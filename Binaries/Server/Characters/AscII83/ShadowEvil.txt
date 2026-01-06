@@ -1,6 +1,6 @@
 [FILE-DATE]
 
-file-saved-date: 2026 1 6 9 20
+file-saved-date: 2026 1 6 15 1
 
 [NAME-ACCOUNT]
 
@@ -10,41 +10,41 @@ account-name       = ShadowEvil
 [STATUS]
 
 character-profile 	=__________
-character-location   = elvine
+character-location   = NONE
 character-guild-name = NONE
 character-guild-GUID = -1
 character-guild-rank = -1
-character-loc-map = gshop_2
-character-loc-x   = 50
-character-loc-y   = 42
+character-loc-map = default
+character-loc-x   = 94
+character-loc-y   = 76
 
-character-HP       = 122
-character-MP       = 73
-character-SP       = 202
-character-LEVEL    = 24
+character-HP       = 61
+character-MP       = 43
+character-SP       = 42
+character-LEVEL    = 9
 character-RATING   = 0
-character-STR      = 77
+character-STR      = 14
 character-INT      = 10
 character-VIT      = 12
 character-DEX      = 14
 character-MAG      = 10
 character-CHARISMA = 10
 character-LUCK     = 10
-character-EXP      = 20138
-character-LU_Pool  = 9
+character-EXP      = 2657
+character-LU_Pool  = 27
 character-EK-Count = 0
 character-PK-Count = 0
 character-reward-gold = 0
 character-downskillindex = -1
-character-IDnum1 = -24575
+character-IDnum1 = 29015
 character-IDnum2 = 1015
 character-IDnum3 = 1
-sex-status       = 1
-skin-status      = 2
-hairstyle-status = 0
-haircolor-status = 14
-underwear-status = 6
-hunger-status    = 99
+sex-status       = 2
+skin-status      = 1
+hairstyle-status = 3
+haircolor-status = 15
+underwear-status = 5
+hunger-status    = 100
 timeleft-shutup  = 0
 timeleft-rating  = 0
 timeleft-force-recall  = 60
@@ -60,9 +60,9 @@ character-contribution = 0
 character-war-contribution = 0
 character-quest-completed = 0
 special-event-id = 0
-super-attack-left = 2
+super-attack-left = 0
 reserved-fightzone-id = 0 0 0
-special-ability-time = 0
+special-ability-time = 1011
 locked-map-name = NONE
 locked-map-time = 0
 crusade-job = 0
@@ -73,17 +73,16 @@ party-id = 0
 gizon-item-upgade-left = 0
 
 
-appr1 = 230
-appr2 = 33
+appr1 = 1013
+appr2 = -4096
 appr3 = 0
 appr4 = 0
-appr-color = 1879048192
+appr-color = 0
 
 [ITEMLIST]
 
-character-item = Gold                 2757 2 5073 3605 1 0 0 0 0 0 0
-character-item = WoodShield           1 2 5252 13808 1 0 0 0 0 300 8847360
-character-item = ShortSword           1 2 16131 30457 1 7 0 0 0 418 3342336
+character-item = Gold                 209 2 12986 14713 1 0 0 0 0 0 0
+character-item = LightAxe             1 2 17385 25021 1 1 0 0 0 500 5439488
 
 
 
@@ -96,9 +95,9 @@ skill-mastery     = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 
 skill-SSN     = -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 -842150451 
 [ITEM-EQUIP-STATUS]
 
-item-equip-status = 01100000000000000000000000000000000000000000000000
-item-position-x = 7 50 113 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
-item-position-y = 66 86 43 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
+item-equip-status = 00000000000000000000000000000000000000000000000000
+item-position-x = 40 112 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+item-position-y = 30 34 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
 
 [EOF]
 

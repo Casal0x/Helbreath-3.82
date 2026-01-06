@@ -9,6 +9,8 @@
 #include <fstream>
 using namespace std;
 
+#include "AccountSqliteStore.h"
+
 extern char	G_cData50000[50000];
 //extern void PutLogList(char* cMsg);
 extern char G_cTxt[512];
@@ -43,6 +45,12 @@ bool IsValidName(char* pStr)
 		//if ((pStr[i] < '0') || (pStr[i] > 'z')) return false;
 	}
 	return true;
+}
+
+void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBufferSize)
+{
+	std::snprintf(outBuffer, outBufferSize, "%04d-%02d-%02d %02d:%02d:%02d",
+		sysTime.wYear, sysTime.wMonth, sysTime.wDay, sysTime.wHour, sysTime.wMinute, sysTime.wSecond);
 }
 
 void LoginServer::Activated()
@@ -655,6 +663,43 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	SaveAccountInfo(0, cAcc, nullptr, cName, 1, h);
 
+	{
+		sqlite3* db = nullptr;
+		std::string dbPath;
+		if (EnsureAccountDatabase(cAcc, &db, dbPath)) {
+			AccountDbCharacterData data = {};
+			std::snprintf(data.accountName, sizeof(data.accountName), "%s", cAcc);
+			std::snprintf(data.characterName, sizeof(data.characterName), "%s", cName);
+			FormatTimestamp(SysTime, data.createdAt, sizeof(data.createdAt));
+			data.appr1 = 1187;
+			data.appr2 = 0;
+			data.appr3 = 0;
+			data.appr4 = 0;
+			data.apprColor = 0;
+			data.level = 1;
+			data.exp = 0;
+			std::snprintf(data.mapName, sizeof(data.mapName), "default");
+			data.mapX = -1;
+			data.mapY = -1;
+			data.hp = hp;
+			data.mp = mp;
+			data.sp = sp;
+			data.str = str;
+			data.vit = vit;
+			data.dex = dex;
+			data.intl = intl;
+			data.mag = mag;
+			data.chr = chr;
+			data.gender = gender;
+			data.skin = skin;
+			data.hairStyle = hairstyle;
+			data.hairColor = haircolor;
+			data.underwear = under;
+			InsertCharacterRecord(db, data);
+			CloseAccountDatabase(db);
+		}
+	}
+
 	char cData[512] = {};
 	char* cp2 = cData;
 	Push(cp2, cName, 10);
@@ -1047,6 +1092,24 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 
 	fwrite(cFile, 1, strlen(cFile), pFile);
 	fclose(pFile);
+
+	{
+		sqlite3* db = nullptr;
+		std::string dbPath;
+		if (EnsureAccountDatabase(cName, &db, dbPath)) {
+			AccountDbAccountData data = {};
+			std::snprintf(data.name, sizeof(data.name), "%s", cName);
+			std::snprintf(data.password, sizeof(data.password), "%s", cPassword);
+			std::snprintf(data.email, sizeof(data.email), "%s", cEmailAddr);
+			std::snprintf(data.quiz, sizeof(data.quiz), "%s", cQuiz);
+			std::snprintf(data.answer, sizeof(data.answer), "%s", cAnswer);
+			FormatTimestamp(SysTime, data.createdAt, sizeof(data.createdAt));
+			FormatTimestamp(SysTime, data.passwordChangedAt, sizeof(data.passwordChangedAt));
+			std::snprintf(data.lastIp, sizeof(data.lastIp), "%s", G_pGame->_lclients[h]->_ip);
+			InsertAccountRecord(db, data);
+			CloseAccountDatabase(db);
+		}
+	}
 }
 
 
@@ -1360,6 +1423,15 @@ void LoginServer::LocalSavePlayerData(int h)
 	if (pFile != 0) {
 		fwrite(cp, iSize, 1, pFile);
 		fclose(pFile);
+	}
+
+	{
+		sqlite3* db = nullptr;
+		std::string dbPath;
+		if (EnsureAccountDatabase(G_pGame->m_pClientList[h]->m_cAccountName, &db, dbPath)) {
+			SaveCharacterSnapshot(db, G_pGame->m_pClientList[h]);
+			CloseAccountDatabase(db);
+		}
 	}
 
 	delete[]pData;

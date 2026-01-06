@@ -6,7 +6,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ActionID.h">
+    <ClInclude Include="AccountSqliteStore.h">
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="BuildItem.h">
@@ -19,9 +19,6 @@
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="DynamicObject.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="DynamicObjectID.h">
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="Fish.h">
@@ -51,19 +48,10 @@
     <ClInclude Include="Misc.h">
       <Filter>source</Filter>
     </ClInclude>
-    <ClInclude Include="Msg.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="NetMessages.h">
-      <Filter>source</Filter>
-    </ClInclude>
     <ClInclude Include="Npc.h">
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="OccupyFlag.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Player.h">
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="Portion.h">
@@ -73,12 +61,6 @@
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="Skill.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="SkillNum.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="StrTok.h">
       <Filter>source</Filter>
     </ClInclude>
     <ClInclude Include="StrategicPoint.h">
@@ -102,75 +84,33 @@
     <ClInclude Include="winmain.h">
       <Filter>source</Filter>
     </ClInclude>
-    <ClInclude Include="DebugDialog.h" />
     <ClInclude Include="GlobalDef.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="LoginServer.h" />
     <ClInclude Include="PartyManager.h" />
     <ClInclude Include="MobCounter.h" />
+    <ClInclude Include="ActionID_Server.h" />
+    <ClInclude Include="CommonTypes.h" />
+    <ClInclude Include="EntityManager.h" />
+    <ClInclude Include="NetworkMsg.h" />
+    <ClInclude Include="ServerMessages.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="BuildItem.cpp">
+    <ClCompile Include="AccountSqliteStore.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="Client.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="DelayEvent.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="DynamicObject.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Fish.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="Game.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="GuildsMan.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Item.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Magic.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="Map.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="Mineral.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Misc.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Msg.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="Npc.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="OccupyFlag.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Portion.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="Quest.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Skill.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="StrTok.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="StrategicPoint.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="TeleportLoc.cpp">
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="Tile.cpp">
@@ -182,13 +122,11 @@
     <ClCompile Include="wmain.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="DebugDialog.cpp" />
     <ClCompile Include="LoginServer.cpp" />
     <ClCompile Include="PartyManager.cpp" />
-    <ClCompile Include="MobCounter.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="HGserver.rc" />
+    <ClCompile Include="CommonTypes.cpp" />
+    <ClCompile Include="EntityManager.cpp" />
+    <ClCompile Include="NetworkMsg.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />
