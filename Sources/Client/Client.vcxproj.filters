@@ -67,6 +67,9 @@
     <ClInclude Include="FrameTiming.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="InputManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Benchmark.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -83,6 +86,9 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="FrameTiming.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <!-- Managers -->
@@ -164,13 +170,7 @@
     <ClInclude Include="DXC_ddraw.h">
       <Filter>DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="DXC_dinput.h">
-      <Filter>DirectX</Filter>
-    </ClInclude>
     <ClCompile Include="DXC_ddraw.cpp">
-      <Filter>DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="DXC_dinput.cpp">
       <Filter>DirectX</Filter>
     </ClCompile>
     <!-- Network -->

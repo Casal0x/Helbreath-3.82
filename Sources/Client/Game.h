@@ -29,7 +29,7 @@ using namespace std;
 
 #include "GlobalDef.h"
 #include "DXC_ddraw.h"
-#include "DXC_dinput.h"
+#include "InputManager.h"
 #include "XSocket.h"
 #include "Sprite.h"
 #include "SpriteID.h"
@@ -724,7 +724,6 @@ public:
 	} m_stTeleportList[20];
 
 	class DXC_ddraw  m_DDraw;
-	class DXC_dinput m_DInput;
 	class CSprite  * m_pSprite[DEF_MAXSPRITES];
 	class CSprite  * m_pTileSpr[DEF_MAXTILES];
 	class CSprite  * m_pEffectSpr[DEF_MAXEFFECTSPR];

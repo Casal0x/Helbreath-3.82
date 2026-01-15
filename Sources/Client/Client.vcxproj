@@ -147,12 +147,12 @@
     <ClInclude Include="ActionID_Client.h" />
     <ClInclude Include="Benchmark.h" />
     <ClInclude Include="FrameTiming.h" />
+    <ClInclude Include="InputManager.h" />
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
     <ClInclude Include="CommonTypes.h" />
     <ClInclude Include="Curse.h" />
     <ClInclude Include="DXC_ddraw.h" />
-    <ClInclude Include="DXC_dinput.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="DialogBoxIDs.h" />
     <ClInclude Include="DialogBoxInfo.h" />
@@ -254,8 +254,8 @@
     <ClCompile Include="DialogBox_ItemUpgrade.cpp" />
     <ClCompile Include="DialogBox_SellList.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
+    <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="DXC_ddraw.cpp" />
-    <ClCompile Include="DXC_dinput.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />

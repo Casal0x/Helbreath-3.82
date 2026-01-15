@@ -1,5 +1,6 @@
 #include "DialogBox_RepairAll.h"
 #include "Game.h"
+#include "InputManager.h"
 
 DialogBox_RepairAll::DialogBox_RepairAll(CGame* pGame)
 	: IDialogBox(DialogBoxId::RepairAll, pGame)
@@ -58,7 +59,7 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if (msZ > 0) Info().sView--;
 			if (msZ < 0) Info().sView++;
-			m_pGame->m_DInput.m_sZ = 0;
+			InputManager::Get().ClearWheelDelta();
 		}
 
 		if (Info().sView < 0)
@@ -137,3 +138,5 @@ bool DialogBox_RepairAll::OnClick(short msX, short msY)
 
 	return false;
 }
+
+

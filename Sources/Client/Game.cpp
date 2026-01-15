@@ -604,10 +604,7 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		return false;
 	}
 
-	if (m_DInput.bInit(hWnd, hInst) == false) {
-		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
+	InputManager::Get().Initialize(m_hWnd);
 
 	m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 0, false);
@@ -3908,7 +3905,7 @@ bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 {
 	int i;
 	char         cDlgID;
-	m_DInput.m_sZ = 0;
+	InputManager::Get().ClearWheelDelta();
 	// Snoopy: 41->61
 	for (i = 0; i < 61; i++)
 		// Snoopy: 40->60
@@ -16742,7 +16739,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 {
 	int i;
 	if (m_bIsObserverMode == true) return;
-	// Note: Dialogs that handle scroll should read m_DInput.m_sZ directly and reset it after processing
+	// Note: Dialogs that handle scroll should read InputManager::Get().GetWheelDelta() and clear it after processing
 	//Snoopy: 41->61
 	bool bIconPanelDrawn = false;
 	for (i = 0; i < 61; i++)
@@ -19215,7 +19212,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		}
 	}
 
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 	UpdateScreen_OnSelectCharacter(sX, sY, msX, msY);
 
 	if ((dwTime - dwCTime) > 100)
@@ -22231,7 +22228,7 @@ void CGame::UpdateScreen_OnAgreement()
 		m_bEscPressed = false;
 		return;
 	}
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 
 	iMIbuttonNum = pMI->iGetStatus(msX, msY, cLB, &cMIresult);
 	if (cMIresult == DEF_MIRESULT_CLICK) {
@@ -22273,7 +22270,7 @@ void CGame::UpdateScreen_OnAgreement()
 	if (msZ != 0)
 	{
 		m_iAgreeView = m_iAgreeView - msZ / 60;
-		m_DInput.m_sZ = 0;
+		InputManager::Get().ClearWheelDelta();
 	}
 	if (cLB != 0 && iTotalLines > 20)
 	{
@@ -22521,7 +22518,7 @@ void CGame::OnKeyUp(WPARAM wParam)
 			sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
 			sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
 			std::memset(tempid, 0, sizeof(tempid));
-			m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+			InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 			if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
 			{
 				char* token, cBuff[64];
@@ -22989,7 +22986,7 @@ void CGame::UpdateScreen_Quit()
 	}
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Check for click
 	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
@@ -23053,7 +23050,7 @@ void CGame::UpdateScreen_VersionNotMatch()
 	}
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
 	if ((cMIresult == DEF_MIRESULT_CLICK) && (iMIbuttonNum == 1))
@@ -23094,7 +23091,7 @@ void CGame::UpdateScreen_ConnectionLost()
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Auto-transition after 5 seconds
 	if ((GameClock::GetTimeMS() - m_dwTime) > 5000)
@@ -23123,7 +23120,7 @@ void CGame::DrawScreen_ConnectionLost()
 void CGame::UpdateScreen_Msg()
 {
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Auto-transition after 1.5 seconds
 	if ((G_dwGlobalTime - m_dwTime) > 1500)
@@ -23195,7 +23192,7 @@ void CGame::UpdateScreen_WaitingResponse()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // WaitingResponse screen - Draw phase (rendering only)
@@ -23294,7 +23291,7 @@ void CGame::UpdateScreen_Connecting()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // Connecting screen - Draw phase (rendering only)
@@ -23373,7 +23370,7 @@ void CGame::UpdateScreen_QueryForceLogin()
 	}
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Animation frame updates
 	if ((dwTime - dwCTime) > 100) {
@@ -23478,7 +23475,7 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 	}
 
 	// Poll mouse input and store for Draw phase
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Animation frame updates
 	if ((dwTime - dwCTime) > 100)
@@ -23586,8 +23583,7 @@ void CGame::UpdateScreen_MainMenu()
 		pMI->AddRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY);
 		pMI->AddRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY);
 		pMI->AddRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY);
-		m_DInput.m_sX = 400;
-		m_DInput.m_sY = 240;
+		InputManager::Get().SetMousePosition(400, 240);
 
 		m_cCurFocus = 1;
 		m_cMaxFocus = 3;
@@ -23599,7 +23595,7 @@ void CGame::UpdateScreen_MainMenu()
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	// Update focus based on mouse position
 	if ((m_sFrameMouseX >= 384 + SCREENX) && (m_sFrameMouseY >= 177 + SCREENY) && (m_sFrameMouseX <= 548 + SCREENX) && (m_sFrameMouseY <= 198 + SCREENY)) m_cCurFocus = 1;
@@ -23726,7 +23722,7 @@ void CGame::UpdateScreen_WaitInitData()
 	}
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // WaitInitData screen - Draw phase (rendering only)
@@ -23828,7 +23824,7 @@ void CGame::UpdateScreen_SelectServer()
 	}
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
 	if (cMIresult == DEF_MIRESULT_CLICK) {
@@ -24008,7 +24004,7 @@ void CGame::UpdateScreen_Login()
 	}
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
 	if (cMIresult == DEF_MIRESULT_CLICK)
@@ -24075,7 +24071,7 @@ void CGame::DrawScreen_Loading()
 	UpdateScreen_OnLoading_Progress();
 
 	// Poll mouse for cursor
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	uint32_t dwTime = GameClock::GetTimeMS();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
@@ -24253,7 +24249,7 @@ void CGame::UpdateScreen_ChangePassword()
 	}
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
+	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	iMIbuttonNum = s_pChgPwdMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
 	if (cMIresult == DEF_MIRESULT_CLICK)
@@ -24555,7 +24551,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 	}
 
 	// Poll mouse input
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 	m_sFrameMouseX = msX;
 	m_sFrameMouseY = msY;
 	s_sNewAcctMsX = msX;
@@ -24906,7 +24902,7 @@ void CGame::UpdateScreen_SelectCharacter()
 		}
 	}
 
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 	s_sSelCharMsX = msX;
 	s_sSelCharMsY = msY;
 
@@ -25162,7 +25158,7 @@ void CGame::UpdateScreen_CreateNewCharacter()
 		return;
 	}
 
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 	s_sNewCharMsX = msX;
 	s_sNewCharMsY = msY;
 
@@ -27638,7 +27634,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 		return;
 	}
 
-	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
 
 	switch (m_cMsg[0]) {
 	case '0':
@@ -29970,7 +29966,7 @@ void CGame::UpdateScreen_OnGame()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 20) m_cGameModeCount = 20;
 
-	m_DInput.UpdateMouseState(&s_sOnGameMsX, &s_sOnGameMsY, &s_sOnGameMsZ, &s_cOnGameLB, &s_cOnGameRB);
+	InputManager::Get().GetLegacyState(&s_sOnGameMsX, &s_sOnGameMsY, &s_sOnGameMsZ, &s_cOnGameLB, &s_cOnGameRB);
 	m_dwCurTime = GameClock::GetTimeMS();
 
 	// Sync manager singletons with game state
@@ -32246,7 +32242,7 @@ void CGame::DrawDialogBox_Bank(short msX, short msY, short msZ, char cLB)
 				if (msZ > 0) m_dialogBoxManager.Info(DialogBoxId::Bank).sView--;
 				if (msZ < 0) m_dialogBoxManager.Info(DialogBoxId::Bank).sView++;
 			}
-			m_DInput.m_sZ = 0;
+			InputManager::Get().ClearWheelDelta();
 		}
 		if (iTotalLines > m_dialogBoxManager.Info(DialogBoxId::Bank).sV1 && m_dialogBoxManager.Info(DialogBoxId::Bank).sView > iTotalLines - m_dialogBoxManager.Info(DialogBoxId::Bank).sV1) m_dialogBoxManager.Info(DialogBoxId::Bank).sView = iTotalLines - m_dialogBoxManager.Info(DialogBoxId::Bank).sV1;
 		if (iTotalLines <= m_dialogBoxManager.Info(DialogBoxId::Bank).sV1) m_dialogBoxManager.Info(DialogBoxId::Bank).sView = 0;
@@ -33569,7 +33565,7 @@ void CGame::DrawDialogBox_SkillDlg(short msX, short msY, short msZ, char cLB)
 		}
 		if ((msZ != 0) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Manufacture)) {
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sView = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sView - msZ / 60;
-			m_DInput.m_sZ = 0;
+			InputManager::Get().ClearWheelDelta();
 		}
 		if (m_pDispBuildItemList[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sView + 12] == 0)
 		{
@@ -39783,3 +39779,6 @@ void CGame::NotifyMsg_RepairAllPrices(char* pData)
 	else
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::RepairAll, 0, 0, 0);
 }
+
+
+

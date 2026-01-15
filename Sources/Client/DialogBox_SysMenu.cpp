@@ -1,4 +1,5 @@
 #include "DialogBox_SysMenu.h"
+#include "InputManager.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
@@ -75,6 +76,7 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 
 	// Resize and center the window
 	SetWindowPos(G_hWnd, HWND_TOP, newX, newY, newWidth, newHeight, SWP_SHOWWINDOW);
+	InputManager::Get().SetActive(true);
 }
 
 DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)

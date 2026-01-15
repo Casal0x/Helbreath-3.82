@@ -23,6 +23,7 @@
 #include "resource.h"
 #include "FrameTiming.h"
 #include "ConfigManager.h"
+#include "InputManager.h"
 
 // --------------------------------------------------------------
 #define WM_USER_TIMERSIGNAL		WM_USER + 500
@@ -117,12 +118,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (wParam == 0)
 		{
 			G_pGame->m_bIsProgramActive = false;
-			G_pGame->m_DInput.SetAcquire(false);
+			InputManager::Get().SetActive(false);
 		}
 		else
 		{
 			G_pGame->m_bIsProgramActive = true;
-			G_pGame->m_DInput.SetAcquire(true);
+			InputManager::Get().SetActive(true);
 			G_pGame->m_bCtrlPressed = false;
 
 			G_pGame->m_bIsRedrawPDBGS = true;
@@ -137,6 +138,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
+
+	case WM_SETFOCUS:
+		InputManager::Get().SetActive(true);
+		break;
+
+	case WM_KILLFOCUS:
+		InputManager::Get().SetActive(false);
+		break;
+
+	case WM_MOUSEMOVE:
+		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		break;
+
+	case WM_LBUTTONDOWN:
+		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		InputManager::Get().OnMouseDown(0);
+		break;
+
+	case WM_LBUTTONUP:
+		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		InputManager::Get().OnMouseUp(0);
+		break;
+
+	case WM_RBUTTONDOWN:
+		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		InputManager::Get().OnMouseDown(1);
+		break;
+
+	case WM_RBUTTONUP:
+		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		InputManager::Get().OnMouseUp(1);
+		break;
+
+	case WM_MOUSEWHEEL:
+	{
+		POINT pt{ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		ScreenToClient(hWnd, &pt);
+		InputManager::Get().OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wParam), pt.x, pt.y);
+		break;
+	}
 
 	case WM_SETCURSOR:
 		SetCursor(0);
@@ -159,6 +200,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
 	srand((unsigned)time(0));
+
+	// Ensure consistent pixel coordinates under RDP and high-DPI setups.
+	// Try per-monitor v2 first, then fall back to system DPI aware on older OS.
+	if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+		SetProcessDPIAware();
+	}
 
 	// Load settings early so window size is available
 	ConfigManager::Get().Initialize();
@@ -229,12 +276,14 @@ void EventLoop()
 		{
 			FrameTiming::BeginFrame();
 			G_pGame->RenderFrame();  // Centralized: Clear -> UpdateScreen -> Flip
+			InputManager::Get().BeginFrame();
 			FrameTiming::EndFrame();
 		}
 		else if (G_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
 		{
 			FrameTiming::BeginFrame();
 			G_pGame->RenderFrame();  // Use RenderFrame for loading too
+			InputManager::Get().BeginFrame();
 			FrameTiming::EndFrame();
 		}
 		else WaitMessage();

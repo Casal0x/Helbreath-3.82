@@ -1,5 +1,6 @@
 #include "DialogBox_Shop.h"
 #include "Game.h"
+#include "InputManager.h"
 #include "lan_eng.h"
 
 DialogBox_Shop::DialogBox_Shop(CGame* pGame)
@@ -61,7 +62,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
 
     if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView - msZ / 60;
-        m_pGame->m_DInput.m_sZ = 0;
+        InputManager::Get().ClearWheelDelta();
     }
 
     if (iTotalLines > 13 && m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView > iTotalLines - 13)
@@ -415,7 +416,7 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
 
     if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 + msZ / 60;
-        m_pGame->m_DInput.m_sZ = 0;
+        InputManager::Get().ClearWheelDelta();
     }
 
     if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 > (50 - m_pGame->_iGetTotalItemNum()))
@@ -539,3 +540,5 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
 
     return false;
 }
+
+

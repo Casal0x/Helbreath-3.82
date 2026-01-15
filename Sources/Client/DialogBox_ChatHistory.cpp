@@ -1,5 +1,6 @@
 #include "DialogBox_ChatHistory.h"
 #include "Game.h"
+#include "InputManager.h"
 
 #define DEF_CHAT_VISIBLE_LINES 8
 #define DEF_CHAT_SCROLLBAR_HEIGHT 105
@@ -27,11 +28,11 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 	// Mouse wheel scrolling
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)
 	{
-		short sWheelDelta = m_pGame->m_DInput.m_sZ;
+		short sWheelDelta = InputManager::Get().GetWheelDelta();
 		if (sWheelDelta != 0)
 		{
 			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView += sWheelDelta / 30;
-			m_pGame->m_DInput.m_sZ = 0;
+			InputManager::Get().ClearWheelDelta();
 		}
 	}
 
@@ -106,3 +107,5 @@ bool DialogBox_ChatHistory::OnClick(short msX, short msY)
 	// Chat history dialog has no click actions - scrolling is handled in OnDraw
 	return false;
 }
+
+
