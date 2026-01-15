@@ -1,4 +1,33 @@
 #include "DialogBoxManager.h"
+#include "IDialogBox.h"
+#include "DialogBox_WarningMsg.h"
+#include "DialogBox_Resurrect.h"
+#include "DialogBox_Noticement.h"
+#include "DialogBox_RepairAll.h"
+#include "DialogBox_ConfirmExchange.h"
+#include "DialogBox_Help.h"
+#include "DialogBox_ItemDrop.h"
+#include "DialogBox_LevelUpSetting.h"
+#include "DialogBox_Character.h"
+#include "DialogBox_Inventory.h"
+#include "DialogBox_Skill.h"
+#include "DialogBox_Magic.h"
+#include "DialogBox_HudPanel.h"
+#include "DialogBox_GuideMap.h"
+#include "DialogBox_Fishing.h"
+#include "DialogBox_CrusadeJob.h"
+#include "DialogBox_ItemDropAmount.h"
+#include "DialogBox_Map.h"
+#include "DialogBox_NpcActionQuery.h"
+#include "DialogBox_SysMenu.h"
+#include "DialogBox_Text.h"
+#include "DialogBox_MagicShop.h"
+#include "DialogBox_NpcTalk.h"
+#include "DialogBox_ChatHistory.h"
+#include "DialogBox_CityHallMenu.h"
+#include "DialogBox_Shop.h"
+#include "DialogBox_ItemUpgrade.h"
+#include "DialogBox_SellList.h"
 #include "Game.h"
 
 DialogBoxManager::DialogBoxManager(CGame* game)
@@ -6,9 +35,76 @@ DialogBoxManager::DialogBoxManager(CGame* game)
 {
 }
 
+DialogBoxManager::~DialogBoxManager()
+{
+	for (int i = 0; i < 61; i++)
+	{
+		delete m_pDialogBoxes[i];
+		m_pDialogBoxes[i] = nullptr;
+	}
+}
+
 void DialogBoxManager::Initialize(CGame* game)
 {
 	m_game = game;
+}
+
+void DialogBoxManager::InitializeDialogBoxes()
+{
+	// Dialog boxes are registered here as they are migrated
+	RegisterDialogBox(new DialogBox_WarningMsg(m_game));
+	RegisterDialogBox(new DialogBox_Resurrect(m_game));
+	RegisterDialogBox(new DialogBox_Noticement(m_game));
+	RegisterDialogBox(new DialogBox_RepairAll(m_game));
+	RegisterDialogBox(new DialogBox_ConfirmExchange(m_game));
+	RegisterDialogBox(new DialogBox_Help(m_game));
+	RegisterDialogBox(new DialogBox_ItemDrop(m_game));
+	RegisterDialogBox(new DialogBox_LevelUpSetting(m_game));
+	RegisterDialogBox(new DialogBox_Character(m_game));
+	RegisterDialogBox(new DialogBox_Inventory(m_game));
+	RegisterDialogBox(new DialogBox_Skill(m_game));
+	RegisterDialogBox(new DialogBox_Magic(m_game));
+	RegisterDialogBox(new DialogBox_HudPanel(m_game));
+	RegisterDialogBox(new DialogBox_GuideMap(m_game));
+	RegisterDialogBox(new DialogBox_Fishing(m_game));
+	RegisterDialogBox(new DialogBox_CrusadeJob(m_game));
+	RegisterDialogBox(new DialogBox_ItemDropAmount(m_game));
+	RegisterDialogBox(new DialogBox_Map(m_game));
+	RegisterDialogBox(new DialogBox_NpcActionQuery(m_game));
+	RegisterDialogBox(new DialogBox_SysMenu(m_game));
+	RegisterDialogBox(new DialogBox_Text(m_game));
+	RegisterDialogBox(new DialogBox_MagicShop(m_game));
+	RegisterDialogBox(new DialogBox_NpcTalk(m_game));
+	RegisterDialogBox(new DialogBox_ChatHistory(m_game));
+	RegisterDialogBox(new DialogBox_CityHallMenu(m_game));
+	RegisterDialogBox(new DialogBox_Shop(m_game));
+	RegisterDialogBox(new DialogBox_ItemUpgrade(m_game));
+	RegisterDialogBox(new DialogBox_SellList(m_game));
+}
+
+void DialogBoxManager::RegisterDialogBox(IDialogBox* pDialogBox)
+{
+	if (!pDialogBox) return;
+	int id = static_cast<int>(pDialogBox->GetId());
+	if (id >= 0 && id < 61)
+	{
+		delete m_pDialogBoxes[id];
+		m_pDialogBoxes[id] = pDialogBox;
+	}
+}
+
+IDialogBox* DialogBoxManager::GetDialogBox(DialogBoxId::Type id) const
+{
+	return GetDialogBox(static_cast<int>(id));
+}
+
+IDialogBox* DialogBoxManager::GetDialogBox(int iBoxID) const
+{
+	if (iBoxID >= 0 && iBoxID < 61)
+	{
+		return m_pDialogBoxes[iBoxID];
+	}
+	return nullptr;
 }
 
 void DialogBoxManager::InitDefaults()
@@ -36,12 +132,6 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::ItemDropConfirm].sY = 0 + SCREENY;
 	m_info[DialogBoxId::ItemDropConfirm].sSizeX = 270;
 	m_info[DialogBoxId::ItemDropConfirm].sSizeY = 105;
-
-	// Age <15 box !?!?!?
-	m_info[DialogBoxId::Age15].sX = 0 + SCREENX;
-	m_info[DialogBoxId::Age15].sY = 0 + SCREENY;
-	m_info[DialogBoxId::Age15].sSizeX = 310;
-	m_info[DialogBoxId::Age15].sSizeY = 170;
 
 	// ** This is a battle area **
 	m_info[DialogBoxId::WarningBattleArea].sX = 0 + SCREENX;
@@ -182,17 +272,11 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::Quest].sSizeX = 258;
 	m_info[DialogBoxId::Quest].sSizeY = 339;
 
-	//Gauge Pannel
-	m_info[DialogBoxId::GaugePanel].sX = 0;
-	m_info[DialogBoxId::GaugePanel].sY = LOGICAL_HEIGHT - 53;
-	m_info[DialogBoxId::GaugePanel].sSizeX = 157;
-	m_info[DialogBoxId::GaugePanel].sSizeY = 53;
-
-	//Icon Pannel
-	m_info[DialogBoxId::IconPanel].sX = 0;
-	m_info[DialogBoxId::IconPanel].sY = LOGICAL_HEIGHT - ICON_PANEL_HEIGHT;
-	m_info[DialogBoxId::IconPanel].sSizeX = ICON_PANEL_WIDTH;
-	m_info[DialogBoxId::IconPanel].sSizeY = ICON_PANEL_HEIGHT;//47;
+	//HUD Panel (combined gauge + icon panel)
+	m_info[DialogBoxId::HudPanel].sX = 0;
+	m_info[DialogBoxId::HudPanel].sY = LOGICAL_HEIGHT - ICON_PANEL_HEIGHT;
+	m_info[DialogBoxId::HudPanel].sSizeX = ICON_PANEL_WIDTH;
+	m_info[DialogBoxId::HudPanel].sSizeY = ICON_PANEL_HEIGHT;
 
 	//Sell List Dialog
 	m_info[DialogBoxId::SellList].sX = 170 + SCREENX;
@@ -300,6 +384,8 @@ void DialogBoxManager::InitDefaults()
 void DialogBoxManager::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 {
 	if (!m_game) return;
+	// For now, delegate to CGame which handles the full draw loop
+	// Individual dialogs will be migrated incrementally
 	m_game->DrawDialogBoxs(msX, msY, msZ, cLB);
 }
 

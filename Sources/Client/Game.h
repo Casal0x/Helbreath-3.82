@@ -133,6 +133,16 @@ using namespace std;
 #define DEF_MAXPARTYMEMBERS			8
 #define DEF_MAXCRUSADESTRUCTURES	300
 
+// Overlay types for popup screens that render over base screens
+enum class OverlayType {
+	None = 0,
+	Connecting,
+	WaitingResponse,
+	LogResMsg,
+	QueryForceLogin,
+	QueryDeleteCharacter
+};
+
 template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
 static void Push(char*& cp, T value) {
 	auto p = (T*)cp;
@@ -257,48 +267,18 @@ public:
 	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
 	bool bReadItemNameConfigFile();
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void DrawDialogBox_Character(short msX, short msY);//1
-	void DrawDialogBox_Inventory(int msX, int msY);//2
-	void DrawDialogBox_Magic(short msX, short msY, short msZ);//3
 	void DrawDialogBox_GuildMenu(short msX, short msY);//7
 	void DrawDialogBox_GuildOperation(short msX, short msY);//8
-	void DrawDialogBox_GuideMap(short msX, short msY, char cLB);//9
-	void DrawDialogBox_Chat(short msX, short msY, short msZ, char cLB);//10
-	void DrawDialogBox_Shop(short msX, short msY, short msZ, char cLB);//11
-	void DrawDialogBox_LevelUpSetting(short msX, short msY);//12
-	void DrawDialogBox_CityHallMenu(short msX, short msY);//13
 	void DrawDialogBox_Bank(short msX, short msY, short msZ, char cLB);//14
-	void DrawDialogBox_Skill(short msX, short msY, short msZ, char cLB);//15
-	void DrawDialogBox_MagicShop(short msX, short msY, short msZ);//16
-	void DrawDialogBox_QueryDropItemAmount();//17
-	void DrawDialogBox_Text(short msX, short msY, short msZ, char cLB);//18
-	void DrawDialogBox_SysMenu(short msX, short msY, char cLB);//19
-	void DrawDialogBox_NpcActionQuery(short msX, short msY);//20
-	void DrawDialogBox_NpcTalk(short msX, short msY, char cLB);//21
-	void DrawDialogBox_Map();//22
 	void DrawDialogBox_SellorRepairItem(short msX, short msY);//23
-	void DrawDialogBox_Fishing(short msX, short msY);//24
-	void DrawDialogBox_ShutDownMsg(short msX, short msY);//25
 	void DrawDialogBox_SkillDlg(short msX, short msY, short msZ, char cLB);//26
 	void DrawDialogBox_Exchange(short msX, short msY);//27
 	void DrawDialogBox_Quest(int msX, int msY);//28
-	void DrawDialogBox_GaugePannel();//29
-	void DrawDialogBox_IconPannel(short msX, short msY);//30
-	void DrawDialogBox_SellList(short msX, short msY);//31
 	void DrawDialogBox_Party(short msX, short msY);//32
-	void DrawDialogBox_CrusadeJob(short msX, short msY);//33
-	void DrawDialogBox_ItemUpgrade(int msX, int msY);//34
-	void DrawDialogBox_Help(int msX, int msY);//35
 	void DrawDialogBox_Commander(int msX, int msY);//36
 	void DrawDialogBox_Constructor(int msX, int msY);//37
 	void DrawDialogBox_Soldier(int msX, int msY);//38
-    void DrawDialogBox_ItemDrop(short msX, short msY);//4
-	void DrawDialogBox_WarningMsg(short msX, short msY);//6
-	void DrawDialogBox_15AgeMsg(short msX, short msY);//5
-	void DrawDialogBox_FeedBackCard(short msX, short msY);//40
 	void DisplayCommaNumber_G_cTxt(uint32_t iGold);// Name changed by Snoopy (easyer to understand...)
-
-	void DrawDialogBox_ConfirmExchange(short msX, short msY); //41
 
 	// Slates - Alastor
 	void bItemDrop_Slates();
@@ -306,38 +286,16 @@ public:
 	void DrawDialogBox_Slates(short msX, short msY, short msZ, char cLB);//40
 
 	bool _bCheckDlgBoxClick(short msX, short msY);
-	void DlgBoxClick_WarningMsg(short msX, short msY);
-	void DlgBoxClick_15AgeMsg(short msX, short msY);
-	void DlgBoxClick_ItemDrop(short msX, short msY);
-	void DlgBoxClick_Character(short msX, short msY);
-	void DlgBoxClick_Inventory(short msX, short msY);
-	void DlgBoxClick_Magic(short msX, short msY);
 	void DlgBoxClick_GuildMenu(short msX, short msY);
 	void DlgBoxClick_GuildOp(short msX, short msY);
-	void DlgBoxClick_Shop(short msX, short msY);
-	void DlgBoxClick_LevelUpSettings(short msX, short msY);
-	void DlgBoxClick_CityhallMenu(short msX, short msY);
 	void DlgBoxClick_Bank(short msX, short msY);
-	void DlgBoxClick_Skill(short msX, short msY);
-	void DlgBoxClick_MagicShop(short msX, short msY);
-	void DlgBoxClick_FeedBackCard(short msX, short msY);
-	void DlgBoxClick_Text(short msX, short msY);
-	void DlgBoxClick_SysMenu(short msX, short msY);
-	void DlgBoxClick_NpcActionQuery(short msX, short msY);
-	void DlgBoxClick_NpcTalk(int msX, int msY);
 	void DlgBoxClick_ItemSellorRepair(short msX, short msY);
 	void DlgBoxClick_Fish(short msX, short msY);
-	void DlgBoxClick_ShutDownMsg(short msX, short msY);
 	void DlgBoxClick_SkillDlg(short msX, short msY);
 	void DlgBoxClick_Exchange(short msX, short msY);
 
 	void DlgBoxClick_Quest(int msX, int msY);
-	void DlgBoxClick_SellList(short msX, short msY);
-	void DlgBoxClick_IconPannel(short msX, short msY);
 	void DlgBoxClick_Party(short msX, short msY);
-	void DlgBoxClick_CrusadeJob(short msX, short msY);
-	void DlgBoxClick_ItemUpgrade(int msX, int msY);
-	void DlgBoxClick_Help(int msX, int msY);
 	void DlgBoxClick_Commander(int msX, int msY);
 	void DlgBoxClick_Constructor(int msX, int msY);
 	void DlgBoxClick_Soldier(int msX, int msY);
@@ -505,6 +463,13 @@ public:
 	void UpdateScreen_Loading();
 	void DrawScreen_Loading();
 
+	// Overlay system for popup screens that render over base screens
+	void ShowOverlay(OverlayType type, char context, char message = 0);
+	void HideOverlay();
+	bool IsOverlayActive() const { return m_activeOverlay != OverlayType::None; }
+	void UpdateOverlay();
+	void DrawOverlay();
+
 	void NpcTalkHandler(char * pData);
 	int  _iGetWeaponSkillType();
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
@@ -649,21 +614,16 @@ public:
 	bool bReadLoginConfigFile(char * cFn);
 	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
 	void ShowHeldenianVictory(short sSide);
-	void DrawDialogBox_Resurect(short msX, short msY);
-	void DlgBoxClick_Resurect(short msX, short msY);
 	void DrawDialogBox_CMDHallMenu(short msX, short msY);
 	void DlgBoxClick_CMDHallMenu(short msX, short msY);
 	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
 	void DrawDruncncity();
-	void DlgBoxClick_ConfirmExchange(short msX, short msY);
 	void Abaddon_corpse(int sX, int sY);
 	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);
 
 
 	//50Cent - Repair All
-	void DrawDialogBox_RepairAll(short msX, short msY, short msZ);
-	void DlgBoxClick_RepairAll(short msX, short msY);
 	void NotifyMsg_RepairAllPrices(char* pData);
 	short totalItemRepair;
 	int totalPrice;
@@ -961,6 +921,13 @@ public:
 	char m_cLogOutCount;
 	char m_cRestartCount;
 	char m_cGameMode;
+
+	// Overlay system state
+	OverlayType m_activeOverlay = OverlayType::None;
+	char m_cOverlayContext;      // Which background screen (replaces m_cMsg[0] for overlay)
+	char m_cOverlayMessage;      // Message code (replaces m_cMsg[1] for overlay)
+	uint32_t m_dwOverlayStartTime;  // When overlay was shown
+
 	char m_cWhisperIndex;
 	char m_cAccountName[12];
 	char m_cAccountPassword[12];

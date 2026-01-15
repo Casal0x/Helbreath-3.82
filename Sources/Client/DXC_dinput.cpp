@@ -104,6 +104,8 @@ void DXC_dinput::UpdateMouseState(short * pX, short * pY, short * pZ, char * pLB
 	if ( m_pMouse->GetDeviceState( sizeof(DIMOUSESTATE), &dims ) != DI_OK )
 	{
 		m_pMouse->Acquire();
+		// Clear wheel delta on failure to prevent stale values causing endless scrolling
+		*pZ = 0;
 		return;
 	}
 
@@ -133,7 +135,16 @@ void DXC_dinput::UpdateMouseState(short * pX, short * pY, short * pZ, char * pLB
 	m_sY = (short)scaledY;
 
 	// Handle mouse wheel from DirectInput
-	if( (short)dims.lZ != 0 ) m_sZ = (short)dims.lZ;
+	// DirectInput may not reset lZ to 0 between frames, so track previous value
+	// Only update m_sZ when dims.lZ changes (indicating new input)
+	static short s_sPrevDimsZ = 0;
+	short sCurrentZ = (short)dims.lZ;
+	if (sCurrentZ != s_sPrevDimsZ)
+	{
+		// New wheel input detected - calculate delta from previous
+		m_sZ = sCurrentZ - s_sPrevDimsZ;
+		s_sPrevDimsZ = sCurrentZ;
+	}
 
 	// Clamp to game bounds
 	if (m_sX < 0) m_sX = 0;

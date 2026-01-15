@@ -17,19 +17,20 @@ Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (early 2000s co
 
 ## Build Commands
 
-```bash
-# MSBuild path (if not in PATH)
-"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+**ALWAYS use the full path to batch files (do NOT use `cmd.exe /c "cd && batch"`):**
 
-# Build both (from Helbreath-3.82 directory)
-msbuild Helbreath.sln /p:Configuration=Debug /p:Platform=x86
+```bash
+# Build both Client and Server
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_all.bat"
 
 # Client only
-msbuild Helbreath.sln /t:Game /p:Configuration=Debug /p:Platform=x86
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game.bat"
 
 # Server only
-msbuild Helbreath.sln /t:Server /p:Configuration=Debug /p:Platform=x86
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_server.bat"
 ```
+
+Log files are created: `build_all.log`, `build_game.log`, `build_server.log`
 
 **Output:** `Debug\Game.exe`, `Debug\Server.exe` (or `Release\`)
 

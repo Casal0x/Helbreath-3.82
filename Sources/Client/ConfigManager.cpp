@@ -3,8 +3,19 @@
 #include "json.hpp"
 #include <fstream>
 #include <cstring>
+#include <cstdlib>
 
 using json = nlohmann::json;
+
+// 4:3 resolutions for validation (must match DialogBox_SysMenu)
+static const struct { int w, h; } s_ValidResolutions[] = {
+	{ 640, 480 },
+	{ 800, 600 },
+	{ 1024, 768 },
+	{ 1280, 960 },
+	{ 1440, 1080 }
+};
+static const int s_NumValidResolutions = sizeof(s_ValidResolutions) / sizeof(s_ValidResolutions[0]);
 
 ConfigManager& ConfigManager::Get()
 {
@@ -158,6 +169,30 @@ bool ConfigManager::Load(const char* filename)
 				m_windowHeight = Clamp(window["height"].get<int>(), 480, 2160);
 			}
 		}
+
+		// Validate resolution to nearest 4:3 option
+		bool bValidResolution = false;
+		for (int i = 0; i < s_NumValidResolutions; i++) {
+			if (m_windowWidth == s_ValidResolutions[i].w && m_windowHeight == s_ValidResolutions[i].h) {
+				bValidResolution = true;
+				break;
+			}
+		}
+		if (!bValidResolution) {
+			// Find nearest 4:3 resolution
+			int bestIndex = 0;
+			int bestDiff = abs(s_ValidResolutions[0].w - m_windowWidth) + abs(s_ValidResolutions[0].h - m_windowHeight);
+			for (int i = 1; i < s_NumValidResolutions; i++) {
+				int diff = abs(s_ValidResolutions[i].w - m_windowWidth) + abs(s_ValidResolutions[i].h - m_windowHeight);
+				if (diff < bestDiff) {
+					bestDiff = diff;
+					bestIndex = i;
+				}
+			}
+			m_windowWidth = s_ValidResolutions[bestIndex].w;
+			m_windowHeight = s_ValidResolutions[bestIndex].h;
+			m_bDirty = true; // Mark dirty so corrected value is saved
+		}
 	}
 	catch (const json::exception&)
 	{
@@ -283,8 +318,29 @@ void ConfigManager::SetMusicEnabled(bool enabled)
 
 void ConfigManager::SetWindowSize(int width, int height)
 {
-	width = Clamp(width, 640, 3840);
-	height = Clamp(height, 480, 2160);
+	// Validate to nearest 4:3 resolution
+	bool bValid = false;
+	for (int i = 0; i < s_NumValidResolutions; i++) {
+		if (width == s_ValidResolutions[i].w && height == s_ValidResolutions[i].h) {
+			bValid = true;
+			break;
+		}
+	}
+	if (!bValid) {
+		// Snap to nearest valid resolution
+		int bestIndex = 0;
+		int bestDiff = abs(s_ValidResolutions[0].w - width) + abs(s_ValidResolutions[0].h - height);
+		for (int i = 1; i < s_NumValidResolutions; i++) {
+			int diff = abs(s_ValidResolutions[i].w - width) + abs(s_ValidResolutions[i].h - height);
+			if (diff < bestDiff) {
+				bestDiff = diff;
+				bestIndex = i;
+			}
+		}
+		width = s_ValidResolutions[bestIndex].w;
+		height = s_ValidResolutions[bestIndex].h;
+	}
+
 	if (m_windowWidth != width || m_windowHeight != height)
 	{
 		m_windowWidth = width;

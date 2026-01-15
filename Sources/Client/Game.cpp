@@ -19,6 +19,9 @@
 #include "WeatherManager.h"
 #include "ChatCommandManager.h"
 
+// DialogBox system
+#include "IDialogBox.h"
+
 extern char G_cSpriteAlphaDegree;
 
 extern char G_cCmdLine[256], G_cCmdLineTokenA[120], G_cCmdLineTokenA_Lowercase[120], G_cCmdLineTokenB[120], G_cCmdLineTokenC[120], G_cCmdLineTokenD[120], G_cCmdLineTokenE[120];
@@ -38,9 +41,9 @@ short _tmp_sOwnerType, _tmp_sAppr1, _tmp_sAppr2, _tmp_sAppr3, _tmp_sAppr4;//, _t
 int _tmp_iStatus;
 char  _tmp_cAction, _tmp_cDir, _tmp_cFrame, _tmp_cName[12];
 int   _tmp_iChatIndex, _tmp_dx, _tmp_dy, _tmp_iApprColor, _tmp_iEffectType, _tmp_iEffectFrame, _tmp_dX, _tmp_dY; // 21.171 2002-6-14
-	uint16_t _tmp_wObjectID;
+uint16_t _tmp_wObjectID;
 char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
-	uint16_t wFocusObjectID;
+uint16_t wFocusObjectID;
 short sFocus_dX, sFocus_dY;
 char  cFocusAction, cFocusFrame, cFocusDir, cFocusName[12];
 short sFocusX, sFocusY, sFocusOwnerType, sFocusAppr1, sFocusAppr2, sFocusAppr3, sFocusAppr4;
@@ -99,6 +102,7 @@ CGame::CGame()
 	// Initialize critical pointers first to avoid 0xCDCDCDCD debug heap issues
 	m_pInputBuffer = nullptr;
 	m_dialogBoxManager.Initialize(this);
+	m_dialogBoxManager.InitializeDialogBoxes();
 
 	srand((unsigned)time(0));
 	ReadSettings();
@@ -225,12 +229,6 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = 0 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sSizeX = 270;
 	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sSizeY = 105;
-
-	// Age <15 box !?!?!?
-	m_dialogBoxManager.Info(DialogBoxId::Age15).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Age15).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Age15).sSizeX = 310;
-	m_dialogBoxManager.Info(DialogBoxId::Age15).sSizeY = 170;
 
 	// ** This is a battle area **
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 0 + SCREENX;
@@ -372,16 +370,16 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::Quest).sSizeY = 339;
 
 	//Gauge Pannel
-	m_dialogBoxManager.Info(DialogBoxId::GaugePanel).sX = 0;
-	m_dialogBoxManager.Info(DialogBoxId::GaugePanel).sY = LOGICAL_HEIGHT - 53;
-	m_dialogBoxManager.Info(DialogBoxId::GaugePanel).sSizeX = 157;
-	m_dialogBoxManager.Info(DialogBoxId::GaugePanel).sSizeY = 53;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX = 0;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY = LOGICAL_HEIGHT - 53;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeX = 157;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeY = 53;
 
 	//Icon Pannel
-	m_dialogBoxManager.Info(DialogBoxId::IconPanel).sX = 0;
-	m_dialogBoxManager.Info(DialogBoxId::IconPanel).sY = LOGICAL_HEIGHT - ICON_PANEL_HEIGHT;
-	m_dialogBoxManager.Info(DialogBoxId::IconPanel).sSizeX = ICON_PANEL_WIDTH;
-	m_dialogBoxManager.Info(DialogBoxId::IconPanel).sSizeY = ICON_PANEL_HEIGHT;//47;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX = 0;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY = LOGICAL_HEIGHT - ICON_PANEL_HEIGHT;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeX = ICON_PANEL_WIDTH;
+	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeY = ICON_PANEL_HEIGHT;//47;
 
 	//Sell List Dialog
 	m_dialogBoxManager.Info(DialogBoxId::SellList).sX = 170 + SCREENX;
@@ -592,7 +590,7 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR2", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
-	
+
 	bReadIp();
 
 	if (bReadItemNameConfigFile() == false)
@@ -659,8 +657,8 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_sPlayerType = 2;
 	m_cPlayerTurn = 0;
 	// Snoopy: fixed here
-	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::GaugePanel);
-	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::IconPanel); // 29�� GaugePannel
+	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
+	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel); // 29�� GaugePannel
 
 	m_cMenuDir = 4;
 	m_cMenuDirCnt = 0;
@@ -836,7 +834,7 @@ void CGame::UpdateScreen()
 		break;
 
 	case DEF_GAMEMODE_ONCREATENEWACCOUNT:
-		// Unsplit - handled in DrawScreen()
+		UpdateScreen_CreateNewAccount();
 		break;
 #endif
 
@@ -1245,315 +1243,299 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	switch (dwMsgID) {
 
 	case DEF_REQUEST_ANGEL:	// to Game Server
-		{
-			hb::net::PacketRequestAngel req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.name, 0, sizeof(req.name));
-			if (pString != nullptr) {
-				std::size_t name_len = std::strlen(pString);
-				if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
-				std::memcpy(req.name, pString, name_len);
-			}
-			req.angel_id = iV1;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	{
+		hb::net::PacketRequestAngel req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.name, 0, sizeof(req.name));
+		if (pString != nullptr) {
+			std::size_t name_len = std::strlen(pString);
+			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
+			std::memcpy(req.name, pString, name_len);
 		}
-		break;
+		req.angel_id = iV1;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case DEF_REQUEST_RESURRECTPLAYER_YES: // By snoopy
 	case DEF_REQUEST_RESURRECTPLAYER_NO:  // By snoopy
-		{
-			hb::net::PacketRequestHeaderOnly req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestHeaderOnly req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_HELDENIAN_SCROLL:// By snoopy
-		{
-			hb::net::PacketRequestHeldenianScroll req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.name, 0, sizeof(req.name));
-			if (pString != nullptr) {
-				std::size_t name_len = std::strlen(pString);
-				if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
-				std::memcpy(req.name, pString, name_len);
-			}
-			req.item_id = wCommand;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	{
+		hb::net::PacketRequestHeldenianScroll req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.name, 0, sizeof(req.name));
+		if (pString != nullptr) {
+			std::size_t name_len = std::strlen(pString);
+			if (name_len >= sizeof(req.name)) name_len = sizeof(req.name) - 1;
+			std::memcpy(req.name, pString, name_len);
 		}
-		break;
+		req.item_id = wCommand;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_TELEPORT_LIST:
-		{
-			hb::net::PacketRequestName20 req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.name, 0, sizeof(req.name));
-			std::memcpy(req.name, "William", sizeof(req.name));
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestName20 req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.name, 0, sizeof(req.name));
+		std::memcpy(req.name, "William", sizeof(req.name));
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_HELDENIAN_TP_LIST: // Snoopy: Heldenian TP
-		{
-			hb::net::PacketRequestName20 req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.name, 0, sizeof(req.name));
-			std::memcpy(req.name, "Gail", sizeof(req.name));
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestName20 req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.name, 0, sizeof(req.name));
+		std::memcpy(req.name, "Gail", sizeof(req.name));
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_HELDENIAN_TP: // Snoopy: Heldenian TP
 	case MSGID_REQUEST_CHARGED_TELEPORT:
-		{
-			hb::net::PacketRequestTeleportId req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.teleport_id = iV1;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestTeleportId req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.teleport_id = iV1;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_SELLITEMLIST:
-		{
-			hb::net::PacketRequestSellItemList req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			for (i = 0; i < DEF_MAXSELLLIST; i++) {
-				req.entries[i].index = static_cast<uint8_t>(m_stSellItemList[i].iIndex);
-				req.entries[i].amount = m_stSellItemList[i].iAmount;
-			}
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	{
+		hb::net::PacketRequestSellItemList req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		for (i = 0; i < DEF_MAXSELLLIST; i++) {
+			req.entries[i].index = static_cast<uint8_t>(m_stSellItemList[i].iIndex);
+			req.entries[i].amount = m_stSellItemList[i].iAmount;
 		}
-		break;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_RESTART:
-		{
-			hb::net::PacketRequestHeaderOnly req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestHeaderOnly req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_PANNING:
-		{
-			hb::net::PacketRequestPanning req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.dir = static_cast<uint8_t>(cDir);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestPanning req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.dir = static_cast<uint8_t>(cDir);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_CHANGEPASSWORD:
-		{
-			hb::net::ChangePasswordRequest req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.new_password, 0, sizeof(req.new_password));
-			std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
-			std::memset(req.new_password_confirm, 0, sizeof(req.new_password_confirm));
-			std::memcpy(req.new_password_confirm, m_cNewPassConfirm, sizeof(req.new_password_confirm));
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::ChangePasswordRequest req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.new_password, 0, sizeof(req.new_password));
+		std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
+		std::memset(req.new_password_confirm, 0, sizeof(req.new_password_confirm));
+		std::memcpy(req.new_password_confirm, m_cNewPassConfirm, sizeof(req.new_password_confirm));
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_CREATENEWACCOUNT:
 		// to Log Server
-		{
-			hb::net::CreateAccountRequestFull req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.email, 0, sizeof(req.email));
-			std::memcpy(req.email, m_cEmailAddr, sizeof(req.email));
-			std::memset(req.gender, 0, sizeof(req.gender));
-			req.gender[0] = ' ';
-			std::memset(req.age, 0, sizeof(req.age));
-			std::memcpy(req.age, m_cAccountAge, sizeof(req.age));
-			std::memset(req.padding1, 0, sizeof(req.padding1));
-			req.padding1[0] = ' ';
-			std::memset(req.padding2, 0, sizeof(req.padding2));
-			req.padding2[0] = ' ';
-			std::memset(req.padding3, 0, sizeof(req.padding3));
-			req.padding3[0] = ' ';
-			std::memset(req.country, 0, sizeof(req.country));
-			std::memcpy(req.country, m_cAccountCountry, sizeof(req.country));
-			std::memset(req.ssn, 0, sizeof(req.ssn));
-			std::memcpy(req.ssn, m_cAccountSSN, sizeof(req.ssn));
-			std::memset(req.quiz, 0, sizeof(req.quiz));
-			std::memcpy(req.quiz, m_cAccountQuiz, sizeof(req.quiz));
-			std::memset(req.answer, 0, sizeof(req.answer));
-			std::memcpy(req.answer, m_cAccountAnswer, sizeof(req.answer));
-			std::memset(req.cmd_line, 0, sizeof(req.cmd_line));
-			std::memcpy(req.cmd_line, G_cCmdLineTokenA_Lowercase, sizeof(req.cmd_line));
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::CreateAccountRequest req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.email, 0, sizeof(req.email));
+		std::memcpy(req.email, m_cEmailAddr, sizeof(req.email));
+		std::memset(req.quiz, 0, sizeof(req.quiz));
+		std::memcpy(req.quiz, m_cAccountQuiz, sizeof(req.quiz));
+		std::memset(req.answer, 0, sizeof(req.answer));
+		std::memcpy(req.answer, m_cAccountAnswer, sizeof(req.answer));
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_GETMINIMUMLOADGATEWAY:
 	case MSGID_REQUEST_LOGIN:
 		// to Log Server
-		{
-			hb::net::LoginRequest req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.world_name, 0, sizeof(req.world_name));
-			std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
+	{
+		hb::net::LoginRequest req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.world_name, 0, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
 
-		break;
+	break;
 
 	case MSGID_REQUEST_CREATENEWCHARACTER:
 		// to Log Server
-		{
-			hb::net::CreateCharacterRequest req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.character_name, 0, sizeof(req.character_name));
-			std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.world_name, 0, sizeof(req.world_name));
-			std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-			req.gender = static_cast<uint8_t>(m_cGender);
-			req.skin = static_cast<uint8_t>(m_cSkinCol);
-			req.hairstyle = static_cast<uint8_t>(m_cHairStyle);
-			req.haircolor = static_cast<uint8_t>(m_cHairCol);
-			req.underware = static_cast<uint8_t>(m_cUnderCol);
-			req.str = static_cast<uint8_t>(m_ccStr);
-			req.vit = static_cast<uint8_t>(m_ccVit);
-			req.dex = static_cast<uint8_t>(m_ccDex);
-			req.intl = static_cast<uint8_t>(m_ccInt);
-			req.mag = static_cast<uint8_t>(m_ccMag);
-			req.chr = static_cast<uint8_t>(m_ccChr);
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::CreateCharacterRequest req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.character_name, 0, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.world_name, 0, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		req.gender = static_cast<uint8_t>(m_cGender);
+		req.skin = static_cast<uint8_t>(m_cSkinCol);
+		req.hairstyle = static_cast<uint8_t>(m_cHairStyle);
+		req.haircolor = static_cast<uint8_t>(m_cHairCol);
+		req.underware = static_cast<uint8_t>(m_cUnderCol);
+		req.str = static_cast<uint8_t>(m_ccStr);
+		req.vit = static_cast<uint8_t>(m_ccVit);
+		req.dex = static_cast<uint8_t>(m_ccDex);
+		req.intl = static_cast<uint8_t>(m_ccInt);
+		req.mag = static_cast<uint8_t>(m_ccMag);
+		req.chr = static_cast<uint8_t>(m_ccChr);
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_ENTERGAME:
 		// to Log Server
-		{
-			hb::net::EnterGameRequestFull req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-			std::memset(req.character_name, 0, sizeof(req.character_name));
-			std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
-			std::memset(req.map_name, 0, sizeof(req.map_name));
-			std::memcpy(req.map_name, m_cMapName, sizeof(req.map_name));
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			req.level = m_iLevel;
-			std::memset(req.world_name, 0, sizeof(req.world_name));
-			std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-			std::memset(req.cmd_line, 0, sizeof(req.cmd_line));
-			std::memcpy(req.cmd_line, G_cCmdLineTokenA, sizeof(req.cmd_line));
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::EnterGameRequestFull req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
+		std::memset(req.character_name, 0, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
+		std::memset(req.map_name, 0, sizeof(req.map_name));
+		std::memcpy(req.map_name, m_cMapName, sizeof(req.map_name));
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		req.level = m_iLevel;
+		std::memset(req.world_name, 0, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		std::memset(req.cmd_line, 0, sizeof(req.cmd_line));
+		std::memcpy(req.cmd_line, G_cCmdLineTokenA, sizeof(req.cmd_line));
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_DELETECHARACTER:
 		// to Log Server
-		{
-			hb::net::DeleteCharacterRequest req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
-			std::memset(req.character_name, 0, sizeof(req.character_name));
-			std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName, sizeof(req.character_name));
-			std::memset(req.account_name, 0, sizeof(req.account_name));
-			std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.world_name, 0, sizeof(req.world_name));
-			std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-			iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::DeleteCharacterRequest req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
+		std::memset(req.character_name, 0, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName, sizeof(req.character_name));
+		std::memset(req.account_name, 0, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.world_name, 0, sizeof(req.world_name));
+		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
+		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_SETITEMPOS:
 		// to Game Server
-		{
-			hb::net::PacketRequestSetItemPos req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.dir = static_cast<uint8_t>(cDir);
-			req.x = static_cast<int16_t>(iV1);
-			req.y = static_cast<int16_t>(iV2);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
-		break;
+	{
+		hb::net::PacketRequestSetItemPos req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.dir = static_cast<uint8_t>(cDir);
+		req.x = static_cast<int16_t>(iV1);
+		req.y = static_cast<int16_t>(iV2);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
+	break;
 
 	case MSGID_COMMAND_CHECKCONNECTION:
-		{
-			hb::net::PacketCommandCheckConnection req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.time_ms = dwTime;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
+	{
+		hb::net::PacketCommandCheckConnection req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.time_ms = dwTime;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
 
-		break;
+	break;
 
 	case MSGID_REQUEST_INITDATA:
 	case MSGID_REQUEST_INITPLAYER:
 		// to Game Server
-		{
-			hb::net::PacketRequestInitPlayer req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			std::memset(req.player, 0, sizeof(req.player));
-			std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
-			std::memset(req.account, 0, sizeof(req.account));
-			std::memcpy(req.account, m_cAccountName, sizeof(req.account));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
-			std::memset(req.server, 0, sizeof(req.server));
-			std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
-			req.padding = 0;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
+	{
+		hb::net::PacketRequestInitPlayer req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.player, 0, sizeof(req.player));
+		std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
+		std::memset(req.account, 0, sizeof(req.account));
+		std::memcpy(req.account, m_cAccountName, sizeof(req.account));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
+		std::memset(req.server, 0, sizeof(req.server));
+		std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
+		req.padding = 0;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
 
-		//m_bIsObserverMode = false;
-		break;
+	//m_bIsObserverMode = false;
+	break;
 	case MSGID_LEVELUPSETTINGS:
 		// CLEROTH
 		//if ((m_cLU_Str + m_cLU_Vit + m_cLU_Dex + m_cLU_Int + m_cLU_Mag + m_cLU_Char) > 3) return false;
-		{
-			hb::net::PacketRequestLevelUpSettings req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.str = static_cast<int16_t>(m_cLU_Str);
-			req.vit = static_cast<int16_t>(m_cLU_Vit);
-			req.dex = static_cast<int16_t>(m_cLU_Dex);
-			req.intel = static_cast<int16_t>(m_cLU_Int);
-			req.mag = static_cast<int16_t>(m_cLU_Mag);
-			req.chr = static_cast<int16_t>(m_cLU_Char);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestLevelUpSettings req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.str = static_cast<int16_t>(m_cLU_Str);
+		req.vit = static_cast<int16_t>(m_cLU_Vit);
+		req.dex = static_cast<int16_t>(m_cLU_Dex);
+		req.intel = static_cast<int16_t>(m_cLU_Int);
+		req.mag = static_cast<int16_t>(m_cLU_Mag);
+		req.chr = static_cast<int16_t>(m_cLU_Char);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_COMMAND_CHATMSG:
 		if (m_bIsTeleportRequested == true) return false;
@@ -1582,87 +1564,87 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		if (m_bIsTeleportRequested == true) return false;
 		switch (wCommand) {
 		case DEF_COMMONTYPE_BUILDITEM:
-			{
-				hb::net::PacketCommandCommonBuild req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				std::memset(req.name, 0, sizeof(req.name));
-				if (pString != 0) {
-					std::size_t name_len = std::strlen(pString);
-					if (name_len > sizeof(req.name)) name_len = sizeof(req.name);
-					std::memcpy(req.name, pString, name_len);
-				}
-				req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-				req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-				req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-				req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-				req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-				req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		{
+			hb::net::PacketCommandCommonBuild req{};
+			req.base.header.msg_id = dwMsgID;
+			req.base.header.msg_type = wCommand;
+			req.base.x = m_sPlayerX;
+			req.base.y = m_sPlayerY;
+			req.base.dir = static_cast<uint8_t>(cDir);
+			std::memset(req.name, 0, sizeof(req.name));
+			if (pString != 0) {
+				std::size_t name_len = std::strlen(pString);
+				if (name_len > sizeof(req.name)) name_len = sizeof(req.name);
+				std::memcpy(req.name, pString, name_len);
 			}
-			break;
+			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
+			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		}
+		break;
 
 		case DEF_COMMONTYPE_REQ_CREATEPORTION:
-			{
-				hb::net::PacketCommandCommonItems req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-				req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-				req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-				req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-				req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-				req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-				req.padding = 0;
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-			}
-			break;
+		{
+			hb::net::PacketCommandCommonItems req{};
+			req.base.header.msg_id = dwMsgID;
+			req.base.header.msg_type = wCommand;
+			req.base.x = m_sPlayerX;
+			req.base.y = m_sPlayerY;
+			req.base.dir = static_cast<uint8_t>(cDir);
+			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
+			req.padding = 0;
+			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		}
+		break;
 
-			//Crafting
+		//Crafting
 		case DEF_COMMONTYPE_CRAFTITEM:
-			{
-				hb::net::PacketCommandCommonBuild req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				std::memset(req.name, ' ', sizeof(req.name));
-				req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
-				req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
-				req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
-				req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
-				req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
-				req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-			}
-			break;
+		{
+			hb::net::PacketCommandCommonBuild req{};
+			req.base.header.msg_id = dwMsgID;
+			req.base.header.msg_type = wCommand;
+			req.base.x = m_sPlayerX;
+			req.base.y = m_sPlayerY;
+			req.base.dir = static_cast<uint8_t>(cDir);
+			std::memset(req.name, ' ', sizeof(req.name));
+			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6);
+			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		}
+		break;
 
-			// Create Slate Request - Diuuude
+		// Create Slate Request - Diuuude
 		case DEF_COMMONTYPE_REQ_CREATESLATE:
-			{
-				hb::net::PacketCommandCommonItems req{};
-				req.base.header.msg_id = dwMsgID;
-				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
-				req.base.dir = static_cast<uint8_t>(cDir);
-				req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV1);
-				req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV2);
-				req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV3);
-				req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV4);
-				req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV5);
-				req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV6);
-				req.padding = 0;
-				iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-			}
-			break;
+		{
+			hb::net::PacketCommandCommonItems req{};
+			req.base.header.msg_id = dwMsgID;
+			req.base.header.msg_type = wCommand;
+			req.base.x = m_sPlayerX;
+			req.base.y = m_sPlayerY;
+			req.base.dir = static_cast<uint8_t>(cDir);
+			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV1);
+			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV2);
+			req.item_ids[2] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV3);
+			req.item_ids[3] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV4);
+			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV5);
+			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV6);
+			req.padding = 0;
+			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		}
+		break;
 
 		default:
 			if (pString == 0)
@@ -1705,88 +1687,88 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case MSGID_REQUEST_CREATENEWGUILD:
 	case MSGID_REQUEST_DISBANDGUILD:
 		// to Game Server
-		{
-			hb::net::PacketRequestGuildAction req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = DEF_MSGTYPE_CONFIRM;
-			std::memset(req.player, 0, sizeof(req.player));
-			std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
-			std::memset(req.account, 0, sizeof(req.account));
-			std::memcpy(req.account, m_cAccountName, sizeof(req.account));
-			std::memset(req.password, 0, sizeof(req.password));
-			std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-			std::memset(req.guild, 0, sizeof(req.guild));
-			char cTemp[21];
-			std::memset(cTemp, 0, sizeof(cTemp));
-			std::memcpy(cTemp, m_cGuildName, 20);
-			CMisc::ReplaceString(cTemp, ' ', '_');
-			std::memcpy(req.guild, cTemp, sizeof(req.guild));
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestGuildAction req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		std::memset(req.player, 0, sizeof(req.player));
+		std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
+		std::memset(req.account, 0, sizeof(req.account));
+		std::memcpy(req.account, m_cAccountName, sizeof(req.account));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memset(req.guild, 0, sizeof(req.guild));
+		char cTemp[21];
+		std::memset(cTemp, 0, sizeof(cTemp));
+		std::memcpy(cTemp, m_cGuildName, 20);
+		CMisc::ReplaceString(cTemp, ' ', '_');
+		std::memcpy(req.guild, cTemp, sizeof(req.guild));
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case MSGID_REQUEST_TELEPORT:
-		{
-			hb::net::PacketRequestHeaderOnly req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = DEF_MSGTYPE_CONFIRM;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
+	{
+		hb::net::PacketRequestHeaderOnly req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
 
-		m_bIsTeleportRequested = true;
-		break;
+	m_bIsTeleportRequested = true;
+	break;
 
 	case MSGID_REQUEST_CIVILRIGHT:
-		{
-			hb::net::PacketRequestHeaderOnly req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = DEF_MSGTYPE_CONFIRM;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
-		break;
+	{
+		hb::net::PacketRequestHeaderOnly req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
+	break;
 
 	case MSGID_REQUEST_RETRIEVEITEM:
-		{
-			hb::net::PacketRequestRetrieveItem req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = DEF_MSGTYPE_CONFIRM;
-			req.item_slot = static_cast<uint8_t>(iV1);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
-		break;
+	{
+		hb::net::PacketRequestRetrieveItem req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		req.item_slot = static_cast<uint8_t>(iV1);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
+	break;
 
 	case MSGID_REQUEST_NOTICEMENT:
-		{
-			hb::net::PacketRequestNoticement req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.value = iV1;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-		}
-		break;
+	{
+		hb::net::PacketRequestNoticement req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.value = iV1;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
 
 	case  MSGID_REQUEST_FIGHTZONE_RESERVE:
-		{
-			hb::net::PacketRequestFightzoneReserve req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.fightzone = iV1;
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
-		break;
+	{
+		hb::net::PacketRequestFightzoneReserve req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.fightzone = iV1;
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
+	break;
 
 	case MSGID_STATECHANGEPOINT:
 		// Diuuude
-		{
-			hb::net::PacketRequestStateChange req{};
-			req.header.msg_id = dwMsgID;
-			req.header.msg_type = 0;
-			req.change1 = static_cast<uint8_t>(cStateChange1);
-			req.change2 = static_cast<uint8_t>(cStateChange2);
-			req.change3 = static_cast<uint8_t>(cStateChange3);
-			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
-		}
-		break;
+	{
+		hb::net::PacketRequestStateChange req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		req.change1 = static_cast<uint8_t>(cStateChange1);
+		req.change2 = static_cast<uint8_t>(cStateChange2);
+		req.change3 = static_cast<uint8_t>(cStateChange3);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+	}
+	break;
 
 	default:
 		if (m_bIsTeleportRequested == true) return false;
@@ -1831,10 +1813,10 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		wsprintf(cDbg, "[NETWARN] bSendCommand: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		OutputDebugStringA(cDbg);
 	}
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-		delete m_pGSock;
-		m_pGSock = 0;
-		break;
+	ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+	delete m_pGSock;
+	m_pGSock = 0;
+	break;
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
 	{
@@ -1842,14 +1824,14 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		wsprintf(cDbg, "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		OutputDebugStringA(cDbg);
 	}
-		delete m_pGSock;
-		m_pGSock = 0;
-		if (G_pCalcSocket != 0) {
-			delete G_pCalcSocket;
-			G_pCalcSocket = 0;
-		}
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
-		break;
+	delete m_pGSock;
+	m_pGSock = 0;
+	if (G_pCalcSocket != 0) {
+		delete G_pCalcSocket;
+		G_pCalcSocket = 0;
+	}
+	SendMessage(m_hWnd, WM_DESTROY, 0, 0);
+	break;
 	}
 	return true;
 }
@@ -2588,7 +2570,7 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	std::memset(pContents, 0, dwMsgSize + 1);
 	memcpy(pContents, pData, dwMsgSize);
 
-	token = strtok(pContents, seps);   
+	token = strtok(pContents, seps);
 	while (token != 0) {
 		if (cReadModeA != 0) {
 			switch (cReadModeA) {
@@ -3949,23 +3931,25 @@ bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 				(m_dialogBoxManager.Info(cDlgID).sY < msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) > msY))
 			{
 				switch (cDlgID) {
-				case 1:
-					DlgBoxClick_Character(msX, msY);
+				case 1: // DialogBoxId::CharacterInfo
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 2:
-					DlgBoxClick_Inventory(msX, msY);
+				case 2: // DialogBoxId::Inventory
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 3:
-					DlgBoxClick_Magic(msX, msY);
+				case 3: // DialogBoxId::Magic
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Magic))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 4:
-					DlgBoxClick_ItemDrop(msX, msY);
+				case 4: // DialogBoxId::ItemDropConfirm
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropConfirm))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 5:
-					DlgBoxClick_15AgeMsg(msX, msY);
-					break;
-				case 6:
-					DlgBoxClick_WarningMsg(msX, msY);
+				case 6: // DialogBoxId::WarningBattleArea
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::WarningBattleArea))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 7:
 					DlgBoxClick_GuildMenu(msX, msY);
@@ -3973,46 +3957,59 @@ bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 				case 8:
 					DlgBoxClick_GuildOp(msX, msY);
 					break;
-				case 9:
+				case 9: // DialogBoxId::GuideMap
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuideMap))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 11:
-					DlgBoxClick_Shop(msX, msY);
+				case 11: // DialogBoxId::SaleMenu
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SaleMenu))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 12:
-					DlgBoxClick_LevelUpSettings(msX, msY);
+				case 12: // DialogBoxId::LevelUpSetting
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::LevelUpSetting))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 13:
-					DlgBoxClick_CityhallMenu(msX, msY);
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CityHallMenu))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 14:
 					DlgBoxClick_Bank(msX, msY);
 					break;
-				case 15:
-					DlgBoxClick_Skill(msX, msY);
+				case 15: // DialogBoxId::Skill
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Skill))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 16:
-					DlgBoxClick_MagicShop(msX, msY);
+				case 16: // DialogBoxId::MagicShop
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::MagicShop))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 18:
-					DlgBoxClick_Text(msX, msY);
+				case 18: // DialogBoxId::Text
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Text))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 19:
-					DlgBoxClick_SysMenu(msX, msY);
+				case 19: // DialogBoxId::SystemMenu
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SystemMenu))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 20:
-					DlgBoxClick_NpcActionQuery(msX, msY);
+				case 20: // DialogBoxId::NpcActionQuery
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcActionQuery))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 21:
-					DlgBoxClick_NpcTalk(msX, msY);
+				case 21: // DialogBoxId::NpcTalk
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcTalk))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 23:
 					DlgBoxClick_ItemSellorRepair(msX, msY);
 					break;
-				case 24:
-					DlgBoxClick_Fish(msX, msY);
+				case 24: // DialogBoxId::Fishing
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Fishing))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 25:
-					DlgBoxClick_ShutDownMsg(msX, msY);
+				case 25: // DialogBoxId::Noticement
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Noticement))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 26:
 					DlgBoxClick_SkillDlg(msX, msY);
@@ -4023,23 +4020,28 @@ bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 				case 28:
 					DlgBoxClick_Quest(msX, msY);
 					break;
-				case 30:
-					DlgBoxClick_IconPannel(msX, msY);
+				case 29: // DialogBoxId::HudPanel
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 31:
-					DlgBoxClick_SellList(msX, msY);
+				case 31: // DialogBoxId::SellList
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 32:
 					DlgBoxClick_Party(msX, msY);
 					break;
-				case 33:
-					DlgBoxClick_CrusadeJob(msX, msY);
+				case 33: // DialogBoxId::CrusadeJob
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeJob))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 34:
-					DlgBoxClick_ItemUpgrade(msX, msY);
+				case 34: // DialogBoxId::ItemUpgrade
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade))
+						pDlg->OnClick(msX, msY);
 					break;
-				case 35:
-					DlgBoxClick_Help(msX, msY);
+				case 35: // DialogBoxId::Help
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Help))
+						pDlg->OnClick(msX, msY);
 					break;
 
 				case 36:
@@ -4058,20 +4060,23 @@ bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 					DlgBoxClick_Slates(msX, msY);
 					break;
 					// Snoopy: Boite de dialogue de confirmation d'�change
-				case 41:
-					DlgBoxClick_ConfirmExchange(msX, msY);
+				case 41: // DialogBoxId::ConfirmExchange
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ConfirmExchange))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 42:
 					DlgBoxClick_ChangeStatsMajestic(msX, msY);
 					break;
-				case 50:
-					DlgBoxClick_Resurect(msX, msY);
+				case 50: // DialogBoxId::Resurrect
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Resurrect))
+						pDlg->OnClick(msX, msY);
 					break;
 				case 51:
 					DlgBoxClick_CMDHallMenu(msX, msY);
 					break;
-				case 52://50Cent Repair All
-					DlgBoxClick_RepairAll(msX, msY);
+				case 52: // DialogBoxId::RepairAll
+					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::RepairAll))
+						pDlg->OnClick(msX, msY);
 					break;
 				}
 
@@ -4427,34 +4432,34 @@ void CGame::CommonEventHandler(char* pData)
 
 	switch (wEventType) {
 	case DEF_COMMONTYPE_ITEMDROP:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
-			if (!pkt) return;
-			dwV4 = pkt->v4;
-		}
-		if ((sV1 == 6) && (sV2 == 0)) {
-			bAddNewEffect(4, sX, sY, 0, 0, 0);
-		}
-		m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
+		if (!pkt) return;
+		dwV4 = pkt->v4;
+	}
+	if ((sV1 == 6) && (sV2 == 0)) {
+		bAddNewEffect(4, sX, sY, 0, 0, 0);
+	}
+	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4);
+	break;
 
 	case DEF_COMMONTYPE_SETITEM:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
-			if (!pkt) return;
-			dwV4 = pkt->v4;
-		}
-		m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4, false); // v1.4 color
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
+		if (!pkt) return;
+		dwV4 = pkt->v4;
+	}
+	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4, false); // v1.4 color
+	break;
 
 	case DEF_COMMONTYPE_MAGIC:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonMagic>(pData, sizeof(hb::net::PacketEventCommonMagic));
-			if (!pkt) return;
-			sV4 = pkt->v4;
-		}
-		bAddNewEffect(sV3, sX, sY, sV1, sV2, 0, sV4);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonMagic>(pData, sizeof(hb::net::PacketEventCommonMagic));
+		if (!pkt) return;
+		sV4 = pkt->v4;
+	}
+	bAddNewEffect(sV3, sX, sY, sV1, sV2, 0, sV4);
+	break;
 
 	case DEF_COMMONTYPE_CLEARGUILDNAME:
 		ClearGuildNameList();
@@ -4540,10 +4545,10 @@ void CGame::InitGameSettings()
 	//Snoopy: 58 because 2 last ones alreaddy defined
 	for (i = 0; i < 58; i++)
 		m_dialogBoxManager.SetOrderAt(i, 0);
-	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::GaugePanel);
-	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::IconPanel);
-	m_dialogBoxManager.SetEnabled(DialogBoxId::GaugePanel, true);
-	m_dialogBoxManager.SetEnabled(DialogBoxId::IconPanel, true);
+	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
+	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel);
+	m_dialogBoxManager.SetEnabled(DialogBoxId::HudPanel, true);
+	m_dialogBoxManager.SetEnabled(DialogBoxId::HudPanel, true);
 
 	for (i = 0; i < DEF_MAXEFFECTS; i++) {
 		if (m_pEffectList[i] != 0) delete m_pEffectList[i];
@@ -7182,7 +7187,7 @@ void CGame::DrawEffects()
 void CGame::bItemDrop_IconPannel(short msX, short msY)
 {
 	short sX, sY, sItemIndex;
-	sX = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sX;	sY = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sY;
+	sX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;	sY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
 
 	sItemIndex = m_stMCursor.sSelectedObjectID;
 	if (m_bIsItemDisabled[sItemIndex] == true) return;
@@ -14073,7 +14078,7 @@ void CGame::LogResponseHandler(char* pData)
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3A");
 	}
-		break;
+	break;
 
 	case DEF_LOGRESMSGTYPE_CONFIRM:
 	{
@@ -14116,7 +14121,7 @@ void CGame::LogResponseHandler(char* pData)
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
 		ClearContents_OnSelectCharacter();
 	}
-		break;
+	break;
 
 	case DEF_LOGRESMSGTYPE_REJECT:
 	{
@@ -14130,7 +14135,7 @@ void CGame::LogResponseHandler(char* pData)
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7H");
 	}
-		break;
+	break;
 
 	case DEF_LOGRESMSGTYPE_NOTENOUGHPOINT:
 		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
@@ -14205,7 +14210,7 @@ void CGame::LogResponseHandler(char* pData)
 		if (!list) return;
 		std::memset(cCharName, 0, sizeof(cCharName));
 		memcpy(cCharName, list->character_name, sizeof(list->character_name));
-		
+
 		m_iTotalChar = list->total_chars;
 		for (i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0) delete m_pCharList[i];
@@ -14232,7 +14237,7 @@ void CGame::LogResponseHandler(char* pData)
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "47");
 	}
-		break;
+	break;
 
 	case DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED:
 		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
@@ -14262,7 +14267,7 @@ void CGame::LogResponseHandler(char* pData)
 		std::memset(m_cGameServerName, 0, sizeof(m_cGameServerName));
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
-		
+
 		m_pGSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
 		m_pGSock->bInitBufferSize(30000);
@@ -14385,6 +14390,99 @@ void CGame::ChangeGameMode(char cMode)
 		m_cGameMode = DEF_GAMEMODE_ONLOGIN;
 	}
 #endif
+}
+
+// Overlay system methods
+void CGame::ShowOverlay(OverlayType type, char context, char message)
+{
+	m_activeOverlay = type;
+	m_cOverlayContext = context;
+	m_cOverlayMessage = message;
+	m_dwOverlayStartTime = G_dwGlobalTime;
+}
+
+void CGame::HideOverlay()
+{
+	m_activeOverlay = OverlayType::None;
+	m_cOverlayContext = 0;
+	m_cOverlayMessage = 0;
+}
+
+void CGame::UpdateOverlay()
+{
+	// Handle input for the active overlay
+	// This will be filled in when we convert each overlay screen
+	switch (m_activeOverlay)
+	{
+	case OverlayType::Connecting:
+		// ESC to cancel connection
+		if (m_bEscPressed)
+		{
+			m_bEscPressed = false;
+			HideOverlay();
+			if (m_pGSock) m_pGSock->_CloseConn();
+			if (m_pLSock) m_pLSock->_CloseConn();
+		}
+		break;
+
+	case OverlayType::WaitingResponse:
+		// ESC to cancel waiting
+		if (m_bEscPressed)
+		{
+			m_bEscPressed = false;
+			HideOverlay();
+			if (m_pGSock) m_pGSock->_CloseConn();
+			if (m_pLSock) m_pLSock->_CloseConn();
+		}
+		break;
+
+	case OverlayType::LogResMsg:
+		// Click to dismiss
+		// Will be handled in the Draw phase click detection
+		break;
+
+	case OverlayType::QueryForceLogin:
+		// Yes/No button handling
+		break;
+
+	case OverlayType::QueryDeleteCharacter:
+		// Yes/No button handling
+		break;
+
+	default:
+		break;
+	}
+}
+
+void CGame::DrawOverlay()
+{
+	// Draw the overlay on top of the base screen
+	// This will be filled in when we convert each overlay screen
+	switch (m_activeOverlay)
+	{
+	case OverlayType::Connecting:
+		// Draw "Connecting..." message
+		break;
+
+	case OverlayType::WaitingResponse:
+		// Draw "Waiting for response..." message
+		break;
+
+	case OverlayType::LogResMsg:
+		// Draw login response message
+		break;
+
+	case OverlayType::QueryForceLogin:
+		// Draw force login confirmation dialog
+		break;
+
+	case OverlayType::QueryDeleteCharacter:
+		// Draw delete character confirmation dialog
+		break;
+
+	default:
+		break;
+	}
 }
 
 bool CGame::bReadIp()
@@ -16652,177 +16750,11 @@ void CGame::InitItemList(char* pData)
 	}
 }
 
-void CGame::DrawDialogBox_GuideMap(short msX, short msY, char cLB)
-{
-	int  m_iMaxMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + m_cMapIndex + 1;
-	int  m_iMinMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP;
-	int  m_iMinMapSquare = m_cMapIndex;
-	//telescope.pak:  frames 1..31 <=> DEF_SPRID_INTERFACE_GUIDEMAP +1...+31 <=> m_cMapIndex 0..30
-	//telescope1.pak: frames 1..3  <=> DEF_SPRID_INTERFACE_GUIDEMAP +36..+38 <=> m_cMapIndex 35..37 et +
-	if (m_cMapIndex < 0) return;
-	if (m_cMapIndex >= 35)
-	{
-		m_iMaxMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + m_cMapIndex + 1;
-		m_iMinMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + 35;
-		m_iMinMapSquare = m_cMapIndex - 35;
-	}
-	short sX, sY, shX, shY, szX, szY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
-	szY = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY;
-	if (sX < 20) sX = 0;
-	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_WIDTH - 128 - 20) sX = LOGICAL_WIDTH - 128;
-	if (sY > 547 - 128 - 20) sY = 547 - 128;
-	for (shX = -2; shX < 130; shX++)
-	{
-		m_DDraw.PutPixel(sX + shX, sY - 2, 50, 50, 50);
-		m_DDraw.PutPixel(sX + shX, sY - 1, 50, 50, 50);
-		m_DDraw.PutPixel(sX + shX, sY + 128, 50, 50, 50);
-		m_DDraw.PutPixel(sX + shX, sY + 129, 50, 50, 50);
-	}
-	for (shY = -2; shY < 130; shY++)
-	{
-		m_DDraw.PutPixel(sX - 2, sY + shY, 50, 50, 50);
-		m_DDraw.PutPixel(sX - 1, sY + shY, 50, 50, 50);
-		m_DDraw.PutPixel(sX + 128, sY + shY, 50, 50, 50);
-		m_DDraw.PutPixel(sX + 129, sY + shY, 50, 50, 50);
-	}
-	if (m_bZoomMap)
-	{
-		shX = m_sPlayerX - 64;
-		shY = m_sPlayerY - 64;
-		if (shX < 0) shX = 0;
-		if (shY < 0) shY = 0;
-		if (shX > m_pMapData->m_sMapSizeX - 128) shX = m_pMapData->m_sMapSizeX - 128;
-		if (shY > m_pMapData->m_sMapSizeY - 128) shY = m_pMapData->m_sMapSizeY - 128;
-		if (m_bDialogTrans) m_pSprite[m_iMaxMapIndex]->PutShiftTransSprite2(sX, sY, shX, shY, 0, m_dwCurTime);
-		else m_pSprite[m_iMaxMapIndex]->PutShiftSpriteFast(sX, sY, shX, shY, 0, m_dwCurTime);
-		m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->PutSpriteFast(sX - shX + m_sPlayerX, sY - shY + m_sPlayerY, 37, m_dwCurTime);
-
-		if ((m_dwCurTime - m_dwMonsterEventTime) < 30000)
-		{
-			if ((m_dwCurTime % 500) < 370)
-			{
-				if (m_sEventX >= shX && m_sEventX <= shX + 128 && m_sEventY >= shY && m_sEventY <= shY + 128)
-					m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->PutSpriteFast(sX + m_sEventX - shX, sY + m_sEventY - shY, m_sMonsterID, m_dwCurTime);
-			}
-		}
-		else
-		{
-			m_dwMonsterEventTime = 0;
-			m_sMonsterID = 0;
-		}
-	}
-	else // Sans zoom
-	{
-		if (m_bDialogTrans) m_pSprite[m_iMinMapIndex]->PutTransSprite2(sX, sY, m_iMinMapSquare, m_dwCurTime);
-		else m_pSprite[m_iMinMapIndex]->PutSpriteFastNoColorKey(sX, sY, m_iMinMapSquare, m_dwCurTime);
-		shX = (m_sPlayerX * 128) / (m_pMapData->m_sMapSizeX);
-		shY = (m_sPlayerY * 128) / (m_pMapData->m_sMapSizeX);
-		m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->PutSpriteFast(sX + shX, sY + shY, 37, m_dwCurTime);
-
-		if ((G_dwGlobalTime - m_dwMonsterEventTime) < 30000)
-		{
-			if ((m_dwCurTime % 500) < 370)
-			{
-				shX = (m_sEventX * 128) / (m_pMapData->m_sMapSizeX);
-				shY = (m_sEventY * 128) / (m_pMapData->m_sMapSizeX);
-				m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->PutSpriteFast(sX + shX, sY + shY, m_sMonsterID, m_dwCurTime);
-			}
-		}
-		else
-		{
-			m_dwMonsterEventTime = 0;
-			m_sMonsterID = 0;
-		}
-	}
-
-	if (cLB != 0) return;
-	if (msX >= sX && msX < sX + szY && msY >= sY && msY < sY + szY)
-	{
-		if (sY > 213) shY = sY - 17;
-		else shY = sY + szY + 4;
-		if (m_bZoomMap) PutString(sX, shY, DEF_MSG_GUIDEMAP_MIN, RGB(200, 200, 120));//"(-)
-		else PutString(sX, shY, DEF_MSG_GUIDEMAP_MAX, RGB(200, 200, 120));//"(+)
-
-		if (m_bZoomMap)
-		{
-			shX = m_sPlayerX - 64;
-			shY = m_sPlayerY - 64;
-			if (shX < 0) shX = 0;
-			if (shY < 0) shY = 0;
-			if (shX > m_pMapData->m_sMapSizeX - 128) shX = m_pMapData->m_sMapSizeX - 128;
-			if (shY > m_pMapData->m_sMapSizeY - 128) shY = m_pMapData->m_sMapSizeY - 128;
-			shX += msX - sX;
-			shY += msY - sY;
-		}
-		else
-		{
-			shX = (msX - sX) * m_pMapData->m_sMapSizeX / 128;
-			shY = (msY - sY) * m_pMapData->m_sMapSizeX / 128;
-		}
-		wsprintf(G_cTxt, "%d, %d", shX, shY);
-		if (m_cMapIndex == 11) // Aresden: Fixed by Snoopy for v3.51 maps
-		{
-			if (shX > 46 && shX < 66 && shY > 107 && shY < 127) strcpy(G_cTxt, DEF_MSG_MAPNAME_MAGICTOWER);
-			else if (shX > 103 && shX < 123 && shY > 86 && shY < 116)  strcpy(G_cTxt, DEF_MSG_MAPNAME_GUILDHALL);
-			else if (shX > 176 && shX < 196 && shY >  62 && shY < 82)  strcpy(G_cTxt, DEF_MSG_MAPNAME_CATH);
-			else if (shX > 135 && shX < 155 && shY > 113 && shY < 133) strcpy(G_cTxt, DEF_MSG_MAPNAME_CITYHALL);
-			else if (shX > 97 && shX < 117 && shY > 175 && shY < 195) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 223 && shX < 243 && shY > 124 && shY < 144) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 118 && shX < 138 && shY > 157 && shY < 177) strcpy(G_cTxt, DEF_MSG_MAPNAME_SHOP);
-			else if (shX > 148 && shX < 178 && shY > 188 && shY < 208) strcpy(G_cTxt, DEF_MSG_MAPNAME_BLACKSMITH);
-			else if (shX > 69 && shX < 89 && shY > 199 && shY < 219) strcpy(G_cTxt, DEF_MSG_MAPNAME_DUNGEON);
-			else if (shX > 21 && shX < 41 && shY > 266 && shY < 286) strcpy(G_cTxt, DEF_MSG_MAPNAME_HUNT);
-			else if (shX > 20 && shX < 40 && shY > 13 && shY < 33)  strcpy(G_cTxt, DEF_MSG_MAPNAME_ML);
-			else if (shX > 246 && shX < 266 && shY > 16 && shY < 36)  strcpy(G_cTxt, DEF_MSG_MAPNAME_ML);
-			else if (shX > 265 && shX < 285 && shY > 195 && shY < 215) strcpy(G_cTxt, DEF_MSG_MAPNAME_FARM);
-			else if (shX > 88 && shX < 108 && shY > 150 && shY < 170) strcpy(G_cTxt, DEF_MSG_MAPNAME_CMDHALL);
-		}
-		else if (m_cMapIndex == 3) // Elvine: Fixed by Snoopy for v3.51 maps
-		{
-			if (shX > 170 && shX < 190 && shY >  65 && shY < 85)      strcpy(G_cTxt, DEF_MSG_MAPNAME_MAGICTOWER);
-			else if (shX > 67 && shX < 87 && shY > 130 && shY < 150)  strcpy(G_cTxt, DEF_MSG_MAPNAME_GUILDHALL);
-			else if (shX > 121 && shX < 141 && shY >  66 && shY < 86)  strcpy(G_cTxt, DEF_MSG_MAPNAME_CATH);
-			else if (shX > 135 && shX < 155 && shY > 117 && shY < 137) strcpy(G_cTxt, DEF_MSG_MAPNAME_CITYHALL);
-			else if (shX > 190 && shX < 213 && shY > 118 && shY < 138) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 73 && shX < 103 && shY > 165 && shY < 185) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 217 && shX < 237 && shY > 142 && shY < 162) strcpy(G_cTxt, DEF_MSG_MAPNAME_SHOP);
-			else if (shX > 216 && shX < 256 && shY > 99 && shY < 119) strcpy(G_cTxt, DEF_MSG_MAPNAME_BLACKSMITH);
-			else if (shX > 251 && shX < 271 && shY >  73 && shY < 93)  strcpy(G_cTxt, DEF_MSG_MAPNAME_DUNGEON);
-			else if (shX > 212 && shX < 232 && shY > 13 && shY < 33)  strcpy(G_cTxt, DEF_MSG_MAPNAME_HUNT);
-			else if (shX > 16 && shX < 36 && shY > 262 && shY < 282) strcpy(G_cTxt, DEF_MSG_MAPNAME_ML);
-			else if (shX > 244 && shX < 264 && shY > 248 && shY < 268) strcpy(G_cTxt, DEF_MSG_MAPNAME_ML);
-			else if (shX > 264 && shX < 284 && shY > 177 && shY < 207) strcpy(G_cTxt, DEF_MSG_MAPNAME_FARM);
-			else if (shX > 207 && shX < 227 && shY > 79 && shY < 99)  strcpy(G_cTxt, DEF_MSG_MAPNAME_CMDHALL);
-		}
-		else if (m_cMapIndex == 5) // Elvine Farm: Fixed by Snoopy for v3.51 maps
-		{
-			if (shX > 62 && shX < 82 && shY >  187 && shY < 207) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 81 && shX < 101 && shY > 169 && shY < 189) strcpy(G_cTxt, DEF_MSG_MAPNAME_SHOP);
-			else if (shX > 101 && shX < 131 && shY > 180 && shY < 200) strcpy(G_cTxt, DEF_MSG_MAPNAME_BLACKSMITH);
-			else if (shX > 130 && shX < 150 && shY > 195 && shY < 215) strcpy(G_cTxt, DEF_MSG_MAPNAME_DUNGEON);
-			else if (shX > 86 && shX < 106 && shY > 139 && shY < 159) strcpy(G_cTxt, DEF_MSG_MAPNAME_BARRACK);
-		}
-		else if (m_cMapIndex == 6) // Areden's Farm: Fixed by Snoopy for v3.51 maps
-		{
-			if (shX > 30 && shX < 50 && shY >  80 && shY < 100) strcpy(G_cTxt, DEF_MSG_MAPNAME_WAREHOUSE);
-			else if (shX > 55 && shX < 85 && shY > 80 && shY < 100)  strcpy(G_cTxt, DEF_MSG_MAPNAME_BLACKSMITH);
-			else if (shX > 52 && shX < 72 && shY > 80 && shY < 100)  strcpy(G_cTxt, DEF_MSG_MAPNAME_SHOP);
-			else if (shX > 70 && shX < 90 && shY > 60 && shY < 80)   strcpy(G_cTxt, DEF_MSG_MAPNAME_DUNGEON);
-			else if (shX > 45 && shX < 65 && shY > 123 && shY < 143) strcpy(G_cTxt, DEF_MSG_MAPNAME_BARRACK);
-		}
-		PutString(msX - 10, msY - 13, G_cTxt, RGB(200, 200, 120));
-	}
-}
-
 void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 {
 	int i;
 	if (m_bIsObserverMode == true) return;
-	m_DInput.m_sZ = 0;
+	// Note: Dialogs that handle scroll should read m_DInput.m_sZ directly and reset it after processing
 	//Snoopy: 41->61
 	bool bIconPanelDrawn = false;
 	for (i = 0; i < 61; i++)
@@ -16830,23 +16762,24 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		{
 			switch (m_dialogBoxManager.OrderAt(i)) {
 			case DialogBoxId::CharacterInfo:
-				//DrawDialogBox_Character(msX, msY); //@@@
-				DrawDialogBox_Character(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Inventory:
-				DrawDialogBox_Inventory(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Magic:
-				DrawDialogBox_Magic(msX, msY, msZ); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Magic))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ItemDropConfirm:
-				DrawDialogBox_ItemDrop(msX, msY); //@@@
-				break;
-			case DialogBoxId::Age15:
-				DrawDialogBox_15AgeMsg(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropConfirm))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::WarningBattleArea:
-				DrawDialogBox_WarningMsg(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::WarningBattleArea))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::GuildMenu:
 				DrawDialogBox_GuildMenu(msX, msY);
@@ -16855,55 +16788,70 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 				DrawDialogBox_GuildOperation(msX, msY);
 				break;
 			case DialogBoxId::GuideMap:
-				DrawDialogBox_GuideMap(msX, msY, cLB);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuideMap))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ChatHistory:
-				DrawDialogBox_Chat(msX, msY, msZ, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChatHistory))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::SaleMenu:
-				DrawDialogBox_Shop(msX, msY, msZ, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SaleMenu))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::LevelUpSetting:
-				DrawDialogBox_LevelUpSetting(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::LevelUpSetting))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::CityHallMenu:
-				DrawDialogBox_CityHallMenu(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CityHallMenu))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Bank:
 				DrawDialogBox_Bank(msX, msY, msZ, cLB); //@@@
 				break;
 			case DialogBoxId::Skill:
-				DrawDialogBox_Skill(msX, msY, msZ, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Skill))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::MagicShop:
-				DrawDialogBox_MagicShop(msX, msY, msZ); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::MagicShop))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ItemDropExternal:
-				DrawDialogBox_QueryDropItemAmount();
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropExternal))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Text:
-				DrawDialogBox_Text(msX, msY, msZ, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Text))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::SystemMenu:
-				DrawDialogBox_SysMenu(msX, msY, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SystemMenu))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::NpcActionQuery:
-				DrawDialogBox_NpcActionQuery(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcActionQuery))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::NpcTalk:
-				DrawDialogBox_NpcTalk(msX, msY, cLB); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcTalk))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Map:
-				DrawDialogBox_Map();
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Map))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::SellOrRepair:
 				DrawDialogBox_SellorRepairItem(msX, msY); //@@@
 				break;
 			case DialogBoxId::Fishing:
-				DrawDialogBox_Fishing(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Fishing))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Noticement:
-				DrawDialogBox_ShutDownMsg(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Noticement))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Manufacture: // Manuf
 				DrawDialogBox_SkillDlg(msX, msY, msZ, cLB);
@@ -16914,27 +16862,29 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 			case DialogBoxId::Quest:
 				DrawDialogBox_Quest(msX, msY); //@@@
 				break;
-			case DialogBoxId::GaugePanel:
-				DrawDialogBox_GaugePannel(); //@@@
-				break;
-			case DialogBoxId::IconPanel:
-				DrawDialogBox_IconPannel(msX, msY); //@@@
+			case DialogBoxId::HudPanel:
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				bIconPanelDrawn = true;
 				break;
 			case DialogBoxId::SellList:
-				DrawDialogBox_SellList(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Party:
 				DrawDialogBox_Party(msX, msY); //@@@
 				break;
 			case DialogBoxId::CrusadeJob:
-				DrawDialogBox_CrusadeJob(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeJob))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ItemUpgrade:
-				DrawDialogBox_ItemUpgrade(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::Help:
-				DrawDialogBox_Help(msX, msY); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Help))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::CrusadeCommander:
 				DrawDialogBox_Commander(msX, msY); //@@@
@@ -16949,30 +16899,34 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 				DrawDialogBox_Slates(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ConfirmExchange:	//Snoopy: Confirmation Exchange
-				DrawDialogBox_ConfirmExchange(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ConfirmExchange))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::ChangeStatsMajestic:
 				DrawDialogBox_ChangeStatsMajestic(msX, msY);
 				break;
 			case DialogBoxId::Resurrect: // Snoopy: Resurection?
-				DrawDialogBox_Resurect(msX, msY);
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Resurrect))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			case DialogBoxId::GuildHallMenu: // Gail
 				DrawDialogBox_CMDHallMenu(msX, msY);
 				break;
 			case DialogBoxId::RepairAll: //50Cent - Repair All
-				DrawDialogBox_RepairAll(msX, msY, msZ); //@@@
+				if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::RepairAll))
+					pDlg->OnDraw(msX, msY, msZ, cLB);
 				break;
 			}
 		}
 	if (bIconPanelDrawn == false)
 	{
-		DrawDialogBox_IconPannel(msX, msY);
+		if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
+			pDlg->OnDraw(msX, msY, msZ, cLB);
 	}
 	int resy = 0;
 	int resx = 0;
-	short iconX = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sX;
-	short iconY = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sY;
+	short iconX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;
+	short iconY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
 	if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 	{
 		if (m_iSuperAttackLeft > 0)
@@ -17069,12 +17023,6 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 	case DialogBoxId::ItemDropConfirm:
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == false) {
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView = cType;
-		}
-		break;
-
-	case DialogBoxId::Age15:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Age15) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Age15).sView = cType;
 		}
 		break;
 
@@ -17503,10 +17451,6 @@ void CGame::DisableDialogBox(int iBoxID)
 		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView] = false;
 		break;
 
-	case DialogBoxId::Age15:
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Age15).sView] = false;
-		break;
-
 	case DialogBoxId::WarningBattleArea:
 		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sView] = false;
 		break;
@@ -17638,6 +17582,10 @@ void CGame::DisableDialogBox(int iBoxID)
 
 	}
 
+	// Call OnDisable for migrated dialogs
+	if (auto* pDlg = m_dialogBoxManager.GetDialogBox(iBoxID))
+		pDlg->OnDisable();
+
 	m_dialogBoxManager.SetEnabled(iBoxID, false);
 	// Snoopy: 39->59
 	for (i = 0; i < 59; i++)
@@ -17664,103 +17612,6 @@ int CGame::iGetTopDialogBoxIndex()
 
 	return 0;
 }
-
-void CGame::DlgBoxClick_IconPannel(short msX, short msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sY;
-	int resi = 0;
-	int resx = 0;
-	int addx = 0;
-	// CLEROTH - LU
-/*	if ((msX > 322)	&& (msX < 355) && (434 < msY) && (475 > msY))
-	{	if (m_iLU_Point <= 0) return;
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) == true)
-			 m_dialogBoxManager.DisableDialogBox(DialogBoxId::LevelUpSetting);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}*/
-	if ((msX > 322 + resx + addx) && (msX < 355 + resx + addx) && (434 + resi < msY) && (475 + resi > msY)) {
-		// Crusade
-		if (m_bIsCrusadeMode == false) return;
-		switch (m_iCrusadeDuty) {
-		case 1: // Fighter
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeSoldier, 0, 0, 0);
-			break;
-
-		case 2: // Constructor
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeConstructor, 0, 0, 0);
-			break;
-
-		case 3: // Commander
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeCommander, 0, 0, 0);
-			break;
-
-		default:
-			break;
-		}
-		PlaySound('E', 14, 5);
-	}
-
-	if ((362 + resx + addx < msX) && (404 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		// Combat Mode Toggle
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-
-	// Character
-	if ((413 + resx + addx < msX) && (447 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CharacterInfo) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::CharacterInfo, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-
-	// Inventory
-	if ((447 + resx + addx < msX) && (484 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Inventory) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Inventory);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::Inventory, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-
-	// Magic
-	if ((484 + resx + addx < msX) && (521 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Magic) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-
-	// Skill
-	if ((521 + resx + addx < msX) && (558 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Skill) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Skill);
-		else {
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Skill, 0, 0, 0);
-		}
-		PlaySound('E', 14, 5);
-	}
-
-	// Chat
-	if ((558 + resx + addx < msX) && (595 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChatHistory);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::ChatHistory, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-
-	// System Menu
-	if ((595 + resx + addx < msX) && (631 + resx + addx > msX) && (434 + resi < msY) && (475 + resi > msY)) {
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == true)
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
-		PlaySound('E', 14, 5);
-	}
-}
-
-
 
 void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 {
@@ -18057,106 +17908,6 @@ void CGame::DlgBoxClick_Party(short msX, short msY)
 	}
 }
 
-
-void CGame::DlgBoxClick_CrusadeJob(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode) {
-	case 1:
-		if (m_bCitizen == false)
-		{
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-			PlaySound('E', 14, 5);
-		}
-		else if (m_bAresden == true)
-		{
-			if (m_iGuildRank == 0)
-			{
-				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 3, 0, 0, 0);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-					PlaySound('E', 14, 5);
-				}
-			}
-			else
-			{
-				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 1, 0, 0, 0);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-				}
-				if (m_iGuildRank != -1)
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
-					{
-						bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 2, 0, 0, 0);
-						m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-						PlaySound('E', 14, 5);
-					}
-				}
-			}
-		}
-		else if (m_bAresden == false)
-		{
-			if (m_iGuildRank == 0)
-			{
-				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 3, 0, 0, 0);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-					PlaySound('E', 14, 5);
-				}
-			}
-			else
-			{
-				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 1, 0, 0, 0);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-					PlaySound('E', 14, 5);
-				}
-				if (m_iGuildRank != -1)
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
-					{
-						bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 2, 0, 0, 0);
-						m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-						PlaySound('E', 14, 5);
-					}
-				}
-			}
-		}
-
-		if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-		{
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 813, 0, 0);
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 2:
-		if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 160) && (msY < sY + 175))
-		{
-			switch (m_iCrusadeDuty) {
-			case 1: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 803, 0, 0); break;
-			case 2: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 805, 0, 0); break;
-			case 3: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 808, 0, 0); break;
-			}
-		}
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeJob);
-			PlaySound('E', 14, 5);
-		}
-		break;
-	}
-}
 
 void CGame::_RequestMapStatus(char* pMapName, int iMode)
 {
@@ -18821,403 +18572,6 @@ void CGame::DrawTopMsg()
 	}
 }
 
-
-void CGame::DrawDialogBox_IconPannel(short msX, short msY)
-{
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	int resy, resx;
-
-	resy = 0;
-	resx = 0;
-	int addx = 0;
-
-	short panelX = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sX;
-	short panelY = m_dialogBoxManager.Info(DialogBoxId::IconPanel).sY;
-	sX = 0;
-	sY = 0;
-	short rawMsX = msX;
-	short rawMsY = msY;
-
-	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(panelX, panelY, 14, dwTime); // Icon Pannel Background
-
-	if (m_iHP > 0) {
-		if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) == false)) // Level-Up button
-			PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", (GameClock::GetTimeMS() / 3) % 255, (GameClock::GetTimeMS() / 3) % 255, 0);
-	}
-	else
-	{
-		if (m_cRestartCount == -1)
-			PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Restart", (GameClock::GetTimeMS() / 3) % 255, (GameClock::GetTimeMS() / 3) % 255, 0);
-	}
-
-	if (m_bIsSafeAttackMode) m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 368 + resx + addx, sY + 440 + resy, 4, dwTime); // Safe Attack Icon
-	else if (m_bIsCombatMode) m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 368 + resx + addx, sY + 440 + resy, 5, dwTime); // Combat Mode Icon
-	if ((362 + resx + addx < msX) && (404 + resx + addx > msX) && (434 + resy < msY) && (475 + resy > msY)) { // Combat Mode Icon
-		m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 362 + resx + addx, sY + 434 + resy, 16, dwTime);
-		if (m_bIsCombatMode) {
-			if (m_bIsSafeAttackMode) wsprintf(G_cTxt, "Safe Attack");
-			else wsprintf(G_cTxt, "Attack");
-		}
-		else wsprintf(G_cTxt, "Peace");
-		PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-	}
-
-	if ((m_bIsCrusadeMode) && (m_iCrusadeDuty != 0)) { // Crusade Icon
-		if (m_bAresden == true) {
-			if ((322 + resx + addx <= msX) && (355 + resx + addx >= msX) && (434 + resy < msY) && (475 + resy > msY))
-				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 322 + resx + addx + 1, sY + 434 + resy, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 322 + resx + addx, sY + 434 + resy, 2, dwTime);
-		}
-		else if (m_bAresden == false) {
-			if ((322 + resx + addx <= msX) && (355 + resx + addx >= msX) && (434 + resy < msY) && (475 + resy > msY))
-				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 322 + resx + addx, sY + 434 + resy, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 322 + resx + addx, sY + 434 + resy, 15, dwTime);
-		}
-	}
-
-	if (m_bCtrlPressed)
-	{
-	uint32_t iCurExp = iGetLevelExp(m_iLevel);
-	uint32_t iNextExp = iGetLevelExp(m_iLevel + 1);
-		if (m_iExp < iNextExp)
-		{
-			iNextExp = iNextExp - iCurExp;
-			if (m_iExp > iCurExp) iCurExp = m_iExp - iCurExp; // curxp: partie faite
-			else iCurExp = 0; // below current lvl !
-			wsprintf(G_cTxt, "Rest Exp: %d", iNextExp - iCurExp);
-		}
-	}
-	else
-	{
-		wsprintf(G_cTxt, "%s (%d,%d)", m_cMapMessage, m_sPlayerX, m_sPlayerY);// Map Message (Center Pannel)
-	}
-	PutAlignedString(sX + 140 + resx + 1, sX + 323 + resx + 1, sY + 456 + resy + 1, G_cTxt, 0, 0, 0);
-	PutAlignedString(sX + 140 + resx, sX + 323 + resx, sY + 456 + resy, G_cTxt, 200, 200, 120);
-
-	if ((msY > 436 + resy) && (msY < 478 + resy)) // Menu Icons
-	{
-		if ((msX > 410 + resx + addx) && (msX < 447 + resx + addx)) { // Character    
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 410 + resx + addx + 2, sY + 434 + resy, 6, dwTime);
-			wsprintf(G_cTxt, "Character");
-			PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-		if ((msX > 447 + resx + addx) && (msX < 484 + resx + addx)) { // Inventory
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 447 + resx + addx + 2, sY + 434 + resy, 7, dwTime);
-			wsprintf(G_cTxt, "Inventory");
-			PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-		if ((msX > 484 + resx + addx) && (msX < 521 + resx + addx)) { // Magic
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 484 + resx + addx + 2, sY + 434 + resy, 8, dwTime);
-			wsprintf(G_cTxt, "Magics");
-			PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-		if ((msX > 521 + resx + addx) && (msX < 558 + resx + addx)) { // Skill
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 521 + resx + addx + 2, sY + 434 + resy, 9, dwTime);
-			wsprintf(G_cTxt, "Skills");
-			PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-		if ((msX > 558 + resx + addx) && (msX < 595 + resx + addx)) { // History
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 558 + resx + addx + 2, sY + 434 + resy, 10, dwTime);
-			wsprintf(G_cTxt, "Chat Log");
-			PutString(rawMsX - 10, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-		if ((msX > 595 + resx + addx) && (msX < 631 + resx + addx)) { // System Menu
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(sX + 595 + resx + addx + 2, sY + 434 + resy, 11, dwTime);
-			wsprintf(G_cTxt, "System Menu");
-			PutString(rawMsX - 20, rawMsY - 20, G_cTxt, RGB(250, 250, 220));
-		}
-	}
-
-	// Hunger bar omitted for 640x480 icon panel variant.
-
-
-}
-
-void CGame::DrawDialogBox_GaugePannel()
-{
-	int iMaxPoint, iBarWidth;
-	int resy = 0;
-	int resx = 0;
-	short baseX = 0;
-	short baseY = 0;
-	// HP bar
-	iMaxPoint = m_iVit * 3 + m_iLevel * 2 + (m_iStr + m_iAngelicStr) / 2;
-	if (m_iHP > iMaxPoint) m_iHP = iMaxPoint;
-	iBarWidth = 101 - (m_iHP * 101) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > 101) iBarWidth = 101;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFastWidth(baseX + 23 + resx, baseY + 437 + resy, 12, iBarWidth, m_dwCurTime);
-
-	wsprintf(G_cTxt, "%d", (short)m_iHP);
-	if (m_bIsPoisoned) {
-		PutString_SprNum(baseX + 85 + resx, baseY + 441 + resy, G_cTxt, m_wR[5] * 11, m_wG[5] * 11, m_wB[5] * 11);
-		PutString_SprFont3(baseX + 35 + resx, baseY + 439 + resy, "Poisoned", m_wR[5] * 8, m_wG[5] * 8, m_wB[5] * 8, true, 2);
-	}
-	else
-	{
-		PutString_SprNum(baseX + 80 + resx + 1, baseY + 441 + resy + 1, G_cTxt, 0, 0, 0);
-		PutString_SprNum(baseX + 80 + resx, baseY + 441 + resy, G_cTxt, 255, 255, 255);
-	}
-
-	//MP bar
-	iMaxPoint = (m_iMag + m_iAngelicMag) * 2 + m_iLevel * 2 + (m_iInt + m_iAngelicInt) / 2;
-	if (m_iMP > iMaxPoint) m_iMP = iMaxPoint;
-	iBarWidth = 101 - (m_iMP * 101) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > 101) iBarWidth = 101;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFastWidth(baseX + 23 + resx, baseY + 459 + resy, 12, iBarWidth, m_dwCurTime);
-	wsprintf(G_cTxt, "%d", (short)m_iMP);
-	PutString_SprNum(baseX + 80 + resx + 1, baseY + 463 + resy + 1, G_cTxt, 0, 0, 0);
-	PutString_SprNum(baseX + 80 + resx, baseY + 463 + resy, G_cTxt, 255, 255, 255);
-
-	// SP bar
-	iMaxPoint = m_iLevel * 2 + (m_iStr + m_iAngelicStr) * 2;
-	if (m_iSP > iMaxPoint) m_iSP = iMaxPoint;
-	iBarWidth = 167 - (m_iSP * 167) / iMaxPoint;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > 167) iBarWidth = 167;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFastWidth(baseX + 147 + resx, baseY + 434 + resy, 13, iBarWidth, m_dwCurTime);
-	wsprintf(G_cTxt, "%d", (short)m_iSP);
-	PutString_SprNum(baseX + 228 + resx + 1, baseY + 435 + resy + 1, G_cTxt, 0, 0, 0);
-	PutString_SprNum(baseX + 228 + resx, baseY + 435 + resy, G_cTxt, 255, 255, 255);
-
-	// Experience Gauge - MORLA - arreglada para que vaya de izquierda a derecha
-	uint32_t iMaxPoint3 = iGetLevelExp(m_iLevel + 1) - iGetLevelExp(m_iLevel);
-	uint32_t uTemp = m_iExp - iGetLevelExp(m_iLevel);
-	iBarWidth = (uTemp * ICON_PANEL_WIDTH) / iMaxPoint3;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > ICON_PANEL_WIDTH) iBarWidth = ICON_PANEL_WIDTH;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFastWidth(baseX + 0, baseY + 427 + resy + 2, 18, iBarWidth, m_dwCurTime);
-	uTemp = uTemp - iMaxPoint3;
-
-	// Hunger bar omitted for 640x480 icon panel variant.
-}
-
-void CGame::DrawDialogBox_Text(short msX, short msY, short msZ, char cLB)
-{
-	short sX, sY;
-	int i, iTotalLines, iPointerLoc;
-	double d1, d2, d3;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Text).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Text).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-
-	iTotalLines = 0;
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
-		if (m_pMsgTextList[i] != 0) iTotalLines++;
-
-	if (iTotalLines > 17) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-	if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text && msZ != 0)
-	{
-		m_dialogBoxManager.Info(DialogBoxId::Text).sView = m_dialogBoxManager.Info(DialogBoxId::Text).sView - msZ / 60;
-		m_DInput.m_sZ = 0;
-	}
-	if (m_dialogBoxManager.Info(DialogBoxId::Text).sView < 0) m_dialogBoxManager.Info(DialogBoxId::Text).sView = 0;
-	if (iTotalLines > 17 && m_dialogBoxManager.Info(DialogBoxId::Text).sView > iTotalLines - 17) m_dialogBoxManager.Info(DialogBoxId::Text).sView = iTotalLines - 17;
-
-	if (iTotalLines > 17) {
-		d1 = (double)m_dialogBoxManager.Info(DialogBoxId::Text).sView;
-		d2 = (double)(iTotalLines - 17);
-		d3 = (274.0f * d1) / d2;
-		iPointerLoc = (int)(d3 + 0.5);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + 35 + iPointerLoc, 7);
-	}
-	else iPointerLoc = 0;
-
-	for (i = 0; i < 17; i++)
-		if (m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView] != 0) {
-			if (m_bDialogTrans == false) { // v2.173
-				switch (m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView]->m_pMsg[0]) {
-				case '_': PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, (m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView]->m_pMsg + 1), 255, 255, 255); break;
-				case ';': PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, (m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView]->m_pMsg + 1), 4, 0, 50); break;
-				default: PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView]->m_pMsg, 45, 25, 25); break;
-				}
-			}
-			else PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, m_pMsgTextList[i + m_dialogBoxManager.Info(DialogBoxId::Text).sView]->m_pMsg, 0, 0, 0);
-		}
-
-	if (cLB != 0 && iTotalLines > 17) {
-		if ((m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text)) {
-			if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-				d1 = (double)(msY - (sY + 35));
-				d2 = (double)(iTotalLines - 17);
-				d3 = (d1 * d2) / 274.0f;
-				iPointerLoc = (int)d3;
-				if (iPointerLoc > iTotalLines - 17) iPointerLoc = iTotalLines - 17;
-				m_dialogBoxManager.Info(DialogBoxId::Text).sView = iPointerLoc;
-			}
-		}
-	}
-	else m_dialogBoxManager.Info(DialogBoxId::Text).bIsScrollSelected = false;
-
-	if ((msX > sX + DEF_RBTNPOSX) && (msX < sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-}
-
-void CGame::DrawDialogBox_15AgeMsg(short msX, short msY)
-{
-	return;
-	// Snoopy: removed FeedbackCard & minus 15 age
-
-}
-
-
-void CGame::DrawDialogBox_WarningMsg(short msX, short msY)//6
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
-
-	PutString2(sX + 63, sY + 35, DEF_MSG_WARNING1, 200, 200, 25);//" ** This is a battle area **"
-	PutString(sX + 30, sY + 57, DEF_MSG_WARNING2, RGB(220, 130, 45));//"This is a dangerous area where you"
-	PutString(sX + 30, sY + 74, DEF_MSG_WARNING3, RGB(220, 130, 45));//"cannot protected from others' attack."
-	PutString(sX + 30, sY + 92, DEF_MSG_WARNING4, RGB(220, 130, 45));//"To play the game in safe, go to the"
-	PutString(sX + 30, sY + 110, DEF_MSG_WARNING5, RGB(220, 130, 45));//" cityhall and change to civilian mode."
-
-	if ((msX >= sX + 122) && (msX <= sX + 125 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 1);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 0);
-
-}
-
-void CGame::DrawDialogBox_ItemDrop(short msX, short msY)
-{
-	short sX, sY;
-	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
-
-	GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView]->m_dwAttribute, cStr1, cStr2, cStr3);
-
-	if (strlen(m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cStr) == 0)  wsprintf(cTxt, "%s", cStr1);
-
-	if (m_bIsSpecial)
-	{
-		PutString(sX + 35, sY + 20, cTxt, RGB(0, 255, 50));
-		PutString(sX + 36, sY + 20, cTxt, RGB(0, 255, 50));
-	}
-	else
-	{
-		PutString(sX + 35, sY + 20, cTxt, RGB(4, 0, 50));
-		PutString(sX + 36, sY + 20, cTxt, RGB(4, 0, 50));
-	}
-	PutString(sX + 35, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, RGB(4, 0, 50));
-	PutString(sX + 36, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, RGB(4, 0, 50));
-
-	if (m_bItemDrop)
-	{
-		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
-		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(255, 255, 255));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(4, 0, 50));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(4, 0, 50));
-		}
-	}
-	else
-	{
-		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
-		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(255, 255, 255));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(4, 0, 50));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(4, 0, 50));
-		}
-	}
-
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
-
-	if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
-}
-
-void CGame::DrawDialogBox_NpcTalk(short msX, short msY, char cLB)
-{
-	short sX, sY;
-	int i, iTotalLines, iPointerLoc;
-	double d1, d2, d3;
-	sX = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).cMode) {
-	case 0: //  OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 1: // Accept / Decline
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 33);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 32);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 41);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 40);
-		break;
-
-	case 2: // Next
-		if ((msX >= sX + 190) && (msX <= sX + 278) && (msY >= sY + 296) && (msY <= sY + 316))
-			PutString_SprFont(sX + 190, sY + 270, "Next", 6, 6, 20);
-		else PutString_SprFont(sX + 190, sY + 270, "Next", 0, 0, 7);
-		break;
-	}
-
-	for (i = 0; i < 17; i++)
-		if ((i < DEF_TEXTDLGMAXLINES) && (m_pMsgTextList2[i + m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView] != 0)) {
-			PutAlignedString(sX, sX + m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sSizeX, sY + 57 + i * 15, m_pMsgTextList2[i + m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView]->m_pMsg, 45, 25, 25);
-		}
-
-	iTotalLines = 0;
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
-		if (m_pMsgTextList2[i] != 0) iTotalLines++;
-
-	if (iTotalLines > 17) {
-		d1 = (double)m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView;
-		d2 = (double)(iTotalLines - 17);
-		d3 = (274.0f * d1) / d2;
-		iPointerLoc = (int)d3;
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 3);
-	}
-	else iPointerLoc = 0;
-
-	if (cLB != 0 && iTotalLines > 17) {
-		if ((m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::NpcTalk)) {
-			if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-				d1 = (double)(msY - (sY + 40));
-				d2 = (double)(iTotalLines - 17);
-				d3 = (d1 * d2) / 274.0f;
-				iPointerLoc = (int)d3;
-
-				if (iPointerLoc > iTotalLines) iPointerLoc = iTotalLines;
-				m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView = iPointerLoc;
-			}
-		}
-	}
-	else m_dialogBoxManager.Info(DialogBoxId::NpcTalk).bIsScrollSelected = false;
-}
-
 void CGame::DrawDialogBox_Slates(short msX, short msY, short msZ, char cLB)
 {
 	int iAdjX, iAdjY;
@@ -19313,534 +18667,6 @@ void CGame::DlgBoxClick_Slates(short msX, short msY)
 	}
 }
 
-void CGame::DlgBoxClick_NpcTalk(int msX, int msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).cMode) {
-	case 0: //  OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 1: // Accept / Decline
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// Accept
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_QUESTACCEPTED, 0, 0, 0, 0, 0);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// Cancel
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 2:	// Next
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			PlaySound('E', 14, 5);
-		}
-		break;
-	}
-}
-
-
-void CGame::DrawDialogBox_Chat(short msX, short msY, short msZ, char cLB)
-{
-	short sX, sY;
-	int i, iPointerLoc;
-	double d1, d2, d3;
-	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 4, false, m_bDialogTrans);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 22, false, m_bDialogTrans);
-
-	if (msZ != 0 && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)) {
-		m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView + msZ / 30;
-		m_DInput.m_sZ = 0;
-	}
-	if (m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView < 0) m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
-	if (m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView > DEF_MAXCHATSCROLLMSGS - 8) m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - 8;
-
-	d1 = (double)m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
-	d2 = (double)(105);
-	d3 = (d1 * d2) / (DEF_MAXCHATSCROLLMSGS - 8);
-	iPointerLoc = (int)d3;
-	iPointerLoc = 105 - iPointerLoc;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 346, sY + 33 + iPointerLoc, 7);
-
-	for (i = 0; i < 8; i++)
-		if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView] != 0) {
-			switch (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_dwTime) {
-			case 0:  PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 230, 230, 230); break;
-			case 1:  PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 130, 200, 130); break;
-			case 2:  PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 255, 130, 130); break;
-			case 3:  PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 130, 130, 255); break;
-			case 4:  PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 230, 230, 130); break;
-			case 10: PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 180, 255, 180); break;
-			case 20: PutString2(sX + 25, sY + 127 - i * 13, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg, 150, 150, 170); break;
-			}
-		}
-
-	if ((cLB != 0) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory))
-	{
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY >= sY + 28) && (msY <= sY + 140)) {
-			d1 = (double)(msY - (sY + 28));
-			d2 = ((DEF_MAXCHATSCROLLMSGS - 8) * d1) / 105.0f;
-			m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - 8 - (int)d2;
-		}
-
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 18) && (msY < sY + 28))
-			m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - 8;
-
-		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 140) && (msY < sY + 163))
-			m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
-	}
-	else m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected = false;
-}
-
-
-void CGame::DlgBoxClick_ItemUpgrade(int msX, int msY)
-{
-	short sX, sY;
-	int i, iSoX, iSoM;
-	sX = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY;
-	switch (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode) {
-	case 1:	// Upgrade Majestic, items in the window
-		if ((m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1) && (msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			int iValue = (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_dwAttribute & 0xF0000000) >> 28;
-			iValue = iValue * (iValue + 6) / 8 + 2;
-			if (m_iGizonItemUpgradeLeft < iValue) break;
-			PlaySound('E', 14, 5);
-			PlaySound('E', 44, 0);
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = GameClock::GetTimeMS();
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Cancel
-			PlaySound('E', 14, 5);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
-		}
-		break;
-
-	case 3: // sucess
-	case 4: // Not possible
-	case 7: // Lost item
-	case 8: // Failed
-	case 9: // Failed
-	case 10:// Failed
-	case 12:// 12 Need stone!
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// OK
-			PlaySound('E', 14, 5);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
-		}
-		break;
-	case 5: // main menu
-		if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
-		{
-			PlaySound('E', 14, 5);
-			iSoX = iSoM = 0;
-			for (i = 0; i < DEF_MAXITEMS; i++)
-				if (m_pItemList[i] != 0)
-				{
-					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
-					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 129)) iSoM++;
-				}
-			if ((iSoX > 0) || (iSoM > 0))
-			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 6;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2 = iSoX;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3 = iSoM;
-			}
-			else AddEventList(DRAW_DIALOGBOX_ITEMUPGRADE30, 10); //"Stone of Xelima or Merien is not present."
-		}
-		if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 1;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Cancel
-			PlaySound('E', 14, 5);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
-		}
-		break;
-
-	case 6: // Upgrade Xelima / Merien
-		if ((m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1) && (msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Upgrade
-			PlaySound('E', 14, 5);
-			PlaySound('E', 44, 0);
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = GameClock::GetTimeMS();
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Cancel
-			PlaySound('E', 14, 5);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
-		}
-		break;
-	}
-}
-
-
-void CGame::DlgBoxClick_SellList(short msX, short msY)
-{
-	int i, x;
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::SellList).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SellList).sY;
-	for (i = 0; i < DEF_MAXSELLLIST; i++)
-		if ((msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15))
-		{
-			if (m_pItemList[m_stSellItemList[i].iIndex] != 0)
-			{
-				m_bIsItemDisabled[m_stSellItemList[i].iIndex] = false;
-				m_stSellItemList[i].iIndex = -1;
-
-				PlaySound('E', 14, 5);
-
-				// ������
-				for (x = 0; x < DEF_MAXSELLLIST - 1; x++)
-					if (m_stSellItemList[x].iIndex == -1) {
-						m_stSellItemList[x].iIndex = m_stSellItemList[x + 1].iIndex;
-						m_stSellItemList[x].iAmount = m_stSellItemList[x + 1].iAmount;
-
-						m_stSellItemList[x + 1].iIndex = -1;
-						m_stSellItemList[x + 1].iAmount = 0;
-					}
-			}
-			return;
-		}
-
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		// Sell
-		bSendCommand(MSGID_REQUEST_SELLITEMLIST, 0, 0, 0, 0, 0, 0);
-		PlaySound('E', 14, 5);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellList);
-	}
-
-	if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		// Cancel
-		PlaySound('E', 14, 5);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellList);
-	}
-}
-
-// 3.51 LevelUp Box - Diuuude
-void CGame::DlgBoxClick_LevelUpSettings(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY;
-	// Strength UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 127) && (msY <= sY + 133) && (m_iStr <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Str += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Str++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Vitality UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 146) && (msY <= sY + 152) && (m_iVit <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Vit += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Vit++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Dexterity UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 165) && (msY <= sY + 171) && (m_iDex <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Dex += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Dex++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Intelligence UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 184) && (msY <= sY + 190) && (m_iInt <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Int += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Int++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Magic UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 203) && (msY <= sY + 209) && (m_iMag <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Mag += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Mag++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Charisma UP - Diuuude
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 222) && (msY <= sY + 228) && (m_iCharisma <= iMaxStats) && (m_iLU_Point > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_iLU_Point >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point -= 5;
-				m_cLU_Char += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_iLU_Point > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_iLU_Point--;
-				m_cLU_Char++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Strength DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133) && (m_cLU_Str > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Str >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Str -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Str > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Str--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Vitality DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152) && (m_cLU_Vit > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Vit >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Vit -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Vit > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Vit--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Dexterity DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171) && (m_cLU_Dex > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Dex >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Dex -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Dex > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Dex--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Intelligence DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190) && (m_cLU_Int > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Int >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Int -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Int > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Int--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Magic DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209) && (m_cLU_Mag > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Mag >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Mag -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Mag > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Mag--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	// Charisma DOWN - Diuuude
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228) && (m_cLU_Char > 0))
-	{
-		if (m_bCtrlPressed == true)
-		{
-			if ((m_cLU_Char >= 5) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Char -= 5;
-				m_iLU_Point += 5;
-			}
-			PlaySound('E', 14, 5);
-		}
-		else
-		{
-			if ((m_cLU_Char > 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false))
-			{
-				m_cLU_Char--;
-				m_iLU_Point++;
-			}
-			PlaySound('E', 14, 5);
-		}
-	}
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-	{
-		if (m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sV1 != m_iLU_Point)
-			// Send command to HG - Diuuude, Only if changed - Snoopy
-			bSendCommand(MSGID_LEVELUPSETTINGS, 0, 0, 0, 0, 0, 0);
-		//m_cLU_Str = m_cLU_Vit = m_cLU_Dex = m_cLU_Int = m_cLU_Mag = m_cLU_Char = 0;
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::LevelUpSetting);
-		PlaySound('E', 14, 5);
-	}
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-	{	// Change stats with Majestic
-		if ((m_iGizonItemUpgradeLeft > 0) && (m_iLU_Point <= 0)
-			&& (m_cLU_Str == 0) && (m_cLU_Vit == 0) && (m_cLU_Dex == 0) && (m_cLU_Int == 0) && (m_cLU_Mag == 0) && (m_cLU_Char == 0))
-		{
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::LevelUpSetting);
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::ChangeStatsMajestic, 0, 0, 0);
-			//PlaySound('E', 14, 5);
-		}
-	}
-}
-
 void CGame::CannotConstruct(int iCode)
 {
 	switch (iCode) {
@@ -19891,94 +18717,6 @@ void CGame::DisplayCommaNumber_G_cTxt(uint32_t iGold)
 	strcpy(G_cTxt, cGold);
 #endif
 }
-
-void CGame::DrawDialogBox_Inventory(int msX, int msY)
-{
-	int i;
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	char cItemColor;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Inventory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Inventory).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX, sY, 0);
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_cItemOrder[i] != -1) && (m_pItemList[m_cItemOrder[i]] != 0))
-		{
-			if (((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_ITEM)
-				&& (m_stMCursor.sSelectedObjectID == m_cItemOrder[i])) || (m_bIsItemEquipped[m_cItemOrder[i]] == true))
-			{
-			}
-			else
-			{
-				cItemColor = m_pItemList[m_cItemOrder[i]]->m_cItemColor;
-				if (m_bIsItemDisabled[m_cItemOrder[i]] == true)
-				{
-					if (cItemColor == 0)
-						m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutTransSprite2(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-							sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame, dwTime);
-					else
-					{
-						if ((m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-							|| (m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-							|| (m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-						{
-							m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutTransSpriteRGB(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-								sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame,
-								m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0],
-								dwTime);
-						}
-						else
-						{
-							m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutTransSpriteRGB(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-								sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame,
-								m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0],
-								dwTime);
-						}
-					}
-				}
-				else
-				{
-					if (cItemColor == 0)
-						m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutSpriteFast(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-							sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame, dwTime);
-					else
-					{
-						if ((m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-							|| (m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-							|| (m_pItemList[m_cItemOrder[i]]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-						{
-							m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutSpriteRGB(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-								sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame,
-								m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0],
-								dwTime);
-						}
-						else {
-							m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_cItemOrder[i]]->m_sSprite]->PutSpriteRGB(sX + 32 + m_pItemList[m_cItemOrder[i]]->m_sX,
-								sY + 44 + m_pItemList[m_cItemOrder[i]]->m_sY, m_pItemList[m_cItemOrder[i]]->m_sSpriteFrame,
-								m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0],
-								dwTime);
-						}
-					}
-				}
-				if ((m_pItemList[m_cItemOrder[i]]->m_cItemType == DEF_ITEMTYPE_CONSUME)
-					|| (m_pItemList[m_cItemOrder[i]]->m_cItemType == DEF_ITEMTYPE_ARROW))
-				{
-					DisplayCommaNumber_G_cTxt((int)m_pItemList[m_cItemOrder[i]]->m_dwCount); // nbe show, as US: 1,200,000
-					PutString2(sX + 29 + m_pItemList[m_cItemOrder[i]]->m_sX + 10, sY + 41 + m_pItemList[m_cItemOrder[i]]->m_sY + 10
-						, G_cTxt, 200, 200, 200);
-				}
-			}
-		}
-	if ((msX >= sX + 23) && (msX <= sX + 76) && (msY >= sY + 172) && (msY <= sY + 184))
-	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 23, sY + 172, 1);
-	}
-	if ((msX >= sX + 140) && (msX <= sX + 212) && (msY >= sY + 172) && (msY <= sY + 184))
-	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 140, sY + 172, 2);
-	}
-}
-
 
 void CGame::CrusadeContributionResult(int iWarContribution)
 {
@@ -20999,251 +19737,6 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 	return false;
 }
 
-void CGame::DlgBoxClick_CityhallMenu(short msX, short msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sY;
-	switch (m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode) {
-	case 0:
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
-		{
-			if (m_bCitizen == true) return;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 1; // citizenship rq
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
-		{
-			if (m_iRewardGold <= 0) return;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 5; // rq reward gold
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
-		{
-			if (m_iEnemyKillCount < 100) return;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 170))
-		{
-			if (m_stQuest.sQuestType == 0) return;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 8;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-		{
-			if (m_bIsCrusadeMode) return;
-			if (m_iPKCount != 0) return;
-			if (m_bCitizen == false) return;
-			if ((m_iLevel > 100) && (m_bHunter == false)) return;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 9;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 10;
-			m_iTeleportMapCount = -1;
-			bSendCommand(MSGID_REQUEST_TELEPORT_LIST, 0, 0, 0, 0, 0, 0);
-			PlaySound('E', 14, 5);
-		}
-		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 245)) {
-			if (m_bIsCrusadeMode == false) return;
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 1:
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Yes Click
-			bSendCommand(MSGID_REQUEST_CIVILRIGHT, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 2;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// No Click
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 3:	//
-	case 4:	// OK�
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// No Click
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 5:
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// Yes
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETREWARDMONEY, 0, 0, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// No
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-		// 3.51 Cityhall Menu - Request Hero's Items - Diuuude - fix by Drajwer
-	case 7:
-		int iReqHeroItemID;
-		// Hero's Cape
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 95) && (msY <= sY + 110))
-		{
-			if (m_bAresden == true) iReqHeroItemID = 400;
-			else iReqHeroItemID = 401;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU47, strlen(DRAW_DIALOGBOX_CITYHALL_MENU47));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Helm
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 125) && (msY <= sY + 140))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 403;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 404;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 405;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 406;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU48, strlen(DRAW_DIALOGBOX_CITYHALL_MENU48));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Cap
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 155) && (msY <= sY + 170))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 407;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 408;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 409;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 410;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU49, strlen(DRAW_DIALOGBOX_CITYHALL_MENU49));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Armor
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 185) && (msY <= sY + 200))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 411;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 412;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 413;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 414;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU50, strlen(DRAW_DIALOGBOX_CITYHALL_MENU50));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Robe
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 215) && (msY <= sY + 230))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 415;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 416;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 417;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 418;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU51, strlen(DRAW_DIALOGBOX_CITYHALL_MENU51));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Hauberk
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 245) && (msY <= sY + 260))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 419;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 420;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 421;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 422;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU52, strlen(DRAW_DIALOGBOX_CITYHALL_MENU52));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		// Hero's Leggings
-		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 275) && (msY <= sY + 290))
-		{
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 423;
-			if ((m_bAresden == true) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 424;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 425;
-			if ((m_bAresden == false) && (m_pCharList[m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 426;
-			std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
-			memcpy(m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU53, strlen(DRAW_DIALOGBOX_CITYHALL_MENU53));
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 8:
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// Yes
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_CANCELQUEST, 0, 0, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// No
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 9:
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// Yes
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_HUNTMODE, 0, 0, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-			// No
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		break;
-
-	case 10:
-		if (m_iTeleportMapCount > 0)
-		{
-			for (int i = 0; i < m_iTeleportMapCount; i++)
-			{
-				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-				{
-					bSendCommand(MSGID_REQUEST_CHARGED_TELEPORT, 0, 0, m_stTeleportList[i].iIndex, 0, 0, 0);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::CityHallMenu);
-					return;
-				}
-			}
-		}
-		break;
-
-	case 11: // Fix Drawjer
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETHEROMANTLE, 0, m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-			PlaySound('E', 14, 5);
-		}
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
-			PlaySound('E', 14, 5);
-		}
-		break;
-	}
-}
-
 void CGame::CivilRightAdmissionHandler(char* pData)
 {
 	uint16_t wResult;
@@ -21296,151 +19789,6 @@ void CGame::CivilRightAdmissionHandler(char* pData)
 		}
 		break;
 	}
-}
-
-void CGame::DlgBoxClick_Text(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Text).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Text).sY;
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		PlaySound('E', 14, 5);
-	}
-}
-
-void CGame::DlgBoxClick_Inventory(short msX, short msY)
-{
-	int i, sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Inventory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Inventory).sY;
-	if ((msX >= sX + 23) && (msX <= sX + 76) && (msY >= sY + 172) && (msY <= sY + 184))
-	{
-		if (m_iGizonItemUpgradeLeft == 0)
-		{
-			m_iGizonItemUpgradeLeft = 0;
-		}
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemUpgrade, 5, 0, 0);
-		PlaySound('E', 14, 5);
-
-	}
-	if ((msX >= sX + 140) && (msX <= sX + 212) && (msY >= sY + 172) && (msY <= sY + 184))
-	{
-		if (m_cSkillMastery[13] == 0)
-		{
-			AddEventList(DLGBOXCLICK_INVENTORY1, 10);
-			AddEventList(DLGBOXCLICK_INVENTORY2, 10);//"The manufacturing manual is purchasable in Blacksmith."
-		}
-		else if (m_bSkillUsingStatus == true)
-		{
-			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY5, 10);//""You are already using another skill."
-			return;
-		}
-		else if (_bIsItemOnHand() == true)
-		{
-			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);//""Your hands should be free to use this item."
-			return;
-		}
-		else
-		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((m_pItemList[i] != 0) && (m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
-					&& (m_pItemList[i]->m_sSpriteFrame == 113)
-					&& (m_pItemList[i]->m_wCurLifeSpan > 0))
-				{
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 3, 0, 0, 0);
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY12, 10);//"Using a manufacturing skill..."
-					PlaySound('E', 14, 5);
-					return;
-				}
-			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY14, 10);
-		}
-		PlaySound('E', 14, 5);
-	}
-}
-
-void CGame::DlgBoxClick_Character(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY;
-	/*
-		if ((msX >= sX + 100) && (msX <= sX + 150) && (msY >= sY + 90) && (msY <= sY + 110)) {
-			MessageBox(0,"CRASHED!!!!","JK",MB_OK);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-			PlaySound('E', 14, 5);
-		}*/
-
-	if ((msX >= sX + 15) && (msX <= sX + 15 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Quest, 1, 0, 0);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-		PlaySound('E', 14, 5);
-	}
-	else if ((msX >= sX + 98) && (msX <= sX + 98 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-		PlaySound('E', 14, 5);
-	}
-	else if ((msX >= sX + 180) && (msX <= sX + 180 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
-		PlaySound('E', 14, 5);
-	}
-}
-
-
-void CGame::DlgBoxClick_MagicShop(short msX, short msY)
-{
-	int i, iCPivot, iYloc, iAdjX, iAdjY;
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sY;
-
-	iAdjX = -20;
-	iAdjY = -35;
-
-	iCPivot = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView * 10;
-
-	iYloc = 0;
-	for (i = 0; i < 9; i++) {
-		if ((m_pMagicCfgList[iCPivot + i] != 0) && (m_pMagicCfgList[iCPivot + i]->m_bIsVisible)) {
-			if ((msX >= sX + iAdjX + 44) && (msX <= sX + iAdjX + 135 + 44) && (msY >= sY + iAdjY + 70 + iYloc + 35) && (msY <= sY + iAdjY + 70 + 14 + iYloc + 35)) {
-				if (m_cMagicMastery[iCPivot + i] == 0)
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_STUDYMAGIC, 0, 0, 0, 0, m_pMagicCfgList[iCPivot + i]->m_cName);
-					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_STUDYMAGIC, 0, iCPivot + i, 0, 0, 0); //2002.02.07 ���� ���� �������� �������ӿ��� ������ȣ�� ����..
-					PlaySound('E', 14, 5);
-				}
-				return;
-			}
-			iYloc += 18;
-		}
-	}
-
-	if ((msX >= sX + iAdjX + 42 + 31) && (msX <= sX + iAdjX + 50 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
-	if ((msX >= sX + iAdjX + 55 + 31) && (msX <= sX + iAdjX + 68 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 1;
-	if ((msX >= sX + iAdjX + 73 + 31) && (msX <= sX + iAdjX + 93 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 2;
-	if ((msX >= sX + iAdjX + 98 + 31) && (msX <= sX + iAdjX + 113 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 3;
-	if ((msX >= sX + iAdjX + 118 + 31) && (msX <= sX + iAdjX + 129 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 4;
-	if ((msX >= sX + iAdjX + 133 + 31) && (msX <= sX + iAdjX + 150 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 5;
-	if ((msX >= sX + iAdjX + 154 + 31) && (msX <= sX + iAdjX + 177 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 6;
-	if ((msX >= sX + iAdjX + 181 + 31) && (msX <= sX + iAdjX + 210 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 7;
-	if ((msX >= sX + iAdjX + 214 + 31) && (msX <= sX + iAdjX + 230 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 8;
-	if ((msX >= sX + iAdjX + 234 + 31) && (msX <= sX + iAdjX + 245 + 31) && (msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
-		m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 9;
 }
 
 void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
@@ -21558,62 +19906,6 @@ int CGame::_iCalcTotalWeight()
 	return iWeight;
 }
 
-void CGame::DlgBoxClick_15AgeMsg(short msX, short msY)
-{	// Snoopy: removed feedback card
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Age15).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Age15).sY;
-	if ((msX >= sX + 120) && (msX <= sX + 120 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Age15);
-}
-
-
-void CGame::DlgBoxClick_WarningMsg(short msX, short msY)// ������.
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY;
-
-	if ((msX >= sX + 120) && (msX <= sX + 120 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::WarningBattleArea);
-}
-
-void CGame::DlgBoxClick_ItemDrop(short msX, short msY)
-{
-	short sX, sY;
-	if (m_cCommand < 0) return;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY;
-
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-	{
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).cMode = 3;
-		bSendCommand(MSGID_COMMAND_COMMON,
-			DEF_COMMONTYPE_ITEMDROP,
-			0,
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView,
-			1,
-			0,
-			m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView]->m_cName);
-		//m_dialogBoxManager.Info(DialogBoxId::Slates).sView );
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropConfirm);
-	}
-
-	else if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-	{
-
-		for (int i = 0; i < DEF_MAXSELLLIST; i++)
-			m_bIsItemDisabled[i] = false;
-
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropConfirm);
-	}
-	else if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
-	{
-		m_bItemDrop = !m_bItemDrop;
-	}
-}
-
 void CGame::DlgBoxClick_ItemSellorRepair(short msX, short msY)
 {
 	short sX, sY;
@@ -21649,7 +19941,7 @@ void CGame::DlgBoxClick_ItemSellorRepair(short msX, short msY)
 		break;
 	}
 }
-	uint32_t CGame::iGetLevelExp(int iLevel)
+uint32_t CGame::iGetLevelExp(int iLevel)
 {
 	uint32_t iRet;
 	if (iLevel == 0) return 0;
@@ -21900,18 +20192,6 @@ void CGame::SetWhetherStatus(bool bStart, char cType)
 	{
 		m_bIsWhetherEffect = false;
 		m_cWhetherEffectType = 0;
-	}
-}
-
-void CGame::DlgBoxClick_ShutDownMsg(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Noticement).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Noticement).sY;
-	if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Noticement);
-		PlaySound('E', 14, 5);
 	}
 }
 
@@ -22553,49 +20833,6 @@ void CGame::DlgBoxClick_Exchange(short msX, short msY)
 		break;
 	}
 }
-/*********************************************************************************************************************
-**  void CGame::DlgBoxClick_ConfirmExchange(short msX, short msY)		(snoopy)									**
-**  description			:: click on confirmation diag																**
-**********************************************************************************************************************/
-void CGame::DlgBoxClick_ConfirmExchange(short msX, short msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sY;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).cMode) {
-	case 1: // Not yet confirmed the exchange
-		// yes
-		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		{
-			if ((m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_stDialogBoxExchangeInfo[4].sV1 != -1))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CONFIRMEXCHANGEITEM, 0
-					, m_stDialogBoxExchangeInfo[0].sV1 // ItemID; inutilis� par serveur
-					, m_stDialogBoxExchangeInfo[0].sV3 // Amount; inutilis� par serveur
-					, 0, 0);
-				PlaySound('E', 14, 5);
-				m_dialogBoxManager.Info(DialogBoxId::Exchange).cMode = 2;
-				m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).cMode = 2;
-			}
-			return;
-		}
-		// No
-		if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		{
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Map);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CANCELEXCHANGEITEM, 0, 0, 0, 0, 0);
-			PlaySound('E', 14, 5);
-			return;
-		}
-		break;
-	case 2: // waiting for other side to confirm
-		break;
-	}
-}
-
 void CGame::DlgBoxClick_Quest(int msX, int msY)
 {
 	short sX, sY;
@@ -23346,142 +21583,6 @@ bool CGame::bReadItemNameConfigFile()
 	return true;
 }
 
-void CGame::DrawDialogBox_Map()
-{
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	double dV1, dV2, dV3;
-	int    tX, tY, szX, szY, dX, dY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Map).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Map).sY;
-
-	szX = 0;
-	szY = 0;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::Map).sV1) {
-	case 1:
-		switch (m_dialogBoxManager.Info(DialogBoxId::Map).sV2) {
-		case 0: // aresden
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutSpriteFast(sX, sY, 0, dwTime);
-			dX = 19;
-			dY = 20;
-			szX = 260;
-			szY = 260;
-			break;
-
-		case 1: // elvine
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutSpriteFast(sX, sY, 1, dwTime);
-			dX = 20;
-			dY = 18;
-			szX = 260;
-			szY = 260;
-			break;
-
-		case 2: // middleland
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutSpriteFast(sX, sY, 0, dwTime);
-			dX = 11;
-			dY = 31;
-			szX = 280;
-			szY = 253;
-			break;
-
-		case 3: // default
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutSpriteFast(sX, sY, 1, dwTime);
-			dX = 52;
-			dY = 42;
-			szX = 200;
-			szY = 200;
-			break;
-
-		case 4: // aresden �
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutSpriteFast(sX, sY, 0, dwTime);
-			dX = 40;
-			dY = 40;
-			szX = 220;
-			szY = 220;
-			break;
-
-		case 5: // elvine �
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutSpriteFast(sX, sY, 1, dwTime);
-			dX = 40;
-			dY = 40;
-			szX = 220;
-			szY = 220;
-			break;
-
-		case 6: // aresden
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutSpriteFast(sX, sY, 0, dwTime);
-			dX = 40;
-			dY = 40;
-			szX = 220;
-			szY = 220;
-			break;
-
-		case 7: // elvine
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutSpriteFast(sX, sY, 1, dwTime);
-			dX = 40;
-			dY = 40;
-			szX = 220;
-			szY = 220;
-			break;
-		case 8: // aresden
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutSpriteFast(sX, sY, 0, dwTime);
-			dX = 40;
-			dY = 32;
-			szX = 220;
-			szY = 220;
-			break;
-
-		case 9: // elvine
-			if (m_bDialogTrans)
-				m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutSpriteFast(sX, sY, 1, dwTime);
-			dX = 40;
-			dY = 38;
-			szX = 220;
-			szY = 220;
-			break;
-
-		}
-
-		dV1 = (double)m_pMapData->m_sMapSizeX;
-		dV2 = (double)m_sPlayerX;
-		dV3 = (dV2 * (double)szX) / dV1;
-		tX = (int)dV3 + dX;
-
-		dV1 = (double)m_pMapData->m_sMapSizeY;
-		if (dV1 == 752) dV1 = 680;
-		dV2 = (double)m_sPlayerY;
-		dV3 = (dV2 * (double)szY) / dV1;
-		tY = (int)dV3 + dY;
-
-
-		//m_pSprite[DEF_SPRID_INTERFACE_MAPS1]->PutSpriteFast(sX +tX, sY +tY, 4, dwTime);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + tX, sY + tY, 43);
-		wsprintf(G_cTxt, "%d,%d", m_sPlayerX, m_sPlayerY);
-		PutString_SprFont3(sX + 10 + tX - 5, sY + 10 + tY - 6, G_cTxt, m_wR[13] * 4, m_wG[13] * 4, m_wB[13] * 4, false, 2);
-		break;
-	}
-}
 /*********************************************************************************************************************
 **  void CGame::NotifyMsg_SetExchangeItem(char *pData)		(snoopy)												**
 **  description			:: Recieve a msg from gserver and sets the item												**
@@ -23899,88 +22000,6 @@ void CGame::NotifyMsg_JoinGuildReject(char* pData)
 	memcpy(cName, pkt->guild_name, 20);
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuildOperation, 0, 0, 0);
 	_PutGuildOperationList(cName, 4);
-}
-
-void CGame::DlgBoxClick_Help(int msX, int msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Help).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Help).sY;
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 0) && (msY < sY + 50 + 15 * 1))
-	{
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 1000, 0, 0);
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 1) && (msY < sY + 50 + 15 * 2)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 900, 0, 0);
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 2) && (msY < sY + 50 + 15 * 3)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 901, 0, 0);
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 3) && (msY < sY + 50 + 15 * 4)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 902, 0, 0);
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 4) && (msY < sY + 50 + 15 * 5)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 903, 0, 0);
-		m_bIsF1HelpWindowEnabled = true;
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 5) && (msY < sY + 50 + 15 * 6)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 904, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 6) && (msY < sY + 50 + 15 * 7)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 905, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 7) && (msY < sY + 50 + 15 * 8)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 906, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 8) && (msY < sY + 50 + 15 * 9)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 907, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 9) && (msY < sY + 50 + 15 * 10)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 908, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 10) && (msY < sY + 50 + 15 * 11)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 909, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 11) && (msY < sY + 50 + 15 * 12)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 910, 0, 0); //
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 12) && (msY < sY + 50 + 15 * 13)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 911, 0, 0); // FAQ
-	}
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 13) && (msY < sY + 50 + 15 * 14)) {
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 912, 0, 0); //
-	}
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		PlaySound('E', 14, 5);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Help);
-	}
 }
 
 /*********************************************************************************************************************
@@ -26392,8 +24411,238 @@ static char s_cNewAcctTempQuiz[44];
 static char s_cNewAcctAnswer[20];
 static char s_cNewAcctPrevFocus;
 static class CMouseInterface* s_pNewAcctMI;
+static short s_sNewAcctMsX;
+static short s_sNewAcctMsY;
+static char s_cNewAcctPrevLB;
 
 // CreateNewAccount screen - Update phase (logic/input handling)
+void CGame::UpdateScreen_CreateNewAccount()
+{
+#ifdef DEF_MAKE_ACCOUNT
+	char cMIresult;
+	int iMIbuttonNum;
+	short msX, msY, msZ;
+	char cLB, cRB;
+
+	if (m_cGameModeCount == 0)
+	{
+		EndInputString();
+
+		s_pNewAcctMI = new class CMouseInterface;
+		// Input field areas
+		s_pNewAcctMI->AddRect(427 + SCREENX, 84 + SCREENY - 5, 550 + SCREENX, 84 + SCREENY + 15);   // 1: Account
+		s_pNewAcctMI->AddRect(427 + SCREENX, 106 + SCREENY - 5, 550 + SCREENX, 106 + SCREENY + 15); // 2: Password
+		s_pNewAcctMI->AddRect(427 + SCREENX, 129 + SCREENY - 5, 550 + SCREENX, 129 + SCREENY + 15); // 3: Confirm
+		s_pNewAcctMI->AddRect(311 + SCREENX, 215 + SCREENY - 5, 550 + SCREENX, 215 + SCREENY + 15); // 4: Email
+		s_pNewAcctMI->AddRect(311 + SCREENX, 253 + SCREENY - 5, 550 + SCREENX, 253 + SCREENY + 15); // 5: Quiz
+		s_pNewAcctMI->AddRect(311 + SCREENX, 291 + SCREENY - 5, 550 + SCREENX, 291 + SCREENY + 15); // 6: Answer
+		// Button areas (left to right: Create, Clear, Cancel)
+		s_pNewAcctMI->AddRect(297 + SCREENX, 398 + SCREENY, 297 + 72 + SCREENX, 398 + 20 + SCREENY); // 7: Create (left)
+		s_pNewAcctMI->AddRect(392 + SCREENX, 398 + SCREENY, 392 + 72 + SCREENX, 398 + 20 + SCREENY); // 8: Clear (center)
+		s_pNewAcctMI->AddRect(488 + SCREENX, 398 + SCREENY, 488 + 72 + SCREENX, 398 + 20 + SCREENY); // 9: Cancel (right)
+
+		s_cNewAcctPrevFocus = 1;
+		s_cNewAcctPrevLB = 0;
+		m_cCurFocus = 1;
+		m_cMaxFocus = 9;
+		m_bEnterPressed = false;
+		m_cArrowPressed = 0;
+
+		std::memset(s_cNewAcctName, 0, sizeof(s_cNewAcctName));
+		std::memset(s_cNewAcctPassword, 0, sizeof(s_cNewAcctPassword));
+		std::memset(s_cNewAcctConfirm, 0, sizeof(s_cNewAcctConfirm));
+		std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
+		std::memset(s_cNewAcctQuiz, 0, sizeof(s_cNewAcctQuiz));
+		std::memset(s_cNewAcctAnswer, 0, sizeof(s_cNewAcctAnswer));
+
+		StartInputString(427 + SCREENX, 84 + SCREENY, 11, s_cNewAcctName);
+		ClearInputString();
+	}
+	m_cGameModeCount++;
+	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
+
+	// Handle arrow key navigation
+	if (m_cArrowPressed != 0)
+	{
+		switch (m_cArrowPressed) {
+		case 1: // Up
+			m_cCurFocus--;
+			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
+			break;
+		case 3: // Down
+			m_cCurFocus++;
+			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
+			break;
+		}
+		m_cArrowPressed = 0;
+	}
+
+	// Handle focus change - switch input field
+	if (s_cNewAcctPrevFocus != m_cCurFocus)
+	{
+		EndInputString();
+		switch (m_cCurFocus) {
+		case 1: StartInputString(427 + SCREENX, 84 + SCREENY, 11, s_cNewAcctName); break;
+		case 2: StartInputString(427 + SCREENX, 106 + SCREENY, 11, s_cNewAcctPassword); break;
+		case 3: StartInputString(427 + SCREENX, 129 + SCREENY, 11, s_cNewAcctConfirm); break;
+		case 4: StartInputString(311 + SCREENX, 215 + SCREENY, 50, m_cEmailAddr); break;
+		case 5: StartInputString(311 + SCREENX, 253 + SCREENY, 43, s_cNewAcctQuiz); break;
+		case 6: StartInputString(311 + SCREENX, 291 + SCREENY, 19, s_cNewAcctAnswer); break;
+		}
+		s_cNewAcctPrevFocus = m_cCurFocus;
+	}
+
+	// Handle Enter key
+	if (m_bEnterPressed == true)
+	{
+		m_bEnterPressed = false;
+		PlaySound('E', 14, 5);
+
+		if (m_cCurFocus <= 6)
+		{
+			// Move to next input field
+			m_cCurFocus++;
+			if (m_cCurFocus > 6) m_cCurFocus = 7; // Move to Create button
+		}
+		else if (m_cCurFocus == 7)
+		{
+			// Create button - validate and submit
+			wsprintf(s_cNewAcctTempQuiz, "%s", s_cNewAcctQuiz);
+			CMisc::ReplaceString(s_cNewAcctTempQuiz, ' ', '_');
+			bool bValid = true;
+			if (strlen(s_cNewAcctName) == 0) bValid = false;
+			if (strlen(s_cNewAcctPassword) == 0) bValid = false;
+			if (strlen(s_cNewAcctConfirm) == 0) bValid = false;
+			if (CMisc::bIsValidEmail(m_cEmailAddr) == false) bValid = false;
+			if (CMisc::bCheckValidName(s_cNewAcctName) == false) bValid = false;
+			if (CMisc::bCheckValidName(s_cNewAcctPassword) == false) bValid = false;
+			if (memcmp(s_cNewAcctPassword, s_cNewAcctConfirm, 10) != 0) bValid = false;
+			if (strlen(s_cNewAcctTempQuiz) == 0) bValid = false;
+			if (strlen(s_cNewAcctAnswer) == 0) bValid = false;
+			if (CMisc::bCheckValidName(s_cNewAcctTempQuiz) == false) bValid = false;
+			if (CMisc::bCheckValidName(s_cNewAcctAnswer) == false) bValid = false;
+
+			if (bValid)
+			{
+				// Copy to game account fields
+				std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
+				std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+				std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
+				std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
+				strcpy(m_cAccountName, s_cNewAcctName);
+				strcpy(m_cAccountPassword, s_cNewAcctPassword);
+				strcpy(m_cAccountQuiz, s_cNewAcctQuiz);
+				strcpy(m_cAccountAnswer, s_cNewAcctAnswer);
+
+				// Connect to server
+				m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+				m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort);
+				m_pLSock->bInitBufferSize(30000);
+				ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+				m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;
+				std::memset(m_cMsg, 0, sizeof(m_cMsg));
+				strcpy(m_cMsg, "01");
+				delete s_pNewAcctMI;
+				return;
+			}
+		}
+		else if (m_cCurFocus == 8)
+		{
+			// Clear - clear all input fields (center button)
+			EndInputString();
+			std::memset(s_cNewAcctName, 0, sizeof(s_cNewAcctName));
+			std::memset(s_cNewAcctPassword, 0, sizeof(s_cNewAcctPassword));
+			std::memset(s_cNewAcctConfirm, 0, sizeof(s_cNewAcctConfirm));
+			std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
+			std::memset(s_cNewAcctQuiz, 0, sizeof(s_cNewAcctQuiz));
+			std::memset(s_cNewAcctAnswer, 0, sizeof(s_cNewAcctAnswer));
+			m_cCurFocus = 1;
+			s_cNewAcctPrevFocus = 0; // Force focus switch to restart input
+		}
+		else if (m_cCurFocus == 9)
+		{
+			// Cancel - go back to main menu (right button)
+			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			delete s_pNewAcctMI;
+			return;
+		}
+	}
+
+	// Handle Escape key
+	if (m_bEscPressed == true)
+	{
+		m_bEscPressed = false;
+		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		delete s_pNewAcctMI;
+		return;
+	}
+
+	// Poll mouse input
+	m_DInput.UpdateMouseState(&msX, &msY, &msZ, &cLB, &cRB);
+	m_sFrameMouseX = msX;
+	m_sFrameMouseY = msY;
+	s_sNewAcctMsX = msX;
+	s_sNewAcctMsY = msY;
+
+	// Detect mouse click (button was down, now released)
+	bool bMouseClick = (s_cNewAcctPrevLB != 0 && cLB == 0);
+	s_cNewAcctPrevLB = cLB;
+
+	// Handle mouse clicks on input fields via CMouseInterface
+	iMIbuttonNum = s_pNewAcctMI->iGetStatus(msX, msY, cLB, &cMIresult);
+	if (cMIresult == DEF_MIRESULT_CLICK)
+	{
+		if (iMIbuttonNum >= 1 && iMIbuttonNum <= 6)
+		{
+			// Clicked on an input field
+			PlaySound('E', 14, 5);
+			m_cCurFocus = iMIbuttonNum;
+		}
+	}
+
+	// Handle mouse clicks on buttons using direct position check
+	// Button order left to right: Create, Clear, Cancel
+	if (bMouseClick)
+	{
+		// Button 7: Create (at 297, 398 - size 72x20) - LEFT
+		bool bOverCreate = (msX >= 297 + SCREENX && msX <= 297 + 72 + SCREENX &&
+			msY >= 398 + SCREENY && msY <= 398 + 20 + SCREENY);
+		// Button 8: Clear (at 392, 398 - size 72x20) - CENTER
+		bool bOverClear = (msX >= 392 + SCREENX && msX <= 392 + 72 + SCREENX &&
+			msY >= 398 + SCREENY && msY <= 398 + 20 + SCREENY);
+		// Button 9: Cancel (at 488, 398 - size 72x20) - RIGHT
+		bool bOverCancel = (msX >= 488 + SCREENX && msX <= 488 + 72 + SCREENX &&
+			msY >= 398 + SCREENY && msY <= 398 + 20 + SCREENY);
+
+		if (bOverCreate)
+		{
+			PlaySound('E', 14, 5);
+			m_cCurFocus = 7;
+			m_bEnterPressed = true; // Trigger Enter handling
+		}
+		else if (bOverClear)
+		{
+			PlaySound('E', 14, 5);
+			EndInputString();
+			std::memset(s_cNewAcctName, 0, sizeof(s_cNewAcctName));
+			std::memset(s_cNewAcctPassword, 0, sizeof(s_cNewAcctPassword));
+			std::memset(s_cNewAcctConfirm, 0, sizeof(s_cNewAcctConfirm));
+			std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
+			std::memset(s_cNewAcctQuiz, 0, sizeof(s_cNewAcctQuiz));
+			std::memset(s_cNewAcctAnswer, 0, sizeof(s_cNewAcctAnswer));
+			m_cCurFocus = 1;
+			s_cNewAcctPrevFocus = 0; // Force focus switch to restart input
+		}
+		else if (bOverCancel)
+		{
+			PlaySound('E', 14, 5);
+			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			delete s_pNewAcctMI;
+			return;
+		}
+	}
+#endif
+}
 
 // CreateNewAccount screen - Draw phase (rendering only)
 void CGame::DrawScreen_CreateNewAccount()
@@ -26543,16 +24792,27 @@ void CGame::DrawScreen_CreateNewAccount()
 		break;
 	}
 
-	// Draw buttons
-	if ((iFlag == 0) && (m_cCurFocus == 7))
+	// Draw buttons - highlight on focus OR mouse hover
+	// Button order left to right: Create, Clear, Cancel
+
+	// Button 7: Create (at 297, 398 - size 72x20) - LEFT
+	bool bHoverCreate = (s_sNewAcctMsX >= 297 + SCREENX && s_sNewAcctMsX <= 297 + 72 + SCREENX &&
+		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
+	if ((iFlag == 0) && (m_cCurFocus == 7 || bHoverCreate))
 		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(199 + 98 + SCREENX, 398 + SCREENY, 25, dwTime);
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(199 + 98 + SCREENX, 398 + SCREENY, 24, dwTime);
 
-	if (m_cCurFocus == 8)
+	// Button 8: Clear (at 392, 398 - size 72x20) - CENTER
+	bool bHoverClear = (s_sNewAcctMsX >= 392 + SCREENX && s_sNewAcctMsX <= 392 + 72 + SCREENX &&
+		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
+	if (m_cCurFocus == 8 || bHoverClear)
 		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(294 + 98 + SCREENX, 398 + SCREENY, 27, dwTime);
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(294 + 98 + SCREENX, 398 + SCREENY, 26, dwTime);
 
-	if (m_cCurFocus == 9)
+	// Button 9: Cancel (at 488, 398 - size 72x20) - RIGHT
+	bool bHoverCancel = (s_sNewAcctMsX >= 488 + SCREENX && s_sNewAcctMsX <= 488 + 72 + SCREENX &&
+		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
+	if (m_cCurFocus == 9 || bHoverCancel)
 		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(390 + 98 + SCREENX, 398 + SCREENY, 17, dwTime);
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(390 + 98 + SCREENX, 398 + SCREENY, 16, dwTime);
 
@@ -26929,8 +25189,12 @@ void CGame::UpdateScreen_CreateNewCharacter()
 	s_sNewCharMsX = msX;
 	s_sNewCharMsY = msY;
 
-	// Store whether character creation is valid (for drawing)
-	s_bNewCharFlag = _bDraw_OnCreateNewCharacter(s_cNewCharName, msX, msY, s_iNewCharPoint);
+	// Compute whether character creation is valid (drawing moved to DrawScreen)
+	s_bNewCharFlag = true;
+	if (strlen(s_cNewCharName) <= 0) s_bNewCharFlag = false;
+	if (s_iNewCharPoint > 0) s_bNewCharFlag = false;
+	if (CMisc::bCheckValidName(s_cNewCharName) == false) s_bNewCharFlag = false;
+	if (_bCheckBadWords(s_cNewCharName) == true) s_bNewCharFlag = false;
 
 	if ((dwTime - s_dwNewCharMTime) > 100)
 	{
@@ -27173,8 +25437,8 @@ void CGame::DrawScreen_CreateNewCharacter()
 	short msY = s_sNewCharMsY;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
-	// Main character creation drawing is done in Update phase via _bDraw_OnCreateNewCharacter
-	// Here we draw tooltips based on mouse position
+	// Draw the main character creation UI
+	_bDraw_OnCreateNewCharacter(s_cNewCharName, msX, msY, s_iNewCharPoint);
 
 	DrawVersion();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
@@ -27602,60 +25866,60 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_ANGELIC_STATS:		// reversed by Snoopy: 0x0BF2
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAngelicStats>(
-				pData, sizeof(hb::net::PacketNotifyAngelicStats));
-			if (!pkt) return;
-			m_iAngelicStr = pkt->str;
-			m_iAngelicInt = pkt->intel;
-			m_iAngelicDex = pkt->dex;
-			m_iAngelicMag = pkt->mag;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAngelicStats>(
+			pData, sizeof(hb::net::PacketNotifyAngelicStats));
+		if (!pkt) return;
+		m_iAngelicStr = pkt->str;
+		m_iAngelicInt = pkt->intel;
+		m_iAngelicDex = pkt->dex;
+		m_iAngelicMag = pkt->mag;
+	}
+	break;
 
 	case DEF_NOTIFY_CURLIFESPAN:
 		NotifyMsg_CurLifeSpan(pData);
 		break;
 
 	case DEF_NOTIFY_ANGEL_FAILED:		// reversed by Snoopy: 0x0BF4
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAngelFailed>(
-				pData, sizeof(hb::net::PacketNotifyAngelFailed));
-			if (!pkt) return;
-			iV1 = pkt->reason;
-		}
-		switch (iV1) {
-		case 1: // "BFB9BBF3C4A120BECAC0BA20B9F6B1D7C0D4B4CFB4D92E20A4D02E2EA4D0" (Stolen bytes ?)
-			AddEventList(DEF_MSG_NOTIFY_ANGEL_FAILED, 10); //"Impossible to get a Tutelary Angel." // Invented by Snoopy.
-			break;
-		case 2: //
-			AddEventList(DEF_MSG_NOTIFY_ANGEL_MAJESTIC, 10);//"You need additional Majesty Points."
-			break;
-		case 3: //
-			AddEventList(DEF_MSG_NOTIFY_ANGEL_LOW_LVL, 10); //"Only Majesty characters can receive Tutelary Angel"
-			break;
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAngelFailed>(
+			pData, sizeof(hb::net::PacketNotifyAngelFailed));
+		if (!pkt) return;
+		iV1 = pkt->reason;
+	}
+	switch (iV1) {
+	case 1: // "BFB9BBF3C4A120BECAC0BA20B9F6B1D7C0D4B4CFB4D92E20A4D02E2EA4D0" (Stolen bytes ?)
+		AddEventList(DEF_MSG_NOTIFY_ANGEL_FAILED, 10); //"Impossible to get a Tutelary Angel." // Invented by Snoopy.
 		break;
+	case 2: //
+		AddEventList(DEF_MSG_NOTIFY_ANGEL_MAJESTIC, 10);//"You need additional Majesty Points."
+		break;
+	case 3: //
+		AddEventList(DEF_MSG_NOTIFY_ANGEL_LOW_LVL, 10); //"Only Majesty characters can receive Tutelary Angel"
+		break;
+	}
+	break;
 
 	case DEF_NOTIFY_ANGEL_RECEIVED:		// reversed by Snoopy: 0x0BF5:
 		AddEventList(DEF_MSG_NOTIFY_ANGEL_RECEIVED, 10);// "You have received the Tutelary Angel."
 		break;
 
 	case DEF_NOTIFY_SPELL_SKILL:		// reversed by Snoopy: 0x0BF6
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpellSkill>(
-				pData, sizeof(hb::net::PacketNotifySpellSkill));
-			if (!pkt) return;
-			for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
-				m_cMagicMastery[i] = pkt->magic_mastery[i];
-			}
-			for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
-				m_cSkillMastery[i] = pkt->skill_mastery[i];
-				if (m_pSkillCfgList[i] != 0)
-					m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
-			}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpellSkill>(
+			pData, sizeof(hb::net::PacketNotifySpellSkill));
+		if (!pkt) return;
+		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
+			m_cMagicMastery[i] = pkt->magic_mastery[i];
 		}
-		break;
+		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
+			m_cSkillMastery[i] = pkt->skill_mastery[i];
+			if (m_pSkillCfgList[i] != 0)
+				m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
+		}
+	}
+	break;
 
 	case DEF_NOTIFY_NORECALL: // Snoopy 0x0BD1
 		AddEventList("You can not recall in this map.", 10);
@@ -27670,36 +25934,36 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_APOCGATEOPEN: // Snoopy ;  Case BD4 of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyApocGateOpen>(
-				pData, sizeof(hb::net::PacketNotifyApocGateOpen));
-			if (!pkt) return;
-			m_iGatePositX = pkt->gate_x;
-			m_iGatePositY = pkt->gate_y;
-			std::memset(m_cGateMapName, 0, sizeof(m_cGateMapName));
-			memcpy(m_cGateMapName, pkt->map_name, sizeof(pkt->map_name));
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyApocGateOpen>(
+			pData, sizeof(hb::net::PacketNotifyApocGateOpen));
+		if (!pkt) return;
+		m_iGatePositX = pkt->gate_x;
+		m_iGatePositY = pkt->gate_y;
+		std::memset(m_cGateMapName, 0, sizeof(m_cGateMapName));
+		memcpy(m_cGateMapName, pkt->map_name, sizeof(pkt->map_name));
+	}
+	break;
 
 	case DEF_NOTIFY_QUESTCOUNTER: // Snoopy;  Case BE2 of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestCounter>(
-				pData, sizeof(hb::net::PacketNotifyQuestCounter));
-			if (!pkt) return;
-			m_stQuest.sCurrentCount = static_cast<short>(pkt->current_count);
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestCounter>(
+			pData, sizeof(hb::net::PacketNotifyQuestCounter));
+		if (!pkt) return;
+		m_stQuest.sCurrentCount = static_cast<short>(pkt->current_count);
+	}
+	break;
 
 	case DEF_NOTIFY_MONSTERCOUNT: // Snoopy ;  Case BE3 of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMonsterCount>(
-				pData, sizeof(hb::net::PacketNotifyMonsterCount));
-			if (!pkt) return;
-			sV1 = pkt->count;
-		}
-		wsprintf(cTxt, "Rest Monster :%d", sV1);
-		AddEventList(cTxt, 10);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMonsterCount>(
+			pData, sizeof(hb::net::PacketNotifyMonsterCount));
+		if (!pkt) return;
+		sV1 = pkt->count;
+	}
+	wsprintf(cTxt, "Rest Monster :%d", sV1);
+	AddEventList(cTxt, 10);
+	break;
 
 	case DEF_NOTIFY_APOCGATECLOSE: // Snoopy ;  Case BD5 of switch 00454077
 		m_iGatePositX = m_iGatePositY = -1;
@@ -27711,16 +25975,16 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_ABADDONKILLED: // Snoopy ;  Case BD6 of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAbaddonKilled>(
-				pData, sizeof(hb::net::PacketNotifyAbaddonKilled));
-			if (!pkt) return;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pkt->killer_name, sizeof(pkt->killer_name));
-		}
-		wsprintf(G_cTxt, "Abaddon is destroyed by %s", cTxt);
-		AddEventList(G_cTxt, 10);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAbaddonKilled>(
+			pData, sizeof(hb::net::PacketNotifyAbaddonKilled));
+		if (!pkt) return;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->killer_name, sizeof(pkt->killer_name));
+	}
+	wsprintf(G_cTxt, "Abaddon is destroyed by %s", cTxt);
+	AddEventList(G_cTxt, 10);
+	break;
 
 	//case DEF_NOTIFY_0BE5: // Snoopy Abaddon's related? Thunder?;  Case BE5 of switch 00454077
 	//	/*00454255  |> B8 01000000    MOV EAX,1         ;  Case BE5 of switch 00454077
@@ -27758,32 +26022,32 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_HELDENIANVICTORY: // Case BEB of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHeldenianVictory>(
-				pData, sizeof(hb::net::PacketNotifyHeldenianVictory));
-			if (!pkt) return;
-			sV1 = pkt->side;
-		}
-		ShowHeldenianVictory(sV1);
-		m_iHeldenianAresdenLeftTower = -1;
-		m_iHeldenianElvineLeftTower = -1;
-		m_iHeldenianAresdenFlags = -1;
-		m_iHeldenianElvineFlags = -1;
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHeldenianVictory>(
+			pData, sizeof(hb::net::PacketNotifyHeldenianVictory));
+		if (!pkt) return;
+		sV1 = pkt->side;
+	}
+	ShowHeldenianVictory(sV1);
+	m_iHeldenianAresdenLeftTower = -1;
+	m_iHeldenianElvineLeftTower = -1;
+	m_iHeldenianAresdenFlags = -1;
+	m_iHeldenianElvineFlags = -1;
+	break;
 
 	case DEF_NOTIFY_HELDENIANCOUNT: // Case BEC of switch 00454077
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHeldenianCount>(
-				pData, sizeof(hb::net::PacketNotifyHeldenianCount));
-			if (!pkt) return;
-			m_iHeldenianAresdenLeftTower = pkt->aresden_tower_left;
-			m_iHeldenianElvineLeftTower = pkt->elvine_tower_left;
-			m_iHeldenianAresdenFlags = pkt->aresden_flags;
-			m_iHeldenianElvineFlags = pkt->elvine_flags;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHeldenianCount>(
+			pData, sizeof(hb::net::PacketNotifyHeldenianCount));
+		if (!pkt) return;
+		m_iHeldenianAresdenLeftTower = pkt->aresden_tower_left;
+		m_iHeldenianElvineLeftTower = pkt->elvine_tower_left;
+		m_iHeldenianAresdenFlags = pkt->aresden_flags;
+		m_iHeldenianElvineFlags = pkt->elvine_flags;
+	}
+	break;
 
-		// Slates - Diuuude
+	// Slates - Diuuude
 	case DEF_NOTIFY_SLATE_CREATESUCCESS:	// 0x0BC1
 		AddEventList(DEF_MSG_NOTIFY_SLATE_CREATESUCCESS, 10);
 		break;
@@ -27809,30 +26073,30 @@ void CGame::NotifyMsgHandler(char* pData)
 
 		// MJ Stats Change - Diuuude: Erreur, ici il s'agit de sorts et skills, le serveur comme la v351 sont aussi bugu�s !
 	case DEF_NOTIFY_STATECHANGE_SUCCESS:	// 0x0BB5
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyStateChangeSuccess>(
-				pData, sizeof(hb::net::PacketNotifyStateChangeSuccess));
-			if (!pkt) return;
-			for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
-				m_cMagicMastery[i] = pkt->magic_mastery[i];
-			}
-			for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
-				m_cSkillMastery[i] = pkt->skill_mastery[i];
-				if (m_pSkillCfgList[i] != 0)
-					m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
-			}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyStateChangeSuccess>(
+			pData, sizeof(hb::net::PacketNotifyStateChangeSuccess));
+		if (!pkt) return;
+		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
+			m_cMagicMastery[i] = pkt->magic_mastery[i];
 		}
-		// MJ Stats Change - Diuuude
-		m_iStr += m_cLU_Str;
-		m_iVit += m_cLU_Vit;
-		m_iDex += m_cLU_Dex;
-		m_iInt += m_cLU_Int;
-		m_iMag += m_cLU_Mag;
-		m_iCharisma += m_cLU_Char;
-		m_iLU_Point = m_iLevel * 3 - ((m_iStr + m_iVit + m_iDex + m_iInt + m_iMag + m_iCharisma) - 70) - 3;
-		m_cLU_Str = m_cLU_Vit = m_cLU_Dex = m_cLU_Int = m_cLU_Mag = m_cLU_Char = 0;
-		AddEventList("Your stat has been changed.", 10); // "Your stat has been changed."
-		break;
+		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
+			m_cSkillMastery[i] = pkt->skill_mastery[i];
+			if (m_pSkillCfgList[i] != 0)
+				m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
+		}
+	}
+	// MJ Stats Change - Diuuude
+	m_iStr += m_cLU_Str;
+	m_iVit += m_cLU_Vit;
+	m_iDex += m_cLU_Dex;
+	m_iInt += m_cLU_Int;
+	m_iMag += m_cLU_Mag;
+	m_iCharisma += m_cLU_Char;
+	m_iLU_Point = m_iLevel * 3 - ((m_iStr + m_iVit + m_iDex + m_iInt + m_iMag + m_iCharisma) - 70) - 3;
+	m_cLU_Str = m_cLU_Vit = m_cLU_Dex = m_cLU_Int = m_cLU_Mag = m_cLU_Char = 0;
+	AddEventList("Your stat has been changed.", 10); // "Your stat has been changed."
+	break;
 
 	case DEF_NOTIFY_LEVELUP: // 0x0B16
 		NotifyMsg_LevelUp(pData);
@@ -27866,123 +26130,167 @@ void CGame::NotifyMsgHandler(char* pData)
 		AddEventList(DEF_MSG_NOTIFY_NOMOREAGRICULTURE, 10);
 		break;
 	case DEF_NOTIFY_SPAWNEVENT:				// 0x0BAA
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpawnEvent>(
-				pData, sizeof(hb::net::PacketNotifySpawnEvent));
-			if (!pkt) return;
-			m_sMonsterID = pkt->monster_id;
-			m_sEventX = pkt->x;
-			m_sEventY = pkt->y;
-		}
-		m_dwMonsterEventTime = dwTime;
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpawnEvent>(
+			pData, sizeof(hb::net::PacketNotifySpawnEvent));
+		if (!pkt) return;
+		m_sMonsterID = pkt->monster_id;
+		m_sEventX = pkt->x;
+		m_sEventY = pkt->y;
+	}
+	m_dwMonsterEventTime = dwTime;
+	break;
 
 	case DEF_NOTIFY_CHANGEPLAYMODE:			// 0x0BA9
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyChangePlayMode>(
-				pData, sizeof(hb::net::PacketNotifyChangePlayMode));
-			if (!pkt) return;
-			memcpy(m_cLocation, pkt->location, sizeof(pkt->location));
-		}
-		if (memcmp(m_cLocation, "aresden", 7) == 0)
-		{
-			m_bAresden = true;
-			m_bCitizen = true;
-			m_bHunter = false;
-		}
-		else if (memcmp(m_cLocation, "arehunter", 9) == 0)
-		{
-			m_bAresden = true;
-			m_bCitizen = true;
-			m_bHunter = true;
-		}
-		else if (memcmp(m_cLocation, "elvine", 6) == 0)
-		{
-			m_bAresden = false;
-			m_bCitizen = true;
-			m_bHunter = false;
-		}
-		else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
-		{
-			m_bAresden = false;
-			m_bCitizen = true;
-			m_bHunter = true;
-		}
-		else
-		{
-			m_bAresden = true;
-			m_bCitizen = false;
-			m_bHunter = true;
-		}
-		AddEventList(DEF_MSG_GAMEMODE_CHANGED, 10);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyChangePlayMode>(
+			pData, sizeof(hb::net::PacketNotifyChangePlayMode));
+		if (!pkt) return;
+		memcpy(m_cLocation, pkt->location, sizeof(pkt->location));
+	}
+	if (memcmp(m_cLocation, "aresden", 7) == 0)
+	{
+		m_bAresden = true;
+		m_bCitizen = true;
+		m_bHunter = false;
+	}
+	else if (memcmp(m_cLocation, "arehunter", 9) == 0)
+	{
+		m_bAresden = true;
+		m_bCitizen = true;
+		m_bHunter = true;
+	}
+	else if (memcmp(m_cLocation, "elvine", 6) == 0)
+	{
+		m_bAresden = false;
+		m_bCitizen = true;
+		m_bHunter = false;
+	}
+	else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
+	{
+		m_bAresden = false;
+		m_bCitizen = true;
+		m_bHunter = true;
+	}
+	else
+	{
+		m_bAresden = true;
+		m_bCitizen = false;
+		m_bHunter = true;
+	}
+	AddEventList(DEF_MSG_GAMEMODE_CHANGED, 10);
+	break;
 
 	case DEF_NOTIFY_REQGUILDNAMEANSWER:	 //   0x0BA6
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyReqGuildNameAnswer>(
-				pData, sizeof(hb::net::PacketNotifyReqGuildNameAnswer));
-			if (!pkt) return;
-			sV1 = pkt->guild_rank;
-			sV2 = pkt->index;
-			std::memset(cTemp, 0, sizeof(cTemp));
-			memcpy(cTemp, pkt->guild_name, sizeof(pkt->guild_name));
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyReqGuildNameAnswer>(
+			pData, sizeof(hb::net::PacketNotifyReqGuildNameAnswer));
+		if (!pkt) return;
+		sV1 = pkt->guild_rank;
+		sV2 = pkt->index;
+		std::memset(cTemp, 0, sizeof(cTemp));
+		memcpy(cTemp, pkt->guild_name, sizeof(pkt->guild_name));
+	}
 
-		std::memset(m_stGuildName[sV2].cGuildName, 0, sizeof(m_stGuildName[sV2].cGuildName));
-		strcpy(m_stGuildName[sV2].cGuildName, cTemp);
-		m_stGuildName[sV2].iGuildRank = sV1;
-		for (i = 0; i < 20; i++) if (m_stGuildName[sV2].cGuildName[i] == '_') m_stGuildName[sV2].cGuildName[i] = ' ';
-		break;
+	std::memset(m_stGuildName[sV2].cGuildName, 0, sizeof(m_stGuildName[sV2].cGuildName));
+	strcpy(m_stGuildName[sV2].cGuildName, cTemp);
+	m_stGuildName[sV2].iGuildRank = sV1;
+	for (i = 0; i < 20; i++) if (m_stGuildName[sV2].cGuildName[i] == '_') m_stGuildName[sV2].cGuildName[i] = ' ';
+	break;
 
 	case DEF_NOTIFY_FORCERECALLTIME: // 0x0BA7
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyForceRecallTime>(
-				pData, sizeof(hb::net::PacketNotifyForceRecallTime));
-			if (!pkt) return;
-			sV1 = pkt->seconds_left;
-		}
-		if ((int)(sV1 / 20) > 0)
-			wsprintf(G_cTxt, NOTIFY_MSG_FORCERECALLTIME1, (int)(sV1 / 20));
-		else
-			wsprintf(G_cTxt, NOTIFY_MSG_FORCERECALLTIME2);
-		AddEventList(G_cTxt, 10);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyForceRecallTime>(
+			pData, sizeof(hb::net::PacketNotifyForceRecallTime));
+		if (!pkt) return;
+		sV1 = pkt->seconds_left;
+	}
+	if ((int)(sV1 / 20) > 0)
+		wsprintf(G_cTxt, NOTIFY_MSG_FORCERECALLTIME1, (int)(sV1 / 20));
+	else
+		wsprintf(G_cTxt, NOTIFY_MSG_FORCERECALLTIME2);
+	AddEventList(G_cTxt, 10);
+	break;
 
 	case DEF_NOTIFY_GIZONITEMUPGRADELEFT: // 0x0BA4// Item upgrade is possible.
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemUpgradeLeft>(
-				pData, sizeof(hb::net::PacketNotifyGizonItemUpgradeLeft));
-			if (!pkt) return;
-			m_iGizonItemUpgradeLeft = pkt->left;
-			switch (pkt->reason) {
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemUpgradeLeft>(
+			pData, sizeof(hb::net::PacketNotifyGizonItemUpgradeLeft));
+		if (!pkt) return;
+		m_iGizonItemUpgradeLeft = pkt->left;
+		switch (pkt->reason) {
 		case 1: //
 			AddEventList(NOTIFY_MSG_HANDLER_GIZONITEMUPGRADELEFT1, 10);
 			break;
 		}
-		}
-		//wsprintf(G_cTxt,"majesty: %d", m_iGizonItemUpgradeLeft);
-		//DebugLog(G_cTxt);
-		break;
+	}
+	//wsprintf(G_cTxt,"majesty: %d", m_iGizonItemUpgradeLeft);
+	//DebugLog(G_cTxt);
+	break;
 
 	case DEF_NOTIFY_GIZONEITEMCHANGE: // 0x0BA5
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemChange>(
-				pData, sizeof(hb::net::PacketNotifyGizonItemChange));
-			if (!pkt) return;
-			sV1 = pkt->item_index;
-			m_pItemList[sV1]->m_cItemType = pkt->item_type;
-			m_pItemList[sV1]->m_wCurLifeSpan = pkt->cur_lifespan;
-			m_pItemList[sV1]->m_sSprite = pkt->sprite;
-			m_pItemList[sV1]->m_sSpriteFrame = pkt->sprite_frame;
-			m_pItemList[sV1]->m_cItemColor = pkt->item_color;
-			m_pItemList[sV1]->m_sItemSpecEffectValue2 = pkt->spec_value2;
-			m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
-			std::memset(m_pItemList[sV1]->m_cName, 0, sizeof(m_pItemList[sV1]->m_cName));
-			memcpy(m_pItemList[sV1]->m_cName, pkt->item_name, sizeof(pkt->item_name));
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGizonItemChange>(
+			pData, sizeof(hb::net::PacketNotifyGizonItemChange));
+		if (!pkt) return;
+		sV1 = pkt->item_index;
+		m_pItemList[sV1]->m_cItemType = pkt->item_type;
+		m_pItemList[sV1]->m_wCurLifeSpan = pkt->cur_lifespan;
+		m_pItemList[sV1]->m_sSprite = pkt->sprite;
+		m_pItemList[sV1]->m_sSpriteFrame = pkt->sprite_frame;
+		m_pItemList[sV1]->m_cItemColor = pkt->item_color;
+		m_pItemList[sV1]->m_sItemSpecEffectValue2 = pkt->spec_value2;
+		m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
+		std::memset(m_pItemList[sV1]->m_cName, 0, sizeof(m_pItemList[sV1]->m_cName));
+		memcpy(m_pItemList[sV1]->m_cName, pkt->item_name, sizeof(pkt->item_name));
+	}
+	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
+	{
+		m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // succes
+	}
+	PlaySound('E', 23, 5);
+	switch (m_sPlayerType) {
+	case 1:
+	case 2:
+	case 3:
+		PlaySound('C', 21, 0);
+		break;
+
+	case 4:
+	case 5:
+	case 6:
+		PlaySound('C', 22, 0);
+		break;
+	}
+	break;
+
+	case DEF_NOTIFY_ITEMATTRIBUTECHANGE: // 0x0BA3
+	case 0x0BC0: // 0x0BC0 Unknown msg, but real in client v3.51
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemAttributeChange>(
+			pData, sizeof(hb::net::PacketNotifyItemAttributeChange));
+		if (!pkt) return;
+		sV1 = pkt->item_index;
+		dwTemp = m_pItemList[sV1]->m_dwAttribute;
+		m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
+		if (pkt->spec_value1 != 0)
+			m_pItemList[sV1]->m_sItemSpecEffectValue1 = static_cast<short>(pkt->spec_value1);
+		if (pkt->spec_value2 != 0)
+			m_pItemList[sV1]->m_sItemSpecEffectValue2 = static_cast<short>(pkt->spec_value2);
+	}
+	if (dwTemp == m_pItemList[sV1]->m_dwAttribute)
+	{
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
 		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // succes
+			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 4;// Failed
+		}
+		PlaySound('E', 24, 5);
+	}
+	else
+	{
+		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
+		{
+			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // Success
 		}
 		PlaySound('E', 23, 5);
 		switch (m_sPlayerType) {
@@ -27991,306 +26299,262 @@ void CGame::NotifyMsgHandler(char* pData)
 		case 3:
 			PlaySound('C', 21, 0);
 			break;
-
 		case 4:
 		case 5:
 		case 6:
 			PlaySound('C', 22, 0);
 			break;
 		}
-		break;
-
-	case DEF_NOTIFY_ITEMATTRIBUTECHANGE: // 0x0BA3
-	case 0x0BC0: // 0x0BC0 Unknown msg, but real in client v3.51
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemAttributeChange>(
-				pData, sizeof(hb::net::PacketNotifyItemAttributeChange));
-			if (!pkt) return;
-			sV1 = pkt->item_index;
-			dwTemp = m_pItemList[sV1]->m_dwAttribute;
-			m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
-			if (pkt->spec_value1 != 0)
-				m_pItemList[sV1]->m_sItemSpecEffectValue1 = static_cast<short>(pkt->spec_value1);
-			if (pkt->spec_value2 != 0)
-				m_pItemList[sV1]->m_sItemSpecEffectValue2 = static_cast<short>(pkt->spec_value2);
-		}
-		if (dwTemp == m_pItemList[sV1]->m_dwAttribute)
-		{
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 4;// Failed
-			}
-			PlaySound('E', 24, 5);
-		}
-		else
-		{
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // Success
-			}
-			PlaySound('E', 23, 5);
-			switch (m_sPlayerType) {
-			case 1:
-			case 2:
-			case 3:
-				PlaySound('C', 21, 0);
-				break;
-			case 4:
-			case 5:
-			case 6:
-				PlaySound('C', 22, 0);
-				break;
-			}
-		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_ITEMUPGRADEFAIL:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemUpgradeFail>(
-				pData, sizeof(hb::net::PacketNotifyItemUpgradeFail));
-			if (!pkt) return;
-			sV1 = pkt->reason;
-		}
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false) return;
-		PlaySound('E', 24, 5);
-		switch (sV1) {
-		case 1:
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 8; // Failed
-			break;
-		case 2:
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 9; // Failed
-			break;
-		case 3:
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 10; // Failed
-			break;
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemUpgradeFail>(
+			pData, sizeof(hb::net::PacketNotifyItemUpgradeFail));
+		if (!pkt) return;
+		sV1 = pkt->reason;
+	}
+	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false) return;
+	PlaySound('E', 24, 5);
+	switch (sV1) {
+	case 1:
+		m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 8; // Failed
 		break;
+	case 2:
+		m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 9; // Failed
+		break;
+	case 3:
+		m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 10; // Failed
+		break;
+	}
+	break;
 
 	case DEF_NOTIFY_PARTY:
-		{
-			const auto* basic = hb::net::PacketCast<hb::net::PacketNotifyPartyBasic>(
-				pData, sizeof(hb::net::PacketNotifyPartyBasic));
-			if (!basic) return;
-			sV1 = basic->type;
-			sV2 = basic->v2;
-			sV3 = basic->v3;
-			sV4 = basic->v4;
-		}
-		switch (sV1) {
-		case 1: //
-			switch (sV2) {
-			case 0:
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-				m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 9;
-				break;
-
-			case 1:
-				m_iPartyStatus = 1;
-				m_iTotalPartyMember = 0;
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-				m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
-				for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 2, 0, 0, m_cMCName);
-				break;
-			}
-			break;
-
-		case 2: //
-			m_iPartyStatus = 0;
-			m_iTotalPartyMember = 0;
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 10;
-			for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
-			break;
-
-		case 4:
-			{
-				const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyName>(
-					pData, sizeof(hb::net::PacketNotifyPartyName));
-				if (!pkt) return;
-				std::memset(cTxt, 0, sizeof(cTxt));
-				memcpy(cTxt, pkt->name, sizeof(pkt->name));
-			}
-
-			switch (sV2) {
-			case 0: //
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-				m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 9;
-				break;
-
-			case 1: //
-				if (strcmp(cTxt, m_cPlayerName) == 0) {
-					m_iPartyStatus = 2;
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-					m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
-				}
-				else {
-					wsprintf(G_cTxt, NOTIFY_MSG_HANDLER1, cTxt);
-					AddEventList(G_cTxt, 10);
-				}
-
-				m_iTotalPartyMember++;
-				for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
-					if (strlen(m_stPartyMemberNameList[i].cName) == 0) {
-						std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
-						memcpy(m_stPartyMemberNameList[i].cName, cTxt, 10);
-						goto NMH_LOOPBREAK1;
-					}
-			NMH_LOOPBREAK1:;
-				break;
-
-			case 2: //
-				break;
-			}
-			break;
-
-		case 5: //
-			m_iTotalPartyMember = 0;
-			for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
-
-			{
-				const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyList>(
-					pData, sizeof(hb::net::PacketNotifyPartyList));
-				if (!pkt) return;
-				const char* names = pkt->names;
-				m_iTotalPartyMember = pkt->count;
-				for (i = 1; i <= pkt->count; i++) {
-					std::memset(m_stPartyMemberNameList[i - 1].cName, 0, sizeof(m_stPartyMemberNameList[i - 1].cName));
-					memcpy(m_stPartyMemberNameList[i - 1].cName, names, 10);
-					names += 11;
-				}
-			}
-			break;
-
-		default:
-			break;
-
-		case 6:
-			{
-				const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyName>(
-					pData, sizeof(hb::net::PacketNotifyPartyName));
-				if (!pkt) return;
-				std::memset(cTxt, 0, sizeof(cTxt));
-				memcpy(cTxt, pkt->name, sizeof(pkt->name));
-			}
-
-			switch (sV2) {
-			case 0: //
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-				m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 7;
-				break;
-
-			case 1: //
-				if (strcmp(cTxt, m_cPlayerName) == 0) {
-					m_iPartyStatus = 0;
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
-					m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;
-				}
-				else {
-					wsprintf(G_cTxt, NOTIFY_MSG_HANDLER2, cTxt);
-					AddEventList(G_cTxt, 10);
-				}
-				for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
-					if (strcmp(m_stPartyMemberNameList[i].cName, cTxt) == 0) {
-						std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
-						m_iTotalPartyMember--;
-						goto NMH_LOOPBREAK2;
-					}
-			NMH_LOOPBREAK2:;
-				break;
-			}
-			break;
-
-		case 7: //
+	{
+		const auto* basic = hb::net::PacketCast<hb::net::PacketNotifyPartyBasic>(
+			pData, sizeof(hb::net::PacketNotifyPartyBasic));
+		if (!basic) return;
+		sV1 = basic->type;
+		sV2 = basic->v2;
+		sV3 = basic->v3;
+		sV4 = basic->v4;
+	}
+	switch (sV1) {
+	case 1: //
+		switch (sV2) {
+		case 0:
 			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 9;
 			break;
 
-		case 8: //
-			m_iPartyStatus = 0;
+		case 1:
+			m_iPartyStatus = 1;
 			m_iTotalPartyMember = 0;
+			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
 			for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 2, 0, 0, m_cMCName);
 			break;
 		}
 		break;
 
-	case DEF_NOTIFY_CANNOTCONSTRUCT:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotConstruct>(
-				pData, sizeof(hb::net::PacketNotifyCannotConstruct));
-			if (!pkt) return;
-			sV1 = pkt->reason;
+	case 2: //
+		m_iPartyStatus = 0;
+		m_iTotalPartyMember = 0;
+		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+		m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 10;
+		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+		break;
+
+	case 4:
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyName>(
+			pData, sizeof(hb::net::PacketNotifyPartyName));
+		if (!pkt) return;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->name, sizeof(pkt->name));
+	}
+
+	switch (sV2) {
+	case 0: //
+		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+		m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 9;
+		break;
+
+	case 1: //
+		if (strcmp(cTxt, m_cPlayerName) == 0) {
+			m_iPartyStatus = 2;
+			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
+		}
+		else {
+			wsprintf(G_cTxt, NOTIFY_MSG_HANDLER1, cTxt);
+			AddEventList(G_cTxt, 10);
 		}
 
-		CannotConstruct(sV1);
-		PlaySound('E', 25, 0, 0);
+		m_iTotalPartyMember++;
+		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
+			if (strlen(m_stPartyMemberNameList[i].cName) == 0) {
+				std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+				memcpy(m_stPartyMemberNameList[i].cName, cTxt, 10);
+				goto NMH_LOOPBREAK1;
+			}
+	NMH_LOOPBREAK1:;
 		break;
+
+	case 2: //
+		break;
+	}
+	break;
+
+	case 5: //
+		m_iTotalPartyMember = 0;
+		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+
+		{
+			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyList>(
+				pData, sizeof(hb::net::PacketNotifyPartyList));
+			if (!pkt) return;
+			const char* names = pkt->names;
+			m_iTotalPartyMember = pkt->count;
+			for (i = 1; i <= pkt->count; i++) {
+				std::memset(m_stPartyMemberNameList[i - 1].cName, 0, sizeof(m_stPartyMemberNameList[i - 1].cName));
+				memcpy(m_stPartyMemberNameList[i - 1].cName, names, 10);
+				names += 11;
+			}
+		}
+		break;
+
+	default:
+		break;
+
+	case 6:
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPartyName>(
+			pData, sizeof(hb::net::PacketNotifyPartyName));
+		if (!pkt) return;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->name, sizeof(pkt->name));
+	}
+
+	switch (sV2) {
+	case 0: //
+		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+		m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 7;
+		break;
+
+	case 1: //
+		if (strcmp(cTxt, m_cPlayerName) == 0) {
+			m_iPartyStatus = 0;
+			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;
+		}
+		else {
+			wsprintf(G_cTxt, NOTIFY_MSG_HANDLER2, cTxt);
+			AddEventList(G_cTxt, 10);
+		}
+		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
+			if (strcmp(m_stPartyMemberNameList[i].cName, cTxt) == 0) {
+				std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+				m_iTotalPartyMember--;
+				goto NMH_LOOPBREAK2;
+			}
+	NMH_LOOPBREAK2:;
+		break;
+	}
+	break;
+
+	case 7: //
+		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
+		m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 9;
+		break;
+
+	case 8: //
+		m_iPartyStatus = 0;
+		m_iTotalPartyMember = 0;
+		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+		break;
+	}
+	break;
+
+	case DEF_NOTIFY_CANNOTCONSTRUCT:
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotConstruct>(
+			pData, sizeof(hb::net::PacketNotifyCannotConstruct));
+		if (!pkt) return;
+		sV1 = pkt->reason;
+	}
+
+	CannotConstruct(sV1);
+	PlaySound('E', 25, 0, 0);
+	break;
 
 	case DEF_NOTIFY_TCLOC:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTCLoc>(
-				pData, sizeof(hb::net::PacketNotifyTCLoc));
-			if (!pkt) return;
-			m_iTeleportLocX = pkt->dest_x;
-			m_iTeleportLocY = pkt->dest_y;
-			std::memset(m_cTeleportMapName, 0, sizeof(m_cTeleportMapName));
-			memcpy(m_cTeleportMapName, pkt->teleport_map, sizeof(pkt->teleport_map));
-			m_iConstructLocX = pkt->construct_x;
-			m_iConstructLocY = pkt->construct_y;
-			std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
-			memcpy(m_cConstructMapName, pkt->construct_map, sizeof(pkt->construct_map));
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTCLoc>(
+			pData, sizeof(hb::net::PacketNotifyTCLoc));
+		if (!pkt) return;
+		m_iTeleportLocX = pkt->dest_x;
+		m_iTeleportLocY = pkt->dest_y;
+		std::memset(m_cTeleportMapName, 0, sizeof(m_cTeleportMapName));
+		memcpy(m_cTeleportMapName, pkt->teleport_map, sizeof(pkt->teleport_map));
+		m_iConstructLocX = pkt->construct_x;
+		m_iConstructLocY = pkt->construct_y;
+		std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
+		memcpy(m_cConstructMapName, pkt->construct_map, sizeof(pkt->construct_map));
+	}
+	break;
 
 	case DEF_NOTIFY_CONSTRUCTIONPOINT:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyConstructionPoint>(
-				pData, sizeof(hb::net::PacketNotifyConstructionPoint));
-			if (!pkt) return;
-			sV1 = pkt->construction_point;
-			sV2 = pkt->war_contribution;
-			sV3 = pkt->notify_type;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyConstructionPoint>(
+			pData, sizeof(hb::net::PacketNotifyConstructionPoint));
+		if (!pkt) return;
+		sV1 = pkt->construction_point;
+		sV2 = pkt->war_contribution;
+		sV3 = pkt->notify_type;
+	}
+
+	if (sV3 == 0) {
+		if ((sV1 > m_iConstructionPoint) && (sV2 > m_iWarContribution)) {
+			wsprintf(G_cTxt, "%s +%d, %s +%d", m_pGameMsgList[13]->m_pMsg, (sV1 - m_iConstructionPoint), m_pGameMsgList[21]->m_pMsg, (sV2 - m_iWarContribution));
+			SetTopMsg(G_cTxt, 5);
+			PlaySound('E', 23, 0, 0);
 		}
 
-		if (sV3 == 0) {
-			if ((sV1 > m_iConstructionPoint) && (sV2 > m_iWarContribution)) {
-				wsprintf(G_cTxt, "%s +%d, %s +%d", m_pGameMsgList[13]->m_pMsg, (sV1 - m_iConstructionPoint), m_pGameMsgList[21]->m_pMsg, (sV2 - m_iWarContribution));
+		if ((sV1 > m_iConstructionPoint) && (sV2 == m_iWarContribution)) {
+			if (m_iCrusadeDuty == 3) {
+				wsprintf(G_cTxt, "%s +%d", m_pGameMsgList[13]->m_pMsg, sV1 - m_iConstructionPoint);
 				SetTopMsg(G_cTxt, 5);
 				PlaySound('E', 23, 0, 0);
 			}
+		}
 
-			if ((sV1 > m_iConstructionPoint) && (sV2 == m_iWarContribution)) {
-				if (m_iCrusadeDuty == 3) {
-					wsprintf(G_cTxt, "%s +%d", m_pGameMsgList[13]->m_pMsg, sV1 - m_iConstructionPoint);
-					SetTopMsg(G_cTxt, 5);
-					PlaySound('E', 23, 0, 0);
-				}
-			}
+		if ((sV1 == m_iConstructionPoint) && (sV2 > m_iWarContribution)) {
+			wsprintf(G_cTxt, "%s +%d", m_pGameMsgList[21]->m_pMsg, sV2 - m_iWarContribution);
+			SetTopMsg(G_cTxt, 5);
+			PlaySound('E', 23, 0, 0);
+		}
 
-			if ((sV1 == m_iConstructionPoint) && (sV2 > m_iWarContribution)) {
-				wsprintf(G_cTxt, "%s +%d", m_pGameMsgList[21]->m_pMsg, sV2 - m_iWarContribution);
+		if (sV1 < m_iConstructionPoint) {
+			if (m_iCrusadeDuty == 3) {
+				wsprintf(G_cTxt, "%s -%d", m_pGameMsgList[13]->m_pMsg, m_iConstructionPoint - sV1);
 				SetTopMsg(G_cTxt, 5);
-				PlaySound('E', 23, 0, 0);
-			}
-
-			if (sV1 < m_iConstructionPoint) {
-				if (m_iCrusadeDuty == 3) {
-					wsprintf(G_cTxt, "%s -%d", m_pGameMsgList[13]->m_pMsg, m_iConstructionPoint - sV1);
-					SetTopMsg(G_cTxt, 5);
-					PlaySound('E', 25, 0, 0);
-				}
-			}
-
-			if (sV2 < m_iWarContribution) {
-				wsprintf(G_cTxt, "%s -%d", m_pGameMsgList[21]->m_pMsg, m_iWarContribution - sV2);
-				SetTopMsg(G_cTxt, 5);
-				PlaySound('E', 24, 0, 0);
+				PlaySound('E', 25, 0, 0);
 			}
 		}
 
-		m_iConstructionPoint = sV1;
-		m_iWarContribution = sV2;
-		break;
+		if (sV2 < m_iWarContribution) {
+			wsprintf(G_cTxt, "%s -%d", m_pGameMsgList[21]->m_pMsg, m_iWarContribution - sV2);
+			SetTopMsg(G_cTxt, 5);
+			PlaySound('E', 24, 0, 0);
+		}
+	}
+
+	m_iConstructionPoint = sV1;
+	m_iWarContribution = sV2;
+	break;
 
 	case DEF_NOTIFY_NOMORECRUSADESTRUCTURE:
 		SetTopMsg(m_pGameMsgList[12]->m_pMsg, 5);
@@ -28298,37 +26562,37 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_GRANDMAGICRESULT:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGrandMagicResult>(
-				pData, sizeof(hb::net::PacketNotifyGrandMagicResult));
-			if (!pkt) return;
-			sV1 = pkt->crashed_structures;
-			sV2 = pkt->structure_damage;
-			sV3 = pkt->casualities;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
-			sV4 = pkt->active_structure;
-			sV5 = pkt->value_count;
-			sV6 = sV7 = sV8 = sV9 = 0;
-			if (sV5 > 0) sV6 = pkt->values[0];
-			if (sV5 > 1) sV7 = pkt->values[1];
-			if (sV5 > 2) sV8 = pkt->values[2];
-			if (sV5 > 3) sV9 = pkt->values[3];
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGrandMagicResult>(
+			pData, sizeof(hb::net::PacketNotifyGrandMagicResult));
+		if (!pkt) return;
+		sV1 = pkt->crashed_structures;
+		sV2 = pkt->structure_damage;
+		sV3 = pkt->casualities;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
+		sV4 = pkt->active_structure;
+		sV5 = pkt->value_count;
+		sV6 = sV7 = sV8 = sV9 = 0;
+		if (sV5 > 0) sV6 = pkt->values[0];
+		if (sV5 > 1) sV7 = pkt->values[1];
+		if (sV5 > 2) sV8 = pkt->values[2];
+		if (sV5 > 3) sV9 = pkt->values[3];
+	}
 
-		GrandMagicResult(cTxt, sV1, sV2, sV3, sV4, sV6, sV7, sV8, sV9);
-		break;
+	GrandMagicResult(cTxt, sV1, sV2, sV3, sV4, sV6, sV7, sV8, sV9);
+	break;
 
 	case DEF_NOTIFY_METEORSTRIKECOMING:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMeteorStrikeComing>(
-				pData, sizeof(hb::net::PacketNotifyMeteorStrikeComing));
-			if (!pkt) return;
-			sV1 = pkt->phase;
-		}
-		MeteorStrikeComing(sV1);
-		PlaySound('E', 25, 0, 0);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyMeteorStrikeComing>(
+			pData, sizeof(hb::net::PacketNotifyMeteorStrikeComing));
+		if (!pkt) return;
+		sV1 = pkt->phase;
+	}
+	MeteorStrikeComing(sV1);
+	PlaySound('E', 25, 0, 0);
+	break;
 
 	case DEF_NOTIFY_METEORSTRIKEHIT:
 		SetTopMsg(m_pGameMsgList[17]->m_pMsg, 5);
@@ -28345,180 +26609,180 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_LOCKEDMAP:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLockedMap>(
-				pData, sizeof(hb::net::PacketNotifyLockedMap));
-			if (!pkt) return;
-			sV1 = pkt->seconds_left;
-			std::memset(cTemp, 0, sizeof(cTemp));
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLockedMap>(
+			pData, sizeof(hb::net::PacketNotifyLockedMap));
+		if (!pkt) return;
+		sV1 = pkt->seconds_left;
+		std::memset(cTemp, 0, sizeof(cTemp));
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
+	}
 
-		GetOfficialMapName(cTxt, cTemp);
-		wsprintf(G_cTxt, NOTIFY_MSG_HANDLER3, sV1, cTemp);
-		SetTopMsg(G_cTxt, 10);
-		PlaySound('E', 25, 0, 0);
-		break;
+	GetOfficialMapName(cTxt, cTemp);
+	wsprintf(G_cTxt, NOTIFY_MSG_HANDLER3, sV1, cTemp);
+	SetTopMsg(G_cTxt, 10);
+	PlaySound('E', 25, 0, 0);
+	break;
 
 	case DEF_NOTIFY_CRUSADE: // Crusade msg
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCrusade>(
+			pData, sizeof(hb::net::PacketNotifyCrusade));
+		if (!pkt) return;
+		iV1 = pkt->crusade_mode;
+		iV2 = pkt->crusade_duty;
+		iV3 = pkt->v3;
+		iV4 = pkt->v4;
+	}
+	if (m_bIsCrusadeMode == false)
+	{
+		if (iV1 != 0) // begin crusade
 		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCrusade>(
-				pData, sizeof(hb::net::PacketNotifyCrusade));
-			if (!pkt) return;
-			iV1 = pkt->crusade_mode;
-			iV2 = pkt->crusade_duty;
-			iV3 = pkt->v3;
-			iV4 = pkt->v4;
+			m_bIsCrusadeMode = true;
+			m_iCrusadeDuty = iV2;
+			if ((m_iCrusadeDuty != 3) && (m_bCitizen == true))
+				_RequestMapStatus("middleland", 3);
+			if (m_iCrusadeDuty != 0)
+				m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
+			else m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
+			if (m_bCitizen == false) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH, 0, 0);
+			else if (m_bAresden == true) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 801, 0, 0);
+			else if (m_bAresden == false) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
+			if (m_bCitizen == false) SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
+			else SetTopMsg(m_pGameMsgList[9]->m_pMsg, 10);
+			PlaySound('E', 25, 0, 0);
 		}
-		if (m_bIsCrusadeMode == false)
+		if (iV3 != 0) // Crusade finished, show XP result screen
 		{
-			if (iV1 != 0) // begin crusade
-			{
-				m_bIsCrusadeMode = true;
-				m_iCrusadeDuty = iV2;
-				if ((m_iCrusadeDuty != 3) && (m_bCitizen == true))
-					_RequestMapStatus("middleland", 3);
-				if (m_iCrusadeDuty != 0)
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
-				else m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
-				if (m_bCitizen == false) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH, 0, 0);
-				else if (m_bAresden == true) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 801, 0, 0);
-				else if (m_bAresden == false) m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
-				if (m_bCitizen == false) SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
-				else SetTopMsg(m_pGameMsgList[9]->m_pMsg, 10);
-				PlaySound('E', 25, 0, 0);
-			}
-			if (iV3 != 0) // Crusade finished, show XP result screen
-			{
-				CrusadeContributionResult(iV3);
-			}
-			if (iV4 == -1) // The crusade you played in was finished.
-			{
-				CrusadeContributionResult(0); // You connect in this crusade, but did not connect after previous one => no XP....
-			}
+			CrusadeContributionResult(iV3);
+		}
+		if (iV4 == -1) // The crusade you played in was finished.
+		{
+			CrusadeContributionResult(0); // You connect in this crusade, but did not connect after previous one => no XP....
+		}
+	}
+	else
+	{
+		if (iV1 == 0) // crusade finished show result (1st result: winner)
+		{
+			m_bIsCrusadeMode = false;
+			m_iCrusadeDuty = 0;
+			CrusadeWarResult(iV4);
+			SetTopMsg(m_pGameMsgList[57]->m_pMsg, 8);
 		}
 		else
 		{
-			if (iV1 == 0) // crusade finished show result (1st result: winner)
+			if (m_iCrusadeDuty != iV2)
 			{
-				m_bIsCrusadeMode = false;
-				m_iCrusadeDuty = 0;
-				CrusadeWarResult(iV4);
-				SetTopMsg(m_pGameMsgList[57]->m_pMsg, 8);
-			}
-			else
-			{
-				if (m_iCrusadeDuty != iV2)
-				{
-					m_iCrusadeDuty = iV2;
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
-					PlaySound('E', 25, 0, 0);
-				}
-			}
-			if (iV4 == -1)
-			{
-				CrusadeContributionResult(0); // You connect in this crusade, but did not connect after previous one => no XP....
+				m_iCrusadeDuty = iV2;
+				m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
+				PlaySound('E', 25, 0, 0);
 			}
 		}
-		break;
+		if (iV4 == -1)
+		{
+			CrusadeContributionResult(0); // You connect in this crusade, but did not connect after previous one => no XP....
+		}
+	}
+	break;
 
 	case DEF_NOTIFY_SPECIALABILITYSTATUS:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpecialAbilityStatus>(
-				pData, sizeof(hb::net::PacketNotifySpecialAbilityStatus));
-			if (!pkt) return;
-			sV1 = pkt->status_type;
-			sV2 = pkt->ability_type;
-			sV3 = pkt->seconds_left;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpecialAbilityStatus>(
+			pData, sizeof(hb::net::PacketNotifySpecialAbilityStatus));
+		if (!pkt) return;
+		sV1 = pkt->status_type;
+		sV2 = pkt->ability_type;
+		sV3 = pkt->seconds_left;
+	}
+	if (sV1 == 1) // Use SA
+	{
+		PlaySound('E', 35, 0);
+		AddEventList(NOTIFY_MSG_HANDLER4, 10); // "Use special ability!"
+		switch (sV2) {
+		case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER5, sV3); break;//"You are untouchable for %d seconds!"
+		case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER6, sV3); break;//"
+		case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER7, sV3); break;//"
+		case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER8, sV3); break;//"
+		case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER9, sV3); break;//"
+		case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER10, sV3); break;//"
+		case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER11, sV3); break;//"
+		case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER12, sV3); break;//"
+		case 55: // Spell effect
+			if (sV3 > 90)
+				wsprintf(G_cTxt, "You cast a powerfull incantation, you can't use it again before %d minutes.", sV3 / 60);
+			else
+				wsprintf(G_cTxt, "You cast a powerfull incantation, you can't use it again before %d seconds.", sV3);
+			break;
 		}
-		if (sV1 == 1) // Use SA
+		AddEventList(G_cTxt, 10);
+	}
+	else if (sV1 == 2) // Finished using
+	{
+		if (m_iSpecialAbilityType != (int)sV2)
 		{
-			PlaySound('E', 35, 0);
-			AddEventList(NOTIFY_MSG_HANDLER4, 10); // "Use special ability!"
-			switch (sV2) {
-			case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER5, sV3); break;//"You are untouchable for %d seconds!"
-			case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER6, sV3); break;//"
-			case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER7, sV3); break;//"
-			case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER8, sV3); break;//"
-			case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER9, sV3); break;//"
-			case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER10, sV3); break;//"
-			case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER11, sV3); break;//"
-			case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER12, sV3); break;//"
-			case 55: // Spell effect
-				if (sV3 > 90)
-					wsprintf(G_cTxt, "You cast a powerfull incantation, you can't use it again before %d minutes.", sV3 / 60);
-				else
-					wsprintf(G_cTxt, "You cast a powerfull incantation, you can't use it again before %d seconds.", sV3);
-				break;
-			}
-			AddEventList(G_cTxt, 10);
-		}
-		else if (sV1 == 2) // Finished using
-		{
-			if (m_iSpecialAbilityType != (int)sV2)
+			PlaySound('E', 34, 0);
+			AddEventList(NOTIFY_MSG_HANDLER13, 10);//"Special ability has been set!"
+			if (sV3 >= 60)
 			{
-				PlaySound('E', 34, 0);
-				AddEventList(NOTIFY_MSG_HANDLER13, 10);//"Special ability has been set!"
-				if (sV3 >= 60)
-				{
-					switch (sV2) {
-					case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER14, sV3 / 60); AddEventList(G_cTxt, 10); break;//"Ability that decreases enemy's HP by 50%: Can use after %dMin"
-					case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER15, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER16, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER17, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER18, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER19, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER20, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER21, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
-					}
+				switch (sV2) {
+				case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER14, sV3 / 60); AddEventList(G_cTxt, 10); break;//"Ability that decreases enemy's HP by 50%: Can use after %dMin"
+				case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER15, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER16, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER17, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER18, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER19, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER20, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
+				case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER21, sV3 / 60); AddEventList(G_cTxt, 10); break;//"
 				}
-				else
-				{
-					switch (sV2) {
-					case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER22, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER23, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER24, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER25, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER26, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER27, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER28, sV3); AddEventList(G_cTxt, 10); break;//"
-					case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER29, sV3); AddEventList(G_cTxt, 10); break;//""Ability that makes character untouchable: Can use after %dSec"
-					}
-				}
-			}
-			m_iSpecialAbilityType = (int)sV2;
-			m_dwSpecialAbilitySettingTime = dwTime;
-			m_iSpecialAbilityTimeLeftSec = (int)sV3;
-		}
-		else if (sV1 == 3)  // End of using time
-		{
-			m_bIsSpecialAbilityEnabled = false;
-			m_dwSpecialAbilitySettingTime = dwTime;
-			if (sV3 == 0)
-			{
-				m_iSpecialAbilityTimeLeftSec = 1200;
-				AddEventList(NOTIFY_MSG_HANDLER30, 10);//"Special ability has run out! Will be available in 20 minutes."
 			}
 			else
 			{
-				m_iSpecialAbilityTimeLeftSec = (int)sV3;
-				if (sV3 > 90)
-					wsprintf(G_cTxt, "Special ability has run out! Will be available in %d minutes.", sV3 / 60);
-				else wsprintf(G_cTxt, "Special ability has run out! Will be available in %d seconds.", sV3);
-				AddEventList(G_cTxt, 10);
+				switch (sV2) {
+				case 1: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER22, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 2: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER23, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 3: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER24, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 4: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER25, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 5: wsprintf(G_cTxt, NOTIFY_MSG_HANDLER26, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 50:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER27, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 51:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER28, sV3); AddEventList(G_cTxt, 10); break;//"
+				case 52:wsprintf(G_cTxt, NOTIFY_MSG_HANDLER29, sV3); AddEventList(G_cTxt, 10); break;//""Ability that makes character untouchable: Can use after %dSec"
+				}
 			}
 		}
-		else if (sV1 == 4) // Unequiped the SA item
+		m_iSpecialAbilityType = (int)sV2;
+		m_dwSpecialAbilitySettingTime = dwTime;
+		m_iSpecialAbilityTimeLeftSec = (int)sV3;
+	}
+	else if (sV1 == 3)  // End of using time
+	{
+		m_bIsSpecialAbilityEnabled = false;
+		m_dwSpecialAbilitySettingTime = dwTime;
+		if (sV3 == 0)
 		{
-			AddEventList(NOTIFY_MSG_HANDLER31, 10);//"Special ability has been released."
-			m_iSpecialAbilityType = 0;
+			m_iSpecialAbilityTimeLeftSec = 1200;
+			AddEventList(NOTIFY_MSG_HANDLER30, 10);//"Special ability has run out! Will be available in 20 minutes."
 		}
-		else if (sV1 == 5) // Angel
+		else
 		{
-			PlaySound('E', 52, 0); // Angel
+			m_iSpecialAbilityTimeLeftSec = (int)sV3;
+			if (sV3 > 90)
+				wsprintf(G_cTxt, "Special ability has run out! Will be available in %d minutes.", sV3 / 60);
+			else wsprintf(G_cTxt, "Special ability has run out! Will be available in %d seconds.", sV3);
+			AddEventList(G_cTxt, 10);
 		}
-		break;
+	}
+	else if (sV1 == 4) // Unequiped the SA item
+	{
+		AddEventList(NOTIFY_MSG_HANDLER31, 10);//"Special ability has been released."
+		m_iSpecialAbilityType = 0;
+	}
+	else if (sV1 == 5) // Angel
+	{
+		PlaySound('E', 52, 0); // Angel
+	}
+	break;
 
 	case DEF_NOTIFY_SPECIALABILITYENABLED:
 		if (m_bIsSpecialAbilityEnabled == false) {
@@ -28529,82 +26793,82 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_ENERGYSPHEREGOALIN:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereGoalIn>(
-				pData, sizeof(hb::net::PacketNotifyEnergySphereGoalIn));
-			if (!pkt) return;
-			sV1 = pkt->result;
-			sV2 = pkt->side;
-			sV3 = pkt->goal;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pkt->name, sizeof(pkt->name));
-		}
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereGoalIn>(
+			pData, sizeof(hb::net::PacketNotifyEnergySphereGoalIn));
+		if (!pkt) return;
+		sV1 = pkt->result;
+		sV2 = pkt->side;
+		sV3 = pkt->goal;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		memcpy(cTxt, pkt->name, sizeof(pkt->name));
+	}
 
-		if (sV2 == sV3)
+	if (sV2 == sV3)
+	{
+		PlaySound('E', 24, 0);
+		if (strcmp(cTxt, m_cPlayerName) == 0)
 		{
-			PlaySound('E', 24, 0);
-			if (strcmp(cTxt, m_cPlayerName) == 0)
-			{
-				AddEventList(NOTIFY_MSG_HANDLER33, 10);//You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
-				m_iContribution += sV1; // fixed, server must match...
-				m_iContributionPrice = 0;
-				if (m_iContribution < 0) m_iContribution = 0;
+			AddEventList(NOTIFY_MSG_HANDLER33, 10);//You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
+			m_iContribution += sV1; // fixed, server must match...
+			m_iContributionPrice = 0;
+			if (m_iContribution < 0) m_iContribution = 0;
+		}
+		else {
+			std::memset(G_cTxt, 0, sizeof(G_cTxt));
+			if (m_bAresden == true) wsprintf(G_cTxt, NOTIFY_MSG_HANDLER34, cTxt);//"%s(Aresden) pushed energy sphere to enemy's portal!!..."
+			else if (m_bAresden == false) wsprintf(G_cTxt, NOTIFY_MSG_HANDLER34_ELV, cTxt);//"%s(Elvine) pushed energy sphere to enemy's portal!!..."
+			AddEventList(G_cTxt, 10);
+		}
+	}
+	else
+	{
+		PlaySound('E', 23, 0);
+		if (strcmp(cTxt, m_cPlayerName) == 0)
+		{
+			switch (m_sPlayerType) {
+			case 1:
+			case 2:
+			case 3:	PlaySound('C', 21, 0); break;
+			case 4:
+			case 5:
+			case 6:	PlaySound('C', 22, 0); break;
 			}
-			else {
-				std::memset(G_cTxt, 0, sizeof(G_cTxt));
-				if (m_bAresden == true) wsprintf(G_cTxt, NOTIFY_MSG_HANDLER34, cTxt);//"%s(Aresden) pushed energy sphere to enemy's portal!!..."
-				else if (m_bAresden == false) wsprintf(G_cTxt, NOTIFY_MSG_HANDLER34_ELV, cTxt);//"%s(Elvine) pushed energy sphere to enemy's portal!!..."
-				AddEventList(G_cTxt, 10);
-			}
+			AddEventList(NOTIFY_MSG_HANDLER35, 10);//"Congulaturations! You brought energy sphere to energy portal and earned experience and prize gold!"
+
+			m_iContribution += 5;
+			if (m_iContribution < 0) m_iContribution = 0;
 		}
 		else
 		{
-			PlaySound('E', 23, 0);
-			if (strcmp(cTxt, m_cPlayerName) == 0)
+			std::memset(G_cTxt, 0, sizeof(G_cTxt));
+			if (sV3 == 1)
 			{
-				switch (m_sPlayerType) {
-				case 1:
-				case 2:
-				case 3:	PlaySound('C', 21, 0); break;
-				case 4:
-				case 5:
-				case 6:	PlaySound('C', 22, 0); break;
-				}
-				AddEventList(NOTIFY_MSG_HANDLER35, 10);//"Congulaturations! You brought energy sphere to energy portal and earned experience and prize gold!"
-
-				m_iContribution += 5;
-				if (m_iContribution < 0) m_iContribution = 0;
+				wsprintf(G_cTxt, NOTIFY_MSG_HANDLER36, cTxt);//"Elvine %s : Goal in!"
+				AddEventList(G_cTxt, 10);
 			}
-			else
+			else if (sV3 == 2)
 			{
-				std::memset(G_cTxt, 0, sizeof(G_cTxt));
-				if (sV3 == 1)
-				{
-					wsprintf(G_cTxt, NOTIFY_MSG_HANDLER36, cTxt);//"Elvine %s : Goal in!"
-					AddEventList(G_cTxt, 10);
-				}
-				else if (sV3 == 2)
-				{
-					wsprintf(G_cTxt, NOTIFY_MSG_HANDLER37, cTxt);//"Aresden %s : Goal in!"
-					AddEventList(G_cTxt, 10);
-				}
+				wsprintf(G_cTxt, NOTIFY_MSG_HANDLER37, cTxt);//"Aresden %s : Goal in!"
+				AddEventList(G_cTxt, 10);
 			}
 		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_ENERGYSPHERECREATED:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereCreated>(
-				pData, sizeof(hb::net::PacketNotifyEnergySphereCreated));
-			if (!pkt) return;
-			sV1 = pkt->x;
-			sV2 = pkt->y;
-		}
-		std::memset(G_cTxt, 0, sizeof(G_cTxt));
-		wsprintf(G_cTxt, NOTIFY_MSG_HANDLER38, sV1, sV2);//"Energy sphere was dropped in (%d, %d) of middleland!"
-		AddEventList(G_cTxt, 10);
-		AddEventList(NOTIFY_MSG_HANDLER39, 10);//"A player who pushed energy sphere to the energy portal of his city will earn many Exp and Contribution."
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnergySphereCreated>(
+			pData, sizeof(hb::net::PacketNotifyEnergySphereCreated));
+		if (!pkt) return;
+		sV1 = pkt->x;
+		sV2 = pkt->y;
+	}
+	std::memset(G_cTxt, 0, sizeof(G_cTxt));
+	wsprintf(G_cTxt, NOTIFY_MSG_HANDLER38, sV1, sV2);//"Energy sphere was dropped in (%d, %d) of middleland!"
+	AddEventList(G_cTxt, 10);
+	AddEventList(NOTIFY_MSG_HANDLER39, 10);//"A player who pushed energy sphere to the energy portal of his city will earn many Exp and Contribution."
+	break;
 
 	case DEF_NOTIFY_QUERY_JOINPARTY:
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
@@ -28619,11 +26883,11 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_RESPONSE_CREATENEWPARTY:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyResponseCreateNewParty>(
-				pData, sizeof(hb::net::PacketNotifyResponseCreateNewParty));
-			if (!pkt) return;
-			if ((bool)pkt->result == true)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyResponseCreateNewParty>(
+			pData, sizeof(hb::net::PacketNotifyResponseCreateNewParty));
+		if (!pkt) return;
+		if ((bool)pkt->result == true)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 2;
 		}
@@ -28631,36 +26895,36 @@ void CGame::NotifyMsgHandler(char* pData)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
 		}
-		}
-		break;
+	}
+	break;
 
-		//50Cent - HP Bar
+	//50Cent - HP Bar
 	case DEF_SEND_NPCHP:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNpcHp>(
-				pData, sizeof(hb::net::PacketNotifyNpcHp));
-			if (!pkt) return;
-			iNpcHP = pkt->hp;
-			iNpcMaxHP = pkt->max_hp;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNpcHp>(
+			pData, sizeof(hb::net::PacketNotifyNpcHp));
+		if (!pkt) return;
+		iNpcHP = pkt->hp;
+		iNpcMaxHP = pkt->max_hp;
+	}
+	break;
 
 	case DEF_NOTIFY_DAMAGEMOVE:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDamageMove>(
-				pData, sizeof(hb::net::PacketNotifyDamageMove));
-			if (!pkt) return;
-			m_sDamageMove = pkt->dir;
-			m_sDamageMoveAmount = pkt->amount;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDamageMove>(
+			pData, sizeof(hb::net::PacketNotifyDamageMove));
+		if (!pkt) return;
+		m_sDamageMove = pkt->dir;
+		m_sDamageMoveAmount = pkt->amount;
+	}
+	break;
 
 	case DEF_NOTIFY_OBSERVERMODE:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyObserverMode>(
-				pData, sizeof(hb::net::PacketNotifyObserverMode));
-			if (!pkt) return;
-			if (pkt->enabled == 1)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyObserverMode>(
+			pData, sizeof(hb::net::PacketNotifyObserverMode));
+		if (!pkt) return;
+		if (pkt->enabled == 1)
 		{
 			AddEventList(NOTIFY_MSG_HANDLER40);//"Observer Mode On. Press 'SHIFT + ESC' to Log Out..."
 			m_bIsObserverMode = true;
@@ -28676,8 +26940,8 @@ void CGame::NotifyMsgHandler(char* pData)
 			m_bIsObserverMode = false;
 			m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir, m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor, m_iPlayerStatus, m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
 		}
-		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_BUILDITEMSUCCESS:
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
@@ -28798,13 +27062,13 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_ITEMPOSLIST:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPosList>(
-				pData, sizeof(hb::net::PacketNotifyItemPosList));
-			if (!pkt) return;
-			for (i = 0; i < DEF_MAXITEMS; i++) {
-				sX = pkt->positions[i * 2];
-				sY = pkt->positions[i * 2 + 1];
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPosList>(
+			pData, sizeof(hb::net::PacketNotifyItemPosList));
+		if (!pkt) return;
+		for (i = 0; i < DEF_MAXITEMS; i++) {
+			sX = pkt->positions[i * 2];
+			sY = pkt->positions[i * 2 + 1];
 			if (m_pItemList[i] != 0) {
 				if (sY < -10) sY = -10;
 				if (sX < 0)   sX = 0;
@@ -28815,17 +27079,17 @@ void CGame::NotifyMsgHandler(char* pData)
 				m_pItemList[i]->m_sY = sY;
 			}
 		}
-		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_ENEMYKILLS:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKills>(
-				pData, sizeof(hb::net::PacketNotifyEnemyKills));
-			if (!pkt) return;
-			m_iEnemyKillCount = pkt->count;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKills>(
+			pData, sizeof(hb::net::PacketNotifyEnemyKills));
+		if (!pkt) return;
+		m_iEnemyKillCount = pkt->count;
+	}
+	break;
 
 	case DEF_NOTIFY_DOWNSKILLINDEXSET:
 		NotifyMsg_DownSkillIndexSet(pData);
@@ -28856,20 +27120,20 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_SUPERATTACKLEFT:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySuperAttackLeft>(
-				pData, sizeof(hb::net::PacketNotifySuperAttackLeft));
-			if (!pkt) return;
-			m_iSuperAttackLeft = pkt->left;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySuperAttackLeft>(
+			pData, sizeof(hb::net::PacketNotifySuperAttackLeft));
+		if (!pkt) return;
+		m_iSuperAttackLeft = pkt->left;
+	}
+	break;
 
 	case DEF_NOTIFY_SAFEATTACKMODE:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySafeAttackMode>(
-				pData, sizeof(hb::net::PacketNotifySafeAttackMode));
-			if (!pkt) return;
-			switch (pkt->enabled) {
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySafeAttackMode>(
+			pData, sizeof(hb::net::PacketNotifySafeAttackMode));
+		if (!pkt) return;
+		switch (pkt->enabled) {
 		case 1:
 			if (!m_bIsSafeAttackMode) AddEventList(NOTIFY_MSG_HANDLER50, 10);//"
 			m_bIsSafeAttackMode = true;
@@ -28879,8 +27143,8 @@ void CGame::NotifyMsgHandler(char* pData)
 			m_bIsSafeAttackMode = false;
 			break;
 		}
-		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_IPACCOUNTINFO:
 		std::memset(cTemp, 0, sizeof(cTemp));
@@ -28894,25 +27158,25 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_REWARDGOLD:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRewardGold>(
-				pData, sizeof(hb::net::PacketNotifyRewardGold));
-			if (!pkt) return;
-			m_iRewardGold = pkt->gold;
-		}
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRewardGold>(
+			pData, sizeof(hb::net::PacketNotifyRewardGold));
+		if (!pkt) return;
+		m_iRewardGold = pkt->gold;
+	}
+	break;
 
 	case DEF_NOTIFY_SERVERSHUTDOWN:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerShutdown>(
-				pData, sizeof(hb::net::PacketNotifyServerShutdown));
-			if (!pkt) return;
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Noticement) == false)
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Noticement, pkt->mode, 0, 0);
-			else m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode = pkt->mode;
-		}
-		PlaySound('E', 27, 0);
-		break;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerShutdown>(
+			pData, sizeof(hb::net::PacketNotifyServerShutdown));
+		if (!pkt) return;
+		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Noticement) == false)
+			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Noticement, pkt->mode, 0, 0);
+		else m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode = pkt->mode;
+	}
+	PlaySound('E', 27, 0);
+	break;
 
 	case DEF_NOTIFY_GLOBALATTACKMODE:
 		NotifyMsg_GlobalAttackMode(pData);
@@ -28923,11 +27187,11 @@ void CGame::NotifyMsgHandler(char* pData)
 		break;
 
 	case DEF_NOTIFY_FISHCANCELED:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishCanceled>(
-				pData, sizeof(hb::net::PacketNotifyFishCanceled));
-			if (!pkt) return;
-			switch (pkt->reason) {
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFishCanceled>(
+			pData, sizeof(hb::net::PacketNotifyFishCanceled));
+		if (!pkt) return;
+		switch (pkt->reason) {
 		case 0:
 			AddEventList(NOTIFY_MSG_HANDLER52, 10);
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
@@ -28943,8 +27207,8 @@ void CGame::NotifyMsgHandler(char* pData)
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
 			break;
 		}
-		}
-		break;
+	}
+	break;
 
 	case DEF_NOTIFY_FISHSUCCESS:
 		AddEventList(NOTIFY_MSG_HANDLER55, 10);
@@ -29248,11 +27512,11 @@ void CGame::NotifyMsgHandler(char* pData)
 		NotifyMsg_ForceDisconn(pData);
 		break;
 	case DEF_NOTIFY_FIGHTZONERESERVE:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFightZoneReserve>(
-				pData, sizeof(hb::net::PacketNotifyFightZoneReserve));
-			if (!pkt) return;
-			switch (pkt->result) {
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyFightZoneReserve>(
+			pData, sizeof(hb::net::PacketNotifyFightZoneReserve));
+		if (!pkt) return;
+		switch (pkt->result) {
 		case -5:
 			AddEventList(NOTIFY_MSG_HANDLER68, 10);
 			break;
@@ -29283,8 +27547,8 @@ void CGame::NotifyMsgHandler(char* pData)
 			AddEventList(cTxt, 10);
 			break;
 		}
-		}
-		break;
+	}
+	break;
 	}
 }
 
@@ -30273,139 +28537,6 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 }
 
 
-
-void CGame::DlgBoxClick_SysMenu(short msX, short msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sY;
-	if ((msX >= sX + 120) && (msX <= sX + 150) && (msY >= sY + 63) && (msY <= sY + 74))
-	{
-		m_cDetailLevel = 0; // v1.41
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
-		PlaySound('E', 14, 5);
-	}
-
-	if ((msX >= sX + 151) && (msX <= sX + 200) && (msY >= sY + 63) && (msY <= sY + 74))
-	{
-		m_cDetailLevel = 1;
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
-		PlaySound('E', 14, 5);
-	}
-
-	if ((msX >= sX + 201) && (msX <= sX + 234) && (msY >= sY + 63) && (msY <= sY + 74))
-	{
-		m_cDetailLevel = 2;
-		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
-		PlaySound('E', 14, 5);
-	}
-
-	if ((msX >= sX + 24) && (msX <= sX + 115) && (msY >= sY + 81) && (msY <= sY + 100))
-	{
-		if (AudioManager::Get().IsSoundAvailable())
-		{
-			if (AudioManager::Get().IsSoundEnabled())
-			{
-				AudioManager::Get().StopSound(SoundType::Effect, 38);
-				AudioManager::Get().SetSoundEnabled(false);
-				AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
-			}
-			else
-			{
-				AudioManager::Get().SetSoundEnabled(true);
-				AddEventList(NOTIFY_MSG_SOUND_ON, 10);
-			}
-		}
-	}
-
-	if ((msX >= sX + 116) && (msX <= sX + 202) && (msY >= sY + 81) && (msY <= sY + 100))
-	{
-		if (AudioManager::Get().IsSoundAvailable())
-		{
-			if (AudioManager::Get().IsMusicEnabled()) 	// Music Off
-			{
-				AudioManager::Get().SetMusicEnabled(false);
-				AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
-				AudioManager::Get().StopMusic();
-			}
-			else // Music On
-			{
-				AudioManager::Get().SetMusicEnabled(true);
-				AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
-				StartBGM();
-			}
-		}
-	}
-
-
-	if ((msX >= sX + 23) && (msX <= sX + 108) && (msY >= sY + 108) && (msY <= sY + 119))
-	{
-		if (m_bWhisper == true)
-		{
-			m_bWhisper = false;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND7, 10);
-		}
-		else
-		{
-			m_bWhisper = true;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND6, 10);
-		}
-	}
-
-	if ((msX >= sX + 123) && (msX <= sX + 203) && (msY >= sY + 108) && (msY <= sY + 119))
-	{
-		if (m_bShout == true)
-		{
-			m_bShout = false;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
-		}
-		else
-		{
-			m_bShout = true;
-			AddEventList(BCHECK_LOCAL_CHAT_COMMAND8, 10);
-		}
-	}
-
-	//Transparency Change
-	if ((msX >= sX + 28) && (msX <= sX + 235) && (msY >= sY + 156) && (msY <= sY + 171)) m_bDialogTrans = !m_bDialogTrans;
-
-	//Guide Map Toggle
-	if ((msX >= sX + 28) && (msX <= sX + 127) && (msY >= sY + 178) && (msY <= sY + 193))
-	{
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap)) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
-		else m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0, 0);
-	}
-
-	if (m_bForceDisconn) return;
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY)) {
-		if (m_cLogOutCount == -1)
-
-#ifdef _DEBUG
-			m_cLogOutCount = 1;
-#else
-			m_cLogOutCount = 11;
-#endif
-		else {
-			m_cLogOutCount = -1;
-			AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-		}
-		PlaySound('E', 14, 5);
-	}
-
-	if ((m_iHP <= 0) && (m_cRestartCount == -1))
-	{
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-		{
-			m_cRestartCount = 5;
-			m_dwRestartCountTime = GameClock::GetTimeMS();
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-			wsprintf(G_cTxt, DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
-			AddEventList(G_cTxt, 10);
-			PlaySound('E', 14, 5);
-		}
-	}
-}
 
 void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 {
@@ -32406,46 +30537,46 @@ void CGame::MotionResponseHandler(char* pData)
 		break;
 
 	case DEF_OBJECTMOVE_CONFIRM:
-		{
-			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveConfirm>(
-				pData, sizeof(hb::net::PacketResponseMotionMoveConfirm));
-			if (!pkt) return;
-			sX = pkt->x;
-			sY = pkt->y;
-			cDir = static_cast<char>(pkt->dir);
-			m_iSP = m_iSP - pkt->stamina_cost;
-			if (m_iSP < 0) m_iSP = 0;
-			// v1.3
-			//m_iOccupyStatus = (int)*cp;
-			iPreHP = m_iHP;
-			m_iHP = pkt->hp;
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveConfirm>(
+			pData, sizeof(hb::net::PacketResponseMotionMoveConfirm));
+		if (!pkt) return;
+		sX = pkt->x;
+		sY = pkt->y;
+		cDir = static_cast<char>(pkt->dir);
+		m_iSP = m_iSP - pkt->stamina_cost;
+		if (m_iSP < 0) m_iSP = 0;
+		// v1.3
+		//m_iOccupyStatus = (int)*cp;
+		iPreHP = m_iHP;
+		m_iHP = pkt->hp;
 
-			if (m_iHP != iPreHP)
+		if (m_iHP != iPreHP)
+		{
+			if (m_iHP < iPreHP)
 			{
-				if (m_iHP < iPreHP)
+				wsprintf(G_cTxt, NOTIFYMSG_HP_DOWN, iPreHP - m_iHP);
+				AddEventList(G_cTxt, 10);
+				m_dwDamagedTime = GameClock::GetTimeMS();
+				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
 				{
-					wsprintf(G_cTxt, NOTIFYMSG_HP_DOWN, iPreHP - m_iHP);
-					AddEventList(G_cTxt, 10);
-					m_dwDamagedTime = GameClock::GetTimeMS();
-					if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
-					{
-						m_cLogOutCount = -1;
-						AddEventList(MOTION_RESPONSE_HANDLER2, 10);
-					}
-				}
-				else
-				{
-					wsprintf(G_cTxt, NOTIFYMSG_HP_UP, m_iHP - iPreHP);
-					AddEventList(G_cTxt, 10);
+					m_cLogOutCount = -1;
+					AddEventList(MOTION_RESPONSE_HANDLER2, 10);
 				}
 			}
-			m_pMapData->ShiftMapData(cDir);
-			const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
-			_ReadMapData(sX, sY, mapData);
-			m_bIsRedrawPDBGS = true;
-			m_cCommandCount--;
+			else
+			{
+				wsprintf(G_cTxt, NOTIFYMSG_HP_UP, m_iHP - iPreHP);
+				AddEventList(G_cTxt, 10);
+			}
 		}
-		break;
+		m_pMapData->ShiftMapData(cDir);
+		const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
+		_ReadMapData(sX, sY, mapData);
+		m_bIsRedrawPDBGS = true;
+		m_cCommandCount--;
+	}
+	break;
 
 	case DEF_OBJECTMOVE_REJECT:
 		if (m_iHP <= 0) return;
@@ -32678,8 +30809,12 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
 			if (m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX)
 			{
-				m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sX = msX - m_stMCursor.sDistX;
-				m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sY = msY - m_stMCursor.sDistY;
+				// HudPanel is fixed and cannot be moved
+				if (m_stMCursor.sSelectedObjectID != DialogBoxId::HudPanel)
+				{
+					m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sX = msX - m_stMCursor.sDistX;
+					m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sY = msY - m_stMCursor.sDistY;
+				}
 			}
 			m_stMCursor.sPrevX = msX;
 			m_stMCursor.sPrevY = msY;
@@ -34149,1349 +32284,6 @@ void CGame::DrawDialogBox_Bank(short msX, short msY, short msZ, char cLB)
 	}
 }
 
-
-void CGame::DrawDialogBox_Character(short msX, short msY)
-{
-	short sX, sY, sSprH, sFrame;
-	int i, iR, iG, iB, iSkirtDraw = 0;
-	char cTxt2[120], cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
-	char  cItemColor, cCollison;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 0, false, m_bDialogTrans);
-
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-	strcpy(G_cTxt, m_cPlayerName);
-	strcat(G_cTxt, " : ");
-
-	if (m_iPKCount > 0) {
-		std::memset(cTxt2, 0, sizeof(cTxt2));
-		wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER1, m_iPKCount);
-		strcat(G_cTxt, cTxt2);
-	}
-
-	std::memset(cTxt2, 0, sizeof(cTxt2));
-	wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER2, m_iContribution);
-	strcat(G_cTxt, cTxt2);
-	PutAlignedString(sX + 24, sX + 252, sY + 52, G_cTxt, 45, 20, 20);
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-
-	if (m_bCitizen == false)
-	{
-		strcpy(G_cTxt, DRAW_DIALOGBOX_CHARACTER7); // "Traveller"
-	}
-	else
-	{
-		if (m_bHunter)
-		{
-			if (m_bAresden)
-				strcat(G_cTxt, DEF_MSG_ARECIVIL); //
-			else strcat(G_cTxt, DEF_MSG_ELVCIVIL); // "Elvine Civilian"
-		}
-		else
-		{
-			if (m_bAresden)
-				strcat(G_cTxt, DEF_MSG_ARESOLDIER); //
-			else strcat(G_cTxt, DEF_MSG_ELVSOLDIER); //
-		}
-		if (m_iGuildRank >= 0)
-		{
-			strcat(G_cTxt, "(");
-			strcat(G_cTxt, m_cGuildName);
-			if (m_iGuildRank == 0) strcat(G_cTxt, DEF_MSG_GUILDMASTER1);
-			else strcat(G_cTxt, DEF_MSG_GUILDSMAN1); // " Guildsman)"
-		}
-	}
-
-	PutAlignedString(sX, sX + 275, sY + 69, G_cTxt, 45, 25, 25);
-
-	int iTemp;
-	// Level
-	wsprintf(G_cTxt, "%d", m_iLevel);
-	PutAlignedString(sX + 180, sX + 250, sY + 106, G_cTxt, 45, 25, 25);
-	// Exp
-	DisplayCommaNumber_G_cTxt(m_iExp);
-	PutAlignedString(sX + 180, sX + 250, sY + 125, G_cTxt, 45, 25, 25);
-	// Next.Exp
-	DisplayCommaNumber_G_cTxt(iGetLevelExp(m_iLevel + 1));
-	PutAlignedString(sX + 180, sX + 250, sY + 142, G_cTxt, 45, 25, 25);
-
-	// Hp
-	iTemp = m_iHP;
-	wsprintf(G_cTxt, "%d/%d", iTemp, m_iVit * 3 + m_iLevel * 2 + (m_iStr + m_iAngelicStr) / 2);
-	PutAlignedString(sX + 180, sX + 250, sY + 173, G_cTxt, 45, 25, 25);
-
-	// Mp
-	iTemp = m_iMP;
-	wsprintf(G_cTxt, "%d/%d", iTemp, (m_iMag + m_iAngelicMag) * 2 + m_iLevel * 2 + (m_iInt + m_iAngelicInt) / 2);
-	PutAlignedString(sX + 180, sX + 250, sY + 191, G_cTxt, 45, 25, 25);
-
-	// Sp
-	iTemp = m_iSP;
-	wsprintf(G_cTxt, "%d/%d", iTemp, m_iLevel * 2 + (m_iStr + m_iAngelicStr) * 2);
-	PutAlignedString(sX + 180, sX + 250, sY + 208, G_cTxt, 45, 25, 25);
-
-	// Max.Load
-	wsprintf(G_cTxt, "%d/%d", (_iCalcTotalWeight() / 100), ((m_iStr + m_iAngelicStr) * 5 + m_iLevel * 5));
-	PutAlignedString(sX + 180, sX + 250, sY + 240, G_cTxt, 45, 25, 25);
-
-	// Enemy Kills
-	wsprintf(G_cTxt, "%d", m_iEnemyKillCount);
-	PutAlignedString(sX + 180, sX + 250, sY + 257, G_cTxt, 45, 25, 25);
-
-	// Str
-	if (m_iAngelicStr == 0)
-	{
-		wsprintf(G_cTxt, "%d", m_iStr);
-		PutAlignedString(sX + 48, sX + 82, sY + 285, G_cTxt, 45, 25, 25);
-	}
-	else
-	{
-		wsprintf(G_cTxt, "%d", m_iStr + m_iAngelicStr);
-		PutAlignedString(sX + 48, sX + 82, sY + 285, G_cTxt, 0, 0, 192);
-	}
-
-	// Vit
-	wsprintf(G_cTxt, "%d", m_iVit);
-	PutAlignedString(sX + 218, sX + 251, sY + 285, G_cTxt, 45, 25, 25);
-
-	// Dex
-	if (m_iAngelicDex == 0)
-	{
-		wsprintf(G_cTxt, "%d", m_iDex);
-		PutAlignedString(sX + 48, sX + 82, sY + 302, G_cTxt, 45, 25, 25);
-	}
-	else
-	{
-		wsprintf(G_cTxt, "%d", m_iDex + m_iAngelicDex);
-		PutAlignedString(sX + 48, sX + 82, sY + 302, G_cTxt, 0, 0, 192);
-	}
-
-	// Int
-	if (m_iAngelicInt == 0)
-	{
-		wsprintf(G_cTxt, "%d", m_iInt);
-		PutAlignedString(sX + 135, sX + 167, sY + 285, G_cTxt, 45, 25, 25);
-	}
-	else
-	{
-		wsprintf(G_cTxt, "%d", m_iInt + m_iAngelicInt);
-		PutAlignedString(sX + 135, sX + 167, sY + 285, G_cTxt, 0, 0, 192);
-	}
-
-	// Mag
-	if (m_iAngelicMag == 0)
-	{
-		wsprintf(G_cTxt, "%d", m_iMag);
-		PutAlignedString(sX + 135, sX + 167, sY + 302, G_cTxt, 45, 25, 25);
-	}
-	else
-	{
-		wsprintf(G_cTxt, "%d", m_iMag + m_iAngelicMag);
-		PutAlignedString(sX + 135, sX + 167, sY + 302, G_cTxt, 0, 0, 192);
-	}
-
-	// Chr
-	wsprintf(G_cTxt, "%d", m_iCharisma);
-	PutAlignedString(sX + 218, sX + 251, sY + 302, G_cTxt, 45, 25, 25);
-
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
-		cEquipPoiStatus[i] = -1;
-
-	for (i = 0; i < DEF_MAXITEMS; i++)
-	{
-		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))	cEquipPoiStatus[m_pItemList[i]->m_cEquipPos] = i;
-	}
-	if ((m_sPlayerType >= 1) && (m_sPlayerType <= 3))
-	{
-		cCollison = -1;
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->PutSpriteFast(sX + 171, sY + 290, m_sPlayerType - 1, m_dwCurTime);
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
-		{
-			_GetHairColorRGB(((m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->PutSpriteRGB(sX + 171, sY + 290, (m_sPlayerAppr1 & 0x0F00) >> 8, iR, iG, iB, m_dwCurTime);
-		}
-
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->PutSpriteFast(sX + 171, sY + 290, (m_sPlayerAppr1 & 0x000F), m_dwCurTime);
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BACK]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 41, sY + 137, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 41, sY + 137, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 41, sY + 137, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 41, sY + 137, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 41, sY + 137, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BACK;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_PANTS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_ARMS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BOOTS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BODY]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BODY;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_FULLBODY;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 90, sY + 170, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 90, sY + 170, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 90, sY + 170, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 90, sY + 170, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 90, sY + 170, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_LHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 57, sY + 186, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 57, sY + 186, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 57, sY + 186, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 57, sY + 186, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_RHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 57, sY + 186, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 57, sY + 186, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 57, sY + 186, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 57, sY + 186, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_TWOHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_NECK]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 35, sY + 120, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 35, sY + 120, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 35, sY + 120, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 35, sY + 120, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_NECK;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 32, sY + 193, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 32, sY + 193, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 32, sY + 193, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 32, sY + 193, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_RFINGER;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 98, sY + 182, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 98, sY + 182, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 98, sY + 182, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 98, sY + 182, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_LFINGER;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteFast(sX + 72, sY + 135, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutSpriteRGB(sX + 72, sY + 135, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite2(sX + 72, sY + 135, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSpriteRGB(sX + 72, sY + 135, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 72, sY + 135, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_HEAD;
-		}
-		if (cCollison != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[cCollison]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[cCollison]]->m_sSpriteFrame;
-			if (cCollison == DEF_EQUIPPOS_HEAD)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 72, sY + 135, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_RFINGER)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 32, sY + 193, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_LFINGER)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 98, sY + 182, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_NECK)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 35, sY + 120, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_TWOHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 57, sY + 186, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_RHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 57, sY + 186, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_LHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 90, sY + 170, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BODY)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_FULLBODY)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BOOTS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_ARMS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_PANTS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BACK)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->PutTransSprite(sX + 41, sY + 137, sFrame, m_dwCurTime);
-		}
-	}
-	else if ((m_sPlayerType >= 4) && (m_sPlayerType <= 6))
-	{
-		cCollison = -1;
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->PutSpriteFast(sX + 171, sY + 290, m_sPlayerType - 4, m_dwCurTime);
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
-		{
-			_GetHairColorRGB(((m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->PutSpriteRGB(sX + 171, sY + 290, (m_sPlayerAppr1 & 0x0F00) >> 8, iR, iG, iB, m_dwCurTime);
-		}
-
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->PutSpriteFast(sX + 171, sY + 290, (m_sPlayerAppr1 & 0x000F), m_dwCurTime);
-
-		if ((cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1))
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if ((sSprH == 12) && (sFrame == 0)) iSkirtDraw = 1;
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BACK]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 45, sY + 143, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 45, sY + 143, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 45, sY + 143, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 45, sY + 143, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 45, sY + 143, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BACK;
-		}
-
-		if ((cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) && (iSkirtDraw == 1))
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BOOTS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_PANTS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_ARMS;
-		}
-
-		if ((cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) && (iSkirtDraw == 0))
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BOOTS;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_BODY]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_BODY;
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 171, sY + 290, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 171, sY + 290, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_FULLBODY;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 84, sY + 175, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 84, sY + 175, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 84, sY + 175, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 84, sY + 175, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 84, sY + 175, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_LHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_cItemColor;
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 60, sY + 191, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 60, sY + 191, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 60, sY + 191, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 60, sY + 191, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_RHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_cItemColor;
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 60, sY + 191, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 60, sY + 191, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 60, sY + 191, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 60, sY + 191, sFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_TWOHAND;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_NECK]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 35, sY + 120, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 35, sY + 120, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 35, sY + 120, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 35, sY + 120, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_NECK;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 32, sY + 193, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 32, sY + 193, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 32, sY + 193, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 32, sY + 193, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_RFINGER;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 98, sY + 182, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 98, sY + 182, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 98, sY + 182, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 98, sY + 182, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_LFINGER;
-		}
-
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			cItemColor = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_cItemColor;
-
-			if (m_bIsItemDisabled[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]] == false)
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 72, sY + 139, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteRGB(sX + 72, sY + 139, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			else
-			{
-				if (cItemColor == 0)
-					m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite2(sX + 72, sY + 139, sFrame, m_dwCurTime);
-				else m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSpriteRGB(sX + 72, sY + 139, sFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], m_dwCurTime);
-			}
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 72, sY + 139, sFrame, msX, msY))
-				cCollison = DEF_EQUIPPOS_HEAD;
-		}
-		if (cCollison != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[cCollison]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[cCollison]]->m_sSpriteFrame;
-			if (cCollison == DEF_EQUIPPOS_HEAD)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 72, sY + 139, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_RFINGER)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 32, sY + 193, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_LFINGER)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 98, sY + 182, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_NECK)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 35, sY + 120, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_TWOHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 60, sY + 191, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_RHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 60, sY + 191, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_LHAND)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 84, sY + 175, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BODY)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_FULLBODY)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BOOTS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_ARMS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_PANTS)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 171, sY + 290, sFrame, m_dwCurTime);
-			else if (cCollison == DEF_EQUIPPOS_BACK)
-				m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 45, sY + 143, sFrame, m_dwCurTime);
-		}
-	}
-
-	// v2.05
-	if ((msX >= sX + 15) && (msX <= sX + 15 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 15, sY + 340, 5, false, m_bDialogTrans);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 15, sY + 340, 4, false, m_bDialogTrans);
-
-	if ((msX >= sX + 98) && (msX <= sX + 98 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 98, sY + 340, 45, false, m_bDialogTrans);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 98, sY + 340, 44, false, m_bDialogTrans);
-
-	if ((msX >= sX + 180) && (msX <= sX + 180 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 180, sY + 340, 11, false, m_bDialogTrans);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 180, sY + 340, 10, false, m_bDialogTrans);
-}
-
-// 3.51 Level Up Dialog - Diuuude
-void CGame::DrawDialogBox_LevelUpSetting(short msX, short msY)
-{
-	short sX, sY, szX;
-	uint32_t dwTime = m_dwCurTime;
-	char cTxt[120];
-	int iStats;
-	sX = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + 16, sY + 100, 4);
-
-	PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING1);
-	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING2);
-
-	// Points Left - Display in green if > 0
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, RGB(0, 0, 0));
-	wsprintf(cTxt, "%d", m_iLU_Point);
-	if (m_iLU_Point > 0)
-	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 255, 0));
-	}
-	else
-	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 0, 0));
-	}
-	// Strength
-	PutString(sX + 24, sY + 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iStr);
-	PutString(sX + 109, sY + 125, cTxt, RGB(25, 35, 25));
-	iStats = m_iStr + m_cLU_Str;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iStr)
-	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 127) && (msY <= sY + 133) && (m_iStr < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 127, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133) && (m_cLU_Str > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 127, 6, dwTime);
-
-	// Vitality
-	PutString(sX + 24, sY + 144, DRAW_DIALOGBOX_LEVELUP_SETTING5, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iVit);
-	PutString(sX + 109, sY + 144, cTxt, RGB(25, 35, 25));
-	iStats = m_iVit + m_cLU_Vit;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iVit)
-	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 146) && (msY <= sY + 152) && (m_iVit < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 146, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152) && (m_cLU_Vit > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 146, 6, dwTime);
-
-	// Dexterity
-	PutString(sX + 24, sY + 163, DRAW_DIALOGBOX_LEVELUP_SETTING6, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iDex);
-	PutString(sX + 109, sY + 163, cTxt, RGB(25, 35, 25));
-	iStats = m_iDex + m_cLU_Dex;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iDex)
-	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 165) && (msY <= sY + 171) && (m_iDex < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 165, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171) && (m_cLU_Dex > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 165, 6, dwTime);
-
-	// Intelligence
-	PutString(sX + 24, sY + 182, DRAW_DIALOGBOX_LEVELUP_SETTING7, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iInt);
-	PutString(sX + 109, sY + 182, cTxt, RGB(25, 35, 25));
-	iStats = m_iInt + m_cLU_Int;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iInt)
-	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 184) && (msY <= sY + 190) && (m_iInt < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 184, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190) && (m_cLU_Int > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 184, 6, dwTime);
-
-	// Magic
-	PutString(sX + 24, sY + 201, DRAW_DIALOGBOX_LEVELUP_SETTING8, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iMag);
-	PutString(sX + 109, sY + 201, cTxt, RGB(25, 35, 25));
-	iStats = m_iMag + m_cLU_Mag;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iMag)
-	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 203) && (msY <= sY + 209) && (m_iMag < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 203, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209) && (m_cLU_Mag > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 203, 6, dwTime);
-
-	// Charisma
-	PutString(sX + 24, sY + 220, DRAW_DIALOGBOX_LEVELUP_SETTING9, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_iCharisma);
-	PutString(sX + 109, sY + 220, cTxt, RGB(25, 35, 25));
-	iStats = m_iCharisma + m_cLU_Char;
-	wsprintf(cTxt, "%d", iStats);
-	if (iStats != m_iCharisma)
-	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(255, 0, 0));
-	}
-	else
-	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(25, 35, 25));
-	}
-	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 222) && (msY <= sY + 228) && (m_iCharisma < iMaxStats))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + 222, 5, dwTime);
-	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228) && (m_cLU_Char > 0))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + 222, 6, dwTime);
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-	if ((m_cLU_Str == 0) && (m_cLU_Vit == 0) && (m_cLU_Dex == 0) && (m_cLU_Int == 0) && (m_cLU_Mag == 0) && (m_cLU_Char == 0))
-	{
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			if (m_iLU_Point <= 0) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 21);
-		}
-		else
-		{
-			if (m_iLU_Point <= 0) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 20);
-		}
-	}
-}
-
-void CGame::DrawDialogBox_CityHallMenu(short msX, short msY)
-{
-	short sX, sY, szX;
-	char cTxt[120];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 18);//CityHall Menu Text
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode) {
-	case 0:
-		// citizenship req
-		if (m_bCitizen == false)
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
-				PutAlignedString(sX, sX + szX, sY + 70, DRAW_DIALOGBOX_CITYHALL_MENU1, 255, 255, 255);	//"
-			else PutAlignedString(sX, sX + szX, sY + 70, DRAW_DIALOGBOX_CITYHALL_MENU1, 4, 0, 50);		//"
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 70, DRAW_DIALOGBOX_CITYHALL_MENU1, 65, 65, 65);			//"
-
-		if (m_iRewardGold > 0)
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
-				PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU4, 255, 255, 255);	//"
-			else PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU4, 4, 0, 50);		//"
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU4, 65, 65, 65);			//"
-
-		// 3.51 Cityhall Menu - Request Hero's Items - Diuuude
-		if ((m_iEnemyKillCount >= 100) && (m_iContribution >= 10))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
-				PutAlignedString(sX, sX + szX, sY + 120, DRAW_DIALOGBOX_CITYHALL_MENU8, 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 120, DRAW_DIALOGBOX_CITYHALL_MENU8, 4, 0, 50);
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 120, DRAW_DIALOGBOX_CITYHALL_MENU8, 65, 65, 65);
-
-		// Cancel quest
-		if (m_stQuest.sQuestType != 0)
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 170))
-				PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_CITYHALL_MENU11, 255, 255, 255);//"
-			else PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_CITYHALL_MENU11, 4, 0, 50);//"
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_CITYHALL_MENU11, 65, 65, 65);//"
-
-		// change playmode
-		if ((m_bIsCrusadeMode == false) && m_bCitizen && (m_iPKCount == 0))
-		{
-			if (m_bHunter == true)
-			{
-				if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-					PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 255, 255, 255);
-				else
-					PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 4, 0, 50);
-			}
-			else if (m_iLevel < 100)
-			{
-				if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-					PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 255, 255, 255);
-				else
-					PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 4, 0, 50);
-			}
-			else // Disable...
-				PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 65, 65, 65);
-		}
-		else       PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 65, 65, 65);
-
-		// Teleport menu
-		if ((m_bIsCrusadeMode == false) && m_bCitizen && (m_iPKCount == 0))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
-				PutAlignedString(sX, sX + szX, sY + 195, DRAW_DIALOGBOX_CITYHALL_MENU69, 255, 255, 255);//"Teleporting to dungeon level 2."
-			else PutAlignedString(sX, sX + szX, sY + 195, DRAW_DIALOGBOX_CITYHALL_MENU69, 4, 0, 50);
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 195, DRAW_DIALOGBOX_CITYHALL_MENU69, 65, 65, 65);
-
-		//Change crusade role
-		if (m_bIsCrusadeMode && m_bCitizen)
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 220))
-				PutAlignedString(sX, sX + szX, sY + 220, DRAW_DIALOGBOX_CITYHALL_MENU14, 255, 255, 255);//"Change the crusade assignment."
-			else PutAlignedString(sX, sX + szX, sY + 220, DRAW_DIALOGBOX_CITYHALL_MENU14, 4, 0, 50);//"
-		}
-		else    PutAlignedString(sX, sX + szX, sY + 220, DRAW_DIALOGBOX_CITYHALL_MENU14, 65, 65, 65);//"
-
-		PutAlignedString(sX, sX + szX, sY + 270, DRAW_DIALOGBOX_CITYHALL_MENU17);//"Select an Item you want."
-
-		break;
-
-	case 1: // become citizen warning
-		PutAlignedString(sX, sX + szX, sY + 80, DRAW_DIALOGBOX_CITYHALL_MENU18, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU19, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_CITYHALL_MENU20, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU21, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_CITYHALL_MENU22, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU23, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU24, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 200, DRAW_DIALOGBOX_CITYHALL_MENU25, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU26, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_CITYHALL_MENU27, 55, 25, 25);//"
-
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
-		break;
-
-	case 2: // Offering Citizenship.
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_CITYHALL_MENU28, 55, 25, 25);//"
-		break;
-
-	case 3: //Congratulations!! You acquired Citizenship"
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_CITYHALL_MENU29, 55, 25, 25);//"
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 4: //Failed on acquiring citizenship!"
-		PutAlignedString(sX, sX + szX, sY + 80, DRAW_DIALOGBOX_CITYHALL_MENU30, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 100, DRAW_DIALOGBOX_CITYHALL_MENU31, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 115, DRAW_DIALOGBOX_CITYHALL_MENuint32_t, 55, 25, 25);//"
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 5: //The prize gold for your"
-		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU33, 55, 25, 25);//"
-		wsprintf(cTxt, DRAW_DIALOGBOX_CITYHALL_MENU34, m_iRewardGold);//"
-		PutAlignedString(sX, sX + szX, sY + 140, cTxt, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU35, 55, 25, 25);//"
-
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
-		break;
-
-	case 7:// 3.51 Cityhall Menu - Request Hero's Items - Diuuude
-		PutAlignedString(sX, sX + szX, sY + 60, DRAW_DIALOGBOX_CITYHALL_MENU46, 255, 255, 255);// Here are the Hero's Item aivable :
-		// Hero's Cape (EK 300)
-		if (m_iEnemyKillCount >= 300)
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 110))
-				PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU47, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU47, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU47, 65, 65, 65);// Disabled Mode
-		// Hero's Helm (EK 150 - Contrib 20)
-		if ((m_iEnemyKillCount >= 150) && (m_iContribution >= 20))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 125) && (msY < sY + 140))
-				PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU48, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU48, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU48, 65, 65, 65);// Disabled Mode
-		// Hero's Cap (EK 100 - Contrib 20)
-		if ((m_iEnemyKillCount >= 100) && (m_iContribution >= 20))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 155) && (msY < sY + 170))
-				PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU49, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU49, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU49, 65, 65, 65);// Disabled Mode
-		// Hero's Armor (EK 300 - Contrib 30)
-		if ((m_iEnemyKillCount >= 300) && (m_iContribution >= 30))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 185) && (msY < sY + 200))
-				PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_CITYHALL_MENU50, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_CITYHALL_MENU50, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_CITYHALL_MENU50, 65, 65, 65);// Disabled Mode
-		// Hero's Robe (EK 200 - Contrib 20)
-		if ((m_iEnemyKillCount >= 200) && (m_iContribution >= 20))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 215) && (msY < sY + 230))
-				PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU51, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU51, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU51, 65, 65, 65);// Disabled Mode
-		// Hero's Hauberk (EK 100 - Contrib 10)
-		if ((m_iEnemyKillCount >= 100) && (m_iContribution >= 10))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 245) && (msY < sY + 260))
-				PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_CITYHALL_MENU52, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_CITYHALL_MENU52, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_CITYHALL_MENU52, 65, 65, 65);// Disabled Mode
-		// Hero's Leggings (EK 150 - Contrib 15)
-		if ((m_iEnemyKillCount >= 150) && (m_iContribution >= 15))
-		{
-			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 275) && (msY < sY + 290))
-				PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_CITYHALL_MENU53, 255, 255, 255);// On mouse over Mode
-			else PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_CITYHALL_MENU53, 4, 0, 50);// Normal Mode
-		}
-		else PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_CITYHALL_MENU53, 65, 65, 65);// Disabled Mode
-		break;
-
-	case 8: // cancel current quest?
-		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU54, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_CITYHALL_MENU55, 55, 25, 25);//"
-
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
-		break;
-
-	case 9: // You are civilian/ combatant now
-		if (m_bHunter)
-		{
-			PutAlignedString(sX, sX + szX, sY + 53, DRAW_DIALOGBOX_CITYHALL_MENU57, 200, 200, 25);//"
-		}
-		else
-		{
-			PutAlignedString(sX, sX + szX, sY + 53, DRAW_DIALOGBOX_CITYHALL_MENU58, 200, 200, 25);//"
-		}
-		PutAlignedString(sX, sX + szX, sY + 78, DRAW_DIALOGBOX_CITYHALL_MENU59, 55, 25, 25);//"
-
-		PutString(sX + 35, sY + 108, DRAW_DIALOGBOX_CITYHALL_MENU60, RGB(220, 130, 45));//"
-		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU61, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_CITYHALL_MENU62, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU63, 55, 25, 25);//"
-		PutString(sX + 35, sY + 177, DRAW_DIALOGBOX_CITYHALL_MENU64, RGB(220, 130, 45));//"
-		PutAlignedString(sX, sX + szX, sY + 194, DRAW_DIALOGBOX_CITYHALL_MENU65, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 209, DRAW_DIALOGBOX_CITYHALL_MENU66, 55, 25, 25);//"
-		PutAlignedString(sX, sX + szX, sY + 224, DRAW_DIALOGBOX_CITYHALL_MENU67, 55, 25, 25);//"
-
-		PutAlignedString(sX, sX + szX, sY + 252, DRAW_DIALOGBOX_CITYHALL_MENU68, 55, 25, 25);//"
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
-		break;
-
-	case 10: // TP 2nd screen
-		if (m_iTeleportMapCount > 0)
-		{
-			PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_CITYHALL_MENU69, 55, 25, 25);//"Teleporting to dungeon level 2."
-			PutAlignedString(sX, sX + szX, sY + 80, DRAW_DIALOGBOX_CITYHALL_MENU70, 55, 25, 25);//"5000Gold is required"
-			PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU71, 55, 25, 25);//"to teleport to dungeon level 2."
-			PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_CITYHALL_MENU72, 55, 25, 25);//"Would you like to teleport?"
-			PutString2(sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, 55, 25, 25);//"Civilians cannot go some area."
-			for (int i = 0; i < m_iTeleportMapCount; i++)
-			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				GetOfficialMapName(m_stTeleportList[i].mapname, cTxt);
-				wsprintf(G_cTxt, DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_stTeleportList[i].iCost);
-				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, G_cTxt, 255, 255, 255);
-				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, G_cTxt, 250, 250, 0);
-			}
-		}
-		else if (m_iTeleportMapCount == -1)
-		{
-			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU73, 55, 25, 25);//"Now it's searching for possible area"
-			PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_CITYHALL_MENU74, 55, 25, 25);//"to teleport."
-			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU75, 55, 25, 25);//"Please wait for a moment."
-		}
-		else
-		{
-			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU76, 55, 25, 25);//"There is no area that you can teleport."
-		}
-		break;
-
-	case 11: //drajwer - ask for tooking hero mantle
-		PutAlignedString(sX, sX + szX - 1, sY + 125, m_cTakeHeroItemName, 55, 25, 25);
-		PutAlignedString(sX + 1, sX + szX, sY + 125, m_cTakeHeroItemName, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_CITYHALL_MENU46A, 55, 25, 25); // would you like..
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX)
-			&& (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
-			&& (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
-		break;
-	}
-}
-/*********************************************************************************************************************
-**  void CGame::DrawDialogBox_ConfirmExchange(short msX, short msY)	(snoopy)										**
-**  description			:: paints the trade windows	Added confirmation window in v3.51								**
-**********************************************************************************************************************/
-void CGame::DrawDialogBox_ConfirmExchange(short msX, short msY)
-{
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
-	switch (m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).cMode) {
-	case 1: // Question
-		PutString(sX + 35, sY + 30, "Do you really want to exchange?", RGB(4, 0, 50));
-		PutString(sX + 36, sY + 30, "Do you really want to exchange?", RGB(4, 0, 50));
-
-		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
-
-		if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
-		break;
-
-	case 2: // Waiting for response
-		PutString(sX + 45, sY + 36, "Waiting for response...", RGB(4, 0, 50));
-		PutString(sX + 46, sY + 36, "Waiting for response...", RGB(4, 0, 50));
-		break;
-	}
-}
-
 /*********************************************************************************************************************
 **  void CGame::DrawDialogBox_Exchange(short msX, short msY)	(snoopy)											**
 **  description			:: paints the trade windows																	**
@@ -35755,39 +32547,6 @@ void CGame::DrawDialogBox_Exchange(short msX, short msY)
 			else PutString_SprFont(sX + 450, sY + 310, "Cancel", 0,0,7);*/
 		break;
 	}
-}
-
-void CGame::DrawDialogBox_Fishing(short msX, short msY)
-{
-
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	char  cTxt[120];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Fishing).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Fishing).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
-
-	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_dialogBoxManager.Info(DialogBoxId::Fishing).cStr, 0, cStr1, cStr2, cStr3);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::Fishing).cMode) {
-	case 0:
-		m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_dialogBoxManager.Info(DialogBoxId::Fishing).sV3]->PutSpriteFast(sX + 18 + 35, sY + 18 + 17, m_dialogBoxManager.Info(DialogBoxId::Fishing).sV4, dwTime);
-		wsprintf(cTxt, "%s", cStr1);
-		PutString(sX + 98, sY + 14, cTxt, RGB(255, 255, 255));
-		wsprintf(cTxt, DRAW_DIALOGBOX_FISHING1, m_dialogBoxManager.Info(DialogBoxId::Fishing).sV2);
-		PutString(sX + 98, sY + 28, cTxt, RGB(0, 0, 0));
-		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, RGB(0, 0, 0));
-		wsprintf(cTxt, "%d %%", m_dialogBoxManager.Info(DialogBoxId::Fishing).sV1);
-		PutString_SprFont(sX + 157, sY + 40, cTxt, 10, 0, 0);
-		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			PutString_SprFont(sX + 160, sY + 70, "Try Now!", 6, 6, 20);
-		else PutString_SprFont(sX + 160, sY + 70, "Try Now!", 0, 0, 7);
-		break;
-	}
-
 }
 
 void CGame::DrawDialogBox_GuildMenu(short msX, short msY)
@@ -36191,630 +32950,6 @@ void CGame::DrawDialogBox_GuildOperation(short msX, short msY)
 	}
 }
 
-int  _tmp_iMCProb[] = { 0, 300, 250, 200, 150, 100, 80, 70, 60, 50, 40 };
-int  _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,   10, 14, 28, 32, 36, 40 };
-
-void CGame::DrawDialogBox_Magic(short msX, short msY, short msZ)
-{
-	short sX, sY, sMagicCircle, sLevelMagic;
-	int  iCPivot, i, iYloc, iResult, iManaCost;
-	char cTxt[120], cMana[10];
-	uint32_t dwTime = m_dwCurTime;
-	double dV1, dV2, dV3, dV4;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Magic).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Magic).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 1, false, m_bDialogTrans);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 7, false, m_bDialogTrans);
-
-	if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Magic && msZ != 0)
-	{
-		if (msZ > 0) m_dialogBoxManager.Info(DialogBoxId::Magic).sView--;
-		if (msZ < 0) m_dialogBoxManager.Info(DialogBoxId::Magic).sView++;
-		m_DInput.m_sZ = 0;
-	}
-	if (m_dialogBoxManager.Info(DialogBoxId::Magic).sView < 0) m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9;
-	if (m_dialogBoxManager.Info(DialogBoxId::Magic).sView > 9) m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0;
-
-	//Circle
-	std::memset(cTxt, 0, sizeof(cTxt));
-	switch (m_dialogBoxManager.Info(DialogBoxId::Magic).sView) {
-	case 0: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC1);  break;//"Circle One"
-	case 1: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC2);  break;//"Circle Two"
-	case 2: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC3);  break;//"Circle Three"
-	case 3: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC4);  break;//"Circle Four"
-	case 4: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC5);  break;//"Circle Five"
-	case 5: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC6);  break;//"Circle Six"
-	case 6: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC7);  break;//"Circle Seven"
-	case 7: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC8);  break;//"Circle Eight"
-	case 8: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC9);  break;//"Circle Nine"
-	case 9: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC10); break;//"Circle Ten"
-	}
-	PutAlignedString(sX + 3, sX + 256, sY + 50, cTxt);
-	PutAlignedString(sX + 4, sX + 257, sY + 50, cTxt);
-	iCPivot = m_dialogBoxManager.Info(DialogBoxId::Magic).sView * 10;
-	iYloc = 0;
-
-	for (i = 0; i < 9; i++) {
-		if ((m_cMagicMastery[iCPivot + i] != 0) && (m_pMagicCfgList[iCPivot + i] != 0)) {
-			wsprintf(cTxt, "%s", m_pMagicCfgList[iCPivot + i]->m_cName);
-
-			CMisc::ReplaceString(cTxt, '-', ' ');
-			iManaCost = iGetManaCost(iCPivot + i);
-			if (iManaCost > m_iMP)
-			{
-				if (CMisc::bCheckIMEString(cTxt) == false)
-				{
-					PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-				}
-				else PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 5, 5, 5);
-				wsprintf(cMana, "%3d", iManaCost);
-				PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 5, 5, 5);
-			}
-			else
-				if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
-				{
-					if (CMisc::bCheckIMEString(cTxt) == false)
-					{
-						PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-						PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-					}
-					else PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 250, 250, 250);
-					wsprintf(cMana, "%3d", iManaCost);
-					PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 250, 250, 250);
-				}
-				else
-				{
-					if (CMisc::bCheckIMEString(cTxt) == false)
-					{
-						PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-						PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-					}
-					else PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 1, 1, 8);
-					wsprintf(cMana, "%3d", iManaCost);
-					PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 1, 1, 8);
-				}
-
-			iYloc += 18;
-		}
-
-	}
-
-	if (iYloc == 0) {
-		PutAlignedString(sX + 3, sX + 256, sY + 100, DRAW_DIALOGBOX_MAGIC11);//"
-		PutAlignedString(sX + 3, sX + 256, sY + 115, DRAW_DIALOGBOX_MAGIC12);//"
-		PutAlignedString(sX + 3, sX + 256, sY + 130, DRAW_DIALOGBOX_MAGIC13);//"
-		PutAlignedString(sX + 3, sX + 256, sY + 145, DRAW_DIALOGBOX_MAGIC14);//"
-		PutAlignedString(sX + 3, sX + 256, sY + 160, DRAW_DIALOGBOX_MAGIC15);//"
-	}
-
-	m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 30, sY + 250, 19, dwTime);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::Magic).sView) {
-	case 0: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 30, sY + 250, 20, dwTime); break;
-	case 1: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 43, sY + 250, 21, dwTime); break;
-	case 2: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 61, sY + 250, 22, dwTime); break;
-	case 3: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 86, sY + 250, 23, dwTime); break;
-	case 4: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 106, sY + 250, 24, dwTime); break;
-	case 5: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 121, sY + 250, 25, dwTime); break;
-	case 6: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 142, sY + 250, 26, dwTime); break;
-	case 7: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 169, sY + 250, 27, dwTime); break;
-	case 8: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 202, sY + 250, 28, dwTime); break;
-	case 9: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 222, sY + 250, 29, dwTime); break;
-	}
-
-	sMagicCircle = m_dialogBoxManager.Info(DialogBoxId::Magic).sView + 1;
-	if (m_cSkillMastery[4] == 0)
-		dV1 = 1.0f;
-	else dV1 = (double)m_cSkillMastery[4];
-	dV2 = (double)(dV1 / 100.0f);
-	dV3 = (double)_tmp_iMCProb[sMagicCircle];
-	dV1 = dV2 * dV3;
-	iResult = (int)dV1;
-	if ((m_iInt + m_iAngelicInt) > 50) iResult += ((m_iInt + m_iAngelicInt) - 50) / 2;
-	sLevelMagic = (m_iLevel / 10);
-	if (sMagicCircle != sLevelMagic)
-	{
-		if (sMagicCircle > sLevelMagic)
-		{
-			dV1 = (double)(m_iLevel - sLevelMagic * 10);
-			dV2 = (double)abs(sMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[sMagicCircle];
-			dV3 = (double)abs(sMagicCircle - sLevelMagic) * 10;
-			dV4 = (dV1 / dV3) * dV2;
-			iResult -= abs(abs(sMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[sMagicCircle] - (int)dV4);
-		}
-		else
-		{
-			iResult += 5 * abs(sMagicCircle - sLevelMagic);
-		}
-	}
-
-	switch (m_cWhetherStatus) {
-	case 0: break;
-	case 1: iResult = iResult - (iResult / 24); break;
-	case 2:	iResult = iResult - (iResult / 12); break;
-	case 3: iResult = iResult - (iResult / 5);  break;
-	}
-	for (i = 0; i < DEF_MAXITEMS; i++)
-	{
-		if (m_pItemList[i] == 0) continue;
-		if (m_bIsItemEquipped[i] == true)
-		{
-			if (((m_pItemList[i]->m_dwAttribute & 0x00F00000) >> 20) == 10)
-			{
-				dV1 = (double)iResult;
-				dV2 = (double)(((m_pItemList[i]->m_dwAttribute & 0x000F0000) >> 16) * 3);
-				dV3 = dV1 + dV2;
-				iResult = (int)dV3;
-				break;
-			}
-		}
-	}
-
-	if (iResult > 100) iResult = 100;
-	if (m_iSP < 1) iResult = iResult * 9 / 10;
-	if (iResult < 1) iResult = 1;
-
-	std::memset(cTxt, 0, sizeof(cTxt));
-	wsprintf(cTxt, DRAW_DIALOGBOX_MAGIC16, iResult);//"
-	PutAlignedString(sX, sX + 256, sY + 267, cTxt);
-	PutAlignedString(sX + 1, sX + 257, sY + 267, cTxt);
-
-	// v2.15
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 285) && (msY <= sY + 285 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 285, 49, false, m_bDialogTrans);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 285, 48, false, m_bDialogTrans);
-}
-
-void CGame::DrawDialogBox_MagicShop(short msX, short msY, short msZ)
-{
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	int  i;
-
-	int  iCPivot, iYloc;
-	char cTxt[120], cMana[10];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 1);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 14);
-
-	if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::MagicShop && msZ != 0)
-	{
-		if (msZ > 0) m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView--;
-		if (msZ < 0) m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView++;
-		m_DInput.m_sZ = 0;
-	}
-	if (m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView < 0) m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 9;
-	if (m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView > 9) m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
-
-	PutString(sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, RGB(45, 25, 25));//"Spell Name"
-	PutString(sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, RGB(45, 25, 25));//"Req.Int"
-	PutString(sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, RGB(45, 25, 25));//"Cost"
-
-	iCPivot = m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView * 10;
-
-	iYloc = 0;
-	for (i = 0; i < 9; i++) {
-		if ((m_pMagicCfgList[iCPivot + i] != 0) && (m_pMagicCfgList[iCPivot + i]->m_bIsVisible)) {
-			wsprintf(cTxt, "%s", m_pMagicCfgList[iCPivot + i]->m_cName);
-
-			CMisc::ReplaceString(cTxt, '-', ' ');
-			if (m_cMagicMastery[iCPivot + i] != 0) {
-				if (CMisc::bCheckIMEString(cTxt) == false)
-				{
-					PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-					PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-				}
-				else PutString_SprFont(sX + 24, sY + 70 + iYloc, cTxt, 5, 5, 5);
-				wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				PutString_SprFont(sX + 200, sY + 70 + iYloc, cMana, 5, 5, 5);
-				wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				PutString_SprFont(sX + 241, sY + 70 + iYloc, cMana, 5, 5, 5);
-			}
-			else
-				if ((msX >= sX + 24) && (msX <= sX + 24 + 135) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc)) {
-					if (CMisc::bCheckIMEString(cTxt) == false)
-					{
-						PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-						PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-					}
-					else PutString_SprFont(sX - 20 + 44, sY + 70 + iYloc, cTxt, 250, 250, 250);
-					wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue2);
-					PutString_SprFont(sX - 20 + 220, sY + 70 + iYloc, cMana, 250, 250, 250);
-					wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue3);
-					PutString_SprFont(sX - 20 + 261, sY + 70 + iYloc, cMana, 250, 250, 250);
-				}
-				else {
-					if (CMisc::bCheckIMEString(cTxt) == false)
-					{
-						PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-						PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-					}
-					else PutString_SprFont(sX - 20 + 44, sY + 70 + iYloc, cTxt, 1, 1, 8);
-					wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue2);
-					PutString_SprFont(sX - 20 + 220, sY + 70 + iYloc, cMana, 1, 1, 8);
-					wsprintf(cMana, "%3d", m_pMagicCfgList[iCPivot + i]->m_sValue3);
-					PutString_SprFont(sX - 20 + 261, sY + 70 + iYloc, cMana, 1, 1, 8);
-				}
-			iYloc += 18;
-		}
-	}
-
-	m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 55, sY + 250, 19, dwTime);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView) {
-	case 0: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 44 + 31, sY + 250, 20, dwTime); break;
-	case 1: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 57 + 31, sY + 250, 21, dwTime); break;
-	case 2: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 75 + 31, sY + 250, 22, dwTime); break;
-	case 3: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 100 + 31, sY + 250, 23, dwTime); break;
-	case 4: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 120 + 31, sY + 250, 24, dwTime); break;
-	case 5: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 135 + 31, sY + 250, 25, dwTime); break;
-	case 6: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 156 + 31, sY + 250, 26, dwTime); break;
-	case 7: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 183 + 31, sY + 250, 27, dwTime); break;
-	case 8: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 216 + 31, sY + 250, 28, dwTime); break;
-	case 9: m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 236 + 31, sY + 250, 29, dwTime); break;
-	}
-
-	PutAlignedString(sX, sX + m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeX, sY + 275, DRAW_DIALOGBOX_MAGICSHOP14, 45, 25, 25);
-}
-
-void CGame::DrawDialogBox_ShutDownMsg(short msX, short msY)
-{
-	short sX, sY, szX;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Noticement).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Noticement).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::Noticement).sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode) {
-	case 1:
-		std::memset(G_cTxt, 0, sizeof(G_cTxt));
-		if (m_dialogBoxManager.Info(DialogBoxId::Noticement).sV1 != 0) wsprintf(G_cTxt, DRAW_DIALOGBOX_NOTICEMSG1, m_dialogBoxManager.Info(DialogBoxId::Noticement).sV1);
-		else strcpy(G_cTxt, DRAW_DIALOGBOX_NOTICEMSG2);
-		PutAlignedString(sX, sX + szX, sY + 31, G_cTxt, 100, 10, 10);
-		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
-		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
-		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG5);
-		PutAlignedString(sX, sX + szX, sY + 99, DRAW_DIALOGBOX_NOTICEMSG6);
-		if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 0);
-		break;
-
-	case 2:
-		PutAlignedString(sX, sX + szX, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, 100, 10, 10);
-		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG8);
-		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG9);
-		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG10);
-		PutAlignedString(sX, sX + szX, sY + 99, DRAW_DIALOGBOX_NOTICEMSG11);
-		if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 0);
-		break;
-	}
-}
-
-void CGame::DrawDialogBox_NpcActionQuery(short msX, short msY)
-{
-	short sX, sY, szX;
-
-	char cTxt[120], cTxt2[120], cStr1[64], cStr2[64], cStr3[64];
-
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sSizeX;
-
-	//DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5); //5
-	//DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6); //6
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode) {
-	case 0: // npc
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-		switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3) {
-		case 15:
-			PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
-			break;
-		case 19:
-			PutString(sX + 33, sY + 23, NPC_NAME_MAGICIAN, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_MAGICIAN, RGB(255, 255, 255));
-			break;
-		case 20:
-			PutString(sX + 33, sY + 23, NPC_NAME_WAREHOUSE_KEEPER, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_WAREHOUSE_KEEPER, RGB(255, 255, 255));
-			break;
-		case 24:
-			PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));
-			break;
-		case 25:
-			PutString(sX + 33, sY + 23, NPC_NAME_CITYHALL_OFFICER, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_CITYHALL_OFFICER, RGB(255, 255, 255));
-			break;
-		case 26: // "Guildhall Officer"
-			PutString(sX + 33, sY + 23, NPC_NAME_GUILDHALL_OFFICER, RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_GUILDHALL_OFFICER, RGB(255, 255, 255));
-			break;
-		case 90: //Gail
-			PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-			PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
-			break;
-		}
-
-		if (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 == 25)
-		{   // OFFER
-			if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, RGB(255, 255, 255)); // "Offer"
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, RGB(4, 0, 50));
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY13, RGB(4, 0, 50));
-			}
-		}
-		else if (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 == 20)
-		{   // WITHDRAW
-			if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, RGB(255, 255, 255)); // "Withdraw"
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, RGB(4, 0, 50));
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY17, RGB(4, 0, 50));
-			}
-		}
-		else if (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 == 19) // CLEROTH: MAGICIAN
-		{   // LEARN
-			if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, RGB(255, 255, 255)); // "Learn"
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, RGB(4, 0, 50));
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY19, RGB(4, 0, 50));
-			}
-		}
-		else
-		{   // TRADE
-			if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255)); // "Trade"
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-				PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-			}
-		}
-
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false)
-		{
-			if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255)); // "Talk"
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-			}
-		}
-		break;
-
-	case 1: // Other char
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-		GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
-		wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, cStr1); //"%d %s to"
-		wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr); // "%s"
-
-		PutString(sX + 24, sY + 25, cTxt, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 40, cTxt2, RGB(45, 25, 25));
-
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, RGB(255, 255, 255));//"Give"
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, RGB(255, 255, 255));
-		}
-		else {
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, RGB(4, 0, 50));
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, RGB(4, 0, 50));
-		}
-
-		if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
-			PutString(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, RGB(255, 255, 255));//"Exchange"
-			PutString(sX + 156, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, RGB(255, 255, 255));
-		}
-		else {
-			PutString(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, RGB(4, 0, 50));
-			PutString(sX + 156, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, RGB(4, 0, 50));
-		}
-		break;
-
-	case 2: // Shop / BS
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-		GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
-
-		wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, cStr1);//"%d %s to"
-		wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);//"%s"
-
-		PutString(sX + 24, sY + 20, cTxt, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 35, cTxt2, RGB(45, 25, 25));
-
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(255, 255, 255));//"Sell"
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(4, 0, 50));
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(4, 0, 50));
-		}
-
-		if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-			(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cItemType == DEF_ITEMTYPE_ARROW))
-		{
-		}
-		else
-		{
-			if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70))
-			{
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, RGB(255, 255, 255));//"Repair"
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, RGB(255, 255, 255));
-			}
-			else
-			{
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, RGB(4, 0, 50));
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, RGB(4, 0, 50));
-			}
-		}
-		break;
-
-	case 3: // WH
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-		GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
-
-		wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, cStr1);//"%d %s to"
-		wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);//"%s"
-
-		PutAlignedString(sX, sX + 240, sY + 20, cTxt, 45, 25, 25);
-		PutAlignedString(sX, sX + 240, sY + 35, cTxt2, 45, 25, 25);
-
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, RGB(255, 255, 255));//"Deposit"
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, RGB(4, 0, 50));
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, RGB(4, 0, 50));
-		}
-		break;
-
-	case 4: // talk to npc or unicorn
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-		switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3) {
-		case 21:
-			PutString(sX + 35, sY + 25, NPC_NAME_GUARD, RGB(45, 25, 25));//
-			PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_GUARD, RGB(255, 255, 255));
-			break;
-		case 32:
-			PutString(sX + 35, sY + 25, NPC_NAME_UNICORN, RGB(45, 25, 25));//"
-			PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_UNICORN, RGB(255, 255, 255));//"
-			break;
-		case 67:
-			PutString(sX + 35, sY + 25, NPC_NAME_MCGAFFIN, RGB(45, 25, 25));
-			PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_MCGAFFIN, RGB(255, 255, 255));
-			break;
-		case 68:
-			PutString(sX + 35, sY + 25, NPC_NAME_PERRY, RGB(45, 25, 25));
-			PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_PERRY, RGB(255, 255, 255));
-			break;
-		case 69:
-			PutString(sX + 35, sY + 25, NPC_NAME_DEVLIN, RGB(45, 25, 25));
-			PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_DEVLIN, RGB(255, 255, 255));
-			break;
-
-		}
-
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) {
-			if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255));
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255));
-			}
-			else {
-				PutString(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-				PutString(sX + 126, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-			}
-		}
-		break;
-
-	case 5: // Shop / BS
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-		switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3) {
-		case 15:
-			PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));//Shop Keeper"
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
-			break;
-		case 24:
-			PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));//"BlackSmith Keeper"
-			PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));//"
-			//50Cent - Repair All
-			if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 22) && (msY < sY + 37))
-			{
-				PutString(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, RGB(255, 255, 255));//"Repair All"
-				PutString(sX + 156, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, RGB(255, 255, 255));
-			}
-			else
-			{
-				PutString(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, RGB(4, 0, 50));
-				PutString(sX + 156, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, RGB(4, 0, 50));
-			}
-			break;
-		}
-
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255));//"Trade"
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-		}
-
-		if ((msX > sX + 25 + 79) && (msX < sX + 80 + 75) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			PutString(sX + 28 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(255, 255, 255));//"Sell"
-			PutString(sX + 29 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 28 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(4, 0, 50));
-			PutString(sX + 29 + 75, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, RGB(4, 0, 50));
-		}
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false)
-		{
-			if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70))
-			{
-				PutString(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255));//"Talk"
-				PutString(sX + 156, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(255, 255, 255));
-			}
-			else
-			{
-				PutString(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-				PutString(sX + 156, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, RGB(4, 0, 50));
-			}
-		}
-		break;
-
-	case 6: //Gail
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255)); // "Trade"
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(255, 255, 255));
-		}
-		else
-		{
-			PutString(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-			PutString(sX + 29, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, RGB(4, 0, 50));
-		}
-		PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
-		break;
-	}
-}
-
 void CGame::DrawDialogBox_Party(short msX, short msY)
 {
 	short sX, sY, szX;
@@ -37001,51 +33136,6 @@ void CGame::DrawDialogBox_Party(short msX, short msY)
 	}
 }
 
-void CGame::DrawDialogBox_QueryDropItemAmount()
-{
-	short sX, sY;
-	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode) {
-	case 1:
-		GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwAttribute, cStr1, cStr2, cStr3);
-		if (strlen(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr) == 0)
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
-		else wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);//"%s:
-
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, RGB(55, 25, 25));
-
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, RGB(55, 25, 25));//"
-		if (m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			PutString(sX + 40, sY + 57, m_cAmountString, RGB(255, 255, 255), false, 2);
-		wsprintf(cTxt, "__________ (0 ~ %d)", m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, RGB(25, 35, 25));
-		break;
-
-	case 20:
-		GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwAttribute, cStr1, cStr2, cStr3);
-		if (strlen(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr) == 0) // v1.4
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);//"%s:
-		else wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);//"%s:
-
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 < 1000) // v1.4
-			PutString(sX + 30, sY + 20, cTxt, RGB(55, 25, 25));
-
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, RGB(55, 25, 25));//"
-		PutString(sX + 40, sY + 57, m_cAmountString, RGB(255, 255, 255), false, 2);
-		wsprintf(cTxt, "__________ (0 ~ %d)", m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, RGB(25, 35, 25));
-		break;
-	}
-}
-
-
 void CGame::DrawDialogBox_Quest(int msX, int msY)
 {
 	short sX, sY, szX;
@@ -37173,120 +33263,6 @@ void CGame::DrawDialogBox_Quest(int msX, int msY)
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-}
-
-void CGame::DrawDialogBox_SellList(short msX, short msY)
-{
-	short sX, sY, szX;
-	int  i, iItem;
-	char cTemp[255], cStr1[64], cStr2[64], cStr3[64];
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::SellList).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SellList).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::SellList).sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
-
-	iItem = 0;
-	for (i = 0; i < DEF_MAXSELLLIST; i++)
-		if (m_stSellItemList[i].iIndex != -1)
-		{
-			std::memset(cTemp, 0, sizeof(cTemp));
-			GetItemName(m_pItemList[m_stSellItemList[i].iIndex]->m_cName, m_pItemList[m_stSellItemList[i].iIndex]->m_dwAttribute, cStr1, cStr2, cStr3);
-			if (m_stSellItemList[i].iAmount > 1)
-			{
-				wsprintf(cTemp, DRAW_DIALOGBOX_SELL_LIST1, m_stSellItemList[i].iAmount, cStr1);
-				if ((msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15))
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTemp, 255, 255, 255);
-				else
-				{
-					if (m_bIsSpecial)
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTemp, 0, 255, 50);
-					else
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTemp, 45, 25, 25);
-				}
-			}
-			else
-			{
-				if ((msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15))
-				{
-					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0)) PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 255, 255, 255);
-					else
-					{
-						std::memset(G_cTxt, 0, sizeof(G_cTxt));
-						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
-						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0)) wsprintf(G_cTxt, "%s(%s, %s)", cStr1, cStr2, cStr3);
-							else wsprintf(G_cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, G_cTxt, 255, 255, 255);
-
-						}
-						else
-						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0)) wsprintf(G_cTxt, "(%s, %s)", cStr2, cStr3);
-							else wsprintf(G_cTxt, "(%s%s)", cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 255, 255, 255);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, G_cTxt, 200, 200, 200);
-							i++;
-						}
-					}
-				}
-				else
-				{
-					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
-					{
-						if (m_bIsSpecial)
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 0, 255, 50);
-						else
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 45, 25, 25);
-					}
-					else
-					{
-						std::memset(G_cTxt, 0, sizeof(G_cTxt));
-						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
-						{
-							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0)) wsprintf(G_cTxt, "%s(%s, %s)", cStr1, cStr2, cStr3);
-							else wsprintf(G_cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
-
-							if (m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, G_cTxt, 0, 255, 50);
-							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, G_cTxt, 45, 25, 25);
-
-						}
-						else
-						{
-							if (m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 0, 255, 50);
-							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 45, 25, 25);
-						}
-					}
-				}
-			}
-		}
-		else iItem++;
-
-	if (iItem == DEF_MAXSELLLIST) {
-		PutAlignedString(sX, sX + szX, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST2);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST3);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 60 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST4);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 75 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST5);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 95 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST6);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 110 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST7);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 125 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST8);//"
-		PutAlignedString(sX, sX + szX, sY + 55 + 155 + 282 - 117 - 170, DRAW_DIALOGBOX_SELL_LIST9);//"
-
-	}
-
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY) && (iItem < DEF_MAXSELLLIST))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 39);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 38);
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
 }
 
 void CGame::DrawDialogBox_SellorRepairItem(short msX, short msY)
@@ -37434,513 +33410,6 @@ void CGame::DrawDialogBox_SellorRepairItem(short msX, short msY)
 	}
 }
 
-void CGame::DrawDialogBox_Shop(short msX, short msY, short msZ, char cLB)
-{
-	short sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	int  i, iTemp;
-	char cTemp[255], cStr2[255], cStr3[255];
-
-	int  iCost, iDiscountCost, iDiscountRatio;
-
-	double dTmp1, dTmp2, dTmp3;
-	int  iTotalLines, iPointerLoc;
-	bool bFlagStatLow = false;
-	bool bFlagRedShown = false;
-	double d1, d2, d3;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode) {
-	case 0:
-		iTotalLines = 0;
-		for (i = 0; i < DEF_MAXMENUITEMS; i++)
-			if (m_pItemForSaleList[i] != 0) iTotalLines++;
-		if (iTotalLines > 13) {
-			d1 = (double)m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView;
-			d2 = (double)(iTotalLines - 13);
-			d3 = (274.0f * d1) / d2;
-			iPointerLoc = (int)(d3);
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 3);
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
-		}
-		else iPointerLoc = 0;
-
-		if (cLB != 0 && iTotalLines > 13)
-		{
-			if ((m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu))
-			{
-				if ((msX >= sX + 235) && (msX <= sX + 260) && (msY >= sY + 10) && (msY <= sY + 330))
-				{
-					d1 = (double)(msY - (sY + 35));
-					d2 = (double)(iTotalLines - 13);
-					d3 = (d1 * d2) / 274.0f;
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = (int)(d3 + 0.5);
-				}
-			}
-		}
-		else m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bIsScrollSelected = false;
-		if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView - msZ / 60;
-			m_DInput.m_sZ = 0;
-		}
-		if (iTotalLines > 13 && m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView > iTotalLines - 13) m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = iTotalLines - 13;
-		if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView < 0 || iTotalLines < 13) m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = 0;
-		PutAlignedString(sX + 22, sX + 165, sY + 45, DRAW_DIALOGBOX_SHOP1); // "ITEM"
-		PutAlignedString(sX + 23, sX + 166, sY + 45, DRAW_DIALOGBOX_SHOP1);
-		PutAlignedString(sX + 153, sX + 250, sY + 45, DRAW_DIALOGBOX_SHOP3);
-		PutAlignedString(sX + 154, sX + 251, sY + 45, DRAW_DIALOGBOX_SHOP3);
-
-		for (i = 0; i < 13; i++)
-			if (((i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) && (m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0))
-			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				GetItemName(m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView], cTemp, cStr2, cStr3);
-				if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79))
-				{
-					PutAlignedString(sX + 10, sX + 190, sY + i * 18 + 65, cTemp, 255, 255, 255);
-				}
-				else PutAlignedString(sX + 10, sX + 190, sY + i * 18 + 65, cTemp, 4, 0, 50);
-			}
-
-		for (i = 0; i < 13; i++)
-			if (((i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) && (m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0))
-			{
-				iDiscountRatio = ((m_iCharisma - 10) / 4);
-				dTmp1 = (double)iDiscountRatio;
-				dTmp2 = dTmp1 / 100.0f;
-				dTmp1 = (double)m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice;
-				dTmp3 = dTmp1 * dTmp2;
-				iDiscountCost = (int)dTmp3;
-				iCost = (int)(m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice * ((100 + m_cDiscount) / 100.));
-				iCost = iCost - iDiscountCost;
-
-				if (iCost < (m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2))
-					iCost = (m_pItemForSaleList[i + m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2) - 1;
-				std::memset(cTemp, 0, sizeof(cTemp));
-				wsprintf(cTemp, "%6d", iCost);
-				if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79))
-					PutAlignedString(sX + 148, sX + 260, sY + i * 18 + 65, cTemp, 255, 255, 255);
-				else	PutAlignedString(sX + 148, sX + 260, sY + i * 18 + 65, cTemp, 4, 0, 50);
-			}
-		break;
-
-	default:
-		m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sSprite]->PutSpriteFast(sX + 62 + 30 - 35, sY + 84 + 30 - 10,
-			m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sSpriteFrame, dwTime);
-
-		std::memset(cTemp, 0, sizeof(cTemp));
-		GetItemName(m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1], cTemp, cStr2, cStr3);
-
-		PutAlignedString(sX + 25, sX + 240, sY + 50, cTemp, 255, 255, 255);
-		PutAlignedString(sX + 26, sX + 241, sY + 50, cTemp, 255, 255, 255);
-
-		strcpy(cTemp, DRAW_DIALOGBOX_SHOP3); //"PRICE"
-		PutString(sX + 90, sY + 78 + 30 - 10, cTemp, RGB(40, 10, 10));
-		PutString(sX + 91, sY + 78 + 30 - 10, cTemp, RGB(40, 10, 10));
-		strcpy(cTemp, DRAW_DIALOGBOX_SHOP6); // "Weight"
-		PutString(sX + 90, sY + 93 + 30 - 10, cTemp, RGB(40, 10, 10));
-		PutString(sX + 91, sY + 93 + 30 - 10, cTemp, RGB(40, 10, 10));
-
-		iDiscountRatio = ((m_iCharisma - 10) / 4);
-		dTmp1 = (double)iDiscountRatio;
-		dTmp2 = dTmp1 / 100.0f;
-		dTmp1 = (double)m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wPrice;
-		dTmp3 = dTmp1 * dTmp2;
-		iDiscountCost = (int)dTmp3;
-		iCost = (int)(m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wPrice * ((100 + m_cDiscount) / 100.));
-		iCost = iCost - iDiscountCost;
-
-		if (iCost < (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wPrice / 2))
-			iCost = (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wPrice / 2) - 1;
-
-		wsprintf(cTemp, DRAW_DIALOGBOX_SHOP7, iCost);
-		//": %d Gold"
-		PutString(sX + 140, sY + 98, cTemp, RGB(45, 25, 25));
-
-		iTemp = m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100;
-		wsprintf(cTemp, DRAW_DIALOGBOX_SHOP8, iTemp);
-		//": %d Stone"
-		PutString(sX + 140, sY + 113, cTemp, RGB(45, 25, 25));
-
-		switch (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cEquipPos) {
-		case DEF_EQUIPPOS_RHAND:
-		case DEF_EQUIPPOS_TWOHAND:
-			strcpy(cTemp, DRAW_DIALOGBOX_SHOP9);  // Damage
-			PutString(sX + 90, sY + 145, cTemp, RGB(40, 10, 10));
-			PutString(sX + 91, sY + 145, cTemp, RGB(40, 10, 10));
-			strcpy(cTemp, DRAW_DIALOGBOX_SHOP10); //"Speed(Min.~Max.)"
-			PutString(sX + 40, sY + 175, cTemp, RGB(40, 10, 10));
-			PutString(sX + 41, sY + 175, cTemp, RGB(40, 10, 10));
-
-			if (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue3 != 0)
-			{
-				wsprintf(cTemp, ": %dD%d+%d (S-M)", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue1,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue2,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue3);
-			}
-			else
-			{
-				wsprintf(cTemp, ": %dD%d (S-M)", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue1,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue2);
-			}
-			PutString(sX + 140, sY + 145, cTemp, RGB(45, 25, 25));
-			if (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue6 != 0)
-			{
-				wsprintf(cTemp, ": %dD%d+%d (L)", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue4,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue6);
-			}
-			else
-			{
-				wsprintf(cTemp, ": %dD%d (L)", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue4,
-					m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-			}
-			PutString(sX + 140, sY + 160, cTemp, RGB(45, 25, 25));
-			if (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cSpeed == 0)   wsprintf(cTemp, ": 0(10~10)");
-			else wsprintf(cTemp, ": %d(%d ~ %d)", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cSpeed, iTemp, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cSpeed * 13);
-			PutString(sX + 140, sY + 175, cTemp, RGB(45, 25, 25));
-
-			if ((m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100) > m_iStr)
-			{
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100));
-				PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
-				PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25); // *Your STR should be at least %d to use this item."
-				bFlagRedShown = true;
-			}
-			break;
-
-		case DEF_EQUIPPOS_LHAND:
-			strcpy(cTemp, DRAW_DIALOGBOX_SHOP12); // "Defence"
-			PutString(sX + 90, sY + 145, cTemp, RGB(40, 10, 10));
-			PutString(sX + 91, sY + 145, cTemp, RGB(40, 10, 10));
-			wsprintf(cTemp, ": +%d%", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue1);
-			PutString(sX + 140, sY + 145, cTemp, RGB(45, 25, 25));
-			if ((m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100) > m_iStr)
-			{
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100));
-				PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25); // "*Your STR should be at least %d to use this item."
-				PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
-				bFlagRedShown = true;
-			}
-			break;
-
-		case DEF_EQUIPPOS_HEAD:
-		case DEF_EQUIPPOS_BODY:
-		case DEF_EQUIPPOS_BOOTS:
-		case DEF_EQUIPPOS_ARMS:
-		case DEF_EQUIPPOS_PANTS:
-			strcpy(cTemp, DRAW_DIALOGBOX_SHOP12); // "Defence"
-			PutString(sX + 90, sY + 145, cTemp, RGB(40, 10, 10));
-			PutString(sX + 91, sY + 145, cTemp, RGB(40, 10, 10));
-			wsprintf(cTemp, ": +%d%", m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue1);
-			PutString(sX + 140, sY + 145, cTemp, RGB(45, 25, 25));
-			bFlagStatLow = false;
-			switch (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue4) {
-			case 10://"Available for above Str %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP15, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iStr >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-			case 11: // "Available for above Dex %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP16, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iDex >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-			case 12: // "Available for above Vit %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP17, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iVit >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-			case 13: // "Available for above Int %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP18, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iInt >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-			case 14: // "Available for above Mag %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP19, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iMag >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-			case 15: // "Available for above Chr %d"
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP20, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5);
-				if (m_iCharisma >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sItemEffectValue5)
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
-				}
-				else
-				{
-					PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 125, 25, 25);
-					PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 125, 25, 25);
-					bFlagStatLow = true; // Means some red msg need to be shown at the bottom
-				}
-				break;
-
-			default:
-				break;
-			}
-			if ((m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100) > m_iStr)
-			{
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_wWeight / 100));
-				PutAlignedString(sX + 25, sX + 240, sY + 288, cTemp, 195, 25, 25);
-				PutAlignedString(sX + 26, sX + 241, sY + 288, cTemp, 195, 25, 25); // "*Your STR should be at least %d to use this item."
-				bFlagRedShown = true;
-			}
-			else if (bFlagStatLow == true) // Means some stat is too low
-			{
-				strcpy(cTemp, DRAW_DIALOGBOX_SHOP21); // "(Warning!) Your stat is too low for this item."
-				PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
-				PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
-				bFlagRedShown = true;
-			}
-			else if ((strstr(m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cName, "(M)") != 0)
-				&& (m_sPlayerType > 3))
-			{
-				strcpy(cTemp, DRAW_DIALOGBOX_SHOP22); // "(Warning!) only for male."
-				PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
-				PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
-				bFlagRedShown = true;
-			}
-			else if ((strstr(m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cName, "(W)") != 0)
-				&& (m_sPlayerType <= 3))
-			{
-				strcpy(cTemp, DRAW_DIALOGBOX_SHOP23); // "(Warning!) only for female."
-				PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
-				PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
-				bFlagRedShown = true;
-			}
-			break;
-
-		case DEF_EQUIPPOS_NONE:
-			break;
-		}
-
-		if (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sLevelLimit != 0)
-		{
-			strcpy(cTemp, DRAW_DIALOGBOX_SHOP24); // "Level"
-			if (m_iLevel >= m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sLevelLimit)
-			{
-				PutString(sX + 90, sY + 190, cTemp, RGB(40, 10, 10));
-				PutString(sX + 91, sY + 190, cTemp, RGB(40, 10, 10));
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP25, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sLevelLimit);
-				PutString(sX + 140, sY + 190, cTemp, RGB(45, 25, 25));// ": above %d"
-			}
-			else
-			{
-				PutString(sX + 90, sY + 190, cTemp, RGB(40, 10, 10));
-				PutString(sX + 91, sY + 190, cTemp, RGB(40, 10, 10));
-				wsprintf(cTemp, DRAW_DIALOGBOX_SHOP25, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_sLevelLimit);
-				PutString(sX + 140, sY + 190, cTemp, RGB(125, 25, 25));// ": above %d"
-				if (bFlagRedShown == false)
-				{
-					strcpy(cTemp, DRAW_DIALOGBOX_SHOP26); // "(Warning!) Your level is too low for this item."
-					PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
-					PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 258, cTemp, 195, 25, 25);
-					bFlagRedShown = true;
-				}
-			}
-		}
-
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 156, sY + 219, 19, dwTime);
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 170, sY + 219, 19, dwTime);
-		PutString(sX + 123 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, RGB(40, 10, 10)); // "Quantity:"
-		PutString(sX + 124 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, RGB(40, 10, 10));
-		if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 + msZ / 60;
-			m_DInput.m_sZ = 0;
-		}
-		if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 > (50 - _iGetTotalItemNum())) m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - _iGetTotalItemNum());
-		if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 < 1) m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-
-		if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= 10)
-		{
-			std::memset(cTemp, 0, sizeof(cTemp));
-			_itoa(m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
-			cTemp[1] = 0;
-			PutString(sX - 35 + 186, sY - 10 + 237, cTemp, RGB(40, 10, 10));
-			PutString(sX - 35 + 187, sY - 10 + 237, cTemp, RGB(40, 10, 10));
-			std::memset(cTemp, 0, sizeof(cTemp));
-			_itoa(m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
-			PutString(sX - 35 + 200, sY - 10 + 237, (cTemp + 1), RGB(40, 10, 10));
-			PutString(sX - 35 + 201, sY - 10 + 237, (cTemp + 1), RGB(40, 10, 10));
-		}
-		else
-		{
-			PutString(sX - 35 + 186, sY - 10 + 237, "0", RGB(40, 10, 10));
-			PutString(sX - 35 + 187, sY - 10 + 237, "0", RGB(40, 10, 10));
-			std::memset(cTemp, 0, sizeof(cTemp));
-			_itoa(m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
-			PutString(sX - 35 + 200, sY - 10 + 237, (cTemp), RGB(40, 10, 10));
-			PutString(sX - 35 + 201, sY - 10 + 237, (cTemp), RGB(40, 10, 10));
-		}
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 156, sY + 244, 20, dwTime);
-		m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 170, sY + 244, 20, dwTime);
-
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 31);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 30);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		break;
-	}
-}
-
-void CGame::DrawDialogBox_Skill(short msX, short msY, short msZ, char cLB)
-{
-	short sX, sY;
-	int  i, iTotalLines, iPointerLoc;
-	char cTemp[255], cTemp2[255];
-	double d1, d2, d3;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Skill).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Skill).sY;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0); // Normal Dialog
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 1); // Skill Dialog Title Bar
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::Skill).cMode) {
-	case 0:
-		for (i = 0; i < 17; i++)
-			if ((i < DEF_MAXSKILLTYPE) && (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView] != 0))
-			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				wsprintf(cTemp, "%s", m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_cName);
-				CMisc::ReplaceString(cTemp, '-', ' ');
-				std::memset(cTemp2, 0, sizeof(cTemp2));
-				wsprintf(cTemp2, "%3d%%", m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_iLevel);
-				if ((msX >= sX + 25) && (msX <= sX + 166) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
-				{
-					if ((m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_bIsUseable == true)
-						&& (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_iLevel != 0))
-					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(255, 255, 255));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(255, 255, 255));
-					}
-					else
-					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(5, 5, 5));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(5, 5, 5));
-					}
-				}
-				else
-				{
-					if ((m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_bIsUseable == true)
-						&& (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_iLevel != 0))
-					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(34, 30, 120));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(34, 30, 120));
-					}
-					else
-					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(5, 5, 5));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(5, 5, 5));
-					}
-				}
-
-				if (m_iDownSkillIndex == (i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView))
-					m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSpriteRGB(sX + 215, sY + 47 + i * 15, 21, 50, 50, 50, m_dwTime);
-				else m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutSpriteFast(sX + 215, sY + 47 + i * 15, 20, m_dwTime);
-			}
-
-		iTotalLines = 0;
-		for (i = 0; i < DEF_MAXSKILLTYPE; i++)
-			if (m_pSkillCfgList[i] != 0) iTotalLines++;
-
-		if (iTotalLines > 17)
-		{
-			d1 = (double)m_dialogBoxManager.Info(DialogBoxId::Skill).sView;
-			d2 = (double)(iTotalLines - 17);
-			d3 = (274.0f * d1) / d2;
-			iPointerLoc = (int)d3;
-		}
-		else iPointerLoc = 0;
-		if (iTotalLines > 17)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
-		}
-
-		if (cLB != 0 && iTotalLines > 17)
-		{
-			if ((m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Skill))
-			{
-				if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 30) && (msY <= sY + 320))
-				{
-					d1 = (double)(msY - (sY + 35));
-					d2 = (double)(iTotalLines - 17);
-					d3 = (d1 * d2) / 274.0f;
-					iPointerLoc = (int)(d3 + 0.5);
-					if (iPointerLoc > iTotalLines - 17) iPointerLoc = iTotalLines - 17;
-					m_dialogBoxManager.Info(DialogBoxId::Skill).sView = iPointerLoc;
-				}
-			}
-		}
-		else m_dialogBoxManager.Info(DialogBoxId::Skill).bIsScrollSelected = false;
-		if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Skill && msZ != 0)
-		{
-			if (msZ > 0) m_dialogBoxManager.Info(DialogBoxId::Skill).sView--;
-			if (msZ < 0) m_dialogBoxManager.Info(DialogBoxId::Skill).sView++;
-			m_DInput.m_sZ = 0;
-		}
-		if (m_dialogBoxManager.Info(DialogBoxId::Skill).sView < 0) m_dialogBoxManager.Info(DialogBoxId::Skill).sView = 0;
-		if (iTotalLines > 17 && m_dialogBoxManager.Info(DialogBoxId::Skill).sView > iTotalLines - 17) m_dialogBoxManager.Info(DialogBoxId::Skill).sView = iTotalLines - 17;
-		break;
-	}
-}
 
 void CGame::DrawDialogBox_SkillDlg(short msX, short msY, short msZ, char cLB)
 {
@@ -38595,200 +34064,6 @@ void CGame::DrawDialogBox_SkillDlg(short msX, short msY, short msZ, char cLB)
 	}
 }
 
-void CGame::DrawDialogBox_SysMenu(short msX, short msY, char cLB)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 6);
-	PutString(sX + 23, sY + 63, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 63, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
-	if (m_cDetailLevel == 0)
-		PutString(sX + 121, sY + 63, DRAW_DIALOGBOX_SYSMENU_LOW, RGB(255, 255, 255));
-	else PutString(sX + 121, sY + 63, DRAW_DIALOGBOX_SYSMENU_LOW, RGB(45, 25, 25));
-	if (m_cDetailLevel == 1)
-		PutString(sX + 153, sY + 63, DRAW_DIALOGBOX_SYSMENU_NORMAL, RGB(255, 255, 255));
-	else PutString(sX + 153, sY + 63, DRAW_DIALOGBOX_SYSMENU_NORMAL, RGB(45, 25, 25));
-	if (m_cDetailLevel == 2)
-		PutString(sX + 205, sY + 63, DRAW_DIALOGBOX_SYSMENU_HIGH, RGB(255, 255, 255));
-	else PutString(sX + 205, sY + 63, DRAW_DIALOGBOX_SYSMENU_HIGH, RGB(45, 25, 25));
-
-	PutString(sX + 23, sY + 84, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 84, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
-	if (AudioManager::Get().IsSoundAvailable()) {
-		if (AudioManager::Get().IsSoundEnabled()) PutString(sX + 85, sY + 85, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-		else PutString(sX + 83, sY + 85, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-	}
-	else PutString(sX + 68, sY + 85, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
-
-	PutString(sX + 123, sY + 84, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
-	PutString(sX + 124, sY + 84, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
-	if (AudioManager::Get().IsSoundAvailable()) {
-		if (AudioManager::Get().IsMusicEnabled()) PutString(sX + 180, sY + 85, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-		else PutString(sX + 178, sY + 85, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-	}
-	else PutString(sX + 163, sY + 85, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
-
-	PutString(sX + 23, sY + 106, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 106, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
-	if (m_bWhisper) PutString(sX + 85, sY + 106, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else PutString(sX + 82, sY + 106, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-
-	PutString(sX + 123, sY + 106, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
-	PutString(sX + 124, sY + 106, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
-	if (m_bShout) PutString(sX + 180, sY + 106, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else PutString(sX + 177, sY + 106, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-
-	PutString(sX + 23, sY + 124, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 124, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 130 + AudioManager::Get().GetSoundVolume(), sY + 129, 8);
-
-	PutString(sX + 23, sY + 141, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 141, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 130 + AudioManager::Get().GetMusicVolume(), sY + 145, 8);
-
-	PutString(sX + 23, sY + 158, DRAW_DIALOGBOX_SYSMENU_TRANSPARENCY, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 158, DRAW_DIALOGBOX_SYSMENU_TRANSPARENCY, RGB(45, 25, 25));
-	if (m_bDialogTrans) PutString(sX + 208, sY + 158, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else PutString(sX + 207, sY + 158, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-
-	PutString(sX + 23, sY + 180, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 180, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap)) PutString(sX + 99, sY + 180, DRAW_DIALOGBOX_SYSMENU_ON, RGB(255, 255, 255));
-	else PutString(sX + 98, sY + 180, DRAW_DIALOGBOX_SYSMENU_OFF, RGB(200, 200, 200));
-
-	SYSTEMTIME SysTime;
-	GetLocalTime(&SysTime);
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-	wsprintf(G_cTxt, "%d:%d:%d:%d:%d", SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
-	PutString(sX + 23, sY + 204, G_cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 204, G_cTxt, RGB(45, 25, 25));
-
-	//v2.172
-#ifdef _DEBUG
-	PutString(sX + 23, sY + 41, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25)); // "Test server"
-	PutString(sX + 24, sY + 41, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25)); // "Test server"
-#else
-
-	if (strcmp(m_cWorldServerName, NAME_WORLDNAME1) == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME1, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME1, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS2") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME2, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME2, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS3") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME3, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME3, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS4") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME4, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME4, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS5") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME5, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME5, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS6") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME6, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME6, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS7") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME7, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME7, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS8") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME8, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME8, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS9") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME9, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME9, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS10") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME10, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME10, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS11") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME11, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME11, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS12") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME12, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME12, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS13") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME13, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME13, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS14") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME14, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME14, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS15") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME15, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME15, RGB(45, 25, 25));
-	}
-	else if (strcmp(m_cWorldServerName, "WS16") == 0) {
-		PutString(sX + 23, sY + 41, MSG_WORLDNAME16, RGB(45, 25, 25));
-		PutString(sX + 24, sY + 41, MSG_WORLDNAME16, RGB(45, 25, 25));
-	}
-#endif
-
-	if ((cLB != 0) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SystemMenu))
-		//  (msX >= sX + 120) && (msX <= sX + 242) && (msY >= sY +122) && (msY <= sY +138)
-	{
-		if ((msX >= sX + 127) && (msX <= sX + 238) && (msY >= sY + 122) && (msY <= sY + 138))
-		{
-			int volume = msX - (sX + 127);
-			if (volume > 100) volume = 100;
-			if (volume < 0) volume = 0;
-			AudioManager::Get().SetSoundVolume(volume);
-		}
-		if ((msX >= sX + 127) && (msX <= sX + 238) && (msY >= sY + 139) && (msY <= sY + 155))
-		{
-			int volume = msX - (sX + 127);
-			if (volume > 100) volume = 100;
-			if (volume < 0) volume = 0;
-			AudioManager::Get().SetMusicVolume(volume);
-		}
-	}
-	else m_dialogBoxManager.Info(DialogBoxId::SystemMenu).bIsScrollSelected = false;
-
-	// Log-Out
-	if (m_cLogOutCount == -1)
-	{
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 9);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 8);
-	}
-	else  //Continue
-	{
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 7);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + 225, 6);
-	}
-	// Restart
-	if ((m_iHP <= 0) && (m_cRestartCount == -1))
-	{
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 37);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 36);
-	}
-	else if (m_cRestartCount == -1)
-	{	// Of course it's easy to remove or change this...
-		PutString(sX + 133, sY + 214, "Coded by Cleroth,", RGB(45, 25, 25));
-		PutString(sX + 134, sY + 214, "Coded by Cleroth,", RGB(45, 25, 25));
-		PutString(sX + 125, sY + 229, "Diuuude & Snoopy81", RGB(45, 25, 25));
-		PutString(sX + 126, sY + 229, "Diuuude & Snoopy81", RGB(45, 25, 25));
-	}
-}
-
-//\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-
 void CGame::bItemDrop_Character()
 {
 	ItemEquipHandler((char)m_stMCursor.sSelectedObjectID);
@@ -39385,416 +34660,6 @@ void CGame::DlgBoxClick_Fish(short msX, short msY)
 	}
 }
 
-void CGame::DlgBoxClick_Magic(short msX, short msY)
-{
-	int i, iCPivot, iYloc;
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Magic).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Magic).sY;
-	iCPivot = m_dialogBoxManager.Info(DialogBoxId::Magic).sView * 10;
-	iYloc = 0;
-	for (i = 0; i < 9; i++)
-	{
-		if ((m_cMagicMastery[iCPivot + i] != 0) && (m_pMagicCfgList[iCPivot + i] != 0))
-		{
-			if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 18 + iYloc))
-			{
-				UseMagic(iCPivot + i);
-				PlaySound('E', 14, 5);
-				return;
-			}
-			iYloc += 18;
-		}
-	}
-	if ((msX >= sX + 16) && (msX <= sX + 38) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0;
-	if ((msX >= sX + 39) && (msX <= sX + 56) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1;
-	if ((msX >= sX + 57) && (msX <= sX + 81) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2;
-	if ((msX >= sX + 82) && (msX <= sX + 101) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3;
-	if ((msX >= sX + 102) && (msX <= sX + 116) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4;
-	if ((msX >= sX + 117) && (msX <= sX + 137) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5;
-	if ((msX >= sX + 138) && (msX <= sX + 165) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6;
-	if ((msX >= sX + 166) && (msX <= sX + 197) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7;
-	if ((msX >= sX + 198) && (msX <= sX + 217) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8;
-	if ((msX >= sX + 218) && (msX <= sX + 239) && (msY >= sY + 240) && (msY <= sY + 268))
-		m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9;
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 285) && (msY <= sY + 285 + DEF_BTNSZY))
-	{
-		if (m_cSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
-		else
-		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((m_pItemList[i] != 0) && (m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
-					(m_pItemList[i]->m_sSpriteFrame == 55))
-				{
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 1, 0, 0, 0);
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY10, 10);
-					PlaySound('E', 14, 5);
-					return;
-				}
-			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY15, 10);
-		}
-		PlaySound('E', 14, 5);
-	}
-}
-
-void CGame::DlgBoxClick_NpcActionQuery(short msX, short msY)
-{
-	short sX, sY;
-	int   absX, absY;
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
-	{
-		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
-		return;
-	}
-	sX = m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode) {
-	case 0: // Talk to npc
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			m_dialogBoxManager.EnableDialogBox(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2, 0, 0);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1) {
-			case 7:	// Guild
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
-				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);
-				break;
-			case 11: // BS or Shop
-				switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2) {
-				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
-					AddEventList(TALKING_TO_SHOP_KEEPER, 10);
-					break;
-				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
-					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);
-					break;
-				}
-				break;
-			case 13: // CityHall officer
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
-				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);
-				break;
-			case 14: // WH keeper
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
-				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);
-				break;
-			case 16: // Magicmerchant
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
-				AddEventList(TALKING_TO_MAGICIAN, 10);
-				break;
-			}
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		break;
-
-	case 1: // On other player
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			absX = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 - m_sPlayerX);
-			absY = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 - m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4); //v1.4
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10); //"Too far to give the item."
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		else if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			absX = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 - m_sPlayerX);
-			absY = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 - m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4); //v1.4
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY8, 10); //"Too far to exchange item."
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		break;
-
-	case 2: // Item on Shop/BS
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEM, 0, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4); // v1.4
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		else if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			if (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 == 1)
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2, 0, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4); // v1.4
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-			}
-		}
-		break;
-
-	case 3: // Put item in the WH
-		if ((msX > sX + 25) && (msX < sX + 105) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			absX = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 - m_sPlayerX);
-			absY = abs(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 - m_sPlayerY);
-			if ((absX <= 8) && (absY <= 8))
-			{
-				if (_iGetBankItemCount() >= (DEF_MAXBANKITEMS - 1))
-				{
-					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);//"here is no empty space left in warehouse."
-				}
-				else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4); //v1.4
-			}
-			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);//"Too far to give the item."
-
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		break;
-
-	case 4: // talk to npc or Unicorn
-		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3) {
-			case 21: // Guard
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 21, 0, 0, 0);
-				AddEventList(TALKING_TO_GUARD, 10);//"Talking to Guard..."
-				break;
-
-			case 32: // Unicorn
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 32, 0, 0, 0);
-				AddEventList(TALKING_TO_UNICORN, 10);//"Talking to Unicorn..."
-				break;
-			case 67:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 67, 0, 0, 0);
-				AddEventList(TALKING_TO_MCGAFFIN, 10);//"Talking to a town man..."
-				break;
-			case 68:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 68, 0, 0, 0);
-				AddEventList(TALKING_TO_PERRY, 10);//"Talking to a town maiden..."
-				break;
-			case 69:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 69, 0, 0, 0);
-				AddEventList(TALKING_TO_DEVLIN, 10);//"Talking to a town magician..."
-				break;
-			}
-		}
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		break;
-
-
-	case 5: // Talk
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			m_dialogBoxManager.EnableDialogBox(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2, 0, 0);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		if ((msX > sX + 25 + 75) && (msX < sX + 80 + 75) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::SellList, 0, 0, 0);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-
-		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1) {
-			case 7:	// Guild
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
-				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);//"Talking to Guildhall Officer..."
-				break;
-
-			case 11: //
-				switch (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2) {
-				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
-					AddEventList(TALKING_TO_SHOP_KEEPER, 10);//"Talking to Shop Keeper..."
-					break;
-				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
-					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);//"
-					break;
-				}
-				break;
-
-			case 13: //
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
-				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);//"
-				break;
-
-			case 14: //
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
-				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);//
-				break;
-
-			case 16: //
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
-				AddEventList(TALKING_TO_MAGICIAN, 10);//"
-				break;
-			}
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-		//50Cent - Repair All
-		if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 22) && (msY < sY + 37))
-			if (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 == 24)
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRALL, 0, 0, 0, 0, 0, 0); // v1.4
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-			}
-		break;
-
-	case 6: // Snoopy: Added Gail
-		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70))
-		{
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuildHallMenu, 0, 0, 0);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-		}
-	}
-}
-
-
-void CGame::DlgBoxClick_Shop(short msX, short msY)
-{
-	int i;
-	short sX, sY;
-	char cTemp[21];
-	sX = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY;
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode) {
-	case 0:
-		for (i = 0; i < 13; i++)
-			if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79)) {
-				if (_iGetTotalItemNum() >= 50) {
-					AddEventList(DLGBOX_CLICK_SHOP1, 10);//"You cannot buy anything because your bag is full."
-					return;
-				}
-
-				PlaySound('E', 14, 5);
-				if (m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i] != 0)
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i + 1;
-				return;
-			}
-		break;
-
-	default:
-		if ((msX >= sX + 145) && (msX <= sX + 162) && (msY >= sY + 209) && (msY <= sY + 230))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 += 10;
-			if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - _iGetTotalItemNum()))
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - _iGetTotalItemNum());
-		}
-
-		if ((msX >= sX + 145) && (msX <= sX + 162) && (msY >= sY + 234) && (msY <= sY + 251))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 -= 10;
-			if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 <= 1)
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-		}
-
-		if ((msX >= sX + 163) && (msX <= sX + 180) && (msY >= sY + 209) && (msY <= sY + 230))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3++;
-			if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - _iGetTotalItemNum()))
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - _iGetTotalItemNum());
-		}
-
-		if ((msX >= sX + 163) && (msX <= sX + 180) && (msY >= sY + 234) && (msY <= sY + 251))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3--;
-			if (m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 <= 1)
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-		}
-
-		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Purchase Click
-			if ((50 - _iGetTotalItemNum()) < m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3)
-			{
-				AddEventList(DLGBOX_CLICK_SHOP1, 10);//"ou cannot buy anything because your bag is full."
-			}
-			else
-			{
-				std::memset(cTemp, 0, sizeof(cTemp));
-				strcpy(cTemp, m_pItemForSaleList[m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cName);
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, 0, 0, cTemp);
-			}
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-			PlaySound('E', 14, 5);
-		}
-
-		if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{	// Cancel Click
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-			PlaySound('E', 14, 5);
-		}
-		break;
-	}
-}
-
-void CGame::DlgBoxClick_Skill(short msX, short msY)
-{
-	int i;
-	short sX, sY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Skill).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Skill).sY;
-	switch (m_dialogBoxManager.Info(DialogBoxId::Skill).cMode) {
-	case -1:
-		break;
-	case 0:
-		for (i = 0; i < 17; i++)
-			if ((i < DEF_MAXSKILLTYPE) && (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView] != 0))
-			{
-				if ((msX >= sX + 44) && (msX <= sX + 135 + 44) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
-				{
-					if ((m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_bIsUseable == true)
-						&& (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_iLevel != 0))
-					{
-						if (m_bSkillUsingStatus == true)
-						{
-							AddEventList(DLGBOX_CLICK_SKILL1, 10); // "You are already using other skill."
-							return;
-						}
-						if ((m_bCommandAvailable == false) || (m_iHP <= 0))
-						{
-							AddEventList(DLGBOX_CLICK_SKILL2, 10); // "You can't use a skill while you are moving."
-							return;
-						}
-						if (m_bIsGetPointingMode == true)
-						{
-							return;
-						}
-						switch (m_pSkillCfgList[i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView]->m_cUseMethod) {
-						case 0:
-						case 2:
-							bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USESKILL, 0, (i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView), 0, 0, 0);
-							m_bSkillUsingStatus = true;
-							m_dialogBoxManager.DisableDialogBox(DialogBoxId::Skill);
-							PlaySound('E', 14, 5);
-							break;
-						}
-					}
-				}
-				else if ((msX >= sX + 215) && (msX <= sX + 240) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
-				{
-					if (m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag == false)
-					{
-						bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SETDOWNSKILLINDEX, 0, i + m_dialogBoxManager.Info(DialogBoxId::Skill).sView, 0, 0, 0);
-						PlaySound('E', 14, 5);
-						m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag = true;
-					}
-				}
-			}
-		break;
-	}
-}
 
 void CGame::DlgBoxClick_SkillDlg(short msX, short msY)
 {
@@ -41759,99 +36624,6 @@ void CGame::NotifyMsg_WhisperMode(bool bActive, char* pData)
 	AddEventList(G_cTxt, 10);
 }
 
-void CGame::DrawDialogBox_CrusadeJob(short msX, short msY)
-{
-	short sX, sY;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode) {
-	case 1:
-		PutAlignedString(sX + 24, sX + 246, sY + 45 + 20, DRAWDIALOGBOX_CRUSADEJOB1);
-		PutAlignedString(sX + 24, sX + 246, sY + 60 + 20, DRAWDIALOGBOX_CRUSADEJOB2);
-		PutAlignedString(sX + 24, sX + 246, sY + 75 + 20, DRAWDIALOGBOX_CRUSADEJOB3);
-		PutAlignedString(sX + 24, sX + 246, sY + 90 + 20, DRAWDIALOGBOX_CRUSADEJOB4);
-
-		if (m_bCitizen == true)
-		{
-			if (m_bAresden)
-			{
-				if (m_iGuildRank == 0)
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-						PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 255, 255, 255);//(Commander)"
-					else PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 4, 0, 50);//(Commander)"
-				}
-				else
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-						PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 255, 255, 255);//(Soldier)"
-					else PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 4, 0, 50);//(Soldier)"
-					if (m_iGuildRank != -1)
-					{
-						if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
-							PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 255, 255, 255);//(Constructor)"
-						else PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 4, 0, 50);//(Constructor)"
-
-					}
-				}
-			}
-			else if (m_bAresden == false)
-			{
-				if (m_iGuildRank == 0)
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-						PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 255, 255, 255);//(Commander)"
-					else PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 4, 0, 50);//(Commander)"
-				}
-				else
-				{
-					if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-						PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 255, 255, 255);//(Soldier)"
-					else PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 4, 0, 50);//(Soldier)"
-					if (m_iGuildRank != -1)
-					{
-						if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
-							PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 255, 255, 255);//(Constructor)"
-						else PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 4, 0, 50);//(Constructor)"
-					}
-				}
-			}
-		}
-
-		PutAlignedString(sX + 24, sX + 246, sY + 290 - 40, DRAWDIALOGBOX_CRUSADEJOB10);
-		PutAlignedString(sX + 24, sX + 246, sY + 305 - 40, DRAWDIALOGBOX_CRUSADEJOB17);
-
-		if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-			PutString_SprFont(sX + 50 + 160, sY + 296, "Help", 6, 6, 20);
-		else PutString_SprFont(sX + 50 + 160, sY + 296, "Help", 0, 0, 7);
-		break;
-
-	case 2:
-		PutAlignedString(sX + 24, sX + 246, sY + 90 + 20, DRAWDIALOGBOX_CRUSADEJOB18);
-		switch (m_iCrusadeDuty) {
-		case 1: PutAlignedString(sX + 24, sX + 246, sY + 125, DRAWDIALOGBOX_CRUSADEJOB19); break;//"(Soldier)
-		case 2: PutAlignedString(sX + 24, sX + 246, sY + 125, DRAWDIALOGBOX_CRUSADEJOB20); break;//"(Constructor)
-		case 3: PutAlignedString(sX + 24, sX + 246, sY + 125, DRAWDIALOGBOX_CRUSADEJOB21); break;//"(Commander)
-		}
-
-		PutAlignedString(sX + 24, sX + 246, sY + 145, DRAWDIALOGBOX_CRUSADEJOB22);
-		if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 160) && (msY < sY + 175))
-			PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, 255, 255, 255);
-		else PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, 4, 0, 50);
-
-		PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB25);
-		PutAlignedString(sX + 24, sX + 246, sY + 190, DRAWDIALOGBOX_CRUSADEJOB26);
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-	}
-}
-
 void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int iFrame)
 {
 	bool bFlag = true;
@@ -42251,32 +37023,32 @@ void CGame::MotionEventHandler(char* pData)
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(pData, sizeof(hb::net::PacketEventMotionPlayer));
 			if (!pkt) return;
-		sX = pkt->x;
-		sY = pkt->y;
-		sType = pkt->type;
-		cDir = static_cast<char>(pkt->dir);
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		sAppr1 = pkt->appr1;
-		sAppr2 = pkt->appr2;
-		sAppr3 = pkt->appr3;
-		sAppr4 = pkt->appr4;
-		iApprColor = pkt->appr_color;
-		iStatus = pkt->status;
-		iLoc = pkt->loc;
+			sX = pkt->x;
+			sY = pkt->y;
+			sType = pkt->type;
+			cDir = static_cast<char>(pkt->dir);
+			memcpy(cName, pkt->name, sizeof(pkt->name));
+			sAppr1 = pkt->appr1;
+			sAppr2 = pkt->appr2;
+			sAppr3 = pkt->appr3;
+			sAppr4 = pkt->appr4;
+			iApprColor = pkt->appr_color;
+			iStatus = pkt->status;
+			iLoc = pkt->loc;
 		}
 		else 	// Npc or mob
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionNpc>(pData, sizeof(hb::net::PacketEventMotionNpc));
 			if (!pkt) return;
-		sX = pkt->x;
-		sY = pkt->y;
-		sType = pkt->type;
-		cDir = static_cast<char>(pkt->dir);
-		memcpy(cName, pkt->name, sizeof(pkt->name));
-		sAppr1 = sAppr3 = sAppr4 = 0;
-		sAppr2 = pkt->appr2;
-		iStatus = pkt->status;
-		iLoc = pkt->loc;
+			sX = pkt->x;
+			sY = pkt->y;
+			sType = pkt->type;
+			cDir = static_cast<char>(pkt->dir);
+			memcpy(cName, pkt->name, sizeof(pkt->name));
+			sAppr1 = sAppr3 = sAppr4 = 0;
+			sAppr2 = pkt->appr2;
+			iStatus = pkt->status;
+			iLoc = pkt->loc;
 		}
 	}
 	else
@@ -43605,388 +38377,6 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 }
 
-void CGame::DrawDialogBox_Help(int msX, int msY)
-{
-	short sX, sY, szX;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Help).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Help).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::Help).sSizeX;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 0) && (msY < sY + 50 + 15 * 1))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 0, DRAW_DIALOGBOX_HELP2, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 0, DRAW_DIALOGBOX_HELP2, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 1) && (msY < sY + 50 + 15 * 2))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 1, DRAW_DIALOGBOX_HELP1, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 1, DRAW_DIALOGBOX_HELP1, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 2) && (msY < sY + 50 + 15 * 3))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 2, DRAW_DIALOGBOX_HELP3, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 2, DRAW_DIALOGBOX_HELP3, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 3) && (msY < sY + 50 + 15 * 4))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 3, DRAW_DIALOGBOX_HELP4, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 3, DRAW_DIALOGBOX_HELP4, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 4) && (msY < sY + 50 + 15 * 5))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 4, DRAW_DIALOGBOX_HELP5, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 4, DRAW_DIALOGBOX_HELP5, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 5) && (msY < sY + 50 + 15 * 6))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 5, DRAW_DIALOGBOX_HELP6, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 5, DRAW_DIALOGBOX_HELP6, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 6) && (msY < sY + 50 + 15 * 7))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 6, DRAW_DIALOGBOX_HELP7, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 6, DRAW_DIALOGBOX_HELP7, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 7) && (msY < sY + 50 + 15 * 8))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 7, DRAW_DIALOGBOX_HELP8, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 7, DRAW_DIALOGBOX_HELP8, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 8) && (msY < sY + 50 + 15 * 9))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 8, DRAW_DIALOGBOX_HELP9, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 8, DRAW_DIALOGBOX_HELP9, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 9) && (msY < sY + 50 + 15 * 10))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 9, DRAW_DIALOGBOX_HELP10, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 9, DRAW_DIALOGBOX_HELP10, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 10) && (msY < sY + 50 + 15 * 11))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 10, DRAW_DIALOGBOX_HELP11, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 10, DRAW_DIALOGBOX_HELP11, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 11) && (msY < sY + 50 + 15 * 12))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 11, DRAW_DIALOGBOX_HELP12, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 11, DRAW_DIALOGBOX_HELP12, 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 12) && (msY < sY + 50 + 15 * 13))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 12, "F.A.Q.", 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 12, "F.A.Q.", 4, 0, 50);
-	if ((msX >= sX + 25) && (msX <= sX + 248) && (msY >= sY + 50 + 15 * 13) && (msY < sY + 50 + 15 * 14))
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * 13, DRAW_DIALOGBOX_HELP13, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + 50 + 15 * 13, DRAW_DIALOGBOX_HELP13, 4, 0, 50);
-
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-}
-
-void CGame::DrawDialogBox_ItemUpgrade(int msX, int msY)
-{
-	int i, sX, sY, iValue;
-	char cItemColor, cStr1[120], cStr2[120], cStr3[120];
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 5); //Item Upgrade Text
-
-	switch (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode) {
-	case 1://Gizon box Drag item needed to be upgraded"
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE1); // Drag item needed to be upgraded"
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE2); // "from the inventory. Then press"
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE3); // 'Upgrade' button."
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-		wsprintf(G_cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_iGizonItemUpgradeLeft);		// "Item upgrade point : %d"
-		PutAlignedString(sX + 24, sX + 248, sY + 100, G_cTxt);
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-			iValue = (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_dwAttribute & 0xF0000000) >> 28;
-			iValue = iValue * (iValue + 6) / 8 + 2;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos >= 11)
-				&& (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemType == 1))
-			{
-				if ((memcmp(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cName, "AngelicPandent(STR)", 19) == 0)
-					|| (memcmp(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-					|| (memcmp(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cName, "AngelicPandent(INT)", 19) == 0)
-					|| (memcmp(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cName, "AngelicPandent(MAG)", 19) == 0))
-				{
-					iValue = (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_dwAttribute & 0xF0000000) >> 28;
-					switch (iValue) {
-					case 0:	iValue = 10; break;
-					case 1: iValue = 11; break;
-					case 2: iValue = 13; break;
-					case 3: iValue = 16; break;
-					case 4: iValue = 20; break;
-					case 5: iValue = 25; break;
-					case 6: iValue = 31; break;
-					case 7: iValue = 38; break;
-					case 8: iValue = 46; break;
-					case 9: iValue = 55; break;
-					}
-				}
-			}
-			wsprintf(G_cTxt, DRAW_DIALOGBOX_ITEMUPGRADE12, iValue); //"Needed upgrade point : %d"
-			if (m_iGizonItemUpgradeLeft < iValue)
-				PutAlignedString(sX + 24, sX + 248, sY + 115, G_cTxt, 195, 25, 25);
-			else PutAlignedString(sX + 24, sX + 248, sY + 115, G_cTxt);
-			i = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-			cItemColor = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemColor;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
-			}
-			else
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
-			}
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1], cStr1, cStr2, cStr3);
-			PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-			PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-			PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
-			if (m_iGizonItemUpgradeLeft < iValue)
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-			else
-			{
-				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-					DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 47);
-				else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-			}
-		}
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-		// Cancel
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		break;
-
-	case 2: // in progress
-		PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE5);
-		PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE6);
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-			i = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-			cItemColor = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemColor;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
-			}
-			else
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
-			}
-			if ((rand() % 5) == 0) m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutTransSprite25(sX + 134, sY + 182, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, dwTime);
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1], cStr1, cStr2, cStr3);
-			PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-			PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-			PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
-		}
-		if (((dwTime - m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1) / 1000 > 4) && (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 != 0))
-		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_UPGRADEITEM, 0, m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1, 0, 0, 0);
-		}
-		break;
-
-	case 3: // Congratulations
-		PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE7);//"Congratulation! item upgrade"
-		PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE8);//"has been succeeded."
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-			i = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-			cItemColor = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemColor;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
-			}
-			else
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
-			}
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1], cStr1, cStr2, cStr3);
-			PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-			PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-			PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
-		}
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 4: // Failed
-		PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE9);//"Item upgrade has failed."
-		if ((m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1) && (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1] == 0))
-		{
-			PlaySound('E', 24, 0, 0);
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 7;
-			return;
-		}
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-			i = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-			cItemColor = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemColor;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
-			}
-			else
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
-			}
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1], cStr1, cStr2, cStr3);
-			PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-			PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-			PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
-		}
-
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 5: // select Stone/ Gizon
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE13); // "Select which kind of items to upgrade."
-		if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
-		{
-			PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 255, 255, 255); // "Normal item upgrade"
-			PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE16); // "Upgrading a normal item."
-			PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE17); // "With upgrading weapon"
-			PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE18); // "items, Stone of Xelima"
-			PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE19); // "is needed. With upgrading"
-			PutAlignedString(sX + 24, sX + 248, sY + 210, DRAW_DIALOGBOX_ITEMUPGRADE20); // "armor items, Stone of"
-			PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE21); // "Merien is needed."
-			PutAlignedString(sX + 24, sX + 248, sY + 255, DRAW_DIALOGBOX_ITEMUPGRADE26); // "* Majestic items cannot be"
-			PutAlignedString(sX + 24, sX + 248, sY + 270, DRAW_DIALOGBOX_ITEMUPGRADE27); // "upgraded with this performance."
-		}
-		else PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 4, 0, 50); // "Normal item upgrade"
-		if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
-		{
-			PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 255, 255, 255); // "Majestic item upgrade"
-			PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE22); // "Upgrading majestic items."
-			PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE23); // "In order to upgrade majestic items,"
-			PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE24); // "enough upgrade points for"
-			PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE25); // "majestic items are required."
-			PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE28); // "* Normal items cannot be"
-			PutAlignedString(sX + 24, sX + 248, sY + 240, DRAW_DIALOGBOX_ITEMUPGRADE29); // "upgraded with this performance."
-		}
-		else PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 4, 0, 50); // "Majestic item upgrade"
-		// Cancel
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		break;
-
-	case 6: // Stone upgrade
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE31); // "After bring a normal item to"
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE32); //
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE33); //
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2 == 0)
-		{
-			PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, DRAW_DIALOGBOX_ITEMUPGRADE41, 195, 25, 25);//"You can upgrade only armor."
-		}
-		else
-		{
-			wsprintf(G_cTxt, DRAW_DIALOGBOX_ITEMUPGRADE34, m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2);//"The number of upgrade(weapon): %d"
-			PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, G_cTxt);
-		}
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3 == 0)
-		{
-			PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, DRAW_DIALOGBOX_ITEMUPGRADE42, 195, 25, 25);//"You can upgrade only weapon."
-		}
-		else
-		{
-			wsprintf(G_cTxt, DRAW_DIALOGBOX_ITEMUPGRADE35, m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3);//"The number of upgrade(armor): %d"
-			PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, G_cTxt);
-		}
-
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-			i = m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
-			cItemColor = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cItemColor;
-			if ((m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-				|| (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
-			}
-			else
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSprite]->PutSpriteRGB(sX + 134, sY + 182
-					, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
-			}
-
-			std::memset(cStr1, 0, sizeof(cStr1));
-			std::memset(cStr2, 0, sizeof(cStr2));
-			std::memset(cStr3, 0, sizeof(cStr3));
-			GetItemName(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1], cStr1, cStr2, cStr3);
-			PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-			PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-			PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
-			if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 47);
-			else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
-		}
-		// Cancel
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		break;
-
-	case 7: // lost item
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE36);//"Due to the failure of upgrade, the"
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 145, DRAW_DIALOGBOX_ITEMUPGRADE37);//"item is gone. Try next time!"
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 8: // impossible deja an max
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE38);//"Upgrading the item is not possible any more."
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 9: // impossible
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE39);//"Upgrading the item is not possible."
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-
-	case 10: // plus de gizons
-		PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE40);//"A point to upgrade items is not present"
-		// OK
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
-		break;
-	}
-}
-
 LONG CGame::GetRegKey(HKEY key, LPCTSTR subkey, LPTSTR retdata)
 {
 	HKEY hkey;
@@ -44981,54 +39371,6 @@ void CGame::ShowHeldenianVictory(short sSide)
 }
 
 /*********************************************************************************************************************
-**  void DrawDialogBox_Resurect(short msX, short msY) 				( Snoopy )										**
-**  description			: Asks the player if he accepts resurection													**
-**********************************************************************************************************************/
-void CGame::DrawDialogBox_Resurect(short msX, short msY)
-{
-	short sX, sY;
-	//00476D02  |. 68 A4474C00    PUSH 004C47A4                    ;  ASCII "Someone intend to resurrect you."
-	//00476D41  |. 68 8C474C00    PUSH 004C478C                    ;  ASCII "Will you revive here?"
-	sX = m_dialogBoxManager.Info(DialogBoxId::Resurrect).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Resurrect).sY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
-
-	PutString(sX + 50, sY + 20, "Someone intend to resurrect you.", RGB(4, 0, 50));
-	PutString(sX + 80, sY + 35, "Will you revive here?", RGB(4, 0, 50));
-
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
-
-	if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
-}
-
-/*********************************************************************************************************************
-**  void DlgBoxClick_ItemDrop(short msX, short msY)			( Snoopy )												**
-**  description			: Response of the player if he accepts resurection or not									**
-**********************************************************************************************************************/
-void CGame::DlgBoxClick_Resurect(short msX, short msY)
-{
-	short sX, sY;
-	//#define DEF_REQUEST_RESURRECTPLAYER_YES				0x0FC94214
-	//#define DEF_REQUEST_RESURRECTPLAYER_NO				0x0FC94215
-	sX = m_dialogBoxManager.Info(DialogBoxId::Resurrect).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Resurrect).sY;
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-	{   // yes
-		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_YES, 0, 0, 0, 0, 0, 0, 0);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Resurrect);
-	}
-	else if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
-	{	// no
-		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_NO, 0, 0, 0, 0, 0, 0, 0);
-		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Resurrect);
-	}
-}
-
-/*********************************************************************************************************************
 **  void 	ResponseHeldenianTeleportList(char *pData)									(  Snoopy )					**
 **  description			: Gail's TP																					**
 **********************************************************************************************************************/
@@ -45464,146 +39806,3 @@ void CGame::NotifyMsg_RepairAllPrices(char* pData)
 	else
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::RepairAll, 0, 0, 0);
 }
-
-void CGame::DrawDialogBox_RepairAll(short msX, short msY, short msZ) //4LifeX Modified - 50Cent - Repair All
-{
-	short sX, sY, szX;
-	char cTxt[120];
-	int i, iTotalLines, iPointerLoc;
-	double d1, d2, d3;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::RepairAll).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::RepairAll).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::RepairAll).sSizeX;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 10);
-
-	for (i = 0; i < 15; i++)
-		if ((i + m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView) < totalItemRepair)
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, "%s - Cost: %d", m_pItemList[m_stRepairAll[i + m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView].index]->m_cName, m_stRepairAll[i + m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView].price);
-
-			PutString(sX + 30, sY + 45 + i * 15, cTxt, RGB(5, 5, 5));
-			m_bIsItemDisabled[m_stRepairAll[i + m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView].index] = true;
-		}
-
-
-	iTotalLines = totalItemRepair;
-	if (iTotalLines > 15)
-	{
-		d1 = (double)m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView;
-		d2 = (double)(iTotalLines - 15);
-		d3 = (274.0f * d1) / d2;
-		iPointerLoc = (int)d3;
-	}
-	else iPointerLoc = 0;
-
-	if (iTotalLines > 15)
-	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
-	}
-
-	if (iTotalLines > 15)
-	{
-		if (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::RepairAll && msZ != 0)
-		{
-			if (msZ > 0) m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView--;
-			if (msZ < 0) m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView++;
-			m_DInput.m_sZ = 0;
-		}
-
-		if (m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView < 0)
-			m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView = 0;
-
-		if (iTotalLines > 15 && m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView > iTotalLines - 15)
-			m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView = iTotalLines - 15;
-	}
-
-	if (totalItemRepair > 0)
-	{
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 43);
-		}
-		else
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 42);
-		}
-
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		}
-		else
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		}
-		std::memset(cTxt, 0, sizeof(cTxt));
-		wsprintf(cTxt, "Total cost : %d", totalPrice);
-		PutString(sX + 30, sY + 270, cTxt, RGB(5, 5, 5));
-	}
-	else
-	{
-		PutAlignedString(sX, sX + szX, sY + 140, "There are no items to repair.", 5, 5, 5);
-		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-		}
-		else
-		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
-		}
-	}
-}
-
-//4LifeX Modified - 50Cent - Repair All
-void CGame::DlgBoxClick_RepairAll(short msX, short msY)
-{
-	short sX, sY;
-	int i;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::RepairAll).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::RepairAll).sY;
-
-	for (i = 0; i < 15; i++)
-		if ((i + m_dialogBoxManager.Info(DialogBoxId::RepairAll).sView) < totalItemRepair)
-		{
-			if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRALLCONFIRM, 0, 0, 0, 0, 0);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::RepairAll);
-			}
-
-			if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::RepairAll);
-		}
-		else
-		{
-			if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::RepairAll);
-		}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

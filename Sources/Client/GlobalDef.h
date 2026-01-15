@@ -23,7 +23,7 @@
 #define MSG_HOMEPAGE			"http://www.helbreath.com/"
 #define DEF_UPPERVERSION		3
 #define DEF_LOWERVERSION		51
-#define DEF_SERVER_IP			"127.0.0.1"
+#define DEF_SERVER_IP			"199.187.160.239" // 199.187.160.239
 #define DEF_SERVER_PORT			2500
 #define DEF_GSERVER_PORT		9907
 

@@ -4,14 +4,20 @@
 #include "DialogBoxInfo.h"
 
 class CGame;
+class IDialogBox;
 
 class DialogBoxManager
 {
 public:
 	explicit DialogBoxManager(CGame* game = nullptr);
+	~DialogBoxManager();
 
 	void Initialize(CGame* game);
 	void InitDefaults();
+	void InitializeDialogBoxes();
+	void RegisterDialogBox(IDialogBox* pDialogBox);
+	IDialogBox* GetDialogBox(DialogBoxId::Type id) const;
+	IDialogBox* GetDialogBox(int iBoxID) const;
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	bool _bCheckDlgBoxClick(short msX, short msY);
 	bool _bCheckDlgBoxDoubleClick(short msX, short msY);
@@ -45,4 +51,5 @@ private:
 	DialogBoxInfo m_info[61]{};
 	char m_order[61]{};
 	bool m_enabled[61]{};
+	IDialogBox* m_pDialogBoxes[61]{};
 };
