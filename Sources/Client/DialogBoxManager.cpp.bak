@@ -350,6 +350,18 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::ChangeStatsMajestic].sSizeX = 258;
 	m_info[DialogBoxId::ChangeStatsMajestic].sSizeY = 339;
 
+	// Upgrade Window
+	m_info[DialogBoxId::UpgradeWindow].sX = 380;
+	m_info[DialogBoxId::UpgradeWindow].sY = 180;
+	m_info[DialogBoxId::UpgradeWindow].sSizeX = 160;
+	m_info[DialogBoxId::UpgradeWindow].sSizeY = 85;
+
+	// Upgrade all
+	m_info[DialogBoxId::UpgradeAll].sX = 185;
+	m_info[DialogBoxId::UpgradeAll].sY = 100;
+	m_info[DialogBoxId::UpgradeAll].sSizeX = 350;
+	m_info[DialogBoxId::UpgradeAll].sSizeY = 105;
+
 	// Snoopy: Resurection
 	m_info[DialogBoxId::Resurrect].sX = 185 + SCREENX;
 	m_info[DialogBoxId::Resurrect].sY = 100 + SCREENY;

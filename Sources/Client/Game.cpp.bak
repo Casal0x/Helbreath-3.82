@@ -453,6 +453,18 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeY = 339;
 
+	// Upgrade Window
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeWindow).sX = 380;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeWindow).sY = 180;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeWindow).sSizeX = 160;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeWindow).sSizeY = 85;
+
+	// Upgrade all
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeAll).sX = 185;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeAll).sY = 100;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeAll).sSizeX = 350;
+	m_dialogBoxManager.Info(DialogBoxId::UpgradeAll).sSizeY = 105;
+
 	// Snoopy: Resurection
 	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sX = 185 + SCREENX;
 	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sY = 100 + SCREENY;
@@ -16966,6 +16978,17 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 	switch (iBoxID) {
 	case DialogBoxId::RepairAll: //50Cent - Repair all
 		m_dialogBoxManager.Info(DialogBoxId::RepairAll).cMode = cType;
+		break;
+	case DialogBoxId::UpgradeAll:
+		if (m_dialogBoxManager.IsEnabled(iBoxID) == false)
+		{
+			m_dialogBoxManager.Info(iBoxID).bFlag = false;
+			m_dialogBoxManager.Info(iBoxID).cMode = cType;
+			m_dialogBoxManager.Info(iBoxID).sV2 = -1;
+			m_dialogBoxManager.Info(iBoxID).sV3 = -1;
+			m_dialogBoxManager.Info(iBoxID).sV1 = sV1;
+			m_dialogBoxManager.Info(iBoxID).dwV1 = 0;
+		}
 		break;
 	case DialogBoxId::SaleMenu:
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) == false)
