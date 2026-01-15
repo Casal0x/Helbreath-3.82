@@ -5,6 +5,7 @@
 DialogBox_Map::DialogBox_Map(CGame* pGame)
 	: IDialogBox(DialogBoxId::Map, pGame)
 {
+	SetDefaultRect(336 + SCREENX, 88 + SCREENY, 270, 346);
 }
 
 void DialogBox_Map::OnEnable(int cType, int sV1, int sV2, char* pString)

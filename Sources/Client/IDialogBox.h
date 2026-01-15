@@ -37,6 +37,7 @@ protected:
 	void PlaySoundEffect(char cType, int iNum, int iDist, long lPan = 0);
 	void AddEventList(char* pTxt, char cColor = 0, bool bDupAllow = true);
 	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4 = 0);
+	void SetDefaultRect(short sX, short sY, short sSizeX, short sSizeY);
 
 	// Dialog management helpers
 	void EnableDialogBox(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);

@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include <cstring>
 
 InputManager& InputManager::Get()
 {
@@ -19,6 +20,9 @@ InputManager::InputManager()
 	, m_leftReleased(false)
 	, m_rightReleased(false)
 {
+	std::memset(m_keyDown, 0, sizeof(m_keyDown));
+	std::memset(m_keyPressed, 0, sizeof(m_keyPressed));
+	std::memset(m_keyReleased, 0, sizeof(m_keyReleased));
 }
 
 InputManager::~InputManager() = default;
@@ -37,6 +41,9 @@ void InputManager::SetActive(bool active)
 {
 	m_active = active;
 	UpdateCursorClip(active);
+	if (!active) {
+		ClearAllKeys();
+	}
 }
 
 void InputManager::BeginFrame()
@@ -46,6 +53,8 @@ void InputManager::BeginFrame()
 	m_leftReleased = false;
 	m_rightReleased = false;
 	m_wheelDelta = 0;
+	std::memset(m_keyPressed, 0, sizeof(m_keyPressed));
+	std::memset(m_keyReleased, 0, sizeof(m_keyReleased));
 }
 
 void InputManager::OnMouseMove(int x, int y)
@@ -99,6 +108,26 @@ void InputManager::OnMouseWheel(int delta, int x, int y)
 	m_wheelDelta = static_cast<short>(m_wheelDelta + delta);
 }
 
+void InputManager::OnKeyDown(int vk)
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return;
+	}
+	m_keyPressed[vk] = true;
+	m_keyDown[vk] = true;
+}
+
+void InputManager::OnKeyUp(int vk)
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return;
+	}
+	if (m_keyDown[vk]) {
+		m_keyReleased[vk] = true;
+	}
+	m_keyDown[vk] = false;
+}
+
 bool InputManager::IsLeftMouseDown() const
 {
 	return m_leftDown;
@@ -127,6 +156,102 @@ bool InputManager::IsRightMousePressed() const
 bool InputManager::IsRightMouseReleased() const
 {
 	return m_rightReleased;
+}
+
+bool InputManager::IsKeyDown(int vk) const
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return false;
+	}
+	return m_keyDown[vk];
+}
+
+bool InputManager::IsKeyPressed(int vk) const
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return false;
+	}
+	return m_keyPressed[vk];
+}
+
+bool InputManager::IsKeyReleased(int vk) const
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return false;
+	}
+	return m_keyReleased[vk];
+}
+
+bool InputManager::ConsumeKeyPressed(int vk)
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return false;
+	}
+	if (!m_keyPressed[vk]) {
+		return false;
+	}
+	m_keyPressed[vk] = false;
+	return true;
+}
+
+void InputManager::ClearKeyPressed(int vk)
+{
+	if (vk < 0 || vk >= kKeyCount) {
+		return;
+	}
+	m_keyPressed[vk] = false;
+}
+
+void InputManager::ClearAllKeys()
+{
+	std::memset(m_keyDown, 0, sizeof(m_keyDown));
+	std::memset(m_keyPressed, 0, sizeof(m_keyPressed));
+	std::memset(m_keyReleased, 0, sizeof(m_keyReleased));
+}
+
+bool InputManager::IsCtrlDown() const
+{
+	return IsKeyDown(VK_CONTROL);
+}
+
+bool InputManager::IsShiftDown() const
+{
+	return IsKeyDown(VK_SHIFT);
+}
+
+bool InputManager::IsAltDown() const
+{
+	return IsKeyDown(VK_MENU);
+}
+
+bool InputManager::IsEnterPressed() const
+{
+	return IsKeyPressed(VK_RETURN);
+}
+
+bool InputManager::IsEscPressed() const
+{
+	return IsKeyPressed(VK_ESCAPE);
+}
+
+void InputManager::SetEnterPressed()
+{
+	m_keyPressed[VK_RETURN] = true;
+}
+
+void InputManager::SetEscPressed()
+{
+	m_keyPressed[VK_ESCAPE] = true;
+}
+
+void InputManager::ClearEnterPressed()
+{
+	ClearKeyPressed(VK_RETURN);
+}
+
+void InputManager::ClearEscPressed()
+{
+	ClearKeyPressed(VK_ESCAPE);
 }
 
 short InputManager::GetMouseX() const

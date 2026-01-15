@@ -6,6 +6,7 @@
 DialogBox_ItemDropAmount::DialogBox_ItemDropAmount(CGame* pGame)
 	: IDialogBox(DialogBoxId::ItemDropExternal, pGame)
 {
+	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 215, 87);
 }
 
 void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)

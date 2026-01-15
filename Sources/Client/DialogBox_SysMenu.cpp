@@ -82,6 +82,7 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::SystemMenu, pGame)
 {
+	SetDefaultRect(337 + SCREENX, 107 + SCREENY, 258, 268);
 }
 
 void DialogBox_SysMenu::DrawDetailLevel(short sX, short sY)

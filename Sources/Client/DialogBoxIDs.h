@@ -49,8 +49,6 @@ namespace DialogBoxId
 		ChangeStatsMajestic = 42,
 		Resurrect = 50,
 		GuildHallMenu = 51,
-		RepairAll = 52,
-		Unknown54 = 54,
-		Unknown58 = 58
+		RepairAll = 52
 	};
 }

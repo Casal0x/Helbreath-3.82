@@ -6,6 +6,7 @@
 DialogBox_Shop::DialogBox_Shop(CGame* pGame)
     : IDialogBox(DialogBoxId::SaleMenu, pGame)
 {
+    SetDefaultRect(70 + SCREENX, 50 + SCREENY, 258, 339);
 }
 
 void DialogBox_Shop::OnDraw(short msX, short msY, short msZ, char cLB)

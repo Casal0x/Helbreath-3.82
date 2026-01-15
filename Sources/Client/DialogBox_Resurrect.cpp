@@ -4,6 +4,7 @@
 DialogBox_Resurrect::DialogBox_Resurrect(CGame* pGame)
 	: IDialogBox(DialogBoxId::Resurrect, pGame)
 {
+	SetDefaultRect(185 + SCREENX, 100 + SCREENY, 270, 105);
 }
 
 void DialogBox_Resurrect::OnDraw(short msX, short msY, short msZ, char cLB)

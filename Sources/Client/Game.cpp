@@ -18,6 +18,7 @@
 #include "AudioManager.h"
 #include "WeatherManager.h"
 #include "ChatCommandManager.h"
+#include "HotkeyManager.h"
 
 // DialogBox system
 #include "IDialogBox.h"
@@ -105,6 +106,7 @@ CGame::CGame()
 
 	srand((unsigned)time(0));
 	ReadSettings();
+	RegisterHotkeys();
 
 #ifdef _DEBUG
 	m_bToggleScreen = true;
@@ -205,36 +207,6 @@ CGame::CGame()
 
 	// CLEROTh - INIT DIALOG BOXES
 
-	//Character-Info Dialog(F5)
-	m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX = 30 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY = 30 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sSizeX = 270;
-	m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sSizeY = 376;
-
-	//Inventory Dialog(F6)
-	m_dialogBoxManager.Info(DialogBoxId::Inventory).sX = 380 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Inventory).sY = 210 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Inventory).sSizeX = 225;
-	m_dialogBoxManager.Info(DialogBoxId::Inventory).sSizeY = 185;
-
-	//Magic Circle Dialog(F7)
-	m_dialogBoxManager.Info(DialogBoxId::Magic).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Magic).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Magic).sSizeX = 258;//280;
-	m_dialogBoxManager.Info(DialogBoxId::Magic).sSizeY = 328;//346;
-
-	// Item drop confirmation
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sSizeX = 270;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sSizeY = 105;
-
-	// ** This is a battle area **
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sSizeX = 310;
-	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sSizeY = 170;
-
 	//Guild Menu Dialog
 	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX = 337 + SCREENX;
 	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY = 57 + SCREENY;
@@ -247,36 +219,6 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sSizeX = 295;
 	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sSizeY = 346;
 
-	//Guide Map Dialog
-	m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = LOGICAL_MAX_X - 128;
-	m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY = 0;
-	m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX = 128;
-	m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = 128;
-
-	//Chatting History Dialog(F9)
-	m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX = 135 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY = 273 + SCREENY + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sSizeX = 364;
-	m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sSizeY = 162;
-
-	//Sale Menu Dialog
-	m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX = 70 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY = 50 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sSizeY = 339;
-
-	//Level-Up Setting Dialog
-	m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sSizeY = 339;
-
-	//City Hall Menu Dialog
-	m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sSizeY = 339;
-
 	//Bank Dialog
 	m_dialogBoxManager.Info(DialogBoxId::Bank).sX = 60 + SCREENX; //337
 	m_dialogBoxManager.Info(DialogBoxId::Bank).sY = 50 + SCREENY;
@@ -284,71 +226,11 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::Bank).sSizeY = 339;
 	m_dialogBoxManager.Info(DialogBoxId::Bank).sV1 = 13;
 
-	//Skill Menu(F8)
-	m_dialogBoxManager.Info(DialogBoxId::Skill).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Skill).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Skill).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Skill).sSizeY = 339;
-
-	//Magic Shop Menu
-	m_dialogBoxManager.Info(DialogBoxId::MagicShop).sX = 30 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::MagicShop).sY = 30 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeX = 304;
-	m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeY = 328;
-
-	//Dialog items drop external screen
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sSizeX = 215;
-	m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sSizeY = 87;
-
-	//Text Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Text).sX = 20 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Text).sY = 65 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Text).sSizeX = 258; // 238
-	m_dialogBoxManager.Info(DialogBoxId::Text).sSizeY = 339; // 274
-
-	//System Menu Dialog(F12)
-	m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sY = 107 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sSizeX = 258;//270; //v2.18
-	m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sSizeY = 268;//346;
-
-	//NpcActionQuery Dialog
-	m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = 237 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sSizeX = 252;
-	m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sSizeY = 87;
-
-	//NpcTalk Dialog
-	m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sSizeY = 339;
-
-	//Map
-	m_dialogBoxManager.Info(DialogBoxId::Map).sX = 336 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Map).sY = 88 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Map).sSizeX = 270;
-	m_dialogBoxManager.Info(DialogBoxId::Map).sSizeY = 346;
-
 	//ItemSellorRepair Dialog
 	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sX = 337 + SCREENX;
 	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sY = 57 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sSizeY = 339;
-
-	//Fishing Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Fishing).sX = 193 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Fishing).sY = 241 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Fishing).sSizeX = 263;
-	m_dialogBoxManager.Info(DialogBoxId::Fishing).sSizeY = 100;
-
-	//Noticement Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Noticement).sX = 162 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Noticement).sY = 40 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Noticement).sSizeX = 315;
-	m_dialogBoxManager.Info(DialogBoxId::Noticement).sSizeY = 171;
 
 	//Manufacture Dialog
 	m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX = 100 + SCREENX;
@@ -368,47 +250,11 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::Quest).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::Quest).sSizeY = 339;
 
-	//Gauge Pannel
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX = 0;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY = LOGICAL_HEIGHT - 53;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeX = 157;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeY = 53;
-
-	//Icon Pannel
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX = 0;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY = LOGICAL_HEIGHT - ICON_PANEL_HEIGHT;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeX = ICON_PANEL_WIDTH;
-	m_dialogBoxManager.Info(DialogBoxId::HudPanel).sSizeY = ICON_PANEL_HEIGHT;//47;
-
-	//Sell List Dialog
-	m_dialogBoxManager.Info(DialogBoxId::SellList).sX = 170 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::SellList).sY = 70 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::SellList).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::SellList).sSizeY = 339;
-
 	//Party Dialog
 	m_dialogBoxManager.Info(DialogBoxId::Party).sX = 0 + SCREENX;
 	m_dialogBoxManager.Info(DialogBoxId::Party).sY = 0 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::Party).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::Party).sSizeY = 339;
-
-	//Crusade Job Dialog
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sSizeY = 339;
-
-	//Item Upgrade Dialog
-	m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX = 60 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY = 50 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sSizeY = 339;
-
-	//Help Menu Dialog(F1)
-	m_dialogBoxManager.Info(DialogBoxId::Help).sX = 358 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Help).sY = 65 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Help).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Help).sSizeY = 339;
 
 	//Crusade Commander Dialog
 	m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sX = 20 + SCREENX;
@@ -440,23 +286,11 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeY = 339;
 
-	// Snoopy: Item exchange confirmation
-	m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sX = 285 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sY = 200 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sSizeX = 270;
-	m_dialogBoxManager.Info(DialogBoxId::ConfirmExchange).sSizeY = 105;
-
 	// MJ Stats Change DialogBox - Diuuude
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sX = 0 + SCREENX;
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sY = 0 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeY = 339;
-
-	// Snoopy: Resurection
-	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sX = 185 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sY = 100 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sSizeX = 270;
-	m_dialogBoxManager.Info(DialogBoxId::Resurrect).sSizeY = 105;
 
 	//Guild Hall Menu Dialog
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sX = 337 + SCREENX;
@@ -464,18 +298,9 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeY = 339;
 
-	//50Cent - Repair All
-	m_dialogBoxManager.Info(DialogBoxId::RepairAll).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::RepairAll).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::RepairAll).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::RepairAll).sSizeY = 339;
-
-
-
-	m_bCtrlPressed = false;
-	m_bShiftPressed = false;
-	m_bEnterPressed = false;
-	m_bEscPressed = false;
+	InputManager::Get().ClearAllKeys();
+	InputManager::Get().ClearEnterPressed();
+	InputManager::Get().ClearEscPressed();
 	m_dwDialogCloseTime = 0;
 	m_iTimeLeftSecAccount = 0;
 	m_iTimeLeftSecIP = 0;
@@ -1928,7 +1753,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						}
 					}
 
-					if (m_bShiftPressed && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
+					if (InputManager::Get().IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
 						sItemSelectedID = sItemID;
 						dwItemSelectedAttr = dwItemAttr;
 						iItemSelectedx = ix;
@@ -3873,7 +3698,7 @@ void CGame::OnTimer()
 			delete m_pGSock;
 			m_pGSock = 0;
 			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-			m_bEscPressed = false;
+			InputManager::Get().ClearEscPressed();
 			PlaySound('E', 14, 5);
 			AudioManager::Get().StopSound(SoundType::Effect, 38);
 			AudioManager::Get().StopMusic();
@@ -14400,9 +14225,9 @@ void CGame::UpdateOverlay()
 	{
 	case OverlayType::Connecting:
 		// ESC to cancel connection
-		if (m_bEscPressed)
+		if (InputManager::Get().IsEscPressed())
 		{
-			m_bEscPressed = false;
+			InputManager::Get().ClearEscPressed();
 			HideOverlay();
 			if (m_pGSock) m_pGSock->_CloseConn();
 			if (m_pLSock) m_pLSock->_CloseConn();
@@ -14411,9 +14236,9 @@ void CGame::UpdateOverlay()
 
 	case OverlayType::WaitingResponse:
 		// ESC to cancel waiting
-		if (m_bEscPressed)
+		if (InputManager::Get().IsEscPressed())
 		{
-			m_bEscPressed = false;
+			InputManager::Get().ClearEscPressed();
 			HideOverlay();
 			if (m_pGSock) m_pGSock->_CloseConn();
 			if (m_pLSock) m_pLSock->_CloseConn();
@@ -16915,7 +16740,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	{
 		if (m_iSuperAttackLeft > 0)
 		{
-			if (GetAsyncKeyState(VK_MENU) >> 15)
+			if (InputManager::Get().IsAltDown())
 				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutTransSprite(iconX + 368 + resx + 7, iconY + 440 + resy, 3, m_dwCurTime);
 			wsprintf(G_cTxt, "%d", m_iSuperAttackLeft);
 			PutString_SprFont2(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 255, 255, 255);
@@ -19140,7 +18965,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		if (m_cCurFocus < 1)		   m_cCurFocus = 1;
 
 		m_cArrowPressed = 0;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 
 		dwCTime = GameClock::GetTimeMS();
 	}
@@ -19163,17 +18988,17 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_pCharList[m_cCurFocus - 1] != 0)
@@ -22209,18 +22034,18 @@ void CGame::UpdateScreen_OnAgreement()
 
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-	if (m_bEnterPressed == true) {
+	if (InputManager::Get().IsEnterPressed() == true) {
 		PlaySound('E', 14, 5);
 		ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
 		ClearContents_OnCreateNewAccount();
 		delete pMI;
 		return;
 	}
-	if (m_bEscPressed == true) {
+	if (InputManager::Get().IsEscPressed() == true) {
 		PlaySound('E', 14, 5);
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
@@ -22300,382 +22125,66 @@ void CGame::UpdateScreen_OnAgreement()
 
 
 
-void CGame::OnSysKeyDown(WPARAM wParam)
-{
-	switch (wParam)
-	{
-	case VK_SHIFT:
-		m_bShiftPressed = true;
-		break;
-	case VK_CONTROL:
-		m_bCtrlPressed = true;
-		break;
-	case VK_RETURN:
-		m_bEnterPressed = true;
-		break;
-	}
-}
-
-void CGame::OnSysKeyUp(WPARAM wParam)
-{
-	switch (wParam)
-	{
-	case VK_SHIFT:
-		m_bShiftPressed = false;
-		break;
-	case VK_CONTROL:
-		m_bCtrlPressed = false;
-		break;
-	case VK_RETURN:
-		m_bEnterPressed = false;
-		if (m_bToggleScreen == true)
-		{
-			m_bIsRedrawPDBGS = true;
-			m_DDraw.ChangeDisplayMode(G_hWnd);
-		}
-		break;
-	case VK_ESCAPE:
-		m_bEscPressed = false;
-
-	}
-}
-
 void CGame::OnKeyUp(WPARAM wParam)
 {
-	int i = 0;
-	uint32_t dwTime = GameClock::GetTimeMS();
+	if (HotkeyManager::Get().HandleKeyUp(static_cast<int>(wParam))) {
+		return;
+	}
 
 	switch (wParam) {
-	case VK_SHIFT:
-		m_bShiftPressed = false;
-		break;
-	case VK_CONTROL:
-		m_bCtrlPressed = false;
-		break;
-	case 65://'A'
-		if (m_bCtrlPressed && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			if (m_bForceAttack)
-			{
-				m_bForceAttack = false;
-				AddEventList(DEF_MSG_FORCEATTACK_OFF, 10);
-			}
-			else
-			{
-				m_bForceAttack = true;
-				AddEventList(DEF_MSG_FORCEATTACK_ON, 10);
-			}
-		}
-		break;
-	case 69://'E'
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			if (m_bCtrlPressed)
-			{
-				if (m_dialogBoxManager.IsEnabled(DialogBoxId::Unknown54) == false && m_dialogBoxManager.IsEnabled(DialogBoxId::Unknown58) == false)
-				{
-					m_dialogBoxManager.EnableDialogBox(DialogBoxId::Unknown58, 0, 0, 0);
-				}
-				else
-				{
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::Unknown58);
-					m_dialogBoxManager.DisableDialogBox(DialogBoxId::Unknown54);
-				}
-			}
-		}
-		break;
-	case 68://'D'
-		if (m_bCtrlPressed == true && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			m_cDetailLevel++;
-			if (m_cDetailLevel > 2) m_cDetailLevel = 0;
-			switch (m_cDetailLevel) {
-			case 0:
-				AddEventList(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
-				break;
-			case 1:
-				AddEventList(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
-				break;
-			case 2:
-				AddEventList(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
-				break;
-			}
-		}
-		break;
-
-	case 72: // 'H' // Snoopy: Mimics VK_F1
-		if (m_bCtrlPressed && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
-			else
-			{
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::Help);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-			}
-		}
-		break;
-
-	case 87: // 'W' // Snoopy: mimics VK_F11 Togles transparency
-		if (m_bCtrlPressed && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			m_bDialogTrans = !m_bDialogTrans;
-		}
-		break;
-
-	case 88: // 'X' // Snoopy: mimics VK_F12 Logout Window
-		if (m_bCtrlPressed && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
-			else m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-		}
-		break;
-
-	case 77://'M'
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			if (m_bCtrlPressed)
-			{
-				if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
-				else m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0, 0);
-			}
-		}
-		break;
-
-#ifdef _DEBUG
-	case 81://'Q'
-		if ((m_bCtrlPressed == true) && (m_cGameMode == DEF_GAMEMODE_ONMAINGAME))
-		{
-			std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-			strcpy(m_cChatMsg, "/enableadmincommand 147258 ");
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-			//ClearInputString();
-		}
-		break;
-#endif
-
-	case 82://'R'
-		if (m_bCtrlPressed == true && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			if (m_bRunningMode)
-			{
-				m_bRunningMode = false;
-				AddEventList(NOTIFY_MSG_CONVERT_WALKING_MODE, 10);
-			}
-			else
-			{
-				m_bRunningMode = true;
-				AddEventList(NOTIFY_MSG_CONVERT_RUNNING_MODE, 10);
-			}
-		}
-		break;
-
-	case 83://'S'
-		if (m_bCtrlPressed == true && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			if (AudioManager::Get().IsMusicEnabled()) // Music Off
-			{
-				AudioManager::Get().SetMusicEnabled(false);
-				AudioManager::Get().StopMusic();
-				AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
-				break;
-			}
-			else if (AudioManager::Get().IsSoundEnabled())
-			{
-				AudioManager::Get().StopSound(SoundType::Effect, 38);
-				AudioManager::Get().SetSoundEnabled(false);
-				AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
-				break;
-			}
-			else 	// Music On
-			{
-				if (AudioManager::Get().IsSoundAvailable())
-				{
-					AudioManager::Get().SetMusicEnabled(true);
-					AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
-				}
-				if (AudioManager::Get().IsSoundAvailable())
-				{
-					AudioManager::Get().SetSoundEnabled(true);
-					AddEventList(NOTIFY_MSG_SOUND_ON, 10);
-				}
-				StartBGM();
-			}
-		}
-		break;
-
-	case 84: //'T'
-		if (m_bCtrlPressed == true && m_cGameMode == DEF_GAMEMODE_ONMAINGAME && (!m_bInputStatus))
-		{
-			char tempid[100], cLB, cRB;
-			short sX, sY, msX, msY, msZ;
-			sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
-			sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-			std::memset(tempid, 0, sizeof(tempid));
-			InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
-			{
-				char* token, cBuff[64];
-				char   seps[] = ":";
-				int i = (139 - msY + sY) / 13;
-				if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView] == 0) return;
-				if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg[0] == ' ') i++;
-				strcpy(cBuff, m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg);
-				token = strtok(cBuff, seps);
-				wsprintf(tempid, "/to %s", token);
-				bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
-			}
-			else if (_tmp_sOwnerType < 7 && (strlen(_tmp_cName) > 0) && (m_iIlusionOwnerH == 0)
-				&& ((m_bIsCrusadeMode == false) || _iGetFOE(_tmp_iStatus) >= 0))
-			{
-				wsprintf(tempid, "/to %s", _tmp_cName);
-				bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
-			}
-			else
-			{
-				EndInputString();
-				wsprintf(m_cChatMsg, "/to ");
-				StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-			}
-		}
-		break;
 	case 107: //'+'
-		if (m_bInputStatus == false) m_bZoomMap = true;
+		Hotkey_Simple_ZoomIn();
 		break;
 	case 109: //'-'
-		if (m_bInputStatus == false) m_bZoomMap = false;
+		Hotkey_Simple_ZoomOut();
 		break;
 
 	case VK_F2:
-		UseShortCut(2);
+		Hotkey_Simple_UseShortcut2();
 		break;
 
 	case VK_F3:
-		UseShortCut(3);
+		Hotkey_Simple_UseShortcut3();
 		break;
 
 	case VK_INSERT:
-		if (m_iHP <= 0) return;
-		if (m_bItemUsingStatus == true)
-		{
-			AddEventList(USE_RED_POTION1, 10);
-			return;
-		}
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
-		{
-			AddEventList(USE_RED_POTION2, 10);
-			return;
-		}
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-				(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 1))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-				m_bIsItemDisabled[i] = true;
-				m_bItemUsingStatus = true;
-				return;
-			}
-
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-				(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 2))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-				m_bIsItemDisabled[i] = true;
-				m_bItemUsingStatus = true;
-				return;
-			}
+		Hotkey_Simple_UseHealthPotion();
 		break;
 
 	case VK_DELETE:
-		if (m_iHP <= 0) return;
-		if (m_bItemUsingStatus == true)
-		{
-			AddEventList(USE_BLUE_POTION1, 10);
-			return;
-		}
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
-		{
-			AddEventList(USE_BLUE_POTION2, 10);
-			return;
-		}
-
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-				(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 3))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-				m_bIsItemDisabled[i] = true;
-				m_bItemUsingStatus = true;
-				return;
-			}
-
-		for (i = 0; i < DEF_MAXITEMS; i++)
-			if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-				(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 4))
-			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-				m_bIsItemDisabled[i] = true;
-				m_bItemUsingStatus = true;
-				return;
-			}
+		Hotkey_Simple_UseManaPotion();
 		break;
 
 	case VK_END:
-		if (((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) ||
-			((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ItemDropExternal)))
-		{
-		}
-		else if ((!m_bInputStatus) && (m_cBackupChatMsg[0] != '!') && (m_cBackupChatMsg[0] != '~') && (m_cBackupChatMsg[0] != '^') &&
-			(m_cBackupChatMsg[0] != '@'))
-		{
-			std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-			strcpy(m_cChatMsg, m_cBackupChatMsg);
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-		}
+		Hotkey_Simple_LoadBackupChat();
 		break;
 
 	case VK_F4:
-		if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-		UseMagic(m_sMagicShortCut);
+		Hotkey_Simple_UseMagicShortcut();
 		break;
 
 	case VK_F5:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CharacterInfo) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::CharacterInfo, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::CharacterInfo);
+		Hotkey_Simple_ToggleCharacterInfo();
 		break;
 
 	case VK_F6:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Inventory) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Inventory, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Inventory);
+		Hotkey_Simple_ToggleInventory();
 		break;
 
 	case VK_F7:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Magic) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
+		Hotkey_Simple_ToggleMagic();
 		break;
 
 	case VK_F8:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Skill) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Skill, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::Skill);
+		Hotkey_Simple_ToggleSkill();
 		break;
 
 	case VK_F9:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::ChatHistory, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChatHistory);
+		Hotkey_Simple_ToggleChatHistory();
 		break;
 
 	case VK_F12:
-		if (m_bInputStatus) return;
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
-		else m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
+		Hotkey_Simple_ToggleSystemMenu();
 		break;
 
 	case VK_F1:
@@ -22686,186 +22195,52 @@ void CGame::OnKeyUp(WPARAM wParam)
 		//{	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Help);
 		//	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
 		//}
-		UseShortCut(1);
+		Hotkey_Simple_UseShortcut1();
 		break;
 
 	case VK_UP:
-		m_cArrowPressed = 1;
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			int iTotalMsg = 0;
-			for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
-			{
-				if (m_pWhisperMsg[i] != 0)
-				{
-					iTotalMsg = i;
-					break;
-				}
-			}
-			m_cWhisperIndex++;
-			if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-			if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-			if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-				EndInputString();
-				wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-				StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-			}
-		}
+		Hotkey_Simple_WhisperCycleUp();
 		break;
 
 	case VK_RIGHT:
-		m_cArrowPressed = 2;
+		Hotkey_Simple_ArrowRight();
 		break;
 
 	case VK_DOWN:
-		m_cArrowPressed = 3;
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			int iTotalMsg = 0;
-			for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
-			{
-				if (m_pWhisperMsg[i] != 0)
-				{
-					iTotalMsg = i;
-					break;
-				}
-			}
-			m_cWhisperIndex--;
-			if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-			if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-			if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-				EndInputString();
-				wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-				StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-			}
-		}
+		Hotkey_Simple_WhisperCycleDown();
 		break;
 
 	case VK_LEFT:
-		m_cArrowPressed = 4;
+		Hotkey_Simple_ArrowLeft();
 		break;
 
 	case VK_SNAPSHOT:
-		CreateScreenShot();
+		Hotkey_Simple_Screenshot();
 		break;
 
-#ifndef DEF_USING_WIN_IME
 	case VK_TAB:
-		if (m_bShiftPressed)
-		{
-			m_cCurFocus--;
-			if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
-		}
-		else
-		{
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-		}
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-		}
+		Hotkey_Simple_TabToggleCombat();
 		break;
-
-	case VK_RETURN:
-		m_bEnterPressed = true;
-		break;
-#endif
 
 	case VK_HOME:
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLESAFEATTACKMODE, 0, 0, 0, 0, 0);
-		}
+		Hotkey_Simple_ToggleSafeAttack();
 		break;
 
 	case VK_ESCAPE:
-		m_bEscPressed = true;
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
-		{
-			if ((m_bIsObserverMode == true) && (m_bShiftPressed)) { //ObserverMode Shift+Esc
-				// Log Out
-				if (m_cLogOutCount == -1) m_cLogOutCount = 1;
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-				PlaySound('E', 14, 5);
-			}
-			else if (m_cLogOutCount != -1) {
-				if (m_bForceDisconn == false) { //Esc
-					m_cLogOutCount = -1;
-					AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
-				}
-			}
-			if (m_bIsGetPointingMode == true) {
-				m_bIsGetPointingMode = false;
-				AddEventList(COMMAND_PROCESSOR1, 10);
-			}
-			m_bIsF1HelpWindowEnabled = false;
-		}
+		Hotkey_Simple_Escape();
 		break;
 
 	case 33:
-		if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-		if (m_bInputStatus) return;
-		if (m_bIsSpecialAbilityEnabled == true)
-		{
-			if (m_iSpecialAbilityType != 0) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACTIVATESPECABLTY, 0, 0, 0, 0, 0);
-				m_bIsSpecialAbilityEnabled = false;
-			}
-			else AddEventList(ON_KEY_UP26, 10);
-		}
-		else {
-			if (m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
-			else {
-				if ((m_sPlayerAppr4 & 0x00F0) != 0) {
-					AddEventList(ON_KEY_UP28, 10);
-					return;
-				}
-
-				i = (dwTime - m_dwSpecialAbilitySettingTime) / 1000;
-				i = m_iSpecialAbilityTimeLeftSec - i;
-				if (i < 0) i = 0;
-
-				std::memset(G_cTxt, 0, sizeof(G_cTxt));
-				if (i < 60) {
-					switch (m_iSpecialAbilityType) {
-					case 1: wsprintf(G_cTxt, ON_KEY_UP29, i); break;//"
-					case 2: wsprintf(G_cTxt, ON_KEY_UP30, i); break;//"
-					case 3: wsprintf(G_cTxt, ON_KEY_UP31, i); break;//"
-					case 4: wsprintf(G_cTxt, ON_KEY_UP32, i); break;//"
-					case 5: wsprintf(G_cTxt, ON_KEY_UP33, i); break;//"
-					case 50:wsprintf(G_cTxt, ON_KEY_UP34, i); break;//"
-					case 51:wsprintf(G_cTxt, ON_KEY_UP35, i); break;//"
-					case 52:wsprintf(G_cTxt, ON_KEY_UP36, i); break;//"
-					}
-				}
-				else {
-					switch (m_iSpecialAbilityType) {
-					case 1: wsprintf(G_cTxt, ON_KEY_UP37, i / 60); break;//"
-					case 2: wsprintf(G_cTxt, ON_KEY_UP38, i / 60); break;//"
-					case 3: wsprintf(G_cTxt, ON_KEY_UP39, i / 60); break;//"
-					case 4: wsprintf(G_cTxt, ON_KEY_UP40, i / 60); break;//"
-					case 5: wsprintf(G_cTxt, ON_KEY_UP41, i / 60); break;//"
-					case 50:wsprintf(G_cTxt, ON_KEY_UP42, i / 60); break;//"
-					case 51:wsprintf(G_cTxt, ON_KEY_UP43, i / 60); break;//"
-					case 52:wsprintf(G_cTxt, ON_KEY_UP44, i / 60); break;//"
-					}
-				}
-				AddEventList(G_cTxt, 10);
-			}
-		}
+		Hotkey_Simple_SpecialAbility();
 		break;
+	default:
+		return;
 	}
 }
 
 void CGame::OnKeyDown(WPARAM wParam)
 {
 	switch (wParam) {
-	case VK_CONTROL:
-		m_bCtrlPressed = true;
-		break;
-	case VK_SHIFT:
-		m_bShiftPressed = true;
-		break;
 	case VK_INSERT:
 	case VK_DELETE:
 	case VK_TAB:
@@ -22897,33 +22272,31 @@ void CGame::OnKeyDown(WPARAM wParam)
 	case VK_DIVIDE:
 	case VK_NUMLOCK:
 	case VK_SCROLL:
-		break;
+		return;
+	}
 
-	default:
-		if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	{
+		if (InputManager::Get().IsCtrlDown())
 		{
-			if (m_bCtrlPressed)
-			{
-				switch (wParam) {
-				case 48: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break; // 0
-				case 49: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0; break; // 1
-				case 50: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1; break; // 2
-				case 51: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2; break; // 3
-				case 52: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3; break; // 4
-				case 53: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4; break; // 5
-				case 54: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5; break; // 6
-				case 55: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6; break; // 7
-				case 56: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7; break; // 8
-				case 57: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break; // 9
-				}
-			}
-			else if ((m_bInputStatus == false) && (GetAsyncKeyState(VK_MENU) >> 15 == false))
-			{
-				StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-				ClearInputString();
+			switch (wParam) {
+			case 48: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break; // 0
+			case 49: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0; break; // 1
+			case 50: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1; break; // 2
+			case 51: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2; break; // 3
+			case 52: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3; break; // 4
+			case 53: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4; break; // 5
+			case 54: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5; break; // 6
+			case 55: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6; break; // 7
+			case 56: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7; break; // 8
+			case 57: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break; // 9
 			}
 		}
-		break;
+		else if ((m_bInputStatus == false) && (!InputManager::Get().IsAltDown()))
+		{
+			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+			ClearInputString();
+		}
 	}
 }
 
@@ -22951,20 +22324,20 @@ void CGame::UpdateScreen_Quit()
 			delete m_pGSock;
 			m_pGSock = 0;
 		}
-		m_bEscPressed = false;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEscPressed();
+		InputManager::Get().ClearEnterPressed();
 		pMI = new class CMouseInterface;
 		pMI->AddRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 	}
 
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 120) m_cGameModeCount = 120;
 
 	// Handle escape/enter to quit immediately
-	if (m_bEscPressed == true || m_bEnterPressed == true) {
-		m_bEscPressed = false;
-		m_bEnterPressed = false;
+	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true) {
+		InputManager::Get().ClearEscPressed();
+		InputManager::Get().ClearEnterPressed();
 		delete pMI;
 		ChangeGameMode(DEF_GAMEMODE_NULL);
 		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
@@ -23028,16 +22401,16 @@ void CGame::UpdateScreen_VersionNotMatch()
 		}
 		pMI = new class CMouseInterface;
 		pMI->AddRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 	}
 
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 120) m_cGameModeCount = 120;
 
-	if (m_bEscPressed == true || m_bEnterPressed == true)
+	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEscPressed = false;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEscPressed();
+		InputManager::Get().ClearEnterPressed();
 		delete pMI;
 		ChangeGameMode(DEF_GAMEMODE_NULL);
 		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
@@ -23140,14 +22513,14 @@ void CGame::UpdateScreen_WaitingResponse()
 
 	if (m_cGameModeCount == 0)
 	{
-		m_bEnterPressed = false;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEnterPressed();
+		InputManager::Get().ClearEscPressed();
 		dwCTime = GameClock::GetTimeMS();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		if ((dwTime - m_dwTime) > 7000)
 		{
@@ -23163,7 +22536,7 @@ void CGame::UpdateScreen_WaitingResponse()
 				m_pGSock = 0;
 			}
 		}
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23241,14 +22614,14 @@ void CGame::UpdateScreen_Connecting()
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0) {
-		m_bEnterPressed = false;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEnterPressed();
+		InputManager::Get().ClearEscPressed();
 		dwCTime = dwMTime = GameClock::GetTimeMS();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true) {
+	if (InputManager::Get().IsEscPressed() == true) {
 		if ((dwTime - m_dwTime) > 1000)
 		{
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
@@ -23263,7 +22636,7 @@ void CGame::UpdateScreen_Connecting()
 				m_pGSock = 0;
 			}
 		}
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23347,8 +22720,8 @@ void CGame::UpdateScreen_QueryForceLogin()
 		pMI = new class CMouseInterface;
 		pMI->AddRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
 		pMI->AddRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		m_bEnterPressed = false;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEnterPressed();
+		InputManager::Get().ClearEscPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		PlaySound('E', 25, 0);
@@ -23356,10 +22729,10 @@ void CGame::UpdateScreen_QueryForceLogin()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true) {
+	if (InputManager::Get().IsEscPressed() == true) {
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23452,7 +22825,7 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 		pMI = new class CMouseInterface;
 		pMI->AddRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
 		pMI->AddRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		PlaySound('E', 25, 0);
@@ -23460,11 +22833,11 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23582,7 +22955,7 @@ void CGame::UpdateScreen_MainMenu()
 		m_cCurFocus = 1;
 		m_cMaxFocus = 3;
 
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 	}
 	m_cGameModeCount++;
@@ -23610,9 +22983,9 @@ void CGame::UpdateScreen_MainMenu()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEnterPressed == true) {
+	if (InputManager::Get().IsEnterPressed() == true) {
 		PlaySound('E', 14, 5);
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		switch (m_cCurFocus) {
 		case 1:
 			delete pMI;
@@ -23690,13 +23063,13 @@ void CGame::UpdateScreen_WaitInitData()
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0) {
-		m_bEnterPressed = false;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEnterPressed();
+		InputManager::Get().ClearEscPressed();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true) {
+	if (InputManager::Get().IsEscPressed() == true) {
 		if ((dwTime - m_dwTime) > 7000)
 		{
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
@@ -23711,7 +23084,7 @@ void CGame::UpdateScreen_WaitInitData()
 				m_pGSock = 0;
 			}
 		}
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23758,7 +23131,7 @@ void CGame::UpdateScreen_SelectServer()
 		m_cCurFocus = 1;
 		m_cMaxFocus = 3;
 
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 	}
 	m_cGameModeCount++;
@@ -23779,9 +23152,9 @@ void CGame::UpdateScreen_SelectServer()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
 		case 1:
@@ -23804,11 +23177,11 @@ void CGame::UpdateScreen_SelectServer()
 		}
 	}
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -23900,7 +23273,7 @@ void CGame::UpdateScreen_Login()
 		cPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 4;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		std::memset(s_cLoginName, 0, sizeof(s_cLoginName));
 		std::memset(s_cLoginPassword, 0, sizeof(s_cLoginPassword));
@@ -23934,9 +23307,9 @@ void CGame::UpdateScreen_Login()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		switch (m_cCurFocus) {
@@ -23971,12 +23344,12 @@ void CGame::UpdateScreen_Login()
 		}
 	}
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		EndInputString();
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -24115,7 +23488,7 @@ void CGame::UpdateScreen_ChangePassword()
 		s_cChgPwdPrevFocus = 2;
 		m_cCurFocus = 2;
 		m_cMaxFocus = 6;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 
 		std::memset(s_cChgPwdName, 0, sizeof(s_cChgPwdName));
@@ -24171,7 +23544,7 @@ void CGame::UpdateScreen_ChangePassword()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
@@ -24211,14 +23584,14 @@ void CGame::UpdateScreen_ChangePassword()
 			delete s_pChgPwdMI;
 			return;
 		}
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 	}
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete s_pChgPwdMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -24412,7 +23785,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 		s_cNewAcctPrevLB = 0;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 9;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 
 		std::memset(s_cNewAcctName, 0, sizeof(s_cNewAcctName));
@@ -24460,9 +23833,9 @@ void CGame::UpdateScreen_CreateNewAccount()
 	}
 
 	// Handle Enter key
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_cCurFocus <= 6)
@@ -24536,9 +23909,9 @@ void CGame::UpdateScreen_CreateNewAccount()
 	}
 
 	// Handle Escape key
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete s_pNewAcctMI;
 		return;
@@ -24585,7 +23958,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 		{
 			PlaySound('E', 14, 5);
 			m_cCurFocus = 7;
-			m_bEnterPressed = true; // Trigger Enter handling
+			InputManager::Get().SetEnterPressed(); // Trigger Enter handling
 		}
 		else if (bOverClear)
 		{
@@ -24825,7 +24198,7 @@ void CGame::UpdateScreen_SelectCharacter()
 		if (m_cCurFocus < 1) m_cCurFocus = 1;
 
 		m_cArrowPressed = 0;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 
 		s_dwSelCharCTime = GameClock::GetTimeMS();
 	}
@@ -24848,17 +24221,17 @@ void CGame::UpdateScreen_SelectCharacter()
 		m_cArrowPressed = 0;
 	}
 
-	if (m_bEscPressed == true)
+	if (InputManager::Get().IsEscPressed() == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 		delete s_pSelCharMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_pCharList[m_cCurFocus - 1] != 0)
@@ -25109,7 +24482,7 @@ void CGame::UpdateScreen_CreateNewCharacter()
 		s_cNewCharPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 6;
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		s_dwNewCharMTime = GameClock::GetTimeMS();
 		std::memset(s_cNewCharName, 0, sizeof(s_cNewCharName));
@@ -25145,10 +24518,10 @@ void CGame::UpdateScreen_CreateNewCharacter()
 		s_cNewCharPrevFocus = m_cCurFocus;
 	}
 
-	if (m_bEscPressed == true) {
+	if (InputManager::Get().IsEscPressed() == true) {
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
 		delete s_pNewCharMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -26192,7 +25565,6 @@ void CGame::NotifyMsgHandler(char* pData)
 		}
 	}
 	//wsprintf(G_cTxt,"majesty: %d", m_iGizonItemUpgradeLeft);
-	//DebugLog(G_cTxt);
 	break;
 
 	case DEF_NOTIFY_GIZONEITEMCHANGE: // 0x0BA5
@@ -27579,8 +26951,8 @@ void CGame::UpdateScreen_OnLogResMsg()
 	{
 		pMI = new class CMouseInterface;
 		pMI->AddRect(370 + SCREENX, 240 + SCREENY, 370 + SCREENX + DEF_BTNSZX, 240 + SCREENY + DEF_BTNSZY);
-		m_bEnterPressed = false;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEnterPressed();
+		InputManager::Get().ClearEscPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
@@ -27588,7 +26960,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (m_bEscPressed == true || m_bEnterPressed) {
+	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed()) {
 		switch (m_cMsg[0]) {
 		case '0':
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
@@ -27624,7 +26996,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 		}
 
 		delete pMI;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -29870,7 +29242,7 @@ void CGame::_CalcSocketClosed()
 	{
 		delete m_pGSock;
 		m_pGSock = 0;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -29958,13 +29330,13 @@ void CGame::UpdateScreen_OnGame()
 	}
 
 	// Enter key handling
-	if (m_bEnterPressed == true)
+	if (InputManager::Get().IsEnterPressed() == true)
 	{
-		m_bEnterPressed = false;
+		InputManager::Get().ClearEnterPressed();
 
 		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
 			EndInputString();
-			m_bEnterPressed = false;
+			InputManager::Get().ClearEnterPressed();
 			if (strlen(m_cGuildName) == 0) return;
 			if (strcmp(m_cGuildName, "NONE") != 0) {
 				bSendCommand(MSGID_REQUEST_CREATENEWGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
@@ -30160,7 +29532,7 @@ void CGame::UpdateScreen_OnGame()
 		WriteSettings(); // Save settings on logout
 		delete m_pGSock;
 		m_pGSock = 0;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -30618,7 +29990,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	if (m_bIsObserverMode == true) return;
 
-	if (GetAsyncKeyState(VK_MENU) >> 15) // [ALT]
+	if (InputManager::Get().IsAltDown()) // [ALT]
 		m_bSuperAttackMode = true;
 	else m_bSuperAttackMode = false;
 
@@ -30842,7 +30214,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	{
 		delete m_pGSock;
 		m_pGSock = 0;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -30894,7 +30266,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			if (memcmp(m_cMCName, m_cPlayerName, 10) == 0) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
-				if (m_bCtrlPressed == true)
+				if (InputManager::Get().IsCtrlDown() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 					if ((iObjectStatus & 0x10) != 0) return;
@@ -30931,7 +30303,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 7: // SS
 							if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 							{
-								if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+								if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 								{
 									if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 									{
@@ -30956,7 +30328,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else
 							{
-								if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)
+								if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)
 									&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 									m_cCommand = DEF_OBJECTRUN;	// Staminar
 								else m_cCommand = DEF_OBJECTMOVE;
@@ -30996,7 +30368,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
 									&& (_iGetAttackType() != 5)) // no Dash possible with StormBlade
 								{
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 									{
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
@@ -31021,7 +30393,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 								else
 								{
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)
 										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31042,7 +30414,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)) {
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -31062,7 +30434,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31085,7 +30457,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 								{
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 									{
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
@@ -31110,7 +30482,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 								else
 								{
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31129,7 +30501,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)) {
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -31149,7 +30521,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31168,7 +30540,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)) {
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -31188,7 +30560,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31415,7 +30787,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0)
+									if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0)
 										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -31428,7 +30800,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
 										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31438,7 +30810,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
 										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31455,7 +30827,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									else
 									{
-										if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+										if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -31468,7 +30840,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								case 9: // Fencing
 									if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true))
 									{
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31477,7 +30849,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									else
 									{
-										if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+										if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -31489,7 +30861,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 								case 10: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31497,7 +30869,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+										if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -31508,7 +30880,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 								case 14: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31516,7 +30888,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+										if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -31527,7 +30899,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 								case 21: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (m_bShiftPressed || m_bRunningMode) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -31535,7 +30907,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+										if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -31550,7 +30922,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 					}
 					else {
-						if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+						if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 							(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 							m_cCommand = DEF_OBJECTRUN;
 						else m_cCommand = DEF_OBJECTMOVE;
@@ -31562,7 +30934,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			}
 			else
 			{
-				if ((m_bShiftPressed || m_bRunningMode) && (m_iSP > 0) &&
+				if ((InputManager::Get().IsShiftDown() || m_bRunningMode) && (m_iSP > 0) &&
 					(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 					m_cCommand = DEF_OBJECTRUN;
 				else m_cCommand = DEF_OBJECTMOVE;
@@ -31589,7 +30961,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			absY = abs(m_sPlayerY - m_sMCY);
 			if (absX == 0 && absY == 0) return;
 
-			if (m_bCtrlPressed == true)
+			if (InputManager::Get().IsCtrlDown() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if ((iObjectStatus & 0x10) != 0) return;
@@ -31926,11 +31298,11 @@ MOTION_COMMAND_PROCESS:;
 			{
 				if (m_cCommand == DEF_OBJECTMOVE)
 				{
-					if (m_bRunningMode || m_bShiftPressed) m_cCommand = DEF_OBJECTRUN;
+					if (m_bRunningMode || InputManager::Get().IsShiftDown()) m_cCommand = DEF_OBJECTRUN;
 				}
 				if (m_cCommand == DEF_OBJECTRUN)
 				{
-					if ((m_bRunningMode == false) && (m_bShiftPressed == false)) m_cCommand = DEF_OBJECTMOVE;
+					if ((m_bRunningMode == false) && (InputManager::Get().IsShiftDown() == false)) m_cCommand = DEF_OBJECTMOVE;
 					if (m_iSP < 1) m_cCommand = DEF_OBJECTMOVE;
 				}
 
@@ -34045,7 +33417,7 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 	sTmpSprFrm = m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame;
 
 	char cItemID;
-	if (m_bShiftPressed)
+	if (InputManager::Get().IsShiftDown())
 	{
 		for (int i = 0; i < DEF_MAXITEMS; i++)
 		{
@@ -34636,7 +34008,6 @@ void CGame::DlgBoxClick_SkillDlg(short msX, short msY)
 	case 7:
 		if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
 		{
-			DebugLog("Tag1 DlgBoxClick_SkillDlg");
 			if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 == -1)
 			{
 				AddEventList(DLGBOX_CLICK_SKILLDLG2, 10); // "There is not enough crafting materials. Please put in more materials."
@@ -35206,7 +34577,7 @@ void CGame::NotifyMsg_ForceDisconn(char* pData)
 	{
 		delete m_pGSock;
 		m_pGSock = 0;
-		m_bEscPressed = false;
+		InputManager::Get().ClearEscPressed();
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
 		if (strlen(G_cCmdLineTokenA) != 0)
@@ -38331,7 +37702,7 @@ void CGame::UseShortCut(int num)
 	if (num < 4) index = num;
 	else index = num + 7;
 	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-	if (m_bCtrlPressed == true)
+	if (InputManager::Get().IsCtrlDown() == true)
 	{
 		if (m_sRecentShortCut == -1)
 		{
@@ -39609,7 +38980,7 @@ void CGame::DKGlare(int iWeaponColor, int iWeaponIndex, int* iWeaponGlare)
 **  description			: 	Placeholder for Druncncity effects (nota: bubbles already coded)						**
 **********************************************************************************************************************/
 void CGame::DrawDruncncity()
-{	//DebugLog("druncncity");
+{
 }
 
 /*********************************************************************************************************************
@@ -39651,30 +39022,6 @@ void CGame::Abaddon_corpse(int sX, int sY)
 		}
 }
 
-/*********************************************************************************************************************
-**  void DebugLog(char * cStr)			( Snoopy )																	**
-**  description			: writes data into "Debug.txt"																**
-**********************************************************************************************************************/
-void CGame::DebugLog(char* cStr)
-{
-	FILE* pFile;
-	char cBuffer[512];
-	SYSTEMTIME SysTime;
-	pFile = fopen("Debug.txt", "at");
-	if (pFile == 0) return;
-	std::memset(cBuffer, 0, sizeof(cBuffer));
-	GetLocalTime(&SysTime);
-	wsprintf(cBuffer, "(%4d:%2d:%2d_%2d:%2d:%2d) - ", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
-	strcat(cBuffer, cStr);
-	strcat(cBuffer, "\n");
-	fwrite(cBuffer, 1, strlen(cBuffer), pFile);
-	fclose(pFile);
-}
-
-/*********************************************************************************************************************
-**  void DebugLog(char * cStr)	( Snoopy )															**
-**  description			: 															**
-**********************************************************************************************************************/
 
 //50Cent - Repair All
 void CGame::NotifyMsg_RepairAllPrices(char* pData)

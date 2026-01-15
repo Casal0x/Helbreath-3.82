@@ -6,6 +6,7 @@
 DialogBox_Text::DialogBox_Text(CGame* pGame)
 	: IDialogBox(DialogBoxId::Text, pGame)
 {
+	SetDefaultRect(20 + SCREENX, 65 + SCREENY, 258, 339);
 }
 
 int DialogBox_Text::GetTotalLines() const

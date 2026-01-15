@@ -6,6 +6,7 @@
 DialogBox_Fishing::DialogBox_Fishing(CGame* pGame)
 	: IDialogBox(DialogBoxId::Fishing, pGame)
 {
+	SetDefaultRect(193 + SCREENX, 241 + SCREENY, 263, 100);
 }
 
 void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)

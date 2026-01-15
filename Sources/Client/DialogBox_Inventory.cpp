@@ -5,6 +5,7 @@
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
 {
+	SetDefaultRect(380 + SCREENX, 210 + SCREENY, 225, 185);
 }
 
 // Helper: Draw a single inventory item with proper coloring and state

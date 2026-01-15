@@ -6,6 +6,7 @@
 DialogBox_SellList::DialogBox_SellList(CGame* pGame)
 	: IDialogBox(DialogBoxId::SellList, pGame)
 {
+	SetDefaultRect(170 + SCREENX, 70 + SCREENY, 258, 339);
 }
 
 void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)

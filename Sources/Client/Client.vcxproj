@@ -255,9 +255,11 @@
     <ClCompile Include="DialogBox_ItemUpgrade.cpp" />
     <ClCompile Include="DialogBox_SellList.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
+    <ClCompile Include="HotkeyManager.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="DXC_ddraw.cpp" />
+    <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />

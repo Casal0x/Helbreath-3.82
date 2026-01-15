@@ -5,6 +5,7 @@
 DialogBox_LevelUpSetting::DialogBox_LevelUpSetting(CGame* pGame)
 	: IDialogBox(DialogBoxId::LevelUpSetting, pGame)
 {
+	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 258, 339);
 }
 
 void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, const char* pLabel,
@@ -115,7 +116,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (iCurrentStat <= m_pGame->iMaxStats) && (m_pGame->m_iLU_Point > 0))
 	{
-		if (m_pGame->m_bCtrlPressed)
+		if (InputManager::Get().IsCtrlDown())
 		{
 			if ((m_pGame->m_iLU_Point >= 5) && !bMajesticOpen)
 			{
@@ -139,7 +140,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (cPendingChange > 0))
 	{
-		if (m_pGame->m_bCtrlPressed)
+		if (InputManager::Get().IsCtrlDown())
 		{
 			if ((cPendingChange >= 5) && !bMajesticOpen)
 			{

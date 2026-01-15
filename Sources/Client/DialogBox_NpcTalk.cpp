@@ -6,6 +6,7 @@
 DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcTalk, pGame)
 {
+	SetDefaultRect(337 + SCREENX, 57 + SCREENY, 258, 339);
 }
 
 int DialogBox_NpcTalk::GetTotalLines() const

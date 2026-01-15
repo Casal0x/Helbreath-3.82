@@ -8,6 +8,7 @@
 DialogBox_ChatHistory::DialogBox_ChatHistory(CGame* pGame)
 	: IDialogBox(DialogBoxId::ChatHistory, pGame)
 {
+	SetDefaultRect(135 + SCREENX, 273 + SCREENY + SCREENY, 364, 162);
 }
 
 void DialogBox_ChatHistory::OnDraw(short msX, short msY, short msZ, char cLB)

@@ -566,8 +566,6 @@ public:
 	void ReleaseUnusedSprites();
 	bool bReadIp();
 	void OnKeyUp(WPARAM wParam);
-	void OnSysKeyDown(WPARAM wParam);
-	void OnSysKeyUp(WPARAM wParam);
 	void ChangeGameMode(char cMode);
 	void PutString(int iX, int iY, char * pString, COLORREF color);
 	void PutString(int iX, int iY, char * pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
@@ -597,6 +595,41 @@ public:
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
 	void CalcViewPoint();
 	void OnKeyDown(WPARAM wParam);
+	void RegisterHotkeys();
+	void Hotkey_ToggleForceAttack();
+	void Hotkey_CycleDetailLevel();
+	void Hotkey_ToggleHelp();
+	void Hotkey_ToggleDialogTransparency();
+	void Hotkey_ToggleSystemMenu();
+	void Hotkey_ToggleGuideMap();
+	void Hotkey_EnableAdminCommand();
+	void Hotkey_ToggleRunningMode();
+	void Hotkey_ToggleSoundAndMusic();
+	void Hotkey_WhisperTarget();
+	void Hotkey_Simple_UseHealthPotion();
+	void Hotkey_Simple_UseManaPotion();
+	void Hotkey_Simple_LoadBackupChat();
+	void Hotkey_Simple_UseMagicShortcut();
+	void Hotkey_Simple_ToggleCharacterInfo();
+	void Hotkey_Simple_ToggleInventory();
+	void Hotkey_Simple_ToggleMagic();
+	void Hotkey_Simple_ToggleSkill();
+	void Hotkey_Simple_ToggleChatHistory();
+	void Hotkey_Simple_ToggleSystemMenu();
+	void Hotkey_Simple_UseShortcut1();
+	void Hotkey_Simple_UseShortcut2();
+	void Hotkey_Simple_UseShortcut3();
+	void Hotkey_Simple_WhisperCycleUp();
+	void Hotkey_Simple_WhisperCycleDown();
+	void Hotkey_Simple_ArrowLeft();
+	void Hotkey_Simple_ArrowRight();
+	void Hotkey_Simple_Screenshot();
+	void Hotkey_Simple_TabToggleCombat();
+	void Hotkey_Simple_ToggleSafeAttack();
+	void Hotkey_Simple_Escape();
+	void Hotkey_Simple_SpecialAbility();
+	void Hotkey_Simple_ZoomIn();
+	void Hotkey_Simple_ZoomOut();
 	void Quit();
 	bool bInit(HWND hWnd, HINSTANCE hInst, char * pCmdLine);
 
@@ -610,7 +643,6 @@ public:
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	//Snoopy: added function:
-	void DebugLog(char * cStr);
 	bool bReadLoginConfigFile(char * cFn);
 	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
 	void ShowHeldenianVictory(short sSide);
@@ -790,7 +822,7 @@ public:
 	bool m_bIsItemEquipped[DEF_MAXITEMS];
 	bool m_bIsItemDisabled[DEF_MAXITEMS];
 	bool m_bIsGetPointingMode;
-	bool m_bEnterPressed, m_bEscPressed, m_bCtrlPressed, m_bRunningMode, m_bShiftPressed;
+	bool m_bRunningMode;
 
 	bool m_bDialogTrans;
 	bool m_bIsCombatMode;

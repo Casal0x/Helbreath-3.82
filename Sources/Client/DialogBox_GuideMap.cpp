@@ -6,6 +6,7 @@
 DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuideMap, pGame)
 {
+	SetDefaultRect(LOGICAL_MAX_X - 128, 0, 128, 128);
 }
 
 void DialogBox_GuideMap::DrawBorder(short sX, short sY)

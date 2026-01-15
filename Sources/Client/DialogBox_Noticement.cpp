@@ -5,6 +5,7 @@
 DialogBox_Noticement::DialogBox_Noticement(CGame* pGame)
 	: IDialogBox(DialogBoxId::Noticement, pGame)
 {
+	SetDefaultRect(162 + SCREENX, 40 + SCREENY, 315, 171);
 }
 
 void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)

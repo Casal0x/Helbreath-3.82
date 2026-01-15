@@ -3,8 +3,9 @@
 #include "lan_eng.h"
 
 DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* pGame)
-    : IDialogBox(DialogBoxId::ItemUpgrade, pGame)
+	: IDialogBox(DialogBoxId::ItemUpgrade, pGame)
 {
+	SetDefaultRect(60 + SCREENX, 50 + SCREENY, 258, 339);
 }
 
 void DialogBox_ItemUpgrade::OnDraw(short msX, short msY, short msZ, char cLB)

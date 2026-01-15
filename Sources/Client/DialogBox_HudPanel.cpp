@@ -15,6 +15,7 @@ const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] 
 DialogBox_HudPanel::DialogBox_HudPanel(CGame* pGame)
 	: IDialogBox(DialogBoxId::HudPanel, pGame)
 {
+	SetDefaultRect(0, LOGICAL_HEIGHT - ICON_PANEL_HEIGHT, ICON_PANEL_WIDTH, ICON_PANEL_HEIGHT);
 }
 
 bool DialogBox_HudPanel::IsInButton(short msX, short msY, int x1, int x2) const
@@ -147,7 +148,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
-	if (m_pGame->m_bCtrlPressed)
+	if (InputManager::Get().IsCtrlDown())
 	{
 		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
 		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);

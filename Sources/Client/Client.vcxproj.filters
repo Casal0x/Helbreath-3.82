@@ -64,18 +64,18 @@
     <ClInclude Include="resource.h">
       <Filter>Core</Filter>
     </ClInclude>
-      <ClInclude Include="FrameTiming.h">
-        <Filter>Core</Filter>
-      </ClInclude>
-      <ClInclude Include="InputManager.h">
-        <Filter>Core</Filter>
-      </ClInclude>
-      <ClInclude Include="Version.h">
-        <Filter>Core</Filter>
-      </ClInclude>
-      <ClInclude Include="Benchmark.h">
-        <Filter>Core</Filter>
-      </ClInclude>
+    <ClInclude Include="FrameTiming.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="InputManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Version.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Benchmark.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClCompile Include="Game.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -88,15 +88,15 @@
     <ClCompile Include="CommonTypes.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-      <ClCompile Include="FrameTiming.cpp">
-        <Filter>Core</Filter>
-      </ClCompile>
-      <ClCompile Include="InputManager.cpp">
-        <Filter>Core</Filter>
-      </ClCompile>
-      <ClCompile Include="Version.cpp">
-        <Filter>Core</Filter>
-      </ClCompile>
+    <ClCompile Include="FrameTiming.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="InputManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Version.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
     <!-- Managers -->
     <ClInclude Include="ConfigManager.h">
       <Filter>Managers</Filter>
@@ -450,5 +450,13 @@
     <Image Include="icon1.ico">
       <Filter>Resources</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Game.Hotkeys.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="HotkeyManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

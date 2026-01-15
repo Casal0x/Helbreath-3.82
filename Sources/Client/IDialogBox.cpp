@@ -57,6 +57,15 @@ bool IDialogBox::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, in
 	return m_pGame->bSendCommand(dwMsgID, wCommand, cDir, iV1, iV2, iV3, pString, iV4);
 }
 
+void IDialogBox::SetDefaultRect(short sX, short sY, short sSizeX, short sSizeY)
+{
+	auto& info = Info();
+	info.sX = sX;
+	info.sY = sY;
+	info.sSizeX = sSizeX;
+	info.sSizeY = sSizeY;
+}
+
 void IDialogBox::EnableDialogBox(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString)
 {
 	m_pGame->m_dialogBoxManager.EnableDialogBox(id, cType, sV1, sV2, pString);

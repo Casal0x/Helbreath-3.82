@@ -97,22 +97,107 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_KEYDOWN:
+		switch (wParam)
+		{
+		case VK_SHIFT:
+			InputManager::Get().OnKeyDown(VK_SHIFT);
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		case VK_CONTROL:
+			InputManager::Get().OnKeyDown(VK_CONTROL);
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		case VK_INSERT:
+		case VK_DELETE:
+		case VK_TAB:
+		case VK_RETURN:
+		case VK_ESCAPE:
+		case VK_END:
+		case VK_HOME:
+		case VK_F1:
+		case VK_F2:
+		case VK_F3:
+		case VK_F4:
+		case VK_F5:
+		case VK_F6:
+		case VK_F7:
+		case VK_F8:
+		case VK_F9:
+		case VK_F10:
+		case VK_F11:
+		case VK_F12:
+		case VK_PRIOR: // Page-Up
+		case VK_NEXT: // Page-Down
+		case VK_LWIN:
+		case VK_RWIN:
+		case VK_MULTIPLY:
+		case VK_ADD: //'+'
+		case VK_SEPARATOR:
+		case VK_SUBTRACT: //'-'
+		case VK_DECIMAL:
+		case VK_DIVIDE:
+		case VK_NUMLOCK:
+		case VK_SCROLL:
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		}
 		G_pGame->OnKeyDown(wParam);
 		return (DefWindowProc(hWnd, message, wParam, lParam));
 
 	case WM_KEYUP:
+		switch (wParam)
+		{
+		case VK_SHIFT:
+			InputManager::Get().OnKeyUp(VK_SHIFT);
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		case VK_CONTROL:
+			InputManager::Get().OnKeyUp(VK_CONTROL);
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		case VK_RETURN:
+			InputManager::Get().OnKeyUp(VK_RETURN);
+			InputManager::Get().SetEnterPressed();
+			return (DefWindowProc(hWnd, message, wParam, lParam));
+		}
 		G_pGame->OnKeyUp(wParam);
 		return (DefWindowProc(hWnd, message, wParam, lParam));
 
 	case WM_SYSKEYDOWN:
-		G_pGame->OnSysKeyDown(wParam);
+		switch (wParam)
+		{
+		case VK_SHIFT:
+			InputManager::Get().OnKeyDown(VK_SHIFT);
+			break;
+		case VK_CONTROL:
+			InputManager::Get().OnKeyDown(VK_CONTROL);
+			break;
+		case VK_MENU:
+			InputManager::Get().OnKeyDown(VK_MENU);
+			break;
+		case VK_RETURN:
+			InputManager::Get().OnKeyDown(VK_RETURN);
+			break;
+		}
 		return (DefWindowProc(hWnd, message, wParam, lParam));
-		break;
 
 	case WM_SYSKEYUP:
-		G_pGame->OnSysKeyUp(wParam);
+		switch (wParam)
+		{
+		case VK_SHIFT:
+			InputManager::Get().OnKeyUp(VK_SHIFT);
+			break;
+		case VK_CONTROL:
+			InputManager::Get().OnKeyUp(VK_CONTROL);
+			break;
+		case VK_MENU:
+			InputManager::Get().OnKeyUp(VK_MENU);
+			break;
+		case VK_RETURN:
+			InputManager::Get().OnKeyUp(VK_RETURN);
+			InputManager::Get().ClearEnterPressed();
+			break;
+		case VK_ESCAPE:
+			InputManager::Get().OnKeyUp(VK_ESCAPE);
+			InputManager::Get().ClearEscPressed();
+			break;
+		}
 		return (DefWindowProc(hWnd, message, wParam, lParam));
-		break;
 
 	case WM_ACTIVATEAPP:
 		if (wParam == 0)
@@ -124,7 +209,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			G_pGame->m_bIsProgramActive = true;
 			InputManager::Get().SetActive(true);
-			G_pGame->m_bCtrlPressed = false;
+			InputManager::Get().ClearAllKeys();
 
 			G_pGame->m_bIsRedrawPDBGS = true;
 			G_pGame->m_DDraw.ChangeDisplayMode(G_hWnd);

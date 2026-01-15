@@ -21,6 +21,8 @@ public:
 	void OnMouseDown(int button);
 	void OnMouseUp(int button);
 	void OnMouseWheel(int delta, int x, int y);
+	void OnKeyDown(int vk);
+	void OnKeyUp(int vk);
 
 	bool IsLeftMouseDown() const;
 	bool IsLeftMousePressed() const;
@@ -28,6 +30,21 @@ public:
 	bool IsRightMouseDown() const;
 	bool IsRightMousePressed() const;
 	bool IsRightMouseReleased() const;
+	bool IsKeyDown(int vk) const;
+	bool IsKeyPressed(int vk) const;
+	bool IsKeyReleased(int vk) const;
+	bool ConsumeKeyPressed(int vk);
+	void ClearKeyPressed(int vk);
+	void ClearAllKeys();
+	bool IsCtrlDown() const;
+	bool IsShiftDown() const;
+	bool IsAltDown() const;
+	bool IsEnterPressed() const;
+	bool IsEscPressed() const;
+	void SetEnterPressed();
+	void SetEscPressed();
+	void ClearEnterPressed();
+	void ClearEscPressed();
 
 	short GetMouseX() const;
 	short GetMouseY() const;
@@ -59,4 +76,9 @@ private:
 	bool m_rightPressed;
 	bool m_leftReleased;
 	bool m_rightReleased;
+
+	static constexpr int kKeyCount = 256;
+	bool m_keyDown[kKeyCount];
+	bool m_keyPressed[kKeyCount];
+	bool m_keyReleased[kKeyCount];
 };
