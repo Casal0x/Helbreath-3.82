@@ -9,6 +9,7 @@
 #include "FrameTiming.h"
 #include "lan_eng.h"
 #include "Packet/SharedPackets.h"
+#include "SharedCalculations.h"
 #include <cstdio>
 #include <windows.h>
 
@@ -19779,10 +19780,7 @@ void CGame::DlgBoxClick_ItemSellorRepair(short msX, short msY)
 }
 uint32_t CGame::iGetLevelExp(int iLevel)
 {
-	uint32_t iRet;
-	if (iLevel == 0) return 0;
-	iRet = iGetLevelExp(iLevel - 1) + iLevel * (50 + (iLevel * (iLevel / 17) * (iLevel / 17)));
-	return iRet;
+	return CalculateLevelExp(iLevel);
 }
 
 int CGame::_iGetTotalItemNum()

@@ -14,6 +14,7 @@
 #include "MapInfoSqliteStore.h"
 #include "sqlite3.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
+#include "SharedCalculations.h"
 
 class CDebugWindow* DbgWnd;
 
@@ -165,7 +166,37 @@ CGame::CGame(HWND hWnd)
 	_lsock = 0;
 	g_login = new LoginServer;
 
-	m_iPlayerMaxLevel = DEF_PLAYERMAXLEVEL;
+	// Initialize configurable settings with defaults
+	// Timing Settings (milliseconds)
+	m_iClientTimeout = DEF_CLIENTTIMEOUT;
+	m_iStaminaRegenInterval = DEF_SPUPTIME;
+	m_iPoisonDamageInterval = DEF_POISONTIME;
+	m_iHealthRegenInterval = DEF_HPUPTIME;
+	m_iManaRegenInterval = DEF_MPUPTIME;
+	m_iHungerConsumeInterval = DEF_HUNGERTIME;
+	m_iSummonCreatureDuration = DEF_SUMMONTIME;
+	m_iAutosaveInterval = DEF_AUTOSAVETIME;
+	m_iLagProtectionInterval = DEF_RAGPROTECTIONTIME;
+
+	// Character/Leveling Settings
+	m_iBaseStatValue = 10;
+	m_iCreationStatBonus = 4;
+	m_iLevelupStatGain = DEF_TOTALLEVELUPPOINT;
+	m_iMaxLevel = DEF_PLAYERMAXLEVEL;
+	m_iMaxStatValue = 0; // Calculated after config load
+
+	// Combat Settings
+	m_iMinimumHitRatio = DEF_MINIMUMHITRATIO;
+	m_iMaximumHitRatio = DEF_MAXIMUMHITRATIO;
+
+	// Gameplay Settings
+	m_iNighttimeDuration = DEF_NIGHTTIME;
+	m_iStartingGuildRank = m_iStartingGuildRank;
+	m_iGrandMagicManaConsumption = DEF_GMGMANACONSUMEUNIT;
+	m_iMaxConstructionPoints = m_iMaxConstructionPoints;
+	m_iMaxSummonPoints = DEF_MAXSUMMONPOINTS;
+	m_iMaxWarContribution = m_iMaxWarContribution;
+
 	m_bIsDropTableAvailable = false;
 	m_DropTables.clear();
 
@@ -275,7 +306,6 @@ CGame::CGame(HWND hWnd)
 	m_iAutoRebootingCount = 0;
 	m_bEnemyKillMode = false;
 	m_iEnemyKillAdjust = 1;
-	m_bAdminSecurity = true;
 	m_sRaidTimeMonday = 0;
 	m_sRaidTimeTuesday = 0;
 	m_sRaidTimeWednesday = 0;
@@ -824,7 +854,6 @@ bool CGame::bInit()
 		//PutLogFileList(G_cTxt);
 	}
 
-	m_iLimitedUserExp = m_iLevelExpTable[DEF_LEVELLIMIT + 1];
 	m_iLevelExp20 = m_iLevelExpTable[20];
 
 	sqlite3* configDb = nullptr;
@@ -858,6 +887,12 @@ bool CGame::bInit()
 		CloseGameConfigDatabase(configDb);
 		return false;
 	}
+
+	// Calculate m_iMaxStatValue after settings are loaded
+	// Formula: base + creation + (levelup * max_level) + angelic_max(16)
+	m_iMaxStatValue = m_iBaseStatValue + m_iCreationStatBonus + (m_iLevelupStatGain * m_iMaxLevel) + 16;
+	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Max stat value calculated: %d", m_iMaxStatValue);
+	PutLogList(G_cTxt);
 
 	if (!LoadAdminListConfig(configDb, this)) {
 		PutLogList(" ");
@@ -910,7 +945,7 @@ bool CGame::bInit()
 	}
 
 	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= DEF_NIGHTTIME)
+	if (SysTime.wMinute >= m_iNighttimeDuration)
 		m_cDayOrNight = 2;
 	else m_cDayOrNight = 1;
 
@@ -1660,8 +1695,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 	char_pkt->guild_rank = m_pClientList[iClientH]->m_iGuildRank;
 	char_pkt->super_attack_left = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_iSuperAttackLeft);
 	char_pkt->fightzone_number = m_pClientList[iClientH]->m_iFightzoneNumber;
-	char_pkt->max_stats = DEF_CHARPOINTLIMIT;
-	char_pkt->max_level = m_iPlayerMaxLevel;
+	char_pkt->max_stats = m_iMaxStatValue;
+	char_pkt->max_level = m_iMaxLevel;
 
 	//hbest
 	m_pClientList[iClientH]->isForceSet = false;
@@ -1964,7 +1999,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 	}
 	else if (m_bIsHeldenianMode) {
 		sSummonPoints = m_pClientList[iClientH]->m_iCharisma * 300;
-		if (sSummonPoints > DEF_MAXSUMMONPOINTS) sSummonPoints = DEF_MAXSUMMONPOINTS;
+		if (sSummonPoints > m_iMaxSummonPoints) sSummonPoints = m_iMaxSummonPoints;
 		if (m_pClientList[iClientH]->m_dwHeldenianGUID == 0) {
 			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
 			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
@@ -3537,15 +3572,15 @@ void CGame::CheckClientResponseTime()
 	for (i = 1; i < DEF_MAXCLIENTS; i++) {
 		if (m_pClientList[i] != 0) {
 
-			if ((dwTime - m_pClientList[i]->m_dwTime) > DEF_CLIENTTIMEOUT) {
+			if ((dwTime - m_pClientList[i]->m_dwTime) > (uint32_t)m_iClientTimeout) {
 				if (m_pClientList[i]->m_bIsInitComplete) {
-					//Testcode 
+					//Testcode
 					std::snprintf(G_cTxt, sizeof(G_cTxt), "Client Timeout: %s", m_pClientList[i]->m_cIPaddress);
 					PutLogList(G_cTxt);
 
 					DeleteClient(i, true, true);
 				}
-				else if ((dwTime - m_pClientList[i]->m_dwTime) > DEF_CLIENTTIMEOUT) {
+				else if ((dwTime - m_pClientList[i]->m_dwTime) > (uint32_t)m_iClientTimeout) {
 					DeleteClient(i, false, false);
 				}
 			}
@@ -3570,11 +3605,10 @@ void CGame::CheckClientResponseTime()
 				m_pClientList[i]->m_iTimeLeft_Rating--;
 				if (m_pClientList[i]->m_iTimeLeft_Rating < 0) m_pClientList[i]->m_iTimeLeft_Rating = 0;
 
-				if (((dwTime - m_pClientList[i]->m_dwHungerTime) > DEF_HUNGERTIME) && (m_pClientList[i]->m_bIsKilled == false)) {
-					// v2.03
-					if ((m_pClientList[i]->m_iLevel < DEF_LEVELLIMIT) || (m_pClientList[i]->m_iAdminUserLevel >= 1)) {
+				if (((dwTime - m_pClientList[i]->m_dwHungerTime) > (uint32_t)m_iHungerConsumeInterval) && (m_pClientList[i]->m_bIsKilled == false)) {
+					if (m_pClientList[i]->m_iAdminUserLevel < 1) {
+						m_pClientList[i]->m_iHungerStatus--;
 					}
-					else m_pClientList[i]->m_iHungerStatus--;
 					if (m_pClientList[i]->m_iHungerStatus <= 0) m_pClientList[i]->m_iHungerStatus = 0;
 					m_pClientList[i]->m_dwHungerTime = dwTime;
 
@@ -3593,30 +3627,30 @@ void CGame::CheckClientResponseTime()
 				iPlusTime = abs(iPlusTime);
 
 				// HP
-				if ((dwTime - m_pClientList[i]->m_dwHPTime) > (uint32_t)(DEF_HPUPTIME + iPlusTime)) {
+				if ((dwTime - m_pClientList[i]->m_dwHPTime) > (uint32_t)(m_iHealthRegenInterval + iPlusTime)) {
 					TimeHitPointsUp(i);
 					m_pClientList[i]->m_dwHPTime = dwTime;
 				}
 
 				// MP
-				if ((dwTime - m_pClientList[i]->m_dwMPTime) > (uint32_t)(DEF_MPUPTIME + iPlusTime)) {
+				if ((dwTime - m_pClientList[i]->m_dwMPTime) > (uint32_t)(m_iManaRegenInterval + iPlusTime)) {
 					TimeManaPointsUp(i);
 					m_pClientList[i]->m_dwMPTime = dwTime;
 				}
 
 				// SP
-				if ((dwTime - m_pClientList[i]->m_dwSPTime) > (uint32_t)(DEF_SPUPTIME + iPlusTime)) {
+				if ((dwTime - m_pClientList[i]->m_dwSPTime) > (uint32_t)(m_iStaminaRegenInterval + iPlusTime)) {
 					TimeStaminarPointsUp(i);
 					m_pClientList[i]->m_dwSPTime = dwTime;
 				}
 
-				if ((m_pClientList[i]->m_bIsPoisoned) && ((dwTime - m_pClientList[i]->m_dwPoisonTime) > DEF_POISONTIME)) {
+				if ((m_pClientList[i]->m_bIsPoisoned) && ((dwTime - m_pClientList[i]->m_dwPoisonTime) > (uint32_t)m_iPoisonDamageInterval)) {
 					PoisonEffect(i, 0);
 					m_pClientList[i]->m_dwPoisonTime = dwTime;
 				}
 
 				if ((m_pMapList[m_pClientList[i]->m_cMapIndex]->m_bIsFightZone == false) &&
-					((dwTime - m_pClientList[i]->m_dwAutoSaveTime) > (uint32_t)DEF_AUTOSAVETIME)) {
+					((dwTime - m_pClientList[i]->m_dwAutoSaveTime) > (uint32_t)m_iAutosaveInterval)) {
 					g_login->LocalSavePlayerData(i); //bSendMsgToLS(MSGID_REQUEST_SAVEPLAYERDATA, i);
 					m_pClientList[i]->m_dwAutoSaveTime = dwTime;
 				}
@@ -5003,24 +5037,6 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 
 
 	m_pClientList[iClientH]->m_bIsInitComplete = true;
-
-	//bSendMsgToLS(MSGID_ENTERGAMECONFIRM, iClientH);
-
-	/*if (m_iTotalClients > DEF_MAXONESERVERUSERS) {
-		switch (iDice(1,2)) {
-		case 1:
-			RequestTeleportHandler(iClientH, "2   ", "bisle", -1, -1);
-			break;
-			case 2:
-				switch (m_pClientList[iClientH]->m_cSide) {
-					case 0: RequestTeleportHandler(iClientH, "2   ", "resurr1", -1, -1); break;
-					case 1: RequestTeleportHandler(iClientH, "2   ", "resurr1", -1, -1); break;
-					case 2: RequestTeleportHandler(iClientH, "2   ", "resurr2", -1, -1); break;
-				}
-				break;
-		}
-	}*/
-
 }
 
 void CGame::GameProcess()
@@ -6863,7 +6879,6 @@ void CGame::DropItemHandler(int iClientH, short sItemIndex, int iAmount, const c
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsOnServerChange) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if ((sItemIndex < 0) || (sItemIndex >= DEF_MAXITEMS)) return;
 	if (m_pClientList[iClientH]->m_pItemList[sItemIndex] == 0) return;
@@ -8072,7 +8087,6 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsOnServerChange) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if (m_pClientList[iClientH]->m_pItemList[sItemIndex] == 0) return;
 	if ((sItemIndex < 0) || (sItemIndex >= DEF_MAXITEMS)) return;
@@ -10052,7 +10066,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		else {
 			memcpy(pkt.guild_name, "?", 1);
 		}
-		pkt.rank = DEF_GUILDSTARTRANK;
+		pkt.rank = m_iStartingGuildRank;
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -10070,7 +10084,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = DEF_GUILDSTARTRANK;
+			pkt.rank = m_iStartingGuildRank;
 			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
 			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
@@ -10084,7 +10098,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = DEF_GUILDSTARTRANK;
+			pkt.rank = m_iStartingGuildRank;
 			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
 			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
@@ -10098,7 +10112,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 			else {
 				memcpy(pkt.guild_name, "?", 1);
 			}
-			pkt.rank = DEF_GUILDSTARTRANK;
+			pkt.rank = m_iStartingGuildRank;
 			memcpy(pkt.location, m_pClientList[iToH]->m_cLocation, sizeof(pkt.location));
 			iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		}
@@ -10188,7 +10202,7 @@ void CGame::JoinGuildApproveHandler(int iClientH, const char* pName)
 			std::memset(m_pClientList[i]->m_cLocation, 0, sizeof(m_pClientList[i]->m_cLocation));
 			strcpy(m_pClientList[i]->m_cLocation, m_pClientList[iClientH]->m_cLocation);
 
-			m_pClientList[i]->m_iGuildRank = DEF_GUILDSTARTRANK; //@@@  GuildRankÀÇ ½ÃÀÛÀº DEF_GUILDSTARTRANK
+			m_pClientList[i]->m_iGuildRank = m_iStartingGuildRank; //@@@  GuildRankÀÇ ½ÃÀÛÀº DEF_GUILDSTARTRANK
 
 			// °¡ÀÔ ½ÅÃ»ÀÚ¿¡°Ô °¡ÀÔÀÌ ¼º°øÇßÀ½À» ¾Ë¸®´Â ¸Þ½ÃÁö¸¦ º¸³»ÁØ´Ù.
 			SendNotifyMsg(iClientH, i, DEF_COMMONTYPE_JOINGUILDAPPROVE, 0, 0, 0, 0);
@@ -10620,8 +10634,8 @@ void CGame::ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType
 						(m_pClientList[i]->m_iCrusadeDuty == 3)) {
 						m_pClientList[i]->m_iConstructionPoint += (m_pClientList[iClientH]->m_iLevel / 2);
 
-						if (m_pClientList[i]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-							m_pClientList[i]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+						if (m_pClientList[i]->m_iConstructionPoint > m_iMaxConstructionPoints)
+							m_pClientList[i]->m_iConstructionPoint = m_iMaxConstructionPoints;
 
 						//testcode
 						std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Npc! Construction +%d", (m_pClientList[iClientH]->m_iLevel / 2));
@@ -14517,7 +14531,7 @@ RTH_NEXTSTEP:
 	}
 	else if (m_bIsHeldenianMode) {
 		sSummonPoints = m_pClientList[iClientH]->m_iCharisma * 300;
-		if (sSummonPoints > DEF_MAXSUMMONPOINTS) sSummonPoints = DEF_MAXSUMMONPOINTS;
+		if (sSummonPoints > m_iMaxSummonPoints) sSummonPoints = m_iMaxSummonPoints;
 		if (m_pClientList[iClientH]->m_dwHeldenianGUID == 0) {
 			m_pClientList[iClientH]->m_dwHeldenianGUID = m_dwHeldenianGUID;
 			m_pClientList[iClientH]->m_iConstructionPoint = sSummonPoints;
@@ -16598,13 +16612,7 @@ void CGame::Quit()
 
 uint32_t CGame::iGetLevelExp(int iLevel)
 {
-	uint32_t iRet;
-
-	if (iLevel == 0) return 0;
-
-	iRet = iGetLevelExp(iLevel - 1) + iLevel * (50 + (iLevel * (iLevel / 17) * (iLevel / 17)));
-
-	return iRet;
+	return CalculateLevelExp(iLevel);
 }
 
 int CGame::_iCalcSkillSSNpoint(int iLevel)
@@ -16646,7 +16654,7 @@ bool CGame::bCheckLevelUp(int iClientH)
 
 	while (m_pClientList[iClientH]->m_iExp >= m_pClientList[iClientH]->m_iNextLevelExp)
 	{
-		if (m_pClientList[iClientH]->m_iLevel < m_iPlayerMaxLevel)
+		if (m_pClientList[iClientH]->m_iLevel < m_iMaxLevel)
 		{
 			// ·¹º§ÀÌ ¿Ã¶ú´Ù.
 			m_pClientList[iClientH]->m_iLevel++;
@@ -16695,8 +16703,8 @@ bool CGame::bCheckLevelUp(int iClientH)
 		else {
 			m_pClientList[iClientH]->m_iGizonItemUpgradeLeft++;
 
-			m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_iPlayerMaxLevel + 1];
-			m_pClientList[iClientH]->m_iExp = m_iLevelExpTable[m_iPlayerMaxLevel];
+			m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_iMaxLevel + 1];
+			m_pClientList[iClientH]->m_iExp = m_iLevelExpTable[m_iMaxLevel];
 			//addon
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMUPGRADELEFT, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 1, 0, 0);
 		}
@@ -17189,7 +17197,6 @@ void CGame::RequestCivilRightHandler(int iClientH, char* pData)
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 
 	// ?횑쨔횑 횉횗 쨍쨋?쨩?횉 쩌횘쩌횙?횑 ?횜쨈횢쨍챕 쩍횄쨔횓짹횉?쨩 째징횁첬 쩌철 쩐첩쨈횢. 
 	if (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) != 0) wResult = 0;
@@ -17618,7 +17625,7 @@ void CGame::EnemyKillRewardHandler(int iAttackerH, int iClientH)
 	// if attacker's level is greater than 80, set ek level to 80
 	if (m_pClientList[iAttackerH]->m_iLevel >= 80) iEK_Level = 80;
 	// check if attacker level is less than or equal to max level
-	if (m_pClientList[iAttackerH]->m_iLevel >= m_iPlayerMaxLevel) {
+	if (m_pClientList[iAttackerH]->m_iLevel >= m_iMaxLevel) {
 		// if the
 		if (iGetExpLevel(m_pClientList[iClientH]->m_iExp) >= iEK_Level) {
 			// Èñ»ýÀÚÀÇ ·¹º§ÀÌ 80ÀÌ»óÀÌ°í
@@ -17660,13 +17667,13 @@ void CGame::EnemyKillRewardHandler(int iAttackerH, int iClientH)
 				m_pClientList[iAttackerH]->m_iExp += (iRewardExp / 3) * 4;
 				m_pClientList[iAttackerH]->m_iWarContribution += (iRewardExp - (iRewardExp / 3)) * 12;
 
-				if (m_pClientList[iAttackerH]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-					m_pClientList[iAttackerH]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+				if (m_pClientList[iAttackerH]->m_iWarContribution > m_iMaxWarContribution)
+					m_pClientList[iAttackerH]->m_iWarContribution = m_iMaxWarContribution;
 
 				m_pClientList[iAttackerH]->m_iConstructionPoint += m_pClientList[iClientH]->m_iLevel / 2;
 
-				if (m_pClientList[iAttackerH]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-					m_pClientList[iAttackerH]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+				if (m_pClientList[iAttackerH]->m_iConstructionPoint > m_iMaxConstructionPoints)
+					m_pClientList[iAttackerH]->m_iConstructionPoint = m_iMaxConstructionPoints;
 
 				//testcode
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Player! Construction: +%d WarContribution +%d", m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
@@ -17730,13 +17737,13 @@ void CGame::EnemyKillRewardHandler(int iAttackerH, int iClientH)
 				m_pClientList[iAttackerH]->m_iExp += (iRewardExp / 3) * 4;
 				m_pClientList[iAttackerH]->m_iWarContribution += (iRewardExp - (iRewardExp / 3)) * 12;
 
-				if (m_pClientList[iAttackerH]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-					m_pClientList[iAttackerH]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+				if (m_pClientList[iAttackerH]->m_iWarContribution > m_iMaxWarContribution)
+					m_pClientList[iAttackerH]->m_iWarContribution = m_iMaxWarContribution;
 
 				m_pClientList[iAttackerH]->m_iConstructionPoint += m_pClientList[iClientH]->m_iLevel / 2;
 
-				if (m_pClientList[iAttackerH]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-					m_pClientList[iAttackerH]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+				if (m_pClientList[iAttackerH]->m_iConstructionPoint > m_iMaxConstructionPoints)
+					m_pClientList[iAttackerH]->m_iConstructionPoint = m_iMaxConstructionPoints;
 
 				//testcode
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Player Killed by Player! Construction: +%d WarContribution +%d", m_pClientList[iClientH]->m_iLevel / 2, (iRewardExp - (iRewardExp / 3)) * 6);
@@ -19088,7 +19095,6 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 
 	switch (cAttackerType) {
 	case DEF_OWNERTYPE_PLAYER:
-		if ((m_bAdminSecurity) && (m_pClientList[sAttackerH]->m_iAdminUserLevel > 0)) return;
 		if (m_pClientList[sAttackerH]->m_cHeroArmourBonus == 2) iDamage += 4;
 		if ((m_pClientList[sAttackerH]->m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND] == -1) || (m_pClientList[sAttackerH]->m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND] == -1)) {
 			sItemIndex = m_pClientList[sAttackerH]->m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND];
@@ -19185,7 +19191,7 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_pClientList[sTargetH]->m_bIsNeutral) &&
 			(m_pClientList[sTargetH]->m_iPKCount == 0) && (m_pClientList[sTargetH]->m_bIsOwnLocation)) return;
 
-		if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > DEF_RAGPROTECTIONTIME) return;
+		if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > (uint32_t)m_iLagProtectionInterval) return;
 		if ((m_pMapList[m_pClientList[sTargetH]->m_cMapIndex]->m_bIsAttackEnabled == false) && (m_pClientList[sTargetH]->m_iAdminUserLevel == 0)) return;
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_pClientList[sAttackerH]->m_bIsNeutral) && (m_pClientList[sTargetH]->m_iPKCount == 0)) return;
 		if ((m_pClientList[sTargetH]->m_iPartyID != 0) && (iPartyID == m_pClientList[sTargetH]->m_iPartyID)) return;
@@ -19586,10 +19592,9 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 
 	iPartyID = 0;
 
-	// �����ڰ� �÷��̾��� Mag�� ���� ���ʽ� ������� ���� 
+	// �����ڰ� �÷��̾��� Mag�� ���� ���ʽ� ������� ����
 	switch (cAttackerType) {
 	case DEF_OWNERTYPE_PLAYER:
-		if ((m_bAdminSecurity) && (m_pClientList[sAttackerH]->m_iAdminUserLevel > 0)) return;
 		dTmp1 = (double)iDamage;
 		dTmp2 = (double)(m_pClientList[sAttackerH]->m_iMag + m_pClientList[sAttackerH]->m_iAngelicMag);
 
@@ -19651,7 +19656,7 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 		// �̹� �׾� �ִٸ� ó�� ����.
 		if (m_pClientList[sTargetH]->m_bIsKilled) return;
 		// ������ ���� ��ȣ�� �޾ƾ� �Ѵٸ� 
-		if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > DEF_RAGPROTECTIONTIME) return;
+		if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > (uint32_t)m_iLagProtectionInterval) return;
 		// �����ڰ� ��ġ�� ���� ���� �Ұ��� ���̶�� 
 		// v2.03 ���� �ٿ�Ǿ ��ħ 
 		if (m_pClientList[sTargetH]->m_cMapIndex == -1) return;
@@ -20230,8 +20235,8 @@ bool CGame::bCheckResistingMagicSuccess(char cAttackerDir, short sTargetH, char 
 	dTmp3 = (dTmp1 / dTmp2) * 50.0f;
 	iDestHitRatio = (int)(dTmp3);
 
-	if (iDestHitRatio < DEF_MINIMUMHITRATIO) iDestHitRatio = DEF_MINIMUMHITRATIO;
-	if (iDestHitRatio > DEF_MAXIMUMHITRATIO) iDestHitRatio = DEF_MAXIMUMHITRATIO;
+	if (iDestHitRatio < m_iMinimumHitRatio) iDestHitRatio = m_iMinimumHitRatio;
+	if (iDestHitRatio > m_iMaximumHitRatio) iDestHitRatio = m_iMaximumHitRatio;
 	if (iDestHitRatio >= 100) return false;
 
 	iResult = iDice(1, 100);
@@ -23478,7 +23483,7 @@ void CGame::CheckDayOrNightMode()
 	cPrevMode = m_cDayOrNight;
 
 	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= DEF_NIGHTTIME)
+	if (SysTime.wMinute >= m_iNighttimeDuration)
 		m_cDayOrNight = 2;
 	else m_cDayOrNight = 1;
 
@@ -23758,7 +23763,7 @@ void CGame::CalcExpStock(int iClientH)
 	if (m_pClientList[iClientH]->m_iExpStock <= 0) return;
 	// !!!!
 	// v2.12 2002-2-6 ÁöÁ¸µµ ÇöÀç °æÇèÄ¡°¡ ÃÖ´ë ·¹º§ °æÇèÄ¡º¸´Ù ÀûÀ¸¸é °æÇèÄ¡¸¦ ¾òÀ»¼ö ÀÖ°Ô º¯°æ .. v2.15 »èÁ¦. ÁöÁ¸µµ °æÇèÄ¡ ¾ò´Â´Ù.
-	//if ((m_pClientList[iClientH]->m_iLevel >= m_iPlayerMaxLevel) && (m_pClientList[iClientH]->m_iExp >= m_iLevelExpTable[m_iPlayerMaxLevel])) return;
+	//if ((m_pClientList[iClientH]->m_iLevel >= m_iMaxLevel) && (m_pClientList[iClientH]->m_iExp >= m_iLevelExpTable[m_iMaxLevel])) return;
 
 	// Æ÷»ó°ú Æä³ÎÆ¼°¡ ¾ø´Â ¸Ê À§¿¡ ¼­ ÀÖ´Ù¸é °æÇèÄ¡´Â ¿Ã¶ó°¡Áö ¾Ê´Â´Ù.
 	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cType == DEF_MAPTYPE_NOPENALTY_NOREWARD) {
@@ -26769,7 +26774,6 @@ void CGame::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmount, sho
 
 	if (m_pClientList[iClientH] == 0) return;
 	if ((sItemIndex < 0) || (sItemIndex >= DEF_MAXITEMS)) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 	if (m_pClientList[iClientH]->m_pItemList[sItemIndex] == 0) return;
 	if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwCount < static_cast<uint32_t>(iAmount)) return;
 	if (m_pClientList[iClientH]->m_bIsOnServerChange) return;
@@ -26782,10 +26786,6 @@ void CGame::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmount, sho
 
 
 	if ((sOwnerH != 0) && (cOwnerType == DEF_OWNERTYPE_PLAYER)) {
-
-		if ((m_bAdminSecurity) && (m_pClientList[sOwnerH]->m_iAdminUserLevel > 0)) {
-			return;
-		}
 
 		// v1.4 �ְ��� �� ��ü�� �´��� �Ǵ��Ѵ�.
 		if (wObjectID != 0) {
@@ -26874,13 +26874,6 @@ void CGame::SetExchangeItem(int iClientH, int iItemIndex, int iAmount)
 	if (m_pClientList[iClientH]->m_bIsOnServerChange) return;
 	if (m_pClientList[iClientH]->iExchangeCount > 4) return;	//only 4 items trade
 
-	//no admin trade
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) {
-		_ClearExchangeStatus(m_pClientList[iClientH]->m_iExchangeH);
-		_ClearExchangeStatus(iClientH);
-	}
-
-
 	if ((m_pClientList[iClientH]->m_bIsExchangeMode) && (m_pClientList[iClientH]->m_iExchangeH != 0)) {
 		iExH = m_pClientList[iClientH]->m_iExchangeH;
 		if ((m_pClientList[iExH] == 0) || (memcmp(m_pClientList[iClientH]->m_cExchangeName, m_pClientList[iExH]->m_cCharName, 10) != 0)) {
@@ -26944,8 +26937,6 @@ void CGame::ConfirmExchangeItem(int iClientH)
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsOnServerChange) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
-
 
 	if ((m_pClientList[iClientH]->m_bIsExchangeMode) && (m_pClientList[iClientH]->m_iExchangeH != 0)) {
 		iExH = m_pClientList[iClientH]->m_iExchangeH;
@@ -27659,12 +27650,15 @@ void CGame::_ClearQuestStatus(int iClientH)
 
 int CGame::iGetMaxHP(int iClientH)
 {
-	int iRet;
-
 	if (m_pClientList[iClientH] == 0) return 0;
 
-	iRet = m_pClientList[iClientH]->m_iVit * 3 + m_pClientList[iClientH]->m_iLevel * 2 + (m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 2;
+	int iRet = CalculateMaxHP(
+		m_pClientList[iClientH]->m_iVit,
+		m_pClientList[iClientH]->m_iLevel,
+		m_pClientList[iClientH]->m_iStr,
+		m_pClientList[iClientH]->m_iAngelicStr);
 
+	// Apply side effect reduction if active
 	if (m_pClientList[iClientH]->m_iSideEffect_MaxHPdown != 0)
 		iRet = iRet - (iRet / m_pClientList[iClientH]->m_iSideEffect_MaxHPdown);
 
@@ -27673,24 +27667,24 @@ int CGame::iGetMaxHP(int iClientH)
 
 int CGame::iGetMaxMP(int iClientH)
 {
-	int iRet;
-
 	if (m_pClientList[iClientH] == 0) return 0;
 
-	iRet = (2 * (m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iAngelicMag)) + (2 * m_pClientList[iClientH]->m_iLevel) + ((m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iAngelicInt) / 2);
-
-	return iRet;
+	return CalculateMaxMP(
+		m_pClientList[iClientH]->m_iMag,
+		m_pClientList[iClientH]->m_iAngelicMag,
+		m_pClientList[iClientH]->m_iLevel,
+		m_pClientList[iClientH]->m_iInt,
+		m_pClientList[iClientH]->m_iAngelicInt);
 }
 
 int CGame::iGetMaxSP(int iClientH)
 {
-	int iRet;
-
 	if (m_pClientList[iClientH] == 0) return 0;
 
-	iRet = (2 * (m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr)) + (2 * m_pClientList[iClientH]->m_iLevel);
-
-	return iRet;
+	return CalculateMaxSP(
+		m_pClientList[iClientH]->m_iStr,
+		m_pClientList[iClientH]->m_iAngelicStr,
+		m_pClientList[iClientH]->m_iLevel);
 }
 
 void CGame::GetMapInitialPoint(int iMapIndex, short* pX, short* pY, char* pPlayerLocation)
@@ -28733,7 +28727,6 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 	int i;
 
 	if (m_pClientList[iClientH] == 0) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 
 	switch (iV1) {
 	case 0: // ÆÄÆ¼ Å»Åð ½ÅÃ»
@@ -29887,7 +29880,7 @@ void CGame::CheckConnectionHandler(int iClientH, char* pData)
 		dwTimeGapServer = (dwTime - m_pClientList[iClientH]->m_dwInitCCTime);
 
 		if (dwTimeGapClient < dwTimeGapServer) return;
-		if ((dwTimeGapClient - dwTimeGapServer) >= (DEF_CLIENTTIMEOUT)) {
+		if ((dwTimeGapClient - dwTimeGapServer) >= (uint32_t)m_iClientTimeout) {
 			DeleteClient(iClientH, true, true);
 			return;
 		}
@@ -30905,11 +30898,11 @@ void CGame::CheckCommanderConstructionPoint(int iClientH)
 				m_pClientList[i]->m_iConstructionPoint += m_pClientList[iClientH]->m_iConstructionPoint;
 				m_pClientList[i]->m_iWarContribution += (m_pClientList[iClientH]->m_iConstructionPoint / 10);
 
-				if (m_pClientList[i]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-					m_pClientList[i]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+				if (m_pClientList[i]->m_iConstructionPoint > m_iMaxConstructionPoints)
+					m_pClientList[i]->m_iConstructionPoint = m_iMaxConstructionPoints;
 
-				if (m_pClientList[i]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-					m_pClientList[i]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+				if (m_pClientList[i]->m_iWarContribution > m_iMaxWarContribution)
+					m_pClientList[i]->m_iWarContribution = m_iMaxWarContribution;
 
 				SendNotifyMsg(0, i, DEF_NOTIFY_CONSTRUCTIONPOINT, m_pClientList[i]->m_iConstructionPoint, m_pClientList[i]->m_iWarContribution, 0, 0);
 				m_pClientList[iClientH]->m_iConstructionPoint = 0; // °ª ÃÊ±âÈ­ 
@@ -30949,11 +30942,11 @@ void CGame::GSM_ConstructionPoint(int iGuildGUID, int iPoint)
 			m_pClientList[i]->m_iConstructionPoint += iPoint;
 			m_pClientList[i]->m_iWarContribution += iPoint / 10;
 
-			if (m_pClientList[i]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-				m_pClientList[i]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+			if (m_pClientList[i]->m_iConstructionPoint > m_iMaxConstructionPoints)
+				m_pClientList[i]->m_iConstructionPoint = m_iMaxConstructionPoints;
 
-			if (m_pClientList[i]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-				m_pClientList[i]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+			if (m_pClientList[i]->m_iWarContribution > m_iMaxWarContribution)
+				m_pClientList[i]->m_iWarContribution = m_iMaxWarContribution;
 
 			SendNotifyMsg(0, i, DEF_NOTIFY_CONSTRUCTIONPOINT, m_pClientList[i]->m_iConstructionPoint, m_pClientList[i]->m_iWarContribution, 0, 0);
 			//testcode
@@ -33068,10 +33061,7 @@ void CGame::OnStartGameSignal()
 	bool configDbReady = EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated);
 	if (configDbReady && !configDbCreated) {
 		bool hasCrusade = HasGameConfigRows(configDb, "crusade_structures");
-		bool hasSchedule = HasGameConfigRows(configDb, "schedule_crusade") ||
-			HasGameConfigRows(configDb, "schedule_apocalypse_start") ||
-			HasGameConfigRows(configDb, "schedule_apocalypse_end") ||
-			HasGameConfigRows(configDb, "schedule_heldenian");
+		bool hasSchedule = HasGameConfigRows(configDb, "event_schedule");
 		if (hasCrusade && hasSchedule) {
 			if (LoadCrusadeConfig(configDb, this) && LoadScheduleConfig(configDb, this)) {
 				loadedSchedules = true;
@@ -35032,7 +35022,6 @@ void CGame::RequestJoinPartyHandler(int iClientH, char* pData, uint32_t dwMsgSiz
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_NULL) return;
 	if ((dwMsgSize) <= 0) return;
-	if ((m_bAdminSecurity) && (m_pClientList[iClientH]->m_iAdminUserLevel > 0)) return;
 
 	std::memset(cBuff, 0, sizeof(cBuff));
 	memcpy(cBuff, pData, dwMsgSize);
@@ -36800,7 +36789,6 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 	case DEF_OWNERTYPE_PLAYER:
 
 		if (m_pClientList[sAttackerH] == 0) return 0;
-		if ((m_bAdminSecurity) && (m_pClientList[sAttackerH]->m_iAdminUserLevel > 0)) return 0;
 		if ((m_pMapList[m_pClientList[sAttackerH]->m_cMapIndex]->m_bIsAttackEnabled == false) && (m_pClientList[sAttackerH]->m_iAdminUserLevel == 0)) return 0;
 		if ((m_pMapList[m_pClientList[sAttackerH]->m_cMapIndex] == 0) && (m_pMapList[m_pClientList[sAttackerH]->m_cMapIndex]->m_bIsHeldenianMap) && (m_bIsHeldenianMode)) return 0;
 		if ((m_bIsCrusadeMode == false) && (m_pClientList[sAttackerH]->m_bIsPlayerCivil) && (cTargetType == DEF_OWNERTYPE_PLAYER)) return 0;
@@ -37173,8 +37161,8 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 						}
 
 						m_pClientList[sAttackerH]->m_iWarContribution += iWarContribution;
-						if (m_pClientList[sAttackerH]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-							m_pClientList[sAttackerH]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+						if (m_pClientList[sAttackerH]->m_iWarContribution > m_iMaxWarContribution)
+							m_pClientList[sAttackerH]->m_iWarContribution = m_iMaxWarContribution;
 						std::snprintf(G_cTxt, sizeof(G_cTxt), "Construction Complete! WarContribution: +%d", iWarContribution);
 						PutLogList(G_cTxt);
 						SendNotifyMsg(0, sAttackerH, DEF_NOTIFY_CONSTRUCTIONPOINT, m_pClientList[sAttackerH]->m_iConstructionPoint, m_pClientList[sAttackerH]->m_iWarContribution, 0, 0);
@@ -37343,8 +37331,8 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 	dTmp3 = (dTmp1 / dTmp2) * 50.0f;
 	iDestHitRatio = (int)(dTmp3);
 
-	if (iDestHitRatio < DEF_MINIMUMHITRATIO) iDestHitRatio = DEF_MINIMUMHITRATIO;
-	if (iDestHitRatio > DEF_MAXIMUMHITRATIO) iDestHitRatio = DEF_MAXIMUMHITRATIO;
+	if (iDestHitRatio < m_iMinimumHitRatio) iDestHitRatio = m_iMinimumHitRatio;
+	if (iDestHitRatio > m_iMaximumHitRatio) iDestHitRatio = m_iMaximumHitRatio;
 
 	if ((bIsAttackerBerserk) && (iAttackMode < 20)) {
 		iAP_SM = iAP_SM * 2;
@@ -37441,7 +37429,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 		switch (cTargetType) {
 		case DEF_OWNERTYPE_PLAYER:
 			ClearSkillUsingStatus(sTargetH);
-			if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > DEF_RAGPROTECTIONTIME) {
+			if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > (uint32_t)m_iLagProtectionInterval) {
 				return 0;
 			}
 			else {
@@ -38316,7 +38304,7 @@ bool CGame::_bCheckCharacterData(int iClientH)
 		}
 	}
 
-	if ((m_pClientList[iClientH]->m_iLevel > m_iPlayerMaxLevel) && (m_pClientList[iClientH]->m_iAdminUserLevel == 0)) {
+	if ((m_pClientList[iClientH]->m_iLevel > m_iMaxLevel) && (m_pClientList[iClientH]->m_iAdminUserLevel == 0)) {
 		try
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), "Packet Editing: (%s) Player: (%s) level above max server level.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
@@ -39047,7 +39035,7 @@ void CGame::CheckCrusadeResultCalculation(int iClientH)
 	if (m_pClientList[iClientH]->m_cVar == 1) return;
 
 	if ((m_bIsCrusadeMode == false) && (m_pClientList[iClientH]->m_dwCrusadeGUID != 0)) {
-		if (m_pClientList[iClientH]->m_iWarContribution > DEF_MAXWARCONTRIBUTION) m_pClientList[iClientH]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+		if (m_pClientList[iClientH]->m_iWarContribution > m_iMaxWarContribution) m_pClientList[iClientH]->m_iWarContribution = m_iMaxWarContribution;
 		if (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID) {
 			if (m_iCrusadeWinnerSide == 0) {
 				m_pClientList[iClientH]->m_iExpStock += (m_pClientList[iClientH]->m_iWarContribution / 6);

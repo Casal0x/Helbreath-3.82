@@ -131,8 +131,7 @@
 #define DEF_ITEMLOG_MAGICLEARN			16
 #define DEF_ITEMLOG_USE					32
 
-#define DEF_MAXGUILDS					1000 // ���ÿ� ������ �� �ִ� ���� 
-#define DEF_MAXONESERVERUSERS			800	// 800 // �� �������� �����? �� �ִ� �ִ� ����ڼ�?. �ʰ��� ���? ��Ȱ�� Ȥ�� ������ ����, �������? ��������.
+#define DEF_MAXGUILDS					1000 // ���ÿ� ������ �� �ִ� ����
 
 #define DEF_MAXGATESERVERSTOCKMSGSIZE	10000
 
@@ -142,11 +141,7 @@
 #define DEF_MAXHELDENIAN				10
 
 //v1.4311-3  �������� �ִ� ����
-#define DEF_MAXFIGHTZONE 10 
-
-//============================
-#define DEF_LEVELLIMIT		20				// ü���� ���� ����ġ!!!			
-//============================
+#define DEF_MAXFIGHTZONE 10
 
 //============================
 #define DEF_MINIMUMHITRATIO 15				// ���� ���� Ȯ�� 
@@ -768,7 +763,7 @@ public:
 	char m_cGameConnectionIP[16];   // Optional - for future login->game server connection
 	int  m_iGameConnectionPort;     // Optional - for future login->game server connection
 
-	uint32_t  m_iLimitedUserExp, m_iLevelExp20;
+	uint32_t  m_iLevelExp20;
 
 //private:
 	bool LoadPlayerDataFromDb(int iClientH);
@@ -969,7 +964,6 @@ public:
 	uint32_t m_dwCrusadeGUID;
 	short m_sLastCrusadeDate;
 	int   m_iCrusadeWinnerSide;
-	int   m_iPlayerMaxLevel;
 
 	struct  {
 		int iTotalMembers;
@@ -991,8 +985,7 @@ public:
 	// New 06/07/2004
 	bool m_bEnemyKillMode;
 	int m_iEnemyKillAdjust;
-	bool m_bAdminSecurity;
-	
+
 	// Configurable Raid Time 
 	short m_sRaidTimeMonday; 
 	short m_sRaidTimeTuesday; 
@@ -1018,8 +1011,43 @@ public:
 	// Limit Checks
 	bool m_bAllow100AllSkill;
 	char m_cRepDropModifier;
-	short m_sMaxPlayerLevel;
-	
+
+	// ============================================================================
+	// Configurable Settings (loaded from GameConfigs.db)
+	// ============================================================================
+
+	// Timing Settings (milliseconds)
+	int m_iClientTimeout;           // client-timeout-ms
+	int m_iStaminaRegenInterval;    // stamina-regen-interval
+	int m_iPoisonDamageInterval;    // poison-damage-interval
+	int m_iHealthRegenInterval;     // health-regen-interval
+	int m_iManaRegenInterval;       // mana-regen-interval
+	int m_iHungerConsumeInterval;   // hunger-consume-interval
+	int m_iSummonCreatureDuration;  // summon-creature-duration
+	int m_iAutosaveInterval;        // autosave-interval
+	int m_iLagProtectionInterval;   // lag-protection-interval
+
+	// Character/Leveling Settings
+	int m_iBaseStatValue;           // base-stat-value
+	int m_iCreationStatBonus;       // creation-stat-bonus
+	int m_iLevelupStatGain;         // levelup-stat-gain
+	int m_iMaxLevel;                // max-level (renamed from max-player-level)
+	int m_iMaxStatValue;            // calculated: base + creation + (levelup * max_level) + 16
+
+	// Combat Settings
+	int m_iMinimumHitRatio;         // minimum-hit-ratio
+	int m_iMaximumHitRatio;         // maximum-hit-ratio
+
+	// Gameplay Settings
+	int m_iNighttimeDuration;       // nighttime-duration
+	int m_iStartingGuildRank;       // starting-guild-rank
+	int m_iGrandMagicManaConsumption; // grand-magic-mana-consumption
+	int m_iMaxConstructionPoints;   // maximum-construction-points
+	int m_iMaxSummonPoints;         // maximum-summon-points
+	int m_iMaxWarContribution;      // maximum-war-contribution
+
+	// ============================================================================
+
 	bool var_89C, var_8A0;
 	char m_cHeldenianVictoryType, m_sLastHeldenianWinner, m_cHeldenianModeType;
 	int m_iHeldenianAresdenDead, m_iHeldenianElvineDead, var_A38, var_88C;

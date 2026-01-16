@@ -6,7 +6,7 @@
         "soundVolume": 16
     },
     "display": {
-        "detailLevel": 1,
+        "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
         "runningMode": true,

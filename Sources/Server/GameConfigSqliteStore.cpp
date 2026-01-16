@@ -793,7 +793,6 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     ok &= InsertKeyValueInt(stmt, "secondary-drop-rate", game->m_iSecondaryDropRate);
     ok &= InsertKeyValue(stmt, "enemy-kill-mode", game->m_bEnemyKillMode ? "deathmatch" : "classic");
     ok &= InsertKeyValueInt(stmt, "enemy-kill-adjust", game->m_iEnemyKillAdjust);
-    ok &= InsertKeyValue(stmt, "admin-security", game->m_bAdminSecurity ? "on" : "off");
     ok &= InsertKeyValueInt(stmt, "monday-raid-time", game->m_sRaidTimeMonday);
     ok &= InsertKeyValueInt(stmt, "tuesday-raid-time", game->m_sRaidTimeTuesday);
     ok &= InsertKeyValueInt(stmt, "wednesday-raid-time", game->m_sRaidTimeWednesday);
@@ -810,7 +809,35 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     }
     ok &= InsertKeyValueInt(stmt, "slate-success-rate", game->m_sSlateSuccessRate);
     ok &= InsertKeyValueInt(stmt, "rep-drop-modifier", game->m_cRepDropModifier);
-    ok &= InsertKeyValueInt(stmt, "max-player-level", game->m_iPlayerMaxLevel);
+
+    // Timing Settings
+    ok &= InsertKeyValueInt(stmt, "client-timeout-ms", game->m_iClientTimeout);
+    ok &= InsertKeyValueInt(stmt, "stamina-regen-interval", game->m_iStaminaRegenInterval);
+    ok &= InsertKeyValueInt(stmt, "poison-damage-interval", game->m_iPoisonDamageInterval);
+    ok &= InsertKeyValueInt(stmt, "health-regen-interval", game->m_iHealthRegenInterval);
+    ok &= InsertKeyValueInt(stmt, "mana-regen-interval", game->m_iManaRegenInterval);
+    ok &= InsertKeyValueInt(stmt, "hunger-consume-interval", game->m_iHungerConsumeInterval);
+    ok &= InsertKeyValueInt(stmt, "summon-creature-duration", game->m_iSummonCreatureDuration);
+    ok &= InsertKeyValueInt(stmt, "autosave-interval", game->m_iAutosaveInterval);
+    ok &= InsertKeyValueInt(stmt, "lag-protection-interval", game->m_iLagProtectionInterval);
+
+    // Character/Leveling Settings
+    ok &= InsertKeyValueInt(stmt, "base-stat-value", game->m_iBaseStatValue);
+    ok &= InsertKeyValueInt(stmt, "creation-stat-bonus", game->m_iCreationStatBonus);
+    ok &= InsertKeyValueInt(stmt, "levelup-stat-gain", game->m_iLevelupStatGain);
+    ok &= InsertKeyValueInt(stmt, "max-level", game->m_iMaxLevel);
+
+    // Combat Settings
+    ok &= InsertKeyValueInt(stmt, "minimum-hit-ratio", game->m_iMinimumHitRatio);
+    ok &= InsertKeyValueInt(stmt, "maximum-hit-ratio", game->m_iMaximumHitRatio);
+
+    // Gameplay Settings
+    ok &= InsertKeyValueInt(stmt, "nighttime-duration", game->m_iNighttimeDuration);
+    ok &= InsertKeyValueInt(stmt, "starting-guild-rank", game->m_iStartingGuildRank);
+    ok &= InsertKeyValueInt(stmt, "grand-magic-mana-consumption", game->m_iGrandMagicManaConsumption);
+    ok &= InsertKeyValueInt(stmt, "maximum-construction-points", game->m_iMaxConstructionPoints);
+    ok &= InsertKeyValueInt(stmt, "maximum-summon-points", game->m_iMaxSummonPoints);
+    ok &= InsertKeyValueInt(stmt, "maximum-war-contribution", game->m_iMaxWarContribution);
 
     sqlite3_finalize(stmt);
     if (!ok) {
@@ -859,14 +886,6 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
             }
         } else if (std::strcmp(key, "enemy-kill-adjust") == 0) {
             game->m_iEnemyKillAdjust = std::atoi(value);
-        } else if (std::strcmp(key, "admin-security") == 0) {
-            if (_stricmp(value, "on") == 0) {
-                game->m_bAdminSecurity = true;
-            } else if (_stricmp(value, "off") == 0) {
-                game->m_bAdminSecurity = false;
-            } else {
-                game->m_bAdminSecurity = (std::atoi(value) != 0);
-            }
         } else if (std::strcmp(key, "monday-raid-time") == 0) {
             game->m_sRaidTimeMonday = (short)std::atoi(value);
         } else if (std::strcmp(key, "tuesday-raid-time") == 0) {
@@ -895,8 +914,56 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
             game->m_sSlateSuccessRate = (short)std::atoi(value);
         } else if (std::strcmp(key, "rep-drop-modifier") == 0) {
             game->m_cRepDropModifier = (char)std::atoi(value);
-        } else if (std::strcmp(key, "max-player-level") == 0) {
-            game->m_iPlayerMaxLevel = std::atoi(value);
+        }
+        // Timing Settings
+        else if (std::strcmp(key, "client-timeout-ms") == 0) {
+            game->m_iClientTimeout = std::atoi(value);
+        } else if (std::strcmp(key, "stamina-regen-interval") == 0) {
+            game->m_iStaminaRegenInterval = std::atoi(value);
+        } else if (std::strcmp(key, "poison-damage-interval") == 0) {
+            game->m_iPoisonDamageInterval = std::atoi(value);
+        } else if (std::strcmp(key, "health-regen-interval") == 0) {
+            game->m_iHealthRegenInterval = std::atoi(value);
+        } else if (std::strcmp(key, "mana-regen-interval") == 0) {
+            game->m_iManaRegenInterval = std::atoi(value);
+        } else if (std::strcmp(key, "hunger-consume-interval") == 0) {
+            game->m_iHungerConsumeInterval = std::atoi(value);
+        } else if (std::strcmp(key, "summon-creature-duration") == 0) {
+            game->m_iSummonCreatureDuration = std::atoi(value);
+        } else if (std::strcmp(key, "autosave-interval") == 0) {
+            game->m_iAutosaveInterval = std::atoi(value);
+        } else if (std::strcmp(key, "lag-protection-interval") == 0) {
+            game->m_iLagProtectionInterval = std::atoi(value);
+        }
+        // Character/Leveling Settings
+        else if (std::strcmp(key, "base-stat-value") == 0) {
+            game->m_iBaseStatValue = std::atoi(value);
+        } else if (std::strcmp(key, "creation-stat-bonus") == 0) {
+            game->m_iCreationStatBonus = std::atoi(value);
+        } else if (std::strcmp(key, "levelup-stat-gain") == 0) {
+            game->m_iLevelupStatGain = std::atoi(value);
+        } else if (std::strcmp(key, "max-level") == 0 || std::strcmp(key, "max-player-level") == 0) {
+            game->m_iMaxLevel = std::atoi(value);
+        }
+        // Combat Settings
+        else if (std::strcmp(key, "minimum-hit-ratio") == 0) {
+            game->m_iMinimumHitRatio = std::atoi(value);
+        } else if (std::strcmp(key, "maximum-hit-ratio") == 0) {
+            game->m_iMaximumHitRatio = std::atoi(value);
+        }
+        // Gameplay Settings
+        else if (std::strcmp(key, "nighttime-duration") == 0) {
+            game->m_iNighttimeDuration = std::atoi(value);
+        } else if (std::strcmp(key, "starting-guild-rank") == 0) {
+            game->m_iStartingGuildRank = std::atoi(value);
+        } else if (std::strcmp(key, "grand-magic-mana-consumption") == 0) {
+            game->m_iGrandMagicManaConsumption = std::atoi(value);
+        } else if (std::strcmp(key, "maximum-construction-points") == 0) {
+            game->m_iMaxConstructionPoints = std::atoi(value);
+        } else if (std::strcmp(key, "maximum-summon-points") == 0) {
+            game->m_iMaxSummonPoints = std::atoi(value);
+        } else if (std::strcmp(key, "maximum-war-contribution") == 0) {
+            game->m_iMaxWarContribution = std::atoi(value);
         }
     }
 

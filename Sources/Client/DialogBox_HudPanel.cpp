@@ -1,6 +1,7 @@
 #include "DialogBox_HudPanel.h"
 #include "Game.h"
 #include "GlobalDef.h"
+#include "SharedCalculations.h"
 
 // Static button data shared between draw and click handling
 const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] = {
@@ -39,8 +40,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	// HP bar
-	iMaxPoint = m_pGame->m_iVit * 3 + m_pGame->m_iLevel * 2 +
-	            (m_pGame->m_iStr + m_pGame->m_iAngelicStr) / 2;
+	iMaxPoint = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel,
+	                           m_pGame->m_iStr, m_pGame->m_iAngelicStr);
 	if (m_pGame->m_iHP > iMaxPoint) m_pGame->m_iHP = iMaxPoint;
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
@@ -63,8 +64,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	}
 
 	// MP bar
-	iMaxPoint = (m_pGame->m_iMag + m_pGame->m_iAngelicMag) * 2 + m_pGame->m_iLevel * 2 +
-	            (m_pGame->m_iInt + m_pGame->m_iAngelicInt) / 2;
+	iMaxPoint = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag,
+	                           m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
 	if (m_pGame->m_iMP > iMaxPoint) m_pGame->m_iMP = iMaxPoint;
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
@@ -77,7 +78,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
 
 	// SP bar
-	iMaxPoint = m_pGame->m_iLevel * 2 + (m_pGame->m_iStr + m_pGame->m_iAngelicStr) * 2;
+	iMaxPoint = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
 	if (m_pGame->m_iSP > iMaxPoint) m_pGame->m_iSP = iMaxPoint;
 	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
