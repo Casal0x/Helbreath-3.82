@@ -58,7 +58,7 @@
 #define DEF_MAXNPCITEMS				1000
 #define DEF_MAXCLIENTS				2000
 #define DEF_MAXCLIENTLOGINSOCK		2000
-#define DEF_MAXNPCS					5000
+#define DEF_MAXNPCS					15000
 #define DEF_MAXITEMTYPES			5000
 #define DEF_CLIENTTIMEOUT			30000  // MODERNIZED: Increased from 10s to 30s for heavy entity rendering
 #define DEF_SPUPTIME				10000
@@ -116,7 +116,6 @@
 #define DEF_ITEMLOG_GET					3
 #define DEF_ITEMLOG_DEPLETE				4
 #define DEF_ITEMLOG_NEWGENDROP			5
-#define DEF_ITEMLOG_DUPITEMID			6
 
 // New 07/05/2004
 #define DEF_ITEMLOG_BUY					7
@@ -131,8 +130,6 @@
 #define DEF_ITEMLOG_SKILLLEARN			12
 #define DEF_ITEMLOG_MAGICLEARN			16
 #define DEF_ITEMLOG_USE					32
-
-#define DEF_MAXDUPITEMID				100
 
 #define DEF_MAXGUILDS					1000 // ���ÿ� ������ �� �ִ� ���� 
 #define DEF_MAXONESERVERUSERS			800	// 800 // �� �������� �����? �� �ִ� �ִ� ����ڼ�?. �ʰ��� ���? ��Ȱ�� Ȥ�� ������ ����, �������? ��������.
@@ -327,7 +324,6 @@ public:
 	void PartyOperation(char* pData);
 
 	void SetHeldenianMode();
-	void AdminOrder_GetFightzoneTicket(int iClientH);
 	void LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHeldenianGUID);
 	void GlobalStartHeldenianMode();
 	bool UpdateHeldenianStatus();
@@ -370,7 +366,6 @@ public:
 	
 	// Lists
 
-	void AdminOrder_CheckStats(int iClientH, char *pData,uint32_t dwMsgSize);
 	void Command_RedBall(int iClientH, char *pData,uint32_t dwMsgSize);
 	void Command_BlueBall(int iClientH, char *pData,uint32_t dwMsgSize);
 	void Command_YellowBall(int iClientH, char* pData, uint32_t dwMsgSize);
@@ -410,19 +405,14 @@ public:
 	void CheckHeldenianResultCalculation(int iClientH);
 	bool __bSetConstructionKit(int iMapIndex, int dX, int dY, int iType, int iTimeCost, int iClientH);
 
-	void AdminOrder_SummonGuild(int iClientH, char * pData, uint32_t dwMsgSize);
 
 	// Acidx commands
-	void AdminOrder_Time(int iClientH, char * pData, uint32_t dwMsgSize);
 	
-	void AdminOrder_Pushplayer(int iClientH, char * pData, uint32_t dwMsgSize);
 
-	void AdminOrder_CheckRep(int iClientH, char *pData,uint32_t dwMsgSize);
 
 	void SetForceRecallTime(int iClientH);
 	void ApplyCombatKilledPenalty(int iClientH, int cPenaltyLevel, bool bIsSAattacked);
 
-	void AdminOrder_ClearNpc(int iClientH);
 
 	//  bool bReadTeleportConfigFile(char * cFn);
 	//	void RequestTeleportD2Handler(int iClientH, char * pData);
@@ -446,41 +436,13 @@ public:
 
 	void RequestChangePlayMode(int iClientH);
 	void GetHeroMantleHandler(int iClientH, int iItemID, const char * pString);
-	void AdminOrder_Weather(int iClientH, char * pData, uint32_t dwMsgSize);
 	
 	bool bCheckMagicInt(int iClientH);
 	bool bChangeState(char cStateChange, char* cStr, char *cVit,char *cDex,char *cInt,char *cMag,char *cChar);
 	void StateChangeHandler(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SetStatus(int iClientH, char *pData, uint32_t dwMsgSize);
 	
 	void SetPoisonFlag(short sOwnerH, char cOwnerType, bool bStatus);
-	void AdminOrder_SummonStorm(int iClientH, char* pData, uint32_t dwMsgSize);
 	
-	void AdminOrder_SummonDeath(int iClientH);
-	void AdminOrder_SetZerk(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SetFreeze(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_Kill(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_Revive(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SetObserverMode(int iClientH);
-	void AdminOrder_EnableAdminCommand(int iClientH, char *pData, uint32_t dwMsgSize);
-	void AdminOrder_CreateItem(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_Summon(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SummonAll(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SummonPlayer(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_UnsummonDemon(int iClientH);
-	void AdminOrder_UnsummonAll(int iClientH);
-	void AdminOrder_SetAttackMode(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_SummonDemon(int iClientH);
-	void AdminOrder_SetInvi(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_Polymorph(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_GetNpcStatus(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_CheckIP(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_CreateFish(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_Teleport(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_ReserveFightzone(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_CloseConn(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_CallGuard(int iClientH, char * pData, uint32_t dwMsgSize);
-	void AdminOrder_DisconnectAll(int iClientH, char * pData, uint32_t dwMsgSize);
 
 	bool bCopyItemContents(class CItem * pOriginal, class CItem * pCopy);
 	int  iGetMapLocationSide(char * pMapName);
@@ -797,16 +759,14 @@ public:
 	CGame(HWND hWnd);
 	virtual ~CGame();
 
-	char m_cServerName[11];
-	char m_cGameServerAddr[16];
-	char m_cGameServerAddrInternal[16];
-	char m_cGameServerAddrExternal[16];
-	int  m_iGameServerMode;
-	char m_cLogServerAddr[16];
-	char m_cGateServerAddr[16];
-	int  m_iGameServerPort;
-	int  m_iLogServerPort;
-	int  m_iGateServerPort;
+	// Realm configuration (from realmlist table)
+	char m_cRealmName[32];
+	char m_cLoginListenIP[16];
+	int  m_iLoginListenPort;
+	char m_cGameListenIP[16];
+	int  m_iGameListenPort;
+	char m_cGameConnectionIP[16];   // Optional - for future login->game server connection
+	int  m_iGameConnectionPort;     // Optional - for future login->game server connection
 
 	uint32_t  m_iLimitedUserExp, m_iLevelExp20;
 
@@ -921,7 +881,6 @@ public:
 	int   m_iAutoRebootingCount;
 
 	class CBuildItem * m_pBuildItemList[DEF_MAXBUILDITEMS];
-	class CItem * m_pDupItemIDList[DEF_MAXDUPITEMID];
 
 	char * m_pNoticementData;
 	uint32_t  m_dwNoticementDataSize;
@@ -1017,51 +976,6 @@ public:
 		int iIndex[9];
 	}m_stPartyInfo[DEF_MAXCLIENTS];
 
-	// Daryl - Admin level adjustments
-	int m_iAdminLevelWho;
-	int m_iAdminLevelGMKill;
-	int m_iAdminLevelGMRevive;
-	int m_iAdminLevelGMCloseconn;
-	int m_iAdminLevelGMCheckRep;
-	int m_iAdminLevelEnergySphere;
-	int m_iAdminLevelShutdown;
-	int m_iAdminLevelObserver;
-	int m_iAdminLevelShutup;
-	int m_iAdminLevelCallGaurd;
-	int m_iAdminLevelSummonDemon;
-	int m_iAdminLevelSummonDeath;
-	int m_iAdminLevelReserveFightzone;
-	int m_iAdminLevelCreateFish;
-	int m_iAdminLevelTeleport;
-	int m_iAdminLevelCheckIP;
-	int m_iAdminLevelPolymorph;
-	int m_iAdminLevelSetInvis;
-	int m_iAdminLevelSetZerk;
-	int m_iAdminLevelSetIce;
-	int m_iAdminLevelGetNpcStatus;
-	int m_iAdminLevelSetAttackMode;
-	int m_iAdminLevelUnsummonAll;
-	int m_iAdminLevelUnsummonDemon;
-	int m_iAdminLevelSummon;
-	int m_iAdminLevelSummonAll;
-	int m_iAdminLevelSummonPlayer;
-	int m_iAdminLevelDisconnectAll;
-	int m_iAdminLevelEnableCreateItem;
-	int m_iAdminLevelCreateItem;
-	int m_iAdminLevelStorm;
-	int m_iAdminLevelWeather;
-	int m_iAdminLevelSetStatus;
-	int m_iAdminLevelGoto;
-	int m_iAdminLevelMonsterCount;
-	int m_iAdminLevelSetRecallTime;
-	int m_iAdminLevelUnsummonBoss;
-	int m_iAdminLevelClearNpc;
-	int m_iAdminLevelTime;
-	int m_iAdminLevelPushPlayer;
-	int m_iAdminLevelSummonGuild;
-	int m_iAdminLevelCheckStatus;
-	int m_iAdminLevelCleanMap;
-
 	// 09/26/2004
 	short m_sSlateSuccessRate;
 
@@ -1089,8 +1003,7 @@ public:
 	short m_sRaidTimeSunday; 
 
 	bool m_bManualTime;
-	int m_iSummonGuildCost;
-	
+
 	// Apocalypse
 	bool	m_bIsApocalyseMode;
 	bool	m_bIsHeldenianMode;
@@ -1103,11 +1016,8 @@ public:
 	int m_sCharPointLimit;
 
 	// Limit Checks
-	short m_sCharStatLimit;
 	bool m_bAllow100AllSkill;
-	short m_sCharSkillLimit;
 	char m_cRepDropModifier;
-	char  m_cSecurityNumber[11];
 	short m_sMaxPlayerLevel;
 	
 	bool var_89C, var_8A0;
@@ -1126,10 +1036,6 @@ private:
 	int _iGetItemSpaceLeft(int iClientH);
 
 public:
-	void AdminOrder_GoTo(int iClientH, char* pData, uint32_t dwMsgSize);
-	void AdminOrder_MonsterCount(int iClientH, char* pData, uint32_t dwMsgSize);
-	void AdminOrder_SetForceRecallTime(int iClientH, char* pData, uint32_t dwMsgSize);
-	void AdminOrder_UnsummonBoss(int iClientH);
 	void RemoveCrusadeNpcs(void);
 	void RemoveCrusadeRecallTime(void);
 	bool _bCrusadeLog(int iAction,int iClientH,int iData, char * cName);

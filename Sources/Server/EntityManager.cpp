@@ -21,14 +21,14 @@ extern int ITEMSPREAD_FIEXD_COORD[25][2];
 CEntityManager::CEntityManager()
 {
     // Allocate entity array (EntityManager OWNS this)
-    m_pNpcList = new CNpc*[DEF_MAXENTITIES];
-    for (int i = 0; i < DEF_MAXENTITIES; i++) {
+    m_pNpcList = new CNpc*[DEF_MAXNPCS];
+    for (int i = 0; i < DEF_MAXNPCS; i++) {
         m_pNpcList[i] = NULL;
         m_dwEntityGUID[i] = 0;
     }
 
     // Allocate active entity tracking list for performance
-    m_pActiveEntityList = new int[DEF_MAXENTITIES];
+    m_pActiveEntityList = new int[DEF_MAXNPCS];
     m_iActiveEntityCount = 0;
 
     m_pMapList = NULL;
@@ -43,7 +43,7 @@ CEntityManager::~CEntityManager()
 {
     // Delete all entities (EntityManager owns them)
     if (m_pNpcList != NULL) {
-        for (int i = 0; i < DEF_MAXENTITIES; i++) {
+        for (int i = 0; i < DEF_MAXNPCS; i++) {
             if (m_pNpcList[i] != NULL) {
                 delete m_pNpcList[i];
                 m_pNpcList[i] = NULL;
@@ -137,7 +137,7 @@ int CEntityManager::CreateEntity(
     if (iMapIndex == -1) return -1;
 
     // Find free entity slot
-    for (i = 1; i < DEF_MAXENTITIES; i++)
+    for (i = 1; i < DEF_MAXNPCS; i++)
         if (m_pNpcList[i] == 0) {
             m_pNpcList[i] = new CNpc(pName);
 
@@ -413,6 +413,15 @@ int CEntityManager::CreateEntity(
             return i; // Return entity handle (SUCCESS)
         }
 
+    // No free slots - log diagnostic info
+    int iUsedSlots = 0;
+    for (int idx = 1; idx < DEF_MAXNPCS; idx++) {
+        if (m_pNpcList[idx] != 0) iUsedSlots++;
+    }
+    std::snprintf(G_cTxt, sizeof(G_cTxt),
+        "[SPAWN] ERROR: No free entity slots! Used: %d/%d, ActiveList: %d, TotalEntities: %d",
+        iUsedSlots, DEF_MAXNPCS - 1, m_iActiveEntityCount, m_iTotalEntities);
+    PutLogList(G_cTxt);
     return -1; // No free slots
 }
 
@@ -733,7 +742,7 @@ void CEntityManager::ProcessEntities()
 
     dwTime = GameClock::GetTimeMS();
 
-    for (i = 1; i < DEF_MAXENTITIES; i++) {
+    for (i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] == 0)
             continue;
 
@@ -1711,7 +1720,8 @@ void CEntityManager::NpcBehavior_Dead(int iNpcH)
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 	}
 
-	if ((dwTime - m_pNpcList[iNpcH]->m_dwDeadTime) > m_pNpcList[iNpcH]->m_dwRegenTime) {
+	uint32_t dwTimeSinceDeath = dwTime - m_pNpcList[iNpcH]->m_dwDeadTime;
+	if (dwTimeSinceDeath > m_pNpcList[iNpcH]->m_dwRegenTime) {
 		DeleteEntity(iNpcH);
 	}
 }
@@ -2498,7 +2508,9 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 
 	// Spot-mob-generatorì •ë³´ 
 	if (m_pNpcList[iNpcH]->m_iSpotMobIndex != 0) {
-		m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_stSpotMobGenerator[m_pNpcList[iNpcH]->m_iSpotMobIndex].iCurMobs--;
+		int iSpotIdx = m_pNpcList[iNpcH]->m_iSpotMobIndex;
+		int iMapIdx = m_pNpcList[iNpcH]->m_cMapIndex;
+		m_pMapList[iMapIdx]->m_stSpotMobGenerator[iSpotIdx].iCurMobs--;
 	}
 
 	m_pGame->RemoveFromTarget(iNpcH, DEF_OWNERTYPE_NPC);
@@ -2683,7 +2695,7 @@ int CEntityManager::GetEntityHandleByGUID(uint32_t dwGUID) const
     if (dwGUID == 0)
         return -1;
 
-    for (int i = 1; i < DEF_MAXENTITIES; i++) {
+    for (int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_dwEntityGUID[i] == dwGUID && m_pNpcList[i] != NULL)
             return i;
     }
@@ -2693,7 +2705,7 @@ int CEntityManager::GetEntityHandleByGUID(uint32_t dwGUID) const
 
 uint32_t CEntityManager::GetEntityGUID(int iEntityHandle) const
 {
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXENTITIES)
+    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS)
         return 0;
 
     return m_dwEntityGUID[iEntityHandle];
@@ -2720,7 +2732,7 @@ int CEntityManager::FindEntityByName(const char* pName) const
     if (pName == NULL)
         return -1;
 
-    for (int i = 1; i < DEF_MAXENTITIES; i++) {
+    for (int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] != NULL) {
             if (memcmp(m_pNpcList[i]->m_cName, pName, 6) == 0)
                 return i;
@@ -2744,7 +2756,7 @@ bool CEntityManager::InitEntityAttributes(CNpc* pNpc, const char* pNpcName, shor
 
 int CEntityManager::GetFreeEntitySlot() const
 {
-    for (int i = 1; i < DEF_MAXENTITIES; i++) {
+    for (int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] == NULL)
             return i;
     }
@@ -2753,7 +2765,7 @@ int CEntityManager::GetFreeEntitySlot() const
 
 bool CEntityManager::IsValidEntity(int iEntityHandle) const
 {
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXENTITIES)
+    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS)
         return false;
 
     return (m_pNpcList[iEntityHandle] != NULL);
@@ -2776,7 +2788,7 @@ void CEntityManager::AddToActiveList(int iEntityHandle)
     // Add entity to active list for fast iteration
     // This allows us to iterate only active entities (e.g., 70) instead of all slots (5000)
 
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXENTITIES) {
+    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS) {
         return; // Invalid handle
     }
 
@@ -2798,7 +2810,7 @@ void CEntityManager::RemoveFromActiveList(int iEntityHandle)
     // Remove entity from active list when deleted
     // Uses swap-and-pop for O(1) removal
 
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXENTITIES) {
+    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS) {
         return; // Invalid handle
     }
 
@@ -3768,13 +3780,23 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
 
     // Loop through all spot mob generators
     for (int j = 1; j < DEF_MAXSPOTMOBGENERATOR; j++) {
-        // Random chance (1 in 3) and check if generator is defined and has room
-        if ((m_pGame->iDice(1, 3) == 2) &&
-            (m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].bDefined) &&
-            (m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].iMaxMobs >
-             m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].iCurMobs)) {
+        // Check if generator is defined and has room for more mobs
+        if (!m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].bDefined) {
+            continue;  // Generator not defined
+        }
 
+        if (m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].iMaxMobs <=
+            m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].iCurMobs) {
+            continue;  // Generator at capacity
+        }
 
+        // Random chance (1 in 3) to spawn this tick - rate limiting
+        if (m_pGame->iDice(1, 3) != 2) {
+            continue;  // Skip this tick, try again next time
+        }
+
+        // If we reach here, we're attempting a spawn
+        {
             iNamingValue = m_pMapList[iMapIndex]->iGetEmptyNamingValue();
             if (iNamingValue == -1) {
                 continue; // No naming value available, try next generator

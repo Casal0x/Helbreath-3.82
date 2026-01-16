@@ -643,10 +643,10 @@ void Initialize()
 
 	// MODERNIZED: Removed G_hWnd parameter, using WSAEventSelect
 	G_pListenSock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
-	G_pListenSock->bListen(G_pGame->m_cGameServerAddr, G_pGame->m_iGameServerPort);
+	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
 
 	G_pLoginSock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
-	G_pLoginSock->bListen(G_pGame->m_cGameServerAddr, G_pGame->m_iLogServerPort);
+	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
 
 	pLogFile = 0;
 	//pLogFile = fopen("test.log","wt+");

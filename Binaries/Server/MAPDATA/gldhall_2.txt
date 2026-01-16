@@ -20,6 +20,7 @@ waypoint          =     8      42    44
 waypoint          =     9      42    44
 waypoint          =     10     42    44
 
+maximum-object		= 10
 
 //-NPC-setting--------Name---------------MoveType----WaypointIndex(10)-------NamePrefix-------;
 npc               =   Kennedy            1           1 2 3 4 5 6 7 8 9 10         1  

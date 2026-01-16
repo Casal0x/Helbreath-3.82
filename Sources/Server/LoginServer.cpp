@@ -722,11 +722,11 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 
 	cp2 = (char*)cData; //outgoing messag - to Client
 
-	memcpy(cp2, (char*)G_pGame->m_cGameServerAddr, 16);
+	memcpy(cp2, (char*)G_pGame->m_cGameListenIP, 16);
 	cp2 += 16;
 
 	auto wp = (uint16_t*)cp2;
-	*wp = (uint16_t)G_pGame->m_iLogServerPort;
+	*wp = (uint16_t)G_pGame->m_iGameListenPort;
 	cp2 += 2;
 
 	char sv_name[21] = {};

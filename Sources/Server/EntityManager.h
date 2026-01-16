@@ -10,8 +10,7 @@
 
 #include "Npc.h"
 #include "Map.h"
-
-#define DEF_MAXENTITIES 5000
+#include "Game.h"  // For DEF_MAXNPCS
 
 struct DropTable;
 
@@ -187,7 +186,7 @@ public:
      * Returns array of active entity indices (not handles!).
      * Use with GetActiveEntityCount() to iterate only active entities.
      *
-     * Performance: O(active_count) instead of O(DEF_MAXENTITIES)
+     * Performance: O(active_count) instead of O(DEF_MAXNPCS)
      *
      * Example:
      *   int* pActiveList = m_pEntityManager->GetActiveEntityList();
@@ -294,7 +293,7 @@ private:
 
     // Entity Storage (OWNED by EntityManager)
     class CNpc** m_pNpcList;                // Entity array (indices 0-4999, index 0 unused)
-    uint32_t m_dwEntityGUID[DEF_MAXENTITIES];  // GUID for each entity slot
+    uint32_t m_dwEntityGUID[DEF_MAXNPCS];  // GUID for each entity slot
 
     // Performance: Active Entity Tracking
     // Instead of iterating 5,000 slots, iterate only active entities

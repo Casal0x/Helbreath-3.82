@@ -8,7 +8,7 @@
     "display": {
         "detailLevel": 1,
         "dialogTransparency": false,
-        "fullscreen": true,
+        "fullscreen": false,
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
@@ -30,7 +30,7 @@
         ]
     },
     "window": {
-        "height": 1080,
-        "width": 1440
+        "height": 600,
+        "width": 800
     }
 }

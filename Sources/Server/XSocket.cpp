@@ -6,6 +6,14 @@
 #include "XSocket.h"
 #include "Client.h"
 #include "winmain.h"
+#include <cstdio>
+
+extern void PutLogList(char* cMsg);
+
+// Queue overflow tracking (shared across all sockets)
+static uint32_t s_dwQueueFullCount = 0;
+static uint32_t s_dwLastQueueFullLogTime = 0;
+static uint32_t s_dwQueueFullCountSinceLastLog = 0;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -419,8 +427,25 @@ int XSocket::_iSend_ForInternalUse(char * cData, int iSize)
 
 int XSocket::_iRegisterUnsentData(char * cData, int iSize)
 {
-	// ť�� �������� ���̻� �����͸� ��⿭�� ������ �� ����.
-	if (m_pUnsentDataList[m_sTail] != 0) return 0;
+	// Queue is full - cannot register more unsent data
+	if (m_pUnsentDataList[m_sTail] != 0) {
+		// Track queue overflow with rate-limited logging
+		s_dwQueueFullCount++;
+		s_dwQueueFullCountSinceLastLog++;
+
+		uint32_t dwNow = GetTickCount();
+		// Log at most once every 5 seconds, showing count since last log
+		if (dwNow - s_dwLastQueueFullLogTime > 5000) {
+			char szLog[256];
+			std::snprintf(szLog, sizeof(szLog),
+				"[XSOCKET] Queue full! Dropped %u packets in last 5s (total: %u). Consider increasing queue size or reducing send rate.",
+				s_dwQueueFullCountSinceLastLog, s_dwQueueFullCount);
+			PutLogList(szLog);
+			s_dwLastQueueFullLogTime = dwNow;
+			s_dwQueueFullCountSinceLastLog = 0;
+		}
+		return 0;
+	}
 	
 	m_pUnsentDataList[m_sTail] = new char[iSize];
 	if (m_pUnsentDataList[m_sTail] == 0) return -1; // �޸� �Ҵ翡 �����ߴ�.

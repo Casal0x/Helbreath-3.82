@@ -22,6 +22,7 @@ waypoint          =     8      59    42
 waypoint          =     9      59    42
 waypoint          =     10     59    42
 
+maximum-object		= 10
 
 //-NPC-setting--------Name---------------MoveType----WaypointIndex(10)-------NamePrefix-------;
 

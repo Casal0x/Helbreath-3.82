@@ -76,8 +76,6 @@ waypoint          =     8      210   73
 waypoint          =     9      134   30
 waypoint          =     10     60    40
 
-
-
 //-No-Attack-Area----------Num-----RECT-------------
 no-attack-area           = 1       92  49 98  55
 

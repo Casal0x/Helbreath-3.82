@@ -202,13 +202,20 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " category INTEGER NOT NULL,"
         " item_color INTEGER NOT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS program_config ("
-        " key TEXT PRIMARY KEY,"
-        " value TEXT NOT NULL"
+        "CREATE TABLE IF NOT EXISTS realmlist ("
+        " id INTEGER PRIMARY KEY,"
+        " realm_name TEXT UNIQUE NOT NULL,"
+        " login_listen_ip TEXT NOT NULL DEFAULT '0.0.0.0',"
+        " login_listen_port INTEGER NOT NULL DEFAULT 2848,"
+        " game_server_listen_ip TEXT NOT NULL DEFAULT '0.0.0.0',"
+        " game_server_listen_port INTEGER NOT NULL DEFAULT 2858,"
+        " game_server_connection_ip TEXT DEFAULT NULL,"
+        " game_server_connection_port INTEGER DEFAULT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS maps ("
+        "CREATE TABLE IF NOT EXISTS active_maps ("
         " map_index INTEGER PRIMARY KEY,"
-        " map_name TEXT NOT NULL"
+        " map_name TEXT NOT NULL,"
+        " active INTEGER NOT NULL DEFAULT 0"
         ");"
         "CREATE TABLE IF NOT EXISTS settings ("
         " key TEXT PRIMARY KEY,"
@@ -220,7 +227,7 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         "CREATE TABLE IF NOT EXISTS banned_list ("
         " ip_address TEXT PRIMARY KEY"
         ");"
-        "CREATE TABLE IF NOT EXISTS admin_settings ("
+        "CREATE TABLE IF NOT EXISTS admin_level_permissions ("
         " key TEXT PRIMARY KEY,"
         " value INTEGER NOT NULL"
         ");"
@@ -395,46 +402,24 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " attribute INTEGER NOT NULL,"
         " item_id INTEGER NOT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS dup_item_ids ("
-        " dup_id INTEGER PRIMARY KEY,"
-        " touch_effect_type INTEGER NOT NULL,"
-        " touch_effect_value1 INTEGER NOT NULL,"
-        " touch_effect_value2 INTEGER NOT NULL,"
-        " touch_effect_value3 INTEGER NOT NULL,"
-        " price INTEGER NOT NULL"
-        ");"
-        "CREATE TABLE IF NOT EXISTS crusade_structures ("
+                "CREATE TABLE IF NOT EXISTS crusade_structures ("
         " structure_id INTEGER PRIMARY KEY,"
         " map_name TEXT NOT NULL,"
         " structure_type INTEGER NOT NULL,"
         " pos_x INTEGER NOT NULL,"
         " pos_y INTEGER NOT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS schedule_crusade ("
-        " schedule_id INTEGER PRIMARY KEY,"
-        " day INTEGER NOT NULL,"
-        " hour INTEGER NOT NULL,"
-        " minute INTEGER NOT NULL"
-        ");"
-        "CREATE TABLE IF NOT EXISTS schedule_apocalypse_start ("
-        " schedule_id INTEGER PRIMARY KEY,"
-        " day INTEGER NOT NULL,"
-        " hour INTEGER NOT NULL,"
-        " minute INTEGER NOT NULL"
-        ");"
-        "CREATE TABLE IF NOT EXISTS schedule_apocalypse_end ("
-        " schedule_id INTEGER PRIMARY KEY,"
-        " day INTEGER NOT NULL,"
-        " hour INTEGER NOT NULL,"
-        " minute INTEGER NOT NULL"
-        ");"
-        "CREATE TABLE IF NOT EXISTS schedule_heldenian ("
-        " schedule_id INTEGER PRIMARY KEY,"
+        "CREATE TABLE IF NOT EXISTS event_schedule ("
+        " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+        " event_type TEXT NOT NULL,"
+        " schedule_index INTEGER NOT NULL,"
         " day INTEGER NOT NULL,"
         " start_hour INTEGER NOT NULL,"
         " start_minute INTEGER NOT NULL,"
-        " end_hour INTEGER NOT NULL,"
-        " end_minute INTEGER NOT NULL"
+        " end_hour INTEGER,"
+        " end_minute INTEGER,"
+        " is_active INTEGER NOT NULL DEFAULT 0,"
+        " UNIQUE(event_type, schedule_index)"
         ");"
         "COMMIT;";
 
@@ -602,7 +587,7 @@ bool LoadItemConfigs(sqlite3* db, CItem** itemList, int maxItems)
     return true;
 }
 
-bool SaveProgramConfigs(sqlite3* db, const CGame* game)
+bool SaveRealmConfig(sqlite3* db, const CGame* game)
 {
     if (db == nullptr || game == nullptr) {
         return false;
@@ -612,43 +597,49 @@ bool SaveProgramConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    if (!ClearTable(db, "program_config") || !ClearTable(db, "maps")) {
+    if (!ClearTable(db, "realmlist") || !ClearTable(db, "active_maps")) {
         RollbackTransaction(db);
         return false;
     }
 
-    sqlite3_stmt* stmtConfig = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO program_config(key, value) VALUES(?, ?);", -1, &stmtConfig, nullptr) != SQLITE_OK) {
+    // Insert realm configuration
+    sqlite3_stmt* stmtRealm = nullptr;
+    const char* realmSql =
+        "INSERT INTO realmlist(id, realm_name, login_listen_ip, login_listen_port, "
+        "game_server_listen_ip, game_server_listen_port, game_server_connection_ip, game_server_connection_port) "
+        "VALUES(1, ?, ?, ?, ?, ?, ?, ?);";
+
+    if (sqlite3_prepare_v2(db, realmSql, -1, &stmtRealm, nullptr) != SQLITE_OK) {
         RollbackTransaction(db);
         return false;
     }
 
     bool ok = true;
-    ok &= InsertKeyValue(stmtConfig, "game-server-name", game->m_cServerName);
-    ok &= InsertKeyValueInt(stmtConfig, "game-server-port", game->m_iGameServerPort);
-    ok &= InsertKeyValue(stmtConfig, "log-server-address", game->m_cLogServerAddr);
-    ok &= InsertKeyValueInt(stmtConfig, "internal-log-server-port", game->m_iLogServerPort);
-    ok &= InsertKeyValue(stmtConfig, "gate-server-address", game->m_cGateServerAddr);
-    ok &= InsertKeyValueInt(stmtConfig, "gate-server-port", game->m_iGateServerPort);
-    ok &= InsertKeyValue(stmtConfig, "game-server-internal-address", game->m_cGameServerAddrInternal);
-    ok &= InsertKeyValue(stmtConfig, "game-server-external-address", game->m_cGameServerAddrExternal);
-    ok &= InsertKeyValue(stmtConfig, "game-server-address", game->m_cGameServerAddr);
-    if (game->m_iGameServerMode == 1) {
-        ok &= InsertKeyValue(stmtConfig, "game-server-mode", "lan");
-    } else if (game->m_iGameServerMode == 2) {
-        ok &= InsertKeyValue(stmtConfig, "game-server-mode", "internet");
+    ok &= PrepareAndBindText(stmtRealm, 1, game->m_cRealmName);
+    ok &= PrepareAndBindText(stmtRealm, 2, game->m_cLoginListenIP);
+    ok &= (sqlite3_bind_int(stmtRealm, 3, game->m_iLoginListenPort) == SQLITE_OK);
+    ok &= PrepareAndBindText(stmtRealm, 4, game->m_cGameListenIP);
+    ok &= (sqlite3_bind_int(stmtRealm, 5, game->m_iGameListenPort) == SQLITE_OK);
+
+    // Optional connection IP/port (bind NULL if empty)
+    if (game->m_cGameConnectionIP[0] != '\0') {
+        ok &= PrepareAndBindText(stmtRealm, 6, game->m_cGameConnectionIP);
+        ok &= (sqlite3_bind_int(stmtRealm, 7, game->m_iGameConnectionPort) == SQLITE_OK);
     } else {
-        ok &= InsertKeyValueInt(stmtConfig, "game-server-mode", game->m_iGameServerMode);
+        ok &= (sqlite3_bind_null(stmtRealm, 6) == SQLITE_OK);
+        ok &= (sqlite3_bind_null(stmtRealm, 7) == SQLITE_OK);
     }
 
-    sqlite3_finalize(stmtConfig);
-    if (!ok) {
+    if (!ok || sqlite3_step(stmtRealm) != SQLITE_DONE) {
+        sqlite3_finalize(stmtRealm);
         RollbackTransaction(db);
         return false;
     }
+    sqlite3_finalize(stmtRealm);
 
+    // Insert maps (active = 1 since we're saving currently loaded maps)
     sqlite3_stmt* stmtMap = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO maps(map_index, map_name) VALUES(?, ?);", -1, &stmtMap, nullptr) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, "INSERT INTO active_maps(map_index, map_name, active) VALUES(?, ?, 1);", -1, &stmtMap, nullptr) != SQLITE_OK) {
         RollbackTransaction(db);
         return false;
     }
@@ -678,63 +669,79 @@ bool SaveProgramConfigs(sqlite3* db, const CGame* game)
     return true;
 }
 
-bool LoadProgramConfigs(sqlite3* db, CGame* game)
+bool LoadRealmConfig(sqlite3* db, CGame* game)
 {
     if (db == nullptr || game == nullptr) {
         return false;
     }
 
+    // Load realm configuration
     sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "SELECT key, value FROM program_config;", -1, &stmt, nullptr) != SQLITE_OK) {
+    const char* realmSql =
+        "SELECT realm_name, login_listen_ip, login_listen_port, "
+        "game_server_listen_ip, game_server_listen_port, "
+        "game_server_connection_ip, game_server_connection_port "
+        "FROM realmlist WHERE id = 1;";
+
+    if (sqlite3_prepare_v2(db, realmSql, -1, &stmt, nullptr) != SQLITE_OK) {
         return false;
     }
 
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const unsigned char* keyText = sqlite3_column_text(stmt, 0);
-        const unsigned char* valueText = sqlite3_column_text(stmt, 1);
-        if (keyText == nullptr || valueText == nullptr) {
-            continue;
-        }
-        const char* key = reinterpret_cast<const char*>(keyText);
-        const char* value = reinterpret_cast<const char*>(valueText);
+    bool realmLoaded = false;
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* realmName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        const char* loginIP = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        int loginPort = sqlite3_column_int(stmt, 2);
+        const char* gameIP = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+        int gamePort = sqlite3_column_int(stmt, 4);
+        const char* connIP = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 5));
+        int connPort = sqlite3_column_int(stmt, 6);
 
-        if (std::strcmp(key, "game-server-name") == 0) {
-            std::snprintf(game->m_cServerName, sizeof(game->m_cServerName), "%s", value);
-        } else if (std::strcmp(key, "game-server-port") == 0) {
-            game->m_iGameServerPort = std::atoi(value);
-        } else if (std::strcmp(key, "log-server-address") == 0) {
-            std::snprintf(game->m_cLogServerAddr, sizeof(game->m_cLogServerAddr), "%s", value);
-        } else if (std::strcmp(key, "internal-log-server-port") == 0) {
-            game->m_iLogServerPort = std::atoi(value);
-        } else if (std::strcmp(key, "gate-server-address") == 0) {
-            std::snprintf(game->m_cGateServerAddr, sizeof(game->m_cGateServerAddr), "%s", value);
-        } else if (std::strcmp(key, "gate-server-port") == 0) {
-            game->m_iGateServerPort = std::atoi(value);
-        } else if (std::strcmp(key, "game-server-internal-address") == 0) {
-            std::snprintf(game->m_cGameServerAddrInternal, sizeof(game->m_cGameServerAddrInternal), "%s", value);
-        } else if (std::strcmp(key, "game-server-external-address") == 0) {
-            std::snprintf(game->m_cGameServerAddrExternal, sizeof(game->m_cGameServerAddrExternal), "%s", value);
-        } else if (std::strcmp(key, "game-server-address") == 0) {
-            std::snprintf(game->m_cGameServerAddr, sizeof(game->m_cGameServerAddr), "%s", value);
-        } else if (std::strcmp(key, "game-server-mode") == 0) {
-            if (_stricmp(value, "lan") == 0) {
-                game->m_iGameServerMode = 1;
-            } else if (_stricmp(value, "internet") == 0) {
-                game->m_iGameServerMode = 2;
-            } else {
-                game->m_iGameServerMode = std::atoi(value);
-            }
+        if (realmName) {
+            std::snprintf(game->m_cRealmName, sizeof(game->m_cRealmName), "%s", realmName);
         }
+        if (loginIP) {
+            std::snprintf(game->m_cLoginListenIP, sizeof(game->m_cLoginListenIP), "%s", loginIP);
+        }
+        game->m_iLoginListenPort = loginPort;
+
+        if (gameIP) {
+            std::snprintf(game->m_cGameListenIP, sizeof(game->m_cGameListenIP), "%s", gameIP);
+        }
+        game->m_iGameListenPort = gamePort;
+
+        // Optional connection IP/port
+        if (connIP && connIP[0] != '\0') {
+            std::snprintf(game->m_cGameConnectionIP, sizeof(game->m_cGameConnectionIP), "%s", connIP);
+            game->m_iGameConnectionPort = connPort;
+        } else {
+            game->m_cGameConnectionIP[0] = '\0';
+            game->m_iGameConnectionPort = 0;
+        }
+
+        realmLoaded = true;
+
+        char logMsg[256] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "Loaded realm: %s (Login: %s:%d, Game: %s:%d)",
+            game->m_cRealmName, game->m_cLoginListenIP, game->m_iLoginListenPort,
+            game->m_cGameListenIP, game->m_iGameListenPort);
+        PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
     }
 
     sqlite3_finalize(stmt);
 
-    if (sqlite3_prepare_v2(db, "SELECT map_name FROM maps ORDER BY map_index;", -1, &stmt, nullptr) != SQLITE_OK) {
+    if (!realmLoaded) {
+        PutLogListLevel(LOG_LEVEL_ERROR, "No realm configuration found in realmlist table (id=1)");
+        return false;
+    }
+
+    // Load active maps only
+    if (sqlite3_prepare_v2(db, "SELECT map_name FROM active_maps WHERE active = 1 ORDER BY map_index;", -1, &stmt, nullptr) != SQLITE_OK) {
         return false;
     }
 
     int mapsLoaded = 0;
-    PutLogListLevel(LOG_LEVEL_NOTICE, "Loading maps from GameConfigs.db...");
+    PutLogListLevel(LOG_LEVEL_NOTICE, "Loading active maps from GameConfigs.db...");
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         const unsigned char* nameText = sqlite3_column_text(stmt, 0);
         if (nameText == nullptr) {
@@ -757,7 +764,7 @@ bool LoadProgramConfigs(sqlite3* db, CGame* game)
         std::snprintf(logMsg, sizeof(logMsg), "Loaded %d maps.", mapsLoaded);
         PutLogListLevel(LOG_LEVEL_NOTICE, logMsg);
     }
-    return (game->m_iGameServerMode != 0);
+    return true;
 }
 
 bool SaveSettingsConfig(sqlite3* db, const CGame* game)
@@ -801,12 +808,8 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     case 4: ok &= InsertKeyValue(stmt, "log-chat-settings", "none"); break;
     default: ok &= InsertKeyValue(stmt, "log-chat-settings", "player"); break;
     }
-    ok &= InsertKeyValueInt(stmt, "summonguild-cost", game->m_iSummonGuildCost);
     ok &= InsertKeyValueInt(stmt, "slate-success-rate", game->m_sSlateSuccessRate);
-    ok &= InsertKeyValueInt(stmt, "character-stat-limit", game->m_sCharStatLimit);
-    ok &= InsertKeyValueInt(stmt, "character-skill-limit", game->m_sCharSkillLimit);
     ok &= InsertKeyValueInt(stmt, "rep-drop-modifier", game->m_cRepDropModifier);
-    ok &= InsertKeyValue(stmt, "admin-security-code", game->m_cSecurityNumber);
     ok &= InsertKeyValueInt(stmt, "max-player-level", game->m_iPlayerMaxLevel);
 
     sqlite3_finalize(stmt);
@@ -888,18 +891,10 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
             } else if (_stricmp(value, "none") == 0) {
                 game->m_bLogChatOption = 4;
             }
-        } else if (std::strcmp(key, "summonguild-cost") == 0) {
-            game->m_iSummonGuildCost = std::atoi(value);
         } else if (std::strcmp(key, "slate-success-rate") == 0) {
             game->m_sSlateSuccessRate = (short)std::atoi(value);
-        } else if (std::strcmp(key, "character-stat-limit") == 0) {
-            game->m_sCharStatLimit = (short)std::atoi(value);
-        } else if (std::strcmp(key, "character-skill-limit") == 0) {
-            game->m_sCharSkillLimit = (short)std::atoi(value);
         } else if (std::strcmp(key, "rep-drop-modifier") == 0) {
             game->m_cRepDropModifier = (char)std::atoi(value);
-        } else if (std::strcmp(key, "admin-security-code") == 0) {
-            std::snprintf(game->m_cSecurityNumber, sizeof(game->m_cSecurityNumber), "%s", value);
         } else if (std::strcmp(key, "max-player-level") == 0) {
             game->m_iPlayerMaxLevel = std::atoi(value);
         }
@@ -1053,206 +1048,19 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
 
 bool SaveAdminSettingsConfig(sqlite3* db, const CGame* game)
 {
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    if (!BeginTransaction(db)) {
-        return false;
-    }
-
-    if (!ClearTable(db, "admin_settings")) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO admin_settings(key, value) VALUES(?, ?);", -1, &stmt, nullptr) != SQLITE_OK) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    struct SettingMap {
-        const char* key;
-        int CGame::*member;
-    };
-
-    const SettingMap settings[] = {
-        {"Admin-Level-/kill", &CGame::m_iAdminLevelGMKill},
-        {"Admin-Level-/revive", &CGame::m_iAdminLevelGMRevive},
-        {"Admin-Level-/closecon", &CGame::m_iAdminLevelGMCloseconn},
-        {"Admin-Level-/checkrep", &CGame::m_iAdminLevelGMCheckRep},
-        {"Admin-Level-/who", &CGame::m_iAdminLevelWho},
-        {"Admin-Level-/energysphere", &CGame::m_iAdminLevelEnergySphere},
-        {"Admin-Level-/shutdownthisserverrightnow", &CGame::m_iAdminLevelShutdown},
-        {"Admin-Level-/setobservermode", &CGame::m_iAdminLevelObserver},
-        {"Admin-Level-/shutup", &CGame::m_iAdminLevelShutup},
-        {"Admin-Level-/attack", &CGame::m_iAdminLevelCallGaurd},
-        {"Admin-Level-/summondemon", &CGame::m_iAdminLevelSummonDemon},
-        {"Admin-Level-/summondeath", &CGame::m_iAdminLevelSummonDeath},
-        {"Admin-Level-/reservefightzone", &CGame::m_iAdminLevelReserveFightzone},
-        {"Admin-Level-/createfish", &CGame::m_iAdminLevelCreateFish},
-        {"Admin-Level-/teleport", &CGame::m_iAdminLevelTeleport},
-        {"Admin-Level-/checkip", &CGame::m_iAdminLevelCheckIP},
-        {"Admin-Level-/polymorph", &CGame::m_iAdminLevelPolymorph},
-        {"Admin-Level-/setinvi", &CGame::m_iAdminLevelSetInvis},
-        {"Admin-Level-/setzerk", &CGame::m_iAdminLevelSetZerk},
-        {"Admin-Level-/setfreeze", &CGame::m_iAdminLevelSetIce},
-        {"Admin-Level-/gns", &CGame::m_iAdminLevelGetNpcStatus},
-        {"Admin-Level-/setattackmode", &CGame::m_iAdminLevelSetAttackMode},
-        {"Admin-Level-/unsummonall", &CGame::m_iAdminLevelUnsummonAll},
-        {"Admin-Level-/unsummondemon", &CGame::m_iAdminLevelUnsummonDemon},
-        {"Admin-Level-/summonnpc", &CGame::m_iAdminLevelSummon},
-        {"Admin-Level-/summonall", &CGame::m_iAdminLevelSummonAll},
-        {"Admin-Level-/summonplayer", &CGame::m_iAdminLevelSummonPlayer},
-        {"Admin-Level-/disconnectall", &CGame::m_iAdminLevelDisconnectAll},
-        {"Admin-Level-/enableadmincreateitem", &CGame::m_iAdminLevelEnableCreateItem},
-        {"Admin-Level-/createitem", &CGame::m_iAdminLevelCreateItem},
-        {"Admin-Level-/storm", &CGame::m_iAdminLevelStorm},
-        {"Admin-Level-/weather", &CGame::m_iAdminLevelWeather},
-        {"Admin-Level-/setstatus", &CGame::m_iAdminLevelSetStatus},
-        {"Admin-Level-/goto", &CGame::m_iAdminLevelGoto},
-        {"Admin-Level-/monstercount", &CGame::m_iAdminLevelMonsterCount},
-        {"Admin-Level-/setforcerecalltime", &CGame::m_iAdminLevelSetRecallTime},
-        {"Admin-Level-/unsummonboss", &CGame::m_iAdminLevelUnsummonBoss},
-        {"Admin-Level-/clearnpc", &CGame::m_iAdminLevelClearNpc},
-        {"Admin-Level-/time", &CGame::m_iAdminLevelTime},
-        {"Admin-Level-/send", &CGame::m_iAdminLevelPushPlayer},
-        {"Admin-Level-/summonguild", &CGame::m_iAdminLevelSummonGuild},
-        {"Admin-Level-/checkstatus", &CGame::m_iAdminLevelCheckStatus},
-        {"Admin-Level-/clearmap", &CGame::m_iAdminLevelCleanMap},
-    };
-
-    bool ok = true;
-    for (const auto& entry : settings) {
-        ok &= InsertKeyValueInt(stmt, entry.key, game->*(entry.member));
-        if (!ok) {
-            break;
-        }
-    }
-
-    sqlite3_finalize(stmt);
-    if (!ok) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    if (!CommitTransaction(db)) {
-        RollbackTransaction(db);
-        return false;
-    }
+    // Admin level permissions - stub for future implementation
+    // Table renamed from admin_settings to admin_level_permissions
+    (void)db;
+    (void)game;
     return true;
 }
 
 bool LoadAdminSettingsConfig(sqlite3* db, CGame* game)
 {
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "SELECT key, value FROM admin_settings;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const unsigned char* keyText = sqlite3_column_text(stmt, 0);
-        if (keyText == nullptr) {
-            continue;
-        }
-        const char* key = reinterpret_cast<const char*>(keyText);
-        int value = sqlite3_column_int(stmt, 1);
-
-        if (std::strcmp(key, "Admin-Level-/kill") == 0) {
-            game->m_iAdminLevelGMKill = value;
-        } else if (std::strcmp(key, "Admin-Level-/revive") == 0) {
-            game->m_iAdminLevelGMRevive = value;
-        } else if (std::strcmp(key, "Admin-Level-/closecon") == 0) {
-            game->m_iAdminLevelGMCloseconn = value;
-        } else if (std::strcmp(key, "Admin-Level-/checkrep") == 0) {
-            game->m_iAdminLevelGMCheckRep = value;
-        } else if (std::strcmp(key, "Admin-Level-/who") == 0) {
-            game->m_iAdminLevelWho = value;
-        } else if (std::strcmp(key, "Admin-Level-/energysphere") == 0) {
-            game->m_iAdminLevelEnergySphere = value;
-        } else if (std::strcmp(key, "Admin-Level-/shutdownthisserverrightnow") == 0) {
-            game->m_iAdminLevelShutdown = value;
-        } else if (std::strcmp(key, "Admin-Level-/setobservermode") == 0) {
-            game->m_iAdminLevelObserver = value;
-        } else if (std::strcmp(key, "Admin-Level-/shutup") == 0) {
-            game->m_iAdminLevelShutup = value;
-        } else if (std::strcmp(key, "Admin-Level-/attack") == 0) {
-            game->m_iAdminLevelCallGaurd = value;
-        } else if (std::strcmp(key, "Admin-Level-/summondemon") == 0) {
-            game->m_iAdminLevelSummonDemon = value;
-        } else if (std::strcmp(key, "Admin-Level-/summondeath") == 0) {
-            game->m_iAdminLevelSummonDeath = value;
-        } else if (std::strcmp(key, "Admin-Level-/reservefightzone") == 0) {
-            game->m_iAdminLevelReserveFightzone = value;
-        } else if (std::strcmp(key, "Admin-Level-/createfish") == 0) {
-            game->m_iAdminLevelCreateFish = value;
-        } else if (std::strcmp(key, "Admin-Level-/teleport") == 0) {
-            game->m_iAdminLevelTeleport = value;
-        } else if (std::strcmp(key, "Admin-Level-/checkip") == 0) {
-            game->m_iAdminLevelCheckIP = value;
-        } else if (std::strcmp(key, "Admin-Level-/polymorph") == 0) {
-            game->m_iAdminLevelPolymorph = value;
-        } else if (std::strcmp(key, "Admin-Level-/setinvi") == 0) {
-            game->m_iAdminLevelSetInvis = value;
-        } else if (std::strcmp(key, "Admin-Level-/setzerk") == 0) {
-            game->m_iAdminLevelSetZerk = value;
-        } else if (std::strcmp(key, "Admin-Level-/setfreeze") == 0) {
-            game->m_iAdminLevelSetIce = value;
-        } else if (std::strcmp(key, "Admin-Level-/gns") == 0) {
-            game->m_iAdminLevelGetNpcStatus = value;
-        } else if (std::strcmp(key, "Admin-Level-/setattackmode") == 0) {
-            game->m_iAdminLevelSetAttackMode = value;
-        } else if (std::strcmp(key, "Admin-Level-/unsummonall") == 0) {
-            game->m_iAdminLevelUnsummonAll = value;
-        } else if (std::strcmp(key, "Admin-Level-/unsummondemon") == 0) {
-            game->m_iAdminLevelUnsummonDemon = value;
-        } else if (std::strcmp(key, "Admin-Level-/summonnpc") == 0) {
-            game->m_iAdminLevelSummon = value;
-        } else if (std::strcmp(key, "Admin-Level-/summonall") == 0) {
-            game->m_iAdminLevelSummonAll = value;
-        } else if (std::strcmp(key, "Admin-Level-/summonplayer") == 0) {
-            game->m_iAdminLevelSummonPlayer = value;
-        } else if (std::strcmp(key, "Admin-Level-/disconnectall") == 0) {
-            game->m_iAdminLevelDisconnectAll = value;
-        } else if (std::strcmp(key, "Admin-Level-/enableadmincreateitem") == 0) {
-            game->m_iAdminLevelEnableCreateItem = value;
-        } else if (std::strcmp(key, "Admin-Level-/createitem") == 0) {
-            game->m_iAdminLevelCreateItem = value;
-        } else if (std::strcmp(key, "Admin-Level-/storm") == 0) {
-            game->m_iAdminLevelStorm = value;
-        } else if (std::strcmp(key, "Admin-Level-/weather") == 0) {
-            game->m_iAdminLevelWeather = value;
-        } else if (std::strcmp(key, "Admin-Level-/setstatus") == 0) {
-            game->m_iAdminLevelSetStatus = value;
-        } else if (std::strcmp(key, "Admin-Level-/goto") == 0) {
-            game->m_iAdminLevelGoto = value;
-        } else if (std::strcmp(key, "Admin-Level-/monstercount") == 0) {
-            game->m_iAdminLevelMonsterCount = value;
-        } else if (std::strcmp(key, "Admin-Level-/setforcerecalltime") == 0) {
-            game->m_iAdminLevelSetRecallTime = value;
-        } else if (std::strcmp(key, "Admin-Level-/unsummonboss") == 0) {
-            game->m_iAdminLevelUnsummonBoss = value;
-        } else if (std::strcmp(key, "Admin-Level-/clearnpc") == 0) {
-            game->m_iAdminLevelClearNpc = value;
-        } else if (std::strcmp(key, "Admin-Level-/time") == 0) {
-            game->m_iAdminLevelTime = value;
-        } else if (std::strcmp(key, "Admin-Level-/send") == 0) {
-            game->m_iAdminLevelPushPlayer = value;
-        } else if (std::strcmp(key, "Admin-Level-/summonguild") == 0) {
-            game->m_iAdminLevelSummonGuild = value;
-        } else if (std::strcmp(key, "Admin-Level-/checkstatus") == 0) {
-            game->m_iAdminLevelCheckStatus = value;
-        } else if (std::strcmp(key, "Admin-Level-/clearmap") == 0) {
-            game->m_iAdminLevelCleanMap = value;
-        }
-    }
-
-    sqlite3_finalize(stmt);
+    // Admin level permissions - stub for future implementation
+    // Table renamed from admin_settings to admin_level_permissions
+    (void)db;
+    (void)game;
     return true;
 }
 
@@ -2151,105 +1959,6 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
     return true;
 }
 
-bool SaveDupItemIdConfigs(sqlite3* db, const CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    if (!BeginTransaction(db)) {
-        return false;
-    }
-
-    if (!ClearTable(db, "dup_item_ids")) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    const char* sql =
-        "INSERT INTO dup_item_ids("
-        " dup_id, touch_effect_type, touch_effect_value1, touch_effect_value2, touch_effect_value3, price"
-        ") VALUES(?,?,?,?,?,?);";
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXDUPITEMID; i++) {
-        if (game->m_pDupItemIDList[i] == nullptr) {
-            continue;
-        }
-
-        const CItem* item = game->m_pDupItemIDList[i];
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-        int col = 1;
-        bool ok = true;
-        ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item->m_sTouchEffectType) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item->m_sTouchEffectValue1) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item->m_sTouchEffectValue2) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item->m_sTouchEffectValue3) == SQLITE_OK);
-        ok &= (sqlite3_bind_int(stmt, col++, item->m_wPrice) == SQLITE_OK);
-
-        if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
-            sqlite3_finalize(stmt);
-            RollbackTransaction(db);
-            return false;
-        }
-    }
-
-    sqlite3_finalize(stmt);
-    if (!CommitTransaction(db)) {
-        RollbackTransaction(db);
-        return false;
-    }
-    return true;
-}
-
-bool LoadDupItemIdConfigs(sqlite3* db, CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXDUPITEMID; i++) {
-        delete game->m_pDupItemIDList[i];
-        game->m_pDupItemIDList[i] = nullptr;
-    }
-
-    const char* sql =
-        "SELECT dup_id, touch_effect_type, touch_effect_value1, touch_effect_value2, touch_effect_value3, price"
-        " FROM dup_item_ids ORDER BY dup_id;";
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int col = 0;
-        int dupId = sqlite3_column_int(stmt, col++);
-        if (dupId < 0 || dupId >= DEF_MAXDUPITEMID) {
-            continue;
-        }
-
-        CItem* item = new CItem();
-        item->m_sTouchEffectType = (short)sqlite3_column_int(stmt, col++);
-        item->m_sTouchEffectValue1 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sTouchEffectValue2 = (short)sqlite3_column_int(stmt, col++);
-        item->m_sTouchEffectValue3 = (short)sqlite3_column_int(stmt, col++);
-        item->m_wPrice = (uint16_t)sqlite3_column_int(stmt, col++);
-
-        game->m_pDupItemIDList[dupId] = item;
-    }
-
-    sqlite3_finalize(stmt);
-    return true;
-}
-
 bool SaveCrusadeConfig(sqlite3* db, const CGame* game)
 {
     if (db == nullptr || game == nullptr) {
@@ -2353,114 +2062,87 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    if (!ClearTable(db, "schedule_crusade") ||
-        !ClearTable(db, "schedule_apocalypse_start") ||
-        !ClearTable(db, "schedule_apocalypse_end") ||
-        !ClearTable(db, "schedule_heldenian")) {
+    if (!ClearTable(db, "event_schedule")) {
         RollbackTransaction(db);
         return false;
     }
 
-    sqlite3_stmt* crusadeStmt = nullptr;
-    sqlite3_stmt* apocStartStmt = nullptr;
-    sqlite3_stmt* apocEndStmt = nullptr;
-    sqlite3_stmt* heldenStmt = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO schedule_crusade(schedule_id, day, hour, minute) VALUES(?,?,?,?);", -1, &crusadeStmt, nullptr) != SQLITE_OK ||
-        sqlite3_prepare_v2(db, "INSERT INTO schedule_apocalypse_start(schedule_id, day, hour, minute) VALUES(?,?,?,?);", -1, &apocStartStmt, nullptr) != SQLITE_OK ||
-        sqlite3_prepare_v2(db, "INSERT INTO schedule_apocalypse_end(schedule_id, day, hour, minute) VALUES(?,?,?,?);", -1, &apocEndStmt, nullptr) != SQLITE_OK ||
-        sqlite3_prepare_v2(db, "INSERT INTO schedule_heldenian(schedule_id, day, start_hour, start_minute, end_hour, end_minute) VALUES(?,?,?,?,?,?);", -1, &heldenStmt, nullptr) != SQLITE_OK) {
-        if (crusadeStmt) sqlite3_finalize(crusadeStmt);
-        if (apocStartStmt) sqlite3_finalize(apocStartStmt);
-        if (apocEndStmt) sqlite3_finalize(apocEndStmt);
-        if (heldenStmt) sqlite3_finalize(heldenStmt);
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql = "INSERT INTO event_schedule(event_type, schedule_index, day, start_hour, start_minute, end_hour, end_minute, is_active) "
+                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?);";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         RollbackTransaction(db);
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXSCHEDULE; i++) {
+    bool success = true;
+
+    // Save crusade schedules
+    for (int i = 0; i < DEF_MAXSCHEDULE && success; i++) {
         if (game->m_stCrusadeWarSchedule[i].iDay >= 0) {
-            sqlite3_reset(crusadeStmt);
-            sqlite3_clear_bindings(crusadeStmt);
+            sqlite3_reset(stmt);
+            sqlite3_clear_bindings(stmt);
             bool ok = true;
-            ok &= (sqlite3_bind_int(crusadeStmt, 1, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(crusadeStmt, 2, game->m_stCrusadeWarSchedule[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(crusadeStmt, 3, game->m_stCrusadeWarSchedule[i].iHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(crusadeStmt, 4, game->m_stCrusadeWarSchedule[i].iMinute) == SQLITE_OK);
-            if (!ok || sqlite3_step(crusadeStmt) != SQLITE_DONE) {
-                sqlite3_finalize(crusadeStmt);
-                sqlite3_finalize(apocStartStmt);
-                sqlite3_finalize(apocEndStmt);
-                sqlite3_finalize(heldenStmt);
-                RollbackTransaction(db);
-                return false;
-            }
+            ok &= PrepareAndBindText(stmt, 1, "crusade");
+            ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_stCrusadeWarSchedule[i].iDay) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_stCrusadeWarSchedule[i].iHour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_stCrusadeWarSchedule[i].iMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_null(stmt, 6) == SQLITE_OK);  // end_hour
+            ok &= (sqlite3_bind_null(stmt, 7) == SQLITE_OK);  // end_minute
+            ok &= (sqlite3_bind_int(stmt, 8, 0) == SQLITE_OK);  // is_active
+            success = ok && (sqlite3_step(stmt) == SQLITE_DONE);
         }
     }
 
-    for (int i = 0; i < DEF_MAXAPOCALYPSE; i++) {
+    // Save apocalypse schedules (start and end times in one row)
+    for (int i = 0; i < DEF_MAXAPOCALYPSE && success; i++) {
         if (game->m_stApocalypseScheduleStart[i].iDay >= 0) {
-            sqlite3_reset(apocStartStmt);
-            sqlite3_clear_bindings(apocStartStmt);
+            sqlite3_reset(stmt);
+            sqlite3_clear_bindings(stmt);
             bool ok = true;
-            ok &= (sqlite3_bind_int(apocStartStmt, 1, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocStartStmt, 2, game->m_stApocalypseScheduleStart[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocStartStmt, 3, game->m_stApocalypseScheduleStart[i].iHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocStartStmt, 4, game->m_stApocalypseScheduleStart[i].iMinute) == SQLITE_OK);
-            if (!ok || sqlite3_step(apocStartStmt) != SQLITE_DONE) {
-                sqlite3_finalize(crusadeStmt);
-                sqlite3_finalize(apocStartStmt);
-                sqlite3_finalize(apocEndStmt);
-                sqlite3_finalize(heldenStmt);
-                RollbackTransaction(db);
-                return false;
+            ok &= PrepareAndBindText(stmt, 1, "apocalypse");
+            ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_stApocalypseScheduleStart[i].iDay) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_stApocalypseScheduleStart[i].iHour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_stApocalypseScheduleStart[i].iMinute) == SQLITE_OK);
+            // End time from the corresponding end schedule
+            if (game->m_stApocalypseScheduleEnd[i].iDay >= 0) {
+                ok &= (sqlite3_bind_int(stmt, 6, game->m_stApocalypseScheduleEnd[i].iHour) == SQLITE_OK);
+                ok &= (sqlite3_bind_int(stmt, 7, game->m_stApocalypseScheduleEnd[i].iMinute) == SQLITE_OK);
+            } else {
+                ok &= (sqlite3_bind_null(stmt, 6) == SQLITE_OK);
+                ok &= (sqlite3_bind_null(stmt, 7) == SQLITE_OK);
             }
-        }
-
-        if (game->m_stApocalypseScheduleEnd[i].iDay >= 0) {
-            sqlite3_reset(apocEndStmt);
-            sqlite3_clear_bindings(apocEndStmt);
-            bool ok = true;
-            ok &= (sqlite3_bind_int(apocEndStmt, 1, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocEndStmt, 2, game->m_stApocalypseScheduleEnd[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocEndStmt, 3, game->m_stApocalypseScheduleEnd[i].iHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(apocEndStmt, 4, game->m_stApocalypseScheduleEnd[i].iMinute) == SQLITE_OK);
-            if (!ok || sqlite3_step(apocEndStmt) != SQLITE_DONE) {
-                sqlite3_finalize(crusadeStmt);
-                sqlite3_finalize(apocStartStmt);
-                sqlite3_finalize(apocEndStmt);
-                sqlite3_finalize(heldenStmt);
-                RollbackTransaction(db);
-                return false;
-            }
+            ok &= (sqlite3_bind_int(stmt, 8, 0) == SQLITE_OK);  // is_active
+            success = ok && (sqlite3_step(stmt) == SQLITE_DONE);
         }
     }
 
-    for (int i = 0; i < DEF_MAXHELDENIAN; i++) {
+    // Save heldenian schedules (these have end times)
+    for (int i = 0; i < DEF_MAXHELDENIAN && success; i++) {
         if (game->m_stHeldenianSchedule[i].iDay >= 0) {
-            sqlite3_reset(heldenStmt);
-            sqlite3_clear_bindings(heldenStmt);
+            sqlite3_reset(stmt);
+            sqlite3_clear_bindings(stmt);
             bool ok = true;
-            ok &= (sqlite3_bind_int(heldenStmt, 1, i) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(heldenStmt, 2, game->m_stHeldenianSchedule[i].iDay) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(heldenStmt, 3, game->m_stHeldenianSchedule[i].StartiHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(heldenStmt, 4, game->m_stHeldenianSchedule[i].StartiMinute) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(heldenStmt, 5, game->m_stHeldenianSchedule[i].EndiHour) == SQLITE_OK);
-            ok &= (sqlite3_bind_int(heldenStmt, 6, game->m_stHeldenianSchedule[i].EndiMinute) == SQLITE_OK);
-            if (!ok || sqlite3_step(heldenStmt) != SQLITE_DONE) {
-                sqlite3_finalize(crusadeStmt);
-                sqlite3_finalize(apocStartStmt);
-                sqlite3_finalize(apocEndStmt);
-                sqlite3_finalize(heldenStmt);
-                RollbackTransaction(db);
-                return false;
-            }
+            ok &= PrepareAndBindText(stmt, 1, "heldenian");
+            ok &= (sqlite3_bind_int(stmt, 2, i) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 3, game->m_stHeldenianSchedule[i].iDay) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 4, game->m_stHeldenianSchedule[i].StartiHour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 5, game->m_stHeldenianSchedule[i].StartiMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 6, game->m_stHeldenianSchedule[i].EndiHour) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 7, game->m_stHeldenianSchedule[i].EndiMinute) == SQLITE_OK);
+            ok &= (sqlite3_bind_int(stmt, 8, 0) == SQLITE_OK);  // is_active
+            success = ok && (sqlite3_step(stmt) == SQLITE_DONE);
         }
     }
 
-    sqlite3_finalize(crusadeStmt);
-    sqlite3_finalize(apocStartStmt);
-    sqlite3_finalize(apocEndStmt);
-    sqlite3_finalize(heldenStmt);
+    sqlite3_finalize(stmt);
+
+    if (!success) {
+        RollbackTransaction(db);
+        return false;
+    }
 
     if (!CommitTransaction(db)) {
         RollbackTransaction(db);
@@ -2475,6 +2157,7 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         return false;
     }
 
+    // Initialize all schedules to -1
     for (int i = 0; i < DEF_MAXSCHEDULE; i++) {
         game->m_stCrusadeWarSchedule[i].iDay = -1;
         game->m_stCrusadeWarSchedule[i].iHour = -1;
@@ -2496,62 +2179,54 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         game->m_stHeldenianSchedule[i].EndiMinute = -1;
     }
 
+    // Load all events from unified table
     sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "SELECT schedule_id, day, hour, minute FROM schedule_crusade ORDER BY schedule_id;", -1, &stmt, nullptr) != SQLITE_OK) {
+    const char* sql = "SELECT event_type, schedule_index, day, start_hour, start_minute, end_hour, end_minute, is_active "
+                      "FROM event_schedule ORDER BY event_type, schedule_index;";
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return false;
     }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int idx = sqlite3_column_int(stmt, 0);
-        if (idx < 0 || idx >= DEF_MAXSCHEDULE) {
-            continue;
-        }
-        game->m_stCrusadeWarSchedule[idx].iDay = sqlite3_column_int(stmt, 1);
-        game->m_stCrusadeWarSchedule[idx].iHour = sqlite3_column_int(stmt, 2);
-        game->m_stCrusadeWarSchedule[idx].iMinute = sqlite3_column_int(stmt, 3);
-    }
-    sqlite3_finalize(stmt);
 
-    if (sqlite3_prepare_v2(db, "SELECT schedule_id, day, hour, minute FROM schedule_apocalypse_start ORDER BY schedule_id;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int idx = sqlite3_column_int(stmt, 0);
-        if (idx < 0 || idx >= DEF_MAXAPOCALYPSE) {
-            continue;
-        }
-        game->m_stApocalypseScheduleStart[idx].iDay = sqlite3_column_int(stmt, 1);
-        game->m_stApocalypseScheduleStart[idx].iHour = sqlite3_column_int(stmt, 2);
-        game->m_stApocalypseScheduleStart[idx].iMinute = sqlite3_column_int(stmt, 3);
-    }
-    sqlite3_finalize(stmt);
+        const char* eventType = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        if (eventType == nullptr) continue;
 
-    if (sqlite3_prepare_v2(db, "SELECT schedule_id, day, hour, minute FROM schedule_apocalypse_end ORDER BY schedule_id;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int idx = sqlite3_column_int(stmt, 0);
-        if (idx < 0 || idx >= DEF_MAXAPOCALYPSE) {
-            continue;
-        }
-        game->m_stApocalypseScheduleEnd[idx].iDay = sqlite3_column_int(stmt, 1);
-        game->m_stApocalypseScheduleEnd[idx].iHour = sqlite3_column_int(stmt, 2);
-        game->m_stApocalypseScheduleEnd[idx].iMinute = sqlite3_column_int(stmt, 3);
-    }
-    sqlite3_finalize(stmt);
+        int idx = sqlite3_column_int(stmt, 1);
+        int day = sqlite3_column_int(stmt, 2);
+        int startHour = sqlite3_column_int(stmt, 3);
+        int startMinute = sqlite3_column_int(stmt, 4);
+        int endHour = sqlite3_column_type(stmt, 5) != SQLITE_NULL ? sqlite3_column_int(stmt, 5) : -1;
+        int endMinute = sqlite3_column_type(stmt, 6) != SQLITE_NULL ? sqlite3_column_int(stmt, 6) : -1;
+        // is_active at column 7 - can be used for state tracking
 
-    if (sqlite3_prepare_v2(db, "SELECT schedule_id, day, start_hour, start_minute, end_hour, end_minute FROM schedule_heldenian ORDER BY schedule_id;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        int idx = sqlite3_column_int(stmt, 0);
-        if (idx < 0 || idx >= DEF_MAXHELDENIAN) {
-            continue;
+        if (strcmp(eventType, "crusade") == 0) {
+            if (idx >= 0 && idx < DEF_MAXSCHEDULE) {
+                game->m_stCrusadeWarSchedule[idx].iDay = day;
+                game->m_stCrusadeWarSchedule[idx].iHour = startHour;
+                game->m_stCrusadeWarSchedule[idx].iMinute = startMinute;
+            }
         }
-        game->m_stHeldenianSchedule[idx].iDay = sqlite3_column_int(stmt, 1);
-        game->m_stHeldenianSchedule[idx].StartiHour = sqlite3_column_int(stmt, 2);
-        game->m_stHeldenianSchedule[idx].StartiMinute = sqlite3_column_int(stmt, 3);
-        game->m_stHeldenianSchedule[idx].EndiHour = sqlite3_column_int(stmt, 4);
-        game->m_stHeldenianSchedule[idx].EndiMinute = sqlite3_column_int(stmt, 5);
+        else if (strcmp(eventType, "apocalypse") == 0) {
+            if (idx >= 0 && idx < DEF_MAXAPOCALYPSE) {
+                // Start time
+                game->m_stApocalypseScheduleStart[idx].iDay = day;
+                game->m_stApocalypseScheduleStart[idx].iHour = startHour;
+                game->m_stApocalypseScheduleStart[idx].iMinute = startMinute;
+                // End time (same day as start)
+                game->m_stApocalypseScheduleEnd[idx].iDay = day;
+                game->m_stApocalypseScheduleEnd[idx].iHour = endHour;
+                game->m_stApocalypseScheduleEnd[idx].iMinute = endMinute;
+            }
+        }
+        else if (strcmp(eventType, "heldenian") == 0) {
+            if (idx >= 0 && idx < DEF_MAXHELDENIAN) {
+                game->m_stHeldenianSchedule[idx].iDay = day;
+                game->m_stHeldenianSchedule[idx].StartiHour = startHour;
+                game->m_stHeldenianSchedule[idx].StartiMinute = startMinute;
+                game->m_stHeldenianSchedule[idx].EndiHour = endHour;
+                game->m_stHeldenianSchedule[idx].EndiMinute = endMinute;
+            }
+        }
     }
     sqlite3_finalize(stmt);
 
