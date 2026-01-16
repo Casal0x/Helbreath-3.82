@@ -56,6 +56,7 @@ public:
 
 	// Display/Detail settings
 	bool IsShowFpsEnabled() const { return m_bShowFPS; }
+	bool IsShowLatencyEnabled() const { return m_bShowLatency; }
 	int GetDetailLevel() const { return m_cDetailLevel; }
 	bool IsZoomMapEnabled() const { return m_bZoomMap; }
 	bool IsDialogTransparencyEnabled() const { return m_bDialogTrans; }
@@ -63,6 +64,7 @@ public:
 	bool IsFullscreenEnabled() const { return m_bFullscreen; }
 
 	void SetShowFpsEnabled(bool enabled);
+	void SetShowLatencyEnabled(bool enabled);
 	void SetDetailLevel(int level);
 	void SetZoomMapEnabled(bool enabled);
 	void SetDialogTransparencyEnabled(bool enabled);
@@ -104,6 +106,7 @@ private:
 
 	// Display/Detail
 	bool m_bShowFPS;
+	bool m_bShowLatency;
 	int m_cDetailLevel;
 	bool m_bZoomMap;
 	bool m_bDialogTrans;

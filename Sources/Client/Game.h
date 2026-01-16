@@ -793,6 +793,7 @@ public:
 	uint32_t m_dwTime;
 	uint32_t m_dwCurTime;
 	uint32_t m_dwCheckConnTime, m_dwCheckSprTime, m_dwCheckChatTime;
+	uint32_t m_dwCheckConnectionTime;
 	uint32_t m_dwDialogCloseTime;
 	int  m_dwLogOutCountTime;//was DWORD
 	uint32_t m_dwRestartCountTime;
@@ -850,6 +851,12 @@ public:
 	short m_sFrameCount;
 	short m_sFPS;
 	uint32_t m_dwFPStime;
+	int m_iLatencyMs;
+	uint32_t m_dwLastNetMsgId;
+	uint32_t m_dwLastNetMsgTime;
+	uint32_t m_dwLastNetMsgSize;
+	uint32_t m_dwLastNetRecvTime;
+	uint32_t m_dwLastNpcEventTime;
 
 	int m_iFightzoneNumber;
 	int m_iFightzoneNumberTemp;

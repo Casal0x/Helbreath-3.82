@@ -50,6 +50,24 @@ short sFocusX, sFocusY, sFocusOwnerType, sFocusAppr1, sFocusAppr2, sFocusAppr3, 
 int iFocuiStatus;
 int   iFocusApprColor;
 
+static void EnsureNetDebugConsole()
+{
+	static bool s_bConsoleReady = false;
+	if (s_bConsoleReady) return;
+
+	if (GetConsoleWindow() == nullptr) {
+		AllocConsole();
+	}
+
+	FILE* pOut = nullptr;
+	FILE* pIn = nullptr;
+	freopen_s(&pOut, "CONOUT$", "w", stdout);
+	freopen_s(&pOut, "CONOUT$", "w", stderr);
+	freopen_s(&pIn, "CONIN$", "r", stdin);
+	SetConsoleTitleA("Helbreath Client Net Debug");
+	s_bConsoleReady = true;
+}
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -101,6 +119,7 @@ CGame::CGame()
 
 	// Initialize critical pointers first to avoid 0xCDCDCDCD debug heap issues
 	m_pInputBuffer = nullptr;
+	EnsureNetDebugConsole();
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
 
@@ -902,6 +921,7 @@ void CGame::OnGameSocketEvent()
 		break;
 
 	case DEF_XSOCKEVENT_READCOMPLETE:
+		m_dwLastNetRecvTime = GameClock::GetTimeMS();
 		pData = m_pGSock->pGetRcvDataPointer(&dwMsgSize);
 		GameRecvMsgHandler(dwMsgSize, pData);
 		m_dwTime = G_dwGlobalTime;
@@ -2691,6 +2711,9 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
+	m_dwLastNetMsgId = header->msg_id;
+	m_dwLastNetMsgTime = GameClock::GetTimeMS();
+	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
 		_bDecodeItemConfigFileContents(reinterpret_cast<char*>(pData + sizeof(hb::net::PacketHeader)), dwMsgSize);
@@ -2778,6 +2801,20 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	case MSGID_RESPONSE_FIGHTZONE_RESERVE:
 		ReserveFightzoneResponseHandler(pData);
 		break;
+
+	case MSGID_COMMAND_CHECKCONNECTION:
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(
+			pData, sizeof(hb::net::PacketCommandCheckConnection));
+		if (!pkt) return;
+		uint32_t dwRecvTime = m_dwLastNetRecvTime;
+		if (dwRecvTime == 0) dwRecvTime = GameClock::GetTimeMS();
+		if (dwRecvTime >= pkt->time_ms)
+		{
+			m_iLatencyMs = static_cast<int>(dwRecvTime - pkt->time_ms);
+		}
+	}
+	break;
 	}
 }
 
@@ -3654,6 +3691,10 @@ void CGame::OnTimer()
 		{
 			m_dwCheckSprTime = dwTime;
 			if (m_bIsProgramActive) ReleaseUnusedSprites();
+		}
+		if ((dwTime - m_dwCheckConnectionTime) > 1000)
+		{
+			m_dwCheckConnectionTime = dwTime;
 			if ((m_pGSock != 0) && (m_pGSock->m_bIsAvailable == true))
 				bSendCommand(MSGID_COMMAND_CHECKCONNECTION, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
 		}
@@ -4284,6 +4325,7 @@ void CGame::InitGameSettings()
 
 	m_bForceAttack = false;
 	m_dwCommandTime = 0;
+	m_dwCheckConnectionTime = 0;
 
 	m_bInputStatus = false;
 	m_pInputBuffer = 0;
@@ -4329,6 +4371,12 @@ void CGame::InitGameSettings()
 	m_bIsAvatarMessenger = false;
 
 	m_iNetLagCount = 0;
+	m_iLatencyMs = -1;
+	m_dwLastNetMsgId = 0;
+	m_dwLastNetMsgTime = 0;
+	m_dwLastNetMsgSize = 0;
+	m_dwLastNetRecvTime = 0;
+	m_dwLastNpcEventTime = 0;
 
 	m_dwEnvEffectTime = GameClock::GetTimeMS();
 
@@ -29695,9 +29743,19 @@ void CGame::DrawScreen_OnGame()
 	else m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(s_sOnGameMsX, s_sOnGameMsY, m_stMCursor.sCursorFrame, s_dwOnGameTime);
 
 	// FPS display
+	int iLatencyY = 100;
 	if (ConfigManager::Get().IsShowFpsEnabled()) {
 		wsprintf(G_cTxt, "fps : %u", FrameTiming::GetFPS());
 		PutString(10, 100, G_cTxt, RGB(255, 255, 255));
+		iLatencyY = 114;
+	}
+
+	if (ConfigManager::Get().IsShowLatencyEnabled()) {
+		if (m_iLatencyMs >= 0)
+			wsprintf(G_cTxt, "latency : %d ms", m_iLatencyMs);
+		else
+			wsprintf(G_cTxt, "latency : -- ms");
+		PutString(10, iLatencyY, G_cTxt, RGB(255, 255, 255));
 	}
 }
 
@@ -34492,12 +34550,14 @@ void CGame::NotifyMsg_Exp(char* pData)
 {
 	DWORD iPrevExp;
 	char cTxt[120];
+	int iRating;
 
 	iPrevExp = m_iExp;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyExp>(
 		pData, sizeof(hb::net::PacketNotifyExp));
 	if (!pkt) return;
 	m_iExp = static_cast<int>(pkt->exp);
+	iRating = static_cast<int>(pkt->rating);
 
 	if (m_iExp > iPrevExp)
 	{
@@ -36286,6 +36346,10 @@ void CGame::MotionEventHandler(char* pData)
 	const auto* baseId = hb::net::PacketCast<hb::net::PacketEventMotionBaseId>(pData, sizeof(hb::net::PacketEventMotionBaseId));
 	if (!baseId) return;
 	wObjectID = baseId->object_id;
+
+	if (wObjectID >= 10000 && wObjectID < 30000) {
+		m_dwLastNpcEventTime = GameClock::GetTimeMS();
+	}
 
 	if (wObjectID < 30000)
 	{

@@ -6,11 +6,12 @@
         "soundVolume": 16
     },
     "display": {
-        "detailLevel": 2,
+        "detailLevel": 1,
         "dialogTransparency": false,
-        "fullscreen": false,
-        "runningMode": false,
+        "fullscreen": true,
+        "runningMode": true,
         "showFps": true,
+        "showLatency": true,
         "zoomMap": true
     },
     "server": {
@@ -29,7 +30,7 @@
         ]
     },
     "window": {
-        "height": 480,
-        "width": 640
+        "height": 1080,
+        "width": 1440
     }
 }

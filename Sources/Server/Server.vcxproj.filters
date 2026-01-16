@@ -92,6 +92,7 @@
     <ClInclude Include="EntityManager.h" />
     <ClInclude Include="NetworkMsg.h" />
     <ClInclude Include="ServerMessages.h" />
+    <ClInclude Include="GameConfigSqliteStore.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp">
@@ -126,6 +127,7 @@
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="EntityManager.cpp" />
     <ClCompile Include="NetworkMsg.cpp" />
+    <ClCompile Include="GameConfigSqliteStore.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

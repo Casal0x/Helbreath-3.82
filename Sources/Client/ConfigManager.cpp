@@ -72,6 +72,7 @@ void ConfigManager::SetDefaults()
 
 	// Display/Detail defaults
 	m_bShowFPS = false;
+	m_bShowLatency = false;
 	m_cDetailLevel = 2;
 	m_bZoomMap = true;
 	m_bDialogTrans = false;
@@ -190,6 +191,10 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bShowFPS = display["showFps"].get<bool>();
 			}
+			if (display.contains("showLatency"))
+			{
+				m_bShowLatency = display["showLatency"].get<bool>();
+			}
 			if (display.contains("detailLevel"))
 			{
 				m_cDetailLevel = Clamp(display["detailLevel"].get<int>(), 0, 2);
@@ -275,6 +280,7 @@ bool ConfigManager::Save(const char* filename)
 
 	// Display/Detail settings
 	j["display"]["showFps"] = m_bShowFPS;
+	j["display"]["showLatency"] = m_bShowLatency;
 	j["display"]["detailLevel"] = m_cDetailLevel;
 	j["display"]["zoomMap"] = m_bZoomMap;
 	j["display"]["dialogTransparency"] = m_bDialogTrans;
@@ -404,6 +410,15 @@ void ConfigManager::SetShowFpsEnabled(bool enabled)
 	if (m_bShowFPS != enabled)
 	{
 		m_bShowFPS = enabled;
+		m_bDirty = true;
+	}
+}
+
+void ConfigManager::SetShowLatencyEnabled(bool enabled)
+{
+	if (m_bShowLatency != enabled)
+	{
+		m_bShowLatency = enabled;
 		m_bDirty = true;
 	}
 }

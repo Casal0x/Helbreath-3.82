@@ -61,6 +61,11 @@ public:
 	//char m_cConnectionCheck;
 
 	bool m_bIsClientConnected;
+	uint32_t m_dwLastMsgId;
+	uint32_t m_dwLastMsgTime;
+	uint32_t m_dwLastMsgSize;
+	uint32_t m_dwLastFullObjectId;
+	uint32_t m_dwLastFullObjectTime;
 
 	CClient(HWND hWnd);
 	virtual ~CClient();

@@ -139,6 +139,9 @@
     <ClInclude Include="CmdShowFrame.h">
       <Filter>Chat\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="CmdShowPing.h">
+      <Filter>Chat\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="CmdWhisper.h">
       <Filter>Chat\Commands</Filter>
     </ClInclude>
@@ -152,6 +155,9 @@
       <Filter>Chat\Commands</Filter>
     </ClInclude>
     <ClCompile Include="CmdShowFrame.cpp">
+      <Filter>Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdShowPing.cpp">
       <Filter>Chat\Commands</Filter>
     </ClCompile>
     <ClCompile Include="CmdWhisper.cpp">

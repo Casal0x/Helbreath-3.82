@@ -37,6 +37,11 @@ CClient::CClient(HWND hWnd)
 
 	m_bIsInitComplete = false;
 	m_bIsClientConnected = false;
+	m_dwLastMsgId = 0;
+	m_dwLastMsgTime = 0;
+	m_dwLastMsgSize = 0;
+	m_dwLastFullObjectId = 0;
+	m_dwLastFullObjectTime = 0;
 
 	m_iAngelicStr = m_iAngelicInt = m_iAngelicDex = m_iAngelicMag = 0;
 

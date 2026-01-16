@@ -486,16 +486,25 @@ void CGame::OnClientSocketEvent(int iClientH)
 		break;
 
 	case DEF_XSOCKEVENT_SOCKETERROR:
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Disconnected! SOCKETERROR (%s)", iClientH, m_pClientList[iClientH]->m_cIPaddress);
+		std::snprintf(G_cTxt, sizeof(G_cTxt),
+			"<%d> Client Disconnected! SOCKETERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
+			m_pClientList[iClientH]->m_dwLastMsgId,
+			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
+			m_pClientList[iClientH]->m_dwLastMsgSize,
+			m_pClientList[iClientH]->m_cCharName);
 		PutLogList(G_cTxt);
 		DeleteClient(iClientH, true, true);
 		break;
 
 	case DEF_XSOCKEVENT_SOCKETCLOSED:
-		// DEBUG: Add detailed disconnect info
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Disconnected! SOCKETCLOSED (%s) - TimeSinceLastPacket: %dms, CharName: %s",
-			iClientH, m_pClientList[iClientH]->m_cIPaddress,
+		std::snprintf(G_cTxt, sizeof(G_cTxt),
+			"<%d> Client Disconnected! SOCKETCLOSED (%s) WSA=%d TimeSinceLastPacket=%dms LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
 			dwTime - m_pClientList[iClientH]->m_dwTime,
+			m_pClientList[iClientH]->m_dwLastMsgId,
+			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
+			m_pClientList[iClientH]->m_dwLastMsgSize,
 			m_pClientList[iClientH]->m_cCharName);
 		PutLogList(G_cTxt);
 		if ((dwTime - m_pClientList[iClientH]->m_dwLogoutHackCheck) < 1000) {
@@ -509,6 +518,18 @@ void CGame::OnClientSocketEvent(int iClientH)
 			}
 		}
 
+		DeleteClient(iClientH, true, true);
+		break;
+
+	case DEF_XSOCKEVENT_CRITICALERROR:
+		std::snprintf(G_cTxt, sizeof(G_cTxt),
+			"<%d> Client Disconnected! CRITICALERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
+			m_pClientList[iClientH]->m_dwLastMsgId,
+			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
+			m_pClientList[iClientH]->m_dwLastMsgSize,
+			m_pClientList[iClientH]->m_cCharName);
+		PutLogList(G_cTxt);
 		DeleteClient(iClientH, true, true);
 		break;
 	}
@@ -1086,6 +1107,14 @@ void CGame::OnClientRead(int iClientH)
 	if (m_pClientList[iClientH] == 0) return;
 
 	pData = m_pClientList[iClientH]->m_pXSock->pGetRcvDataPointer(&dwMsgSize, &cKey); // v1.4
+
+	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
+		pData, sizeof(hb::net::PacketHeader));
+	if (header) {
+		m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
+		m_pClientList[iClientH]->m_dwLastMsgTime = GameClock::GetTimeMS();
+		m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+	}
 
 	if (bPutMsgQuene(DEF_MSGFROM_CLIENT, pData, dwMsgSize, iClientH, cKey) == false) {
 		PutLogList("@@@@@@ CRITICAL ERROR in MsgQuene!!! @@@@@@");
@@ -3072,6 +3101,10 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 							iRet = send_packet(&pkt_all, sizeof(pkt_all));
 							break;
 
+						case DEF_OBJECTSTOP:
+							iRet = send_packet(&pkt_all, sizeof(pkt_all));
+							break;
+
 						case DEF_OBJECTDYING:
 							iRet = send_packet(&pkt_move, sizeof(pkt_move));
 							break;
@@ -3487,6 +3520,7 @@ void CGame::CheckClientResponseTime()
 	short sTemp;
 	uint32_t dwTime;
 	short sItemIndex;
+	static uint32_t s_dwLastIdleLog = 0;
 	//locobans
 	//int iMapside, iMapside2;
 	//SYSTEMTIME SysTime;
@@ -3522,6 +3556,20 @@ void CGame::CheckClientResponseTime()
 				}
 			}
 			else if (m_pClientList[i]->m_bIsInitComplete) {
+				uint32_t dwIdle = dwTime - m_pClientList[i]->m_dwTime;
+				if (dwIdle > 5000 && (dwTime - m_pClientList[i]->m_dwLastMsgTime) > 5000 &&
+					(dwTime - s_dwLastIdleLog) > 5000) {
+					std::snprintf(G_cTxt, sizeof(G_cTxt),
+						"[NET] IDLE slot=%d idle=%ums lastmsg=0x%08X lastage=%ums size=%u char=%s ip=%s",
+						i, dwIdle, m_pClientList[i]->m_dwLastMsgId,
+						dwTime - m_pClientList[i]->m_dwLastMsgTime,
+						m_pClientList[i]->m_dwLastMsgSize,
+						m_pClientList[i]->m_cCharName,
+						m_pClientList[i]->m_cIPaddress);
+					PutLogList(G_cTxt);
+					s_dwLastIdleLog = dwTime;
+				}
+
 				m_pClientList[i]->m_iTimeLeft_ShutUp--;
 				if (m_pClientList[i]->m_iTimeLeft_ShutUp < 0) m_pClientList[i]->m_iTimeLeft_ShutUp = 0;
 
@@ -8863,7 +8911,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 
 void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, char* pString, uint32_t sV4, uint32_t sV5, uint32_t sV6, uint32_t sV7, uint32_t sV8, uint32_t sV9, char* pString2)
 {
-	int iRet, i;
+	int iRet = 0, i;
 
 	if (m_pClientList[iToH] == 0) return;
 
@@ -18776,6 +18824,7 @@ void CGame::RequestFullObjectData(int iClientH, char* pData)
 	uint16_t wObjectID;
 	int sTemp, sTemp2;
 	int iRet;
+	uint32_t dwTime;
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -18783,6 +18832,13 @@ void CGame::RequestFullObjectData(int iClientH, char* pData)
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	wObjectID = header->msg_type;
+	dwTime = GameClock::GetTimeMS();
+
+	if ((wObjectID != m_pClientList[iClientH]->m_dwLastFullObjectId) ||
+		(dwTime - m_pClientList[iClientH]->m_dwLastFullObjectTime) > 1000) {
+		m_pClientList[iClientH]->m_dwLastFullObjectId = wObjectID;
+		m_pClientList[iClientH]->m_dwLastFullObjectTime = dwTime;
+	}
 
 	if (wObjectID < 10000) {
 		if ((wObjectID == 0) || (wObjectID >= DEF_MAXCLIENTS)) return;
@@ -31886,6 +31942,12 @@ void CGame::CheckConnectionHandler(int iClientH, char* pData)
 			return;
 		}
 	}
+
+	hb::net::PacketCommandCheckConnection resp{};
+	resp.header.msg_id = MSGID_COMMAND_CHECKCONNECTION;
+	resp.header.msg_type = DEF_MSGTYPE_CONFIRM;
+	resp.time_ms = dwTimeRcv;
+	m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
 }
 
 void CGame::SelectCrusadeDutyHandler(int iClientH, int iDuty)

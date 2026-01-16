@@ -7,6 +7,25 @@
 #include "CommonTypes.h"
 #include "Benchmark.h"
 #include <cstring>
+#include <cstdio>
+
+namespace
+{
+	const uint32_t DEF_FULLDATA_REQUEST_INTERVAL = 2000;
+	uint32_t g_dwLastFullDataRequestTime[30000];
+	bool ShouldRequestFullData(uint16_t wObjectID, int sX, int sY)
+	{
+		if (wObjectID >= 30000) return false;
+		if (sX != -1 || sY != -1) return true;
+
+		uint32_t dwNow = GameClock::GetTimeMS();
+		if (dwNow - g_dwLastFullDataRequestTime[wObjectID] < DEF_FULLDATA_REQUEST_INTERVAL) {
+			return false;
+		}
+		g_dwLastFullDataRequestTime[wObjectID] = dwNow;
+		return true;
+	}
+}
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -1029,6 +1048,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	uint32_t dwTime;
 	int   iEffectType, iEffectFrame, iEffectTotalFrame;
 	bool  bUseAbsPos = false;
+	uint16_t wOriginalObjectID = wObjectID;
 
 	if ((m_sPivotX == -1) || (m_sPivotY == -1)) return false;
 	std::memset(cTmpName, 0, sizeof(cTmpName));
@@ -1099,7 +1119,6 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				m_pData[iX][iY].m_iDeadChatMsg = 0;
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
-				m_pGame->RequestFullObjectData(wObjectID);
 				return false;
 			}
 		}
@@ -1140,7 +1159,6 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				}
 			}
 		std::memset(pName, 0, strlen(pName));
-		m_pGame->RequestFullObjectData(wObjectID);
 		return false;
 	}
 	iChatIndex = 0;
@@ -1159,7 +1177,6 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
-				m_pGame->RequestFullObjectData(wObjectID);
 				return false;
 			}
 			if (m_pData[iX][iY].m_wObjectID == wObjectID)
@@ -1522,7 +1539,9 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					goto EXIT_SEARCH_LOOP;
 				}
 			}
-		m_pGame->RequestFullObjectData(wObjectID);
+		if (ShouldRequestFullData(wObjectID, sX, sY)) {
+			m_pGame->RequestFullObjectData(wObjectID);
+		}
 		std::memset(pName, 0, strlen(pName));
 		return false;
 	}
