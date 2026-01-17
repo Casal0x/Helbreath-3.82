@@ -194,6 +194,20 @@
     <ClInclude Include="DialogBox_Shop.h" />
     <ClInclude Include="DialogBox_ItemUpgrade.h" />
     <ClInclude Include="DialogBox_SellList.h" />
+    <ClInclude Include="DialogBox_GuildMenu.h" />
+    <ClInclude Include="DialogBox_GuildOperation.h" />
+    <ClInclude Include="DialogBox_Bank.h" />
+    <ClInclude Include="DialogBox_Exchange.h" />
+    <ClInclude Include="DialogBox_Party.h" />
+    <ClInclude Include="DialogBox_Quest.h" />
+    <ClInclude Include="DialogBox_Commander.h" />
+    <ClInclude Include="DialogBox_Constructor.h" />
+    <ClInclude Include="DialogBox_Soldier.h" />
+    <ClInclude Include="DialogBox_Slates.h" />
+    <ClInclude Include="DialogBox_ChangeStatsMajestic.h" />
+    <ClInclude Include="DialogBox_GuildHallMenu.h" />
+    <ClInclude Include="DialogBox_SellOrRepair.h" />
+    <ClInclude Include="DialogBox_Manufacture.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameMonitor.h" />
     <ClInclude Include="GlobalDef.h" />
@@ -224,6 +238,7 @@
     <ClInclude Include="CmdShout.h" />
     <ClInclude Include="CmdIgnore.h" />
     <ClInclude Include="CmdWeather.h" />
+    <ClInclude Include="CmdProfile.h" />
     <ClInclude Include="WeatherManager.h" />
   </ItemGroup>
   <ItemGroup>
@@ -261,6 +276,20 @@
     <ClCompile Include="DialogBox_Shop.cpp" />
     <ClCompile Include="DialogBox_ItemUpgrade.cpp" />
     <ClCompile Include="DialogBox_SellList.cpp" />
+    <ClCompile Include="DialogBox_GuildMenu.cpp" />
+    <ClCompile Include="DialogBox_GuildOperation.cpp" />
+    <ClCompile Include="DialogBox_Bank.cpp" />
+    <ClCompile Include="DialogBox_Exchange.cpp" />
+    <ClCompile Include="DialogBox_Party.cpp" />
+    <ClCompile Include="DialogBox_Quest.cpp" />
+    <ClCompile Include="DialogBox_Commander.cpp" />
+    <ClCompile Include="DialogBox_Constructor.cpp" />
+    <ClCompile Include="DialogBox_Soldier.cpp" />
+    <ClCompile Include="DialogBox_Slates.cpp" />
+    <ClCompile Include="DialogBox_ChangeStatsMajestic.cpp" />
+    <ClCompile Include="DialogBox_GuildHallMenu.cpp" />
+    <ClCompile Include="DialogBox_SellOrRepair.cpp" />
+    <ClCompile Include="DialogBox_Manufacture.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
     <ClCompile Include="HotkeyManager.cpp" />
     <ClCompile Include="InputManager.cpp" />
@@ -283,6 +312,7 @@
     <ClCompile Include="CmdShout.cpp" />
     <ClCompile Include="CmdIgnore.cpp" />
     <ClCompile Include="CmdWeather.cpp" />
+    <ClCompile Include="CmdProfile.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
   </ItemGroup>

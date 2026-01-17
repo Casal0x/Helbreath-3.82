@@ -28,6 +28,20 @@
 #include "DialogBox_Shop.h"
 #include "DialogBox_ItemUpgrade.h"
 #include "DialogBox_SellList.h"
+#include "DialogBox_GuildMenu.h"
+#include "DialogBox_GuildOperation.h"
+#include "DialogBox_Bank.h"
+#include "DialogBox_Exchange.h"
+#include "DialogBox_Party.h"
+#include "DialogBox_Quest.h"
+#include "DialogBox_Commander.h"
+#include "DialogBox_Constructor.h"
+#include "DialogBox_Soldier.h"
+#include "DialogBox_Slates.h"
+#include "DialogBox_ChangeStatsMajestic.h"
+#include "DialogBox_GuildHallMenu.h"
+#include "DialogBox_SellOrRepair.h"
+#include "DialogBox_Manufacture.h"
 #include "Game.h"
 
 DialogBoxManager::DialogBoxManager(CGame* game)
@@ -80,6 +94,20 @@ void DialogBoxManager::InitializeDialogBoxes()
 	RegisterDialogBox(new DialogBox_Shop(m_game));
 	RegisterDialogBox(new DialogBox_ItemUpgrade(m_game));
 	RegisterDialogBox(new DialogBox_SellList(m_game));
+	RegisterDialogBox(new DialogBox_GuildMenu(m_game));
+	RegisterDialogBox(new DialogBox_GuildOperation(m_game));
+	RegisterDialogBox(new DialogBox_Bank(m_game));
+	RegisterDialogBox(new DialogBox_Exchange(m_game));
+	RegisterDialogBox(new DialogBox_Party(m_game));
+	RegisterDialogBox(new DialogBox_Quest(m_game));
+	RegisterDialogBox(new DialogBox_Commander(m_game));
+	RegisterDialogBox(new DialogBox_Constructor(m_game));
+	RegisterDialogBox(new DialogBox_Soldier(m_game));
+	RegisterDialogBox(new DialogBox_Slates(m_game));
+	RegisterDialogBox(new DialogBox_ChangeStatsMajestic(m_game));
+	RegisterDialogBox(new DialogBox_GuildHallMenu(m_game));
+	RegisterDialogBox(new DialogBox_SellOrRepair(m_game));
+	RegisterDialogBox(new DialogBox_Manufacture(m_game));
 }
 
 void DialogBoxManager::RegisterDialogBox(IDialogBox* pDialogBox)
@@ -367,6 +395,18 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::RepairAll].sY = 57 + SCREENY;
 	m_info[DialogBoxId::RepairAll].sSizeX = 258;
 	m_info[DialogBoxId::RepairAll].sSizeY = 339;
+}
+
+void DialogBoxManager::UpdateDialogBoxs()
+{
+	// Update all enabled dialogs (order doesn't matter for update)
+	for (int i = 0; i < 61; i++)
+	{
+		if (m_enabled[i] && m_pDialogBoxes[i])
+		{
+			m_pDialogBoxes[i]->OnUpdate();
+		}
+	}
 }
 
 void DialogBoxManager::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)

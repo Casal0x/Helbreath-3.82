@@ -77,7 +77,7 @@ using namespace std;
 #define DEF_CHATTIMEOUT_B		500
 #define DEF_CHATTIMEOUT_C		2000
 #define DEF_MAXITEMS			50
-#define DEF_MAXBANKITEMS		121 // v1.2 120+1
+#define DEF_MAXBANKITEMS		1000 // Hard cap - actual soft limit received from server
 #define DEF_MAXGUILDSMAN		32
 #define DEF_MAXMENUITEMS		140  //v2.15  120 ->140
 #define DEF_TEXTDLGMAXLINES		300 //v2.18 3000->300
@@ -130,6 +130,7 @@ using namespace std;
 #define DEF_SELECTEDOBJTYPE_ITEM	2
 
 #define DEF_DOUBLECLICKTIME			300
+#define DEF_DOUBLECLICKTOLERANCE	4
 #define DEF_MAXPARTYMEMBERS			8
 #define DEF_MAXCRUSADESTRUCTURES	300
 
@@ -198,10 +199,6 @@ public:
 	void CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType);
 	void CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType);
 
-	// MJ Stats Change Related functions - Alastor
-	void DrawDialogBox_ChangeStatsMajestic(short msX, short msY);		// Change stats using majestic - Alastor
-	void DlgBoxClick_ChangeStatsMajestic(short msX, short msY);			// Change stats using majestic - Alastor
-
 	void NotifyMsg_CurLifeSpan(char* pData);
 
 	// MJ Stats Change Related vars - Alastor
@@ -267,38 +264,12 @@ public:
 	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
 	bool bReadItemNameConfigFile();
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void DrawDialogBox_GuildMenu(short msX, short msY);//7
-	void DrawDialogBox_GuildOperation(short msX, short msY);//8
-	void DrawDialogBox_Bank(short msX, short msY, short msZ, char cLB);//14
-	void DrawDialogBox_SellorRepairItem(short msX, short msY);//23
-	void DrawDialogBox_SkillDlg(short msX, short msY, short msZ, char cLB);//26
-	void DrawDialogBox_Exchange(short msX, short msY);//27
-	void DrawDialogBox_Quest(int msX, int msY);//28
-	void DrawDialogBox_Party(short msX, short msY);//32
-	void DrawDialogBox_Commander(int msX, int msY);//36
-	void DrawDialogBox_Constructor(int msX, int msY);//37
-	void DrawDialogBox_Soldier(int msX, int msY);//38
 	void DisplayCommaNumber_G_cTxt(uint32_t iGold);// Name changed by Snoopy (easyer to understand...)
 
 	// Slates - Alastor
 	void bItemDrop_Slates();
-	void DlgBoxClick_Slates(short msX, short msY);
-	void DrawDialogBox_Slates(short msX, short msY, short msZ, char cLB);//40
 
 	bool _bCheckDlgBoxClick(short msX, short msY);
-	void DlgBoxClick_GuildMenu(short msX, short msY);
-	void DlgBoxClick_GuildOp(short msX, short msY);
-	void DlgBoxClick_Bank(short msX, short msY);
-	void DlgBoxClick_ItemSellorRepair(short msX, short msY);
-	void DlgBoxClick_Fish(short msX, short msY);
-	void DlgBoxClick_SkillDlg(short msX, short msY);
-	void DlgBoxClick_Exchange(short msX, short msY);
-
-	void DlgBoxClick_Quest(int msX, int msY);
-	void DlgBoxClick_Party(short msX, short msY);
-	void DlgBoxClick_Commander(int msX, int msY);
-	void DlgBoxClick_Constructor(int msX, int msY);
-	void DlgBoxClick_Soldier(int msX, int msY);
 	void NotifyMsgHandler(char * pData);
 	void NotifyMsg_GlobalAttackMode(char * pData);
 	void NotifyMsg_QuestReward(char * pData);
@@ -646,8 +617,6 @@ public:
 	bool bReadLoginConfigFile(char * cFn);
 	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
 	void ShowHeldenianVictory(short sSide);
-	void DrawDialogBox_CMDHallMenu(short msX, short msY);
-	void DlgBoxClick_CMDHallMenu(short msX, short msY);
 	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
 	void DrawDruncncity();
@@ -1062,5 +1031,6 @@ public:
 
 	short iMaxStats;
 	int iMaxLevel;
+	int iMaxBankItems;
 };
 

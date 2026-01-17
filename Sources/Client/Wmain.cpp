@@ -237,6 +237,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_LBUTTONDOWN:
+	case WM_LBUTTONDBLCLK: // Handle double-click as button down for manual detection
 		InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		InputManager::Get().OnMouseDown(0);
 		break;

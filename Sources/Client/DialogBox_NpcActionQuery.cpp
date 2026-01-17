@@ -336,7 +336,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
 			if ((absX <= 8) && (absY <= 8)) {
-				if (m_pGame->_iGetBankItemCount() >= (DEF_MAXBANKITEMS - 1)) {
+				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
 					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 				}
 				else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);

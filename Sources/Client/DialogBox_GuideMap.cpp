@@ -10,6 +10,17 @@ DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
 	SetDefaultRect(LOGICAL_MAX_X - 128, 0, 128, 128);
 }
 
+void DialogBox_GuideMap::OnUpdate()
+{
+	// Clear expired monster event
+	if (m_pGame->m_dwMonsterEventTime != 0 &&
+		(m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) >= 30000)
+	{
+		m_pGame->m_dwMonsterEventTime = 0;
+		m_pGame->m_sMonsterID = 0;
+	}
+}
+
 void DialogBox_GuideMap::DrawBorder(short sX, short sY)
 {
 	for (short shX = -2; shX < 130; shX++)
@@ -63,11 +74,6 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 			}
 		}
 	}
-	else
-	{
-		m_pGame->m_dwMonsterEventTime = 0;
-		m_pGame->m_sMonsterID = 0;
-	}
 }
 
 void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
@@ -99,11 +105,6 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->PutSpriteFast(sX + shX, sY + shY, m_pGame->m_sMonsterID, dwTime);
 		}
-	}
-	else
-	{
-		m_pGame->m_dwMonsterEventTime = 0;
-		m_pGame->m_sMonsterID = 0;
 	}
 }
 

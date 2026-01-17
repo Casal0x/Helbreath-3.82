@@ -18,6 +18,7 @@ public:
 	virtual bool OnClick(short msX, short msY) = 0;
 
 	// Optional virtual methods - override as needed
+	virtual void OnUpdate() {}  // Called once per frame for enabled dialogs
 	virtual bool OnDoubleClick(short msX, short msY) { return false; }
 	virtual void OnEnable(int cType, int sV1, int sV2, char* pString) {}
 	virtual void OnDisable() {}

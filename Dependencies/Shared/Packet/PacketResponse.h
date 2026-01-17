@@ -139,6 +139,7 @@ namespace net {
 		int32_t fightzone_number;
 		int16_t max_stats;
 		int32_t max_level;
+		int16_t max_bank_items;
 	};
 
 	struct HB_PACKED PacketResponseInitDataHeader {

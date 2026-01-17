@@ -838,6 +838,7 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     ok &= InsertKeyValueInt(stmt, "maximum-construction-points", game->m_iMaxConstructionPoints);
     ok &= InsertKeyValueInt(stmt, "maximum-summon-points", game->m_iMaxSummonPoints);
     ok &= InsertKeyValueInt(stmt, "maximum-war-contribution", game->m_iMaxWarContribution);
+    ok &= InsertKeyValueInt(stmt, "max-bank-items", game->m_iMaxBankItems);
 
     sqlite3_finalize(stmt);
     if (!ok) {
@@ -964,6 +965,8 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
             game->m_iMaxSummonPoints = std::atoi(value);
         } else if (std::strcmp(key, "maximum-war-contribution") == 0) {
             game->m_iMaxWarContribution = std::atoi(value);
+        } else if (std::strcmp(key, "max-bank-items") == 0) {
+            game->m_iMaxBankItems = std::atoi(value);
         }
     }
 

@@ -86,7 +86,6 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short sX = Info().sX;
 	short sY = Info().sY;
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
 	char cCollison = -1;
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
 
@@ -137,23 +136,25 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1));
 	PutAlignedString(sX + 180, sX + 250, sY + 142, m_pGame->G_cTxt, 45, 25, 25);
 
-	// HP, MP, SP
-	int maxHP = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel, m_pGame->m_iStr, m_pGame->m_iAngelicStr);
-	int maxMP = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag, m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
-	int maxSP = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
+	// Calculate max stats
+	int iMaxHP = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel, m_pGame->m_iStr, m_pGame->m_iAngelicStr);
+	int iMaxMP = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag, m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
+	int iMaxSP = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
+	int iMaxLoad = CalculateMaxLoad(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iHP, maxHP);
+	// HP, MP, SP
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iHP, iMaxHP);
 	PutAlignedString(sX + 180, sX + 250, sY + 173, m_pGame->G_cTxt, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iMP, maxMP);
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iMP, iMaxMP);
 	PutAlignedString(sX + 180, sX + 250, sY + 191, m_pGame->G_cTxt, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iSP, maxSP);
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iSP, iMaxSP);
 	PutAlignedString(sX + 180, sX + 250, sY + 208, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Max Load
-	int maxLoad = CalculateMaxLoad(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
-	wsprintf(m_pGame->G_cTxt, "%d/%d", (m_pGame->_iCalcTotalWeight() / 100), maxLoad);
+	int iTotalWeight = m_pGame->_iCalcTotalWeight();
+	wsprintf(m_pGame->G_cTxt, "%d/%d", (iTotalWeight / 100), iMaxLoad);
 	PutAlignedString(sX + 180, sX + 250, sY + 240, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Enemy Kills
@@ -173,9 +174,8 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX + 218, sX + 251, sY + 302, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Build equipment status array
-	for (int i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
-		cEquipPoiStatus[i] = -1;
-
+	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
+	std::memset(cEquipPoiStatus, -1, sizeof(cEquipPoiStatus));
 	for (int i = 0; i < DEF_MAXITEMS; i++)
 	{
 		if (m_pGame->m_pItemList[i] != nullptr && m_pGame->m_bIsItemEquipped[i])

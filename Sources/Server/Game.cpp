@@ -196,6 +196,7 @@ CGame::CGame(HWND hWnd)
 	m_iMaxConstructionPoints = m_iMaxConstructionPoints;
 	m_iMaxSummonPoints = DEF_MAXSUMMONPOINTS;
 	m_iMaxWarContribution = m_iMaxWarContribution;
+	m_iMaxBankItems = 200; // Default soft cap
 
 	m_bIsDropTableAvailable = false;
 	m_DropTables.clear();
@@ -1697,6 +1698,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 	char_pkt->fightzone_number = m_pClientList[iClientH]->m_iFightzoneNumber;
 	char_pkt->max_stats = m_iMaxStatValue;
 	char_pkt->max_level = m_iMaxLevel;
+	char_pkt->max_bank_items = m_iMaxBankItems;
 
 	//hbest
 	m_pClientList[iClientH]->isForceSet = false;
@@ -5146,6 +5148,96 @@ int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sCla
 		pNpcName, pName, pMapName, sClass, cSA, cMoveType,
 		poX, poY, pWaypointList, pArea, iSpotMobIndex, cChangeSide,
 		bHideGenMode, bIsSummoned, bFirmBerserk, bIsMaster, iGuildGUID) > 0);
+}
+
+int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
+{
+	if (db == nullptr || m_pMapList[iMapIndex] == nullptr)
+		return 0;
+
+	const char* sql =
+		"SELECT npc_name, move_type, waypoint_list, name_prefix"
+		" FROM map_npcs WHERE map_name = ? COLLATE NOCASE;";
+
+	sqlite3_stmt* stmt = nullptr;
+	if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
+		return 0;
+	}
+
+	sqlite3_bind_text(stmt, 1, m_pMapList[iMapIndex]->m_cName, -1, SQLITE_STATIC);
+
+	int npcCount = 0;
+	char cNpcName[24];
+	char cNpcWaypointIndex[12];
+	char cNamePrefix;
+	char cNpcMoveType;
+	char cName[8];
+	int iNamingValue;
+
+	while (sqlite3_step(stmt) == SQLITE_ROW) {
+		// Get NPC name
+		const char* npcName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+		if (npcName == nullptr) continue;
+		std::memset(cNpcName, 0, sizeof(cNpcName));
+		strncpy(cNpcName, npcName, sizeof(cNpcName) - 1);
+
+		// Get move type
+		cNpcMoveType = static_cast<char>(sqlite3_column_int(stmt, 1));
+
+		// Get waypoint list (comma-separated string like "0,0,0,0,0,0,0,0,0,0")
+		std::memset(cNpcWaypointIndex, 0, sizeof(cNpcWaypointIndex));
+		const char* waypointList = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+		if (waypointList != nullptr && strlen(waypointList) > 0) {
+			// Parse comma-separated waypoints
+			char waypointCopy[64];
+			strncpy(waypointCopy, waypointList, sizeof(waypointCopy) - 1);
+			waypointCopy[sizeof(waypointCopy) - 1] = '\0';
+
+			char* token = strtok(waypointCopy, ",");
+			int wpIndex = 0;
+			while (token != nullptr && wpIndex < 10) {
+				cNpcWaypointIndex[wpIndex] = static_cast<char>(atoi(token));
+				token = strtok(nullptr, ",");
+				wpIndex++;
+			}
+		}
+
+		// Get name prefix
+		const char* prefix = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 3));
+		cNamePrefix = (prefix != nullptr && strlen(prefix) > 0) ? prefix[0] : '_';
+
+		// Get a naming value for this NPC
+		iNamingValue = m_pMapList[iMapIndex]->iGetEmptyNamingValue();
+		if (iNamingValue == -1) {
+			// No more naming values available for this map
+			continue;
+		}
+
+		// Construct the NPC instance name
+		std::memset(cName, 0, sizeof(cName));
+		std::snprintf(cName, sizeof(cName), "XX%d", iNamingValue);
+		cName[0] = cNamePrefix;
+		cName[1] = static_cast<char>(iMapIndex + 65);
+
+		// Spawn the NPC
+		if (bCreateNewNpc(cNpcName, cName, m_pMapList[iMapIndex]->m_cName, 0, 0, cNpcMoveType, 0, 0, cNpcWaypointIndex, 0, 0, -1, false) == false) {
+			// Failed, release the naming value
+			m_pMapList[iMapIndex]->SetNamingValueEmpty(iNamingValue);
+		}
+		else {
+			npcCount++;
+		}
+	}
+
+	sqlite3_finalize(stmt);
+
+	if (npcCount > 0) {
+		char cTxt[128];
+		std::snprintf(cTxt, sizeof(cTxt), "  - Spawned %d static NPCs for map: %s", npcCount, m_pMapList[iMapIndex]->m_cName);
+		PutLogList(cTxt);
+	}
+
+	return npcCount;
 }
 
 void CGame::NpcProcess()
@@ -33017,6 +33109,8 @@ void CGame::OnStartGameSignal()
 
 					if (LoadMapConfig(mapInfoDb, m_pMapList[i]->m_cName, m_pMapList[i])) {
 						mapsLoaded++;
+						// Spawn static NPCs for this map from database
+						SpawnMapNpcsFromDatabase(mapInfoDb, i);
 					}
 					else {
 						char cTxt[256];

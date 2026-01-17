@@ -60,6 +60,10 @@ private:
 	static const ToggleButtonInfo TOGGLE_BUTTONS[];
 	static constexpr int TOGGLE_BUTTON_COUNT = 6;
 
+	// Level up text position
+	static constexpr int LEVELUP_TEXT_X = 32;
+	static constexpr int LEVELUP_TEXT_Y = 448;
+
 	// Helper methods
 	void DrawGaugeBars();
 	void DrawIconButtons(short msX, short msY);

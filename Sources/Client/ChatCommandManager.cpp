@@ -5,6 +5,7 @@
 #include "CmdShout.h"
 #include "CmdIgnore.h"
 #include "CmdWeather.h"
+#include "CmdProfile.h"
 #include "Game.h"
 #include <cstring>
 
@@ -77,4 +78,5 @@ void ChatCommandManager::RegisterBuiltInCommands()
 	RegisterCommand(std::make_unique<CmdIgnoreOn>());
 	RegisterCommand(std::make_unique<CmdIgnoreOff>());
 	RegisterCommand(std::make_unique<CmdWeather>());
+	RegisterCommand(std::make_unique<CmdProfile>());
 }

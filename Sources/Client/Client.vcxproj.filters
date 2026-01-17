@@ -440,6 +440,78 @@
     <ClInclude Include="DialogBox_SellList.h">
       <Filter>DialogBox</Filter>
     </ClInclude>
+    <ClCompile Include="DialogBox_GuildMenu.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_GuildMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_GuildOperation.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_GuildOperation.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Bank.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Bank.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Exchange.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Exchange.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Party.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Party.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Quest.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Quest.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Commander.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Commander.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Constructor.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Constructor.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Soldier.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Soldier.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_Slates.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_Slates.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_ChangeStatsMajestic.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_ChangeStatsMajestic.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClCompile Include="DialogBox_GuildHallMenu.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClInclude Include="DialogBox_GuildHallMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">

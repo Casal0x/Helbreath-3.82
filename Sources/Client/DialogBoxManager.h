@@ -18,6 +18,7 @@ public:
 	void RegisterDialogBox(IDialogBox* pDialogBox);
 	IDialogBox* GetDialogBox(DialogBoxId::Type id) const;
 	IDialogBox* GetDialogBox(int iBoxID) const;
+	void UpdateDialogBoxs();
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	bool _bCheckDlgBoxClick(short msX, short msY);
 	bool _bCheckDlgBoxDoubleClick(short msX, short msY);

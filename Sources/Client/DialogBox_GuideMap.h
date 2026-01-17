@@ -7,6 +7,7 @@ public:
 	DialogBox_GuideMap(CGame* pGame);
 	~DialogBox_GuideMap() override = default;
 
+	void OnUpdate() override;
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
 

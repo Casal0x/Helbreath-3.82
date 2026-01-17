@@ -677,6 +677,7 @@ public:
 	void NpcProcess();
 	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, RECT * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0);
 	//bool bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sX, short sY);
+	int SpawnMapNpcsFromDatabase(struct sqlite3* db, int iMapIndex);
 	bool _bReadMapInfoFiles(int iMapIndex);
 	
 	bool _bGetIsStringIsNumber(char * pStr);
@@ -1045,6 +1046,7 @@ public:
 	int m_iMaxConstructionPoints;   // maximum-construction-points
 	int m_iMaxSummonPoints;         // maximum-summon-points
 	int m_iMaxWarContribution;      // maximum-war-contribution
+	int m_iMaxBankItems;            // max-bank-items
 
 	// ============================================================================
 

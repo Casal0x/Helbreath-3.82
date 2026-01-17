@@ -26,7 +26,7 @@ using namespace std;
 
 #define DEF_MSGBUFFERSIZE	60000  // MODERNIZED: Increased from 30000 to handle more entity data
 #define DEF_MAXITEMS		50
-#define DEF_MAXBANKITEMS	200
+#define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
 #define DEF_MAXGUILDSMAN	128 // �ִ� ���� �� 
 
 #define	DEF_MAXMAGICTYPE	100	// �����Ϸ��� �α׼������뵵 �ٲپ��? �Ѵ�.
