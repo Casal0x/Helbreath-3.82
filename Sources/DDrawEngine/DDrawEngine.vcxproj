@@ -64,6 +64,7 @@
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(SolutionDir)Sources\Client;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -83,6 +84,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(SolutionDir)Sources\Client;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Lib>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -95,6 +97,8 @@
     <ClInclude Include="DDrawRenderer.h" />
     <ClInclude Include="DDrawTexture.h" />
     <ClInclude Include="Win32Window.h" />
+    <ClInclude Include="DDrawSprite.h" />
+    <ClInclude Include="DDrawSpriteFactory.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXC_ddraw.cpp" />
@@ -104,6 +108,9 @@
     <ClCompile Include="DDrawTexture.cpp" />
     <ClCompile Include="RendererFactory.cpp" />
     <ClCompile Include="Win32Window.cpp" />
+    <ClCompile Include="DDrawSprite.cpp" />
+    <ClCompile Include="DDrawSpriteFactory.cpp" />
+    <ClCompile Include="..\..\Dependencies\Shared\ISpriteFactory.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

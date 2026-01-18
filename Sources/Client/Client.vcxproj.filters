@@ -13,9 +13,6 @@
     <Filter Include="Chat\Commands">
       <UniqueIdentifier>{4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="DirectX">
-      <UniqueIdentifier>{4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Network">
       <UniqueIdentifier>{5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
     </Filter>
@@ -188,12 +185,6 @@
       <Filter>Chat\Commands</Filter>
     </ClCompile>
     <!-- DirectX -->
-    <ClInclude Include="DXC_ddraw.h">
-      <Filter>DirectX</Filter>
-    </ClInclude>
-    <ClCompile Include="DXC_ddraw.cpp">
-      <Filter>DirectX</Filter>
-    </ClCompile>
     <!-- Network -->
     <ClInclude Include="XSocket.h">
       <Filter>Network</Filter>
@@ -271,13 +262,7 @@
       <Filter>NetworkMessages</Filter>
     </ClCompile>
     <!-- Graphics -->
-    <ClInclude Include="Sprite.h">
-      <Filter>Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="SpriteID.h">
-      <Filter>Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Mydib.h">
       <Filter>Graphics</Filter>
     </ClInclude>
     <!-- Effects -->
@@ -295,12 +280,6 @@
     </ClCompile>
     <ClCompile Include="Effect_Lights.cpp">
       <Filter>Effects</Filter>
-    </ClCompile>
-    <ClCompile Include="Sprite.cpp">
-      <Filter>Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Mydib.cpp">
-      <Filter>Graphics</Filter>
     </ClCompile>
     <!-- World -->
     <ClInclude Include="MapData.h">
@@ -609,6 +588,7 @@
     <ClInclude Include="DialogBox_Manufacture.h">
       <Filter>DialogBox</Filter>
     </ClInclude>
+    <ClInclude Include="GameWindowHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">
@@ -637,5 +617,6 @@
       <Filter>DialogBox</Filter>
     </ClCompile>
     <ClCompile Include="Wmain.cpp" />
+    <ClCompile Include="GameWindowHandler.cpp" />
   </ItemGroup>
 </Project>
