@@ -28,7 +28,8 @@
 using namespace std;
 
 #include "GlobalDef.h"
-#include "DXC_ddraw.h"
+#include "IRenderer.h"
+#include "RendererFactory.h"
 #include "InputManager.h"
 #include "XSocket.h"
 #include "Sprite.h"
@@ -652,7 +653,7 @@ public:
 		int iCost;
 	} m_stTeleportList[20];
 
-	class DXC_ddraw  m_DDraw;
+	class IRenderer* m_DDraw;  // Abstract renderer interface
 	class CSprite  * m_pSprite[DEF_MAXSPRITES];
 	class CSprite  * m_pTileSpr[DEF_MAXTILES];
 	class CSprite  * m_pEffectSpr[DEF_MAXEFFECTSPR];

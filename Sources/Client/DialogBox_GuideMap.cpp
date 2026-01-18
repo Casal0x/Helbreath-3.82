@@ -25,17 +25,17 @@ void DialogBox_GuideMap::DrawBorder(short sX, short sY)
 {
 	for (short shX = -2; shX < 130; shX++)
 	{
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY - 2, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY - 1, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY + 128, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY + 129, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + shX, sY - 2, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + shX, sY - 1, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + shX, sY + 128, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + shX, sY + 129, 50, 50, 50);
 	}
 	for (short shY = -2; shY < 130; shY++)
 	{
-		m_pGame->m_DDraw.PutPixel(sX - 2, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX - 1, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + 128, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + 129, sY + shY, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX - 2, sY + shY, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX - 1, sY + shY, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + 128, sY + shY, 50, 50, 50);
+		m_pGame->m_DDraw->PutPixel(sX + 129, sY + shY, 50, 50, 50);
 	}
 }
 

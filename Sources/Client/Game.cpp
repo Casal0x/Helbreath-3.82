@@ -13,6 +13,9 @@
 #include <cstdio>
 #include <windows.h>
 
+// Renderer - include DXC_ddraw.h for CSprite compatibility (takes DXC_ddraw*)
+#include "DXC_ddraw.h"
+
 // Manager singletons
 #include "ConfigManager.h"
 #include "Camera.h"
@@ -120,6 +123,7 @@ CGame::CGame()
 
 	// Initialize critical pointers first to avoid 0xCDCDCDCD debug heap issues
 	m_pInputBuffer = nullptr;
+	m_DDraw = nullptr;
 	EnsureNetDebugConsole();
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
@@ -344,6 +348,8 @@ CGame::CGame()
 
 CGame::~CGame()
 {
+	Renderer::Destroy();
+	m_DDraw = nullptr;
 }
 
 bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
@@ -430,7 +436,14 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		return false;
 	}
 
-	if (m_DDraw.bInit(m_hWnd) == false)
+	// Create and initialize the renderer
+	if (!Renderer::Set(RendererType::DirectDraw))
+	{
+		MessageBox(m_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		return false;
+	}
+	m_DDraw = Renderer::Get();
+	if (m_DDraw->Init(m_hWnd) == false)
 	{
 		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
@@ -439,28 +452,28 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	InputManager::Get().Initialize(m_hWnd);
 
 	m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 0, false);
+	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "New-Dialog", 0, false);
 	CloseHandle(m_hPakFile);
 
 	m_hPakFile = CreateFile("sprites\\interface2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 0, false);
-	m_pSprite[DEF_SPRID_INTERFACE_CRAFTING] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 3, false);
+	m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface2", 0, false);
+	m_pSprite[DEF_SPRID_INTERFACE_CRAFTING] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface2", 3, false);
 	CloseHandle(m_hPakFile);
 
 	// CLEROTH - LOAD FONTS BEFORE MAIN LOADING
 	m_hPakFile = CreateFile("sprites\\interface2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (m_hPakFile != INVALID_HANDLE_VALUE)
 	{
-		m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 1, false);
-		m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 2, false);
+		m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface2", 1, false);
+		m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface2", 2, false);
 		CloseHandle(m_hPakFile);
 	}
 
 	m_hPakFile = CreateFile("sprites\\sprfonts.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (m_hPakFile != INVALID_HANDLE_VALUE)
 	{
-		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = new class CSprite(m_hPakFile, &m_DDraw, "sprfonts", 0, false);
-		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = new class CSprite(m_hPakFile, &m_DDraw, "sprfonts", 1, false);
+		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "sprfonts", 0, false);
+		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "sprfonts", 1, false);
 		CloseHandle(m_hPakFile);
 	}
 
@@ -481,34 +494,34 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_cMenuDirCnt = 0;
 	m_cMenuFrame = 0;
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[1], &m_wWG[1], &m_wWB[1]); // Light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[2], &m_wWG[2], &m_wWB[2]); // light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[3], &m_wWG[3], &m_wWB[3]); // light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 100, 70), &m_wWR[4], &m_wWG[4], &m_wWB[4]); // Green
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(130, 90, 10), &m_wWR[5], &m_wWG[5], &m_wWB[5]); // Critical
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(42, 53, 111), &m_wWR[6], &m_wWG[6], &m_wWB[6]); // Heavy-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(145, 145, 145), &m_wWR[7], &m_wWG[7], &m_wWB[7]); // White
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(120, 100, 120), &m_wWR[8], &m_wWG[8], &m_wWB[8]); // Violet
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(75, 10, 10), &m_wWR[9], &m_wWG[9], &m_wWB[9]); // Heavy-Red
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(135, 104, 30), &m_wR[10], &m_wG[10], &m_wB[10]);	// Gold, buggy
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[1], &m_wWG[1], &m_wWB[1]); // Light-blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[2], &m_wWG[2], &m_wWB[2]); // light-blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[3], &m_wWG[3], &m_wWB[3]); // light-blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(70, 100, 70), &m_wWR[4], &m_wWG[4], &m_wWB[4]); // Green
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(130, 90, 10), &m_wWR[5], &m_wWG[5], &m_wWB[5]); // Critical
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(42, 53, 111), &m_wWR[6], &m_wWG[6], &m_wWB[6]); // Heavy-blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(145, 145, 145), &m_wWR[7], &m_wWG[7], &m_wWB[7]); // White
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(120, 100, 120), &m_wWR[8], &m_wWG[8], &m_wWB[8]); // Violet
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(75, 10, 10), &m_wWR[9], &m_wWG[9], &m_wWB[9]); // Heavy-Red
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(135, 104, 30), &m_wR[10], &m_wG[10], &m_wB[10]);	// Gold, buggy
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(200 / 2, 200 / 2, 200 / 2), &m_wR[0], &m_wG[0], &m_wB[0]);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x50 / 2, 0x50 / 2, 0xC0 / 2), &m_wR[1], &m_wG[1], &m_wB[1]); // Indigo Blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(79, 79, 62), &m_wR[2], &m_wG[2], &m_wB[2]); // Custom-Weapon Color
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(135, 104, 30), &m_wR[3], &m_wG[3], &m_wB[3]); // Gold
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(255 / 2, 36 / 2, 0), &m_wR[4], &m_wG[4], &m_wB[4]); // Crimson
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(10, 60, 10), &m_wR[5], &m_wG[5], &m_wB[5]); // Green
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x50 / 2, 0x50 / 2, 0x50 / 2), &m_wR[6], &m_wG[6], &m_wB[6]); // Gray
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x5F / 2, 0x9E / 2, 0xA0 / 2), &m_wR[7], &m_wG[7], &m_wB[7]); // Aqua
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xFF / 2, 0x69 / 2, 0xB4 / 2), &m_wR[8], &m_wG[8], &m_wB[8]); // Pink
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(90, 60, 90), &m_wR[9], &m_wG[9], &m_wB[9]); // Violet
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(200 / 2, 200 / 2, 200 / 2), &m_wR[0], &m_wG[0], &m_wB[0]);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0xC0 / 2), &m_wR[1], &m_wG[1], &m_wB[1]); // Indigo Blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(79, 79, 62), &m_wR[2], &m_wG[2], &m_wB[2]); // Custom-Weapon Color
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(135, 104, 30), &m_wR[3], &m_wG[3], &m_wB[3]); // Gold
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(255 / 2, 36 / 2, 0), &m_wR[4], &m_wG[4], &m_wB[4]); // Crimson
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(10, 60, 10), &m_wR[5], &m_wG[5], &m_wB[5]); // Green
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0x50 / 2), &m_wR[6], &m_wG[6], &m_wB[6]); // Gray
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0x5F / 2, 0x9E / 2, 0xA0 / 2), &m_wR[7], &m_wG[7], &m_wB[7]); // Aqua
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0xFF / 2, 0x69 / 2, 0xB4 / 2), &m_wR[8], &m_wG[8], &m_wB[8]); // Pink
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(90, 60, 90), &m_wR[9], &m_wG[9], &m_wB[9]); // Violet
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0, 35, 60), &m_wR[10], &m_wG[10], &m_wB[10]); // Blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xD2 / 2, 0xB4 / 2, 0x8C / 2), &m_wR[11], &m_wG[11], &m_wB[11]); // Tan
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xBD / 2, 0xB7 / 2, 0x6B / 2), &m_wR[12], &m_wG[12], &m_wB[12]); // Khaki
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(85, 85, 8), &m_wR[13], &m_wG[13], &m_wB[13]); // Yellow
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(75, 10, 10), &m_wR[14], &m_wG[14], &m_wB[14]); // Red
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x30, 0x30, 0x30), &m_wR[15], &m_wG[15], &m_wB[15]); // Black
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0, 35, 60), &m_wR[10], &m_wG[10], &m_wB[10]); // Blue
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0xD2 / 2, 0xB4 / 2, 0x8C / 2), &m_wR[11], &m_wG[11], &m_wB[11]); // Tan
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0xBD / 2, 0xB7 / 2, 0x6B / 2), &m_wR[12], &m_wG[12], &m_wB[12]); // Khaki
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(85, 85, 8), &m_wR[13], &m_wG[13], &m_wB[13]); // Yellow
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(75, 10, 10), &m_wR[14], &m_wG[14], &m_wB[14]); // Red
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0x30, 0x30, 0x30), &m_wR[15], &m_wG[15], &m_wB[15]); // Black
 
 
 
@@ -845,7 +858,7 @@ void CGame::RenderFrame()
 
 	// Clear backbuffer before drawing
 	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
-	m_DDraw.ClearBackB4();
+	m_DDraw->BeginFrame();
 	FrameTiming::EndProfile(ProfileStage::ClearBuffer);
 
 	// Draw phase: Pure rendering based on current state
@@ -853,7 +866,7 @@ void CGame::RenderFrame()
 
 	// Flip to show the drawn content
 	FrameTiming::BeginProfile(ProfileStage::Flip);
-	if (m_DDraw.iFlip() == DDERR_SURFACELOST)
+	if (static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->iFlip() == DDERR_SURFACELOST)
 		RestoreSprites();
 	FrameTiming::EndProfile(ProfileStage::Flip);
 
@@ -2649,7 +2662,7 @@ void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEf
 	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
 	for (short i = 0; i < sCount; i++)
 	{
-		if (i < iTotalimage) m_pSprite[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+		if (i < iTotalimage) m_pSprite[i + sStart] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), FileName, i, bAlphaEffect);
 	}
 	CloseHandle(m_hPakFile);
 }
@@ -2666,7 +2679,7 @@ void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaE
 	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
 	for (short i = 0; i < sCount; i++)
 	{
-		if (i < iTotalimage) m_pTileSpr[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+		if (i < iTotalimage) m_pTileSpr[i + sStart] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), FileName, i, bAlphaEffect);
 	}
 	CloseHandle(m_hPakFile);
 }
@@ -2683,7 +2696,7 @@ void CGame::MakeEffectSpr(char* FileName, short sStart, short sCount, bool bAlph
 	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
 	for (short i = 0; i < sCount; i++)
 	{
-		if (i < iTotalimage) m_pEffectSpr[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+		if (i < iTotalimage) m_pEffectSpr[i + sStart] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), FileName, i, bAlphaEffect);
 	}
 	CloseHandle(m_hPakFile);
 }
@@ -2698,82 +2711,82 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	{
 		m_hPakFile = CreateFile("sprites\\interface.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_MOUSECURSOR] = new class CSprite(m_hPakFile, &m_DDraw, "interface", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = new class CSprite(m_hPakFile, &m_DDraw, "interface", 1, false);
+			m_pSprite[DEF_SPRID_MOUSECURSOR] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "interface", 1, false);
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\Newmaps.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 4, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Newmaps", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Newmaps", 1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Newmaps", 2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Newmaps", 3, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Newmaps", 4, false);
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\LoginDialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "LoginDialog", 0, false);
 #ifdef DEF_MAKE_ACCOUNT
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_AGREEMENT] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "LoginDialog", 1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_AGREEMENT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "LoginDialog", 2, false);
 #endif
 			CloseHandle(m_hPakFile);
 		}
 #ifdef DEF_MAKE_ACCOUNT			// CLEROTH - ACC - Snoopy: fixed to use without special pak
 		m_hPakFile = CreateFile("sprites\\CreateNewAcc.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "CreateNewAcc", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "CreateNewAcc", 0, false);
 			CloseHandle(m_hPakFile);
 		}
 		else
 		{
 			m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "New-Dialog", 2, false);
 			CloseHandle(m_hPakFile);
 		}
 #endif
 		m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "New-Dialog", 1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "New-Dialog", 2, false);
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\GameDialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 4, false);
-			//m_pSprite[DEF_SPRID_INTERFACE_GUIDEMAP] =      new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 5, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 6, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 7, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_SELECTCHAR] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 8, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWCHAR] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 9, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 10, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 3, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 4, false);
+			//m_pSprite[DEF_SPRID_INTERFACE_GUIDEMAP] =      new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 5, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 6, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 7, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_SELECTCHAR] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 8, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWCHAR] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 9, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog", 10, false);
 			CloseHandle(m_hPakFile);
 		}
 
 		//m_hPakFile = CreateFile("sprites\\GameDialog2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		//if (m_hPakFile != INVALID_HANDLE_VALUE) {
-		//	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL2] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog2", 6, false);
+		//	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "GameDialog2", 6, false);
 		//	CloseHandle(m_hPakFile);
 		//}
 
 		m_hPakFile = CreateFile("sprites\\PartySprite.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = new class CSprite(m_hPakFile, &m_DDraw, "PartySprite", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "PartySprite", 0, false);
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\DialogText.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = new class CSprite(m_hPakFile, &m_DDraw, "DialogText", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = new class CSprite(m_hPakFile, &m_DDraw, "DialogText", 1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "DialogText", 0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "DialogText", 1, false);
 			CloseHandle(m_hPakFile);
 		}
 		MakeSprite("Telescope", DEF_SPRID_INTERFACE_GUIDEMAP, 32, false);	  // Snoopy: 20->32
@@ -2787,8 +2800,8 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeTileSpr("maptiles1", 0, 32, true);
 		m_hPakFile = CreateFile("sprites\\structures1.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0); //�Ⱦ��� Ÿ�� �ε� ���Ѵ�.2002.09.06����
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pTileSpr[1 + 50] = new class CSprite(m_hPakFile, &m_DDraw, "structures1", 1, true);
-			m_pTileSpr[5 + 50] = new class CSprite(m_hPakFile, &m_DDraw, "structures1", 5, true);
+			m_pTileSpr[1 + 50] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "structures1", 1, true);
+			m_pTileSpr[5 + 50] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "structures1", 5, true);
 			CloseHandle(m_hPakFile);
 		}
 		MakeTileSpr("Sinside1", 70, 27, false);
@@ -2841,9 +2854,9 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeSprite("item-pack", DEF_SPRID_ITEMPACK_PIVOTPOINT + 1, 27, false);
 		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 17, false); //
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 18, false); //
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19, false); // Angels
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 17, false); //
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 18, false); //
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 19, false); // Angels
 			CloseHandle(m_hPakFile);
 		}
 
@@ -2852,9 +2865,9 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		m_hPakFile = CreateFile("sprites\\item-ground.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 17, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 18, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 19, false);//Angels
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-ground", 17, false);
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-ground", 18, false);
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-ground", 19, false);//Angels
 			CloseHandle(m_hPakFile);
 		}
 		MakeSprite("item-dynamic", DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT, 3, false);// Snoopy 2-> 3 (flags)
@@ -2865,58 +2878,58 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	{
 		m_hPakFile = CreateFile("sprites\\item-equipM.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 0, false);	// body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 1, false);	// 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 2, false);	// 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 3] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 3, false);	// 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 4] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 4, false);	// 4-tunics
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 5] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 5, false);	// 5-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 7] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 6, false);	// 6-berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 8] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 7, false);	// 7-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 9] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 8, false);	// 8-bodyarmor
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 15] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 17] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 9, false);  // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 10, false); // undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 13, false); // capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 14, false); // helm
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 0, false);	// body
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 1, false);	// 1-swords
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 2, false);	// 2-bows
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 3, false);	// 3-shields
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 4, false);	// 4-tunics
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 5, false);	// 5-shoes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 6, false);	// 6-berk
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 8] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 7, false);	// 7-hoses
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 9] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 8, false);	// 8-bodyarmor
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 15] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 11, false); // Axe hammer
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 17] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 12, false); // Wands
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 9, false);  // hair
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 10, false); // undies
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 13, false); // capes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipM", 14, false); // helm
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 15); // Necks
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 15); // Necks
 			//Snoopy: Angels pandents
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19); // Angels
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 19); // Angels
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\item-equipW.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 0, false); // body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 1, false); // 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 2, false); // 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 43] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 3, false); // 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 45] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 4, false); // 4-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 50] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 5, false); // 5-Soustif
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 51] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 6, false); // 6 berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 52] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 7, false); // 7 hose
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 53] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 8, false); // 8-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 55] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 57] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 58] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 9, false); // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 59] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 10, false);// undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 60] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 13, false);// capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 61] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 14, false);// helm
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 0, false); // body
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 1, false); // 1-swords
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 2, false); // 2-bows
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 43] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 3, false); // 3-shields
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 45] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 4, false); // 4-shoes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 50] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 5, false); // 5-Soustif
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 51] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 6, false); // 6 berk
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 52] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 7, false); // 7 hose
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 53] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 8, false); // 8-hoses
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 55] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 11, false); // Axe hammer
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 57] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 12, false); // Wands
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 58] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 9, false); // hair
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 59] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 10, false);// undies
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 60] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 13, false);// capes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 61] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-equipW", 14, false);// helm
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 15);// necks
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 15);// necks
 			//Snoopy: Angels pandents
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 62] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19); // Angels
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 62] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "item-pack", 19); // Angels
 			CloseHandle(m_hPakFile);
 		}
 		MakeSprite("Bm", 500 + 15 * 8 * 0, 96, true);// Black Man (Type: 1)
@@ -2973,7 +2986,7 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
 			for (i = 0; i < 40; i++)
-				m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = new class CSprite(m_hPakFile, &m_DDraw, "Effect5", 0, true);
+				m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Effect5", 0, true);
 
 			CloseHandle(m_hPakFile);
 		}
@@ -3061,14 +3074,14 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		m_hPakFile = CreateFile("sprites\\Mpt.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 1, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 7, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 0] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 0, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 1, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 2, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 3, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 4, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 5, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 6, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mpt", i + 12 * 7, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_cLoading = 52;
@@ -3080,14 +3093,14 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		m_hPakFile = CreateFile("sprites\\Mhr.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 1, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 7, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 0] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 0, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 1, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 2, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 3, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 4, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 5, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 6, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mhr", i + 12 * 7, true);
 			CloseHandle(m_hPakFile);
 		}
 		MakeSprite("MLArmor", DEF_SPRID_BODYARMOR_M + 15 * 1, 12, true);
@@ -3120,17 +3133,17 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeSprite("MLBoots", DEF_SPRID_BOOT_M + 15 * 2, 12, true);
 		m_hPakFile = CreateFile("sprites\\Msw.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 3, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 10] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 11] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 12] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 11, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 0, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 2, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 3, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 5, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 6, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 8] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 7, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 9] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 8, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 10] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 9, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 11] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 10, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 12] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msw", i + 56 * 11, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_cLoading = 60;
@@ -3183,21 +3196,21 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		m_hPakFile = CreateFile("sprites\\Mbo.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = new class CSprite(m_hPakFile, &m_DDraw, "Mbo", i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Mbo", i + 56 * 1, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_hPakFile = CreateFile("sprites\\Msh.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 0, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 1, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 2, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 3, true);
-			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 4, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 5, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 6, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 7, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 8, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 0, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 1, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 2, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 3, true);
+			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 4, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 5, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 6, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 8] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 7, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 9] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Msh", i + 7 * 8, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_cLoading = 72;
@@ -3230,27 +3243,27 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	{
 		m_hPakFile = CreateFile("sprites\\Wpt.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 7, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 0] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 2, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 3, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 4, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 5, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 6, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wpt", i + 12 * 7, true);
 			CloseHandle(m_hPakFile);
 		}
 
 		m_hPakFile = CreateFile("sprites\\Whr.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 7, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 0] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 0, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 2, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 3, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 4, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 5, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 6, true);
+			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Whr", i + 12 * 7, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_cLoading = 80;
@@ -3291,17 +3304,17 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	{
 		m_hPakFile = CreateFile("sprites\\Wsw.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 3, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 10] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 11] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 12] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 11, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 0, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 2, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 3, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 5, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 6, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 8] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 7, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 9] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 8, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 10] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 9, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 11] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 10, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 12] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsw", i + 56 * 11, true);
 			CloseHandle(m_hPakFile);
 		}
 		MakeSprite("Wswx", DEF_SPRID_WEAPON_W + 64 * 5, 56, true);
@@ -3370,20 +3383,20 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		m_hPakFile = CreateFile("sprites\\Wbo.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = new class CSprite(m_hPakFile, &m_DDraw, "Wbo", i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wbo", i + 56 * 1, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_hPakFile = CreateFile("sprites\\Wsh.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 0, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 1, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 2, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 3, true);
-			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 4, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 5, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 6, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 7, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 8, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 1] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 0, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 2] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 1, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 3] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 2, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 4] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 3, true);
+			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 5] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 4, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 6] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 5, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 7] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 6, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 8] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 7, true);
+			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 9] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "Wsh", i + 7 * 8, true);
 			CloseHandle(m_hPakFile);
 		}
 		m_cLoading = 100;
@@ -3399,7 +3412,7 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		if (m_hPakFile != INVALID_HANDLE_VALUE)
 		{
 			for (i = 0; i <= 6; i++) // Because effectn�0 is EnergySphere
-				m_pEffectSpr[i + 24] = new class CSprite(m_hPakFile, &m_DDraw, "effect5", i + 1, false);
+				m_pEffectSpr[i + 24] = new class CSprite(m_hPakFile, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer()), "effect5", i + 1, false);
 			CloseHandle(m_hPakFile);
 		}
 		MakeEffectSpr("CruEffect1", 31, 9, false);
@@ -4821,7 +4834,7 @@ void CGame::PutString_SprFont2(int iX, int iY, char* pStr, short sR, short sG, s
 	uint32_t dwTime = G_dwGlobalTime;
 	char  cTmpStr[200];
 
-	m_DDraw.ColorTransferRGB(RGB(sR, sG, sB), &iR, &iG, &iB);
+	static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->ColorTransferRGB(RGB(sR, sG, sB), &iR, &iG, &iB);
 
 	std::memset(cTmpStr, 0, sizeof(cTmpStr));
 	strcpy(cTmpStr, pStr);
@@ -4904,7 +4917,7 @@ void CGame::PutString_SprNum(int iX, int iY, char* pStr, short sR, short sG, sho
 	uint16_t wR, wG, wB;
 	std::memset(cTmpStr, 0, sizeof(cTmpStr));
 	strcpy(cTmpStr, pStr);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(sR, sG, sB), &wR, &wG, &wB);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(sR, sG, sB), &wR, &wG, &wB);
 	iXpos = iX;
 	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++)
 	{
@@ -4925,20 +4938,20 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 	char* pTmp;
 	int i;
 	if (strlen(pString) == 0) return;
-	if (bIsPreDC == false) m_DDraw._GetBackBufferDC();
+	if (bIsPreDC == false) m_DDraw->BeginTextBatch();
 	if (bHide == false)
 	{
 		switch (cBGtype) {
 		case 0:
-			m_DDraw.TextOut(iX + 1, iY, pString, color);
+			m_DDraw->DrawText(iX + 1, iY, pString, color);
 			break;
 		case 1:
-			m_DDraw.TextOut(iX, iY + 1, pString, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY + 1, pString, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY, pString, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX, iY + 1, pString, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX + 1, iY + 1, pString, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX + 1, iY, pString, RGB(5, 5, 5));
 			break;
 		}
-		m_DDraw.TextOut(iX, iY, pString, color);
+		m_DDraw->DrawText(iX, iY, pString, color);
 	}
 	else
 	{
@@ -4950,45 +4963,45 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 
 		switch (cBGtype) {
 		case 0:
-			m_DDraw.TextOut(iX + 1, iY, pTmp, color);
+			m_DDraw->DrawText(iX + 1, iY, pTmp, color);
 			break;
 		case 1:
-			m_DDraw.TextOut(iX, iY + 1, pTmp, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY + 1, pTmp, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY, pTmp, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX, iY + 1, pTmp, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX + 1, iY + 1, pTmp, RGB(5, 5, 5));
+			m_DDraw->DrawText(iX + 1, iY, pTmp, RGB(5, 5, 5));
 			break;
 		}
-		m_DDraw.TextOut(iX, iY, pTmp, color);
+		m_DDraw->DrawText(iX, iY, pTmp, color);
 		delete[] pTmp;
 	}
-	if (bIsPreDC == false) m_DDraw._ReleaseBackBufferDC();
+	if (bIsPreDC == false) m_DDraw->EndTextBatch();
 }
 
 
 void CGame::PutString(int iX, int iY, char* pString, COLORREF color)
 {
-	m_DDraw._GetBackBufferDC();
-	m_DDraw.TextOut(iX, iY, pString, color);
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->BeginTextBatch();
+	m_DDraw->DrawText(iX, iY, pString, color);
+	m_DDraw->EndTextBatch();
 }
 
 void CGame::PutString2(int iX, int iY, char* pString, short sR, short sG, short sB)
 {
-	m_DDraw._GetBackBufferDC();
-	m_DDraw.TextOut(iX + 1, iY, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX, iY + 1, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX + 1, iY + 1, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX, iY, pString, RGB(sR, sG, sB));
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->BeginTextBatch();
+	m_DDraw->DrawText(iX + 1, iY, pString, RGB(0, 0, 0));
+	m_DDraw->DrawText(iX, iY + 1, pString, RGB(0, 0, 0));
+	m_DDraw->DrawText(iX + 1, iY + 1, pString, RGB(0, 0, 0));
+	m_DDraw->DrawText(iX, iY, pString, RGB(sR, sG, sB));
+	m_DDraw->EndTextBatch();
 }
 
 void CGame::PutAlignedString(int iX1, int iX2, int iY, char* pString, short sR, short sG, short sB)
 {
 	RECT rt;
-	m_DDraw._GetBackBufferDC();
+	m_DDraw->BeginTextBatch();
 	SetRect(&rt, iX1, iY, iX2, iY + 15);
-	m_DDraw.DrawText(&rt, pString, RGB(sR, sG, sB));
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->DrawTextRect(&rt, pString, RGB(sR, sG, sB));
+	m_DDraw->EndTextBatch();
 }
 
 bool CGame::bInitMagicCfgList()
@@ -11831,12 +11844,12 @@ void CGame::ChatMsgHandler(char* pData)
 
 	std::memset(cMsg, 0, sizeof(cMsg));
 	wsprintf(cMsg, "%s: %s", cName, cTemp);
-	m_DDraw._GetBackBufferDC();
+	m_DDraw->BeginTextBatch();
 	bFlag = false;
 	short sCheckByte = 0;
 	while (bFlag == false)
 	{
-		iLoc = CMisc::iGetTextLengthLoc(m_DDraw.m_hDC, cMsg, 305);
+		iLoc = CMisc::iGetTextLengthLoc(static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_hDC, cMsg, 305);
 		for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
 		if (iLoc == 0)
 		{
@@ -11870,7 +11883,7 @@ void CGame::ChatMsgHandler(char* pData)
 		}
 	}
 
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->EndTextBatch();
 
 	_RemoveChatMsgListByObjectID(iObjectID);
 
@@ -11939,7 +11952,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 		m_bIsRedrawPDBGS = false;
 		m_iPDBGSdivX = sDivX;
 		m_iPDBGSdivY = sDivY;
-		SetRect(&m_DDraw.m_rcClipArea, 0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
+		SetRect(&static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
 		indexY = sDivY + m_pMapData->m_sPivotY;
 		for (iy = -sModY; iy < LOGICAL_MAX_Y + 48; iy += 32) // LOGICAL_HEIGHT 
 		{
@@ -11948,16 +11961,16 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 			{
 				sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
 				sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->PutSpriteFastNoColorKeyDst(m_DDraw.m_lpPDBGS, ix - 16 + sModX, iy - 16 + sModY, sSprFrame, m_dwCurTime);
+				m_pTileSpr[sSpr]->PutSpriteFastNoColorKeyDst(static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lpPDBGS, ix - 16 + sModX, iy - 16 + sModY, sSprFrame, m_dwCurTime);
 				indexX++;
 			}
 			indexY++;
 		}
-		SetRect(&m_DDraw.m_rcClipArea, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+		SetRect(&static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 	}
 	RECT rcRect;
 	SetRect(&rcRect, sModX, sModY, LOGICAL_WIDTH + sModX, LOGICAL_HEIGHT + sModY); // our fictitious sprite bitmap is
-	m_DDraw.m_lpBackB4->BltFast(0, 0, m_DDraw.m_lpPDBGS, &rcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+	static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lpBackB4->BltFast(0, 0, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lpPDBGS, &rcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
 
 	// Grid overlay removed.
 
@@ -13919,7 +13932,7 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 				}
 			}
 
-	m_DDraw._GetBackBufferDC();
+	m_DDraw->BeginTextBatch();
 	for (i = 0; i < DEF_MAXCHATMSGS; i++)
 		if (m_pChatMsgList[i] != 0)
 			if ((m_pChatMsgList[i]->m_sX >= sX) && (m_pChatMsgList[i]->m_sX <= dX) &&
@@ -13939,7 +13952,7 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 					break;
 				}
 			}
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->EndTextBatch();
 }
 
 
@@ -14345,7 +14358,7 @@ void CGame::SetTopMsg(char* pString, unsigned char iLastSec)
 void CGame::DrawTopMsg()
 {
 	if (strlen(m_cTopMsg) == 0) return;
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
+	m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
 
 	if ((((G_dwGlobalTime - m_dwTopMsgTime) / 250) % 2) == 0)
 		PutAlignedString(0, LOGICAL_MAX_X, 10, m_cTopMsg, 255, 255, 0);
@@ -14755,58 +14768,58 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	case 20:
 	default:
 		if (bIsPreDC == false)
-			m_DDraw._GetBackBufferDC();
+			m_DDraw->BeginTextBatch();
 
-		GetTextExtentPoint32(m_DDraw.m_hDC, cMsg, strlen(cMsg), &Size);
+		GetTextExtentPoint32(static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_hDC, cMsg, strlen(cMsg), &Size);
 
 		switch (Size.cx / 160) {
 		case 0:
 			SetRect(&rcRect, sX - 80 + 1, sY - 65 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_DDraw->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 1:
 			SetRect(&rcRect, sX - 80 + 1, sY - 83 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_DDraw->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 2:
 			SetRect(&rcRect, sX - 80 + 1, sY - 101 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_DDraw->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 3:
 			SetRect(&rcRect, sX - 80 + 1, sY - 119 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_DDraw->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_DDraw->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 		}
 
 		if (bIsPreDC == false)
-			m_DDraw._ReleaseBackBufferDC();
+			m_DDraw->EndTextBatch();
 		break;
 	}
 }
@@ -15059,8 +15072,8 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		}
 	}
 
-	//	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0,0,639,479);
-	//	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 6) m_DDraw->DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 2) m_DDraw->DrawShadowBox(0,0,639,479);
 }
 
 bool CGame::bDlgBoxPress_Character(short msX, short msY)
@@ -15886,19 +15899,19 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_DDraw->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15917,19 +15930,19 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_DDraw->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15981,19 +15994,19 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_DDraw->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -16012,19 +16025,19 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_DDraw->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -16042,10 +16055,10 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	dwTime = m_dwCurTime;
 	sX = pX1 = iX1 = tX = sX;
 	sY = pY1 = iY1 = tY = sY;
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(50, 50, 100), &wR1, &wG1, &wB1);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(30, 30, 100), &wR2, &wG2, &wB2);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0, 0, 30), &wR3, &wG3, &wB3);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(50, 50, 200), &wR4, &wG4, &wB4);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(50, 50, 100), &wR1, &wG1, &wB1);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(30, 30, 100), &wR2, &wG2, &wB2);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(0, 0, 30), &wR3, &wG3, &wB3);
+	CMisc::ColorTransfer(m_DDraw->GetPixelFormat(), RGB(50, 50, 200), &wR4, &wG4, &wB4);
 
 	for (j = 0; j < 100; j++)
 	{
@@ -17433,7 +17446,7 @@ void CGame::CreateScreenShot()
 		pFile = fopen(cFn, "rb");
 		if (pFile == 0)
 		{
-			m_DDraw.Screenshot(cFn, m_DDraw.m_lpBackB4);
+			static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->Screenshot(cFn, static_cast<DXC_ddraw*>(m_DDraw->GetNativeRenderer())->m_lpBackB4);
 
 			wsprintf(G_cTxt, NOTIFYMSG_CREATE_SCREENSHOT1, cFn);
 			AddEventList(G_cTxt, 10);
@@ -17716,8 +17729,8 @@ void CGame::UpdateScreen_OnAgreement()
 	DrawVersion();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
 
-	//	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0,0,639,479);
-	//	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 6) m_DDraw->DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 2) m_DDraw->DrawShadowBox(0,0,639,479);
 }
 
 #endif //endif from #ifdef DEF_MAKE_ACCOUNT
@@ -18191,7 +18204,7 @@ void CGame::DrawScreen_WaitingResponse()
 	}
 	m_bIsHideLocalCursor = false;
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 7, 0, 0);
 
@@ -18291,7 +18304,7 @@ void CGame::DrawScreen_Connecting()
 	}
 	m_bIsHideLocalCursor = false;
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	wsprintf(G_cTxt, "Connecting to Server... %3dSec", (dwTime - m_dwTime) / 1000);
 	PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, G_cTxt, 7, 0, 0);
@@ -18385,11 +18398,11 @@ void CGame::DrawScreen_QueryForceLogin()
 
 	UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6)) {
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 	else if (m_cGameModeCount >= 6) {
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
@@ -18493,12 +18506,12 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	UpdateScreen_OnSelectCharacter(0, 0, 500, 70);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6))
 	{
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 	else if (m_cGameModeCount >= 6)
 	{
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
@@ -19273,7 +19286,7 @@ void CGame::DrawScreen_ChangePassword()
 
 	// Draw background (SelectCharacter screen)
 	UpdateScreen_OnSelectCharacter(0, 0, 0, 0, true);
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	// Draw dialog boxes
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + SCREENX, 112 + SCREENY, 0);
@@ -20828,7 +20841,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 		break;
 	}
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
@@ -23146,7 +23159,7 @@ void CGame::DrawScreen_OnGame()
 		if (((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
 			((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
 		}
-		else m_DDraw.DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
+		else m_DDraw->DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
 		ShowReceivedString();
 	}
 
@@ -23235,16 +23248,16 @@ void CGame::DrawScreen_OnGame()
 	DrawTopMsg();
 
 	// Fade-in overlay
-	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	if (m_cGameModeCount < 6) m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	if (m_cGameModeCount < 2) m_DDraw->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	// Cursor
 	if (m_bIsObserverMode == true) {
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX + 1, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX - 1, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
+		m_DDraw->PutPixel(s_sOnGameMsX, s_sOnGameMsY, 255, 255, 255);
+		m_DDraw->PutPixel(s_sOnGameMsX + 1, s_sOnGameMsY, 255, 255, 255);
+		m_DDraw->PutPixel(s_sOnGameMsX - 1, s_sOnGameMsY, 255, 255, 255);
+		m_DDraw->PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
+		m_DDraw->PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
 	}
 	else m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(s_sOnGameMsX, s_sOnGameMsY, m_stMCursor.sCursorFrame, s_dwOnGameTime);
 	FrameTiming::EndProfile(ProfileStage::DrawMisc);
@@ -25650,7 +25663,7 @@ void CGame::ShowEventList(uint32_t dwTime)
 {
 	int i;
 	int baseY = EVENTLIST2_BASE_Y;
-	m_DDraw._GetBackBufferDC();
+	m_DDraw->BeginTextBatch();
 	for (i = 0; i < 6; i++)
 		if ((dwTime - m_stEventHistory[i].dwTime) < 5000)
 		{
@@ -25710,7 +25723,7 @@ void CGame::ShowEventList(uint32_t dwTime)
 	{
 		PutString(440 - 29, 440 - 52, SHOW_EVENT_LIST1, RGB(235, 235, 235), false, 1, true);
 	}
-	m_DDraw._ReleaseBackBufferDC();
+	m_DDraw->EndTextBatch();
 }
 
 void CGame::RequestTeleportAndWaitData()

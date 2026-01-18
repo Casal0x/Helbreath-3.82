@@ -1,3 +1,8 @@
+// Mydib.h: BMP file loading for sprite surfaces
+//
+// Part of DDrawEngine static library
+//////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <windows.h>
