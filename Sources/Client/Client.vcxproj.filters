@@ -37,6 +37,12 @@
     <Filter Include="DialogBox">
       <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567890}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Effects">
+      <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetworkMessages">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567891}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Core -->
@@ -92,6 +98,18 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Version.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClInclude Include="EffectManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClCompile Include="EffectManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClInclude Include="NetworkMessageManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClCompile Include="NetworkMessageManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <!-- Managers -->
@@ -186,6 +204,72 @@
     <ClCompile Include="XSocket.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="NetworkMessages_Stats.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Items.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Guild.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Combat.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Skills.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Player.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Quest.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Party.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Apocalypse.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Heldenian.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Slates.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Map.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Exchange.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Bank.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Angels.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Events.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Agriculture.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Fish.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Crafting.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Admin.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Crusade.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_System.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
     <!-- Graphics -->
     <ClInclude Include="Sprite.h">
       <Filter>Graphics</Filter>
@@ -196,9 +280,22 @@
     <ClInclude Include="Mydib.h">
       <Filter>Graphics</Filter>
     </ClInclude>
+    <!-- Effects -->
     <ClInclude Include="Effect.h">
-      <Filter>Graphics</Filter>
+      <Filter>Effects</Filter>
     </ClInclude>
+    <ClCompile Include="Effect_Add.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect_Update.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect_Draw.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect_Lights.cpp">
+      <Filter>Effects</Filter>
+    </ClCompile>
     <ClCompile Include="Sprite.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>

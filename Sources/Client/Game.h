@@ -51,6 +51,8 @@ using namespace std;
 #include "BuildItem.h"
 #include "Curse.h"
 #include "DialogBoxManager.h"
+#include "EffectManager.h"
+#include "NetworkMessageManager.h"
 
 //v2.18
 #define DEF_BTNSZX				74
@@ -267,77 +269,7 @@ public:
 	void bItemDrop_Slates();
 
 	bool _bCheckDlgBoxClick(short msX, short msY);
-	void NotifyMsgHandler(char * pData);
-	void NotifyMsg_GlobalAttackMode(char * pData);
-	void NotifyMsg_QuestReward(char * pData);
-	void NotifyMsg_QuestContents(char * pData);
-	void NotifyMsg_ItemColorChange(char * pData);
-	void NotifyMsg_DropItemFin_CountChanged(char * pData);
-	void NotifyMsg_CannotGiveItem(char * pData);
-	void NotifyMsg_GiveItemFin_CountChanged(char * pData);
-	void NotifyMsg_SetExchangeItem(char * pData);
-	void NotifyMsg_OpenExchageWindow(char * pData);
-	void NotifyMsg_DownSkillIndexSet(char * pData);
-	void NotifyMsg_AdminInfo(char * pData);
-	void NotifyMsg_WhetherChange(char * pData);
-	void NotifyMsg_FishChance(char * pData);
-	void NotifyMsg_EventFishMode(char * pData);
-	void NotifyMsg_NoticeMsg(char * pData);
-	void NotifyMsg_RatingPlayer(char * pData);
-	void NotifyMsg_CannotRating(char * pData);
-	void NotifyMsg_PlayerShutUp(char * pData);
-	void NotifyMsg_TimeChange(char * pData);
-	void NotifyMsg_Hunger(char * pData);
-	void NotifyMsg_PlayerProfile(char * pData);
-	void NotifyMsg_WhisperMode(bool bActive, char * pData);
-	void NotifyMsg_PlayerStatus(bool bOnGame, char * pData);
-	void NotifyMsg_Charisma(char * pData);
-	void NotifyMsg_ItemRepaired(char * pData);
-	void NotifyMsg_RepairItemPrice(char * pData);
-	void NotifyMsg_CannotRepairItem(char * pData);
-	void NotifyMsg_CannotSellItem(char * pData);
-	void NotifyMsg_SellItemPrice(char * pData);
-	void NotifyMsg_ShowMap(char * pData);
-	void NotifyMsg_SkillUsingEnd(char * pData);
-	void NotifyMsg_TotalUsers(char * pData);
-	void NotifyMsg_MagicEffectOff(char * pData);
-	void NotifyMsg_MagicEffectOn(char * pData);
-	void NotifyMsg_SetItemCount(char * pData);
-	void NotifyMsg_ItemDepleted_EraseItem(char * pData);
-	void NotifyMsg_ServerChange(char * pData);
-	void NotifyMsg_Skill(char * pData);
-	void NotifyMsg_DropItemFin_EraseItem(char * pData);
-	void NotifyMsg_GiveItemFin_EraseItem(char * pData);
-	void NotifyMsg_EnemyKillReward(char * pData);
-	void NotifyMsg_PKcaptured(char * pData);
-	void NotifyMsg_PKpenalty(char * pData);
-	void NotifyMsg_ItemToBank(char * pData);
-	void NotifyMsg_ItemLifeSpanEnd(char * pData);
-	void NotifyMsg_ItemReleased(char * pData);
-	void NotifyMsg_LevelUp(char * pData);
-	void NotifyMsg_SettingSuccess(char * pData); // CLEROTH - LU
-	void NotifyMsg_MP(char * pData);
-	void NotifyMsg_SP(char * pData);
-	void NotifyMsg_SkillTrainSuccess(char * pData);
-	void NotifyMsg_MagicStudyFail(char * pData);
-	void NotifyMsg_MagicStudySuccess(char * pData);
-	void NotifyMsg_DismissGuildsMan(char * pData);
-	void NotifyMsg_NewGuildsMan(char * pData);
-	void NotifyMsg_CannotJoinMoreGuildsMan(char * pData);
-	void NotifyMsg_GuildDisbanded(char * pData);
-	void NotifyMsg_Exp(char * pData);
-	void NotifyMsg_Killed(char * pData);
-	void NotifyMsg_HP(char * pData);
-	void NotifyMsg_ItemPurchased(char * pData);
-	void NotifyMsg_DismissGuildReject(char * pData);
-	void NotifyMsg_DismissGuildApprove(char * pData);
-	void NotifyMsg_JoinGuildReject(char * pData);
-	void NotifyMsg_JoinGuildApprove(char * pData);
-	void NotifyMsg_QueryDismissGuildPermission(char * pData);
-	void NotifyMsg_QueryJoinGuildPermission(char * pData);
-	void NotifyMsg_ItemObtained(char * pData);
-	void NotifyMsg_ForceDisconn(char * pData);
-	void NotifyMsg_BanGuildMan(char * pData);
+
 
 	void ResponsePanningHandler(char * pData);
 	void _CalcSocketClosed();
@@ -492,10 +424,7 @@ public:
 	void ResponseShopContentsHandler(char* pData);
 	void PutChatScrollList(char * pMsg, char cType);
 	void RequestTeleportAndWaitData();
-	void DrawEffectLights();
 	void PointCommandHandler(int indexX, int indexY, char cItemID = -1);
-	void DrawEffects();
-	void bAddNewEffect(short sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1 = 1);
 	void AddEventList(char * pTxt, char cColor = 0, bool bDupAllow = true);
 	void ShowEventList(uint32_t dwTime);
 	void SetItemCount(char * pItemName, uint32_t dwCount);
@@ -733,7 +662,8 @@ public:
 	class CMsg    * m_pChatMsgList[DEF_MAXCHATMSGS];
 	class CMsg    * m_pChatScrollList[DEF_MAXCHATSCROLLMSGS];
 	class CMsg    * m_pWhisperMsg[DEF_MAXWHISPERMSG];
-	class CEffect * m_pEffectList[DEF_MAXEFFECTS];
+	EffectManager* m_pEffectManager;
+	NetworkMessageManager* m_pNetworkMessageManager;
 	class CItem   * m_pItemList[DEF_MAXITEMS];
 	class CItem   * m_pBankList[DEF_MAXBANKITEMS];
 	class CMagic * m_pMagicCfgList[DEF_MAXMAGICTYPE];
