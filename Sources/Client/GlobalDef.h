@@ -21,7 +21,7 @@
 #include "Version.h"
 
 #define NAME_WORLDNAME1			"WS1" // Name for default (1st) server
-#define DEF_SERVER_IP			"127.0.0.1" //"199.187.160.239"
+#define DEF_SERVER_IP			"127.0.0.1"
 #define DEF_SERVER_PORT			2500
 #define DEF_GSERVER_PORT		9907
 

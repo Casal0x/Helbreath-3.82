@@ -127,7 +127,7 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 	char cTxt[120], cTxt2[128];
 	int iLoc;
 
-	m_pGame->GetItemName(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].cStr1,
+	m_pGame->GetItemName(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sItemID,
 		m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].dwV1, cNameStr, cSubStr1, cSubStr2);
 
 	if ((msX >= sX + sXadd - 6) && (msX <= sX + sXadd + 42) && (msY >= sY + 61) && (msY <= sY + 200)) {

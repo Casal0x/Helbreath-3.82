@@ -16,5 +16,5 @@ private:
 	                 int iArrowYOffset, bool bCanIncrease, bool bCanDecrease);
 
 	bool HandleStatClick(short msX, short msY, short sX, short sY,
-	                     int iYOffset, int& iCurrentStat, char& cPendingChange);
+	                     int iYOffset, int& iCurrentStat, uint16_t& cPendingChange);
 };

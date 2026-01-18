@@ -82,9 +82,6 @@
     <ClCompile Include="DialogBoxManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Wmain.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="CommonTypes.cpp">
       <Filter>Core</Filter>
     </ClCompile>
@@ -223,12 +220,6 @@
     </ClCompile>
     <!-- Entities -->
     <ClInclude Include="CharInfo.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="Item.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="ItemName.h">
       <Filter>Entities</Filter>
     </ClInclude>
     <ClInclude Include="Magic.h">
@@ -512,6 +503,15 @@
     <ClInclude Include="DialogBox_GuildHallMenu.h">
       <Filter>DialogBox</Filter>
     </ClInclude>
+    <ClInclude Include="CmdProfile.h">
+      <Filter>Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_SellOrRepair.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Manufacture.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">
@@ -530,5 +530,15 @@
     <ClCompile Include="HotkeyManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="CmdProfile.cpp">
+      <Filter>Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogBox_Manufacture.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogBox_SellOrRepair.cpp">
+      <Filter>DialogBox</Filter>
+    </ClCompile>
+    <ClCompile Include="Wmain.cpp" />
   </ItemGroup>
 </Project>

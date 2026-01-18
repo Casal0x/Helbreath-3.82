@@ -522,8 +522,11 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
         }
         else {
             std::memset(cTemp, 0, sizeof(cTemp));
-            strcpy(cTemp, m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1]->m_cName);
-            m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, 0, 0, cTemp);
+            CItem* pShopItem = m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1];
+            strcpy(cTemp, pShopItem->m_cName);
+            // Send item ID in iV2 for reliable item lookup on server
+            int iItemId = pShopItem->m_sIDnum;
+            m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, iItemId, 0, cTemp);
         }
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;

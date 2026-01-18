@@ -19,7 +19,7 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	m_pGame->GetItemName(Info().cStr, 0, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->FindItemIdByName(Info().cStr), 0, cStr1, cStr2, cStr3);
 
 	switch (Info().cMode)
 	{

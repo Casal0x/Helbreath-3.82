@@ -62,12 +62,12 @@ namespace net {
 
 	struct HB_PACKED PacketRequestLevelUpSettings {
 		PacketHeader header;
-		int16_t str;
-		int16_t vit;
-		int16_t dex;
-		int16_t intel;
-		int16_t mag;
-		int16_t chr;
+		uint16_t str;
+		uint16_t vit;
+		uint16_t dex;
+		uint16_t intel;
+		uint16_t mag;
+		uint16_t chr;
 	};
 
 	struct HB_PACKED PacketRequestSellItemListEntry {

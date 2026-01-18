@@ -142,7 +142,7 @@ struct AccountDbCharacterState
 struct AccountDbItemRow
 {
     int slot;
-    char itemName[21];
+    int itemId;
     int count;
     int touchEffectType;
     int touchEffectValue1;
@@ -162,7 +162,7 @@ struct AccountDbItemRow
 struct AccountDbBankItemRow
 {
     int slot;
-    char itemName[21];
+    int itemId;
     int count;
     int touchEffectType;
     int touchEffectValue1;

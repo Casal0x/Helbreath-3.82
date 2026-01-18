@@ -225,6 +225,19 @@ struct DropTable
 	int totalWeight[3];
 };
 
+// Shop system structures
+struct NpcShopMapping
+{
+	int npcType;                    // NPC type (15=ShopKeeper, 24=Blacksmith)
+	int shopId;                     // Which shop inventory to use
+	char description[64];           // For documentation
+};
+
+struct ShopData
+{
+	int shopId;
+	std::vector<int16_t> itemIds;   // List of item IDs available in this shop
+};
 
 template <typename T>
 static bool In(const T& value, std::initializer_list<T> values) {
@@ -462,6 +475,7 @@ public:
 	bool bCheckEnergySphereDestination(int iNpcH, short sAttackerH, char cAttackerType);
 	void JoinPartyHandler(int iClientH, int iV1, const char * pMemberName);
 	void RequestSellItemListHandler(int iClientH, char * pData);
+	void RequestShopContentsHandler(int iClientH, char * pData);
 	void RequestRestartHandler(int iClientH);
 	int iRequestPanningMapDataRequest(int iClientH, char * pData);
 	void GetMagicAbilityHandler(int iClientH);
@@ -641,14 +655,16 @@ public:
 	void ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage);
 	int  SetItemCount(int iClientH, char * pItemName, uint32_t dwCount);
 	int  SetItemCount(int iClientH, int iItemIndex, uint32_t dwCount);
+	int  SetItemCountByID(int iClientH, short sItemID, uint32_t dwCount);
 	uint32_t dwGetItemCount(int iClientH, char * pName);
+	uint32_t dwGetItemCountByID(int iClientH, short sItemID);
 	void DismissGuildRejectHandler(int iClientH, const char * pName);
 	void DismissGuildApproveHandler(int iClientH, const char * pName);
 	void JoinGuildRejectHandler(int iClientH, const char * pName);
 	void JoinGuildApproveHandler(int iClientH, const char * pName);
 	void SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, char * pString, uint32_t sV4 = 0, uint32_t sV5 = 0, uint32_t sV6 = 0, uint32_t sV7 = 0, uint32_t sV8 = 0, uint32_t sV9 = 0, char * pString2 = 0);
 	void GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short dX, short dY, uint16_t wObjectID, const char * pItemName);
-	void RequestPurchaseItemHandler(int iClientH, const char * pItemName, int iNum);
+	void RequestPurchaseItemHandler(int iClientH, const char * pItemName, int iNum, int iItemId = 0);
 	void ResponseDisbandGuildHandler(char * pData, int iType);
 	void RequestDisbandGuildHandler(int iClientH, char * pData, uint32_t dwMsgSize);
 	void RequestCreateNewGuildHandler(int iClientH, char * pData, uint32_t dwMsgSize);
@@ -791,6 +807,11 @@ public:
 	bool			m_bIsSkillAvailable, m_bIsPortionAvailable, m_bIsQuestAvailable, m_bIsTeleportAvailable;
 	bool			m_bIsDropTableAvailable;
 	std::map<int, DropTable> m_DropTables;
+
+	// Shop system - server sends shop contents to client by item IDs
+	bool m_bIsShopDataAvailable;
+	std::map<int, int> m_NpcShopMappings;        // npc_type → shop_id
+	std::map<int, ShopData> m_ShopData;          // shop_id → ShopData
 	class CItem   * m_pItemConfigList[DEF_MAXITEMTYPES];
 	class CNpc    * m_pNpcConfigList[DEF_MAXNPCTYPES];
 	class CMagic  * m_pMagicConfigList[DEF_MAXMAGICTYPE];

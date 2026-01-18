@@ -49,7 +49,7 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
 
-		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID]->m_cName, m_pGame->m_pItemList[cItemID]->m_dwAttribute, cTemp, cStr2, cStr3);
+		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID], cTemp, cStr2, cStr3);
 		if (Info().sV4 == 1) strcpy(cTxt, cTemp);
 		else wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, cTemp);
 

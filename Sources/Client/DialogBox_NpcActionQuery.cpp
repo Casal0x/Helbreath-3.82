@@ -86,7 +86,7 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1]->m_cName, m_pGame->m_pItemList[Info().sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
@@ -105,7 +105,7 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1]->m_cName, m_pGame->m_pItemList[Info().sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -130,7 +130,7 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1]->m_cName, m_pGame->m_pItemList[Info().sV1]->m_dwAttribute, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);

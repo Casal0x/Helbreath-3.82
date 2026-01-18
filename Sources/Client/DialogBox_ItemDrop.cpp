@@ -16,10 +16,7 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
 
-	m_pGame->GetItemName(
-		m_pGame->m_pItemList[Info().sView]->m_cName,
-		m_pGame->m_pItemList[Info().sView]->m_dwAttribute,
-		cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView], cStr1, cStr2, cStr3);
 
 	if (strlen(Info().cStr) == 0)
 		wsprintf(cTxt, "%s", cStr1);

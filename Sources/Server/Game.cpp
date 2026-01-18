@@ -1073,6 +1073,15 @@ bool CGame::bInit()
 		}
 	}
 
+	// Load shop configurations (optional - server works without shops)
+	m_bIsShopDataAvailable = false;
+	if (HasGameConfigRows(configDb, "npc_shop_mapping") || HasGameConfigRows(configDb, "shop_items")) {
+		LoadShopConfigs(configDb, this);
+	}
+	if (!m_bIsShopDataAvailable) {
+		PutLogList("(!) Shop data not configured - NPCs will not have shop inventories.");
+	}
+
 	m_bIsMagicAvailable = false;
 	if (HasGameConfigRows(configDb, "magic_configs")) {
 		m_bIsMagicAvailable = LoadMagicConfigs(configDb, this);
@@ -1752,6 +1761,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 		entry->item_color = m_pClientList[iClientH]->m_pItemList[i]->m_cItemColor;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_pItemList[i]->m_sItemSpecEffectValue2);
 		entry->attribute = m_pClientList[iClientH]->m_pItemList[i]->m_dwAttribute;
+		entry->item_id = m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum;
+		entry->max_lifespan = m_pClientList[iClientH]->m_pItemList[i]->m_wMaxLifeSpan;
 	}
 
 	iTotalItemB = 0;
@@ -1784,6 +1795,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 		entry->item_color = m_pClientList[iClientH]->m_pItemInBankList[i]->m_cItemColor;
 		entry->spec_value2 = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_pItemInBankList[i]->m_sItemSpecEffectValue2);
 		entry->attribute = m_pClientList[iClientH]->m_pItemInBankList[i]->m_dwAttribute;
+		entry->item_id = m_pClientList[iClientH]->m_pItemInBankList[i]->m_sIDnum;
+		entry->max_lifespan = m_pClientList[iClientH]->m_pItemInBankList[i]->m_wMaxLifeSpan;
 	}
 
 	writer.AppendBytes(m_pClientList[iClientH]->m_cMagicMastery, DEF_MAXMAGICTYPE);
@@ -2078,109 +2091,108 @@ bool CGame::bSendClientItemConfigs(int iClientH)
 		return false;
 	}
 
-	const size_t maxPayload = 29992; // Client buffer is 30000; leave room for 8-byte header.
-	const char* header = "[CONFIG]\n\n\n[ITEMS]\n\n";
-	const char* footer = "\n[ENDITEMLIST]\n";
-	const size_t headerLen = std::strlen(header);
-	const size_t footerLen = std::strlen(footer);
+	// Calculate how many items per packet (leave room for header)
+	constexpr size_t maxPacketSize = 30000;
+	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
+	constexpr size_t maxEntriesPerPacket = (maxPacketSize - headerSize) / entrySize;
 
-	int chunkCount = 0;
-	auto sendPayload = [&](const char* payload, size_t payloadLen) -> bool {
+	// First count total items
+	int totalItems = 0;
+	for (int i = 0; i < DEF_MAXITEMTYPES; i++) {
+		if (m_pItemConfigList[i] != 0) {
+			totalItems++;
+		}
+	}
+
+	// Send items in packets
+	int itemsSent = 0;
+	int packetIndex = 0;
+
+	while (itemsSent < totalItems) {
+		// Build packet
 		std::memset(G_cData50000, 0, sizeof(G_cData50000));
-		{
-			auto* header = reinterpret_cast<hb::net::PacketHeader*>(G_cData50000);
-			header->msg_id = MSGID_ITEMCONFIGURATIONCONTENTS;
-			header->msg_type = DEF_MSGTYPE_CONFIRM;
+
+		auto* pktHeader = reinterpret_cast<hb::net::PacketItemConfigHeader*>(G_cData50000);
+		pktHeader->header.msg_id = MSGID_ITEMCONFIGURATIONCONTENTS;
+		pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+		pktHeader->totalItems = static_cast<uint16_t>(totalItems);
+		pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+		auto* entries = reinterpret_cast<hb::net::PacketItemConfigEntry*>(G_cData50000 + headerSize);
+
+		uint16_t entriesInPacket = 0;
+		int configIndex = 0;
+		int skipped = 0;
+
+		// Find items for this packet
+		for (int i = 0; i < DEF_MAXITEMTYPES && entriesInPacket < maxEntriesPerPacket; i++) {
+			if (m_pItemConfigList[i] == 0) {
+				continue;
+			}
+
+			// Skip items already sent in previous packets
+			if (skipped < itemsSent) {
+				skipped++;
+				continue;
+			}
+
+			const class CItem* item = m_pItemConfigList[i];
+			auto& entry = entries[entriesInPacket];
+
+			entry.itemId = item->m_sIDnum;
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::strncpy(entry.name, item->m_cName, sizeof(entry.name) - 1);
+			entry.itemType = item->m_cItemType;
+			entry.equipPos = item->m_cEquipPos;
+			entry.effectType = item->m_sItemEffectType;
+			entry.effectValue1 = item->m_sItemEffectValue1;
+			entry.effectValue2 = item->m_sItemEffectValue2;
+			entry.effectValue3 = item->m_sItemEffectValue3;
+			entry.effectValue4 = item->m_sItemEffectValue4;
+			entry.effectValue5 = item->m_sItemEffectValue5;
+			entry.effectValue6 = item->m_sItemEffectValue6;
+			entry.maxLifeSpan = item->m_wMaxLifeSpan;
+			entry.specialEffect = item->m_sSpecialEffect;
+			entry.sprite = item->m_sSprite;
+			entry.spriteFrame = item->m_sSpriteFrame;
+			entry.price = item->m_bIsForSale ? static_cast<int32_t>(item->m_wPrice) : -static_cast<int32_t>(item->m_wPrice);
+			entry.weight = item->m_wWeight;
+			entry.apprValue = item->m_cApprValue;
+			entry.speed = item->m_cSpeed;
+			entry.levelLimit = item->m_sLevelLimit;
+			entry.genderLimit = item->m_cGenderLimit;
+			entry.specialEffectValue1 = item->m_sSpecialEffectValue1;
+			entry.specialEffectValue2 = item->m_sSpecialEffectValue2;
+			entry.relatedSkill = item->m_sRelatedSkill;
+			entry.category = item->m_cCategory;
+			entry.itemColor = item->m_cItemColor;
+
+			entriesInPacket++;
 		}
-		if (payloadLen > maxPayload) {
-			return false;
-		}
-		std::memcpy(G_cData50000 + sizeof(hb::net::PacketHeader), payload, payloadLen);
-		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(payloadLen + 8));
+
+		pktHeader->itemCount = entriesInPacket;
+		size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
 		switch (iRet) {
 		case DEF_XSOCKEVENT_QUENEFULL:
 		case DEF_XSOCKEVENT_SOCKETERROR:
 		case DEF_XSOCKEVENT_CRITICALERROR:
 		case DEF_XSOCKEVENT_SOCKETCLOSED:
 			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send item configs: Client(%d) Payload(%zu)",
-				iClientH, payloadLen);
+				"Failed to send item configs: Client(%d) Packet(%d)",
+				iClientH, packetIndex);
 			PutLogList(G_cTxt);
 			DeleteClient(iClientH, true, true);
 			delete m_pClientList[iClientH];
 			m_pClientList[iClientH] = 0;
 			return false;
-		default:
-			chunkCount++;
-			return true;
-		}
-		};
-
-	std::string chunk;
-	chunk.reserve(maxPayload);
-	chunk.append(header);
-
-	char line[256] = {};
-	int itemCount = 0;
-	for (int i = 0; i < DEF_MAXITEMTYPES; i++) {
-		if (m_pItemConfigList[i] == 0) {
-			continue;
-		}
-		itemCount++;
-		const class CItem* item = m_pItemConfigList[i];
-		int price = static_cast<int>(item->m_wPrice);
-		if (!item->m_bIsForSale) {
-			price = -price;
 		}
 
-		std::snprintf(line, sizeof(line),
-			"Item = %d %s %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d\n",
-			item->m_sIDnum,
-			item->m_cName,
-			item->m_cItemType,
-			item->m_cEquipPos,
-			item->m_sItemEffectType,
-			item->m_sItemEffectValue1,
-			item->m_sItemEffectValue2,
-			item->m_sItemEffectValue3,
-			item->m_sItemEffectValue4,
-			item->m_sItemEffectValue5,
-			item->m_sItemEffectValue6,
-			item->m_wMaxLifeSpan,
-			item->m_sSpecialEffect,
-			item->m_sSprite,
-			item->m_sSpriteFrame,
-			price,
-			item->m_wWeight,
-			item->m_cApprValue,
-			item->m_cSpeed,
-			item->m_sLevelLimit,
-			item->m_cGenderLimit,
-			item->m_sSpecialEffectValue1,
-			item->m_sSpecialEffectValue2,
-			item->m_sRelatedSkill,
-			item->m_cCategory,
-			item->m_cItemColor);
-
-		size_t lineLen = std::strlen(line);
-		if (chunk.size() + lineLen + footerLen > maxPayload) {
-			chunk.append(footer);
-			if (!sendPayload(chunk.c_str(), chunk.size())) {
-				return false;
-			}
-			chunk.clear();
-			chunk.append(header);
-		}
-		chunk.append(line, lineLen);
+		itemsSent += entriesInPacket;
+		packetIndex++;
 	}
-
-	if (chunk.size() > headerLen) {
-		chunk.append(footer);
-		if (!sendPayload(chunk.c_str(), chunk.size())) {
-			return false;
-		}
-	}
-
 
 	return true;
 }
@@ -4697,7 +4709,7 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 			delete m_pClientList[iClientH]->m_pItemList[item.slot];
 		}
 		m_pClientList[iClientH]->m_pItemList[item.slot] = new class CItem;
-		if (_bInitItemAttr(m_pClientList[iClientH]->m_pItemList[item.slot], item.itemName) == false) {
+		if (_bInitItemAttr(m_pClientList[iClientH]->m_pItemList[item.slot], item.itemId) == false) {
 			delete m_pClientList[iClientH]->m_pItemList[item.slot];
 			m_pClientList[iClientH]->m_pItemList[item.slot] = 0;
 			continue;
@@ -4734,7 +4746,7 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 			delete m_pClientList[iClientH]->m_pItemInBankList[item.slot];
 		}
 		m_pClientList[iClientH]->m_pItemInBankList[item.slot] = new class CItem;
-		if (_bInitItemAttr(m_pClientList[iClientH]->m_pItemInBankList[item.slot], item.itemName) == false) {
+		if (_bInitItemAttr(m_pClientList[iClientH]->m_pItemInBankList[item.slot], item.itemId) == false) {
 			delete m_pClientList[iClientH]->m_pItemInBankList[item.slot];
 			m_pClientList[iClientH]->m_pItemInBankList[item.slot] = 0;
 			continue;
@@ -5064,17 +5076,36 @@ void CGame::_ClearItemConfigList()
 
 
 
+// Helper function to normalize item name for comparison (removes spaces and underscores)
+static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
+{
+	size_t j = 0;
+	for (size_t i = 0; src[i] && j < dstSize - 1; ++i) {
+		if (src[i] != ' ' && src[i] != '_') {
+			dst[j++] = src[i];
+		}
+	}
+	dst[j] = '\0';
+}
+
 bool CGame::_bInitItemAttr(class CItem* pItem, const char* pItemName)
 {
 	int i;
 	char cTmpName[21];
+	char cNormalizedInput[21];
+	char cNormalizedConfig[21];
 
 	std::memset(cTmpName, 0, sizeof(cTmpName));
 	strcpy(cTmpName, pItemName);
 
+	// Normalize the input name for comparison (client may send "MagicStaff" while DB has "Magic Staff")
+	NormalizeItemName(cTmpName, cNormalizedInput, sizeof(cNormalizedInput));
+
 	for (i = 0; i < DEF_MAXITEMTYPES; i++)
 		if (m_pItemConfigList[i] != 0) {
-			if (memcmp(cTmpName, m_pItemConfigList[i]->m_cName, 20) == 0) {
+			// Normalize the config name for comparison
+			NormalizeItemName(m_pItemConfigList[i]->m_cName, cNormalizedConfig, sizeof(cNormalizedConfig));
+			if (_stricmp(cNormalizedInput, cNormalizedConfig) == 0) {
 				std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
 				strcpy(pItem->m_cName, m_pItemConfigList[i]->m_cName);
 				pItem->m_cItemType = m_pItemConfigList[i]->m_cItemType;
@@ -5116,6 +5147,45 @@ bool CGame::_bInitItemAttr(class CItem* pItem, const char* pItemName)
 	return false;
 }
 
+bool CGame::_bInitItemAttr(class CItem* pItem, int iItemID)
+{
+	if (iItemID < 0 || iItemID >= DEF_MAXITEMTYPES) return false;
+	if (m_pItemConfigList[iItemID] == nullptr) return false;
+
+	CItem* pConfig = m_pItemConfigList[iItemID];
+
+	std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
+	strcpy(pItem->m_cName, pConfig->m_cName);
+	pItem->m_cItemType = pConfig->m_cItemType;
+	pItem->m_cEquipPos = pConfig->m_cEquipPos;
+	pItem->m_sItemEffectType = pConfig->m_sItemEffectType;
+	pItem->m_sItemEffectValue1 = pConfig->m_sItemEffectValue1;
+	pItem->m_sItemEffectValue2 = pConfig->m_sItemEffectValue2;
+	pItem->m_sItemEffectValue3 = pConfig->m_sItemEffectValue3;
+	pItem->m_sItemEffectValue4 = pConfig->m_sItemEffectValue4;
+	pItem->m_sItemEffectValue5 = pConfig->m_sItemEffectValue5;
+	pItem->m_sItemEffectValue6 = pConfig->m_sItemEffectValue6;
+	pItem->m_wMaxLifeSpan = pConfig->m_wMaxLifeSpan;
+	pItem->m_wCurLifeSpan = pItem->m_wMaxLifeSpan;
+	pItem->m_sSpecialEffect = pConfig->m_sSpecialEffect;
+	pItem->m_sSprite = pConfig->m_sSprite;
+	pItem->m_sSpriteFrame = pConfig->m_sSpriteFrame;
+	pItem->m_wPrice = pConfig->m_wPrice;
+	pItem->m_wWeight = pConfig->m_wWeight;
+	pItem->m_cApprValue = pConfig->m_cApprValue;
+	pItem->m_cSpeed = pConfig->m_cSpeed;
+	pItem->m_sLevelLimit = pConfig->m_sLevelLimit;
+	pItem->m_cGenderLimit = pConfig->m_cGenderLimit;
+	pItem->m_sSpecialEffectValue1 = pConfig->m_sSpecialEffectValue1;
+	pItem->m_sSpecialEffectValue2 = pConfig->m_sSpecialEffectValue2;
+	pItem->m_sRelatedSkill = pConfig->m_sRelatedSkill;
+	pItem->m_cCategory = pConfig->m_cCategory;
+	pItem->m_sIDnum = pConfig->m_sIDnum;
+	pItem->m_bIsForSale = pConfig->m_bIsForSale;
+	pItem->m_cItemColor = pConfig->m_cItemColor;
+
+	return true;
+}
 
 bool CGame::_bGetIsStringIsNumber(char* pStr)
 {
@@ -6438,6 +6508,10 @@ void CGame::MsgProcess()
 				}
 				break;
 
+			case MSGID_REQUEST_SHOP_CONTENTS:
+				RequestShopContentsHandler(iClientH, pData);
+				break;
+
 			default:
 				if (m_pClientList[iClientH] != 0)  // Snoopy: Anti-crash check !
 				{
@@ -6865,7 +6939,7 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 
 	case DEF_COMMONTYPE_REQ_PURCHASEITEM:
 		//DbgWnd->AddEventMsg("RECV -> DEF_MSGFROM_CLIENT -> MSGID_COMMAND_COMMON -> DEF_COMMONTYPE_REQ_PURCHASEITEM");
-		RequestPurchaseItemHandler(iClientH, pString, iV1);
+		RequestPurchaseItemHandler(iClientH, pString, iV1, iV2);
 		break;
 
 	case DEF_COMMONTYPE_REQ_STUDYMAGIC:
@@ -8006,7 +8080,7 @@ void CGame::ResponseDisbandGuildHandler(char* pData, int iType)
 }
 
 // 05/29/2004 - Hypnotoad - Purchase Dicount updated to take charisma into consideration
-void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int iNum)
+void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int iNum, int iItemId)
 {
 	class CItem* pItem;
 	char cItemName[21];
@@ -8018,7 +8092,7 @@ void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int 
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
-	// ¸¸¾à ¾ÆÀÌÅÛÀ» ±¸ÀÔÇÏ°íÀÚ ÇÏ´Â °÷ÀÌ ÀÚ½ÅÀÇ ¸¶À»ÀÌ ¾Æ´Ï¶ó¸é ±¸ÀÔÇÒ ¼ö ¾ø´Ù. 
+	// ¸¸¾à ¾ÆÀÌÅÛÀ» ±¸ÀÔÇÏ°íÀÚ ÇÏ´Â °÷ÀÌ ÀÚ½ÅÀÇ ¸¶À»ÀÌ ¾Æ´Ï¶ó¸é ±¸ÀÔÇÒ ¼ö ¾ø´Ù.
 	//if ( (memcmp(m_pClientList[iClientH]->m_cLocation, "NONE", 4) != 0) &&
 	//	 (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, m_pClientList[iClientH]->m_cLocation, 10) != 0) ) return;
 
@@ -8041,30 +8115,46 @@ void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int 
 	}
 
 
-	// ¾ÆÀÌÅÛÀ» ±¸ÀÔÇÑ´Ù. 
+	// ¾ÆÀÌÅÛÀ» ±¸ÀÔÇÑ´Ù.
 	std::memset(cItemName, 0, sizeof(cItemName));
 
 	// New 18/05/2004
 	if (m_pClientList[iClientH]->m_pIsProcessingAllowed == false) return;
 
-	// ÀÓ½ÃÄÚµå´Ù. 
-	if (memcmp(pItemName, "10Arrows", 8) == 0) {
-		strcpy(cItemName, "Arrow");
+	// Determine item ID and count
+	// Priority: 1) iItemId parameter (from client), 2) special item names, 3) name lookup
+	short sItemID = 0;
+	dwItemCount = 1;
+
+	// If client sent a valid item ID, use it directly
+	if (iItemId > 0 && iItemId < DEF_MAXITEMTYPES) {
+		sItemID = static_cast<short>(iItemId);
+	}
+	// Handle special item requests by converting internal names to item IDs
+	else if (memcmp(pItemName, "10Arrows", 8) == 0) {
+		sItemID = hb::item::ItemId::Arrow;
 		dwItemCount = 10;
 	}
 	else if (memcmp(pItemName, "100Arrows", 9) == 0) {
-		strcpy(cItemName, "Arrow");
+		sItemID = hb::item::ItemId::Arrow;
 		dwItemCount = 100;
 	}
+	else if (memcmp(pItemName, "GuildAdmissionTicket", 20) == 0) {
+		sItemID = hb::item::ItemId::GuildAdmissionTicket;
+	}
+	else if (memcmp(pItemName, "GuildSecessionTicket", 20) == 0) {
+		sItemID = hb::item::ItemId::GuildSecessionTicket;
+	}
 	else {
+		// Fall back to name-based lookup
 		memcpy(cItemName, pItemName, 20);
-		dwItemCount = 1;
 	}
 
 	for (i = 1; i <= iNum; i++) {
 
 		pItem = new class CItem;
-		if (_bInitItemAttr(pItem, cItemName) == false) {
+		bool bInitOk = (sItemID > 0) ? _bInitItemAttr(pItem, sItemID) : _bInitItemAttr(pItem, cItemName);
+		if (bInitOk == false) {
 			delete pItem;
 		}
 		else {
@@ -8079,7 +8169,7 @@ void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int 
 			iCost = pItem->m_wPrice * pItem->m_dwCount;
 
 
-			dwGoldCount = dwGetItemCount(iClientH, "Gold");
+			dwGoldCount = dwGetItemCountByID(iClientH, hb::item::ItemId::Gold);
 
 			iDiscountRatio = ((m_pClientList[iClientH]->m_iCharisma - 10) / 4);
 
@@ -8128,7 +8218,7 @@ void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int 
 				if (iEraseReq == 1) delete pItem;
 
 				// GoldÀÇ ¼ö·®À» °¨¼Ò½ÃÅ²´Ù. ¹Ýµå½Ã ¿©±â¼­ ¼¼ÆÃÇØ¾ß ¼ø¼­°¡ ¹Ù²îÁö ¾Ê´Â´Ù.
-				iGoldWeight = SetItemCount(iClientH, "Gold", dwGoldCount - wTempPrice);
+				iGoldWeight = SetItemCountByID(iClientH, hb::item::ItemId::Gold, dwGoldCount - wTempPrice);
 				// ¼ÒÁöÇ° ÃÑ Áß·® Àç °è»ê 
 				iCalcTotalWeight(iClientH);
 
@@ -10455,6 +10545,45 @@ int CGame::SetItemCount(int iClientH, int iItemIndex, uint32_t dwCount)
 	}
 
 	return wWeight;
+}
+
+uint32_t CGame::dwGetItemCountByID(int iClientH, short sItemID)
+{
+	if (m_pClientList[iClientH] == nullptr) return 0;
+
+	for (int i = 0; i < DEF_MAXITEMS; i++) {
+		if (m_pClientList[iClientH]->m_pItemList[i] != nullptr &&
+		    m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum == sItemID) {
+			return m_pClientList[iClientH]->m_pItemList[i]->m_dwCount;
+		}
+	}
+
+	return 0;
+}
+
+int CGame::SetItemCountByID(int iClientH, short sItemID, uint32_t dwCount)
+{
+	if (m_pClientList[iClientH] == nullptr) return -1;
+
+	for (int i = 0; i < DEF_MAXITEMS; i++) {
+		if (m_pClientList[iClientH]->m_pItemList[i] != nullptr &&
+		    m_pClientList[iClientH]->m_pItemList[i]->m_sIDnum == sItemID) {
+
+			uint16_t wWeight = iGetItemWeight(m_pClientList[iClientH]->m_pItemList[i], 1);
+
+			if (dwCount == 0) {
+				ItemDepleteHandler(iClientH, i, false);
+			}
+			else {
+				m_pClientList[iClientH]->m_pItemList[i]->m_dwCount = dwCount;
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_SETITEMCOUNT, i, dwCount, (char)true, 0);
+			}
+
+			return wWeight;
+		}
+	}
+
+	return -1;
 }
 
 void CGame::ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage)
@@ -14731,7 +14860,7 @@ void CGame::RequestStudyMagicHandler(int iClientH, const char* pName, bool bIsPu
 	else {
 		if (bIsPurchase) {
 			if (m_pMagicConfigList[iRet]->m_iGoldCost < 0) bMagic = false; // �Ϲ������� ���� ���� �����̶��(������ ����) ��� �� ����.
-			dwGoldCount = dwGetItemCount(iClientH, "Gold");
+			dwGoldCount = dwGetItemCountByID(iClientH, hb::item::ItemId::Gold);
 			if ((uint32_t)iCost > dwGoldCount)  bMagic = false; // ���� �����ص� ��� �� ����.
 		}
 		//wizard remove
@@ -14741,7 +14870,7 @@ void CGame::RequestStudyMagicHandler(int iClientH, const char* pName, bool bIsPu
 		if ((iReqInt <= (m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iAngelicInt)) && (bMagic)) {
 
 			// ���� ��������� �˸���.
-			if (bIsPurchase) SetItemCount(iClientH, "Gold", dwGoldCount - iCost);
+			if (bIsPurchase) SetItemCountByID(iClientH, hb::item::ItemId::Gold, dwGoldCount - iCost);
 
 			// ����ǰ �� �߷� �� ��� 
 			iCalcTotalWeight(iClientH);
@@ -17067,13 +17196,12 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize
 {
 	int iTotalSetting = 0;
 
-	short cStr, cVit, cDex, cInt, cMag, cChar;
+	uint16_t cStr, cVit, cDex, cInt, cMag, cChar;
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if (m_pClientList[iClientH]->m_iLU_Pool <= 0)
 	{
-		//ÇØÄ¿ÀÎ°¡??
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_SETTING_FAILED, 0, 0, 0, 0);
 		return;
 	}
@@ -17088,33 +17216,29 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize
 	cMag = req->mag;
 	cChar = req->chr;
 
-	//	if(m_pClientList[iClientH]->m_iLU_Pool < 3) {
-	//		m_pClientList[iClientH]->m_iLU_Pool = 3;
-	//	}
-
-
-	if ((cStr + cVit + cDex + cInt + cMag + cChar) > m_pClientList[iClientH]->m_iLU_Pool) { // -3
+	if ((cStr + cVit + cDex + cInt + cMag + cChar) > m_pClientList[iClientH]->m_iLU_Pool)
+	{
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_SETTING_FAILED, 0, 0, 0, 0);
 		return;
 	}
 
-	// Level-Up Setting°ª¿¡ ¿À·ù°¡ ÀÖ´ÂÁö °Ë»çÇÑ´Ù.
-	if ((m_pClientList[iClientH]->m_iStr + cStr > DEF_CHARPOINTLIMIT) || (cStr < 0))
+	// Check if adding points would exceed the stat limit
+	if (m_pClientList[iClientH]->m_iStr + cStr > DEF_CHARPOINTLIMIT)
 		return;
 
-	if ((m_pClientList[iClientH]->m_iDex + cDex > DEF_CHARPOINTLIMIT) || (cDex < 0))
+	if (m_pClientList[iClientH]->m_iDex + cDex > DEF_CHARPOINTLIMIT)
 		return;
 
-	if ((m_pClientList[iClientH]->m_iInt + cInt > DEF_CHARPOINTLIMIT) || (cInt < 0))
+	if (m_pClientList[iClientH]->m_iInt + cInt > DEF_CHARPOINTLIMIT)
 		return;
 
-	if ((m_pClientList[iClientH]->m_iVit + cVit > DEF_CHARPOINTLIMIT) || (cVit < 0))
+	if (m_pClientList[iClientH]->m_iVit + cVit > DEF_CHARPOINTLIMIT)
 		return;
 
-	if ((m_pClientList[iClientH]->m_iMag + cMag > DEF_CHARPOINTLIMIT) || (cMag < 0))
+	if (m_pClientList[iClientH]->m_iMag + cMag > DEF_CHARPOINTLIMIT)
 		return;
 
-	if ((m_pClientList[iClientH]->m_iCharisma + cChar > DEF_CHARPOINTLIMIT) || (cChar < 0))
+	if (m_pClientList[iClientH]->m_iCharisma + cChar > DEF_CHARPOINTLIMIT)
 		return;
 
 	iTotalSetting = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iDex + m_pClientList[iClientH]->m_iVit +
@@ -17172,7 +17296,7 @@ void CGame::FightzoneReserveHandler(int iClientH, char* pData, uint32_t dwMsgSiz
 	// ¿¹¾à °¡´ÉÇÑ ½Ã°£ : µÎ½Ã°£ °£°ÝÀ¸·Î ¿¹¾àÀÌ °¡´ÉÇÏ¸ç »ç¿ë¿Ï·á 5ºÐÀü¿¡´Â ¿¹¾àÀÌ ºÒ°¡´ÉÇÏ´Ù.
 	iEnableReserveTime = 2 * 20 * 60 - ((SysTime.wHour % 2) * 20 * 60 + SysTime.wMinute * 20) - 5 * 20;
 
-	dwGoldCount = dwGetItemCount(iClientH, "Gold");
+	dwGoldCount = dwGetItemCountByID(iClientH, hb::item::ItemId::Gold);
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestFightzoneReserve>(
 		pData, sizeof(hb::net::PacketRequestFightzoneReserve));
@@ -17224,7 +17348,7 @@ void CGame::FightzoneReserveHandler(int iClientH, char* pData, uint32_t dwMsgSiz
 		wResult = DEF_MSGTYPE_CONFIRM;
 
 		// »çÅõÀå ¿¹¾àÀ» À§ÇÑ ±Ý¾×À» °¨¼Ò ½ÃÅ²´Ù.
-		SetItemCount(iClientH, "Gold", dwGoldCount - 1500);
+		SetItemCountByID(iClientH, hb::item::ItemId::Gold, dwGoldCount - 1500);
 		iCalcTotalWeight(iClientH);
 
 		// »çÅõÀåÀ» ¿¹¾àÇÑ Å¬¶óÀÌ¾ðÆ®ÀÇ ID¸¦ ³Ö´Â´Ù.
@@ -17553,6 +17677,8 @@ bool CGame::bSetItemToBankItem(int iClientH, short sItemIndex)
 				pkt.item_effect_value2 = pItem->m_sItemEffectValue2;
 				pkt.attribute = pItem->m_dwAttribute;
 				pkt.spec_effect_value2 = static_cast<uint8_t>(pItem->m_sItemSpecEffectValue2);
+				pkt.item_id = pItem->m_sIDnum;
+				pkt.max_lifespan = pItem->m_wMaxLifeSpan;
 				iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			switch (iRet) {
@@ -18055,7 +18181,6 @@ void CGame::GetRewardMoneyHandler(int iClientH)
 {
 	int iRet, iEraseReq, iWeightLeft;
 	uint32_t iRewardGoldLeft;
-	char cItemName[21];
 	class CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -18071,9 +18196,7 @@ void CGame::GetRewardMoneyHandler(int iClientH)
 	if (iWeightLeft <= 0) return;
 
 	pItem = new class CItem;
-	std::memset(cItemName, 0, sizeof(cItemName));
-	std::snprintf(cItemName, sizeof(cItemName), "Gold");
-	_bInitItemAttr(pItem, cItemName);
+	_bInitItemAttr(pItem, hb::item::ItemId::Gold);
 	//pItem->m_dwCount = m_pClientList[iClientH]->m_iRewardGold;
 
 	// (iWeightLeft / pItem->m_wWeight)°¡ ÃÖ´ë ¹ÞÀ» ¼ö ÀÖ´Â Gold°¹¼ö. °®°íÀÖ´Â Æ÷»ó±Ý°ú ºñ±³ÇÑ´Ù. 
@@ -20405,6 +20528,8 @@ bool CGame::bSetItemToBankItem(int iClientH, class CItem* pItem)
 				pkt.item_effect_value2 = pItem->m_sItemEffectValue2;
 				pkt.attribute = pItem->m_dwAttribute;
 				pkt.spec_effect_value2 = static_cast<uint8_t>(pItem->m_sItemSpecEffectValue2);
+				pkt.item_id = pItem->m_sIDnum;
+				pkt.max_lifespan = pItem->m_wMaxLifeSpan;
 				iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			switch (iRet) {
@@ -21559,7 +21684,7 @@ void CGame::UseSkillHandler(int iClientH, int iV1, int iV2, int iV3)
 
 void CGame::ReqSellItemHandler(int iClientH, char cItemID, char cSellToWhom, int iNum, const char* pItemName)
 {
-	char cItemCategory, cItemName[21];
+	char cItemCategory;
 	short sRemainLife;
 	int   iPrice;
 	double d1, d2, d3;
@@ -21578,9 +21703,7 @@ void CGame::ReqSellItemHandler(int iClientH, char cItemID, char cSellToWhom, int
 	iCalcTotalWeight(iClientH);
 
 	m_pGold = new class CItem;
-	std::memset(cItemName, 0, sizeof(cItemName));
-	std::snprintf(cItemName, sizeof(cItemName), "Gold");
-	_bInitItemAttr(m_pGold, cItemName);
+	_bInitItemAttr(m_pGold, hb::item::ItemId::Gold);
 
 	// v1.42
 	bNeutral = false;
@@ -21748,7 +21871,7 @@ void CGame::ReqSellItemConfirmHandler(int iClientH, char cItemID, int iNum, cons
 	short sRemainLife;
 	int   iPrice;
 	double d1, d2, d3;
-	char cItemName[21], cItemCategory;
+	char cItemCategory;
 	uint32_t dwMul1, dwMul2, dwSWEType, dwSWEValue, dwAddPrice1, dwAddPrice2;
 	int    iEraseReq, iRet;
 	bool   bNeutral;
@@ -21937,10 +22060,7 @@ void CGame::ReqSellItemConfirmHandler(int iClientH, char cItemID, int iNum, cons
 	if (iPrice <= 0) return;
 
 	pItemGold = new class CItem;
-	std::memset(cItemName, 0, sizeof(cItemName));
-	std::snprintf(cItemName, sizeof(cItemName), "Gold");
-	_bInitItemAttr(pItemGold, cItemName);
-
+	_bInitItemAttr(pItemGold, hb::item::ItemId::Gold);
 	pItemGold->m_dwCount = iPrice;
 
 	if (_bAddClientItemList(iClientH, pItemGold, &iEraseReq)) {
@@ -22117,7 +22237,7 @@ void CGame::ReqRepairItemCofirmHandler(int iClientH, char cItemID, const char* p
 		}
 
 		// sPrice¸¸Å­ÀÇ µ·ÀÌ µÇ¸é °íÄ¥ ¼ö ÀÖÀ¸³ª ºÎÁ·ÇÏ¸é °íÄ¥ ¼ö ¾ø´Ù. 
-		dwGoldCount = dwGetItemCount(iClientH, "Gold");
+		dwGoldCount = dwGetItemCountByID(iClientH, hb::item::ItemId::Gold);
 
 		if (dwGoldCount < (uint32_t)sPrice) {
 			// ÇÃ·¹ÀÌ¾î°¡ °®°íÀÖ´Â Gold°¡ ¾ÆÀÌÅÛ ¼ö¸® ºñ¿ë¿¡ ºñÇØ Àû´Ù. °íÄ¥ ¼ö ¾øÀ½.
@@ -22146,7 +22266,7 @@ void CGame::ReqRepairItemCofirmHandler(int iClientH, char cItemID, const char* p
 			m_pClientList[iClientH]->m_pItemList[cItemID]->m_wCurLifeSpan = m_pClientList[iClientH]->m_pItemList[cItemID]->m_wMaxLifeSpan;
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_ITEMREPAIRED, cItemID, m_pClientList[iClientH]->m_pItemList[cItemID]->m_wCurLifeSpan, 0, 0);
 
-			iGoldWeight = SetItemCount(iClientH, "Gold", dwGoldCount - sPrice);
+			iGoldWeight = SetItemCountByID(iClientH, hb::item::ItemId::Gold, dwGoldCount - sPrice);
 
 			// ¼ÒÁöÇ° ÃÑ Áß·® Àç °è»ê 
 			iCalcTotalWeight(iClientH);
@@ -23879,7 +23999,7 @@ void CGame::CalcExpStock(int iClientH)
 	if ((bIsLevelUp) && (m_pClientList[iClientH]->m_iLevel <= 5)) {
 		// ÃÊº¸¿ë Gold Áö±Þ. ·¹º§ 1~5±îÁö 100 Gold Áö±Þ.
 		pItem = new class CItem;
-		if (_bInitItemAttr(pItem, "Gold") == false) {
+		if (_bInitItemAttr(pItem, hb::item::ItemId::Gold) == false) {
 			delete pItem;
 			return;
 		}
@@ -23891,7 +24011,7 @@ void CGame::CalcExpStock(int iClientH)
 	if ((bIsLevelUp) && (m_pClientList[iClientH]->m_iLevel > 5) && (m_pClientList[iClientH]->m_iLevel <= 20)) {
 		// ÃÊº¸¿ë Gold Áö±Þ. ·¹º§ 5~20±îÁö 300 Gold Áö±Þ.
 		pItem = new class CItem;
-		if (_bInitItemAttr(pItem, "Gold") == false) {
+		if (_bInitItemAttr(pItem, hb::item::ItemId::Gold) == false) {
 			delete pItem;
 			return;
 		}
@@ -27674,6 +27794,8 @@ int CGame::SendItemNotifyMsg(int iClientH, uint16_t wMsgType, CItem* pItem, int 
 		pkt.item_color = pItem->m_cItemColor;
 		pkt.spec_value2 = static_cast<uint8_t>(pItem->m_sItemSpecEffectValue2);
 		pkt.attribute = pItem->m_dwAttribute;
+		pkt.item_id = pItem->m_sIDnum;
+		pkt.max_lifespan = pItem->m_wMaxLifeSpan;
 		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -27697,6 +27819,8 @@ int CGame::SendItemNotifyMsg(int iClientH, uint16_t wMsgType, CItem* pItem, int 
 		pkt.sprite_frame = pItem->m_sSpriteFrame;
 		pkt.item_color = pItem->m_cItemColor;
 		pkt.cost = static_cast<uint16_t>(iV1);
+		pkt.item_id = pItem->m_sIDnum;
+		pkt.max_lifespan = pItem->m_wMaxLifeSpan;
 		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -28807,8 +28931,75 @@ void CGame::RequestSellItemListHandler(int iClientH, char* pData)
 	}
 }
 
+void CGame::RequestShopContentsHandler(int iClientH, char* pData)
+{
+	if (m_pClientList[iClientH] == 0) return;
+	if (!m_bIsShopDataAvailable) {
+		// No shop data configured
+		return;
+	}
 
+	const auto* req = hb::net::PacketCast<hb::net::PacketShopRequest>(pData, sizeof(hb::net::PacketShopRequest));
+	if (!req) return;
 
+	int16_t npcType = req->npcType;
+
+	// Look up shop ID for this NPC type
+	auto mappingIt = m_NpcShopMappings.find(static_cast<int>(npcType));
+	if (mappingIt == m_NpcShopMappings.end()) {
+		// No shop configured for this NPC type
+		char logMsg[128];
+		std::snprintf(logMsg, sizeof(logMsg), "(!) Shop request for NPC type %d - no shop mapping found", npcType);
+		PutLogList(logMsg);
+		return;
+	}
+
+	int shopId = mappingIt->second;
+
+	// Get shop data
+	auto shopIt = m_ShopData.find(shopId);
+	if (shopIt == m_ShopData.end() || shopIt->second.itemIds.empty()) {
+		// Shop exists in mapping but has no items
+		char logMsg[128];
+		std::snprintf(logMsg, sizeof(logMsg), "(!) Shop request for NPC type %d, shop %d - no items found", npcType, shopId);
+		PutLogList(logMsg);
+		return;
+	}
+
+	const ShopData& shop = shopIt->second;
+	uint16_t itemCount = static_cast<uint16_t>(shop.itemIds.size());
+	if (itemCount > hb::net::MAX_SHOP_ITEMS) {
+		itemCount = hb::net::MAX_SHOP_ITEMS;
+	}
+
+	// Build response packet
+	// Header + array of int16_t item IDs
+	size_t packetSize = sizeof(hb::net::PacketShopResponseHeader) + (itemCount * sizeof(int16_t));
+	char* cData = new char[packetSize];
+	std::memset(cData, 0, packetSize);
+
+	auto* resp = reinterpret_cast<hb::net::PacketShopResponseHeader*>(cData);
+	resp->header.msg_id = MSGID_RESPONSE_SHOP_CONTENTS;
+	resp->header.msg_type = DEF_MSGTYPE_CONFIRM;
+	resp->npcType = npcType;
+	resp->shopId = static_cast<int16_t>(shopId);
+	resp->itemCount = itemCount;
+
+	// Copy item IDs after header
+	int16_t* itemIds = reinterpret_cast<int16_t*>(cData + sizeof(hb::net::PacketShopResponseHeader));
+	for (uint16_t i = 0; i < itemCount; i++) {
+		itemIds[i] = shop.itemIds[i];
+	}
+
+	// Send to client
+	m_pClientList[iClientH]->m_pXSock->iSendMsg(cData, static_cast<uint32_t>(packetSize));
+
+	char logMsg[128];
+	std::snprintf(logMsg, sizeof(logMsg), "(!) Sent shop contents: NPC type %d, shop %d, %d items", npcType, shopId, itemCount);
+	PutLogList(logMsg);
+
+	delete[] cData;
+}
 
 void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 {
@@ -32290,55 +32481,6 @@ int CGame::iGetPlayerABSStatus(int iClientH)
 		iRet = iRet | 1;
 
 	return iRet;
-}
-
-//Init item based in its ID
-bool CGame::_bInitItemAttr(class CItem* pItem, int iItemID)
-{
-	int i;
-
-	for (i = 0; i < DEF_MAXITEMTYPES; i++)
-		if (m_pItemConfigList[i] != 0) {
-			if (m_pItemConfigList[i]->m_sIDnum == iItemID) {
-				// °°Àº ÀÌ¸§À» °¡Áø ¾ÆÀÌÅÛ ¼³Á¤À» Ã£¾Ò´Ù. ¼³Á¤°ªÀ» º¹»çÇÑ´Ù.
-				std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
-				strcpy(pItem->m_cName, m_pItemConfigList[i]->m_cName);
-				pItem->m_cItemType = m_pItemConfigList[i]->m_cItemType;
-				pItem->m_cEquipPos = m_pItemConfigList[i]->m_cEquipPos;
-				pItem->m_sItemEffectType = m_pItemConfigList[i]->m_sItemEffectType;
-				pItem->m_sItemEffectValue1 = m_pItemConfigList[i]->m_sItemEffectValue1;
-				pItem->m_sItemEffectValue2 = m_pItemConfigList[i]->m_sItemEffectValue2;
-				pItem->m_sItemEffectValue3 = m_pItemConfigList[i]->m_sItemEffectValue3;
-				pItem->m_sItemEffectValue4 = m_pItemConfigList[i]->m_sItemEffectValue4;
-				pItem->m_sItemEffectValue5 = m_pItemConfigList[i]->m_sItemEffectValue5;
-				pItem->m_sItemEffectValue6 = m_pItemConfigList[i]->m_sItemEffectValue6;
-				pItem->m_wMaxLifeSpan = m_pItemConfigList[i]->m_wMaxLifeSpan;
-				pItem->m_wCurLifeSpan = pItem->m_wMaxLifeSpan;
-				pItem->m_sSpecialEffect = m_pItemConfigList[i]->m_sSpecialEffect;
-
-				pItem->m_sSprite = m_pItemConfigList[i]->m_sSprite;
-				pItem->m_sSpriteFrame = m_pItemConfigList[i]->m_sSpriteFrame;
-				pItem->m_wPrice = m_pItemConfigList[i]->m_wPrice;
-				pItem->m_wWeight = m_pItemConfigList[i]->m_wWeight;
-				pItem->m_cApprValue = m_pItemConfigList[i]->m_cApprValue;
-				pItem->m_cSpeed = m_pItemConfigList[i]->m_cSpeed;
-				pItem->m_sLevelLimit = m_pItemConfigList[i]->m_sLevelLimit;
-				pItem->m_cGenderLimit = m_pItemConfigList[i]->m_cGenderLimit;
-
-				pItem->m_sSpecialEffectValue1 = m_pItemConfigList[i]->m_sSpecialEffectValue1;
-				pItem->m_sSpecialEffectValue2 = m_pItemConfigList[i]->m_sSpecialEffectValue2;
-
-				pItem->m_sRelatedSkill = m_pItemConfigList[i]->m_sRelatedSkill;
-				pItem->m_cCategory = m_pItemConfigList[i]->m_cCategory;
-				pItem->m_sIDnum = m_pItemConfigList[i]->m_sIDnum;
-
-				pItem->m_bIsForSale = m_pItemConfigList[i]->m_bIsForSale;
-				pItem->m_cItemColor = m_pItemConfigList[i]->m_cItemColor;
-
-				return true;
-			}
-		}
-	return false;
 }
 
 // New 16/05/2004
@@ -40021,7 +40163,7 @@ void CGame::RequestRepairAllItemsConfirmHandler(int iClientH)
 		totalPrice += m_pClientList[iClientH]->m_stRepairAll[i].price;
 	}
 
-	if (dwGetItemCount(iClientH, "Gold") < (uint32_t)totalPrice)
+	if (dwGetItemCountByID(iClientH, hb::item::ItemId::Gold) < (uint32_t)totalPrice)
 	{
 		{
 			hb::net::PacketNotifyNotEnoughGold pkt{};
@@ -40049,6 +40191,6 @@ void CGame::RequestRepairAllItemsConfirmHandler(int iClientH)
 				SendNotifyMsg(0, iClientH, DEF_NOTIFY_ITEMREPAIRED, m_pClientList[iClientH]->m_stRepairAll[i].index, m_pClientList[iClientH]->m_pItemList[m_pClientList[iClientH]->m_stRepairAll[i].index]->m_wCurLifeSpan, 0, 0);
 			}
 		}
-		iCalcTotalWeight(SetItemCount(iClientH, "Gold", dwGetItemCount(iClientH, "Gold") - totalPrice));
+		iCalcTotalWeight(SetItemCountByID(iClientH, hb::item::ItemId::Gold, dwGetItemCountByID(iClientH, hb::item::ItemId::Gold) - totalPrice));
 	}
 }

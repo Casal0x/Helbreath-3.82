@@ -217,7 +217,7 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 		if (m_pGame->m_pDispBuildItemList[i + Info().sView] != 0) {
 
 			std::memset(cTemp, 0, sizeof(cTemp));
-			m_pGame->GetItemName(m_pGame->m_pDispBuildItemList[i + Info().sView]->m_cName, 0, cStr1, cStr2, cStr3);
+			m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[i + Info().sView]->m_cName), 0, cStr1, cStr2, cStr3);
 			wsprintf(cTemp, "%s", cStr1);
 			std::memset(cTemp2, 0, sizeof(cTemp2));
 			wsprintf(cTemp2, "%d%%", m_pGame->m_pDispBuildItemList[i + Info().sView]->m_iMaxSkill);
@@ -299,7 +299,7 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iSprFrame, dwTime);
 
 	std::memset(cTemp, 0, sizeof(cTemp));
-	m_pGame->GetItemName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName, 0, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 	wsprintf(cTemp, "%s", cStr1);
 	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));
 
@@ -324,7 +324,7 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 			case 5: elemName = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cElementName5; elemFlag = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_bElementFlag[5]; break;
 			case 6: elemName = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cElementName6; elemFlag = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_bElementFlag[6]; break;
 			}
-			m_pGame->GetItemName(elemName, 0, cStr1, cStr2, cStr3);
+			m_pGame->GetItemName(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
 			wsprintf(cTemp, "%s", cStr1);
 			if (elemFlag)
 				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(45, 25, 25));
@@ -403,7 +403,7 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 		m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iSprFrame, dwTime);
 
 	std::memset(cTemp, 0, sizeof(cTemp));
-	m_pGame->GetItemName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName, 0, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 	wsprintf(cTemp, "%s", cStr1);
 	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));
 
@@ -426,7 +426,7 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 			case 5: elemName = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cElementName5; elemFlag = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_bElementFlag[5]; break;
 			case 6: elemName = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cElementName6; elemFlag = m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_bElementFlag[6]; break;
 			}
-			m_pGame->GetItemName(elemName, 0, cStr1, cStr2, cStr3);
+			m_pGame->GetItemName(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
 			wsprintf(cTemp, "%s", cStr1);
 			if (elemFlag)
 				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(45, 25, 25));
@@ -489,7 +489,7 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 		m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iSprFrame, dwTime);
 
 	std::memset(cTemp, 0, sizeof(cTemp));
-	m_pGame->GetItemName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName, 0, cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 
 	wsprintf(cTemp, "%s", cStr1);
 	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));

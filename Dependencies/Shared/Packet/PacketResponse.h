@@ -85,6 +85,8 @@ namespace net {
 		uint8_t item_color;
 		uint8_t spec_value2;
 		uint32_t attribute;
+		int16_t item_id;           // Item ID for config lookup
+		uint16_t max_lifespan;     // Maximum durability
 	};
 
 	struct HB_PACKED PacketResponseBankItemEntry {
@@ -101,6 +103,8 @@ namespace net {
 		uint8_t item_color;
 		uint8_t spec_value2;
 		uint32_t attribute;
+		int16_t item_id;           // Item ID for config lookup
+		uint16_t max_lifespan;     // Maximum durability
 	};
 
 	struct HB_PACKED PacketResponseDynamicObject {

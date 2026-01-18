@@ -43,13 +43,12 @@ using namespace std;
 #include "ClientMessages.h"
 #include "MouseInterface.h"
 #include "CharInfo.h"
-#include "Item.h"
+#include "Item/Item.h"
 #include "Magic.h"
 #include "Skill.h"
 #include "DynamicObjectID.h"
 #include "GameMonitor.h"
 #include "BuildItem.h"
-#include "ItemName.h"
 #include "Curse.h"
 #include "DialogBoxManager.h"
 
@@ -87,7 +86,6 @@ using namespace std;
 #define DEF_MAXWHETHEROBJECTS	600
 #define DEF_MAXBUILDITEMS		100
 #define DEF_MAXGAMEMSGS			300
-#define DEF_MAXITEMNAMES		1000
 #define DEF_MAXGUILDNAMES		100
 #define DEF_MAXSELLLIST			12
 
@@ -262,7 +260,6 @@ public:
 	void ClearInputString();
 	void ShowReceivedString(bool bIsHide = false);
 	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
-	bool bReadItemNameConfigFile();
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	void DisplayCommaNumber_G_cTxt(uint32_t iGold);// Name changed by Snoopy (easyer to understand...)
 
@@ -349,8 +346,9 @@ public:
 	void _SetIlusionEffect(int iOwnerH);
 	int _iGetFOE(int iStatus);
 	void NoticementHandler(char * pData);
-	void GetItemName(char * cItemName, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
+	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
 	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
+	short FindItemIdByName(const char* cItemName);
 	void _InitOnCreateNewCharacter();
 	void _LoadGameMsgTextContents();
 	bool _bCheckCurrentBuildItemStatus();
@@ -489,8 +487,9 @@ public:
 	bool _bDraw_OnCreateNewCharacter(char * pName, short msX, short msY, int iPoint);
 	bool _bGetIsStringIsNumber(char * pStr);
 	bool bInitMagicCfgList();
-	bool __bDecodeContentsAndBuildItemForSaleList(char * pBuffer);
 	void _LoadShopMenuContents(char cType);
+	void _RequestShopContents(int16_t npcType);
+	void ResponseShopContentsHandler(char* pData);
 	void PutChatScrollList(char * pMsg, char cType);
 	void RequestTeleportAndWaitData();
 	void DrawEffectLights();
@@ -749,9 +748,9 @@ public:
 
 	class CGameMonitor * m_pCGameMonitor;
 	class CItem * m_pItemForSaleList[DEF_MAXMENUITEMS];
+	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
 	class CCharInfo * m_pCharList[4];
 	class CMsg * m_pGameMsgList[DEF_MAXGAMEMSGS];
-	class CItemName * m_pItemNameList[DEF_MAXITEMNAMES];
 	class CCurse m_curse;
 
 	char * m_pInputBuffer;
@@ -960,7 +959,7 @@ public:
 	char m_cBackupChatMsg[64];
 	char m_cGender, m_cSkinCol, m_cHairStyle, m_cHairCol, m_cUnderCol;
 	char m_ccStr, m_ccVit, m_ccDex, m_ccInt, m_ccMag, m_ccChr;
-	char m_cLU_Str, m_cLU_Vit, m_cLU_Dex, m_cLU_Int, m_cLU_Mag, m_cLU_Char;
+	uint16_t m_cLU_Str, m_cLU_Vit, m_cLU_Dex, m_cLU_Int, m_cLU_Mag, m_cLU_Char;
 
 	char m_cMagicMastery[DEF_MAXMAGICTYPE];
 	unsigned char m_cSkillMastery[DEF_MAXSKILLTYPE]; // v1.4

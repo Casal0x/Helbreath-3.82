@@ -207,8 +207,6 @@ CGame::CGame()
 
 	m_pExID = 0;
 
-	for (i = 0; i < DEF_MAXITEMNAMES; i++) m_pItemNameList[i] = 0;
-
 	m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
 	m_stMCursor.dwSelectClickTime = 0;
 
@@ -217,6 +215,7 @@ CGame::CGame()
 
 	for (i = 0; i < DEF_MAXMENUITEMS; i++)
 		m_pItemForSaleList[i] = 0;
+	m_sPendingShopType = 0;
 
 	// CLEROTh - INIT DIALOG BOXES
 
@@ -417,12 +416,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	}
 
 	bReadIp();
-
-	if (bReadItemNameConfigFile() == false)
-	{
-		MessageBox(m_hWnd, "ItemName.cfg file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
 
 	if (bInitMagicCfgList() == false) {
 		MessageBox(m_hWnd, "MAGICCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
@@ -631,9 +624,6 @@ void CGame::Quit()
 
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++)
 		if (m_pGameMsgList[i] != 0) delete m_pGameMsgList[i];
-
-	for (i = 0; i < DEF_MAXITEMNAMES; i++)
-		if (m_pItemNameList[i] != 0) delete m_pItemNameList[i];
 
 	delete m_pMapData;
 
@@ -1350,18 +1340,16 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	//m_bIsObserverMode = false;
 	break;
 	case MSGID_LEVELUPSETTINGS:
-		// CLEROTH
-		//if ((m_cLU_Str + m_cLU_Vit + m_cLU_Dex + m_cLU_Int + m_cLU_Mag + m_cLU_Char) > 3) return false;
 	{
 		hb::net::PacketRequestLevelUpSettings req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		req.str = static_cast<int16_t>(m_cLU_Str);
-		req.vit = static_cast<int16_t>(m_cLU_Vit);
-		req.dex = static_cast<int16_t>(m_cLU_Dex);
-		req.intel = static_cast<int16_t>(m_cLU_Int);
-		req.mag = static_cast<int16_t>(m_cLU_Mag);
-		req.chr = static_cast<int16_t>(m_cLU_Char);
+		req.str = m_cLU_Str;
+		req.vit = m_cLU_Vit;
+		req.dex = m_cLU_Dex;
+		req.intel = m_cLU_Int;
+		req.mag = m_cLU_Mag;
+		req.chr = m_cLU_Char;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -2341,7 +2329,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	if (sItemSelectedID != -1) {
 		char cStr1[64], cStr2[64], cStr3[64];
 		int  iLoc;
-		GetItemName(m_pItemConfigList[sItemSelectedID]->m_cName, dwItemSelectedAttr, cStr1, cStr2, cStr3);
+		GetItemName(m_pItemConfigList[sItemSelectedID], cStr1, cStr2, cStr3);
 
 		iLoc = 0;
 		if (strlen(cStr1) != 0)
@@ -2389,328 +2377,81 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 {
-	char* pContents, * token, cTxt[120];
-	char seps[] = "= \t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int  iItemConfigListIndex, iTemp;
+	// Parse binary item config packet
+	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
-	pContents = new char[dwMsgSize + 1];
-	std::memset(pContents, 0, dwMsgSize + 1);
-	memcpy(pContents, pData, dwMsgSize);
+	printf("[ITEM CONFIG] Received packet, size=%u, headerSize=%zu, entrySize=%zu\n",
+		dwMsgSize, headerSize, entrySize);
 
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		if (cReadModeA != 0) {
-			switch (cReadModeA) {
-			case 1:
-				switch (cReadModeB) {
-				case 1:
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemIDnumber");
-						delete[] pContents;
-						return false;
-					}
-					iItemConfigListIndex = atoi(token);
-
-					//testcode
-					if (iItemConfigListIndex == 490)
-						iItemConfigListIndex = atoi(token);
-
-					if (m_pItemConfigList[iItemConfigListIndex] != 0) {
-						//wsprintf(cTxt, "(!!!) CRITICAL ERROR! Duplicate ItemIDnum(%d)", iItemConfigListIndex);
-						//PutLogList(cTxt);
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex] = new class CItem;
-					m_pItemConfigList[iItemConfigListIndex]->m_sIDnum = iItemConfigListIndex;
-					cReadModeB = 2;
-					break;
-				case 2:
-					// m_cName 
-					std::memset(m_pItemConfigList[iItemConfigListIndex]->m_cName, 0, sizeof(m_pItemConfigList[iItemConfigListIndex]->m_cName));
-					memcpy(m_pItemConfigList[iItemConfigListIndex]->m_cName, token, strlen(token));
-					cReadModeB = 3;
-					break;
-				case 3:
-					// m_cItemType
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemType");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cItemType = atoi(token);
-					cReadModeB = 4;
-					break;
-				case 4:
-					// m_cEquipPos
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - EquipPos");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cEquipPos = atoi(token);
-					cReadModeB = 5;
-					break;
-				case 5:
-					// m_sItemEffectType
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectType");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectType = atoi(token);
-					cReadModeB = 6;
-					break;
-				case 6:
-					// m_sItemEffectValue1
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue1");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue1 = atoi(token);
-					cReadModeB = 7;
-					break;
-				case 7:
-					// m_sItemEffectValue2
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue2");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue2 = atoi(token);
-					cReadModeB = 8;
-					break;
-				case 8:
-					// m_sItemEffectValue3
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue3");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue3 = atoi(token);
-					cReadModeB = 9;
-					break;
-				case 9:
-					// m_sItemEffectValue4
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue4");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue4 = atoi(token);
-					cReadModeB = 10;
-					break;
-				case 10:
-					// m_sItemEffectValue5
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue5");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue5 = atoi(token);
-					cReadModeB = 11;
-					break;
-				case 11:
-					// m_sItemEffectValue6
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ItemEffectValue6");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sItemEffectValue6 = atoi(token);
-					cReadModeB = 12;
-					break;
-				case 12:
-					// m_wMaxLifeSpan
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - MaxLifeSpan");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_wMaxLifeSpan = (WORD)atoi(token);
-					cReadModeB = 13;
-					break;
-				case 13:
-					// m_sSpecialEffect
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - MaxFixCount");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sSpecialEffect = atoi(token);
-					cReadModeB = 14;
-					break;
-				case 14:
-					// m_sSprite
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Sprite");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sSprite = atoi(token);
-					cReadModeB = 15;
-					break;
-				case 15:
-					// m_sSpriteFrame
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - SpriteFrame");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sSpriteFrame = atoi(token);
-					cReadModeB = 16;
-					break;
-				case 16:
-					// m_wPrice
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Price");
-						delete[] pContents;
-						return false;
-					}
-					iTemp = atoi(token);
-					if (iTemp < 0)
-						m_pItemConfigList[iItemConfigListIndex]->m_bIsForSale = false;
-					else m_pItemConfigList[iItemConfigListIndex]->m_bIsForSale = true;
-
-					m_pItemConfigList[iItemConfigListIndex]->m_wPrice = abs(iTemp);
-					cReadModeB = 17;
-					break;
-				case 17:
-					// m_wWeight
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Weight");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_wWeight = atoi(token);
-					cReadModeB = 18;
-					break;
-				case 18:
-					// Appr Value
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - ApprValue");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cApprValue = atoi(token);
-					cReadModeB = 19;
-					break;
-				case 19:
-					// m_cSpeed
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Speed");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cSpeed = atoi(token);
-					cReadModeB = 20;
-					break;
-
-				case 20:
-					// m_sLevelLimit
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - LevelLimit");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sLevelLimit = atoi(token);
-					cReadModeB = 21;
-					break;
-
-				case 21:
-					// m_cGederLimit
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - GenderLimit");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cGenderLimit = atoi(token);
-					cReadModeB = 22;
-					break;
-
-				case 22:
-					// m_sSpecialEffectValue1
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - SM_HitRatio");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sSpecialEffectValue1 = atoi(token);
-					cReadModeB = 23;
-					break;
-
-				case 23:
-					// m_sSpecialEffectValue2
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - L_HitRatio");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sSpecialEffectValue2 = atoi(token);
-					cReadModeB = 24;
-					break;
-
-				case 24:
-					// m_sRelatedSkill
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - RelatedSkill");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_sRelatedSkill = atoi(token);
-					cReadModeB = 25;
-					break;
-
-				case 25:
-					// m_cCategory
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Category");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cCategory = atoi(token);
-					cReadModeB = 26;
-					break;
-
-				case 26:
-					// m_cItemColor
-					if (_bGetIsStringIsNumber(token) == false) {
-						//PutLogList("(!!!) CRITICAL ERROR! ITEM configuration file error - Category");
-						delete[] pContents;
-						return false;
-					}
-					m_pItemConfigList[iItemConfigListIndex]->m_cItemColor = atoi(token);
-					cReadModeA = 0;
-					cReadModeB = 0;
-					break;
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-		else {
-			if (memcmp(token, "Item", 4) == 0) {
-				cReadModeA = 1;
-				cReadModeB = 1;
-			}
-
-			if (memcmp(token, "[ENDITEMLIST]", 13) == 0) {
-				cReadModeA = 0;
-				cReadModeB = 0;
-				goto DICFC_STOPDECODING;
-			}
-		}
-		token = strtok(NULL, seps);
+	if (dwMsgSize < headerSize) {
+		printf("[ITEM CONFIG] Packet too small for header\n");
+		return false;
 	}
 
-DICFC_STOPDECODING:;
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
+	uint16_t itemCount = pktHeader->itemCount;
+	printf("[ITEM CONFIG] Header says %u items, totalItems=%u, packetIndex=%u\n",
+		itemCount, pktHeader->totalItems, pktHeader->packetIndex);
 
-	delete[] pContents;
+	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
+		return false;
+	}
+
+	const auto* entries = reinterpret_cast<const hb::net::PacketItemConfigEntry*>(pData + headerSize);
+
+	for (uint16_t i = 0; i < itemCount; i++) {
+		const auto& entry = entries[i];
+		int itemId = entry.itemId;
+
+		if (itemId <= 0 || itemId >= 5000) {
+			continue;
+		}
+
+		// Delete existing item if present (shouldn't happen, but be safe)
+		if (m_pItemConfigList[itemId] != 0) {
+			delete m_pItemConfigList[itemId];
+		}
+
+		m_pItemConfigList[itemId] = new class CItem;
+		CItem* pItem = m_pItemConfigList[itemId];
+
+		pItem->m_sIDnum = entry.itemId;
+		std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
+		std::strncpy(pItem->m_cName, entry.name, sizeof(pItem->m_cName) - 1);
+		pItem->m_cItemType = entry.itemType;
+		pItem->m_cEquipPos = entry.equipPos;
+		pItem->m_sItemEffectType = entry.effectType;
+		pItem->m_sItemEffectValue1 = entry.effectValue1;
+		pItem->m_sItemEffectValue2 = entry.effectValue2;
+		pItem->m_sItemEffectValue3 = entry.effectValue3;
+		pItem->m_sItemEffectValue4 = entry.effectValue4;
+		pItem->m_sItemEffectValue5 = entry.effectValue5;
+		pItem->m_sItemEffectValue6 = entry.effectValue6;
+		pItem->m_wMaxLifeSpan = entry.maxLifeSpan;
+		pItem->m_sSpecialEffect = entry.specialEffect;
+		pItem->m_sSprite = entry.sprite;
+		pItem->m_sSpriteFrame = entry.spriteFrame;
+		pItem->m_bIsForSale = (entry.price >= 0);
+		pItem->m_wPrice = static_cast<uint32_t>(entry.price >= 0 ? entry.price : -entry.price);
+		pItem->m_wWeight = entry.weight;
+		pItem->m_cApprValue = entry.apprValue;
+		pItem->m_cSpeed = entry.speed;
+		pItem->m_sLevelLimit = entry.levelLimit;
+		pItem->m_cGenderLimit = entry.genderLimit;
+		pItem->m_sSpecialEffectValue1 = entry.specialEffectValue1;
+		pItem->m_sSpecialEffectValue2 = entry.specialEffectValue2;
+		pItem->m_sRelatedSkill = entry.relatedSkill;
+		pItem->m_cCategory = entry.category;
+		pItem->m_cItemColor = entry.itemColor;
+	}
+
+	// Count how many items we have now
+	int storedCount = 0;
+	for (int j = 0; j < 5000; j++) {
+		if (m_pItemConfigList[j] != nullptr) storedCount++;
+	}
+	printf("[ITEM CONFIG] After processing: %d items in m_pItemConfigList\n", storedCount);
 
 	return true;
 }
@@ -2724,7 +2465,8 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
-		_bDecodeItemConfigFileContents(reinterpret_cast<char*>(pData + sizeof(hb::net::PacketHeader)), dwMsgSize);
+		// Pass full pData - PacketItemConfigHeader includes the PacketHeader
+		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
 		ResponseChargedTeleport(pData);
@@ -2808,6 +2550,10 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 
 	case MSGID_RESPONSE_FIGHTZONE_RESERVE:
 		ReserveFightzoneResponseHandler(pData);
+		break;
+
+	case MSGID_RESPONSE_SHOP_CONTENTS:
+		ResponseShopContentsHandler(pData);
 		break;
 
 	case MSGID_COMMAND_CHECKCONNECTION:
@@ -6991,161 +6737,130 @@ void CGame::DrawEffectLights()
 
 void CGame::_LoadShopMenuContents(char cType)
 {
-	char cFileName[255], cTemp[255];
-	HANDLE hFile;
-	FILE* pFile;
-	uint32_t dwFileSize;
-	char* pBuffer;
-
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
-	wsprintf(cTemp, "contents%d", cType);
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
-
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return;
-	else {
-		pBuffer = new char[dwFileSize + 1];
-		std::memset(pBuffer, 0, dwFileSize + 1);
-		fread(pBuffer, dwFileSize, 1, pFile);
-
-		__bDecodeContentsAndBuildItemForSaleList(pBuffer);
-		delete[] pBuffer;
-	}
-	fclose(pFile);
+	// Request shop contents from server using NPC type
+	_RequestShopContents(static_cast<int16_t>(cType));
 }
 
-bool CGame::__bDecodeContentsAndBuildItemForSaleList(char* pBuffer)
+void CGame::_RequestShopContents(int16_t npcType)
 {
-	char* pContents, * token;
-	char seps[] = "= ,\t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int  iItemForSaleListIndex = 0;
-
-	pContents = pBuffer;
-
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		if (cReadModeA != 0) {
-			//
-			switch (cReadModeA) {
-			case 1:
-				switch (cReadModeB) {
-				case 1:
-					std::memset(m_pItemForSaleList[iItemForSaleListIndex]->m_cName, 0, sizeof(m_pItemForSaleList[iItemForSaleListIndex]->m_cName));
-					memcpy(m_pItemForSaleList[iItemForSaleListIndex]->m_cName, token, strlen(token));
-					cReadModeB = 2;
-					break;
-				case 2:	// m_cItemType
-					m_pItemForSaleList[iItemForSaleListIndex]->m_cItemType = atoi(token);
-					cReadModeB = 3;
-					break;
-				case 3: // m_cEquipPos
-					m_pItemForSaleList[iItemForSaleListIndex]->m_cEquipPos = atoi(token);
-					cReadModeB = 4;
-					break;
-				case 4: // m_sItemEffectType
-					//m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectType = atoi(token);
-					cReadModeB = 5;
-					break;
-				case 5:	// m_sItemEffectValue1
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue1 = atoi(token);
-					cReadModeB = 6;
-					break;
-				case 6: // m_sItemEffectValue2
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue2 = atoi(token);
-					cReadModeB = 7;
-					break;
-				case 7: // m_sItemEffectValue3
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue3 = atoi(token);
-					cReadModeB = 8;
-					break;
-				case 8: // m_sItemEffectValue4
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue4 = atoi(token);
-					cReadModeB = 9;
-					break;
-				case 9: // m_sItemEffectValue5
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue5 = atoi(token);
-					cReadModeB = 10;
-					break;
-				case 10: // m_sItemEffectValue6
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sItemEffectValue6 = atoi(token);
-					cReadModeB = 11;
-					break;
-				case 11: // m_wMaxLifeSpan
-					m_pItemForSaleList[iItemForSaleListIndex]->m_wMaxLifeSpan = (WORD)atoi(token);
-					cReadModeB = 12;
-					break;
-				case 12: // m_sMaxFixCount
-					//m_pItemForSaleList[iItemForSaleListIndex]->m_sMaxFixCount = atoi(token);
-					cReadModeB = 13;
-					break;
-				case 13: // m_sSprite
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sSprite = atoi(token);
-					cReadModeB = 14;
-					break;
-				case 14: // m_sSpriteFrame
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sSpriteFrame = atoi(token);
-					cReadModeB = 15;
-					break;
-				case 15: // m_wPrice
-					m_pItemForSaleList[iItemForSaleListIndex]->m_wPrice = atoi(token);
-					cReadModeB = 16;
-					break;
-				case 16: // m_wWeight
-					m_pItemForSaleList[iItemForSaleListIndex]->m_wWeight = atoi(token);
-					cReadModeB = 17;
-					break;
-				case 17: // Appr Value
-					//m_pItemForSaleList[iItemForSaleListIndex]->m_cApprValue = atoi(token);
-					cReadModeB = 18;
-					break;
-				case 18: // m_cSpeed
-					m_pItemForSaleList[iItemForSaleListIndex]->m_cSpeed = atoi(token);
-					cReadModeB = 19;
-					break;
-				case 19: // Level Limit
-					m_pItemForSaleList[iItemForSaleListIndex]->m_sLevelLimit = atoi(token);
-					m_pItemForSaleList[iItemForSaleListIndex]->m_dwCount = 1;
-					cReadModeA = 0;
-					cReadModeB = 0;
-					iItemForSaleListIndex++;
-					break;
-				}
-				break;
-
-			default:
-				break;
-			}
+	// Clear existing shop items
+	for (int i = 0; i < DEF_MAXSELLLIST; i++) {
+		if (m_pItemForSaleList[i] != nullptr) {
+			delete m_pItemForSaleList[i];
+			m_pItemForSaleList[i] = nullptr;
 		}
-		else
-		{
-			if (memcmp(token, "ItemForSale", 4) == 0)
-			{
-				if (iItemForSaleListIndex >= DEF_MAXMENUITEMS)
-				{
-					return false;
-				}
-				cReadModeA = 1;
-				cReadModeB = 1;
-				m_pItemForSaleList[iItemForSaleListIndex] = new class CItem;
-			}
-		}
-		token = strtok(NULL, seps);
 	}
-	if ((cReadModeA != 0) || (cReadModeB != 0)) return false;
-	return true;
+
+	// Build and send shop request packet
+	char cData[sizeof(hb::net::PacketShopRequest)];
+	std::memset(cData, 0, sizeof(cData));
+
+	auto* req = reinterpret_cast<hb::net::PacketShopRequest*>(cData);
+	req->header.msg_id = MSGID_REQUEST_SHOP_CONTENTS;
+	req->header.msg_type = DEF_MSGTYPE_CONFIRM;
+	req->npcType = npcType;
+
+	m_pGSock->iSendMsg(cData, sizeof(hb::net::PacketShopRequest));
 }
 
+void CGame::ResponseShopContentsHandler(char* pData)
+{
+	const auto* resp = hb::net::PacketCast<hb::net::PacketShopResponseHeader>(
+		pData, sizeof(hb::net::PacketShopResponseHeader));
+	if (!resp) {
+		printf("[SHOP] Response: invalid packet\n");
+		return;
+	}
+
+	uint16_t itemCount = resp->itemCount;
+	printf("[SHOP] Response received: NPC type %d, shop %d, %d items\n",
+		resp->npcType, resp->shopId, itemCount);
+
+	// Debug: Count how many items are in the config list
+	int configCount = 0;
+	for (int i = 0; i < 5000; i++) {
+		if (m_pItemConfigList[i] != nullptr) configCount++;
+	}
+	printf("[SHOP] Client has %d items in m_pItemConfigList\n", configCount);
+
+	if (itemCount > DEF_MAXMENUITEMS) {
+		itemCount = DEF_MAXMENUITEMS;
+	}
+
+	// Clear existing shop items
+	for (int i = 0; i < DEF_MAXMENUITEMS; i++) {
+		if (m_pItemForSaleList[i] != nullptr) {
+			delete m_pItemForSaleList[i];
+			m_pItemForSaleList[i] = nullptr;
+		}
+	}
+
+	// Get item IDs from packet (they follow the header)
+	const int16_t* itemIds = reinterpret_cast<const int16_t*>(pData + sizeof(hb::net::PacketShopResponseHeader));
+
+	// Populate shop list from item configs
+	int shopIndex = 0;
+	int skippedCount = 0;
+	int notFoundCount = 0;
+	for (uint16_t i = 0; i < itemCount && shopIndex < DEF_MAXMENUITEMS; i++) {
+		int16_t itemId = itemIds[i];
+		if (itemId <= 0 || itemId >= 5000) {
+			if (skippedCount < 5) printf("[SHOP] Skipping invalid item ID: %d\n", itemId);
+			skippedCount++;
+			continue;
+		}
+		if (m_pItemConfigList[itemId] == nullptr) {
+			if (notFoundCount < 10) printf("[SHOP] Item ID %d not in m_pItemConfigList\n", itemId);
+			notFoundCount++;
+			skippedCount++;
+			continue;
+		}
+
+		// Create new item for shop based on config
+		CItem* pItem = new CItem();
+		CItem* pConfig = m_pItemConfigList[itemId];
+
+		// Copy item data from config
+		pItem->m_sIDnum = itemId;
+		std::memcpy(pItem->m_cName, pConfig->m_cName, sizeof(pItem->m_cName));
+		pItem->m_cItemType = pConfig->m_cItemType;
+		pItem->m_cEquipPos = pConfig->m_cEquipPos;
+		pItem->m_sSprite = pConfig->m_sSprite;
+		pItem->m_sSpriteFrame = pConfig->m_sSpriteFrame;
+		pItem->m_wPrice = pConfig->m_wPrice;
+		pItem->m_wWeight = pConfig->m_wWeight;
+		pItem->m_sItemEffectValue1 = pConfig->m_sItemEffectValue1;
+		pItem->m_sItemEffectValue2 = pConfig->m_sItemEffectValue2;
+		pItem->m_sItemEffectValue3 = pConfig->m_sItemEffectValue3;
+		pItem->m_sItemEffectValue4 = pConfig->m_sItemEffectValue4;
+		pItem->m_sItemEffectValue5 = pConfig->m_sItemEffectValue5;
+		pItem->m_sItemEffectValue6 = pConfig->m_sItemEffectValue6;
+		pItem->m_wMaxLifeSpan = pConfig->m_wMaxLifeSpan;
+		pItem->m_sLevelLimit = pConfig->m_sLevelLimit;
+		pItem->m_cGenderLimit = pConfig->m_cGenderLimit;
+		pItem->m_sSpecialEffect = pConfig->m_sSpecialEffect;
+		pItem->m_cSpeed = pConfig->m_cSpeed;
+
+		// Copy display name
+		pItem->SetDisplayName(pConfig->GetDisplayName());
+
+		m_pItemForSaleList[shopIndex] = pItem;
+		shopIndex++;
+	}
+
+	printf("[SHOP] Populated: %d items added, %d skipped (%d not found in config list)\n", shopIndex, skippedCount, notFoundCount);
+
+	// Only show shop dialog if we have items and there was a pending request
+	if (shopIndex > 0 && m_sPendingShopType != 0) {
+		// Enable the SaleMenu dialog - this will call EnableDialogBox which sets up the dialog
+		EnableDialogBox(static_cast<int>(DialogBoxId::SaleMenu), m_sPendingShopType, 0, 0, nullptr);
+		m_sPendingShopType = 0;  // Clear pending request
+	} else if (m_sPendingShopType != 0) {
+		// No items available - show message to user
+		AddEventList("This shop has no items available.", 10);
+		m_sPendingShopType = 0;
+	}
+}
 
 static char __cSpace[] = { 8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8, 8,6,8,7,8,8,9,10,9,7, 8,8,8,8,8, 8,8,
 						  15,16,12,17,14,15,14,16,10,13, 19,10,17,17,15,14,15,16,13,17, 16,16,20,17,16,14,
@@ -16261,10 +15976,14 @@ void CGame::InitItemList(char* pData)
 		m_pItemList[i]->m_cItemColor = entry.item_color;
 		m_pItemList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pItemList[i]->m_dwAttribute = entry.attribute;
+		m_pItemList[i]->m_sIDnum = entry.item_id;
+		m_pItemList[i]->m_wMaxLifeSpan = entry.max_lifespan;
 		/*
 		m_pItemList[i]->m_bIsCustomMade = (bool)*cp;
 		cp++;
 		*/
+		// Populate display name from the shared item display name map
+		m_pItemList[i]->PopulateDisplayName();
 		m_cItemOrder[i] = i;
 		// Snoopy: Add Angelic Stats
 		if ((m_pItemList[i]->m_cItemType == 1)
@@ -16327,10 +16046,14 @@ void CGame::InitItemList(char* pData)
 		m_pBankList[i]->m_cItemColor = entry.item_color;
 		m_pBankList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pBankList[i]->m_dwAttribute = entry.attribute;
+		m_pBankList[i]->m_sIDnum = entry.item_id;
+		m_pBankList[i]->m_wMaxLifeSpan = entry.max_lifespan;
 		/*
 		m_pBankList[i]->m_bIsCustomMade = (bool)*cp;
 		cp++;
 		*/
+		// Populate display name from the shared item display name map
+		m_pBankList[i]->PopulateDisplayName();
 	}
 
 	cp = reinterpret_cast<const char*>(bankEntries + cTotalItems);
@@ -16600,12 +16323,19 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 			case 0:
 				break;
 			default:
-				_LoadShopMenuContents(cType);
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV1 = cType;
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = 0;
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bFlag = true;
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
+				// Check if shop items are already loaded (called from ResponseShopContentsHandler)
+				if (m_pItemForSaleList[0] != nullptr) {
+					// Items already loaded - just show the dialog
+					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV1 = cType;
+					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
+					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = 0;
+					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bFlag = true;
+					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
+				} else {
+					// Request contents from server - dialog will be shown when response arrives
+					m_sPendingShopType = cType;
+					_LoadShopMenuContents(cType);
+				}
 				break;
 			}
 		}
@@ -18901,7 +18631,7 @@ int CGame::_iCalcTotalWeight()
 				|| (m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_ARROW))
 			{
 				iTemp = m_pItemList[i]->m_wWeight * m_pItemList[i]->m_dwCount;
-				if (strcmp(m_pItemList[i]->m_cName, "Gold") == 0) iTemp = iTemp / 20;
+				if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::Gold) iTemp = iTemp / 20;
 				iWeight += iTemp;
 			}
 			else iWeight += m_pItemList[i]->m_wWeight;
@@ -20336,6 +20066,312 @@ CCBIS_STEP7:;
 	return false;
 }
 
+void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
+{
+	char cTxt[256], cTxt2[256];
+	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
+
+	m_bIsSpecial = false;
+	std::memset(pStr1, 0, 64);
+	std::memset(pStr2, 0, 64);
+	std::memset(pStr3, 0, 64);
+
+	// Use the display name from the item (populated from ItemDisplayNames.h)
+	const char* cName = pItem->GetDisplayName();
+
+	if (0 == memcmp(pItem->m_cName, "AcientTablet", 12)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "NecklaceOf", 10)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "DarkElfBow", 10)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "DarkExecutor", 12)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "The_Devastator", 14)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "DemonSlayer", 10)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "LightingBlade", 12)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "5thAnniversary", 13)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "RubyRing", 8)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "SapphireRing", 12)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Ringof", 6)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "MagicNecklace", 13)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "MagicWand(M.Shield)", 19)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "MagicWand(MS30-LLF)", 19)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Merien", 6)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "BerserkWand", 11)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "ResurWand", 9)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Blood", 5)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Swordof", 7)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "StoneOf", 7)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "ZemstoneofSacrifice", 19)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "StormBringer", 12)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Aresden", 7)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Elvine", 6)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "EmeraldRing", 11)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Excaliber", 9)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Xelima", 6)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "Kloness", 7)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "aHeroOf", 7)) m_bIsSpecial = true;
+	else if (0 == memcmp(pItem->m_cName, "eHeroOf", 7)) m_bIsSpecial = true;
+
+	if ((pItem->m_dwAttribute & 0x00000001) != 0)
+	{
+		m_bIsSpecial = true;
+		strcpy(pStr1, cName);
+		if (pItem->m_cItemType == DEF_ITEMTYPE_MATERIAL)
+			wsprintf(pStr2, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
+		else
+		{
+			if (pItem->m_cEquipPos == DEF_EQUIPPOS_LFINGER)
+			{
+				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
+			}
+			else
+			{
+				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);
+			}
+		}
+	}
+	else
+	{
+		if (pItem->m_dwCount == 1)
+			wsprintf(G_cTxt, "%s", cName);
+		else wsprintf(G_cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);
+		strcpy(pStr1, G_cTxt);
+	}
+
+	if ((pItem->m_dwAttribute & 0x00F0F000) != 0)
+	{
+		m_bIsSpecial = true;
+		dwType1 = (pItem->m_dwAttribute & 0x00F00000) >> 20;
+		dwValue1 = (pItem->m_dwAttribute & 0x000F0000) >> 16;
+		dwType2 = (pItem->m_dwAttribute & 0x0000F000) >> 12;
+		dwValue2 = (pItem->m_dwAttribute & 0x00000F00) >> 8;
+		if (dwType1 != 0)
+		{
+			std::memset(cTxt, 0, sizeof(cTxt));
+			switch (dwType1) {
+			case 1: strcpy(cTxt, GET_ITEM_NAME3);   break;
+			case 2: strcpy(cTxt, GET_ITEM_NAME4);   break;
+			case 3: strcpy(cTxt, GET_ITEM_NAME5);   break;
+			case 4: break;
+			case 5: strcpy(cTxt, GET_ITEM_NAME6);   break;
+			case 6: strcpy(cTxt, GET_ITEM_NAME7);   break;
+			case 7: strcpy(cTxt, GET_ITEM_NAME8);   break;
+			case 8: strcpy(cTxt, GET_ITEM_NAME9);   break;
+			case 9: strcpy(cTxt, GET_ITEM_NAME10);  break;
+			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
+			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
+			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
+			}
+			strcat(cTxt, pStr1);
+			std::memset(pStr1, 0, 64);
+			strcpy(pStr1, cTxt);
+
+			std::memset(cTxt, 0, sizeof(cTxt));
+			switch (dwType1) {
+			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break;
+			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break;
+			case 3: break;
+			case 4: break;
+			case 5: strcpy(cTxt, GET_ITEM_NAME16); break;
+			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
+			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
+			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
+			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
+			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
+			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
+			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			}
+			strcat(pStr2, cTxt);
+
+			if (dwType2 != 0) {
+				std::memset(cTxt, 0, sizeof(cTxt));
+				switch (dwType2) {
+				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7); break;
+				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7); break;
+				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7); break;
+				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7); break;
+				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7); break;
+				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7); break;
+				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7); break;
+				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3); break;
+				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3); break;
+				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);   break;
+				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
+				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				}
+				strcpy(pStr3, cTxt);
+			}
+		}
+	}
+
+	dwValue3 = (pItem->m_dwAttribute & 0xF0000000) >> 28;
+	if (dwValue3 > 0)
+	{
+		if (pStr1[strlen(pStr1) - 2] == '+')
+		{
+			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
+			std::memset(cTxt, 0, sizeof(cTxt));
+			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
+			std::memset(cTxt2, 0, sizeof(cTxt2));
+			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
+			std::memset(pStr1, 0, 64);
+			strcpy(pStr1, cTxt2);
+		}
+		else
+		{
+			std::memset(cTxt, 0, sizeof(cTxt));
+			wsprintf(cTxt, "+%d", dwValue3);
+			strcat(pStr1, cTxt);
+		}
+	}
+
+	// Display mana save effect if present
+	auto effectType = pItem->GetItemEffectType();
+	int iManaSaveValue = 0;
+	if (effectType == hb::item::ItemEffectType::AttackManaSave)
+	{
+		iManaSaveValue = pItem->m_sItemEffectValue4;
+	}
+	else if (effectType == hb::item::ItemEffectType::AddEffect &&
+	         pItem->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
+	{
+		iManaSaveValue = pItem->m_sItemEffectValue2;
+	}
+
+	if (iManaSaveValue > 0)
+	{
+		m_bIsSpecial = true;
+		std::memset(cTxt, 0, sizeof(cTxt));
+		wsprintf(cTxt, "Mana Save +%d%%", iManaSaveValue);
+		// Add to pStr2 if empty, otherwise pStr3
+		if (pStr2[0] == '\0')
+			strcpy(pStr2, cTxt);
+		else if (pStr3[0] == '\0')
+			strcpy(pStr3, cTxt);
+	}
+}
+
+void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* pStr2, char* pStr3)
+{
+	char cTxt[256], cTxt2[256];
+	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
+
+	m_bIsSpecial = false;
+	std::memset(pStr1, 0, 64);
+	std::memset(pStr2, 0, 64);
+	std::memset(pStr3, 0, 64);
+
+	// Look up item config by ID to get display name (m_cName now contains display names)
+	const char* cName = nullptr;
+	if (sItemId > 0 && sItemId < 5000 && m_pItemConfigList[sItemId] != nullptr) {
+		cName = m_pItemConfigList[sItemId]->m_cName;
+	}
+	if (cName == nullptr || cName[0] == '\0') {
+		// Fallback to "Unknown Item" if no display name found
+		strcpy(pStr1, "Unknown Item");
+		return;
+	}
+	strcpy(pStr1, cName);
+
+	if ((dwAttribute & 0x00F0F000) != 0)
+	{
+		m_bIsSpecial = true;
+		dwType1 = (dwAttribute & 0x00F00000) >> 20;
+		dwValue1 = (dwAttribute & 0x000F0000) >> 16;
+		dwType2 = (dwAttribute & 0x0000F000) >> 12;
+		dwValue2 = (dwAttribute & 0x00000F00) >> 8;
+		if (dwType1 != 0)
+		{
+			std::memset(cTxt, 0, sizeof(cTxt));
+			switch (dwType1) {
+			case 1: strcpy(cTxt, GET_ITEM_NAME3); break;
+			case 2: strcpy(cTxt, GET_ITEM_NAME4); break;
+			case 3: strcpy(cTxt, GET_ITEM_NAME5); break;
+			case 4: break;
+			case 5: strcpy(cTxt, GET_ITEM_NAME6); break;
+			case 6: strcpy(cTxt, GET_ITEM_NAME7); break;
+			case 7: strcpy(cTxt, GET_ITEM_NAME8); break;
+			case 8: strcpy(cTxt, GET_ITEM_NAME9); break;
+			case 9: strcpy(cTxt, GET_ITEM_NAME10); break;
+			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
+			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
+			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
+			}
+			strcat(cTxt, pStr1);
+			std::memset(pStr1, 0, 64);
+			strcpy(pStr1, cTxt);
+
+			std::memset(cTxt, 0, sizeof(cTxt));
+			switch (dwType1) {
+			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break;
+			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break;
+			case 3: break;
+			case 4: break;
+			case 5: strcpy(cTxt, GET_ITEM_NAME16); break;
+			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
+			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
+			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
+			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
+			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
+			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
+			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			}
+			strcat(pStr2, cTxt);
+
+			if (dwType2 != 0)
+			{
+				std::memset(cTxt, 0, sizeof(cTxt));
+				switch (dwType2) {
+				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7);  break;
+				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7);  break;
+				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7);  break;
+				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7);  break;
+				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7);  break;
+				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7);  break;
+				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7);  break;
+				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3);  break;
+				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3);  break;
+				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);    break;
+				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
+				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				}
+				strcpy(pStr3, cTxt);
+			}
+		}
+	}
+
+	dwValue3 = (dwAttribute & 0xF0000000) >> 28;
+	if (dwValue3 > 0)
+	{
+		if (pStr1[strlen(pStr1) - 2] == '+')
+		{
+			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
+			std::memset(cTxt, 0, sizeof(cTxt));
+			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
+			std::memset(cTxt2, 0, sizeof(cTxt2));
+			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
+			std::memset(pStr1, 0, 64);
+			strcpy(pStr1, cTxt2);
+		}
+		else
+		{
+			std::memset(cTxt, 0, sizeof(cTxt));
+			wsprintf(cTxt, "+%d", dwValue3);
+			strcat(pStr1, cTxt);
+		}
+	}
+}
+
+short CGame::FindItemIdByName(const char* cItemName)
+{
+	if (cItemName == nullptr) return 0;
+	for (int i = 1; i < 5000; i++) {
+		if (m_pItemConfigList[i] != nullptr &&
+			memcmp(m_pItemConfigList[i]->m_cName, cItemName, 20) == 0) {
+			return static_cast<short>(i);
+		}
+	}
+	return 0; // Not found
+}
+
 void CGame::NoticementHandler(char* pData)
 {
 	FILE* pFile;
@@ -20427,66 +20463,6 @@ void CGame::ResponsePanningHandler(char* pData)
 	m_bIsRedrawPDBGS = true;
 
 	m_bIsObserverCommanded = false;
-}
-
-bool CGame::bReadItemNameConfigFile()
-{
-	FILE* pFile;
-	HANDLE hFile;
-	uint32_t dwFileSize;
-	char* cp, * token, cReadModeA, cReadModeB;
-	char seps[] = "=\n";
-	int iIndex;
-
-	cReadModeA = 0;
-	cReadModeB = 0;
-	iIndex = 0;
-
-	hFile = CreateFile("contents\\ItemName.cfg", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-	pFile = fopen("contents\\ItemName.cfg", "rt");
-	if (pFile == 0) return false;
-	else {
-		cp = new char[dwFileSize + 2];
-		std::memset(cp, 0, dwFileSize + 2);
-		fread(cp, dwFileSize, 1, pFile);
-
-		token = strtok(cp, seps);
-		while (token != 0) {
-
-			if (cReadModeA != 0) {
-				switch (cReadModeA) {
-				case 1:
-					switch (cReadModeB) {
-					case 1:
-						m_pItemNameList[iIndex] = new class CItemName;
-						strcpy(m_pItemNameList[iIndex]->m_cOriginName, token);
-						cReadModeB = 2;
-						break;
-
-					case 2:
-						strcpy(m_pItemNameList[iIndex]->m_cName, token);
-						cReadModeA = 0;
-						cReadModeB = 0;
-						iIndex++;
-						break;
-					}
-				}
-			}
-			else {
-				if (memcmp(token, "Item", 4) == 0) {
-					cReadModeA = 1;
-					cReadModeB = 1;
-				}
-			}
-			token = strtok(0, seps);
-		}
-		delete[] cp;
-	}
-	if (pFile != 0) fclose(pFile);
-
-	return true;
 }
 
 /*********************************************************************************************************************
@@ -28002,310 +27978,6 @@ void CGame::GetNpcName(short sType, char* pName)
 	}
 }
 
-void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
-{
-	int i;
-	char cTxt[256], cTxt2[256], cName[51];
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
-
-	m_bIsSpecial = false;
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(pStr1, 0, sizeof(pStr1));
-	std::memset(pStr2, 0, sizeof(pStr2));
-	std::memset(pStr3, 0, sizeof(pStr3));
-
-	strcpy(cName, pItem->m_cName);
-	for (i = 0; i < DEF_MAXITEMNAMES; i++)
-		if ((m_pItemNameList[i] != 0) && (strcmp(m_pItemNameList[i]->m_cOriginName, pItem->m_cName) == 0))
-		{
-			strcpy(cName, m_pItemNameList[i]->m_cName);
-			break;
-		}
-
-	if (0 == memcmp(pItem->m_cName, "AcientTablet", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "NecklaceOf", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DarkElfBow", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DarkExecutor", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "The_Devastator", 14)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DemonSlayer", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "LightingBlade", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "5thAnniversary", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "RubyRing", 8)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "SapphireRing", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Ringof", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicNecklace", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicWand(M.Shield)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicWand(MS30-LLF)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Merien", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "BerserkWand", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "ResurWand", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Blood", 5)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Swordof", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "StoneOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "ZemstoneofSacrifice", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "StormBringer", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Aresden", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Elvine", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "EmeraldRing", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Excaliber", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Xelima", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Kloness", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "aHeroOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "eHeroOf", 7)) m_bIsSpecial = true;
-	if ((pItem->m_dwAttribute & 0x00000001) != 0)
-	{
-		m_bIsSpecial = true;
-		strcpy(pStr1, cName);
-		if (pItem->m_cItemType == DEF_ITEMTYPE_MATERIAL)
-			wsprintf(pStr2, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);		//"Purity: %d%%"
-		else
-		{	// Crafting Magins completion fix
-			if (pItem->m_cEquipPos == DEF_EQUIPPOS_LFINGER)
-			{
-				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);	//"Completion:
-			}
-			else
-			{
-				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);	//"Completion: +100
-			}
-		}
-	}
-	else
-	{
-		if (pItem->m_dwCount == 1)
-			wsprintf(G_cTxt, "%s", cName);
-		else wsprintf(G_cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);//"%d %s"
-		strcpy(pStr1, G_cTxt);
-	}
-
-	if ((pItem->m_dwAttribute & 0x00F0F000) != 0)
-	{
-		m_bIsSpecial = true;
-		dwType1 = (pItem->m_dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (pItem->m_dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (pItem->m_dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (pItem->m_dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: strcpy(cTxt, GET_ITEM_NAME3);   break;
-			case 2: strcpy(cTxt, GET_ITEM_NAME4);   break; // "Poisoning "
-			case 3: strcpy(cTxt, GET_ITEM_NAME5);   break; // "Righteous "
-			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME6);   break; // "Agile "
-			case 6: strcpy(cTxt, GET_ITEM_NAME7);   break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME8);   break;
-			case 8: strcpy(cTxt, GET_ITEM_NAME9);   break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME10);  break;
-			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
-			}
-			strcat(cTxt, pStr1);
-			std::memset(pStr1, 0, sizeof(pStr1));
-			strcpy(pStr1, cTxt);
-
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break; // "Critical Hit Damage+%d"
-			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break; // "Poison Damage+%d"
-			case 3: break;
-			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME16); break; // "Attack Speed -1"
-			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
-			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
-			}
-			strcat(pStr2, cTxt);
-
-			if (dwType2 != 0) {
-				std::memset(cTxt, 0, sizeof(cTxt));
-				switch (dwType2) {
-				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7); break;
-				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7); break;
-				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7); break;
-				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7); break;
-				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7); break;//"SPrec
-				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7); break;//"MPrec
-				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7); break;
-				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3); break;
-				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3); break;
-				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);   break;
-				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;//"Gold +%
-				}
-				strcpy(pStr3, cTxt);
-			}
-		}
-	}
-
-	dwValue3 = (pItem->m_dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
-	{
-		if (pStr1[strlen(pStr1) - 2] == '+')
-		{
-			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
-			std::memset(cTxt2, 0, sizeof(cTxt2));
-			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
-			std::memset(pStr1, 0, sizeof(pStr1));
-			strcpy(pStr1, cTxt2);
-		}
-		else
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, "+%d", dwValue3);
-			strcat(pStr1, cTxt);
-		}
-	}
-}
-
-void CGame::GetItemName(char* cItemName, uint32_t dwAttribute, char* pStr1, char* pStr2, char* pStr3)
-{
-	int i;
-	char cTxt[256], cTxt2[256], cName[51];
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
-
-	m_bIsSpecial = false;
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(pStr1, 0, sizeof(pStr1));
-	std::memset(pStr2, 0, sizeof(pStr2));
-	std::memset(pStr3, 0, sizeof(pStr3));
-
-	strcpy(cName, cItemName);
-	for (i = 0; i < DEF_MAXITEMNAMES; i++)
-		if ((m_pItemNameList[i] != 0) && (strcmp(m_pItemNameList[i]->m_cOriginName, cItemName) == 0)) {
-			strcpy(cName, m_pItemNameList[i]->m_cName);
-			break;
-		}
-
-	if (0 == memcmp(cItemName, "AcientTablet", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "NecklaceOf", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "DarkElfBow", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "DarkExecutor", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "The_Devastator", 14)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "DemonSlayer", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "LightingBlade", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "5thAnniversary", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "RubyRing", 8)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "SapphireRing", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Ringof", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "MagicNecklace", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "MagicWand(M.Shield)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "MagicWand(MS30-LLF)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Merien", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "BerserkWand", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "ResurWand", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Blood", 5)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Swordof", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "StoneOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "ZemstoneofSacrifice", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "StormBringer", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Aresden", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Elvine", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "EmeraldRing", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Excaliber", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Xelima", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "Kloness", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "aHeroOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(cItemName, "eHeroOf", 7)) m_bIsSpecial = true;
-	strcpy(pStr1, cName);
-
-	if ((dwAttribute & 0x00F0F000) != 0)
-	{
-		m_bIsSpecial = true;
-		dwType1 = (dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: strcpy(cTxt, GET_ITEM_NAME3); break;
-			case 2: strcpy(cTxt, GET_ITEM_NAME4); break;
-			case 3: strcpy(cTxt, GET_ITEM_NAME5); break;
-			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME6); break;
-			case 6: strcpy(cTxt, GET_ITEM_NAME7); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME8); break;
-			case 8: strcpy(cTxt, GET_ITEM_NAME9); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME10); break;
-			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
-			}
-			strcat(cTxt, pStr1);
-			std::memset(pStr1, 0, sizeof(pStr1));
-			strcpy(pStr1, cTxt);
-
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break;
-			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break;
-			case 3: break;
-			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME16); break;
-			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
-			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
-			}
-			strcat(pStr2, cTxt);
-
-			if (dwType2 != 0)
-			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				switch (dwType2) {
-				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7);  break;
-				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7);  break;
-				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7);  break;
-				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7);  break;
-				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7);  break;
-				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7);  break;
-				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7);  break;
-				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3);  break;
-				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);    break;
-				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
-				}
-				strcpy(pStr3, cTxt);
-			}
-		}
-	}
-
-	dwValue3 = (dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
-	{
-		if (pStr1[strlen(pStr1) - 2] == '+')
-		{
-			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
-			std::memset(cTxt2, 0, sizeof(cTxt2));
-			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
-			std::memset(pStr1, 0, sizeof(pStr1));
-			strcpy(pStr1, cTxt2);
-		}
-		else
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, "+%d", dwValue3);
-			strcat(pStr1, cTxt);
-		}
-	}
-}
-
 void CGame::_CalcSocketClosed()
 {
 	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
@@ -28789,7 +28461,8 @@ void CGame::DrawScreen_OnGame()
 			iLoc = 0;
 			for (int iTmp = 0; iTmp < DEF_MAXITEMS; iTmp++) {
 				if (m_pItemList[iTmp] != 0) {
-					if (strcmp(m_pItemList[iTmp]->m_cName, m_pItemList[m_stMCursor.sSelectedObjectID]->m_cName) == 0) iLoc++;
+					// Compare by item ID instead of name
+					if (m_pItemList[iTmp]->m_sIDnum == m_pItemList[m_stMCursor.sSelectedObjectID]->m_sIDnum) iLoc++;
 				}
 			}
 			if (iLoc > 1) {
@@ -28816,11 +28489,6 @@ void CGame::DrawScreen_OnGame()
 	}
 
 	DrawTopMsg();
-
-#ifdef _DEBUG
-	wsprintf(G_cTxt, "M(%d,%d) T(%d,%d)", s_sOnGameMsX, s_sOnGameMsY, (m_sViewPointX + s_sOnGameMsX + 16) / 32, (m_sViewPointY + s_sOnGameMsY + 16) / 32);
-	PutString(s_sOnGameMsX, s_sOnGameMsY + 30, G_cTxt, RGB(255, 255, 255));
-#endif
 
 	// Fade-in overlay
 	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
@@ -30696,7 +30364,7 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 			AddEventList(BITEMDROP_SELLLIST1, 10);
 			return;
 		}
-	if (strcmp(m_pItemList[cItemID]->m_cName, "Gold") == 0) {
+	if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::Gold) {
 		AddEventList(BITEMDROP_SELLLIST2, 10);
 		return;
 	}
@@ -31225,7 +30893,7 @@ void CGame::NotifyMsg_DropItemFin_CountChanged(char* pData)
 	const auto iAmount = static_cast<int>(pkt->amount);
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_pItemList[wItemIndex]->m_cName, m_pItemList[wItemIndex]->m_dwAttribute, cStr1, cStr2, cStr3);
+	GetItemName(m_pItemList[wItemIndex], cStr1, cStr2, cStr3);
 	wsprintf(cTxt, NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
 
 	AddEventList(cTxt, 10);
@@ -31587,7 +31255,7 @@ void CGame::NotifyMsg_GiveItemFin_CountChanged(char* pData)
 	memcpy(cName, pkt->name, 20);
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_pItemList[wItemIndex]->m_cName, m_pItemList[wItemIndex]->m_dwAttribute, cStr1, cStr2, cStr3);
+	GetItemName(m_pItemList[wItemIndex], cStr1, cStr2, cStr3);
 	if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
 	wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, cStr1, cName);
 	AddEventList(cTxt, 10);
@@ -31609,7 +31277,7 @@ void CGame::NotifyMsg_GiveItemFin_EraseItem(char* pData)
 	memcpy(cName, pkt->name, 20);
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_pItemList[sItemIndex]->m_cName, m_pItemList[sItemIndex]->m_dwAttribute, cStr1, cStr2, cStr3);
+	GetItemName(m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
 
 	if (m_bIsItemEquipped[sItemIndex] == true) {
 		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
@@ -31823,9 +31491,9 @@ void CGame::NotifyMsg_ItemObtained(char* pData)
 	uint32_t dwCount, dwAttribute;
 	char  cName[21], cItemType, cEquipPos;
 	bool  bIsEquipped;
-	short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
+	short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2, sItemId;
 	char  cTxt[120], cGenderLimit, cItemColor;
-	uint16_t wWeight, wCurLifeSpan;
+	uint16_t wWeight, wCurLifeSpan, wMaxLifeSpan;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemObtained>(
 		pData, sizeof(hb::net::PacketNotifyItemObtained));
@@ -31846,13 +31514,15 @@ void CGame::NotifyMsg_ItemObtained(char* pData)
 	cItemColor = static_cast<char>(pkt->item_color);
 	sSpecialEV2 = static_cast<short>(pkt->spec_value2);
 	dwAttribute = pkt->attribute;
+	sItemId = pkt->item_id;
+	wMaxLifeSpan = pkt->max_lifespan;
 	/*
 	bIsCustomMade = (bool)*cp;
 	cp++;
 	*/
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(cName, dwAttribute, cStr1, cStr2, cStr3);
+	GetItemName(sItemId, dwAttribute, cStr1, cStr2, cStr3);
 
 	std::memset(cTxt, 0, sizeof(cTxt));
 	if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED2, cStr1);
@@ -31918,7 +31588,12 @@ void CGame::NotifyMsg_ItemObtained(char* pData)
 			m_pItemList[i]->m_cItemColor = cItemColor;
 			m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2; // v1.41
 			m_pItemList[i]->m_dwAttribute = dwAttribute;
+			m_pItemList[i]->m_sIDnum = sItemId;
+			m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
 			//m_pItemList[i]->m_bIsCustomMade = bIsCustomMade;
+
+			// Populate display name from the shared item display name map
+			m_pItemList[i]->PopulateDisplayName();
 
 			_bCheckBuildItemStatus();
 
@@ -31937,8 +31612,8 @@ void CGame::NotifyMsg_ItemPurchased(char* pData)
 	uint32_t dwCount;
 	char  cName[21], cItemType, cEquipPos, cGenderLimit;
 	bool  bIsEquipped;
-	short sSprite, sSpriteFrame, sLevelLimit;
-	uint16_t wCost, wWeight, wCurLifeSpan;
+	short sSprite, sSpriteFrame, sLevelLimit, sItemId;
+	uint16_t wCost, wWeight, wCurLifeSpan, wMaxLifeSpan;
 	char  cTxt[120], cItemColor;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPurchased>(
@@ -31959,9 +31634,11 @@ void CGame::NotifyMsg_ItemPurchased(char* pData)
 	sSpriteFrame = static_cast<short>(pkt->sprite_frame);
 	cItemColor = static_cast<char>(pkt->item_color);
 	wCost = pkt->cost;
+	sItemId = pkt->item_id;
+	wMaxLifeSpan = pkt->max_lifespan;
 	std::memset(cTxt, 0, sizeof(cTxt));
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(cName, 0, cStr1, cStr2, cStr3);
+	GetItemName(sItemId, 0, cStr1, cStr2, cStr3);
 	wsprintf(cTxt, NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
 	AddEventList(cTxt, 10);
 
@@ -32013,6 +31690,11 @@ void CGame::NotifyMsg_ItemPurchased(char* pData)
 			m_pItemList[i]->m_sSprite = sSprite;
 			m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
 			m_pItemList[i]->m_cItemColor = cItemColor;    // v1.4
+			m_pItemList[i]->m_sIDnum = sItemId;
+			m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
+
+			// Populate display name from the shared item display name map
+			m_pItemList[i]->PopulateDisplayName();
 
 			// fixed v1.11
 			for (j = 0; j < DEF_MAXITEMS; j++)
@@ -32074,8 +31756,8 @@ void CGame::NotifyMsg_ItemToBank(char* pData)
 	DWORD dwCount, dwAttribute;
 	char  cName[21], cItemType, cEquipPos, cGenderLimit, cItemColor;
 	bool  bIsEquipped;
-	short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
-	WORD wWeight, wCurLifeSpan;
+	short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2, sItemId;
+	WORD wWeight, wCurLifeSpan, wMaxLifeSpan;
 	char  cTxt[120];
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemToBank>(
 		pData, sizeof(hb::net::PacketNotifyItemToBank));
@@ -32098,9 +31780,11 @@ void CGame::NotifyMsg_ItemToBank(char* pData)
 	sItemEffectValue2 = static_cast<short>(pkt->item_effect_value2);
 	dwAttribute = pkt->attribute;
 	sItemSpecEffectValue2 = static_cast<short>(pkt->spec_effect_value2);
+	sItemId = pkt->item_id;
+	wMaxLifeSpan = pkt->max_lifespan;
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(cName, dwAttribute, cStr1, cStr2, cStr3);
+	GetItemName(sItemId, dwAttribute, cStr1, cStr2, cStr3);
 
 
 	if (m_pBankList[cIndex] == 0) {
@@ -32122,6 +31806,11 @@ void CGame::NotifyMsg_ItemToBank(char* pData)
 		m_pBankList[cIndex]->m_sItemEffectValue2 = sItemEffectValue2;
 		m_pBankList[cIndex]->m_dwAttribute = dwAttribute;
 		m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
+		m_pBankList[cIndex]->m_sIDnum = sItemId;
+		m_pBankList[cIndex]->m_wMaxLifeSpan = wMaxLifeSpan;
+
+		// Populate display name from the shared item display name map
+		m_pBankList[cIndex]->PopulateDisplayName();
 
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMTOBANK3, cStr1);
@@ -33866,32 +33555,29 @@ int CGame::iGetManaCost(int iMagicNo)
 		if (m_pItemList[i] == 0) continue;
 		if (m_bIsItemEquipped[i] == true)
 		{
-			if (strcmp(m_pItemList[i]->m_cName, "MagicWand(MS10)") == 0)		iManaSave += 10;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicWand(MS20)") == 0)		iManaSave += 20;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicWand(MS30-LLF)") == 0) iManaSave += 30;
-			else if (strcmp(m_pItemList[i]->m_cName, "WizMagicWand(MS10)") == 0)	iManaSave += 10;
-			else if (strcmp(m_pItemList[i]->m_cName, "WizMagicWand(MS20)") == 0)	iManaSave += 20;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicNecklace(MS10)") == 0) iManaSave += 10;
-			else if (strcmp(m_pItemList[i]->m_cName, "DarkMageMagicStaff") == 0)	iManaSave += 25;
-			else if (strcmp(m_pItemList[i]->m_cName, "DarkMageMagicStaffW") == 0) iManaSave += 25;
-			else if (strcmp(m_pItemList[i]->m_cName, "DarkMageMagicWand") == 0)	iManaSave += 28;
-			else if (strcmp(m_pItemList[i]->m_cName, "NecklaceOfLiche") == 0)   	iManaSave += 15;
-			// Snoopy: v351 wands
-			else if (strcmp(m_pItemList[i]->m_cName, "DarkMageTempleWand") == 0)	iManaSave += 28;
-			else if (strcmp(m_pItemList[i]->m_cName, "BerserkWand(MS.20)") == 0)	iManaSave += 20;
-			else if (strcmp(m_pItemList[i]->m_cName, "BerserkWand(MS.10)") == 0)	iManaSave += 10;
-			else if (strcmp(m_pItemList[i]->m_cName, "KlonessWand(MS.20)") == 0)	iManaSave += 20;
-			else if (strcmp(m_pItemList[i]->m_cName, "KlonessWand(MS.10)") == 0)	iManaSave += 10;
-			else if (strcmp(m_pItemList[i]->m_cName, "ResurWand(MS.20)") == 0)	iManaSave += 20;
-			else if (strcmp(m_pItemList[i]->m_cName, "ResurWand(MS.10)") == 0)	iManaSave += 10;
-			// Centuu: v382 necks
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicNecklace(MS12)") == 0) iManaSave += 12;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicNecklace(MS14)") == 0) iManaSave += 14;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicNecklace(MS16)") == 0) iManaSave += 16;
-			else if (strcmp(m_pItemList[i]->m_cName, "MagicNecklace(MS18)") == 0) iManaSave += 18;
+			// Data-driven mana save calculation using ItemEffectType
+			auto effectType = m_pItemList[i]->GetItemEffectType();
+			switch (effectType)
+			{
+			case hb::item::ItemEffectType::AttackManaSave:
+				// Weapons with mana save: value stored in m_sItemEffectValue4
+				iManaSave += m_pItemList[i]->m_sItemEffectValue4;
+				break;
+
+			case hb::item::ItemEffectType::AddEffect:
+				// AddEffect with sub-type ManaSave (necklaces, etc.)
+				if (m_pItemList[i]->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
+				{
+					iManaSave += m_pItemList[i]->m_sItemEffectValue2;
+				}
+				break;
+
+			default:
+				break;
+			}
 		}
 	}
-	// Snoopy: MS max = 80%
+	// Mana save max = 80%
 	if (iManaSave > 80) iManaSave = 80;
 	iManaCost = m_pMagicCfgList[iMagicNo]->m_sValue1;
 	if (m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);

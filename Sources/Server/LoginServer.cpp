@@ -316,11 +316,20 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	bool ok = InsertCharacterState(db, state);
 
+	// Starter item IDs from GameConfigs.db
+	constexpr int ITEM_DAGGER = 1;
+	constexpr int ITEM_BIG_RED_POTION = 92;    // Health potion
+	constexpr int ITEM_BIG_BLUE_POTION = 94;   // Mana potion
+	constexpr int ITEM_MAP = 104;
+	constexpr int ITEM_RECALL_SCROLL = 114;
+	constexpr int ITEM_KNEE_TROUSERS_M = 460;  // Shorts for males
+	constexpr int ITEM_BODICE_W = 473;         // Bodice for females
+
 	std::vector<AccountDbItemRow> items;
-	auto addItem = [&](const char* name, int itemColor) {
+	auto addItem = [&](int itemId, int itemColor) {
 		AccountDbItemRow item = {};
 		item.slot = static_cast<int>(items.size());
-		std::snprintf(item.itemName, sizeof(item.itemName), "%s", name);
+		item.itemId = itemId;
 		item.count = 1;
 		item.touchEffectType = 0;
 		item.touchEffectValue1 = 0;
@@ -338,32 +347,17 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 		items.push_back(item);
 	};
 
-	addItem("Dagger", 0);
-	addItem("RecallScroll", 0);
-	addItem("BigRedPotion", 0);
-	addItem("BigGreenPotion", 0);
-	addItem("BigBluePotion", 0);
-	addItem("Map", 0);
+	addItem(ITEM_DAGGER, 0);
+	addItem(ITEM_RECALL_SCROLL, 0);
+	addItem(ITEM_BIG_RED_POTION, 0);
+	addItem(ITEM_BIG_BLUE_POTION, 0);
+	addItem(ITEM_MAP, 0);
 
-	int iRand = (rand() % 16);
-	switch (iRand) {
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 7:
-	case 8:
-	case 15:
-		addItem("WoodShield", 0);
-		break;
-	default:
-		if (gender == 1) {
-			addItem("KneeTrousers(M)", iRand);
-		}
-		else {
-			addItem("Chemise(W)", iRand);
-		}
-		break;
+	// Gender-specific clothing: males get shorts, females get bodice
+	if (gender == 1) {
+		addItem(ITEM_KNEE_TROUSERS_M, 0);
+	} else {
+		addItem(ITEM_BODICE_W, 0);
 	}
 
 	const char* equipStatus = "00000110000000000000000000000000000000000000000000";

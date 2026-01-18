@@ -211,8 +211,6 @@
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameMonitor.h" />
     <ClInclude Include="GlobalDef.h" />
-    <ClInclude Include="Item.h" />
-    <ClInclude Include="ItemName.h" />
     <ClInclude Include="lan_eng.h" />
     <ClInclude Include="Magic.h" />
     <ClInclude Include="MapData.h" />

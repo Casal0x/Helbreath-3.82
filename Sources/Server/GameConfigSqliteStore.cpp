@@ -421,6 +421,16 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " is_active INTEGER NOT NULL DEFAULT 0,"
         " UNIQUE(event_type, schedule_index)"
         ");"
+        "CREATE TABLE IF NOT EXISTS npc_shop_mapping ("
+        " npc_type INTEGER PRIMARY KEY,"
+        " shop_id INTEGER NOT NULL,"
+        " description TEXT"
+        ");"
+        "CREATE TABLE IF NOT EXISTS shop_items ("
+        " shop_id INTEGER NOT NULL,"
+        " item_id INTEGER NOT NULL,"
+        " PRIMARY KEY (shop_id, item_id)"
+        ");"
         "COMMIT;";
 
     if (!ExecSql(db, schemaSql)) {
@@ -1353,6 +1363,72 @@ bool LoadDropTables(sqlite3* db, CGame* game)
     return !game->m_DropTables.empty();
 }
 
+bool LoadShopConfigs(sqlite3* db, CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    game->m_NpcShopMappings.clear();
+    game->m_ShopData.clear();
+    game->m_bIsShopDataAvailable = false;
+
+    // Load NPC -> shop mappings
+    const char* mappingSql = "SELECT npc_type, shop_id, description FROM npc_shop_mapping ORDER BY npc_type;";
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, mappingSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        char logMsg[256] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare npc_shop_mapping query");
+        PutLogList(logMsg);
+        return false;
+    }
+
+    int mappingCount = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int npcType = sqlite3_column_int(stmt, 0);
+        int shopId = sqlite3_column_int(stmt, 1);
+        game->m_NpcShopMappings[npcType] = shopId;
+        mappingCount++;
+    }
+    sqlite3_finalize(stmt);
+
+    // Load shop items
+    const char* itemsSql = "SELECT shop_id, item_id FROM shop_items ORDER BY shop_id, item_id;";
+    if (sqlite3_prepare_v2(db, itemsSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        char logMsg[256] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(!) LoadShopConfigs: Failed to prepare shop_items query");
+        PutLogList(logMsg);
+        return false;
+    }
+
+    int itemCount = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        int shopId = sqlite3_column_int(stmt, 0);
+        int16_t itemId = static_cast<int16_t>(sqlite3_column_int(stmt, 1));
+
+        // Create shop if it doesn't exist
+        if (game->m_ShopData.find(shopId) == game->m_ShopData.end()) {
+            ShopData shop = {};
+            shop.shopId = shopId;
+            game->m_ShopData[shopId] = shop;
+        }
+
+        game->m_ShopData[shopId].itemIds.push_back(itemId);
+        itemCount++;
+    }
+    sqlite3_finalize(stmt);
+
+    if (mappingCount > 0 || itemCount > 0) {
+        game->m_bIsShopDataAvailable = true;
+        char logMsg[256] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(!) Shop configs loaded: %d NPC mappings, %d shops, %d total items",
+            mappingCount, static_cast<int>(game->m_ShopData.size()), itemCount);
+        PutLogList(logMsg);
+    }
+
+    return true;
+}
+
 bool SaveMagicConfigs(sqlite3* db, const CGame* game)
 {
     if (db == nullptr || game == nullptr) {
@@ -2006,15 +2082,23 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         build->m_iMaxSkill = sqlite3_column_int(stmt, col++);
         build->m_wAttribute = (uint16_t)sqlite3_column_int(stmt, col++);
         int storedItemId = sqlite3_column_int(stmt, col++);
-        (void)storedItemId;
 
-        CItem tempItem;
-        if (game->_bInitItemAttr(&tempItem, build->m_cName)) {
-            build->m_sItemID = tempItem.m_sIDnum;
+        // Use the stored item_id directly instead of looking up by name
+        // (names in items table are now display names, not internal names)
+        if (storedItemId > 0 && storedItemId < DEF_MAXITEMTYPES && game->m_pItemConfigList[storedItemId] != nullptr) {
+            build->m_sItemID = static_cast<short>(storedItemId);
         } else {
-            delete build;
-            sqlite3_finalize(stmt);
-            return false;
+            // Fallback to name lookup for backwards compatibility
+            CItem tempItem;
+            if (game->_bInitItemAttr(&tempItem, build->m_cName)) {
+                build->m_sItemID = tempItem.m_sIDnum;
+            } else {
+                char logMsg[256] = {};
+                std::snprintf(logMsg, sizeof(logMsg), "(!) Warning: BuildItem '%s' has invalid item_id %d", build->m_cName, storedItemId);
+                PutLogList(logMsg);
+                delete build;
+                continue; // Skip this build item instead of failing completely
+            }
         }
 
         build->m_iMaxValue = 0;

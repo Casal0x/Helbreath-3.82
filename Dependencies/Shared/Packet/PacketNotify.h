@@ -355,7 +355,8 @@ namespace net {
 		uint8_t item_color;
 		uint8_t spec_value2;
 		uint32_t attribute;
-		uint8_t padding[2];
+		int16_t item_id;           // Item ID for config lookup
+		uint16_t max_lifespan;     // Maximum durability
 	};
 
 	struct HB_PACKED PacketNotifyItemPurchased {
@@ -374,6 +375,8 @@ namespace net {
 		int16_t sprite_frame;
 		uint8_t item_color;
 		uint16_t cost;
+		int16_t item_id;           // Item ID for config lookup
+		uint16_t max_lifespan;     // Maximum durability
 	};
 
 	struct HB_PACKED PacketNotifyItemToBank {
@@ -396,6 +399,8 @@ namespace net {
 		uint32_t attribute;
 		uint8_t spec_effect_value2;
 		uint8_t padding;
+		int16_t item_id;           // Item ID for config lookup
+		uint16_t max_lifespan;     // Maximum durability
 	};
 
 	struct HB_PACKED PacketNotifyRatingPlayer {
