@@ -28,8 +28,7 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		cItemColor = m_pGame->m_pItemList[cItemID]->m_cItemColor;
 		if (cItemColor == 0)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteFast(sX + 62 + 15, sY + 84 + 30,
-				m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, dwTime);
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
 		else
 		{
 			switch (m_pGame->m_pItemList[cItemID]->m_sSprite) {
@@ -37,11 +36,9 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 2: // Bows
 			case 3: // Shields
 			case 15: // Axes hammers
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteRGB(sX + 62 + 15, sY + 84 + 30
-					, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
 				break;
-			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteRGB(sX + 62 + 15, sY + 84 + 30
-				, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], dwTime);
+			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
 				break;
 			}
 		}
@@ -85,8 +82,7 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		cItemID = Info().sV1;
 		cItemColor = m_pGame->m_pItemList[cItemID]->m_cItemColor;
 		if (cItemColor == 0)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteFast(sX + 62 + 15, sY + 84 + 30,
-				m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, dwTime);
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
 		else
 		{
 			switch (m_pGame->m_pItemList[cItemID]->m_sSprite) {
@@ -94,12 +90,10 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 2: // Bows
 			case 3: // Shields
 			case 15: // Axes hammers
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteRGB(sX + 62 + 15, sY + 84 + 30
-					, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
 				break;
 
-			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->PutSpriteRGB(sX + 62 + 15, sY + 84 + 30
-				, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], dwTime);
+			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
 				break;
 			}
 		}

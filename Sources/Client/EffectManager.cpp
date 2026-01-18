@@ -4,7 +4,7 @@
 
 #include "EffectManager.h"
 #include "Game.h"
-#include "Sprite.h"
+#include "ISprite.h"
 #include "Effect.h"
 #include "GlobalDef.h"
 #include "Misc.h"
@@ -28,9 +28,9 @@ EffectManager::~EffectManager()
 }
 
 // Listo
-void EffectManager::SetEffectSprites(CSprite** pEffectSpr)
+void EffectManager::SetEffectSprites(SpriteLib::SpriteCollection& effectSpr)
 {
-	m_pEffectSpr = pEffectSpr;
+	m_pEffectSpr = &effectSpr;
 }
 
 // Listo

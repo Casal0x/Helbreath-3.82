@@ -1,15 +1,17 @@
 //MYDIB.CPP BMP
-//#include <afx.h>
-//#include <AfxWin.h>
+//
+// Part of DDrawEngine static library
+//////////////////////////////////////////////////////////////////////
+
 #include <windows.h>
-#include "CommonTypes.h"
+#include <cstdint>
 #include <stdio.h>
-#include "mydib.h"
+#include "Mydib.h"
 
 CMyDib::CMyDib(char *szFilename, unsigned long dwFilePointer)
 {
-	BITMAPFILEHEADER fh; //bmp 
-	m_lpDib = 0;	
+	BITMAPFILEHEADER fh; //bmp
+	m_lpDib = 0;
 	HANDLE hFileRead;
 	uint32_t nCount;
 	char PathName[28];
@@ -41,4 +43,3 @@ void CMyDib::PaintImage(HDC hDC)
 {	if (m_lpDib == 0) return;
 	SetDIBitsToDevice(hDC, 0, 0, m_wWidthX, m_wWidthY, 0, 0, 0, m_wWidthY, m_lpDib + *(LPDWORD)m_lpDib + 4*m_wColorNums, m_bmpInfo, DIB_RGB_COLORS);
 }
-

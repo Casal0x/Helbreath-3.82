@@ -1,5 +1,6 @@
 // DXC_ddraw.h: interface for the DXC_ddraw class.
 //
+// Part of DDrawEngine static library
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -9,14 +10,18 @@
 #include <windows.h>
 #include <memory.h>
 #include <string.h>
+#include <cstdint>
 #include "ddraw.h"
-#include "Misc.h"
-#include "GlobalDef.h"
+#include "RenderConstants.h"
+
+// Forward declare ConfigManager to avoid circular dependency
+class ConfigManager;
 
 typedef signed char i8;
-class DXC_ddraw  
+
+class DXC_ddraw
 {
-public:	
+public:
 	void DrawItemShadowBox(short sX, short sY, short dX, short dY, int iType = 0);
 	bool m_init;
 	void ChangeBPP(i8 bpp);
@@ -44,7 +49,8 @@ public:
 	HRESULT iSetColorKey(IDirectDrawSurface7 * pdds4, COLORREF rgb);
 	HRESULT iFlip();
 	bool Screenshot(LPCTSTR FileName, LPDIRECTDRAWSURFACE7 lpDDS);
-	
+
+	// Transparency tables (owned by engine, populated during Init)
 	long    m_lTransG100[64][64], m_lTransRB100[64][64];
 	long    m_lTransG70[64][64], m_lTransRB70[64][64];
 	long    m_lTransG50[64][64], m_lTransRB50[64][64];

@@ -25,17 +25,17 @@ void DialogBox_GuideMap::DrawBorder(short sX, short sY)
 {
 	for (short shX = -2; shX < 130; shX++)
 	{
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY - 2, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY - 1, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY + 128, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + shX, sY + 129, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + shX, sY - 2, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + shX, sY - 1, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + shX, sY + 128, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + shX, sY + 129, 50, 50, 50);
 	}
 	for (short shY = -2; shY < 130; shY++)
 	{
-		m_pGame->m_DDraw.PutPixel(sX - 2, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX - 1, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + 128, sY + shY, 50, 50, 50);
-		m_pGame->m_DDraw.PutPixel(sX + 129, sY + shY, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX - 2, sY + shY, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX - 1, sY + shY, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + 128, sY + shY, 50, 50, 50);
+		m_pGame->m_Renderer->PutPixel(sX + 129, sY + shY, 50, 50, 50);
 	}
 }
 
@@ -55,11 +55,11 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 	if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
 
 	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMaxMapIndex]->PutShiftTransSprite2(sX, sY, shX, shY, 0, dwTime);
+		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0, SpriteLib::DrawParams::Alpha(0.25f));
 	else
-		m_pGame->m_pSprite[m_iMaxMapIndex]->PutShiftSpriteFast(sX, sY, shX, shY, 0, dwTime);
+		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->PutSpriteFast(sX - shX + m_pGame->m_sPlayerX, sY - shY + m_pGame->m_sPlayerY, 37, dwTime);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX - shX + m_pGame->m_sPlayerX, sY - shY + m_pGame->m_sPlayerY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
 	{
@@ -68,9 +68,7 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 			if (m_pGame->m_sEventX >= shX && m_pGame->m_sEventX <= shX + 128 &&
 				m_pGame->m_sEventY >= shY && m_pGame->m_sEventY <= shY + 128)
 			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->PutSpriteFast(
-					sX + m_pGame->m_sEventX - shX, sY + m_pGame->m_sEventY - shY,
-					m_pGame->m_sMonsterID, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->Draw(sX + m_pGame->m_sEventX - shX, sY + m_pGame->m_sEventY - shY, m_pGame->m_sMonsterID);
 			}
 		}
 	}
@@ -89,13 +87,13 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 	}
 
 	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMinMapIndex]->PutTransSprite2(sX, sY, m_iMinMapSquare, dwTime);
+		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, SpriteLib::DrawParams::Alpha(0.25f));
 	else
-		m_pGame->m_pSprite[m_iMinMapIndex]->PutSpriteFastNoColorKey(sX, sY, m_iMinMapSquare, dwTime);
+		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, SpriteLib::DrawParams::NoColorKey());
 
 	short shX = (m_pGame->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 	short shY = (m_pGame->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->PutSpriteFast(sX + shX, sY + shY, 37, dwTime);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + shX, sY + shY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
 	{
@@ -103,7 +101,7 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 		{
 			shX = (m_pGame->m_sEventX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->PutSpriteFast(sX + shX, sY + shY, m_pGame->m_sMonsterID, dwTime);
+			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->Draw(sX + shX, sY + shY, m_pGame->m_sMonsterID);
 		}
 	}
 }

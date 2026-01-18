@@ -1,5 +1,6 @@
 // Sprite.h: interface for the CSprite class.
 //
+// Part of DDrawEngine static library
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -10,8 +11,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <cstdint>
+#include <cstring>
 
-#include "CommonTypes.h"
 #include "DXC_ddraw.h"
 #include "Mydib.h"
 
@@ -70,7 +72,7 @@ public:
 	bool _iOpenSprite();
 	void iRestore();
 	IDirectDrawSurface7 *  _pMakeSpriteSurface();
-		
+
 	RECT	m_rcBound;
 	uint32_t	m_dwRefTime;
 	bool	m_bIsSurfaceEmpty;

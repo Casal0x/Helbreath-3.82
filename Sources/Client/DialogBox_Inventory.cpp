@@ -19,7 +19,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 
 	int drawX = baseX + ITEM_OFFSET_X + pItem->m_sX;
 	int drawY = baseY + ITEM_OFFSET_Y + pItem->m_sY;
-	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pItem->m_sSprite];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pItem->m_sSprite];
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
@@ -31,9 +31,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	{
 		// No color tint
 		if (bDisabled)
-			pSprite->PutTransSprite2(drawX, drawY, pItem->m_sSpriteFrame, dwTime);
+			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else
-			pSprite->PutSpriteFast(drawX, drawY, pItem->m_sSpriteFrame, dwTime);
+			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame);
 	}
 	else
 	{
@@ -43,9 +43,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 		int b = wB[cItemColor] - m_pGame->m_wB[0];
 
 		if (bDisabled)
-			pSprite->PutTransSpriteRGB(drawX, drawY, pItem->m_sSpriteFrame, r, g, b, dwTime);
+			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));
 		else
-			pSprite->PutSpriteRGB(drawX, drawY, pItem->m_sSpriteFrame, r, g, b, dwTime);
+			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::Tint(r, g, b));
 	}
 
 	// Show item count for consumables and arrows

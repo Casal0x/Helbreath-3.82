@@ -63,8 +63,8 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 
 				if (m_pGame->m_iDownSkillIndex == (i + Info().sView))
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSpriteRGB(sX + 215, sY + 47 + i * 15, 21, 50, 50, 50, m_pGame->m_dwTime);
-				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutSpriteFast(sX + 215, sY + 47 + i * 15, 20, m_pGame->m_dwTime);
+					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::TintedAlpha(50, 50, 50, 0.7f));
+				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20);
 			}
 
 		iTotalLines = 0;

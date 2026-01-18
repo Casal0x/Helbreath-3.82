@@ -4,7 +4,7 @@
 
 #include "EffectManager.h"
 #include "Game.h"
-#include "Sprite.h"
+#include "ISprite.h"
 #include "Effect.h"
 #include "GlobalDef.h"
 #include "Misc.h"
@@ -1048,11 +1048,10 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				break;
 
 			default:
-				delete m_pEffectSpr[i];
-				m_pEffectSpr[i] = 0;
+				m_pEffectSpr->remove(i);
 				break;
 			}
-			if (m_pEffectSpr[i] != 0)
+			if ((*m_pEffectSpr)[i] != 0)
 			{
 				m_pEffectList[i]->m_mX2 = m_pEffectList[i]->m_mX;
 				m_pEffectList[i]->m_mY2 = m_pEffectList[i]->m_mY;

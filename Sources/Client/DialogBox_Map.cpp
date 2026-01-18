@@ -34,8 +34,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		switch (Info().sV2) {
 		case 0: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutSpriteFast(sX, sY, 0, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0);
 			dX = 19;
 			dY = 20;
 			szX = 260;
@@ -44,8 +44,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 1: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->PutSpriteFast(sX, sY, 1, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1);
 			dX = 20;
 			dY = 18;
 			szX = 260;
@@ -54,8 +54,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 2: // middleland
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutSpriteFast(sX, sY, 0, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0);
 			dX = 11;
 			dY = 31;
 			szX = 280;
@@ -64,8 +64,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 3: // default
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->PutSpriteFast(sX, sY, 1, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1);
 			dX = 52;
 			dY = 42;
 			szX = 200;
@@ -74,8 +74,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 4: // aresden dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutSpriteFast(sX, sY, 0, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -84,8 +84,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 5: // elvine dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->PutSpriteFast(sX, sY, 1, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -94,8 +94,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 6: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutSpriteFast(sX, sY, 0, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -104,8 +104,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 7: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->PutSpriteFast(sX, sY, 1, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -114,8 +114,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 8: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutTransSprite2(sX, sY, 0, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutSpriteFast(sX, sY, 0, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 32;
 			szX = 220;
@@ -124,8 +124,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 9: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutTransSprite2(sX, sY, 1, dwTime);
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->PutSpriteFast(sX, sY, 1, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 38;
 			szX = 220;

@@ -127,22 +127,22 @@ void DialogBox_MagicShop::DrawPageIndicator(short sX, short sY)
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Draw page number strip
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 55, sY + 250, 19, dwTime);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 55, sY + 250, 19);
 
 	// Highlight current page
 	short sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView;
 	switch (sView)
 	{
-	case 0: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 44 + 31, sY + 250, 20, dwTime); break;
-	case 1: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 57 + 31, sY + 250, 21, dwTime); break;
-	case 2: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 75 + 31, sY + 250, 22, dwTime); break;
-	case 3: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 100 + 31, sY + 250, 23, dwTime); break;
-	case 4: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 120 + 31, sY + 250, 24, dwTime); break;
-	case 5: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 135 + 31, sY + 250, 25, dwTime); break;
-	case 6: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 156 + 31, sY + 250, 26, dwTime); break;
-	case 7: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 183 + 31, sY + 250, 27, dwTime); break;
-	case 8: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 216 + 31, sY + 250, 28, dwTime); break;
-	case 9: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX - 20 + 236 + 31, sY + 250, 29, dwTime); break;
+	case 0: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 44 + 31, sY + 250, 20); break;
+	case 1: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 57 + 31, sY + 250, 21); break;
+	case 2: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 75 + 31, sY + 250, 22); break;
+	case 3: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 100 + 31, sY + 250, 23); break;
+	case 4: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 120 + 31, sY + 250, 24); break;
+	case 5: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 135 + 31, sY + 250, 25); break;
+	case 6: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 156 + 31, sY + 250, 26); break;
+	case 7: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 183 + 31, sY + 250, 27); break;
+	case 8: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 216 + 31, sY + 250, 28); break;
+	case 9: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX - 20 + 236 + 31, sY + 250, 29); break;
 	}
 }
 

@@ -121,20 +121,20 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Circle selector bar
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 30, sY + 250, 19, dwTime);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 30, sY + 250, 19);
 
 	// Circle selector highlight
 	switch (Info().sView) {
-	case 0: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 30, sY + 250, 20, dwTime); break;
-	case 1: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 43, sY + 250, 21, dwTime); break;
-	case 2: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 61, sY + 250, 22, dwTime); break;
-	case 3: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 86, sY + 250, 23, dwTime); break;
-	case 4: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 106, sY + 250, 24, dwTime); break;
-	case 5: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 121, sY + 250, 25, dwTime); break;
-	case 6: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 142, sY + 250, 26, dwTime); break;
-	case 7: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 169, sY + 250, 27, dwTime); break;
-	case 8: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 202, sY + 250, 28, dwTime); break;
-	case 9: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->PutSpriteFast(sX + 222, sY + 250, 29, dwTime); break;
+	case 0: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 30, sY + 250, 20); break;
+	case 1: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 43, sY + 250, 21); break;
+	case 2: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 61, sY + 250, 22); break;
+	case 3: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 86, sY + 250, 23); break;
+	case 4: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 106, sY + 250, 24); break;
+	case 5: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 121, sY + 250, 25); break;
+	case 6: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 142, sY + 250, 26); break;
+	case 7: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 169, sY + 250, 27); break;
+	case 8: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 202, sY + 250, 28); break;
+	case 9: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 222, sY + 250, 29); break;
 	}
 
 	// Calculate magic probability

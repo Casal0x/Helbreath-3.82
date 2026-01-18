@@ -37,7 +37,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 {
 	int iMaxPoint, iBarWidth;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	// HP bar
 	iMaxPoint = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel,
@@ -46,7 +46,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->PutSpriteFastWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth, dwTime);
+	pSprite->DrawWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth);
 
 	// HP number
 	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iHP);
@@ -70,7 +70,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->PutSpriteFastWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth, dwTime);
+	pSprite->DrawWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth);
 
 	// MP number
 	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iMP);
@@ -83,7 +83,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > SP_BAR_WIDTH) iBarWidth = SP_BAR_WIDTH;
-	pSprite->PutSpriteFastWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth, dwTime);
+	pSprite->DrawWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth);
 
 	// SP number
 	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iSP);
@@ -98,13 +98,13 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH) / iExpRange;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > ICON_PANEL_WIDTH) iBarWidth = ICON_PANEL_WIDTH;
-	pSprite->PutSpriteFastWidth(0, EXP_BAR_Y, 18, iBarWidth, dwTime);
+	pSprite->DrawWidth(0, EXP_BAR_Y, 18, iBarWidth);
 }
 
 void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 {
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	// Level up / Restart text
 	if (m_pGame->m_iHP > 0)
@@ -123,14 +123,14 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 
 	// Combat mode / Safe attack icon
 	if (m_pGame->m_bIsSafeAttackMode)
-		pSprite->PutSpriteFast(COMBAT_ICON_X, COMBAT_ICON_Y, 4, dwTime);
+		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 4);
 	else if (m_pGame->m_bIsCombatMode)
-		pSprite->PutSpriteFast(COMBAT_ICON_X, COMBAT_ICON_Y, 5, dwTime);
+		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 5);
 
 	// Combat mode button hover
 	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
 	{
-		pSprite->PutSpriteFast(BTN_COMBAT_X1, BTN_Y1, 16, dwTime);
+		pSprite->Draw(BTN_COMBAT_X1, BTN_Y1, 16);
 		const char* tooltip = m_pGame->m_bIsCombatMode
 			? (m_pGame->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
@@ -143,9 +143,9 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	{
 		bool bHover = IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2);
 		if (m_pGame->m_bAresden)
-			pSprite->PutSpriteFast(BTN_CRUSADE_X1 + (bHover ? 1 : 0), BTN_Y1, bHover ? 1 : 2, dwTime);
+			pSprite->Draw(BTN_CRUSADE_X1 + (bHover ? 1 : 0), BTN_Y1, bHover ? 1 : 2);
 		else
-			pSprite->PutSpriteFast(BTN_CRUSADE_X1, BTN_Y1, bHover ? 0 : 15, dwTime);
+			pSprite->Draw(BTN_CRUSADE_X1, BTN_Y1, bHover ? 0 : 15);
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
@@ -173,14 +173,14 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 	if (msY <= BTN_Y1 || msY >= BTN_Y2) return;
 
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
 	{
 		const auto& btn = TOGGLE_BUTTONS[i];
 		if (msX > btn.x1 && msX < btn.x2)
 		{
-			pSprite->PutSpriteFast(btn.spriteX, BTN_Y1, btn.spriteFrame, dwTime);
+			pSprite->Draw(btn.spriteX, BTN_Y1, btn.spriteFrame);
 			wsprintf(m_pGame->G_cTxt, "%s", btn.tooltip);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
 			PutString(msX + tooltipOffset, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
@@ -194,7 +194,7 @@ void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
 	short panelX = Info().sX;
 	short panelY = Info().sY;
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutSpriteFast(panelX, panelY, 14, m_pGame->m_dwCurTime);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(panelX, panelY, 14);
 	DrawGaugeBars();
 	DrawStatusIcons(msX, msY);
 	DrawIconButtons(msX, msY);

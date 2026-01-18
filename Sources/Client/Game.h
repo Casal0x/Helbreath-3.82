@@ -28,10 +28,14 @@
 using namespace std;
 
 #include "GlobalDef.h"
-#include "DXC_ddraw.h"
+#include "IRenderer.h"
+#include "RendererFactory.h"
+#include "ISprite.h"
+#include "ISpriteFactory.h"
+#include "SpriteCollection.h"
+#include "DDrawSpriteFactory.h"
 #include "InputManager.h"
 #include "XSocket.h"
-#include "Sprite.h"
 #include "SpriteID.h"
 #include "Misc.h"
 #include "ChatMsg.h"
@@ -323,7 +327,7 @@ public:
 	void UpdateScreen_OnLogResMsg();
 	void UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus = false);
 	void UpdateScreen_OnChangePassword();
-	void UpdateScreen_OnLoading_Progress();
+	void DrawScreen_OnLoadingProgress();
 	void UpdateScreen_OnVersionNotMatch();
 
 	// Separated Update/Draw methods (Phase 3 refactor)
@@ -652,10 +656,11 @@ public:
 		int iCost;
 	} m_stTeleportList[20];
 
-	class DXC_ddraw  m_DDraw;
-	class CSprite  * m_pSprite[DEF_MAXSPRITES];
-	class CSprite  * m_pTileSpr[DEF_MAXTILES];
-	class CSprite  * m_pEffectSpr[DEF_MAXEFFECTSPR];
+	class IRenderer* m_Renderer;  // Abstract renderer interface
+	DDrawSpriteFactory* m_pSpriteFactory;  // Sprite factory for creating sprites
+	SpriteLib::SpriteCollection m_pSprite;
+	SpriteLib::SpriteCollection m_pTileSpr;
+	SpriteLib::SpriteCollection m_pEffectSpr;
 	class CMapData * m_pMapData;
 	class XSocket * m_pGSock;
 	class XSocket * m_pLSock;

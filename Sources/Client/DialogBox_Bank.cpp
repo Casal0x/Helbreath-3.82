@@ -117,25 +117,16 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	// Draw item sprite
 	char cItemColor = m_pGame->m_pBankList[iItemIndex]->m_cItemColor;
 	if (cItemColor == 0) {
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->PutSpriteFast(
-			sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame, m_pGame->m_dwCurTime);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame);
 	}
 	else {
 		if ((m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
 			(m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
 			(m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-				sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame,
-				m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0],
-				m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0],
-				m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], m_pGame->m_dwCurTime);
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
 		}
 		else {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-				sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame,
-				m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0],
-				m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0],
-				m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], m_pGame->m_dwCurTime);
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
 		}
 	}
 }

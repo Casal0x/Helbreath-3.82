@@ -137,9 +137,7 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     bool bFlagStatLow = false;
     bool bFlagRedShown = false;
 
-    m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->PutSpriteFast(
-        sX + 62 + 30 - 35, sY + 84 + 30 - 10,
-        m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame, dwTime);
+    m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame);
 
     std::memset(cTemp, 0, sizeof(cTemp));
     m_pGame->GetItemName(m_pGame->m_pItemForSaleList[iItemIndex], cTemp, cStr2, cStr3);
@@ -410,8 +408,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
     uint32_t dwTime = m_pGame->m_dwCurTime;
     char cTemp[255];
 
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 156, sY + 219, 19, dwTime);
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 170, sY + 219, 19, dwTime);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 219, 19);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 219, 19);
     m_pGame->PutString(sX + 123 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, RGB(40, 10, 10)); // "Quantity:"
     m_pGame->PutString(sX + 124 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, RGB(40, 10, 10));
 
@@ -444,8 +442,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
         m_pGame->PutString(sX - 35 + 200, sY - 10 + 237, (cTemp), RGB(40, 10, 10));
         m_pGame->PutString(sX - 35 + 201, sY - 10 + 237, (cTemp), RGB(40, 10, 10));
     }
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 156, sY + 244, 20, dwTime);
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 170, sY + 244, 20, dwTime);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 244, 20);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 244, 20);
 }
 
 bool DialogBox_Shop::OnClick(short msX, short msY)

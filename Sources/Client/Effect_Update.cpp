@@ -4,7 +4,7 @@
 
 #include "EffectManager.h"
 #include "Game.h"
-#include "Sprite.h"
+#include "ISprite.h"
 #include "Effect.h"
 #include "GlobalDef.h"
 #include "Misc.h"

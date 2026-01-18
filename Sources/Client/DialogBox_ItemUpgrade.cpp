@@ -92,21 +92,11 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
         || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
         || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-            sX + 134, sY + 182,
-            m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame,
-            m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0],
-            m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0],
-            m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], dwTime);
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
     }
     else
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-            sX + 134, sY + 182,
-            m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame,
-            m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0],
-            m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0],
-            m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], dwTime);
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
     }
 
     std::memset(cStr1, 0, sizeof(cStr1));
@@ -183,28 +173,16 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
             || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
             || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-                sX + 134, sY + 182,
-                m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame,
-                m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0],
-                m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0],
-                m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], dwTime);
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
         }
         else
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->PutSpriteRGB(
-                sX + 134, sY + 182,
-                m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame,
-                m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0],
-                m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0],
-                m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], dwTime);
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
         }
 
         // Flickering effect
         if ((rand() % 5) == 0)
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->PutTransSprite25(
-                sX + 134, sY + 182,
-                m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, dwTime);
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
 
         char cStr1[120], cStr2[120], cStr3[120];
         std::memset(cStr1, 0, sizeof(cStr1));

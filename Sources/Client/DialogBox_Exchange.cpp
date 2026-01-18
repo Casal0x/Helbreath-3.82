@@ -90,8 +90,7 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 		if (m_pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1) {
 			cItemColor = m_pGame->m_stDialogBoxExchangeInfo[i].sV4;
 			if (cItemColor == 0) {
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->PutSpriteFast(
-					sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, dwTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2);
 			}
 			else {
 				switch (m_pGame->m_stDialogBoxExchangeInfo[i].sV1) {
@@ -100,18 +99,10 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->PutSpriteRGB(
-						sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2,
-						m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0],
-						m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0],
-						m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0], dwTime);
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
 					break;
 				default:
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->PutSpriteRGB(
-						sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2,
-						m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0],
-						m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0],
-						m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0], dwTime);
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
 					break;
 				}
 			}

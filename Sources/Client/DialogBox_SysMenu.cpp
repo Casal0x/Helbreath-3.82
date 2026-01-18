@@ -212,7 +212,7 @@ void DialogBox_SysMenu::DrawServerName(short sX, short sY)
 
 void DialogBox_SysMenu::DrawDisplayModeButtons(short sX, short sY, short msX, short msY)
 {
-	const bool isFullscreen = m_pGame->m_DDraw.m_bFullMode;
+	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 	const short modeY = sY + 204;
 	const short windowedX = sX + 112;
 	const short fullscreenX = sX + 182;
@@ -257,7 +257,7 @@ void DialogBox_SysMenu::DrawButtons(short sX, short sY, short msX, short msY)
 
 void DialogBox_SysMenu::DrawResolutionButton(short sX, short sY, short msX, short msY)
 {
-	const bool isFullscreen = m_pGame->m_DDraw.m_bFullMode;
+	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 	int resWidth = 0;
 	int resHeight = 0;
 	if (isFullscreen) {
@@ -419,11 +419,11 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 
 	// Resolution button click (only when alive and not restarting)
 	if ((m_pGame->m_iHP > 0) && (m_pGame->m_cRestartCount == -1)) {
-		bool isFullscreen = m_pGame->m_DDraw.m_bFullMode;
+		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 		if ((msX >= sX + 110) && (msX <= sX + 168) && (msY >= sY + 200) && (msY <= sY + 213)) {
 			if (isFullscreen) {
-				m_pGame->m_DDraw.m_bFullMode = false;
-				m_pGame->m_DDraw.ChangeDisplayMode(G_hWnd);
+				m_pGame->m_Renderer->SetFullscreen(false);
+				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
 				InputManager::Get().SetActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(false);
 				ConfigManager::Get().Save();
@@ -435,8 +435,8 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 
 		if ((msX >= sX + 180) && (msX <= sX + 242) && (msY >= sY + 200) && (msY <= sY + 213)) {
 			if (!isFullscreen) {
-				m_pGame->m_DDraw.m_bFullMode = true;
-				m_pGame->m_DDraw.ChangeDisplayMode(G_hWnd);
+				m_pGame->m_Renderer->SetFullscreen(true);
+				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
 				InputManager::Get().SetActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(true);
 				ConfigManager::Get().Save();

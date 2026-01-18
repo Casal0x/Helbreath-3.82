@@ -42,30 +42,24 @@ char DialogBox_Character::DrawEquippedItem(int equipPos, int drawX, int drawY, s
 	uint16_t* wG = useWeaponColors ? m_pGame->m_wWG : m_pGame->m_wG;
 	uint16_t* wB = useWeaponColors ? m_pGame->m_wWB : m_pGame->m_wB;
 
-	auto* pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 
 	if (!bDisabled)
 	{
 		if (cItemColor == 0)
-			pSprite->PutSpriteFast(drawX, drawY, sFrame, m_pGame->m_dwCurTime);
+			pSprite->Draw(drawX, drawY, sFrame);
 		else
-			pSprite->PutSpriteRGB(drawX, drawY, sFrame,
-				wR[cItemColor] - m_pGame->m_wR[0],
-				wG[cItemColor] - m_pGame->m_wG[0],
-				wB[cItemColor] - m_pGame->m_wB[0], m_pGame->m_dwCurTime);
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(wR[cItemColor] - m_pGame->m_wR[0], wG[cItemColor] - m_pGame->m_wG[0], wB[cItemColor] - m_pGame->m_wB[0]));
 	}
 	else
 	{
 		if (cItemColor == 0)
-			pSprite->PutTransSprite2(drawX, drawY, sFrame, m_pGame->m_dwCurTime);
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else
-			pSprite->PutTransSpriteRGB(drawX, drawY, sFrame,
-				wR[cItemColor] - m_pGame->m_wR[0],
-				wG[cItemColor] - m_pGame->m_wG[0],
-				wB[cItemColor] - m_pGame->m_wB[0], m_pGame->m_dwCurTime);
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(wR[cItemColor] - m_pGame->m_wR[0], wG[cItemColor] - m_pGame->m_wG[0], wB[cItemColor] - m_pGame->m_wB[0], 0.7f));
 	}
 
-	if (pSprite->_bCheckCollison(drawX, drawY, sFrame, msX, msY))
+	if (pSprite->CheckCollision(drawX, drawY, sFrame, msX, msY))
 		return (char)equipPos;
 
 	return -1;
@@ -206,17 +200,17 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	char cItemColor;
 
 	// Base body
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->PutSpriteFast(sX + 171, sY + 290, m_pGame->m_sPlayerType - 1, m_pGame->m_dwCurTime);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX + 171, sY + 290, m_pGame->m_sPlayerType - 1);
 
 	// Hair (if no helmet)
 	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
 	{
 		m_pGame->_GetHairColorRGB(((m_pGame->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->PutSpriteRGB(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, iR, iG, iB, m_pGame->m_dwCurTime);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->PutSpriteFast(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F), m_pGame->m_dwCurTime);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F));
 
 	// Equipment slots at character position (171, 290)
 	char result;
@@ -272,9 +266,9 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 		if (sSprH == 8) // Angel staff
 		{
 			if (!m_pGame->m_bIsItemDisabled[itemIdx])
-				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 45, sY + 143, sFrame, m_pGame->m_dwCurTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 			else
-				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 45, sY + 143, sFrame, m_pGame->m_dwCurTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		}
 	}
 }
@@ -288,17 +282,17 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	int iSkirtDraw = 0;
 
 	// Base body (female uses +40 offset from male sprites)
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->PutSpriteFast(sX + 171, sY + 290, m_pGame->m_sPlayerType - 4, m_pGame->m_dwCurTime);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX + 171, sY + 290, m_pGame->m_sPlayerType - 4);
 
 	// Hair (if no helmet) - female hair is at +18+40 = +58
 	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
 	{
 		m_pGame->_GetHairColorRGB(((m_pGame->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->PutSpriteRGB(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, iR, iG, iB, m_pGame->m_dwCurTime);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->PutSpriteFast(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F), m_pGame->m_dwCurTime);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F));
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
 	if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
@@ -377,9 +371,9 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 		if (sSprH == 8) // Angel staff
 		{
 			if (!m_pGame->m_bIsItemDisabled[itemIdx])
-				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutSpriteFast(sX + 45, sY + 143, sFrame, m_pGame->m_dwCurTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 			else
-				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->PutTransSprite(sX + 45, sY + 143, sFrame, m_pGame->m_dwCurTime);
+				m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		}
 	}
 }

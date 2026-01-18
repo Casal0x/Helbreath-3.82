@@ -58,8 +58,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 			sX = Info().sX;
 			sY = Info().sY;
 		}
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->PutSpriteFast(sX, sY, 4, dwTime);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->PutSpriteFast(sX + 22, sY + 14, 3, dwTime);
+		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX, sY, 4);
+		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX + 22, sY + 14, 3);
 		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", 220, 140, 160);
 		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", 90, 220, 200);
 

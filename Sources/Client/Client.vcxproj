@@ -45,13 +45,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)lib\$(Configuration);$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)lib\$(Configuration);$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -88,7 +88,7 @@
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DDrawEngine.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>
@@ -135,7 +135,7 @@
       <IgnoreAllDefaultLibraries>
       </IgnoreAllDefaultLibraries>
       <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DDrawEngine.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;ddraw.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>
@@ -160,7 +160,6 @@
     <ClInclude Include="CharInfo.h" />
     <ClInclude Include="CommonTypes.h" />
     <ClInclude Include="Curse.h" />
-    <ClInclude Include="DXC_ddraw.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="DialogBoxIDs.h" />
     <ClInclude Include="DialogBoxInfo.h" />
@@ -211,6 +210,7 @@
     <ClInclude Include="EffectManager.h" />
     <ClInclude Include="NetworkMessageManager.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameWindowHandler.h" />
     <ClInclude Include="GameMonitor.h" />
     <ClInclude Include="GlobalDef.h" />
     <ClInclude Include="lan_eng.h" />
@@ -220,10 +220,8 @@
     <ClInclude Include="MouseInterface.h" />
     <ClInclude Include="ChatMsg.h" />
     <ClInclude Include="ClientMessages.h" />
-    <ClInclude Include="Mydib.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skill.h" />
-    <ClInclude Include="Sprite.h" />
     <ClInclude Include="SpriteID.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileSpr.h" />
@@ -294,7 +292,6 @@
     <ClCompile Include="HotkeyManager.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Version.cpp" />
-    <ClCompile Include="DXC_ddraw.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="EffectManager.cpp" />
@@ -328,9 +325,8 @@
     <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MouseInterface.cpp" />
-    <ClCompile Include="Mydib.cpp" />
-    <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Wmain.cpp" />
+    <ClCompile Include="GameWindowHandler.cpp" />
     <ClCompile Include="XSocket.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
@@ -349,6 +345,11 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DDrawEngine\DDrawEngine.vcxproj">
+      <Project>{B3A7D8E1-4C2F-4B9A-8F1E-2C3D4E5F6A7B}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

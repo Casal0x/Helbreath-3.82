@@ -32,11 +32,11 @@ void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, con
 
 	// + arrow highlight
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanIncrease)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 195, sY + iArrowYOffset, 5, dwTime);
+		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 195, sY + iArrowYOffset, 5);
 
 	// - arrow highlight
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanDecrease)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->PutSpriteFast(sX + 210, sY + iArrowYOffset, 6, dwTime);
+		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + iArrowYOffset, 6);
 }
 
 void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)

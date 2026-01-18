@@ -5,11 +5,11 @@
 #pragma once
 
 #include <cstdint>
+#include "SpriteCollection.h"
 #include "EffectType.h"
 
 // Forward declarations only - avoid including heavy headers
 class CGame;
-class CSprite;
 class CEffect;
 
 // Effect constants
@@ -28,7 +28,7 @@ public:
 	~EffectManager();
 
 	// Initialization
-	void SetEffectSprites(CSprite** pEffectSpr);
+	void SetEffectSprites(SpriteLib::SpriteCollection& effectSpr);
 
 	// Main API
 	void AddEffect(EffectType sType, int sX, int sY, int dX, int dY, char cStartFrame, int iV1 = 1);
@@ -50,5 +50,5 @@ private:
 
 	CGame* m_pGame;
 	CEffect* m_pEffectList[DEF_MAXEFFECTS];
-	CSprite** m_pEffectSpr;  // Reference, not owned
+	SpriteLib::SpriteCollection* m_pEffectSpr;  // Reference, not owned
 };

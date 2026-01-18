@@ -1,24 +1,35 @@
 // DXC_ddraw.cpp: implementation of the DXC_ddraw class.
 //
+// Part of DDrawEngine static library
 //////////////////////////////////////////////////////////////////////
 
 #include <string.h>
-#include "CommonTypes.h"
+#include <cstdint>
+#include <cstring>
 #include <objbase.h>
 #include "DXC_ddraw.h"
 #include "ConfigManager.h"
 
+// External window handles (provided by client)
 extern HWND G_hEditWnd;
 extern HWND G_hWnd;
 
 #define CHANGE16BPP				16
 #define CHANGE32BPP				32
 
-extern long    G_lTransG100[64][64], G_lTransRB100[64][64];
-extern long    G_lTransG70[64][64], G_lTransRB70[64][64];
-extern long    G_lTransG50[64][64], G_lTransRB50[64][64];
-extern long    G_lTransG25[64][64], G_lTransRB25[64][64];
-extern long    G_lTransG2[64][64], G_lTransRB2[64][64];
+// Global transparency tables - OWNED BY ENGINE
+// These are defined here and populated during DXC_ddraw::bInit()
+// Client code that needs these will declare them as extern
+long G_lTransG100[64][64], G_lTransRB100[64][64];
+long G_lTransG70[64][64], G_lTransRB70[64][64];
+long G_lTransG50[64][64], G_lTransRB50[64][64];
+long G_lTransG25[64][64], G_lTransRB25[64][64];
+long G_lTransG2[64][64], G_lTransRB2[64][64];
+
+// Sprite-related globals - OWNED BY ENGINE
+int G_iAddTable31[64][510], G_iAddTable63[64][510];
+int G_iAddTransTable31[510][64], G_iAddTransTable63[510][64];
+char G_cSpriteAlphaDegree;
 
 static void GetDisplayDimensions(bool fullMode, int* outWidth, int* outHeight)
 {
@@ -110,7 +121,7 @@ bool DXC_ddraw::bInit(HWND hWnd)
 		ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
 		ddsd.dwBackBufferCount = 1;
 		ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_FLIP | DDSCAPS_COMPLEX;
-		
+
 		ddVal = m_lpDD4->CreateSurface(&ddsd, &m_lpFrontB4, 0);
 		if (ddVal != DD_OK) return false;
 
@@ -159,6 +170,8 @@ bool DXC_ddraw::bInit(HWND hWnd)
 	m_lpBackB4->Unlock(0);
 
 	_TestPixelFormat();
+
+	// Initialize transparency tables (both member and global versions)
 	for (iS = 0; iS < 64; iS++)
 	for (iD = 0; iD < 64; iD++) {
 		m_lTransRB100[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 1.0f);
@@ -166,7 +179,7 @@ bool DXC_ddraw::bInit(HWND hWnd)
 
 		m_lTransRB70[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 0.7f);
 		m_lTransG70[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 0.7f);
-		
+
 		m_lTransRB50[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 0.5f);
 		m_lTransG50[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 0.5f);
 
@@ -179,23 +192,63 @@ bool DXC_ddraw::bInit(HWND hWnd)
 		m_lFadeRB[iD][iS]  = _CalcMinValue(iS, iD, 'R');
 		m_lFadeG[iD][iS]   = _CalcMinValue(iS, iD, 'G');
 
-		G_lTransRB100[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 1.0f);
-		G_lTransG100[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 1.0f);
+		// Also populate global tables for sprite rendering
+		G_lTransRB100[iD][iS] = m_lTransRB100[iD][iS];
+		G_lTransG100[iD][iS]  = m_lTransG100[iD][iS];
 
-		G_lTransRB70[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 0.7f);
-		G_lTransG70[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 0.7f);
-		
-		G_lTransRB50[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 0.5f);
-		G_lTransG50[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 0.5f);
+		G_lTransRB70[iD][iS] = m_lTransRB70[iD][iS];
+		G_lTransG70[iD][iS]  = m_lTransG70[iD][iS];
 
-		G_lTransRB25[iD][iS] = _CalcMaxValue(iS, iD, 'R', 1, 0.25f);
-		G_lTransG25[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 1, 0.25f);
+		G_lTransRB50[iD][iS] = m_lTransRB50[iD][iS];
+		G_lTransG50[iD][iS]  = m_lTransG50[iD][iS];
 
-		G_lTransRB2[iD][iS] = _CalcMaxValue(iS, iD, 'R', 2, 1.0f);
-		G_lTransG2[iD][iS]  = _CalcMaxValue(iS, iD, 'G', 2, 1.0f);
+		G_lTransRB25[iD][iS] = m_lTransRB25[iD][iS];
+		G_lTransG25[iD][iS]  = m_lTransG25[iD][iS];
+
+		G_lTransRB2[iD][iS] = m_lTransRB2[iD][iS];
+		G_lTransG2[iD][iS]  = m_lTransG2[iD][iS];
 	}
 
-	m_hFontInUse = 0;	
+	// Initialize additive blending tables
+	for (int iX = 0; iX < 64; iX++)
+	{
+		for (int iY = 0; iY < 510; iY++)
+		{
+			int iSum = iX + (iY - 255);
+			if (iSum <= 0)
+				iSum = 1;
+
+			if (iSum >= 31)
+				iSum = 31;
+
+			G_iAddTable31[iX][iY] = iSum;
+
+			iSum = iX + (iY - 255);
+			if (iSum <= 0)
+				iSum = 1;
+
+			if (iSum >= 63)
+				iSum = 63;
+
+			G_iAddTable63[iX][iY] = iSum;
+
+			if ((iY - 255) < iX)
+				G_iAddTransTable31[iY][iX] = iX;
+			else if ((iY - 255) > 31)
+				G_iAddTransTable31[iY][iX] = 31;
+			else
+				G_iAddTransTable31[iY][iX] = iY - 255;
+
+			if ((iY - 255) < iX)
+				G_iAddTransTable63[iY][iX] = iX;
+			else if ((iY - 255) > 63)
+				G_iAddTransTable63[iY][iX] = 63;
+			else
+				G_iAddTransTable63[iY][iX] = iY - 255;
+		}
+	}
+
+	m_hFontInUse = 0;
 	m_hFontInUse = CreateFont(16,0, 0, 0, FW_NORMAL, false, false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, VARIABLE_PITCH, "Tahoma") ;
 	m_hDC = 0;
 	m_init = true;
@@ -208,7 +261,7 @@ HRESULT DXC_ddraw::iFlip()
 		return DD_OK;
 
 	HRESULT ddVal;
-	
+
 	RECT rcSource;
 	RECT rcDest;
 	SetRect(&rcSource, 0, 0, res_x, res_y);
@@ -256,7 +309,7 @@ HRESULT DXC_ddraw::iFlip()
 		DDSURFACEDESC2 ddsd2;
 		m_lpFrontB4->Restore();
 		m_lpBackB4->Restore();
-		
+
 		ddsd2.dwSize = sizeof(ddsd2);
 		if (m_lpBackB4->Lock(0, &ddsd2, DDLOCK_WAIT, 0) != DD_OK) return false;
 		m_pBackB4Addr  = (WORD *)ddsd2.lpSurface;
@@ -421,8 +474,8 @@ HRESULT DXC_ddraw::iSetColorKey(IDirectDrawSurface7 * pdds4, uint16_t wColorKey)
 
     if (rgb != CLR_INVALID && pdds4->GetDC(&hdc) == DD_OK)
     {
-        rgbT = GetPixel(hdc, 0, 0);             
-        SetPixel(hdc, 0, 0, rgb);               
+        rgbT = GetPixel(hdc, 0, 0);
+        SetPixel(hdc, 0, 0, rgb);
         pdds4->ReleaseDC(hdc);
     }
 
@@ -431,8 +484,8 @@ HRESULT DXC_ddraw::iSetColorKey(IDirectDrawSurface7 * pdds4, uint16_t wColorKey)
 
     if (hres == DD_OK)
     {
-        dw  = *(DWORD *)ddsd2.lpSurface;                     
-        dw &= (1 << ddsd2.ddpfPixelFormat.dwRGBBitCount)-1;  
+        dw  = *(DWORD *)ddsd2.lpSurface;
+        dw &= (1 << ddsd2.ddpfPixelFormat.dwRGBBitCount)-1;
         pdds4->Unlock(0);
     }
 
@@ -450,7 +503,7 @@ HRESULT DXC_ddraw::iSetColorKey(IDirectDrawSurface7 * pdds4, uint16_t wColorKey)
 	DWORD* dwp;
  DDSURFACEDESC2 ddsd2;
  HRESULT hres;
-   
+
     ddsd2.dwSize = sizeof(ddsd2);
     while ((hres = pdds4->Lock(0, &ddsd2, 0, 0)) == DDERR_WASSTILLDRAWING);
 
@@ -458,8 +511,8 @@ HRESULT DXC_ddraw::iSetColorKey(IDirectDrawSurface7 * pdds4, uint16_t wColorKey)
     {
         dwp = (DWORD *)ddsd2.lpSurface;
 		*dwp = (DWORD)wColorKey;
-		dw  = *(DWORD *)ddsd2.lpSurface;                     
-        dw &= (1 << ddsd2.ddpfPixelFormat.dwRGBBitCount)-1;  
+		dw  = *(DWORD *)ddsd2.lpSurface;
+        dw &= (1 << ddsd2.ddpfPixelFormat.dwRGBBitCount)-1;
         pdds4->Unlock(0);
     }
 
@@ -490,11 +543,11 @@ void DXC_ddraw::_TestPixelFormat()
 	   }
 	   if (ddSurfaceDesc2.ddpfPixelFormat.dwRBitMask == 0x00007C00) {
 		   m_cPixelFormat = 2;
-		  // RGB 5:5:5 
+		  // RGB 5:5:5
 	   }
 	   if (ddSurfaceDesc2.ddpfPixelFormat.dwRBitMask == 0x0000001F) {
 		   m_cPixelFormat = 3;
-		  // BGR 5:6:5 
+		  // BGR 5:6:5
 	   }
 	}
 }
@@ -503,7 +556,7 @@ long DXC_ddraw::_CalcMaxValue(int iS, int iD, char cMode, char cMethod, double d
 {
  long Sum;
  double dTmp;
- 
+
 	switch (cMethod) {
 	case 1:
 		dTmp = (double)iS;
@@ -529,7 +582,7 @@ long DXC_ddraw::_CalcMaxValue(int iS, int iD, char cMode, char cMethod, double d
 			break;
 		}
 		break;
-	
+
 	default:
 		if (Sum >= 32) Sum = 31;
 		break;
@@ -542,7 +595,7 @@ long DXC_ddraw::_CalcMinValue(int iS, int iD, char cMode)
 {
  long Sum;
 
- 
+
 	Sum = iD - iS;
 	if (Sum < 0) Sum = 0;
 
@@ -557,7 +610,7 @@ long DXC_ddraw::_CalcMinValue(int iS, int iD, char cMode)
 			break;
 		}
 		break;
-	
+
 	default:
 		if (Sum >= 32) Sum = 31;
 		break;
@@ -568,7 +621,7 @@ long DXC_ddraw::_CalcMinValue(int iS, int iD, char cMode)
 
 void DXC_ddraw::ClearBackB4()
 {
-	DDSURFACEDESC2 ddsd2;	
+	DDSURFACEDESC2 ddsd2;
 	ddsd2.dwSize = sizeof(ddsd2);
 	if (m_lpBackB4->Lock(0, &ddsd2, DDLOCK_WAIT, 0) != DD_OK) return;
 	memset((char *)ddsd2.lpSurface, 0, ddsd2.lPitch * res_y);
@@ -586,43 +639,43 @@ void DXC_ddraw::DrawShadowBox(short sX, short sY, short dX, short dY, int iType)
 		switch (m_cPixelFormat) {
 		case 1:
 			for (iy = 0; iy <= (dY - sY); iy++) {
-				for (ix = 0; ix <= (dX - sX); ix++) 
-					pDst[ix] = (pDst[ix] & 0xf7de) >> 1; 	
-			
+				for (ix = 0; ix <= (dX - sX); ix++)
+					pDst[ix] = (pDst[ix] & 0xf7de) >> 1;
+
 				pDst += m_sBackB4Pitch;
 			}
 			break;
 
 		case 2:
 			for (iy = 0; iy <= (dY - sY); iy++) {
-				for (ix = 0; ix <= (dX - sX); ix++) 
+				for (ix = 0; ix <= (dX - sX); ix++)
 					pDst[ix] = (pDst[ix] & 0x7bde) >> 1;
-				
+
 				pDst += m_sBackB4Pitch;
 			}
 			break;
 		}
 	}
-	else 
+	else
 	{
 		switch (iType) {
 		case 1:
-			if (m_cPixelFormat == 1) 
+			if (m_cPixelFormat == 1)
 				 wValue = 0x38e7;
 			else wValue = 0x1ce7;
 			break;
 
 		case 2:
-			if (m_cPixelFormat == 1) 
+			if (m_cPixelFormat == 1)
 				 wValue = 0x1863;
 			else wValue = 0xc63;
 			break;
 		}
-		
+
 		for (iy = 0; iy <= (dY - sY); iy++) {
-			for (ix = 0; ix <= (dX - sX); ix++) 
-				pDst[ix] = wValue; 	
-				
+			for (ix = 0; ix <= (dX - sX); ix++)
+				pDst[ix] = wValue;
+
 			pDst += m_sBackB4Pitch;
 		}
 	}
@@ -635,7 +688,7 @@ void DXC_ddraw::PutPixel(short sX, short sY, uint16_t wR, uint16_t wG, uint16_t 
 	if ((sX < 0) || (sY < 0) || (sX > (res_x - 1)) || (sY > (res_y - 1))) return;
 
 	pDst = (WORD *)m_pBackB4Addr + sX + ((sY)*m_sBackB4Pitch);
-	
+
 	switch (m_cPixelFormat) {
 	case 1:
 		*pDst = (WORD)( ((wR>>3)<<11) | ((wG>>2)<<5) | (wB>>3) );
@@ -679,14 +732,14 @@ HRESULT DXC_ddraw::InitFlipToGDI(HWND hWnd)
 
     if( (ddcaps.dwCaps2 & DDCAPS2_CANRENDERWINDOWED) == 0 )
     {
-        // This means FlipToGDISurface() is not supported, so to display GDI 
-        // on these cards, you you must create a bitmap of the GDI window 
+        // This means FlipToGDISurface() is not supported, so to display GDI
+        // on these cards, you you must create a bitmap of the GDI window
         // and BitBlt the bitmap to the backbuffer then flip as normal. However,
-        // this specific sample does not show this. 
+        // this specific sample does not show this.
         return E_FAIL;
     }
 
-    // Create a clipper when using GDI to draw on the primary surface 
+    // Create a clipper when using GDI to draw on the primary surface
     if( FAILED( hr = m_lpDD4->CreateClipper( 0, &pClipper, 0 ) ) )
         return hr;
 
@@ -694,7 +747,7 @@ HRESULT DXC_ddraw::InitFlipToGDI(HWND hWnd)
 
     if( FAILED( hr = m_lpFrontB4->SetClipper( pClipper ) ) ) return hr;
 
-    // We can release the clipper now since g_pDDSPrimary 
+    // We can release the clipper now since g_pDDSPrimary
     // now maintains a ref count on the clipper
 	if( pClipper )
 	{
@@ -807,7 +860,7 @@ try
                               FILE_ATTRIBUTE_NORMAL,
                               0)) == INVALID_HANDLE_VALUE) throw 8;
 	uint32_t Written;    // number of bytes written by WriteFile
-    
+
     // Write a file header to the file:
     bmfh.bfType = 19778;        // 'BM'
     // bmfh.bfSize = ???        // we'll write that later
@@ -881,7 +934,7 @@ catch (...)
     if (lpbi) delete[] lpbi;
     if (lpvBits) delete[] lpvBits;
     if (BmpFile != INVALID_HANDLE_VALUE) CloseHandle(BmpFile);
-    
+
     return Success;
 }
 //---------------------------------------------------------------------------

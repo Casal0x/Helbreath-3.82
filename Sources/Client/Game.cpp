@@ -13,6 +13,11 @@
 #include <cstdio>
 #include <windows.h>
 
+// Renderer - include DXC_ddraw.h for CSprite compatibility (takes DXC_ddraw*)
+#include "DXC_ddraw.h"
+#include "DDrawRenderer.h"
+#include "SpriteLoader.h"
+
 // Manager singletons
 #include "ConfigManager.h"
 #include "Camera.h"
@@ -120,6 +125,7 @@ CGame::CGame()
 
 	// Initialize critical pointers first to avoid 0xCDCDCDCD debug heap issues
 	m_pInputBuffer = nullptr;
+	m_Renderer = nullptr;
 	EnsureNetDebugConsole();
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
@@ -344,6 +350,8 @@ CGame::CGame()
 
 CGame::~CGame()
 {
+	Renderer::Destroy();
+	m_Renderer = nullptr;
 }
 
 bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
@@ -430,39 +438,42 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		return false;
 	}
 
-	if (m_DDraw.bInit(m_hWnd) == false)
+	// Create and initialize the renderer
+	if (!Renderer::Set(RendererType::DirectDraw))
+	{
+		MessageBox(m_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		return false;
+	}
+	m_Renderer = Renderer::Get();
+	if (m_Renderer->Init(m_hWnd) == false)
 	{
 		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
+	// Initialize sprite factory and register it globally
+	DDrawRenderer* pDDrawRenderer = static_cast<DDrawRenderer*>(m_Renderer);
+	m_pSpriteFactory = new DDrawSpriteFactory(pDDrawRenderer->GetDDrawImpl());
+	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
+
 	InputManager::Get().Initialize(m_hWnd);
 
-	m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 0, false);
-	CloseHandle(m_hPakFile);
+	// Load early interface sprites using batch loading
+	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = SpriteLib::Sprites::Create("New-Dialog", 0, false);
 
-	m_hPakFile = CreateFile("sprites\\interface2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 0, false);
-	m_pSprite[DEF_SPRID_INTERFACE_CRAFTING] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 3, false);
-	CloseHandle(m_hPakFile);
+	// Load interface2 sprites in one batch
+	SpriteLib::SpriteLoader::open_pak("interface2", [&](SpriteLib::SpriteLoader& loader) {
+		m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = loader.get_sprite(0, false);
+		m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = loader.get_sprite(1, false);
+		m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = loader.get_sprite(2, false);
+		m_pSprite[DEF_SPRID_INTERFACE_CRAFTING] = loader.get_sprite(3, false);
+	});
 
-	// CLEROTH - LOAD FONTS BEFORE MAIN LOADING
-	m_hPakFile = CreateFile("sprites\\interface2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (m_hPakFile != INVALID_HANDLE_VALUE)
-	{
-		m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 1, false);
-		m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = new class CSprite(m_hPakFile, &m_DDraw, "interface2", 2, false);
-		CloseHandle(m_hPakFile);
-	}
-
-	m_hPakFile = CreateFile("sprites\\sprfonts.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (m_hPakFile != INVALID_HANDLE_VALUE)
-	{
-		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = new class CSprite(m_hPakFile, &m_DDraw, "sprfonts", 0, false);
-		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = new class CSprite(m_hPakFile, &m_DDraw, "sprfonts", 1, false);
-		CloseHandle(m_hPakFile);
-	}
+	// Load sprfonts sprites in one batch
+	SpriteLib::SpriteLoader::open_pak("sprfonts", [&](SpriteLib::SpriteLoader& loader) {
+		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = loader.get_sprite(0, false);
+		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = loader.get_sprite(1, false);
+	});
 
 	m_stMCursor.sX = 0;
 	m_stMCursor.sY = 0;
@@ -481,34 +492,34 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_cMenuDirCnt = 0;
 	m_cMenuFrame = 0;
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[1], &m_wWG[1], &m_wWB[1]); // Light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[2], &m_wWG[2], &m_wWB[2]); // light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 70, 80), &m_wWR[3], &m_wWG[3], &m_wWB[3]); // light-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(70, 100, 70), &m_wWR[4], &m_wWG[4], &m_wWB[4]); // Green
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(130, 90, 10), &m_wWR[5], &m_wWG[5], &m_wWB[5]); // Critical
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(42, 53, 111), &m_wWR[6], &m_wWG[6], &m_wWB[6]); // Heavy-blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(145, 145, 145), &m_wWR[7], &m_wWG[7], &m_wWB[7]); // White
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(120, 100, 120), &m_wWR[8], &m_wWG[8], &m_wWB[8]); // Violet
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(75, 10, 10), &m_wWR[9], &m_wWG[9], &m_wWB[9]); // Heavy-Red
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(135, 104, 30), &m_wR[10], &m_wG[10], &m_wB[10]);	// Gold, buggy
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[1], &m_wWG[1], &m_wWB[1]); // Light-blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[2], &m_wWG[2], &m_wWB[2]); // light-blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[3], &m_wWG[3], &m_wWB[3]); // light-blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 100, 70), &m_wWR[4], &m_wWG[4], &m_wWB[4]); // Green
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(130, 90, 10), &m_wWR[5], &m_wWG[5], &m_wWB[5]); // Critical
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(42, 53, 111), &m_wWR[6], &m_wWG[6], &m_wWB[6]); // Heavy-blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(145, 145, 145), &m_wWR[7], &m_wWG[7], &m_wWB[7]); // White
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(120, 100, 120), &m_wWR[8], &m_wWG[8], &m_wWB[8]); // Violet
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(75, 10, 10), &m_wWR[9], &m_wWG[9], &m_wWB[9]); // Heavy-Red
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(135, 104, 30), &m_wR[10], &m_wG[10], &m_wB[10]);	// Gold, buggy
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(200 / 2, 200 / 2, 200 / 2), &m_wR[0], &m_wG[0], &m_wB[0]);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x50 / 2, 0x50 / 2, 0xC0 / 2), &m_wR[1], &m_wG[1], &m_wB[1]); // Indigo Blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(79, 79, 62), &m_wR[2], &m_wG[2], &m_wB[2]); // Custom-Weapon Color
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(135, 104, 30), &m_wR[3], &m_wG[3], &m_wB[3]); // Gold
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(255 / 2, 36 / 2, 0), &m_wR[4], &m_wG[4], &m_wB[4]); // Crimson
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(10, 60, 10), &m_wR[5], &m_wG[5], &m_wB[5]); // Green
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x50 / 2, 0x50 / 2, 0x50 / 2), &m_wR[6], &m_wG[6], &m_wB[6]); // Gray
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x5F / 2, 0x9E / 2, 0xA0 / 2), &m_wR[7], &m_wG[7], &m_wB[7]); // Aqua
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xFF / 2, 0x69 / 2, 0xB4 / 2), &m_wR[8], &m_wG[8], &m_wB[8]); // Pink
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(90, 60, 90), &m_wR[9], &m_wG[9], &m_wB[9]); // Violet
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(200 / 2, 200 / 2, 200 / 2), &m_wR[0], &m_wG[0], &m_wB[0]);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0xC0 / 2), &m_wR[1], &m_wG[1], &m_wB[1]); // Indigo Blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(79, 79, 62), &m_wR[2], &m_wG[2], &m_wB[2]); // Custom-Weapon Color
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(135, 104, 30), &m_wR[3], &m_wG[3], &m_wB[3]); // Gold
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(255 / 2, 36 / 2, 0), &m_wR[4], &m_wG[4], &m_wB[4]); // Crimson
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(10, 60, 10), &m_wR[5], &m_wG[5], &m_wB[5]); // Green
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0x50 / 2), &m_wR[6], &m_wG[6], &m_wB[6]); // Gray
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x5F / 2, 0x9E / 2, 0xA0 / 2), &m_wR[7], &m_wG[7], &m_wB[7]); // Aqua
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xFF / 2, 0x69 / 2, 0xB4 / 2), &m_wR[8], &m_wG[8], &m_wB[8]); // Pink
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(90, 60, 90), &m_wR[9], &m_wG[9], &m_wB[9]); // Violet
 
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0, 35, 60), &m_wR[10], &m_wG[10], &m_wB[10]); // Blue
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xD2 / 2, 0xB4 / 2, 0x8C / 2), &m_wR[11], &m_wG[11], &m_wB[11]); // Tan
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0xBD / 2, 0xB7 / 2, 0x6B / 2), &m_wR[12], &m_wG[12], &m_wB[12]); // Khaki
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(85, 85, 8), &m_wR[13], &m_wG[13], &m_wB[13]); // Yellow
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(75, 10, 10), &m_wR[14], &m_wG[14], &m_wB[14]); // Red
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0x30, 0x30, 0x30), &m_wR[15], &m_wG[15], &m_wB[15]); // Black
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0, 35, 60), &m_wR[10], &m_wG[10], &m_wB[10]); // Blue
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xD2 / 2, 0xB4 / 2, 0x8C / 2), &m_wR[11], &m_wG[11], &m_wB[11]); // Tan
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xBD / 2, 0xB7 / 2, 0x6B / 2), &m_wR[12], &m_wG[12], &m_wB[12]); // Khaki
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(85, 85, 8), &m_wR[13], &m_wG[13], &m_wB[13]); // Yellow
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(75, 10, 10), &m_wR[14], &m_wG[14], &m_wB[14]); // Red
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x30, 0x30, 0x30), &m_wR[15], &m_wG[15], &m_wB[15]); // Black
 
 
 
@@ -564,12 +575,16 @@ void CGame::Quit()
 	for (i = 0; i < 5000; i++)
 		if (m_pItemConfigList[i] != 0) delete m_pItemConfigList[i];
 
-	for (i = 0; i < DEF_MAXSPRITES; i++)
-		if (m_pSprite[i] != 0) delete m_pSprite[i];
-	for (i = 0; i < DEF_MAXTILES; i++)
-		if (m_pTileSpr[i] != 0) delete m_pTileSpr[i];
-	for (i = 0; i < DEF_MAXEFFECTSPR; i++)
-		if (m_pEffectSpr[i] != 0) delete m_pEffectSpr[i];
+	m_pSprite.clear();
+	m_pTileSpr.clear();
+	m_pEffectSpr.clear();
+
+	// Clean up sprite factory
+	SpriteLib::Sprites::SetFactory(nullptr);
+	if (m_pSpriteFactory) {
+		delete m_pSpriteFactory;
+		m_pSpriteFactory = nullptr;
+	}
 
 	// Sound cleanup handled by AudioManager::Shutdown()
 
@@ -845,7 +860,7 @@ void CGame::RenderFrame()
 
 	// Clear backbuffer before drawing
 	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
-	m_DDraw.ClearBackB4();
+	m_Renderer->BeginFrame();
 	FrameTiming::EndProfile(ProfileStage::ClearBuffer);
 
 	// Draw phase: Pure rendering based on current state
@@ -853,7 +868,7 @@ void CGame::RenderFrame()
 
 	// Flip to show the drawn content
 	FrameTiming::BeginProfile(ProfileStage::Flip);
-	if (m_DDraw.iFlip() == DDERR_SURFACELOST)
+	if (m_Renderer->EndFrameCheckLostSurface())
 		RestoreSprites();
 	FrameTiming::EndProfile(ProfileStage::Flip);
 
@@ -956,7 +971,7 @@ void CGame::OnGameSocketEvent()
 void CGame::RestoreSprites()
 {
 	for (int i = 0; i < DEF_MAXSPRITES; i++)
-		if (m_pSprite[i] != 0) m_pSprite[i]->iRestore();
+		if (m_pSprite[i] != 0) m_pSprite[i]->Restore();
 }
 
 char _tmp_cTmpDirX[9] = { 0,0,1,1,1,0,-1,-1,-1 };
@@ -1747,7 +1762,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				if ((bRet == true) && (sItemID != 0) && m_pItemConfigList[sItemID] != 0)
 				{
 					if (cItemColor == 0)
-						m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->PutSpriteFast(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, dwTime);
+						m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame);
 					else
 					{
 						switch (m_pItemConfigList[sItemID]->m_sSprite) {
@@ -1755,12 +1770,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 2: // Bows
 						case 3: // Shields
 						case 15: // Axes hammers
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->PutSpriteRGB(ix, iy
-								, m_pItemConfigList[sItemID]->m_sSpriteFrame, m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], dwTime);
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
 							break;
 						default:
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->PutSpriteRGB(ix, iy
-								, m_pItemConfigList[sItemID]->m_sSpriteFrame, m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], dwTime);
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
 							break;
 						}
 					}
@@ -1962,7 +1975,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					switch (sObjSpr) {
 					case 200:
 					case 223:
-						m_pTileSpr[sObjSpr]->PutShadowSprite(ix - 16, iy - 16, sObjSprFrame, dwTime);
+						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Shadow());
 						break;
 
 					case 224:
@@ -1975,18 +1988,18 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 38:
 							break;
 						default:
-							m_pTileSpr[sObjSpr]->PutShadowSprite(ix - 16, iy - 16, sObjSprFrame, dwTime);
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Shadow());
 							break;
 						}
 					}
 					if (ConfigManager::Get().GetDetailLevel() == 0) // Special Grass & Flowers
 					{
 						if ((sObjSpr != 6) && (sObjSpr != 9))
-							m_pTileSpr[sObjSpr]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
 					}
 					else
 					{
-						m_pTileSpr[sObjSpr]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
+						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
 					}
 
 					switch (sObjSpr) {
@@ -1998,9 +2011,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 								int iDvalue1 = -1 * (rand() % 5);
 								int iDvalue2 = -1 * (rand() % 5);
 								int iDvalue3 = -1 * (rand() % 5);
-								m_pEffectSpr[0]->PutTransSpriteRGB(ix + 2 - 17, iy - 147 - 15, 1, iDvalue1, iDvalue1, iDvalue1, dwTime);
-								m_pEffectSpr[0]->PutTransSpriteRGB(ix + 16 - 17, iy - 96 - 15, 1, iDvalue2, iDvalue2, iDvalue2, dwTime);
-								m_pEffectSpr[0]->PutTransSpriteRGB(ix - 19 - 17, iy - 126 - 15, 1, iDvalue3, iDvalue3, iDvalue3, dwTime);
+								m_pEffectSpr[0]->Draw(ix + 2 - 17, iy - 147 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue1, iDvalue1, iDvalue1, 0.7f));
+								m_pEffectSpr[0]->Draw(ix + 16 - 17, iy - 96 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue2, iDvalue2, iDvalue2, 0.7f));
+								m_pEffectSpr[0]->Draw(ix - 19 - 17, iy - 126 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue3, iDvalue3, iDvalue3, 0.7f));
 							}
 						}
 						break;
@@ -2041,26 +2054,26 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				}
 				else // sprites 100..199: Trees and tree shadows
 				{
-					m_pTileSpr[sObjSpr]->_GetSpriteRect(ix - 16, iy - 16, sObjSprFrame);
+					m_pTileSpr[sObjSpr]->CalculateBounds(ix - 16, iy - 16, sObjSprFrame);
 					if (ConfigManager::Get().GetDetailLevel() == 0)
 					{
-						if (sObjSpr < 100 + 11) m_pTileSpr[100 + 4]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
-						else if (sObjSpr < 100 + 23) m_pTileSpr[100 + 9]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
-						else if (sObjSpr < 100 + 32) m_pTileSpr[100 + 23]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
-						else m_pTileSpr[100 + 32]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
+						if (sObjSpr < 100 + 11) m_pTileSpr[100 + 4]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						else if (sObjSpr < 100 + 23) m_pTileSpr[100 + 9]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						else if (sObjSpr < 100 + 32) m_pTileSpr[100 + 23]->Draw(ix - 16, iy - 16, sObjSprFrame);
+						else m_pTileSpr[100 + 32]->Draw(ix - 16, iy - 16, sObjSprFrame);
 					}
 					else
 					{
-						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->m_rcBound.top <= m_rcPlayerRect.top) && (m_pTileSpr[sObjSpr]->m_rcBound.bottom >= m_rcPlayerRect.bottom) &&
-							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->m_rcBound.left <= m_rcPlayerRect.left) && (m_pTileSpr[sObjSpr]->m_rcBound.right >= m_rcPlayerRect.right))
+						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.top) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.bottom) &&
+							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.left) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.right))
 						{
-							m_pTileSpr[sObjSpr + 50]->PutFadeSprite(ix, iy, sObjSprFrame, dwTime);
-							m_pTileSpr[sObjSpr]->PutTransSprite2(ix - 16, iy - 16, sObjSprFrame, dwTime);
+							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Fade());
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Alpha(0.25f));
 						}
 						else
 						{
-							m_pTileSpr[sObjSpr + 50]->PutSpriteFast(ix, iy, sObjSprFrame, dwTime);
-							m_pTileSpr[sObjSpr]->PutSpriteFast(ix - 16, iy - 16, sObjSprFrame, dwTime);
+							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame);
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
 						}
 						if (m_bIsXmas == true)
 						{
@@ -2079,9 +2092,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 								for (int j = 0; j < 100; j++)
 								{
-									if (m_pTileSpr[sObjSpr]->_bCheckCollison(ix - 16, iy - 16, sObjSprFrame, ix + ix1[j], iy + iy2[j]))
+									if (m_pTileSpr[sObjSpr]->CheckCollision(ix - 16, iy - 16, sObjSprFrame, ix + ix1[j], iy + iy2[j]))
 									{
-										m_pEffectSpr[66 + (j % 6)]->PutTransSprite(ix + ix1[j], iy + iy2[j], (iXmasTreeBulbDelay >> 2), dwTime);
+										m_pEffectSpr[66 + (j % 6)]->Draw(ix + ix1[j], iy + iy2[j], (iXmasTreeBulbDelay >> 2), SpriteLib::DrawParams::Alpha(0.5f));
 									}
 								}
 							}
@@ -2096,38 +2109,38 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				switch (sDynamicObject) {
 				case DEF_DYNAMICOBJECT_PCLOUD_BEGIN:	// 10
 					if (sDynamicObjectFrame >= 0)
-						m_pEffectSpr[23]->PutTransSprite50_NoColorKey(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame, dwTime);
+						m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_PCLOUD_LOOP:		// 11
-					m_pEffectSpr[23]->PutTransSprite50_NoColorKey(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 8, dwTime);
+					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 8, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_PCLOUD_END:		// 12
-					m_pEffectSpr[23]->PutTransSprite50_NoColorKey(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 16, dwTime);
+					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 16, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_ICESTORM:		// 8
 					iDvalue = (rand() % 5) * (-1);
-					m_pEffectSpr[0]->PutTransSpriteRGB(ix, iy, 1, iDvalue, iDvalue, iDvalue, dwTime);
-					m_pEffectSpr[13]->PutTransSprite70_NoColorKey(ix, iy, sDynamicObjectFrame, dwTime);
+					m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					m_pEffectSpr[13]->Draw(ix, iy, sDynamicObjectFrame, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_FIRE:			// 1
 				case DEF_DYNAMICOBJECT_FIRE3:			// 14
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->PutTransSprite25_NoColorKey(ix, iy, 1, dwTime); break;
-					case 1: m_pEffectSpr[0]->PutTransSprite50_NoColorKey(ix, iy, 1, dwTime); break;
-					case 2: m_pEffectSpr[0]->PutTransSprite70_NoColorKey(ix, iy, 1, dwTime); break;
+					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
-					m_pEffectSpr[9]->PutTransSprite70_NoColorKey(ix, iy, sDynamicObjectFrame / 3, dwTime);
+					m_pEffectSpr[9]->Draw(ix, iy, sDynamicObjectFrame / 3, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_FIRE2:			// 13
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->PutTransSprite25_NoColorKey(ix, iy, 1, dwTime); break;
-					case 1: m_pEffectSpr[0]->PutTransSprite50_NoColorKey(ix, iy, 1, dwTime); break;
-					case 2: m_pEffectSpr[0]->PutTransSprite70_NoColorKey(ix, iy, 1, dwTime); break;
+					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
 					break;
 
@@ -2136,18 +2149,18 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					char cTmpDOdir, cTmpDOframe;
 					cTmpDOdir = CMisc::cCalcDirection(cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData1 + cDynamicObjectData3, cDynamicObjectData2 + cDynamicObjectData4);
 					cTmpDOframe = ((cTmpDOdir - 1) * 4) + (rand() % 4);
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 0]->PutTransSprite2(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, dwTime);
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, SpriteLib::DrawParams::Alpha(0.25f));
 				}
 				break;
 
 				case DEF_DYNAMICOBJECT_MINERAL1:		// 4
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->PutShadowSprite(ix, iy, 0, dwTime);
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->PutSpriteFast(ix, iy, 0, dwTime);
-					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.top != -1)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.top < msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.bottom > msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.left < msX)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.right > msX))
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0, SpriteLib::DrawParams::Shadow());
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0);
+					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top != -1)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top < msY)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().bottom > msY)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().left < msX)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().right > msX))
 					{
 						m_sMCX = indexX;
 						m_sMCY = indexY;
@@ -2158,13 +2171,13 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					break;
 
 				case DEF_DYNAMICOBJECT_MINERAL2:		// 5
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->PutShadowSprite(ix, iy, 1, dwTime);
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->PutSpriteFast(ix, iy, 1, dwTime);
-					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.top != -1)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.top < msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.bottom > msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.left < msX)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->m_rcBound.right > msX))
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1, SpriteLib::DrawParams::Shadow());
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1);
+					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top != -1)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top < msY)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().bottom > msY)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().left < msX)
+						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().right > msX))
 					{
 						m_sMCX = indexX;
 						m_sMCY = indexY;
@@ -2175,15 +2188,15 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					break;
 
 				case DEF_DYNAMICOBJECT_SPIKE:			// 9
-					m_pEffectSpr[17]->PutTransSprite70_NoColorKey(ix, iy, sDynamicObjectFrame, dwTime);
+					m_pEffectSpr[17]->Draw(ix, iy, sDynamicObjectFrame, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
 				case DEF_DYNAMICOBJECT_ARESDENFLAG1:  // 6
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->PutSpriteFast(ix, iy, sDynamicObjectFrame, dwTime);
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 
 				case DEF_DYNAMICOBJECT_ELVINEFLAG1: // 7
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->PutSpriteFast(ix, iy, sDynamicObjectFrame, dwTime);
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 				}
 			}
@@ -2639,143 +2652,123 @@ void CGame::InitPlayerResponseHandler(char* pData)
 
 void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
-	int iTotalimage;
-	DWORD nCount;
-	char PathName[28];
-	wsprintf(PathName, "sprites\\%s.pak", FileName);
-	HANDLE m_hPakFile = CreateFile(PathName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (m_hPakFile == INVALID_HANDLE_VALUE) return;
-	SetFilePointer(m_hPakFile, 20, 0, FILE_BEGIN);
-	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
-	for (short i = 0; i < sCount; i++)
-	{
-		if (i < iTotalimage) m_pSprite[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+	try {
+		size_t loaded = 0;
+		size_t withFrames = 0;
+		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+			size_t totalInPak = loader.get_sprite_count();
+			size_t toLoad = static_cast<size_t>(sCount);
+			if (toLoad > totalInPak) toLoad = totalInPak;
+
+			for (size_t i = 0; i < toLoad; i++) {
+				m_pSprite[i + sStart] = loader.get_sprite(i, bAlphaEffect);
+				if (m_pSprite[i + sStart]) {
+					loaded++;
+					if (m_pSprite[i + sStart]->GetFrameCount() > 0) {
+						withFrames++;
+					}
+				}
+			}
+			printf("[MakeSprite] %s: pak=%zu, requested=%d, loaded=%zu, withFrames=%zu\n",
+				   FileName, totalInPak, sCount, loaded, withFrames);
+		});
+	} catch (const std::exception& e) {
+		printf("[MakeSprite] FAILED %s: %s\n", FileName, e.what());
+	} catch (...) {
+		printf("[MakeSprite] FAILED %s: unknown exception\n", FileName);
 	}
-	CloseHandle(m_hPakFile);
 }
 
 void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
-	int iTotalimage;
-	DWORD nCount;
-	char PathName[28];
-	wsprintf(PathName, "sprites\\%s.pak", FileName);
-	HANDLE m_hPakFile = CreateFile(PathName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (m_hPakFile == INVALID_HANDLE_VALUE) return;
-	SetFilePointer(m_hPakFile, 20, 0, FILE_BEGIN);
-	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
-	for (short i = 0; i < sCount; i++)
-	{
-		if (i < iTotalimage) m_pTileSpr[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+	try {
+		size_t loaded = 0;
+		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+			size_t totalInPak = loader.get_sprite_count();
+			size_t toLoad = static_cast<size_t>(sCount);
+			if (toLoad > totalInPak) toLoad = totalInPak;
+
+			for (size_t i = 0; i < toLoad; i++) {
+				m_pTileSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
+				if (m_pTileSpr[i + sStart]) loaded++;
+			}
+			printf("[MakeTileSpr] %s: pak=%zu, requested=%d, loaded=%zu\n", FileName, totalInPak, sCount, loaded);
+		});
+	} catch (const std::exception& e) {
+		printf("[MakeTileSpr] FAILED %s: %s\n", FileName, e.what());
 	}
-	CloseHandle(m_hPakFile);
 }
 
 void CGame::MakeEffectSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
-	int iTotalimage;
-	DWORD nCount;
-	char PathName[28];
-	wsprintf(PathName, "sprites\\%s.pak", FileName);
-	HANDLE m_hPakFile = CreateFile(PathName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (m_hPakFile == INVALID_HANDLE_VALUE) return;
-	SetFilePointer(m_hPakFile, 20, 0, FILE_BEGIN);
-	ReadFile(m_hPakFile, (char*)&iTotalimage, 4, &nCount, 0);
-	for (short i = 0; i < sCount; i++)
-	{
-		if (i < iTotalimage) m_pEffectSpr[i + sStart] = new class CSprite(m_hPakFile, &m_DDraw, FileName, i, bAlphaEffect);
+	try {
+		size_t loaded = 0;
+		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+			size_t totalInPak = loader.get_sprite_count();
+			size_t toLoad = static_cast<size_t>(sCount);
+			if (toLoad > totalInPak) toLoad = totalInPak;
+
+			for (size_t i = 0; i < toLoad; i++) {
+				m_pEffectSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
+				if (m_pEffectSpr[i + sStart]) loaded++;
+			}
+			printf("[MakeEffectSpr] %s: pak=%zu, requested=%d, loaded=%zu\n", FileName, totalInPak, sCount, loaded);
+		});
+	} catch (const std::exception& e) {
+		printf("[MakeEffectSpr] FAILED %s: %s\n", FileName, e.what());
 	}
-	CloseHandle(m_hPakFile);
 }
 
 void CGame::UpdateScreen_OnLoading(bool bActive)
 {
 	int i;
-	if (bActive) UpdateScreen_OnLoading_Progress();
+	if (bActive) DrawScreen_OnLoadingProgress();
 
 	switch (m_cLoading) {
 	case 0:
 	{
-		m_hPakFile = CreateFile("sprites\\interface.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_MOUSECURSOR] = new class CSprite(m_hPakFile, &m_DDraw, "interface", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = new class CSprite(m_hPakFile, &m_DDraw, "interface", 1, false);
-			CloseHandle(m_hPakFile);
-		}
+		// Load interface sprites (PAKLib handles file access internally)
+		SpriteLib::SpriteLoader::open_pak("interface", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_MOUSECURSOR] = loader.get_sprite(0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = loader.get_sprite(1, false);
+			});
 
-		m_hPakFile = CreateFile("sprites\\Newmaps.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = new class CSprite(m_hPakFile, &m_DDraw, "Newmaps", 4, false);
-			CloseHandle(m_hPakFile);
-		}
+		SpriteLib::SpriteLoader::open_pak("newmaps", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = loader.get_sprite(0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = loader.get_sprite(1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = loader.get_sprite(2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4] = loader.get_sprite(3, false);
+			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = loader.get_sprite(4, false);
+			});
 
-		m_hPakFile = CreateFile("sprites\\LoginDialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 0, false);
-#ifdef DEF_MAKE_ACCOUNT
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_AGREEMENT] = new class CSprite(m_hPakFile, &m_DDraw, "LoginDialog", 2, false);
-#endif
-			CloseHandle(m_hPakFile);
-		}
-#ifdef DEF_MAKE_ACCOUNT			// CLEROTH - ACC - Snoopy: fixed to use without special pak
-		m_hPakFile = CreateFile("sprites\\CreateNewAcc.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "CreateNewAcc", 0, false);
-			CloseHandle(m_hPakFile);
-		}
-		else
-		{
-			m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 2, false);
-			CloseHandle(m_hPakFile);
-		}
-#endif
-		m_hPakFile = CreateFile("sprites\\New-Dialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = new class CSprite(m_hPakFile, &m_DDraw, "New-Dialog", 2, false);
-			CloseHandle(m_hPakFile);
-		}
+		m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = SpriteLib::Sprites::Create("LoginDialog", 0, false);
 
-		m_hPakFile = CreateFile("sprites\\GameDialog.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 4, false);
-			//m_pSprite[DEF_SPRID_INTERFACE_GUIDEMAP] =      new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 5, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 6, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 7, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_SELECTCHAR] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 8, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWCHAR] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 9, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog", 10, false);
-			CloseHandle(m_hPakFile);
-		}
+		SpriteLib::SpriteLoader::open_pak("New-Dialog", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = loader.get_sprite(1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = loader.get_sprite(2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = loader.get_sprite(2, false);
+			});
 
-		//m_hPakFile = CreateFile("sprites\\GameDialog2.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		//if (m_hPakFile != INVALID_HANDLE_VALUE) {
-		//	m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL2] = new class CSprite(m_hPakFile, &m_DDraw, "GameDialog2", 6, false);
-		//	CloseHandle(m_hPakFile);
-		//}
+		SpriteLib::SpriteLoader::open_pak("GameDialog", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = loader.get_sprite(0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = loader.get_sprite(1, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = loader.get_sprite(2, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4] = loader.get_sprite(3, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE] = loader.get_sprite(4, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL] = loader.get_sprite(6, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY] = loader.get_sprite(7, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_SELECTCHAR] = loader.get_sprite(8, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWCHAR] = loader.get_sprite(9, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = loader.get_sprite(10, false);
+			});
 
-		m_hPakFile = CreateFile("sprites\\PartySprite.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = new class CSprite(m_hPakFile, &m_DDraw, "PartySprite", 0, false);
-			CloseHandle(m_hPakFile);
-		}
+		m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = SpriteLib::Sprites::Create("PartySprite", 0, false);
 
-		m_hPakFile = CreateFile("sprites\\DialogText.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = new class CSprite(m_hPakFile, &m_DDraw, "DialogText", 0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = new class CSprite(m_hPakFile, &m_DDraw, "DialogText", 1, false);
-			CloseHandle(m_hPakFile);
-		}
+		SpriteLib::SpriteLoader::open_pak("DialogText", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = loader.get_sprite(0, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = loader.get_sprite(1, false);
+			});
+
 		MakeSprite("Telescope", DEF_SPRID_INTERFACE_GUIDEMAP, 32, false);	  // Snoopy: 20->32
 		MakeSprite("Telescope2", DEF_SPRID_INTERFACE_GUIDEMAP + 35, 4, false); // Snoopy: Ajout.351 (heldenian maps)
 		MakeSprite("monster", DEF_SPRID_INTERFACE_MONSTER, 1, false);
@@ -2785,12 +2778,8 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	case 4:
 	{
 		MakeTileSpr("maptiles1", 0, 32, true);
-		m_hPakFile = CreateFile("sprites\\structures1.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0); //�Ⱦ��� Ÿ�� �ε� ���Ѵ�.2002.09.06����
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pTileSpr[1 + 50] = new class CSprite(m_hPakFile, &m_DDraw, "structures1", 1, true);
-			m_pTileSpr[5 + 50] = new class CSprite(m_hPakFile, &m_DDraw, "structures1", 5, true);
-			CloseHandle(m_hPakFile);
-		}
+		m_pTileSpr[1 + 50] = SpriteLib::Sprites::Create("structures1", 1, true);
+		m_pTileSpr[5 + 50] = SpriteLib::Sprites::Create("structures1", 5, true);
 		MakeTileSpr("Sinside1", 70, 27, false);
 		MakeTileSpr("Trees1", 100, 46, true);
 		MakeTileSpr("TreeShadows", 150, 46, true);
@@ -2837,88 +2826,80 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeTileSpr("Tile531-540", 531, 10, true);	// Diuuude GodH + Pont
 		MakeTileSpr("Tile541-545", 541, 5, true);	// Diuuude GodH
 
-		// DEF_SPRID_ITEMPACK_PIVOTPOINT+0
-		MakeSprite("item-pack", DEF_SPRID_ITEMPACK_PIVOTPOINT + 1, 27, false);
-		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 17, false); //
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 18, false); //
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19, false); // Angels
-			CloseHandle(m_hPakFile);
-		}
+		// DEF_SPRID_ITEMPACK_PIVOTPOINT - batch load from item-pack.pak
+		SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
+			// Load sprites 0-26 to positions 1-27
+			for (size_t i = 0; i < 27 && i < loader.get_sprite_count(); i++) {
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
+			}
+			// Override positions 20-22 with specific pak sprites (Angels)
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 20] = loader.get_sprite(17, false);
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 21] = loader.get_sprite(18, false);
+			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 22] = loader.get_sprite(19, false);
+		});
 
-		// DEF_SPRID_ITEMGROUND_PIVOTPOINT+1
-		MakeSprite("item-ground", DEF_SPRID_ITEMGROUND_PIVOTPOINT + 1, 19, false);
-		m_hPakFile = CreateFile("sprites\\item-ground.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 17, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 18, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-ground", 19, false);//Angels
-			CloseHandle(m_hPakFile);
-		}
+		// DEF_SPRID_ITEMGROUND_PIVOTPOINT - batch load from item-ground.pak
+		SpriteLib::SpriteLoader::open_pak("item-ground", [&](SpriteLib::SpriteLoader& loader) {
+			// Load sprites 0-18 to positions 1-19
+			for (size_t i = 0; i < 19 && i < loader.get_sprite_count(); i++) {
+				m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
+			}
+			// Override positions 20-22 with specific pak sprites (Angels)
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 20] = loader.get_sprite(17, false);
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 21] = loader.get_sprite(18, false);
+			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 22] = loader.get_sprite(19, false);
+		});
 		MakeSprite("item-dynamic", DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT, 3, false);// Snoopy 2-> 3 (flags)
 		m_cLoading = 16;
 	}
 	break;
 	case 16:
 	{
-		m_hPakFile = CreateFile("sprites\\item-equipM.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 0, false);	// body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 1, false);	// 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 2, false);	// 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 3] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 3, false);	// 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 4] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 4, false);	// 4-tunics
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 5] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 5, false);	// 5-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 7] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 6, false);	// 6-berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 8] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 7, false);	// 7-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 9] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 8, false);	// 8-bodyarmor
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 15] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 17] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 9, false);  // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 10, false); // undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 20] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 13, false); // capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 21] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipM", 14, false); // helm
-			CloseHandle(m_hPakFile);
-		}
+		// Load item-equipM.pak batch
+		SpriteLib::SpriteLoader::open_pak("item-equipM", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = loader.get_sprite(0, false);   // body
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = loader.get_sprite(1, false);   // 1-swords
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = loader.get_sprite(2, false);   // 2-bows
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 3] = loader.get_sprite(3, false);   // 3-shields
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 4] = loader.get_sprite(4, false);   // 4-tunics
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 5] = loader.get_sprite(5, false);   // 5-shoes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 7] = loader.get_sprite(6, false);   // 6-berk
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 8] = loader.get_sprite(7, false);   // 7-hoses
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 9] = loader.get_sprite(8, false);   // 8-bodyarmor
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 15] = loader.get_sprite(11, false); // Axe hammer
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 17] = loader.get_sprite(12, false); // Wands
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18] = loader.get_sprite(9, false);  // hair
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19] = loader.get_sprite(10, false); // undies
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 20] = loader.get_sprite(13, false); // capes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 21] = loader.get_sprite(14, false); // helm
+		});
 
-		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 15); // Necks
-			//Snoopy: Angels pandents
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19); // Angels
-			CloseHandle(m_hPakFile);
-		}
+		// Load item-equipW.pak batch
+		SpriteLib::SpriteLoader::open_pak("item-equipW", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = loader.get_sprite(0, false);  // body
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = loader.get_sprite(1, false);  // 1-swords
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = loader.get_sprite(2, false);  // 2-bows
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 43] = loader.get_sprite(3, false);  // 3-shields
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 45] = loader.get_sprite(4, false);  // 4-shoes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 50] = loader.get_sprite(5, false);  // 5-Soustif
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 51] = loader.get_sprite(6, false);  // 6 berk
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 52] = loader.get_sprite(7, false);  // 7 hose
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 53] = loader.get_sprite(8, false);  // 8-hoses
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 55] = loader.get_sprite(11, false); // Axe hammer
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 57] = loader.get_sprite(12, false); // Wands
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 58] = loader.get_sprite(9, false);  // hair
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 59] = loader.get_sprite(10, false); // undies
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 60] = loader.get_sprite(13, false); // capes
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 61] = loader.get_sprite(14, false); // helm
+		});
 
-		m_hPakFile = CreateFile("sprites\\item-equipW.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 0, false); // body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 1, false); // 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 2, false); // 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 43] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 3, false); // 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 45] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 4, false); // 4-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 50] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 5, false); // 5-Soustif
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 51] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 6, false); // 6 berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 52] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 7, false); // 7 hose
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 53] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 8, false); // 8-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 55] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 57] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 58] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 9, false); // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 59] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 10, false);// undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 60] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 13, false);// capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 61] = new class CSprite(m_hPakFile, &m_DDraw, "item-equipW", 14, false);// helm
-			CloseHandle(m_hPakFile);
-		}
-
-		m_hPakFile = CreateFile("sprites\\item-pack.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 15);// necks
-			//Snoopy: Angels pandents
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 62] = new class CSprite(m_hPakFile, &m_DDraw, "item-pack", 19); // Angels
-			CloseHandle(m_hPakFile);
-		}
+		// Load item-pack.pak for necks and angels (used for both M and W)
+		SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = loader.get_sprite(15, false); // Necks (M)
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = loader.get_sprite(19, false); // Angels (M)
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = loader.get_sprite(15, false); // Necks (W)
+			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 62] = loader.get_sprite(19, false); // Angels (W)
+		});
 		MakeSprite("Bm", 500 + 15 * 8 * 0, 96, true);// Black Man (Type: 1)
 		MakeSprite("Wm", 500 + 15 * 8 * 1, 96, true);// White Man (Type: 2)
 		MakeSprite("Ym", 500 + 15 * 8 * 2, 96, true);// Yellow Man (Type: 3)
@@ -2969,14 +2950,11 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeSprite("Unicorn", DEF_SPRID_MOB + 7 * 8 * 22, 40, true);// Unicorn (Type: 32)
 		MakeSprite("WereWolf", DEF_SPRID_MOB + 7 * 8 * 23, 40, true);// WereWolf (Type: 33)
 		MakeSprite("Dummy", DEF_SPRID_MOB + 7 * 8 * 24, 40, true);// Dummy (Type: 34)
-		m_hPakFile = CreateFile("sprites\\Effect5.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0); // Energy-Ball (Type: 35)
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
+		// Energy-Ball (Type: 35) - all 40 slots use the same sprite (index 0)
+		SpriteLib::SpriteLoader::open_pak("Effect5", [&](SpriteLib::SpriteLoader& loader) {
 			for (i = 0; i < 40; i++)
-				m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = new class CSprite(m_hPakFile, &m_DDraw, "Effect5", 0, true);
-
-			CloseHandle(m_hPakFile);
-		}
+				m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = loader.get_sprite(0, true);
+		});
 		m_cLoading = 32;
 	}
 	break;
@@ -3058,38 +3036,28 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	{
 		MakeSprite("Gail", DEF_SPRID_MOB + 7 * 8 * 80, 8, true); // Gail (Type: 90)
 		MakeSprite("Gate", DEF_SPRID_MOB + 7 * 8 * 81, 24, true);// Heldenian Gate (Type: 91)/**/
-		m_hPakFile = CreateFile("sprites\\Mpt.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 1, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Mpt", i + 12 * 7, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Mpt.pak batch (male undies)
+		SpriteLib::SpriteLoader::open_pak("Mpt", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 8; g++) {
+				for (i = 0; i < 12; i++) {
+					m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
+				}
+			}
+		});
 		m_cLoading = 52;
 	}
 	break;
 
 	case 52:
 	{
-		m_hPakFile = CreateFile("sprites\\Mhr.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 1, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_M + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Mhr", i + 12 * 7, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Mhr.pak batch (male hair)
+		SpriteLib::SpriteLoader::open_pak("Mhr", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 8; g++) {
+				for (i = 0; i < 12; i++) {
+					m_pSprite[DEF_SPRID_HAIR_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
+				}
+			}
+		});
 		MakeSprite("MLArmor", DEF_SPRID_BODYARMOR_M + 15 * 1, 12, true);
 		MakeSprite("MCMail", DEF_SPRID_BODYARMOR_M + 15 * 2, 12, true);
 		MakeSprite("MSMail", DEF_SPRID_BODYARMOR_M + 15 * 3, 12, true);
@@ -3118,21 +3086,22 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeSprite("MHLeggings2", DEF_SPRID_LEGG_M + 15 * 6, 12, true); // hero
 		MakeSprite("MShoes", DEF_SPRID_BOOT_M + 15 * 1, 12, true);
 		MakeSprite("MLBoots", DEF_SPRID_BOOT_M + 15 * 2, 12, true);
-		m_hPakFile = CreateFile("sprites\\Msw.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 3, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 10] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 11] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 12] = new class CSprite(m_hPakFile, &m_DDraw, "Msw", i + 56 * 11, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Msw.pak batch (male swords)
+		SpriteLib::SpriteLoader::open_pak("Msw", [&](SpriteLib::SpriteLoader& loader) {
+			// Groups 1-4 (pak index 0-3)
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
+			// Groups 6-12 (pak index 5-11)
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
+		});
 		m_cLoading = 60;
 	}
 	break;
@@ -3179,27 +3148,21 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	break;
 	case 68:
 	{
-		MakeSprite("Mbo", DEF_SPRID_WEAPON_M + 64 * 40, 56, true);
-		m_hPakFile = CreateFile("sprites\\Mbo.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = new class CSprite(m_hPakFile, &m_DDraw, "Mbo", i + 56 * 1, true);
-			CloseHandle(m_hPakFile);
-		}
-		m_hPakFile = CreateFile("sprites\\Msh.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 0, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 1, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 2, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 3, true);
-			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 4, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 5, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 6, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 7, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Msh", i + 7 * 8, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Mbo.pak batch (male bows)
+		SpriteLib::SpriteLoader::open_pak("Mbo", [&](SpriteLib::SpriteLoader& loader) {
+			// First group goes to slot 40
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
+			// Second group goes to slot 41
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
+		});
+		// Load Msh.pak batch (male shields)
+		SpriteLib::SpriteLoader::open_pak("Msh", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 9; g++) {
+				for (i = 0; i < 7; i++) {
+					m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
+				}
+			}
+		});
 		m_cLoading = 72;
 	}
 	break;
@@ -3228,31 +3191,23 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	break;
 	case 76:
 	{
-		m_hPakFile = CreateFile("sprites\\Wpt.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wpt", i + 12 * 7, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Wpt.pak batch (female undies)
+		SpriteLib::SpriteLoader::open_pak("Wpt", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 8; g++) {
+				for (i = 0; i < 12; i++) {
+					m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
+				}
+			}
+		});
 
-		m_hPakFile = CreateFile("sprites\\Whr.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 0] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 0, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 2, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 3, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 4, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 5, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 6, true);
-			for (i = 0; i < 12; i++) m_pSprite[DEF_SPRID_HAIR_W + i + 15 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Whr", i + 12 * 7, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Whr.pak batch (female hair)
+		SpriteLib::SpriteLoader::open_pak("Whr", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 8; g++) {
+				for (i = 0; i < 12; i++) {
+					m_pSprite[DEF_SPRID_HAIR_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
+				}
+			}
+		});
 		m_cLoading = 80;
 	}
 	break;
@@ -3289,21 +3244,22 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	break;
 	case 84:
 	{
-		m_hPakFile = CreateFile("sprites\\Wsw.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 3, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 10] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 11] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 12] = new class CSprite(m_hPakFile, &m_DDraw, "Wsw", i + 56 * 11, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Wsw.pak batch (female swords)
+		SpriteLib::SpriteLoader::open_pak("Wsw", [&](SpriteLib::SpriteLoader& loader) {
+			// Groups 1-4 (pak index 0-3)
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
+			// Groups 6-12 (pak index 5-11)
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
+		});
 		MakeSprite("Wswx", DEF_SPRID_WEAPON_W + 64 * 5, 56, true);
 		MakeSprite("Wsw2", DEF_SPRID_WEAPON_W + 64 * 13, 56, true);
 		MakeSprite("Wsw3", DEF_SPRID_WEAPON_W + 64 * 14, 56, true); // TheVampire
@@ -3366,26 +3322,21 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	break;
 	case 96:
 	{
-		MakeSprite("Wbo", DEF_SPRID_WEAPON_W + 64 * 40, 56, true);// Bow
-		m_hPakFile = CreateFile("sprites\\Wbo.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = new class CSprite(m_hPakFile, &m_DDraw, "Wbo", i + 56 * 1, true);
-			CloseHandle(m_hPakFile);
-		}
-		m_hPakFile = CreateFile("sprites\\Wsh.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE) {
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 1] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 0, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 2] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 1, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 3] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 2, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 4] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 3, true);
-			for (i = 0; i < 7; i++)	m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 5] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 4, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 6] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 5, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 7] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 6, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 8] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 7, true);
-			for (i = 0; i < 7; i++) m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * 9] = new class CSprite(m_hPakFile, &m_DDraw, "Wsh", i + 7 * 8, true);
-			CloseHandle(m_hPakFile);
-		}
+		// Load Wbo.pak batch (female bows)
+		SpriteLib::SpriteLoader::open_pak("Wbo", [&](SpriteLib::SpriteLoader& loader) {
+			// First group goes to slot 40
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
+			// Second group goes to slot 41
+			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
+		});
+		// Load Wsh.pak batch (female shields)
+		SpriteLib::SpriteLoader::open_pak("Wsh", [&](SpriteLib::SpriteLoader& loader) {
+			for (int g = 0; g < 9; g++) {
+				for (i = 0; i < 7; i++) {
+					m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
+				}
+			}
+		});
 		m_cLoading = 100;
 	}
 	break;
@@ -3395,13 +3346,12 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		MakeEffectSpr("effect2", 10, 3, false);
 		MakeEffectSpr("effect3", 13, 6, false);
 		MakeEffectSpr("effect4", 19, 5, false);
-		m_hPakFile = CreateFile("sprites\\effect5.pak", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-		if (m_hPakFile != INVALID_HANDLE_VALUE)
-		{
-			for (i = 0; i <= 6; i++) // Because effectn�0 is EnergySphere
-				m_pEffectSpr[i + 24] = new class CSprite(m_hPakFile, &m_DDraw, "effect5", i + 1, false);
-			CloseHandle(m_hPakFile);
-		}
+		// Load effect5.pak batch (sprites 1-7 to positions 24-30, sprite 0 is EnergySphere)
+		SpriteLib::SpriteLoader::open_pak("effect5", [&](SpriteLib::SpriteLoader& loader) {
+			for (i = 0; i <= 6; i++) {
+				m_pEffectSpr[i + 24] = loader.get_sprite(i + 1, false);
+			}
+		});
 		MakeEffectSpr("CruEffect1", 31, 9, false);
 		MakeEffectSpr("effect6", 40, 5, false);
 		MakeEffectSpr("effect7", 45, 12, false);
@@ -3433,16 +3383,16 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 	}
 }
 /*********************************************************************************************************************
-** 	void CGame::UpdateScreen_OnLoading_Progress()																	**
+** 	void CGame::DrawScreen_OnLoadingProgress()																	**
 **  description			:: loading becomes progressbar																**
 **********************************************************************************************************************/
-void CGame::UpdateScreen_OnLoading_Progress()
+void CGame::DrawScreen_OnLoadingProgress()
 {
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOADING, 0 + SCREENX, 0 + SCREENY, 0, true);
 	DrawVersion();
 	int iBarWidth;
 	iBarWidth = (int)m_cLoading;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->PutSpriteFastWidth(472 + SCREENX, 442 + SCREENY, 1, iBarWidth, G_dwGlobalTime);
+	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->DrawWidth(472 + SCREENX, 442 + SCREENY, 1, iBarWidth);
 }
 
 void CGame::OnTimer()
@@ -3761,15 +3711,14 @@ bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 
 			if (m_pItemList[cItemID] != 0)
 			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + 32 + m_pItemList[cItemID]->m_sX,
-					sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.bottom;
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
+				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
+				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
+				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
+				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
 				if ((m_bIsItemDisabled[cItemID] == false) && (m_bIsItemEquipped[cItemID] == false) && (msX > x1) && (msX < x2) && (msY > y1) && (msY < y2)) {
 
-					if (m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_bCheckCollison(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame, msX, msY) == true)
+					if (m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CheckCollision(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame, msX, msY) == true)
 					{
 						_SetItemOrder(0, cItemID);
 						if ((m_bIsGetPointingMode == true) && (m_iPointCommandType < 100) && (m_iPointCommandType >= 0)
@@ -3785,8 +3734,8 @@ bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 						{
 							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 							m_stMCursor.sSelectedObjectID = cItemID;
-							m_stMCursor.sDistX = msX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotX;
-							m_stMCursor.sDistY = msY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotY;
+							m_stMCursor.sDistX = msX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
+							m_stMCursor.sDistY = msY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
 						}
 						return true;
 					}
@@ -4804,10 +4753,10 @@ void CGame::PutString_SprFont(int iX, int iY, char* pStr, short sR, short sG, sh
 	iXpos = iX;
 	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
 		if ((cTmpStr[iCnt] >= 33) && (cTmpStr[iCnt] <= 122)) {
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteRGB(iXpos + 1, iY, cTmpStr[iCnt] - 33, sR + 11, sG + 7, sB + 6, dwTime);
+			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(sR + 11, sG + 7, sB + 6));
 			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteFast(iXpos, iY, cTmpStr[iCnt] - 33, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 33, sR, sG, sB, dwTime);
+				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33);
+			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(sR, sG, sB));
 			iXpos += __cSpace[cTmpStr[iCnt] - 33];
 		}
 		else iXpos += 5;
@@ -4821,7 +4770,7 @@ void CGame::PutString_SprFont2(int iX, int iY, char* pStr, short sR, short sG, s
 	uint32_t dwTime = G_dwGlobalTime;
 	char  cTmpStr[200];
 
-	m_DDraw.ColorTransferRGB(RGB(sR, sG, sB), &iR, &iG, &iB);
+	static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->ColorTransferRGB(RGB(sR, sG, sB), &iR, &iG, &iB);
 
 	std::memset(cTmpStr, 0, sizeof(cTmpStr));
 	strcpy(cTmpStr, pStr);
@@ -4829,11 +4778,11 @@ void CGame::PutString_SprFont2(int iX, int iY, char* pStr, short sR, short sG, s
 	iXpos = iX;
 	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
 		if ((cTmpStr[iCnt] >= 33) && (cTmpStr[iCnt] <= 122)) {
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteFast(iXpos + 1, iY, cTmpStr[iCnt] - 33, dwTime);
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteFast(iXpos + 1, iY + 1, cTmpStr[iCnt] - 33, dwTime);
+			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY, cTmpStr[iCnt] - 33);
+			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 33);
 			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteFast(iXpos, iY, cTmpStr[iCnt] - 33, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->PutSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 33, iR, iG, iB, dwTime);
+				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33);
+			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			iXpos += __cSpace[cTmpStr[iCnt] - 33];
 		}
 		else iXpos += 5;
@@ -4857,16 +4806,16 @@ void CGame::PutString_SprFont3(int iX, int iY, char* pStr, short sR, short sG, s
 			if ((cTmpStr[iCnt] >= 32) && (cTmpStr[iCnt] <= 126)) {
 
 				if (bTrans == false) {
-					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->PutSpriteFast(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd, dwTime);
-					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->PutSpriteFast(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd, dwTime);
+					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
+					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
 					if ((sR == 0) && (sG == 0) && (sB == 0))
-						m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->PutSpriteFast(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, dwTime);
-					else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->PutSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, sR, sG, sB, dwTime);
+						m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd);
+					else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::Tint(sR, sG, sB));
 
 				}
-				else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->PutTransSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, sR, sG, sB, dwTime);
+				else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::TintedAlpha(sR, sG, sB, 0.7f));
 
-				iXpos += (m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->m_stBrush[cTmpStr[iCnt] - 32 + iAdd].szx);
+				iXpos += m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->GetFrameRect(cTmpStr[iCnt] - 32 + iAdd).width;
 			}
 			else iXpos += 5;
 		}
@@ -4878,16 +4827,16 @@ void CGame::PutString_SprFont3(int iX, int iY, char* pStr, short sR, short sG, s
 			if ((cTmpStr[iCnt] >= 32) && (cTmpStr[iCnt] <= 126)) {
 
 				if (bTrans == false) {
-					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->PutSpriteFast(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd, dwTime);
-					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->PutSpriteFast(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd, dwTime);
+					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
+					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
 					if ((sR == 0) && (sG == 0) && (sB == 0))
-						m_pSprite[DEF_SPRID_INTERFACE_FONT2]->PutSpriteFast(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, dwTime);
-					else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->PutSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, sR, sG, sB, dwTime);
+						m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd);
+					else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::Tint(sR, sG, sB));
 
 				}
-				else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->PutTransSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, sR, sG, sB, dwTime);
+				else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::TintedAlpha(sR, sG, sB, 0.7f));
 
-				iXpos += (m_pSprite[DEF_SPRID_INTERFACE_FONT2]->m_stBrush[cTmpStr[iCnt] - 32 + iAdd].szx);
+				iXpos += m_pSprite[DEF_SPRID_INTERFACE_FONT2]->GetFrameRect(cTmpStr[iCnt] - 32 + iAdd).width;
 			}
 			else iXpos += 5;
 		}
@@ -4904,17 +4853,17 @@ void CGame::PutString_SprNum(int iX, int iY, char* pStr, short sR, short sG, sho
 	uint16_t wR, wG, wB;
 	std::memset(cTmpStr, 0, sizeof(cTmpStr));
 	strcpy(cTmpStr, pStr);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(sR, sG, sB), &wR, &wG, &wB);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(sR, sG, sB), &wR, &wG, &wB);
 	iXpos = iX;
 	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++)
 	{
 		if ((cTmpStr[iCnt] >= 0x30) && (cTmpStr[iCnt] <= 0x39))
 		{
-			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSprite(iXpos + 2, iY, cTmpStr[iCnt] - 0x30 + 6, dwTime);
-			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSprite(iXpos + 1, iY + 1, cTmpStr[iCnt] - 0x30 + 6, dwTime);
+			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos + 2, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
+			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
 			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSprite(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, dwTime);
-			else m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->PutTransSpriteRGB(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, wR, wG, wB, dwTime);
+				m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
+			else m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::TintedAlpha(wR, wG, wB, 0.7f));
 			iXpos += __cSpace2[cTmpStr[iCnt] - 0x30];
 		}
 	}
@@ -4925,20 +4874,20 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 	char* pTmp;
 	int i;
 	if (strlen(pString) == 0) return;
-	if (bIsPreDC == false) m_DDraw._GetBackBufferDC();
+	if (bIsPreDC == false) m_Renderer->BeginTextBatch();
 	if (bHide == false)
 	{
 		switch (cBGtype) {
 		case 0:
-			m_DDraw.TextOut(iX + 1, iY, pString, color);
+			m_Renderer->DrawText(iX + 1, iY, pString, color);
 			break;
 		case 1:
-			m_DDraw.TextOut(iX, iY + 1, pString, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY + 1, pString, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY, pString, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX, iY + 1, pString, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX + 1, iY + 1, pString, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX + 1, iY, pString, RGB(5, 5, 5));
 			break;
 		}
-		m_DDraw.TextOut(iX, iY, pString, color);
+		m_Renderer->DrawText(iX, iY, pString, color);
 	}
 	else
 	{
@@ -4950,45 +4899,45 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 
 		switch (cBGtype) {
 		case 0:
-			m_DDraw.TextOut(iX + 1, iY, pTmp, color);
+			m_Renderer->DrawText(iX + 1, iY, pTmp, color);
 			break;
 		case 1:
-			m_DDraw.TextOut(iX, iY + 1, pTmp, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY + 1, pTmp, RGB(5, 5, 5));
-			m_DDraw.TextOut(iX + 1, iY, pTmp, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX, iY + 1, pTmp, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX + 1, iY + 1, pTmp, RGB(5, 5, 5));
+			m_Renderer->DrawText(iX + 1, iY, pTmp, RGB(5, 5, 5));
 			break;
 		}
-		m_DDraw.TextOut(iX, iY, pTmp, color);
+		m_Renderer->DrawText(iX, iY, pTmp, color);
 		delete[] pTmp;
 	}
-	if (bIsPreDC == false) m_DDraw._ReleaseBackBufferDC();
+	if (bIsPreDC == false) m_Renderer->EndTextBatch();
 }
 
 
 void CGame::PutString(int iX, int iY, char* pString, COLORREF color)
 {
-	m_DDraw._GetBackBufferDC();
-	m_DDraw.TextOut(iX, iY, pString, color);
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->BeginTextBatch();
+	m_Renderer->DrawText(iX, iY, pString, color);
+	m_Renderer->EndTextBatch();
 }
 
 void CGame::PutString2(int iX, int iY, char* pString, short sR, short sG, short sB)
 {
-	m_DDraw._GetBackBufferDC();
-	m_DDraw.TextOut(iX + 1, iY, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX, iY + 1, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX + 1, iY + 1, pString, RGB(0, 0, 0));
-	m_DDraw.TextOut(iX, iY, pString, RGB(sR, sG, sB));
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->BeginTextBatch();
+	m_Renderer->DrawText(iX + 1, iY, pString, RGB(0, 0, 0));
+	m_Renderer->DrawText(iX, iY + 1, pString, RGB(0, 0, 0));
+	m_Renderer->DrawText(iX + 1, iY + 1, pString, RGB(0, 0, 0));
+	m_Renderer->DrawText(iX, iY, pString, RGB(sR, sG, sB));
+	m_Renderer->EndTextBatch();
 }
 
 void CGame::PutAlignedString(int iX1, int iX2, int iY, char* pString, short sR, short sG, short sB)
 {
 	RECT rt;
-	m_DDraw._GetBackBufferDC();
+	m_Renderer->BeginTextBatch();
 	SetRect(&rt, iX1, iY, iX2, iY + 15);
-	m_DDraw.DrawText(&rt, pString, RGB(sR, sG, sB));
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->DrawTextRect(&rt, pString, RGB(sR, sG, sB));
+	m_Renderer->EndTextBatch();
 }
 
 bool CGame::bInitMagicCfgList()
@@ -5522,8 +5471,8 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -5536,20 +5485,20 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 			{
 				if (iWeaponColor == 0)
 				{
-					m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
 				}
 				else
 				{
-					m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame - 1, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
+				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
@@ -5567,117 +5516,117 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (((_tmp_sAppr2 & 0x000F) == 8) && (iShieldGlare == 1))
 			{
-				m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
+				m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-					case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
@@ -5698,133 +5647,133 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+					m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
-				else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame - 1, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
+				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel((_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 8, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -5851,53 +5800,53 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 	if (_tmp_sOwnerType == 81)
 	{
 		int randFrame = _tmp_cFrame % 12;
-		m_pEffectSpr[154]->PutTransSprite70(sX - 50, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[155]->PutTransSprite70(sX - 20, sY - 80, randFrame, dwTime);
-		m_pEffectSpr[156]->PutTransSprite70(sX + 70, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[157]->PutTransSprite70(sX - 30, sY, randFrame, dwTime);
-		m_pEffectSpr[158]->PutTransSprite70(sX - 60, sY + 90, randFrame, dwTime);
-		m_pEffectSpr[159]->PutTransSprite70(sX + 65, sY + 85, randFrame, dwTime);
+		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		switch (_tmp_cDir) {
 		case 1:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 108, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 50, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 70, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 105, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 90, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->PutTransSprite70(sX - 35, sY + 100, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 80, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 65, sY - 5, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 45, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 31, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 40, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 30, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 20, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 20, sY + 16, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -6176,8 +6125,8 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 
 	if (_tmp_iEffectType != 0) {
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX + dx, sY + dy, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX + dx, sY + dy, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX + dx, sY + dy, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX + dx, sY + dy, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -6189,16 +6138,16 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-				else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame - 1, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
+				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
@@ -6216,97 +6165,97 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
-				else m_pSprite[iShieldIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
@@ -6327,126 +6276,126 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iShieldIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13 + dx, sY - 34 + dy, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(sX - 13 + dx, sY - 34 + dy, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-				else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame - 1, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
+				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 		}
 
 		// Berserk
 		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(8 + (_tmp_cDir - 1), sX + dx + 20, sY + dy - 20, _tmp_cFrame % 8, dwTime);
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, _tmp_sOwnerType);
 
 		if (bDashDraw == true) {
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX + dsx, sY + dsy, _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
-			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX + dsx, sY + dsy, _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
-			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX + dsx, sY + dsy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dsx, sY + dsy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->Draw(sX + dsx, sY + dsy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->Draw(sX + dsx, sY + dsy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 		}
 	}
 	else if (strlen(_tmp_cName) > 0)
@@ -6469,11 +6418,11 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 	_tmp_dx = dx;
 	_tmp_dy = dy;
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 
 	return false;
 }
@@ -6630,8 +6579,8 @@ bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bT
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -6653,81 +6602,81 @@ bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bT
 		default:
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else {
 			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
 			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, iR, iG, iB, dwTime);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+				m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(32 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 16, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -6749,11 +6698,11 @@ bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bT
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -6870,8 +6819,8 @@ bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool 
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -6894,113 +6843,113 @@ bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool 
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite2(sX, sY, _tmp_cFrame, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else {
 			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 		if (iUndiesIndex != -1)
 		{
-			if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-			else m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
 		}
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
 			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, iR, iG, iB, dwTime);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
-			if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 		}
 
 		if (iPantsIndex != -1)
 		{
-			if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 		}
 
 		if (iArmArmorIndex != -1)
 		{
-			if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
-			if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
-			if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 		}
 
 		if (iHelmIndex != -1)
 		{
-			if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 		}
 
 		if (iMantleIndex != -1)
 		{
-			if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(40 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -7022,11 +6971,11 @@ bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool 
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -7284,8 +7233,8 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -7299,14 +7248,14 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 				switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
@@ -7324,112 +7273,112 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, cFrame, dwTime);
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, cFrame, dwTime);
+							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
 				if (_tmp_sOwnerType == 35)
-					m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 				if (_tmp_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
 					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
 					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, iR, iG, iB, dwTime);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-					case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 			else
@@ -7449,131 +7398,131 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, cFrame, dwTime);
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, cFrame, dwTime);
+							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
 				if (_tmp_sOwnerType == 35)
-					m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 				if (_tmp_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
 					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
 					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, iR, iG, iB, dwTime);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-					case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 			}
 
 			if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, cFrame, 0, -5, -5, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 			DrawAngel(16 + (_tmp_cDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -7585,14 +7534,14 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 				switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
@@ -7611,109 +7560,109 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 					{
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
 				if (_tmp_sOwnerType == 35)
-					m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 				if (_tmp_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
 					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
 					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, iR, iG, iB, dwTime);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-					case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 			else
@@ -7733,131 +7682,131 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, cFrame, dwTime);
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, cFrame, dwTime);
+							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
 				if (_tmp_sOwnerType == 35)
-					m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 				if (_tmp_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
 					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
 				}
 
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
 					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, iR, iG, iB, dwTime);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-					case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 			}
 
 			if ((_tmp_iStatus & 0x20) != 0)	// Berserk
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, cFrame, 0, -5, -5, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 			DrawAngel(16 + (_tmp_cDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 		}
@@ -7883,52 +7832,52 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 	if (_tmp_sOwnerType == 81)
 	{
 		int randFrame = _tmp_cFrame % 12;
-		m_pEffectSpr[154]->PutTransSprite70(sX - 50, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[155]->PutTransSprite70(sX - 20, sY - 80, randFrame, dwTime);
-		m_pEffectSpr[156]->PutTransSprite70(sX + 70, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[157]->PutTransSprite70(sX - 30, sY, randFrame, dwTime);
-		m_pEffectSpr[158]->PutTransSprite70(sX - 60, sY + 90, randFrame, dwTime);
-		m_pEffectSpr[159]->PutTransSprite70(sX + 65, sY + 85, randFrame, dwTime);
+		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		switch (_tmp_cDir) {
 		case 1:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 108, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 50, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 70, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 105, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 90, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->PutTransSprite70(sX - 35, sY + 100, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 80, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 65, sY - 5, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 45, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 31, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 40, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 30, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 20, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 20, sY + 16, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 
 	return false;
 }
@@ -8159,8 +8108,8 @@ bool CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTra
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -8182,119 +8131,119 @@ bool CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTra
 			if (ConfigManager::Get().GetDetailLevel() != 0)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, cFrame, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 		if (_tmp_sOwnerType == 81)
 		{
-			m_pEffectSpr[152]->PutTransSprite70(sX - 80, sY - 15, _tmp_iEffectFrame % 27, dwTime); // Explosion Abaddon
-			m_pEffectSpr[152]->PutTransSprite70(sX, sY - 15, _tmp_iEffectFrame % 27, dwTime);
-			m_pEffectSpr[152]->PutTransSprite70(sX - 40, sY, _tmp_iEffectFrame % 27, dwTime);
-			m_pEffectSpr[163]->PutTransSprite70(sX - 90, sY - 80, _tmp_iEffectFrame % 12, dwTime); // Ames qui s'envolent
-			m_pEffectSpr[160]->PutTransSprite70(sX - 60, sY - 50, _tmp_iEffectFrame % 12, dwTime);
-			m_pEffectSpr[161]->PutTransSprite70(sX - 30, sY - 20, _tmp_iEffectFrame % 12, dwTime);
-			m_pEffectSpr[162]->PutTransSprite70(sX, sY - 100, _tmp_iEffectFrame % 12, dwTime);
-			m_pEffectSpr[163]->PutTransSprite70(sX + 30, sY - 30, _tmp_iEffectFrame % 12, dwTime);
-			m_pEffectSpr[162]->PutTransSprite70(sX + 60, sY - 90, _tmp_iEffectFrame % 12, dwTime);
-			m_pEffectSpr[163]->PutTransSprite70(sX + 90, sY - 50, _tmp_iEffectFrame % 12, dwTime);
+			m_pEffectSpr[152]->Draw(sX - 80, sY - 15, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f)); // Explosion Abaddon
+			m_pEffectSpr[152]->Draw(sX, sY - 15, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[152]->Draw(sX - 40, sY, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX - 90, sY - 80, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f)); // Ames qui s'envolent
+			m_pEffectSpr[160]->Draw(sX - 60, sY - 50, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[161]->Draw(sX - 30, sY - 20, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[162]->Draw(sX, sY - 100, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX + 30, sY - 30, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[162]->Draw(sX + 60, sY - 90, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX + 90, sY - 50, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
 			switch (_tmp_cDir) {
-			case 1: m_pEffectSpr[140]->PutTransSprite70(sX, sY, cFrame, dwTime); break; // Abbadon dying
-			case 2: m_pEffectSpr[141]->PutTransSprite70(sX, sY, cFrame, dwTime); break; // fixed sprit IDs
-			case 3: m_pEffectSpr[142]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 4: m_pEffectSpr[143]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 5: m_pEffectSpr[144]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 6: m_pEffectSpr[145]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 7: m_pEffectSpr[146]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 8: m_pEffectSpr[147]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
+			case 1: m_pEffectSpr[140]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break; // Abbadon dying
+			case 2: m_pEffectSpr[141]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break; // fixed sprit IDs
+			case 3: m_pEffectSpr[142]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 4: m_pEffectSpr[143]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 5: m_pEffectSpr[144]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 6: m_pEffectSpr[145]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 7: m_pEffectSpr[146]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 8: m_pEffectSpr[147]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
 			}
 		}
-		else if (_tmp_sOwnerType == 66) m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
+		else if (_tmp_sOwnerType == 66) m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else if (_tmp_sOwnerType == 73)
-		{	//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, cFrame, dwTime);
-			m_pSprite[33]->PutTransSprite(sX, sY, cFrame, dwTime);
+		{	//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+			m_pSprite[33]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			switch (_tmp_cDir) {
-			case 1: m_pEffectSpr[141]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break; // Abbadon qui meurt
-			case 2: m_pEffectSpr[142]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-			case 3: m_pEffectSpr[143]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-			case 4: m_pEffectSpr[144]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-			case 5: m_pEffectSpr[145]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-			case 6: m_pEffectSpr[146]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-			case 7: m_pEffectSpr[147]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break;
-				//case 8: m_pEffectSpr[148]->PutTransSprite70(sX, sY, cFrame, dwTime); break;
-			case 8: m_pEffectSpr[141]->PutTransSprite70(sX, sY, cFrame + 8, dwTime); break; //due to buggy Sprite nb
+			case 1: m_pEffectSpr[141]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break; // Abbadon qui meurt
+			case 2: m_pEffectSpr[142]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 3: m_pEffectSpr[143]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 4: m_pEffectSpr[144]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 5: m_pEffectSpr[145]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 6: m_pEffectSpr[146]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 7: m_pEffectSpr[147]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
+				//case 8: m_pEffectSpr[148]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+			case 8: m_pEffectSpr[141]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break; //due to buggy Sprite nb
 			}
 		}
 		else
 		{
 			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
 		}
 
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
 			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, iR, iG, iB, dwTime);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+				m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(24 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -8317,11 +8266,11 @@ bool CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTra
 		}
 	}
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -8529,72 +8478,72 @@ bool   CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTr
 		{
 			_tmp_cFrame = 7;
 			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, iFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, iFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame);
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if (iMantleIndex != -1)
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, iFrame, -2 * _tmp_cFrame + 5, -2 * _tmp_cFrame - 5, -2 * _tmp_cFrame - 5, dwTime);
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, iFrame, -2 * _tmp_cFrame, -2 * _tmp_cFrame, -2 * _tmp_cFrame, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * _tmp_cFrame + 5, -2 * _tmp_cFrame - 5, -2 * _tmp_cFrame - 5, 0.7f));
+		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * _tmp_cFrame, -2 * _tmp_cFrame, -2 * _tmp_cFrame, 0.7f));
 
 	}
 	else if (strlen(_tmp_cName) > 0)
@@ -8621,14 +8570,14 @@ bool   CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTr
 		Abaddon_corpse(sX, sY); // By Snoopy....
 	}
 	else if (_tmp_sOwnerType == 73)
-	{	//m_pEffectSpr[35]->PutTransSprite70(sX+120, sY+120, rand(), dwTime);
-		m_pEffectSpr[35]->PutTransSprite70(sX + 20, sY - 15, rand() % 10, dwTime);
+	{	//m_pEffectSpr[35]->Draw(sX+120, sY+120, rand(), SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[35]->Draw(sX + 20, sY - 15, rand() % 10, SpriteLib::DrawParams::Alpha(0.7f));
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -8939,17 +8888,17 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (_tmp_sOwnerType == 65) // IceGolem
-	{	/*m_pEffectSpr[77]->PutTransSprite70(sX+dx, sY+dy, _tmp_cFrame, dwTime);*/
+	{	/*m_pEffectSpr[77]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f));*/
 		switch (rand() % 3) {
-		case 0:	m_pEffectSpr[76]->PutTransSprite70(fix_x, fix_y, _tmp_cFrame, dwTime); break;
-		case 1:	m_pEffectSpr[77]->PutTransSprite70(fix_x, fix_y, _tmp_cFrame, dwTime); break;
-		case 2:	m_pEffectSpr[78]->PutTransSprite70(fix_x, fix_y, _tmp_cFrame, dwTime); break;
+		case 0:	m_pEffectSpr[76]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+		case 1:	m_pEffectSpr[77]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+		case 2:	m_pEffectSpr[78]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
 		}
 	}
 	if (bTrans == false)
@@ -8959,19 +8908,19 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(fix_x, fix_y, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
@@ -8989,157 +8938,157 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(fix_x, fix_y, 1, dwTime);
+				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite2(sX+dx, sY+dy, _tmp_cFrame, dwTime);
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
@@ -9161,181 +9110,181 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(fix_x, fix_y, 1, dwTime);
+				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite70(fix_x, fix_y, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(fix_x, fix_y, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
 
 		// Berserk
 		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(40 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, _tmp_cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
 
@@ -9364,52 +9313,52 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 	if (_tmp_sOwnerType == 81)
 	{
 		int randFrame = _tmp_iEffectFrame % 12;
-		m_pEffectSpr[154]->PutTransSprite70(sX - 50, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[155]->PutTransSprite70(sX - 20, sY - 80, randFrame, dwTime);
-		m_pEffectSpr[156]->PutTransSprite70(sX + 70, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[157]->PutTransSprite70(sX - 30, sY, randFrame, dwTime);
-		m_pEffectSpr[158]->PutTransSprite70(sX - 60, sY + 90, randFrame, dwTime);
-		m_pEffectSpr[159]->PutTransSprite70(sX + 65, sY + 85, randFrame, dwTime);
+		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		switch (_tmp_cDir) {
 		case 1:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x, fix_y + 108, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 50, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 50, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 70, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 70, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x, fix_y + 105, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 90, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 90, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x - 35, fix_y + 100, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 80, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x - 35, fix_y + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 80, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 65, fix_y - 5, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 65, fix_y - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x + 45, fix_y + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 31, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x + 45, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 31, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x + 40, fix_y + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 30, fix_y + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x + 40, fix_y + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 30, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->PutTransSprite70(fix_x + 20, fix_y + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(fix_x - 20, fix_y + 16, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(fix_x + 20, fix_y + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 20, fix_y + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -9591,8 +9540,8 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -9604,14 +9553,14 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, cFrame, dwTime);
-				else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame);
+				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
@@ -9630,111 +9579,111 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame);
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
@@ -9755,129 +9704,129 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, dwTime);
-				else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, cFrame, dwTime);
-				else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+					m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame);
+				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x, fix_y, cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(16 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
 
@@ -9901,11 +9850,11 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -10099,8 +10048,8 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 		if (iWeaponIndex != -1)
 		{
 			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-			else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 		}
 		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
@@ -10118,87 +10067,87 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
 
 
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 		if (iUndiesIndex != -1)
 		{
-			if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iUndiesIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 		}
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
 			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iPantsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if (iShieldIndex != -1)
 		{
 			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iShieldIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 		}
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 	}
 	else
@@ -10219,89 +10168,89 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
 
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
 			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iPantsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBootsIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if (iShieldIndex != -1)
 		{
 			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iShieldIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 		}
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->PutSpriteFast(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-			else m_pSprite[iMantleIndex]->PutSpriteRGB(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 		if (iWeaponIndex != -1)
 		{
 			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->PutSpriteFast(sX + dx, sY + dy, _tmp_cFrame, dwTime);
-			else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX + dx, sY + dy, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 		}
 	}
 
@@ -10318,11 +10267,11 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -10558,14 +10507,14 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 	case 51: // CP
 	case 86: // HBT
 	case 90: // Gail
-		m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+		m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 		break;
 	}
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(sX, sY, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 	if (bTrans == false)
@@ -10575,19 +10524,19 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(sX, sY, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
@@ -10607,156 +10556,156 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
@@ -10778,174 +10727,174 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(sX, sY, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 			if (_tmp_sOwnerType == 35)
-				m_pEffectSpr[0]->PutTransSprite(sX, sY, 1, dwTime);
+				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 			if (_tmp_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(sX, sY, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(sX - 13, sY - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(sX, sY, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(sX, sY, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(sX, sY, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
@@ -10953,19 +10902,19 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 		{
 			switch (_tmp_cFrame) {
 			case 0: // color effect for crop
-				m_pEffectSpr[84]->PutTransSprite(sX + 52, sY + 54, (dwTime % 3000) / 120, dwTime);
+				m_pEffectSpr[84]->Draw(sX + 52, sY + 54, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
 			case 1: // color effect for crop
-				m_pEffectSpr[83]->PutTransSprite(sX + 53, sY + 59, (dwTime % 3000) / 120, dwTime);
+				m_pEffectSpr[83]->Draw(sX + 53, sY + 59, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
 			case 2: // color effect for crop
-				m_pEffectSpr[82]->PutTransSprite(sX + 53, sY + 65, (dwTime % 3000) / 120, dwTime);
+				m_pEffectSpr[82]->Draw(sX + 53, sY + 65, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
 			}
 		}
 		// Berserk
 		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(sX, sY, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(40 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
 
@@ -10991,52 +10940,52 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 	if (_tmp_sOwnerType == 81)
 	{
 		int randFrame = _tmp_cFrame % 12;
-		m_pEffectSpr[154]->PutTransSprite70(sX - 50, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[155]->PutTransSprite70(sX - 20, sY - 80, randFrame, dwTime);
-		m_pEffectSpr[156]->PutTransSprite70(sX + 70, sY - 50, randFrame, dwTime);
-		m_pEffectSpr[157]->PutTransSprite70(sX - 30, sY, randFrame, dwTime);
-		m_pEffectSpr[158]->PutTransSprite70(sX - 60, sY + 90, randFrame, dwTime);
-		m_pEffectSpr[159]->PutTransSprite70(sX + 65, sY + 85, randFrame, dwTime);
+		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		switch (_tmp_cDir) {
 		case 1:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 108, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 50, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 70, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 105, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 90, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->PutTransSprite70(sX - 35, sY + 100, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 80, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->PutTransSprite70(sX, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 65, sY - 5, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 45, sY + 95, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 31, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 40, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 30, sY + 10, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->PutTransSprite70(sX + 20, sY + 110, _tmp_iEffectFrame % 28, dwTime);
-			m_pEffectSpr[164]->PutTransSprite70(sX - 20, sY + 16, _tmp_iEffectFrame % 15, dwTime);
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
+		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -11742,26 +11691,25 @@ void CGame::ReleaseUnusedSprites()
 	for (i = 0; i < DEF_MAXSPRITES; i++)
 		if ((m_pSprite[i] != 0))
 		{
-			if ((m_pSprite[i]->m_bIsSurfaceEmpty == false) && (m_pSprite[i]->m_bOnCriticalSection == false))
+			if (m_pSprite[i]->IsLoaded() && !m_pSprite[i]->IsInUse())
 			{
-				if ((G_dwGlobalTime - m_pSprite[i]->m_dwRefTime) > 60000) m_pSprite[i]->_iCloseSprite();
-
+				if ((G_dwGlobalTime - m_pSprite[i]->GetLastAccessTime()) > 60000) m_pSprite[i]->Unload();
 			}
 		}
 	for (i = 0; i < DEF_MAXTILES; i++)
 		if ((m_pTileSpr[i] != 0))
 		{
-			if ((m_pTileSpr[i]->m_bIsSurfaceEmpty == false) && (m_pTileSpr[i]->m_bOnCriticalSection == false))
+			if (m_pTileSpr[i]->IsLoaded() && !m_pTileSpr[i]->IsInUse())
 			{
-				if ((G_dwGlobalTime - m_pTileSpr[i]->m_dwRefTime) > 60000) m_pTileSpr[i]->_iCloseSprite();
+				if ((G_dwGlobalTime - m_pTileSpr[i]->GetLastAccessTime()) > 60000) m_pTileSpr[i]->Unload();
 			}
 		}
 	for (i = 0; i < DEF_MAXEFFECTSPR; i++)
 		if ((m_pEffectSpr[i] != 0))
 		{
-			if ((m_pEffectSpr[i]->m_bIsSurfaceEmpty == false) && (m_pEffectSpr[i]->m_bOnCriticalSection == false))
+			if (m_pEffectSpr[i]->IsLoaded() && !m_pEffectSpr[i]->IsInUse())
 			{
-				if ((G_dwGlobalTime - m_pEffectSpr[i]->m_dwRefTime) > 60000) m_pEffectSpr[i]->_iCloseSprite();
+				if ((G_dwGlobalTime - m_pEffectSpr[i]->GetLastAccessTime()) > 60000) m_pEffectSpr[i]->Unload();
 			}
 		}
 
@@ -11831,12 +11779,12 @@ void CGame::ChatMsgHandler(char* pData)
 
 	std::memset(cMsg, 0, sizeof(cMsg));
 	wsprintf(cMsg, "%s: %s", cName, cTemp);
-	m_DDraw._GetBackBufferDC();
+	m_Renderer->BeginTextBatch();
 	bFlag = false;
 	short sCheckByte = 0;
 	while (bFlag == false)
 	{
-		iLoc = CMisc::iGetTextLengthLoc(m_DDraw.m_hDC, cMsg, 305);
+		iLoc = CMisc::iGetTextLengthLoc(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_hDC, cMsg, 305);
 		for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
 		if (iLoc == 0)
 		{
@@ -11870,7 +11818,7 @@ void CGame::ChatMsgHandler(char* pData)
 		}
 	}
 
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->EndTextBatch();
 
 	_RemoveChatMsgListByObjectID(iObjectID);
 
@@ -11939,7 +11887,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 		m_bIsRedrawPDBGS = false;
 		m_iPDBGSdivX = sDivX;
 		m_iPDBGSdivY = sDivY;
-		SetRect(&m_DDraw.m_rcClipArea, 0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
+		SetRect(&static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
 		indexY = sDivY + m_pMapData->m_sPivotY;
 		for (iy = -sModY; iy < LOGICAL_MAX_Y + 48; iy += 32) // LOGICAL_HEIGHT 
 		{
@@ -11948,16 +11896,16 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 			{
 				sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
 				sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->PutSpriteFastNoColorKeyDst(m_DDraw.m_lpPDBGS, ix - 16 + sModX, iy - 16 + sModY, sSprFrame, m_dwCurTime);
+				m_pTileSpr[sSpr]->DrawToSurface(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpPDBGS, ix - 16 + sModX, iy - 16 + sModY, sSprFrame, SpriteLib::DrawParams::NoColorKey());
 				indexX++;
 			}
 			indexY++;
 		}
-		SetRect(&m_DDraw.m_rcClipArea, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+		SetRect(&static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 	}
 	RECT rcRect;
 	SetRect(&rcRect, sModX, sModY, LOGICAL_WIDTH + sModX, LOGICAL_HEIGHT + sModY); // our fictitious sprite bitmap is
-	m_DDraw.m_lpBackB4->BltFast(0, 0, m_DDraw.m_lpPDBGS, &rcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+	static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpBackB4->BltFast(0, 0, static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpPDBGS, &rcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
 
 	// Grid overlay removed.
 
@@ -12136,8 +12084,8 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	if (_tmp_iEffectType != 0)
 	{
 		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->PutTransSprite(fix_x, fix_y, _tmp_iEffectFrame, dwTime); break; // Special Ability: Protect Effect
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
@@ -12148,19 +12096,19 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(fix_x, fix_y, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
@@ -12180,150 +12128,150 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite2(sX+dx, sY+dy, _tmp_cFrame, dwTime);
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				else m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime); // GM effect
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f)); // GM effect
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
@@ -12345,175 +12293,175 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSpriteClip(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutShadowSprite(fix_x, fix_y, _tmp_cFrame, dwTime);
+						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSprite2(fix_x, fix_y, _tmp_cFrame, dwTime);
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2, dwTime);
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
+					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->PutTransSprite2(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-				m_pSprite[iUndiesIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
 				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, iR, iG, iB, dwTime);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iPantsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0], dwTime);
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iArmArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0], dwTime);
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBootsIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0], dwTime);
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iBodyArmorIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0], dwTime);
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iHelmIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0], dwTime);
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iShieldIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0], dwTime);
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->PutTransSpriteRGB(sX, sY,  (_tmp_cDir-1) * 8 + _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 1: m_pEffectSpr[45]->PutTransSprite(fix_x - 13, fix_y - 34, 0, dwTime);
-				case 2: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->PutTransSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->PutTransSprite25(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->PutSpriteFast(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, dwTime);
-					else m_pSprite[iMantleIndex]->PutSpriteRGB(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0], dwTime);
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->PutTransSprite25(fix_x, fix_y, _tmp_cFrame, dwTime);
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->PutSpriteFast(fix_x, fix_y, _tmp_cFrame, dwTime);
-					else m_pSprite[iWeaponIndex]->PutSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0], dwTime);
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, m_iDrawFlag, 0, 0, dwTime); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, m_iDrawFlag, 0, dwTime); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, 0, m_iDrawFlag, dwTime); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
 
 		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x, fix_y, _tmp_cFrame, 0, -5, -5, dwTime);
+			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
 		DrawAngel(40 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, _tmp_cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
 
@@ -12522,14 +12470,14 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 			for (int i = 1; i <= 5; i++)
 			{
 				switch (_tmp_cDir) {
-				case 1: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x, fix_y + (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 2: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x - (i * 5), fix_y + (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 3: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x - (i * 5), fix_y, _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 4: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x - (i * 5), fix_y - (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 5: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x, fix_y - (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 6: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x + (i * 5), fix_y - (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 7: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x + (i * 5), fix_y, _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
-				case 8: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->PutTransSpriteRGB(fix_x + (i * 5), fix_y + (i * 5), _tmp_cFrame, m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), dwTime); break;
+				case 1: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 2: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 3: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 4: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 5: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 6: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 7: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 8: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
 				}
 			}
 		}
@@ -12555,11 +12503,11 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top != -1)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.top < msY)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.bottom > msY)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.left < msX)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->m_rcBound.right > msX)) return true;
+	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1)
+		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY)
+		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY)
+		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX)
+		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
 
@@ -13222,7 +13170,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		if (m_iSuperAttackLeft > 0)
 		{
 			if (InputManager::Get().IsAltDown())
-				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->PutTransSprite(iconX + 368 + resx + 7, iconY + 440 + resy, 3, m_dwCurTime);
+				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX + 368 + resx + 7, iconY + 440 + resy, 3, SpriteLib::DrawParams::Alpha(0.5f));
 			wsprintf(G_cTxt, "%d", m_iSuperAttackLeft);
 			PutString_SprFont2(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 255, 255, 255);
 		}
@@ -13244,18 +13192,18 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 
 	if (sType <= 3)
 	{
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->PutSpriteFast(sX, sY, sType - 1, dwTime);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
 		_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->PutSpriteRGB(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, iR, iG, iB, dwTime);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->PutSpriteFast(sX, sY, (_tmp_sAppr1 & 0x000F), dwTime);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, (_tmp_sAppr1 & 0x000F));
 	}
 	else
 	{
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->PutSpriteFast(sX, sY, sType - 4, dwTime);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
 		_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->PutSpriteRGB(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, iR, iG, iB, dwTime);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->PutSpriteFast(sX, sY, (_tmp_sAppr1 & 0x000F), dwTime);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, (_tmp_sAppr1 & 0x000F));
 	}
 }
 
@@ -13919,7 +13867,7 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 				}
 			}
 
-	m_DDraw._GetBackBufferDC();
+	m_Renderer->BeginTextBatch();
 	for (i = 0; i < DEF_MAXCHATMSGS; i++)
 		if (m_pChatMsgList[i] != 0)
 			if ((m_pChatMsgList[i]->m_sX >= sX) && (m_pChatMsgList[i]->m_sX <= dX) &&
@@ -13939,7 +13887,7 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 					break;
 				}
 			}
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->EndTextBatch();
 }
 
 
@@ -14286,10 +14234,10 @@ void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoC
 	if (bIsNoColorKey == false)
 	{
 		if (bIsTrans == true)
-			m_pSprite[cType]->PutTransSprite2(sX, sY, iFrame, dwTime);
-		else m_pSprite[cType]->PutSpriteFast(sX, sY, iFrame, dwTime);
+			m_pSprite[cType]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+		else m_pSprite[cType]->Draw(sX, sY, iFrame);
 	}
-	else m_pSprite[cType]->PutSpriteFastNoColorKey(sX, sY, iFrame, dwTime);
+	else m_pSprite[cType]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::NoColorKey());
 }
 
 void CGame::SetCameraShakingEffect(short sDist, int iMul)
@@ -14329,7 +14277,7 @@ void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 {
 	if (_iGetFOE(_tmp_iStatus) < 0) // red crusade circle
 	{
-		if (iFrame <= 4) m_pEffectSpr[38]->PutTransSprite(ix, iy, iFrame, G_dwGlobalTime);
+		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 	}
 }
 
@@ -14345,7 +14293,7 @@ void CGame::SetTopMsg(char* pString, unsigned char iLastSec)
 void CGame::DrawTopMsg()
 {
 	if (strlen(m_cTopMsg) == 0) return;
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
 
 	if ((((G_dwGlobalTime - m_dwTopMsgTime) / 250) % 2) == 0)
 		PutAlignedString(0, LOGICAL_MAX_X, 10, m_cTopMsg, 255, 255, 0);
@@ -14755,58 +14703,58 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	case 20:
 	default:
 		if (bIsPreDC == false)
-			m_DDraw._GetBackBufferDC();
+			m_Renderer->BeginTextBatch();
 
-		GetTextExtentPoint32(m_DDraw.m_hDC, cMsg, strlen(cMsg), &Size);
+		GetTextExtentPoint32(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_hDC, cMsg, strlen(cMsg), &Size);
 
 		switch (Size.cx / 160) {
 		case 0:
 			SetRect(&rcRect, sX - 80 + 1, sY - 65 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 1:
 			SetRect(&rcRect, sX - 80 + 1, sY - 83 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 2:
 			SetRect(&rcRect, sX - 80 + 1, sY - 101 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 
 		case 3:
 			SetRect(&rcRect, sX - 80 + 1, sY - 119 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_DDraw.DrawText(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc, sX + 80, sY - iLoc);
-			m_DDraw.DrawText(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
 			break;
 		}
 
 		if (bIsPreDC == false)
-			m_DDraw._ReleaseBackBufferDC();
+			m_Renderer->EndTextBatch();
 		break;
 	}
 }
@@ -14900,8 +14848,8 @@ void CGame::UpdateScreen_OnSelectCharacter()
 				m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 				if (CMisc::bCheckValidString(m_cPlayerName) == true)
 				{
-					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 					m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 					m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 					m_pLSock->bInitBufferSize(30000);
@@ -14947,7 +14895,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
 	iMIbuttonNum = pMI->iGetStatus(msX, msY, cLB, &cMIresult);
 	if (cMIresult == DEF_MIRESULT_CLICK) {
@@ -14971,8 +14919,8 @@ void CGame::UpdateScreen_OnSelectCharacter()
 						m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 						if (CMisc::bCheckValidString(m_cPlayerName) == true)
 						{
-							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 							m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 							m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 							m_pLSock->bInitBufferSize(30000);
@@ -15008,8 +14956,8 @@ void CGame::UpdateScreen_OnSelectCharacter()
 					m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
 					if (CMisc::bCheckValidString(m_cPlayerName) == true) {
-						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 						m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 						m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 						m_pLSock->bInitBufferSize(30000);
@@ -15059,8 +15007,8 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		}
 	}
 
-	//	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0,0,639,479);
-	//	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 6) m_Renderer->DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0,0,639,479);
 }
 
 bool CGame::bDlgBoxPress_Character(short msX, short msY)
@@ -15085,7 +15033,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 72, sY + 135, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 72, sY + 135, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD];
@@ -15098,7 +15046,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER];
@@ -15111,7 +15059,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER];
@@ -15123,7 +15071,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK];
@@ -15136,7 +15084,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND];
@@ -15149,7 +15097,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND];
@@ -15162,7 +15110,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 90, sY + 170, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 90, sY + 170, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND];
@@ -15175,7 +15123,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY];
@@ -15188,7 +15136,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY];
@@ -15201,7 +15149,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS];
@@ -15214,7 +15162,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS];
@@ -15227,7 +15175,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS];
@@ -15240,7 +15188,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 41, sY + 137, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 41, sY + 137, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK];
@@ -15256,7 +15204,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 72, sY + 139, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 72, sY + 139, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD];
@@ -15269,7 +15217,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER];
@@ -15282,7 +15230,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER];
@@ -15295,7 +15243,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK];
@@ -15308,7 +15256,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND];
@@ -15321,7 +15269,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND];
@@ -15334,7 +15282,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 84, sY + 175, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 84, sY + 175, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND];
@@ -15347,7 +15295,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY];
@@ -15360,7 +15308,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY];
@@ -15373,7 +15321,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS];
@@ -15386,7 +15334,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS];
@@ -15399,7 +15347,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS];
@@ -15412,7 +15360,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		{
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 45, sY + 143, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 45, sY + 143, sFrame, msX, msY))
 			{
 				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK];
@@ -15647,13 +15595,13 @@ void CGame::DrawWhetherEffects()
 				dX = m_stWhetherObject[i].sX - m_sViewPointX;
 				dY = m_stWhetherObject[i].sY - m_sViewPointY;
 				cTempFrame = 16 + (m_stWhetherObject[i].cStep / 6);
-				m_pEffectSpr[11]->PutTransSprite(dX, dY, cTempFrame, dwTime);
+				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if ((m_stWhetherObject[i].cStep >= 20) && (m_stWhetherObject[i].cStep < 25) && (m_stWhetherObject[i].sX != 0))
 			{
 				dX = m_stWhetherObject[i].sX - m_sViewPointX;
 				dY = m_stWhetherObject[i].sY - m_sViewPointY;
-				m_pEffectSpr[11]->PutTransSprite(dX, dY, m_stWhetherObject[i].cStep, dwTime);
+				m_pEffectSpr[11]->Draw(dX, dY, m_stWhetherObject[i].cStep, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 		}
 		break;
@@ -15682,7 +15630,7 @@ void CGame::DrawWhetherEffects()
 				}
 				else cTempFrame = 39 + (m_stWhetherObject[i].cStep / 20) * 3 + (rand() % 3);
 
-				m_pEffectSpr[11]->PutTransSprite(dX, dY, cTempFrame, dwTime);
+				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
 				if (m_bIsXmas == true)
 				{
@@ -15701,7 +15649,7 @@ void CGame::DrawWhetherEffects()
 		{
 			for (i = 0; i <= MAXNUM; i++)
 			{
-				if (iy2[i] > 10) m_pEffectSpr[11]->PutTransSprite(ix1[i], iy2[i], iFrame[i], dwTime);
+				if (iy2[i] > 10) m_pEffectSpr[11]->Draw(ix1[i], iy2[i], iFrame[i], SpriteLib::DrawParams::Alpha(0.5f));
 			}
 		}
 		break;
@@ -15886,19 +15834,19 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_Renderer->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15917,19 +15865,19 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_Renderer->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15981,19 +15929,19 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_Renderer->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -16012,19 +15960,19 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)m_DDraw.m_pBackB4Addr + iResultX + ((iResultY)*m_DDraw.m_sBackB4Pitch);
-				switch (m_DDraw.m_cPixelFormat) {
+				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
+				switch (m_Renderer->GetPixelFormat()) {
 				case 1:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)m_DDraw.m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)m_DDraw.m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -16042,10 +15990,10 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	dwTime = m_dwCurTime;
 	sX = pX1 = iX1 = tX = sX;
 	sY = pY1 = iY1 = tY = sY;
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(50, 50, 100), &wR1, &wG1, &wB1);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(30, 30, 100), &wR2, &wG2, &wB2);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(0, 0, 30), &wR3, &wG3, &wB3);
-	CMisc::ColorTransfer(m_DDraw.m_cPixelFormat, RGB(50, 50, 200), &wR4, &wG4, &wB4);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(50, 50, 100), &wR1, &wG1, &wB1);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(30, 30, 100), &wR2, &wG2, &wB2);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0, 0, 30), &wR3, &wG3, &wB3);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(50, 50, 200), &wR4, &wG4, &wB4);
 
 	for (j = 0; j < 100; j++)
 	{
@@ -16097,7 +16045,7 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	}
 	switch (cType) {
 	case 1:
-		m_pEffectSpr[6]->PutTransSprite(iX1, iY1, (rand() % 2), dwTime);
+		m_pEffectSpr[6]->Draw(iX1, iY1, (rand() % 2), SpriteLib::DrawParams::Alpha(0.5f));
 		break;
 	}
 }
@@ -16125,17 +16073,17 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
 				}
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.bottom;
+				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
+				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
+				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
+				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
 				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
 				{
 					switch (i) {
@@ -16149,8 +16097,8 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					m_bIsItemDisabled[cItemID] = false;
 					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotY;
+					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
+					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
 					return true;
 				}
 			}
@@ -16169,17 +16117,17 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
 				}
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.bottom;
+				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
+				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
+				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
+				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
 
 				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
 				{
@@ -16194,8 +16142,8 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					m_bIsItemDisabled[cItemID] = false;
 					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotY;
+					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
+					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
 					m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
 					return true;
 				}
@@ -16215,17 +16163,17 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 40, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 65 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 65, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 115, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + iAdjX + 75 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 40, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 115, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 75 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
 				}
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.bottom;
+				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
+				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
+				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
+				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
 				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
 				{
 					switch (i) {
@@ -16239,8 +16187,8 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					m_bIsItemDisabled[cItemID] = false;
 					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
 					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_sPivotY;
+					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
+					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
 					return true;
 				}
 			}
@@ -17433,7 +17381,7 @@ void CGame::CreateScreenShot()
 		pFile = fopen(cFn, "rb");
 		if (pFile == 0)
 		{
-			m_DDraw.Screenshot(cFn, m_DDraw.m_lpBackB4);
+			static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->Screenshot(cFn, static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpBackB4);
 
 			wsprintf(G_cTxt, NOTIFYMSG_CREATE_SCREENSHOT1, cFn);
 			AddEventList(G_cTxt, 10);
@@ -17492,29 +17440,29 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 	if (CMisc::bCheckValidName(pName) == false) bFlag = false;
 	if (_bCheckBadWords(pName) == true) bFlag = false;
 
-	if ((bFlag == true) && (m_cCurFocus == 2)) m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(384 + SCREENX, 445 + SCREENY, 25, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(384 + SCREENX, 445 + SCREENY, 24, dwTime);
+	if ((bFlag == true) && (m_cCurFocus == 2)) m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + SCREENX, 445 + SCREENY, 25);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + SCREENX, 445 + SCREENY, 24);
 	if (m_cCurFocus == 3)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(500 + SCREENX, 445 + SCREENY, 17, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(500 + SCREENX, 445 + SCREENY, 16, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + SCREENX, 445 + SCREENY, 17);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + SCREENX, 445 + SCREENY, 16);
 	if (m_cCurFocus == 4)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(60 + SCREENX, 445 + SCREENY, 68, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(60 + SCREENX, 445 + SCREENY, 67, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + SCREENX, 445 + SCREENY, 68);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + SCREENX, 445 + SCREENY, 67);
 	if (m_cCurFocus == 5)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(145 + SCREENX, 445 + SCREENY, 66, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(145 + SCREENX, 445 + SCREENY, 65, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + SCREENX, 445 + SCREENY, 66);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + SCREENX, 445 + SCREENY, 65);
 	if (m_cCurFocus == 6)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(230 + SCREENX, 445 + SCREENY, 64, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(230 + SCREENX, 445 + SCREENY, 63, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + SCREENX, 445 + SCREENY, 64);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + SCREENX, 445 + SCREENY, 63);
 	/*if (m_cCurFocus == 4)
-		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(60, 245, 68, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(60, 245, 67, dwTime);
+		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60, 245, 68);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60, 245, 67);
 	if (m_cCurFocus == 5)
-		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(145, 245, 66, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(145, 245, 65, dwTime);
+		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145, 245, 66);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145, 245, 65);
 	if (m_cCurFocus == 6)
-		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(230, 245, 64, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(230, 245, 63, dwTime);*/
+		 m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230, 245, 64);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230, 245, 63);*/
 
 	ShowReceivedString();
 
@@ -17679,7 +17627,7 @@ void CGame::UpdateScreen_OnAgreement()
 	d3 = (double)d1 / d2;
 	d1 = 338.0f * d3;
 	iPointerLoc = (int)d1;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutSpriteFast(sX + 361 - 112, sY + 37 + 13 + iPointerLoc, 7, dwTime);
+	m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 361 - 112, sY + 37 + 13 + iPointerLoc, 7);
 
 	for (i = 0; i < 20; i++)
 		if (m_pAgreeMsgTextList[i + m_iAgreeView] != 0) {
@@ -17699,7 +17647,7 @@ void CGame::UpdateScreen_OnAgreement()
 			d2 = (double)(iTotalLines - 17);
 			d3 = (double)(d1 * d2) / (338.0f);
 			m_iAgreeView = (int)d3;
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->PutTransSprite(sX + 361 - 112, sY + 37 + 13 + iPointerLoc, 4, dwTime);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 361 - 112, sY + 37 + 13 + iPointerLoc, 4, SpriteLib::DrawParams::Alpha(0.5f));
 		}
 	}
 	if (m_iAgreeView < 0) m_iAgreeView = 0;
@@ -17714,10 +17662,10 @@ void CGame::UpdateScreen_OnAgreement()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 158 + 57 - 23 + 45 - 105, sY + 265 + 90, 14);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
-	//	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0,0,639,479);
-	//	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 6) m_Renderer->DrawShadowBox(0,0,639,479);
+	//	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0,0,639,479);
 }
 
 #endif //endif from #ifdef DEF_MAKE_ACCOUNT
@@ -17972,11 +17920,11 @@ void CGame::DrawScreen_Quit()
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0 + SCREENX, 0 + SCREENY, 0, true);
 	if (m_cGameModeCount > 20) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 255 + SCREENX, 123 + SCREENY, 1, true);
-	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->PutTransSprite25(255 + SCREENX, 123 + SCREENY, 1, true);
+	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(255 + SCREENX, 123 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.25f));
 	DrawVersion();
 
 	// Draw cursor at position captured during Update phase
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // VersionNotMatch screen - Update phase (logic/input handling)
@@ -18040,7 +17988,7 @@ void CGame::DrawScreen_VersionNotMatch()
 	PutAlignedString(168, 474, 180, UPDATE_SCREEN_ON_VERSION_NO_MATCH2);
 	DrawVersion();
 
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // ConnectionLost screen - Update phase (logic/input handling)
@@ -18079,7 +18027,7 @@ void CGame::DrawScreen_ConnectionLost()
 	PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 7, 0, 0);
 	PutString(172 + 50 + SCREENX, 180 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTION_LOST, RGB(0, 0, 0));
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // Msg screen - Update phase (logic/input handling)
@@ -18101,7 +18049,7 @@ void CGame::DrawScreen_Msg()
 	uint32_t dwTime = G_dwGlobalTime;
 	PutString(10, 10, m_cMsg, RGB(255, 155, 155), false, 1);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // WaitingResponse screen - Update phase (logic/input handling)
@@ -18191,7 +18139,7 @@ void CGame::DrawScreen_WaitingResponse()
 	}
 	m_bIsHideLocalCursor = false;
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 7, 0, 0);
 
@@ -18203,7 +18151,7 @@ void CGame::DrawScreen_WaitingResponse()
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 8, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
 }
 
 // Connecting screen - Update phase (logic/input handling)
@@ -18291,7 +18239,7 @@ void CGame::DrawScreen_Connecting()
 	}
 	m_bIsHideLocalCursor = false;
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	wsprintf(G_cTxt, "Connecting to Server... %3dSec", (dwTime - m_dwTime) / 1000);
 	PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, G_cTxt, 7, 0, 0);
@@ -18303,7 +18251,7 @@ void CGame::DrawScreen_Connecting()
 	}
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTING3);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 8, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
 }
 
 // QueryForceLogin screen - Update phase (logic/input handling)
@@ -18385,11 +18333,11 @@ void CGame::DrawScreen_QueryForceLogin()
 
 	UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6)) {
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 	else if (m_cGameModeCount >= 6) {
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
@@ -18407,7 +18355,7 @@ void CGame::DrawScreen_QueryForceLogin()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // QueryDeleteCharacter screen - Update phase (logic/input handling)
@@ -18493,12 +18441,12 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	UpdateScreen_OnSelectCharacter(0, 0, 500, 70);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6))
 	{
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 	else if (m_cGameModeCount >= 6)
 	{
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	}
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
@@ -18518,7 +18466,7 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // MainMenu screen - Update phase (logic/input handling)
@@ -18538,11 +18486,7 @@ void CGame::UpdateScreen_MainMenu()
 			delete G_pCalcSocket;
 			G_pCalcSocket = 0;
 		}
-		if (m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] != 0)
-		{
-			delete m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING];
-			m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = 0;
-		}
+		m_pSprite.remove(DEF_SPRID_INTERFACE_ND_LOADING);
 		EndInputString();
 		pMI = new class CMouseInterface;
 
@@ -18642,18 +18586,18 @@ void CGame::DrawScreen_MainMenu()
 
 	switch (m_cCurFocus) {
 	case 1:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->PutSpriteFast(384 + SCREENX, 177 + SCREENY, 1, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 177 + SCREENY, 1);
 		break;
 	case 2:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->PutSpriteFast(384 + SCREENX, 215 + SCREENY, 2, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 215 + SCREENY, 2);
 		break;
 	case 3:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->PutSpriteFast(384 + SCREENX, 254 + SCREENY, 3, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 254 + SCREENY, 3);
 		break;
 	}
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // WaitInitData screen - Update phase (logic/input handling)
@@ -18707,7 +18651,7 @@ void CGame::DrawScreen_WaitInitData()
 	else PutAlignedString(174 + SCREENX, 467 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 8, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
 }
 
 // SelectServer screen - Update phase (logic/input handling)
@@ -18836,7 +18780,7 @@ void CGame::DrawScreen_SelectServer()
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0, 0, 0, true);
 	if (m_cGameModeCount > 20) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 40, 121, 1, true);
-	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->PutTransSprite25(40, 121, 1, true);
+	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(40, 121, 1, SpriteLib::DrawParams::Alpha(0.25f));
 
 	if (m_cGameModeCount > 20)
 	{
@@ -18845,7 +18789,7 @@ void CGame::DrawScreen_SelectServer()
 		if (m_cCurFocus == 3) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256, 282, 4, true);
 	}
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // File-scope static variables for Login screen input buffers
@@ -19034,13 +18978,13 @@ void CGame::UpdateScreen_Loading()
 void CGame::DrawScreen_Loading()
 {
 	// Draw progress
-	UpdateScreen_OnLoading_Progress();
+	DrawScreen_OnLoadingProgress();
 
 	// Poll mouse for cursor
 	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
 	uint32_t dwTime = GameClock::GetTimeMS();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // LogResMsg screen - Update phase (logic/input handling)
@@ -19273,7 +19217,7 @@ void CGame::DrawScreen_ChangePassword()
 
 	// Draw background (SelectCharacter screen)
 	UpdateScreen_OnSelectCharacter(0, 0, 0, 0, true);
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	// Draw dialog boxes
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + SCREENX, 112 + SCREENY, 0);
@@ -19327,15 +19271,15 @@ void CGame::DrawScreen_ChangePassword()
 
 	// Buttons
 	if ((bFlag == true) && (m_cCurFocus == 5))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(197 + SCREENX, 320 + SCREENY, 21, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(197 + SCREENX, 320 + SCREENY, 20, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(197 + SCREENX, 320 + SCREENY, 21);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(197 + SCREENX, 320 + SCREENY, 20);
 
 	if (m_cCurFocus == 6)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(370 + SCREENX, 320 + SCREENY, 17, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(370 + SCREENX, 320 + SCREENY, 16, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 17);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 }
 
 // File-scope static variables for CreateNewAccount screen input buffers
@@ -19738,25 +19682,25 @@ void CGame::DrawScreen_CreateNewAccount()
 	bool bHoverCreate = (s_sNewAcctMsX >= 297 + SCREENX && s_sNewAcctMsX <= 297 + 72 + SCREENX &&
 		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
 	if ((iFlag == 0) && (m_cCurFocus == 7 || bHoverCreate))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(199 + 98 + SCREENX, 398 + SCREENY, 25, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(199 + 98 + SCREENX, 398 + SCREENY, 24, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + SCREENX, 398 + SCREENY, 25);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + SCREENX, 398 + SCREENY, 24);
 
 	// Button 8: Clear (at 392, 398 - size 72x20) - CENTER
 	bool bHoverClear = (s_sNewAcctMsX >= 392 + SCREENX && s_sNewAcctMsX <= 392 + 72 + SCREENX &&
 		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
 	if (m_cCurFocus == 8 || bHoverClear)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(294 + 98 + SCREENX, 398 + SCREENY, 27, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(294 + 98 + SCREENX, 398 + SCREENY, 26, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + SCREENX, 398 + SCREENY, 27);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + SCREENX, 398 + SCREENY, 26);
 
 	// Button 9: Cancel (at 488, 398 - size 72x20) - RIGHT
 	bool bHoverCancel = (s_sNewAcctMsX >= 488 + SCREENX && s_sNewAcctMsX <= 488 + 72 + SCREENX &&
 		s_sNewAcctMsY >= 398 + SCREENY && s_sNewAcctMsY <= 398 + 20 + SCREENY);
 	if (m_cCurFocus == 9 || bHoverCancel)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(390 + 98 + SCREENX, 398 + SCREENY, 17, dwTime);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(390 + 98 + SCREENX, 398 + SCREENY, 16, dwTime);
+		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 17);
+	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(m_sFrameMouseX, m_sFrameMouseY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
 #endif
 }
 
@@ -19842,8 +19786,8 @@ void CGame::UpdateScreen_SelectCharacter()
 				m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 				if (CMisc::bCheckValidString(m_cPlayerName) == true)
 				{
-					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 					m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 					m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 					m_pLSock->bInitBufferSize(30000);
@@ -19911,8 +19855,8 @@ void CGame::UpdateScreen_SelectCharacter()
 						m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 						if (CMisc::bCheckValidString(m_cPlayerName) == true)
 						{
-							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 							m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 							m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 							m_pLSock->bInitBufferSize(30000);
@@ -19948,8 +19892,8 @@ void CGame::UpdateScreen_SelectCharacter()
 					m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
 					if (CMisc::bCheckValidString(m_cPlayerName) == true) {
-						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->_iCloseSprite();
-						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->_iCloseSprite();
+						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
+						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
 						m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 						m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 						m_pLSock->bInitBufferSize(30000);
@@ -20009,7 +19953,7 @@ void CGame::DrawScreen_SelectCharacter()
 	UpdateScreen_OnSelectCharacter(0, 10, s_sSelCharMsX, s_sSelCharMsY);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(s_sSelCharMsX, s_sSelCharMsY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sSelCharMsX, s_sSelCharMsY, 0);
 }
 
 // File-scope static variables for CreateNewCharacter screen
@@ -20380,7 +20324,7 @@ void CGame::DrawScreen_CreateNewCharacter()
 	_bDraw_OnCreateNewCharacter(s_cNewCharName, msX, msY, s_iNewCharPoint);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
 	// Tooltip drawing based on mouse position
 	if ((msX >= 65 + 4 - 127 + SCREENX) && (msX <= 275 + 4 + SCREENX) && (msY >= 65 + 45 + SCREENY) && (msY <= 82 + 45 + SCREENY)) {
@@ -20526,8 +20470,8 @@ void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short 
 	for (i = 0; i < 4; i++)
 	{
 		if ((m_cCurFocus - 1 == i) && (bIgnoreFocus == false))
-			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 62, dwTime);
-		else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->PutSpriteFast(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 61, dwTime);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 62);
+		else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 61);
 
 		if (m_pCharList[i] != 0)
 		{
@@ -20554,7 +20498,7 @@ void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short 
 			{
 				if (CMisc::bCheckValidString(m_pCharList[i]->m_cName) == true)
 				{
-					m_pEffectSpr[0]->PutTransSprite(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, dwTime);
+					m_pEffectSpr[0]->Draw(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 					DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime, 0, 0);
 					PutString(sX + 112 + i * 109 + SCREENX, sY + 179 - 9 + SCREENY, m_pCharList[i]->m_cName, RGB(51, 0, 51));//25,35,25);
 					int	_sLevel = m_pCharList[i]->m_sLevel;
@@ -20828,7 +20772,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 		break;
 	}
 
-	m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
@@ -21040,7 +20984,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 }
 
 void CGame::RetrieveItemHandler(char* pData)
@@ -21184,79 +21128,79 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 41, sY + 137, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 41, sY + 137, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BACK];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_PANTS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_ARMS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BODY];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 90, sY + 170, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 90, sY + 170, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 57, sY + 186, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_NECK];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RFINGER];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LFINGER];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->_bCheckCollison(sX + 72, sY + 135, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 72, sY + 135, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_HEAD];
 		}
 	}
@@ -21264,85 +21208,85 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 45, sY + 143, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 45, sY + 143, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BACK];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_PANTS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_ARMS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BODY];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 171, sY + 290, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 84, sY + 175, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 84, sY + 175, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 60, sY + 191, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 35, sY + 120, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_NECK];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 32, sY + 193, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RFINGER];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 98, sY + 182, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LFINGER];
 		}
 		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->_bCheckCollison(sX + 72, sY + 139, sFrame, msX, msY))
+			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 72, sY + 139, sFrame, msX, msY))
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_HEAD];
 		}
 	}
@@ -21454,12 +21398,12 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 		cItemID = m_cItemOrder[DEF_MAXITEMS - 1 - i];
 		if (m_pItemList[cItemID] == 0) continue;
 
-		m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->_GetSpriteRect(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
+		m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
 		// Order
-		x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.left;
-		y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.top;
-		x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.right;
-		y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->m_rcBound.bottom;
+		x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
+		y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
+		x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
+		y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
 
 		if ((m_bIsItemDisabled[cItemID] == false) && (m_bIsItemEquipped[cItemID] == false) && (msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
 		{	// Order
@@ -21757,11 +21701,11 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	default:
 		if (iNpcHP > 0)
 		{
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->PutSpriteFastWidth(sX, sY + 16, 18, 75, m_dwCurTime, false);
+			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->DrawWidth(sX, sY + 16, 18, 75);
 			int iBarWidth2 = (iNpcHP * 75) / iNpcMaxHP;
 			if (iBarWidth2 < 0) iBarWidth2 = 0;
 			if (iBarWidth2 > 75) iBarWidth2 = 75;
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->PutSpriteFastWidth(sX, sY + 16, 19, iBarWidth2, m_dwCurTime, false); // 16
+			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->DrawWidth(sX, sY + 16, 19, iBarWidth2); // 16
 		}
 		break;
 	}
@@ -23117,23 +23061,23 @@ void CGame::DrawScreen_OnGame()
 
 	// Apocalypse map effects
 	if (m_cMapIndex == 26) {
-		m_pEffectSpr[89]->PutTransSprite(1296 - m_sViewPointX, 1283 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[89]->PutTransSprite(1520 - m_sViewPointX, 1123 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[89]->PutTransSprite(1488 - m_sViewPointX, 3971 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[93]->PutTransSprite(2574 - m_sViewPointX, 3677 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[93]->PutTransSprite(3018 - m_sViewPointX, 3973 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
+		m_pEffectSpr[89]->Draw(1296 - m_sViewPointX, 1283 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[89]->Draw(1520 - m_sViewPointX, 1123 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[89]->Draw(1488 - m_sViewPointX, 3971 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[93]->Draw(2574 - m_sViewPointX, 3677 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[93]->Draw(3018 - m_sViewPointX, 3973 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
 	}
 	else if (m_cMapIndex == 27) {
-		m_pEffectSpr[89]->PutTransSprite(1293 - m_sViewPointX, 3657 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[89]->PutTransSprite(944 - m_sViewPointX, 3881 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[89]->PutTransSprite(1325 - m_sViewPointX, 4137 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
-		m_pEffectSpr[89]->PutTransSprite(1648 - m_sViewPointX, 3913 - m_sViewPointY, _tmp_iEffectFrame % 12, 0);
+		m_pEffectSpr[89]->Draw(1293 - m_sViewPointX, 3657 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[89]->Draw(944 - m_sViewPointX, 3881 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[89]->Draw(1325 - m_sViewPointX, 4137 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[89]->Draw(1648 - m_sViewPointX, 3913 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
 	}
 
 	// Apocalypse gate
 	if ((m_iGatePositX >= m_sViewPointX / 32) && (m_iGatePositX <= m_sViewPointX / 32 + VIEW_TILE_WIDTH)
 		&& (m_iGatePositY >= m_sViewPointY / 32) && (m_iGatePositY <= m_sViewPointY / 32 + VIEW_TILE_HEIGHT)) {
-		m_pEffectSpr[101]->PutTransSprite(m_iGatePositX * 32 - m_sViewPointX - 96, m_iGatePositY * 32 - m_sViewPointY - 69, _tmp_iEffectFrame % 30, s_dwOnGameTime);
+		m_pEffectSpr[101]->Draw(m_iGatePositX * 32 - m_sViewPointX - 96, m_iGatePositY * 32 - m_sViewPointY - 69, _tmp_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.5f));
 	}
 
 	// UI rendering
@@ -23146,7 +23090,7 @@ void CGame::DrawScreen_OnGame()
 		if (((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
 			((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
 		}
-		else m_DDraw.DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
+		else m_Renderer->DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
 		ShowReceivedString();
 	}
 
@@ -23160,21 +23104,13 @@ void CGame::DrawScreen_OnGame()
 			if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
 				(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
 				(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->PutSpriteRGB(
-					s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY,
-					m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame,
-					m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0], s_dwOnGameTime);
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
 			}
 			else {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->PutSpriteRGB(
-					s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY,
-					m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame,
-					m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0], s_dwOnGameTime);
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
 			}
 		}
-		else m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->PutSpriteFast(
-			s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY,
-			m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame, s_dwOnGameTime);
+		else m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame);
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		int iLoc;
@@ -23235,18 +23171,18 @@ void CGame::DrawScreen_OnGame()
 	DrawTopMsg();
 
 	// Fade-in overlay
-	if (m_cGameModeCount < 6) m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	if (m_cGameModeCount < 2) m_DDraw.DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	if (m_cGameModeCount < 6) m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 
 	// Cursor
 	if (m_bIsObserverMode == true) {
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX + 1, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX - 1, s_sOnGameMsY, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
-		m_DDraw.PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
+		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY, 255, 255, 255);
+		m_Renderer->PutPixel(s_sOnGameMsX + 1, s_sOnGameMsY, 255, 255, 255);
+		m_Renderer->PutPixel(s_sOnGameMsX - 1, s_sOnGameMsY, 255, 255, 255);
+		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
+		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
 	}
-	else m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(s_sOnGameMsX, s_sOnGameMsY, m_stMCursor.sCursorFrame, s_dwOnGameTime);
+	else m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sOnGameMsX, s_sOnGameMsY, m_stMCursor.sCursorFrame);
 	FrameTiming::EndProfile(ProfileStage::DrawMisc);
 
 	// FPS and profiling display
@@ -25613,7 +25549,7 @@ void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0 + SCREENX, 0 + SCREENY, 0, true);
 	DrawVersion();
 
-	if ((iFrame >= 15) && (iFrame <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->PutTransSprite25(39 + SCREENX, 121 + SCREENY, 2, true);
+	if ((iFrame >= 15) && (iFrame <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(39 + SCREENX, 121 + SCREENY, 2, SpriteLib::DrawParams::Alpha(0.25f));
 	else if (iFrame > 20) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 39 + SCREENX, 121 + SCREENY, 2, true);
 
 	if (m_cCurFocus != 1) {
@@ -25642,7 +25578,7 @@ void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int
 	}
 	if (m_cCurFocus == 4) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256 + SCREENX, 282 + SCREENY, 4, true);
 	if ((m_bIsHideLocalCursor != true) && (msX != 0) && (msY != 0)) {
-		m_pSprite[DEF_SPRID_MOUSECURSOR]->PutSpriteFast(msX, msY, 0, dwTime);
+		m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 	}
 }
 
@@ -25650,7 +25586,7 @@ void CGame::ShowEventList(uint32_t dwTime)
 {
 	int i;
 	int baseY = EVENTLIST2_BASE_Y;
-	m_DDraw._GetBackBufferDC();
+	m_Renderer->BeginTextBatch();
 	for (i = 0; i < 6; i++)
 		if ((dwTime - m_stEventHistory[i].dwTime) < 5000)
 		{
@@ -25710,7 +25646,7 @@ void CGame::ShowEventList(uint32_t dwTime)
 	{
 		PutString(440 - 29, 440 - 52, SHOW_EVENT_LIST1, RGB(235, 235, 235), false, 1, true);
 	}
-	m_DDraw._ReleaseBackBufferDC();
+	m_Renderer->EndTextBatch();
 }
 
 void CGame::RequestTeleportAndWaitData()
@@ -26772,48 +26708,48 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 {	// Used at the beginning of character drawing
 	// DefenseShield
 	if ((_tmp_iStatus & 0x02000000) != 0)
-		//m_pEffectSpr[80]->PutTransSprite(sX+75, sY+107, _tmp_iEffectFrame%17, dwTime);
-		m_pEffectSpr[80]->PutTransSprite50(sX + 75, sY + 107, _tmp_iEffectFrame % 17, dwTime);
+		//m_pEffectSpr[80]->Draw(sX+75, sY+107, _tmp_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, _tmp_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
 	if ((_tmp_iStatus & 0x04000000) != 0)
-		//m_pEffectSpr[79]->PutTransSprite(sX+101, sY+135, _tmp_iEffectFrame%15, dwTime);
-		m_pEffectSpr[79]->PutTransSprite70(sX + 101, sY + 135, _tmp_iEffectFrame % 15, dwTime);
+		//m_pEffectSpr[79]->Draw(sX+101, sY+135, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
 	if ((_tmp_iStatus & 0x08000000) != 0)
-		//m_pEffectSpr[72]->PutTransSprite(sX, sY+35, _tmp_iEffectFrame%30, dwTime);
-		m_pEffectSpr[72]->PutTransSprite70(sX, sY + 35, _tmp_iEffectFrame % 30, dwTime);
+		//m_pEffectSpr[72]->Draw(sX, sY+35, _tmp_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[72]->Draw(sX, sY + 35, _tmp_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion
 	if ((_tmp_iStatus & 0x01000000) != 0)
-		//m_pEffectSpr[73]->PutTransSprite(sX+125, sY+95, _tmp_iEffectFrame%24, dwTime);
-		m_pEffectSpr[73]->PutTransSprite70(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, dwTime);
+		//m_pEffectSpr[73]->Draw(sX+125, sY+95, _tmp_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
 	if ((_tmp_iStatus & 0x00200000) != 0)
-		//m_pEffectSpr[151]->PutTransSprite(sX+90, sY+55, _tmp_iEffectFrame%24, dwTime);
-		m_pEffectSpr[151]->PutTransSprite70(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, dwTime);
+		//m_pEffectSpr[151]->Draw(sX+90, sY+55, _tmp_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
 	if ((_tmp_iStatus & 0x00400000) != 0)
-		//m_pEffectSpr[149]->PutTransSprite(sX+90, sY+120, _tmp_iEffectFrame%15, dwTime);
-		m_pEffectSpr[149]->PutTransSprite70(sX + 90, sY + 120, _tmp_iEffectFrame % 15, dwTime);
+		//m_pEffectSpr[149]->Draw(sX+90, sY+120, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Blue (Mana) Bleu au sol
 	if ((_tmp_iStatus & 0x00800000) != 0)
-		//m_pEffectSpr[150]->PutTransSprite(sX+1, sY+26, _tmp_iEffectFrame%15, dwTime);
-		m_pEffectSpr[150]->PutTransSprite70(sX + 1, sY + 26, _tmp_iEffectFrame % 15, dwTime);
+		//m_pEffectSpr[150]->Draw(sX+1, sY+26, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Green (XP) Mauve au sol
 	if ((_tmp_iStatus & 0x00010000) != 0)
-		//m_pEffectSpr[148]->PutTransSprite(sX, sY+32, _tmp_iEffectFrame%23, dwTime);
-		m_pEffectSpr[148]->PutTransSprite70(sX, sY + 32, _tmp_iEffectFrame % 23, dwTime);
+		//m_pEffectSpr[148]->Draw(sX, sY+32, _tmp_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[148]->Draw(sX, sY + 32, _tmp_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Hero Flag (Heldenian)  Flameches d'entangle
 	if ((_tmp_iStatus & 0x00020000) != 0)
-		//m_pEffectSpr[87]->PutTransSprite(sX+53, sY+54, _tmp_iEffectFrame%29, dwTime);
-		m_pEffectSpr[87]->PutTransSprite70(sX + 53, sY + 54, _tmp_iEffectFrame % 29, dwTime);
+		//m_pEffectSpr[87]->Draw(sX+53, sY+54, _tmp_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, _tmp_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
 }
 
 /*********************************************************************************************************************
@@ -26824,8 +26760,8 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
 	if ((_tmp_iStatus & 0x80) != 0)
-		//m_pEffectSpr[81]->PutTransSprite(sX+115, sY+85, _tmp_iEffectFrame%21, dwTime);
-		m_pEffectSpr[81]->PutTransSprite70(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 21, dwTime);
+		//m_pEffectSpr[81]->Draw(sX+115, sY+85, _tmp_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
 	//	_iAttackerHeight[]
 }
 
@@ -26843,24 +26779,24 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 	if ((_tmp_iStatus & 0x10) != 0)
 	{
 		if ((_tmp_iStatus & 0x1000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->PutTransSprite(sX, sY, cFrame, dwTime);  //AngelicPendant(STR)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
 		else if ((_tmp_iStatus & 0x2000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->PutTransSprite(sX, sY, cFrame, dwTime); //AngelicPendant(DEX)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
 		else if ((_tmp_iStatus & 0x4000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->PutTransSprite(sX, sY - 15, cFrame, dwTime);//AngelicPendant(INT)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
 		else if ((_tmp_iStatus & 0x8000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->PutTransSprite(sX, sY - 15, cFrame, dwTime);//AngelicPendant(MAG)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
 		if ((_tmp_iStatus & 0x1000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->PutSpriteFast(sX, sY, cFrame, dwTime);  //AngelicPendant(STR)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
 		else if ((_tmp_iStatus & 0x2000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->PutSpriteFast(sX, sY, cFrame, dwTime); //AngelicPendant(DEX)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
 		else if ((_tmp_iStatus & 0x4000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->PutSpriteFast(sX, sY - 15, cFrame, dwTime);//AngelicPendant(INT)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
 		else if ((_tmp_iStatus & 0x8000) != 0)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->PutSpriteFast(sX, sY - 15, cFrame, dwTime);//AngelicPendant(MAG)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
 	}
 
 }

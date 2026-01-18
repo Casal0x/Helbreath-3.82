@@ -24,8 +24,7 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode)
 	{
 	case 0:
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + Info().sV3]->PutSpriteFast(
-			sX + 18 + 35, sY + 18 + 17, Info().sV4, dwTime);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
 
 		wsprintf(cTxt, "%s", cStr1);
 		PutString(sX + 98, sY + 14, cTxt, RGB(255, 255, 255));
