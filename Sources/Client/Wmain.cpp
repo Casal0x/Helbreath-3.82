@@ -135,13 +135,7 @@ void EventLoop()
         if (!pWindow->ProcessMessages())
             break;
 
-        if (G_pGame->m_bIsProgramActive)
-        {
-            FrameTiming::BeginFrame();
-            G_pGame->RenderFrame();
-            FrameTiming::EndFrame();
-        }
-        else if (G_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
+        if (G_pGame->m_bIsProgramActive || G_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
         {
             FrameTiming::BeginFrame();
             G_pGame->RenderFrame();

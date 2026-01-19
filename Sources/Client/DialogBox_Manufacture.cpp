@@ -251,6 +251,7 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 	}
 	if ((msZ != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Manufacture)) {
 		Info().sView = Info().sView - msZ / 60;
+
 	}
 	if (m_pGame->m_pDispBuildItemList[Info().sView + 12] == 0)
 	{

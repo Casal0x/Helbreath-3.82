@@ -629,6 +629,9 @@ bool XSocket::bAccept(class XSocket * pXSock)
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 
+	// MODERNIZED: Enable TCP_NODELAY for v4 Architecture (Server Side)
+	int iNoDelay = 1;
+	setsockopt(pXSock->m_Sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&iNoDelay, sizeof(iNoDelay));
 	return true;
 }
 

@@ -47,7 +47,6 @@ int CMouseInterface::iGetStatus(int msX, int msY, char cLB, char * pResult)
 			}
 		}
 	}
-
 	if ((m_cPrevPress != 0) && (cLB == 0)) {
 		//if (m_cPrevPress <= 0 ) return 0 ;
 		if ((m_pRect[m_cPrevPress]->left < msX) && (m_pRect[m_cPrevPress]->right > msX) &&
@@ -62,3 +61,4 @@ int CMouseInterface::iGetStatus(int msX, int msY, char cLB, char * pResult)
 	*pResult = DEF_MIRESULT_NONE;
 	return 0;
 }
+

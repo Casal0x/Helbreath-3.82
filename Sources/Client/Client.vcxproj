@@ -246,6 +246,7 @@
     <ClInclude Include="ActionID_Client.h" />
     <ClInclude Include="Benchmark.h" />
     <ClInclude Include="FrameTiming.h" />
+
     <ClInclude Include="Version.h" />
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
@@ -308,6 +309,7 @@
     <ClInclude Include="Magic.h" />
     <ClInclude Include="MapData.h" />
     <ClInclude Include="Misc.h" />
+    <ClInclude Include="MouseInterface.h" />
     <ClInclude Include="ChatMsg.h" />
     <ClInclude Include="ClientMessages.h" />
     <ClInclude Include="resource.h" />
@@ -381,6 +383,7 @@
     <ClCompile Include="DialogBox_Manufacture.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
     <ClCompile Include="HotkeyManager.cpp" />
+
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.cpp" />
@@ -414,6 +417,7 @@
     <ClCompile Include="NetworkMessages_System.cpp" />
     <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />
+    <ClCompile Include="MouseInterface.cpp" />
     <ClCompile Include="Wmain.cpp" />
     <ClCompile Include="GameWindowHandler.cpp" />
     <ClCompile Include="XSocket.cpp" />

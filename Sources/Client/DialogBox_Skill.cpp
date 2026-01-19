@@ -105,6 +105,7 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if (msZ > 0) Info().sView--;
 			if (msZ < 0) Info().sView++;
+
 		}
 		if (Info().sView < 0) Info().sView = 0;
 		if (iTotalLines > 17 && Info().sView > iTotalLines - 17) Info().sView = iTotalLines - 17;
@@ -170,4 +171,5 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 	}
 	return false;
 }
+
 

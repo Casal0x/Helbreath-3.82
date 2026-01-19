@@ -63,6 +63,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
 
     if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView - msZ / 60;
+
     }
 
     if (iTotalLines > 13 && m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView > iTotalLines - 13)
@@ -414,6 +415,7 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
 
     if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 + msZ / 60;
+
     }
 
     if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 > (50 - m_pGame->_iGetTotalItemNum()))
@@ -540,4 +542,5 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
 
     return false;
 }
+
 

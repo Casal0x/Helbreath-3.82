@@ -37,6 +37,7 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text && msZ != 0)
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView -= msZ / 60;
+
 	}
 
 	// Clamp scroll view
@@ -136,4 +137,5 @@ bool DialogBox_Text::OnClick(short msX, short msY)
 
 	return false;
 }
+
 
