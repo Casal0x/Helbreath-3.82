@@ -216,10 +216,50 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     m_boundRect.right = drawX + frameRect.width;
     m_boundRect.bottom = drawY + frameRect.height;
 
-    // Create sprite for this frame
+    // Clip to render target bounds - SFML doesn't auto-clip like DDraw
+    // Get actual target size (may be 640x480 for back buffer or 672x512 for PDBGS)
+    sf::Vector2u targetSize = target->getSize();
+    int targetWidth = static_cast<int>(targetSize.x);
+    int targetHeight = static_cast<int>(targetSize.y);
+
+    int srcX = frameRect.x;
+    int srcY = frameRect.y;
+    int srcW = frameRect.width;
+    int srcH = frameRect.height;
+
+    // Clip left edge
+    if (drawX < 0)
+    {
+        srcX -= drawX;
+        srcW += drawX;
+        drawX = 0;
+    }
+    // Clip top edge
+    if (drawY < 0)
+    {
+        srcY -= drawY;
+        srcH += drawY;
+        drawY = 0;
+    }
+    // Clip right edge
+    if (drawX + srcW > targetWidth)
+    {
+        srcW = targetWidth - drawX;
+    }
+    // Clip bottom edge
+    if (drawY + srcH > targetHeight)
+    {
+        srcH = targetHeight - drawY;
+    }
+
+    // Skip if completely clipped
+    if (srcW <= 0 || srcH <= 0)
+        return;
+
+    // Create sprite for this frame with clipped source rect
     sf::IntRect srcRect(
-        {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y)},
-        {static_cast<int>(frameRect.width), static_cast<int>(frameRect.height)}
+        {srcX, srcY},
+        {srcW, srcH}
     );
 
     sf::Sprite sprite(m_texture, srcRect);

@@ -10,6 +10,7 @@
 #include "RenderConstants.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/OpenGL.hpp>
 #include <cstring>
 
 #ifdef _WIN32
@@ -147,7 +148,11 @@ bool SFMLRenderer::CreateRenderTextures()
     OutputDebugStringA("Back buffer created successfully\n");
 
     // Create PDBGS (Pre-Draw Background Surface)
-    if (!m_pdbgs.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
+    // PDBGS must be larger than visible area for smooth tile scrolling
+    // Game draws tiles with 32-pixel buffer zone and copies with offset
+    sprintf_s(debugMsg, "Creating PDBGS: %dx%d\n", PDBGS_WIDTH, PDBGS_HEIGHT);
+    OutputDebugStringA(debugMsg);
+    if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH), static_cast<unsigned int>(PDBGS_HEIGHT)}))
     {
         OutputDebugStringA("ERROR: Failed to create PDBGS render texture!\n");
         return false;
@@ -162,6 +167,15 @@ bool SFMLRenderer::CreateRenderTextures()
     // Disable texture repeating to prevent edge artifacts
     m_backBuffer.setRepeated(false);
     m_pdbgs.setRepeated(false);
+
+    // Set explicit views to ensure 1:1 pixel mapping and prevent edge artifacts
+    // The view must match exactly the surface dimensions
+    sf::View backBufferView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(m_width), static_cast<float>(m_height)}));
+    m_backBuffer.setView(backBufferView);
+
+    // PDBGS has its own larger view
+    sf::View pdbgsView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(PDBGS_WIDTH), static_cast<float>(PDBGS_HEIGHT)}));
+    m_pdbgs.setView(pdbgsView);
 
     // Clear both buffers - use transparent for proper alpha compositing
     m_backBuffer.clear(sf::Color::Transparent);
@@ -249,13 +263,25 @@ void SFMLRenderer::BeginFrame()
         (void)m_pRenderWindow->setActive(true);
     }
 
+    // Reset the view to ensure 1:1 pixel mapping (prevents edge artifacts)
+    sf::View pixelView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(m_width), static_cast<float>(m_height)}));
+    m_backBuffer.setView(pixelView);
+
     // Clear to TRANSPARENT black (alpha=0) so that sprite alpha compositing works correctly
     // When we present to the window, we'll draw over a black background
     m_backBuffer.clear(sf::Color::Transparent);
+
+    // Enable scissor test to clip all drawing to exactly 640x480
+    // This prevents any content from being drawn outside the intended area
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(0, 0, m_width, m_height);
 }
 
 void SFMLRenderer::EndFrame()
 {
+    // Disable scissor test before presenting
+    glDisable(GL_SCISSOR_TEST);
+
     m_backBuffer.display();
 
     if (m_pRenderWindow && m_pRenderWindow->isOpen())
@@ -296,7 +322,10 @@ void SFMLRenderer::EndFrame()
         sf::View pixelView(sf::FloatRect({0.f, 0.f}, {windowWidth, windowHeight}));
         m_pRenderWindow->setView(pixelView);
 
-        sf::Sprite backBufferSprite(m_backBuffer.getTexture());
+        // Use explicit source rectangle to avoid including any texture padding
+        // SFML render textures may have internal padding beyond the requested size
+        sf::IntRect sourceRect({0, 0}, {m_width, m_height});
+        sf::Sprite backBufferSprite(m_backBuffer.getTexture(), sourceRect);
 
         float scaleX = windowWidth / static_cast<float>(m_width);
         float scaleY = windowHeight / static_cast<float>(m_height);
@@ -576,7 +605,8 @@ ITexture* SFMLRenderer::GetBackgroundSurface()
 {
     if (!m_pdbgsWrapper)
     {
-        m_pdbgsWrapper = new SFMLTexture(static_cast<uint16_t>(m_width), static_cast<uint16_t>(m_height));
+        // PDBGS is larger than visible area for smooth tile scrolling
+        m_pdbgsWrapper = new SFMLTexture(static_cast<uint16_t>(PDBGS_WIDTH), static_cast<uint16_t>(PDBGS_HEIGHT));
     }
     return m_pdbgsWrapper;
 }
@@ -684,10 +714,30 @@ void SFMLRenderer::BltBackBufferFromPDBGS(RECT* srcRect)
     // Must call display() before using a RenderTexture as a texture source
     m_pdbgs.display();
 
+    // Clamp source rect to valid PDBGS bounds (672x512) to prevent sampling outside texture
+    int srcLeft = srcRect->left;
+    int srcTop = srcRect->top;
+    int srcRight = srcRect->right;
+    int srcBottom = srcRect->bottom;
+
+    // Clamp to PDBGS bounds
+    if (srcLeft < 0) srcLeft = 0;
+    if (srcTop < 0) srcTop = 0;
+    if (srcRight > PDBGS_WIDTH) srcRight = PDBGS_WIDTH;
+    if (srcBottom > PDBGS_HEIGHT) srcBottom = PDBGS_HEIGHT;
+
+    // Calculate clamped dimensions
+    int width = srcRight - srcLeft;
+    int height = srcBottom - srcTop;
+
+    // Skip if nothing to copy
+    if (width <= 0 || height <= 0)
+        return;
+
     // Copy from PDBGS to back buffer at (0, 0)
     sf::IntRect intRect(
-        {static_cast<int>(srcRect->left), static_cast<int>(srcRect->top)},
-        {static_cast<int>(srcRect->right - srcRect->left), static_cast<int>(srcRect->bottom - srcRect->top)}
+        {srcLeft, srcTop},
+        {width, height}
     );
 
     sf::Sprite sprite(m_pdbgs.getTexture(), intRect);

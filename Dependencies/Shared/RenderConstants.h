@@ -31,6 +31,12 @@
 #define LOGICAL_MAX_Y   (LOGICAL_HEIGHT - 1)
 #endif
 
+// PDBGS (Pre-Draw Background Surface) size
+// This surface holds tiles for smooth scrolling and needs to be larger than
+// the visible area by 32 pixels in each direction (one tile width/height)
+#define PDBGS_WIDTH     (RENDER_LOGICAL_WIDTH + 32)    // 672
+#define PDBGS_HEIGHT    (RENDER_LOGICAL_HEIGHT + 32)   // 512
+
 // Pixel format constants
 #define PIXELFORMAT_RGB565  1   // 5:6:5 format (R=5, G=6, B=5)
 #define PIXELFORMAT_RGB555  2   // 5:5:5 format (R=5, G=5, B=5)
