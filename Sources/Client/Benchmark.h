@@ -104,7 +104,7 @@ public:
                 sprintf_s(buffer, "[BENCHMARK] %s: %.1f μs/call (%d calls, %.3f ms total in 1s)\n",
                          m_pName, dAvgUs, s_slots[slot].iCallCount, dTotalMs);
             }
-            OutputDebugStringA(buffer);
+            printf(buffer);
 
             // Reset for next second
             s_slots[slot].liAccumTicks = 0;
@@ -142,7 +142,7 @@ __declspec(selectany) int _BenchmarkScope::s_iSlotCount = 0;
         } else { \
             sprintf_s(__buffer_##var, "[BENCHMARK] %s: %.1f μs\n", name, __us_##var); \
         } \
-        OutputDebugStringA(__buffer_##var); \
+        printf(__buffer_##var); \
     }
 
 // Quick one-liner for measuring a single statement

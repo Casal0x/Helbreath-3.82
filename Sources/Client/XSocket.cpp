@@ -5,6 +5,7 @@
 #include "XSocket.h"
 #include "CommonTypes.h"
 #include <cstring>
+#include <cstdio>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -13,8 +14,6 @@
 // MODERNIZED: Removed HWND parameter, uses WSAEventSelect instead of WSAAsyncSelect
 XSocket::XSocket(int iBlockLimit)
 {
-	register int i;
-
 	m_cType = 0;
 	m_pRcvBuffer = 0;
 	m_pSndBuffer = 0;
@@ -25,7 +24,7 @@ XSocket::XSocket(int iBlockLimit)
 	m_dwReadSize = 3;
 	m_dwTotalReadSize = 0;
 
-	for (i = 0; i < DEF_XSOCKBLOCKLIMIT; i++) {
+	for (int i = 0; i < DEF_XSOCKBLOCKLIMIT; i++) {
 		m_iUnsentDataSize[i] = 0;
 		m_pUnsentDataList[i] = 0;
 	}
@@ -44,10 +43,9 @@ XSocket::XSocket(int iBlockLimit)
 
 XSocket::~XSocket()
 {
-	register int i;
 	if (m_pRcvBuffer != 0) delete[] m_pRcvBuffer;
 	if (m_pSndBuffer != 0) delete[] m_pSndBuffer;
-	for (i = 0; i < DEF_XSOCKBLOCKLIMIT; i++)
+	for (int i = 0; i < DEF_XSOCKBLOCKLIMIT; i++)
 		if (m_pUnsentDataList[i] != 0) delete[] m_pUnsentDataList[i];
 
 	_CloseConn();
@@ -201,10 +199,14 @@ int XSocket::DrainToQueue()
             return iPacketsQueued;
 
         case DEF_XSOCKEVENT_SOCKETERROR:
+            printf("[XSOCK] DrainToQueue: _iOnRead returned SOCKETERROR\n");
+            return -1;
         case DEF_XSOCKEVENT_SOCKETCLOSED:
+            printf("[XSOCK] DrainToQueue: _iOnRead returned SOCKETCLOSED\n");
             return -1;
 
         case DEF_XSOCKEVENT_MSGSIZETOOLARGE:
+            printf("[XSOCK] DrainToQueue: _iOnRead returned MSGSIZETOOLARGE\n");
             return -1;
 
         case DEF_XSOCKEVENT_ONREAD:
@@ -360,6 +362,7 @@ int XSocket::_iOnRead()
 		if (iRet == SOCKET_ERROR) {
 			WSAErr = WSAGetLastError();
 			if (WSAErr != WSAEWOULDBLOCK) {
+				printf("[XSOCK] _iOnRead HEADER: recv SOCKET_ERROR, WSAErr=%d\n", WSAErr);
 				m_WSAErr = WSAErr;
 				return DEF_XSOCKEVENT_SOCKETERROR;
 			}
@@ -367,6 +370,7 @@ int XSocket::_iOnRead()
 		}
 		else
 			if (iRet == 0) {
+				printf("[XSOCK] _iOnRead HEADER: recv returned 0 (server closed connection)\n");
 				m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
 				return DEF_XSOCKEVENT_SOCKETCLOSED;
 			}
@@ -403,6 +407,7 @@ int XSocket::_iOnRead()
 			if (iRet == SOCKET_ERROR) {
 				WSAErr = WSAGetLastError();
 				if (WSAErr != WSAEWOULDBLOCK) {
+					printf("[XSOCK] _iOnRead BODY: recv SOCKET_ERROR, WSAErr=%d\n", WSAErr);
 					m_WSAErr = WSAErr;
 					return DEF_XSOCKEVENT_SOCKETERROR;
 				}
@@ -410,6 +415,7 @@ int XSocket::_iOnRead()
 			}
 			else
 				if (iRet == 0) {
+					printf("[XSOCK] _iOnRead BODY: recv returned 0 (server closed connection)\n");
 					m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
 					return DEF_XSOCKEVENT_SOCKETCLOSED;
 				}
@@ -647,13 +653,12 @@ bool XSocket::bAccept(class XSocket* pXSock)
 {
 	SOCKET			AcceptedSock;
 	sockaddr		Addr;
-	register int	iLength;
 	uint32_t dwOpt;
 
 	if (m_cType != DEF_XSOCK_LISTENSOCK) return false;
 	if (pXSock == 0) return false;
 
-	iLength = sizeof(Addr);
+	int iLength = sizeof(Addr);
 	AcceptedSock = accept(m_Sock, (struct sockaddr FAR*) & Addr, (int FAR*) & iLength);
 	if (AcceptedSock == INVALID_SOCKET)
 		return false;
@@ -705,7 +710,6 @@ char* XSocket::pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey)
 {
 	uint16_t* wp;
 	uint32_t dwSize;
-	register int i;
 	char cKey;
 
 	cKey = m_pRcvBuffer[0];
@@ -717,7 +721,7 @@ char* XSocket::pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey)
 
 	// v.14 : m_pSndBuffer +3 dwSize� cKey
 	if (cKey != 0) {
-		for (i = 0; i < (int)(dwSize); i++) {
+		for (int i = 0; i < (int)(dwSize); i++) {
 			m_pRcvBuffer[3 + i] = (char)(m_pRcvBuffer[3 + i] ^ (cKey ^ (dwSize - i)));
 			m_pRcvBuffer[3 + i] -= (i ^ cKey);
 		}

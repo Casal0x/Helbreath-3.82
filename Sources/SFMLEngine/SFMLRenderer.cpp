@@ -89,7 +89,7 @@ bool SFMLRenderer::LoadFont()
     {
         char debugMsg[256];
         sprintf_s(debugMsg, "Trying to load font: %s\n", path);
-        OutputDebugStringA(debugMsg);
+        printf(debugMsg);
 
         if (m_font.openFromFile(path))
         {
@@ -97,22 +97,22 @@ bool SFMLRenderer::LoadFont()
             m_font.setSmooth(false);
             m_fontLoaded = true;
             sprintf_s(debugMsg, "Font loaded successfully from: %s\n", path);
-            OutputDebugStringA(debugMsg);
+            printf(debugMsg);
             return true;
         }
         else
         {
-            OutputDebugStringA("  - Failed to load\n");
+            printf("  - Failed to load\n");
         }
     }
 
-    OutputDebugStringA("ERROR: Failed to load any font!\n");
+    printf("ERROR: Failed to load any font!\n");
     return false;
 }
 
 bool SFMLRenderer::Init(HWND hWnd)
 {
-    OutputDebugStringA("SFMLRenderer::Init() called\n");
+    printf("SFMLRenderer::Init() called\n");
 
     // Note: RenderTextures will be created when SetRenderWindow is called,
     // because they require an active OpenGL context from the window.
@@ -120,11 +120,11 @@ bool SFMLRenderer::Init(HWND hWnd)
 
     // Load font for text rendering (this doesn't need OpenGL context)
     if (LoadFont())
-        OutputDebugStringA("Font loaded successfully\n");
+        printf("Font loaded successfully\n");
     else
-        OutputDebugStringA("Warning: Failed to load font\n");
+        printf("Warning: Failed to load font\n");
 
-    OutputDebugStringA("SFMLRenderer::Init() returning true\n");
+    printf("SFMLRenderer::Init() returning true\n");
     return true;
 }
 
@@ -133,31 +133,31 @@ bool SFMLRenderer::CreateRenderTextures()
     if (m_texturesCreated)
         return true;
 
-    OutputDebugStringA("SFMLRenderer::CreateRenderTextures() - Starting\n");
+    printf("SFMLRenderer::CreateRenderTextures() - Starting\n");
 
     // Create back buffer render texture
     char debugMsg[256];
     sprintf_s(debugMsg, "Creating back buffer: %dx%d\n", m_width, m_height);
-    OutputDebugStringA(debugMsg);
+    printf(debugMsg);
 
     if (!m_backBuffer.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
     {
-        OutputDebugStringA("ERROR: Failed to create back buffer render texture!\n");
+        printf("ERROR: Failed to create back buffer render texture!\n");
         return false;
     }
-    OutputDebugStringA("Back buffer created successfully\n");
+    printf("Back buffer created successfully\n");
 
     // Create PDBGS (Pre-Draw Background Surface)
     // PDBGS must be larger than visible area for smooth tile scrolling
     // Game draws tiles with 32-pixel buffer zone and copies with offset
     sprintf_s(debugMsg, "Creating PDBGS: %dx%d\n", PDBGS_WIDTH, PDBGS_HEIGHT);
-    OutputDebugStringA(debugMsg);
+    printf(debugMsg);
     if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH), static_cast<unsigned int>(PDBGS_HEIGHT)}))
     {
-        OutputDebugStringA("ERROR: Failed to create PDBGS render texture!\n");
+        printf("ERROR: Failed to create PDBGS render texture!\n");
         return false;
     }
-    OutputDebugStringA("PDBGS created successfully\n");
+    printf("PDBGS created successfully\n");
 
     // Disable texture smoothing for pixel-perfect scaling (matches DDraw sharpness)
     // This uses nearest-neighbor filtering instead of bilinear
@@ -184,7 +184,7 @@ bool SFMLRenderer::CreateRenderTextures()
     m_pdbgs.display();
 
     m_texturesCreated = true;
-    OutputDebugStringA("SFMLRenderer::CreateRenderTextures() - Complete\n");
+    printf("SFMLRenderer::CreateRenderTextures() - Complete\n");
     return true;
 }
 
@@ -432,15 +432,15 @@ void SFMLRenderer::DrawText(int x, int y, const char* text, uint32_t color)
 void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
 {
     if (!rect || !text) {
-        OutputDebugStringA("DrawTextRect: rect or text is null\n");
+        printf("DrawTextRect: rect or text is null\n");
         return;
     }
     if (!m_fontLoaded) {
-        OutputDebugStringA("DrawTextRect: font not loaded!\n");
+        printf("DrawTextRect: font not loaded!\n");
         return;
     }
     if (!m_texturesCreated) {
-        OutputDebugStringA("DrawTextRect: textures not created yet!\n");
+        printf("DrawTextRect: textures not created yet!\n");
         return;
     }
 
@@ -455,7 +455,7 @@ void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
         char debugMsg[512];
         sprintf_s(debugMsg, "DrawTextRect: '%s' at rect(%d,%d,%d,%d) color RGB(%d,%d,%d)\n",
             text, rect->left, rect->top, rect->right, rect->bottom, r, g, b);
-        OutputDebugStringA(debugMsg);
+        printf(debugMsg);
         drawCount++;
     }
 

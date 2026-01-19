@@ -209,6 +209,13 @@ void SFMLWindow::SetSize(int width, int height, bool center)
 void SFMLWindow::Show()
 {
     m_renderWindow.setVisible(true);
+    m_renderWindow.requestFocus();
+    // On Windows, also force foreground window to ensure focus
+    if (m_hWnd)
+    {
+        SetForegroundWindow(m_hWnd);
+        SetFocus(m_hWnd);
+    }
 }
 
 void SFMLWindow::Hide()

@@ -13,7 +13,6 @@
 #include "ISpriteFactory.h"
 
 // Custom message IDs (these should match what's used in the game)
-#define WM_USER_TIMERSIGNAL     (WM_USER + 500)
 #define WM_USER_CALCSOCKETEVENT (WM_USER + 600)
 
 GameWindowHandler::GameWindowHandler(CGame* pGame)
@@ -194,10 +193,6 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
 
     switch (message)
     {
-    case WM_USER_TIMERSIGNAL:
-        m_pGame->OnTimer();
-        return true;
-
     case WM_USER_CALCSOCKETEVENT:
         m_pGame->_CalcSocketClosed();
         return true;

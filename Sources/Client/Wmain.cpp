@@ -14,6 +14,9 @@
 #include <stdlib.h>
 #include <mmsystem.h>
 #include <process.h>
+#include <atomic>
+#include <thread>
+#include <chrono>
 
 #include "Game.h"
 #include "GlobalDef.h"
@@ -25,14 +28,16 @@
 #include "GameWindowHandler.h"
 
 // --------------------------------------------------------------
-#define WM_USER_TIMERSIGNAL		WM_USER + 500
-
 // Global state
 HWND G_hWnd = 0;
 HWND G_hEditWnd = 0;
 HINSTANCE G_hInstance = 0;
-MMRESULT G_mmTimer;
 class CGame* G_pGame = nullptr;
+
+// Timer thread state (replaces Windows multimedia timer)
+std::atomic<bool> G_bTimerSignal{false};
+std::atomic<bool> G_bTimerRunning{false};
+std::thread G_timerThread;
 class XSocket* G_pCalcSocket = 0;
 bool G_bIsCalcSocketConnected = true;
 uint32_t G_dwCalcSocketTime = 0, G_dwCalcSocketSendTime = 0;
@@ -46,9 +51,19 @@ static GameWindowHandler* g_pWindowHandler = nullptr;
 // Function declarations
 void EventLoop();
 void Initialize(char* pCmdLine);
-void CALLBACK _TimerFunc(UINT wID, UINT wUser, DWORD dwUSer, DWORD dw1, DWORD dw2);
-MMRESULT _StartTimer(DWORD dwTime);
-void _StopTimer(MMRESULT timerid);
+void StartTimerThread();
+void StopTimerThread();
+
+// Timer thread function - signals main thread every 1000ms
+void TimerThreadFunc()
+{
+    while (G_bTimerRunning.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        if (G_bTimerRunning.load()) {
+            G_bTimerSignal.store(true);
+        }
+    }
+}
 
 // --------------------------------------------------------------
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
@@ -100,7 +115,7 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     EventLoop();
 
     // Cleanup
-    _StopTimer(G_mmTimer);
+    StopTimerThread();
 
     // Clear event handler from window BEFORE deleting it
     // This prevents dangling pointer access during window destruction
@@ -148,31 +163,6 @@ void EventLoop()
     }
 }
 
-void CALLBACK _TimerFunc(UINT wID, UINT wUser, DWORD dwUSer, DWORD dw1, DWORD dw2)
-{
-    PostMessage(G_hWnd, WM_USER_TIMERSIGNAL, wID, 0);
-}
-
-MMRESULT _StartTimer(DWORD dwTime)
-{
-    TIMECAPS caps;
-    timeGetDevCaps(&caps, sizeof(caps));
-    timeBeginPeriod(caps.wPeriodMin);
-    return timeSetEvent(dwTime, 0, _TimerFunc, 0, (UINT)TIME_PERIODIC);
-}
-
-void _StopTimer(MMRESULT timerid)
-{
-    TIMECAPS caps;
-    if (timerid != 0)
-    {
-        timeKillEvent(timerid);
-        timerid = 0;
-        timeGetDevCaps(&caps, sizeof(caps));
-        timeEndPeriod(caps.wPeriodMin);
-    }
-}
-
 void Initialize(char* pCmdLine)
 {
     int iErrCode;
@@ -199,6 +189,20 @@ void Initialize(char* pCmdLine)
         return;
     }
 
-    // Start game timer
-    G_mmTimer = _StartTimer(1000);
+    // Start timer thread
+    StartTimerThread();
+}
+
+void StartTimerThread()
+{
+    G_bTimerRunning.store(true);
+    G_timerThread = std::thread(TimerThreadFunc);
+}
+
+void StopTimerThread()
+{
+    G_bTimerRunning.store(false);
+    if (G_timerThread.joinable()) {
+        G_timerThread.join();
+    }
 }

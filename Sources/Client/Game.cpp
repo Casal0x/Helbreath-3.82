@@ -138,6 +138,7 @@ CGame::CGame()
 	iMaxBankItems = 200; // Default soft cap, server overrides
 	m_cLoading = 0;
 	m_bIsFirstConn = true;
+	m_bIsProgramActive = true;  // Start active, OnActivate(false) will set to false if window loses focus
 	m_iItemDropCnt = 0;
 	m_bItemDrop = false;
 	m_bIsSpecial = false;
@@ -717,6 +718,13 @@ void CGame::Quit()
 void CGame::UpdateScreen()
 {
 	G_dwGlobalTime = GameClock::GetTimeMS();
+
+	// Check if timer thread signaled (thread-safe flag check)
+	extern std::atomic<bool> G_bTimerSignal;
+	if (G_bTimerSignal.exchange(false)) {
+		OnTimer();
+	}
+
 	OnGameSocketEvent();
 	OnLogSocketEvent();
 	switch (m_cGameMode) {
@@ -988,21 +996,34 @@ void CGame::OnGameSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
+        printf("[GAMESOCK] Poll returned SOCKETCLOSED\n");
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pGSock;
+        m_pGSock = 0;
+        return;
     case DEF_XSOCKEVENT_SOCKETERROR:
+        printf("[GAMESOCK] Poll returned SOCKETERROR\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pGSock;
         m_pGSock = 0;
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+        printf("[GAMESOCK] Poll returned CONNECTIONESTABLISH\n");
         ConnectionEstablishHandler(DEF_SERVERTYPE_GAME);
         break;
     }
 
     // 2. Drain all available data from TCP buffer to the Queue
+    // Only drain if socket is connected (m_bIsAvailable is set on FD_CONNECT)
+    if (!m_pGSock->m_bIsAvailable) {
+        return; // Still connecting, don't try to read yet
+    }
+
     int iDrained = m_pGSock->DrainToQueue();
 
     if (iDrained < 0) {
+        printf("[GAMESOCK] DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pGSock;
         m_pGSock = 0;
@@ -1719,6 +1740,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
 		}
 		m_cCommandCount++;
+		{
+			char cDbg[128];
+			wsprintf(cDbg, "[CMD] SEND: count=%d cmd=0x%X\n", (int)m_cCommandCount, wCommand);
+			printf("%s", cDbg);
+		}
 		break;
 	}
 	switch (iRet) {
@@ -1728,7 +1754,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	{
 		char cDbg[160];
 		wsprintf(cDbg, "[NETWARN] bSendCommand: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
-		OutputDebugStringA(cDbg);
+		printf("%s", cDbg);
 	}
 	ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
 	delete m_pGSock;
@@ -1739,7 +1765,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	{
 		char cDbg[160];
 		wsprintf(cDbg, "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
-		OutputDebugStringA(cDbg);
+		printf("%s", cDbg);
 	}
 	delete m_pGSock;
 	m_pGSock = 0;
@@ -3475,8 +3501,14 @@ void CGame::OnTimer()
 			if (m_cCommandCount >= 6)
 			{
 				m_iNetLagCount++;
+				{
+					char cDbg[128];
+					wsprintf(cDbg, "[CMD] NETLAG: count=%d lagCount=%d (disconnect at 7)\n", (int)m_cCommandCount, m_iNetLagCount);
+					printf("%s", cDbg);
+				}
 				if (m_iNetLagCount >= 7)
 				{
+					printf("[CMD] DISCONNECT: NetLag threshold reached!\n");
 					ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
 					delete m_pGSock;
 					m_pGSock = 0;
@@ -11096,21 +11128,34 @@ void CGame::OnLogSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
+        printf("[LOGSOCK] Poll returned SOCKETCLOSED\n");
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pLSock;
+        m_pLSock = 0;
+        return;
     case DEF_XSOCKEVENT_SOCKETERROR:
+        printf("[LOGSOCK] Poll returned SOCKETERROR\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pLSock;
         m_pLSock = 0;
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+        printf("[LOGSOCK] Poll returned CONNECTIONESTABLISH\n");
         ConnectionEstablishHandler(DEF_SERVERTYPE_LOG);
         break;
     }
 
     // 2. Drain all available data from TCP buffer to the Queue
+    // Only drain if socket is connected (m_bIsAvailable is set on FD_CONNECT)
+    if (!m_pLSock->m_bIsAvailable) {
+        return; // Still connecting, don't try to read yet
+    }
+
     int iDrained = m_pLSock->DrainToQueue();
 
     if (iDrained < 0) {
+        printf("[LOGSOCK] DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pLSock;
         m_pLSock = 0;
@@ -11498,6 +11543,37 @@ void CGame::ClearContents_OnCreateNewAccount()
 
 void CGame::ChangeGameMode(char cMode)
 {
+	const char* modeName = "UNKNOWN";
+	switch (cMode) {
+	case DEF_GAMEMODE_NULL: modeName = "NULL"; break;
+	case DEF_GAMEMODE_ONQUIT: modeName = "ONQUIT"; break;
+	case DEF_GAMEMODE_ONMAINMENU: modeName = "ONMAINMENU"; break;
+	case DEF_GAMEMODE_ONCONNECTING: modeName = "ONCONNECTING"; break;
+	case DEF_GAMEMODE_ONLOADING: modeName = "ONLOADING"; break;
+	case DEF_GAMEMODE_ONWAITINGINITDATA: modeName = "ONWAITINGINITDATA"; break;
+	case DEF_GAMEMODE_ONMAINGAME: modeName = "ONMAINGAME"; break;
+	case DEF_GAMEMODE_ONCONNECTIONLOST: modeName = "ONCONNECTIONLOST"; break;
+	case DEF_GAMEMODE_ONMSG: modeName = "ONMSG"; break;
+	case DEF_GAMEMODE_ONCREATENEWACCOUNT: modeName = "ONCREATENEWACCOUNT"; break;
+	case DEF_GAMEMODE_ONLOGIN: modeName = "ONLOGIN"; break;
+	case DEF_GAMEMODE_ONQUERYFORCELOGIN: modeName = "ONQUERYFORCELOGIN"; break;
+	case DEF_GAMEMODE_ONSELECTCHARACTER: modeName = "ONSELECTCHARACTER"; break;
+	case DEF_GAMEMODE_ONCREATENEWCHARACTER: modeName = "ONCREATENEWCHARACTER"; break;
+	case DEF_GAMEMODE_ONWAITINGRESPONSE: modeName = "ONWAITINGRESPONSE"; break;
+	case DEF_GAMEMODE_ONQUERYDELETECHARACTER: modeName = "ONQUERYDELETECHARACTER"; break;
+	case DEF_GAMEMODE_ONLOGRESMSG: modeName = "ONLOGRESMSG"; break;
+	case DEF_GAMEMODE_ONCHANGEPASSWORD: modeName = "ONCHANGEPASSWORD"; break;
+	case DEF_GAMEMODE_ONVERSIONNOTMATCH: modeName = "ONVERSIONNOTMATCH"; break;
+	case DEF_GAMEMODE_ONINTRODUCTION: modeName = "ONINTRODUCTION"; break;
+	case DEF_GAMEMODE_ONAGREEMENT: modeName = "ONAGREEMENT"; break;
+	case DEF_GAMEMODE_ONSELECTSERVER: modeName = "ONSELECTSERVER"; break;
+	}
+	{
+		char cDbg[128];
+		wsprintf(cDbg, "[GAMEMODE] Changing to: %s (%d)\n", modeName, (int)cMode);
+		printf("%s", cDbg);
+	}
+
 	m_cGameMode = cMode;
 	m_cGameModeCount = 0;
 	m_dwTime = G_dwGlobalTime;
@@ -23013,10 +23089,20 @@ void CGame::MotionResponseHandler(char* pData)
 	switch (wResponse) {
 	case DEF_OBJECTMOTION_CONFIRM:
 		m_cCommandCount--;
+		{
+			char cDbg[128];
+			wsprintf(cDbg, "[CMD] MOTION_CONFIRM: count=%d\n", (int)m_cCommandCount);
+			printf("%s", cDbg);
+		}
 		break;
 
 	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
 		m_cCommandCount--;
+		{
+			char cDbg[128];
+			wsprintf(cDbg, "[CMD] ATTACK_CONFIRM: count=%d\n", (int)m_cCommandCount);
+			printf("%s", cDbg);
+		}
 		if ((m_wLastAttackTargetID >= 10000) && (m_wLastAttackTargetID < 30000)) {
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETNPCHP, 0, m_wLastAttackTargetID, 0, 0, 0);
 		}
@@ -23041,6 +23127,7 @@ void CGame::MotionResponseHandler(char* pData)
 			m_iPlayerStatus, m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 		m_cCommandCount = 0;
+		printf("[CMD] MOTION_REJECT: count reset to 0\n");
 		m_bIsGetPointingMode = false;
 		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
 		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
@@ -23087,6 +23174,11 @@ void CGame::MotionResponseHandler(char* pData)
 		_ReadMapData(sX, sY, mapData);
 		m_bIsRedrawPDBGS = true;
 		m_cCommandCount--;
+		{
+			char cDbg[128];
+			wsprintf(cDbg, "[CMD] MOVE_CONFIRM: count=%d\n", (int)m_cCommandCount);
+			printf("%s", cDbg);
+		}
 	}
 	break;
 
@@ -23117,6 +23209,7 @@ void CGame::MotionResponseHandler(char* pData)
 			DEF_OBJECTSTOP, 0, 0, 0,
 			0, 7);
 		m_cCommandCount = 0;
+		printf("[CMD] MOVE_REJECT: count reset to 0\n");
 		m_bIsGetPointingMode = false;
 		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
 		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
