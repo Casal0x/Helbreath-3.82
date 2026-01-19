@@ -72,7 +72,7 @@ void HandleForceDisconn(CGame* pGame, char* pData)
 	{
 		delete pGame->m_pGSock;
 		pGame->m_pGSock = 0;
-		// /* cleared automatically */ // Not needed here
+        // /* cleared automatically */ // Not needed here
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
 		if (strlen(G_cCmdLineTokenA) != 0)

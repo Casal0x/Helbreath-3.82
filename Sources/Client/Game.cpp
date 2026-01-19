@@ -2,6 +2,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+
 #include "Game.h"
 #include "CommonTypes.h"
 #include "Benchmark.h"
@@ -181,10 +182,13 @@ CGame::CGame()
 
 	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++) m_pChatScrollList[i] = 0;
 
+	// Initialize legacy pointers
 	for (i = 0; i < DEF_MAXWHISPERMSG; i++) m_pWhisperMsg[i] = 0;
 
+	// Initialize New Managers (Networking v4)
 	m_pEffectManager = new EffectManager(this);
 	m_pNetworkMessageManager = new NetworkMessageManager(this);
+
 
 	for (i = 0; i < DEF_MAXITEMS; i++) m_pItemList[i] = 0;
 
@@ -211,6 +215,7 @@ CGame::CGame()
 	// Crafting:
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pCraftItemList[i] = 0;
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pDispCraftItemList[i] = 0;
+
 
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++) m_pGameMsgList[i] = 0;
 
@@ -318,6 +323,7 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sY = 57 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeY = 339;
+
 	m_dwDialogCloseTime = 0;
 	m_iTimeLeftSecAccount = 0;
 	m_iTimeLeftSecIP = 0;
@@ -444,6 +450,7 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	// Initialize sprite factory and register it globally
 	m_pSpriteFactory = CreateSpriteFactory(m_Renderer);
 	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
+
 	if (bCheckImportantFile() == false)
 	{
 		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
@@ -576,6 +583,7 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_wR[14] = 72;   m_wG[14] = 8;    m_wB[14] = 8;     // Red
 	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
+
 #ifndef _DEBUG
 	m_pCGameMonitor = new class CGameMonitor;
 	//===============================================
@@ -690,6 +698,7 @@ void CGame::Quit()
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pDispCraftItemList[i] != 0) delete m_pDispCraftItemList[i];
 
+
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++)
 		if (m_pGameMsgList[i] != 0) delete m_pGameMsgList[i];
 
@@ -703,6 +712,7 @@ void CGame::Quit()
 	if (m_pEffectManager != 0) delete m_pEffectManager;
 	if (m_pNetworkMessageManager != 0) delete m_pNetworkMessageManager;
 }
+
 
 void CGame::UpdateScreen()
 {
@@ -794,6 +804,7 @@ void CGame::UpdateScreen()
 	}
 }
 
+
 // DrawScreen: Dispatches to DrawScreen_* methods based on current game mode
 // Separated from UpdateScreen to allow: Update -> ClearBackB4 -> Draw -> iFlip
 // NOTE: Unsplit screens temporarily call the old combined UpdateScreen_On* method here
@@ -883,6 +894,7 @@ void CGame::DrawScreen()
 	}
 }
 
+
 // RenderFrame: Centralized rendering frame wrapper
 // Handles: Update -> (skip check) -> Clear backbuffer -> Draw -> Flip
 // This centralizes surface operations that were previously scattered across all screen methods
@@ -925,6 +937,7 @@ void CGame::RenderFrame()
 	FrameTiming::CountDisplayedFrame();
 }
 
+
 void CGame::CalcViewPoint()
 {
 	short dX, dY;
@@ -965,55 +978,75 @@ void CGame::CalcViewPoint()
 	}
 }
 
-// MODERNIZED: No longer a window message handler - polls socket directly
+// MODERNIZED: v4 Networking Architecture (Drain -> Queue -> Process)
 void CGame::OnGameSocketEvent()
 {
-	int iRet;
-	char* pData;
-	uint32_t dwMsgSize;
+    if (m_pGSock == 0) return;
 
-	if (m_pGSock == 0) return;
+    // 1. Check for socket state changes (Connect, Close, Error)
+    int iRet = m_pGSock->Poll();
 
-	// MODERNIZED: Poll() instead of iOnSocketEvent()
-	iRet = m_pGSock->Poll();
-	switch (iRet) {
-	case 0:
-		// No events
-		return;
+    switch (iRet) {
+    case DEF_XSOCKEVENT_SOCKETCLOSED:
+    case DEF_XSOCKEVENT_SOCKETERROR:
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pGSock;
+        m_pGSock = 0;
+        return;
 
-	case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-		ConnectionEstablishHandler(DEF_SERVERTYPE_GAME);
-		break;
+    case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+        ConnectionEstablishHandler(DEF_SERVERTYPE_GAME);
+        break;
+    }
 
-	case DEF_XSOCKEVENT_READCOMPLETE:
-		m_dwLastNetRecvTime = GameClock::GetTimeMS();
-		pData = m_pGSock->pGetRcvDataPointer(&dwMsgSize);
-		GameRecvMsgHandler(dwMsgSize, pData);
-		m_dwTime = G_dwGlobalTime;
-		break;
+    // 2. Drain all available data from TCP buffer to the Queue
+    int iDrained = m_pGSock->DrainToQueue();
 
-	case DEF_XSOCKEVENT_SOCKETCLOSED:
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-		delete m_pGSock;
-		m_pGSock = 0;
-		break;
+    if (iDrained < 0) {
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pGSock;
+        m_pGSock = 0;
+        return;
+    }
 
-	case DEF_XSOCKEVENT_SOCKETERROR:
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-		delete m_pGSock;
-		m_pGSock = 0;
-		break;
+    // 3. Process the queue with a Time Budget
+    //    We process as many packets as possible within the budget to keep the game responsive.
+    constexpr int MAX_PACKETS_PER_FRAME = 120; // Safety limit
+    constexpr uint32_t MAX_TIME_MS = 3;        // 3ms budget for network processing
 
-	case DEF_XSOCKEVENT_CRITICALERROR:
-		delete m_pGSock;
-		m_pGSock = 0;
-		if (G_pCalcSocket != 0)
-		{
-			delete G_pCalcSocket;
-			G_pCalcSocket = 0;
-		}
-		break;
-	}
+    uint32_t dwStartTime = GameClock::GetTimeMS();
+    int iProcessed = 0;
+
+    NetworkPacket packet;
+    while (iProcessed < MAX_PACKETS_PER_FRAME) {
+
+        // Check budget
+        if (GameClock::GetTimeMS() - dwStartTime > MAX_TIME_MS) {
+            break;
+        }
+
+        // Peek next packet
+        if (!m_pGSock->PeekPacket(packet)) {
+            break; // Queue empty
+        }
+
+        // Update functionality timestamps (legacy requirement)
+        m_dwLastNetRecvTime = GameClock::GetTimeMS();
+        m_dwTime = G_dwGlobalTime;
+
+        // Process (using the pointer directly from the packet vector)
+        if (!packet.empty()) {
+             GameRecvMsgHandler(static_cast<uint32_t>(packet.size()), 
+                                const_cast<char*>(packet.ptr()));
+        }
+
+        // CRITICAL FIX: The handler might have closed/deleted the socket!
+        if (m_pGSock == nullptr) return;
+
+        // Pop logic (remove from queue)
+        m_pGSock->PopPacket();
+        iProcessed++;
+    }
 }
 
 void CGame::RestoreSprites()
@@ -11053,47 +11086,72 @@ void CGame::LogEventHandler(char* pData)
 }
 
 // MODERNIZED: No longer a window message handler - polls socket directly
+// MODERNIZED: v4 Networking Architecture (Drain -> Queue -> Process) for Login Socket
 void CGame::OnLogSocketEvent()
 {
-	int iRet;
-	char* pData;
-	uint32_t dwMsgSize;
-	if (m_pLSock == 0) return;
+    if (m_pLSock == 0) return;
 
-	// MODERNIZED: Poll() instead of iOnSocketEvent()
-	iRet = m_pLSock->Poll();
-	switch (iRet) {
-	case 0:
-		// No events
-		return;
+    // 1. Check for socket state changes (Connect, Close, Error)
+    int iRet = m_pLSock->Poll();
 
-	case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-		ConnectionEstablishHandler(DEF_SERVERTYPE_LOG);
-		break;
+    switch (iRet) {
+    case DEF_XSOCKEVENT_SOCKETCLOSED:
+    case DEF_XSOCKEVENT_SOCKETERROR:
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pLSock;
+        m_pLSock = 0;
+        return;
 
-	case DEF_XSOCKEVENT_READCOMPLETE:
-		pData = m_pLSock->pGetRcvDataPointer(&dwMsgSize);
-		LogRecvMsgHandler(pData);
-		m_dwTime = G_dwGlobalTime;
-		break;
+    case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+        ConnectionEstablishHandler(DEF_SERVERTYPE_LOG);
+        break;
+    }
 
-	case DEF_XSOCKEVENT_SOCKETCLOSED:
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-		delete m_pLSock;
-		m_pLSock = 0;
-		break;
+    // 2. Drain all available data from TCP buffer to the Queue
+    int iDrained = m_pLSock->DrainToQueue();
 
-	case DEF_XSOCKEVENT_SOCKETERROR:
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-		delete m_pLSock;
-		m_pLSock = 0;
-		break;
+    if (iDrained < 0) {
+        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+        delete m_pLSock;
+        m_pLSock = 0;
+        return;
+    }
 
-	case DEF_XSOCKEVENT_CRITICALERROR:
-		delete m_pLSock;
-		m_pLSock = 0;
-		break;
-	}
+    // 3. Process the queue with a Time Budget
+    constexpr int MAX_PACKETS_PER_FRAME = 120; // Safety limit
+    constexpr uint32_t MAX_TIME_MS = 3;        // 3ms budget for network processing
+
+    uint32_t dwStartTime = GameClock::GetTimeMS();
+    int iProcessed = 0;
+
+    NetworkPacket packet;
+    while (iProcessed < MAX_PACKETS_PER_FRAME) {
+
+        // Check budget
+        if (GameClock::GetTimeMS() - dwStartTime > MAX_TIME_MS) {
+            break;
+        }
+
+        // Peek next packet
+        if (!m_pLSock->PeekPacket(packet)) {
+            break; // Queue empty
+        }
+
+        // Update timestamps
+        m_dwLastNetRecvTime = GameClock::GetTimeMS();
+
+        // Process (using the pointer directly from the packet vector)
+        if (!packet.empty()) {
+             LogRecvMsgHandler(const_cast<char*>(packet.ptr()));
+        }
+
+        // CRITICAL FIX: The handler might have closed/deleted the socket!
+        if (m_pLSock == nullptr) return;
+
+        // Pop logic (remove from queue)
+        m_pLSock->PopPacket();
+        iProcessed++;
+    }
 }
 
 void CGame::LogResponseHandler(char* pData)

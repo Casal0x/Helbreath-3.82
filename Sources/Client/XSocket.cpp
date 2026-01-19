@@ -165,6 +165,79 @@ int XSocket::Poll()
 	return iResult;
 }
 
+// === v4 Networking API Implementation ===
+
+int XSocket::DrainToQueue()
+{
+    int iPacketsQueued = 0;
+    // Limit drain per call to avoid monopolizing the thread if data floods in
+    constexpr int MAX_DRAIN_PER_CALL = 300; 
+
+    while (iPacketsQueued < MAX_DRAIN_PER_CALL &&
+           m_RecvQueue.size() < MAX_QUEUE_SIZE)
+    {
+        // _iOnRead() uses recv() internally and maintains m_cStatus (HEADER/BODY)
+        int iRet = _iOnRead();
+
+        switch (iRet) {
+        case DEF_XSOCKEVENT_READCOMPLETE:
+            {
+                // Packet assembly complete. Data is in m_pRcvBuffer.
+                // pGetRcvDataPointer handles decryption (XOR) if needed.
+                uint32_t dwSize = 0;
+                char* pData = pGetRcvDataPointer(&dwSize);
+
+                if (pData != nullptr && dwSize > 0) {
+                     // Enqueue a COPY of the data. 
+                     // m_pRcvBuffer is reused, so we must copy.
+                     m_RecvQueue.emplace_back(pData, dwSize);
+                     iPacketsQueued++;
+                }
+            }
+            break;
+
+        case DEF_XSOCKEVENT_BLOCK:
+            // recv() currently empty (WSAEWOULDBLOCK)
+            return iPacketsQueued;
+
+        case DEF_XSOCKEVENT_SOCKETERROR:
+        case DEF_XSOCKEVENT_SOCKETCLOSED:
+            return -1;
+
+        case DEF_XSOCKEVENT_MSGSIZETOOLARGE:
+            return -1;
+
+        case DEF_XSOCKEVENT_ONREAD:
+            // Packet incomplete (partial read). Continue loop to see if more data is ready.
+            break;
+
+        default:
+             // Other events, just continue
+            break;
+        }
+    }
+
+    return iPacketsQueued;
+}
+
+bool XSocket::PeekPacket(NetworkPacket& outPacket) const
+{
+    if (m_RecvQueue.empty()) {
+        return false;
+    }
+    outPacket = m_RecvQueue.front(); 
+    return true;
+}
+
+bool XSocket::PopPacket()
+{
+    if (m_RecvQueue.empty()) {
+        return false;
+    }
+    m_RecvQueue.pop_front();
+    return true;
+}
+
 // MODERNIZED: Removed uiMsg parameter (blocking connect doesn't need events)
 bool XSocket::bBlockConnect(char* pAddr, int iPort)
 {
@@ -202,6 +275,10 @@ bool XSocket::bBlockConnect(char* pAddr, int iPort)
 	dwOpt = 8192 * 5;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
+
+	// MODERNIZED: Enable TCP_NODELAY for v4 Architecture
+	int iNoDelay = 1;
+	setsockopt(m_Sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&iNoDelay, sizeof(iNoDelay));
 
 	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != 0) ? pAddr : "", _TRUNCATE);
 	m_iPortNum = iPort;
@@ -259,6 +336,9 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 
+	// MODERNIZED: Enable TCP_NODELAY for v4 Architecture
+	int iNoDelay = 1;
+	setsockopt(m_Sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&iNoDelay, sizeof(iNoDelay));
 	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != 0) ? pAddr : "", _TRUNCATE);
 	m_iPortNum = iPort;
 

@@ -47,6 +47,7 @@ using namespace std;
 #include "ActionID_Client.h"
 #include "NetMessages.h"
 #include "ClientMessages.h"
+#include "MouseInterface.h"
 #include "CharInfo.h"
 #include "Item/Item.h"
 #include "Magic.h"
@@ -58,6 +59,7 @@ using namespace std;
 #include "DialogBoxManager.h"
 #include "EffectManager.h"
 #include "NetworkMessageManager.h"
+#include "MotionState.h" // v4 Smooth Movement
 #include "CursorTarget.h"
 
 //v2.18
@@ -677,6 +679,7 @@ public:
 	class CMsg    * m_pWhisperMsg[DEF_MAXWHISPERMSG];
 	EffectManager* m_pEffectManager;
 	NetworkMessageManager* m_pNetworkMessageManager;
+	EntityMotionManager m_EntityMotion; // v4 Smooth Movement Manager
 	class CItem   * m_pItemList[DEF_MAXITEMS];
 	class CItem   * m_pBankList[DEF_MAXBANKITEMS];
 	class CMagic * m_pMagicCfgList[DEF_MAXMAGICTYPE];
@@ -808,6 +811,7 @@ public:
 	int	m_iSpecialAbilityTimeLeftSec;
 	int m_iDrawFlag;
 	bool m_bSkipFrame;  // Set by UpdateScreen_OnGame when iUpdateRet == 0 to skip flip
+
 
 	int m_iSpecialAbilityType;
 	int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;

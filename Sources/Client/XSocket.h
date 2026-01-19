@@ -17,6 +17,9 @@
 #include <malloc.h>
 #include <winbase.h>
 #include "CommonTypes.h"
+#include <deque>
+#include <vector>
+#include <cstdint>
 
 #define DEF_XSOCK_LISTENSOCK			1
 #define DEF_XSOCK_NORMALSOCK			2				
@@ -44,6 +47,27 @@
 
 #define DEF_XSOCKBLOCKLIMIT						300	
 
+struct NetworkPacket {
+    std::vector<uint8_t> data;
+    uint32_t reportedSize;
+
+    NetworkPacket() : reportedSize(0) {}
+    NetworkPacket(const char* pData, uint32_t dwSize)
+    {
+        reportedSize = dwSize;
+        // Allocate size + padding to mimic legacy safe-buffer behavior
+        data.reserve(dwSize + 1024);
+        data.assign(reinterpret_cast<const uint8_t*>(pData),
+               reinterpret_cast<const uint8_t*>(pData) + dwSize);
+        // Add zero padding at the end
+        data.insert(data.end(), 1024, 0);
+    }
+
+    size_t size() const { return reportedSize; }
+    bool empty() const { return reportedSize == 0; }
+    const char* ptr() const { return reinterpret_cast<const char*>(data.data()); }
+};
+
 class XSocket
 {
 public:
@@ -57,6 +81,15 @@ public:
 	bool bConnect(char * pAddr, int iPort);
 	bool bBlockConnect(char * pAddr, int iPort);
 	int  Poll();  // MODERNIZED: Replaces iOnSocketEvent, polls for network events
+	
+	// === v4 Networking API ===
+	int DrainToQueue();
+	bool PeekPacket(NetworkPacket& outPacket) const;
+	bool PopPacket();
+	bool HasPendingPackets() const { return !m_RecvQueue.empty(); }
+	size_t GetQueueSize() const { return m_RecvQueue.size(); }
+	void ClearQueue() { m_RecvQueue.clear(); }
+
 	bool bInitBufferSize(uint32_t dwBufferSize);
 	XSocket(int iBlockLimit);  // MODERNIZED: Removed HWND parameter
 	virtual ~XSocket();
@@ -92,4 +125,8 @@ public:
 	WSAEVENT     m_hEvent;  // MODERNIZED: WSAEventSelect event handle instead of window messages
 
 	int			 m_iBlockLimit;
+
+private:
+	std::deque<NetworkPacket> m_RecvQueue;
+	static constexpr size_t MAX_QUEUE_SIZE = 2000;
 };
