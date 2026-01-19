@@ -1,0 +1,283 @@
+// CursorTarget.cpp: Cursor targeting and object focus implementation
+//
+//////////////////////////////////////////////////////////////////////
+
+#include "CursorTarget.h"
+#include "IInput.h"
+#include <cstring>
+#include <chrono>
+
+// Internal state (static, not exposed)
+namespace {
+    // Mouse position (cached from Input:: at BeginFrame)
+    int s_mouseX = 0;
+    int s_mouseY = 0;
+
+    // Current frame's focused object
+    FocusedObject s_focusedObject;
+    int s_bestHitY = -99999;  // Depth sorting - higher Y = closer
+
+    // Ground item state
+    bool s_overGroundItem = false;
+
+    // Cursor state
+    CursorType s_cursorType = CursorType::Arrow;
+
+    // Item cursor animation
+    int64_t s_itemAnimTime = 0;
+    int s_itemAnimFrame = 1;
+}
+
+//-----------------------------------------------------------------------------
+// Frame Lifecycle
+//-----------------------------------------------------------------------------
+
+void CursorTarget::BeginFrame()
+{
+    // Cache mouse position
+    s_mouseX = Input::GetMouseX();
+    s_mouseY = Input::GetMouseY();
+
+    // Reset focus state
+    s_focusedObject = FocusedObject{};
+    s_bestHitY = -99999;
+
+    // Reset ground item state
+    s_overGroundItem = false;
+
+    // Reset cursor (will be determined in EndFrame)
+    s_cursorType = CursorType::Arrow;
+}
+
+void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailable, bool isGetPointingMode)
+{
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+
+    // Ground item takes priority for cursor animation
+    if (s_overGroundItem) {
+        // Animate every 200ms
+        if (now - s_itemAnimTime > 200) {
+            s_itemAnimTime = now;
+            s_itemAnimFrame = (s_itemAnimFrame == 1) ? 2 : 1;
+        }
+        s_cursorType = (s_itemAnimFrame == 1) ?
+            CursorType::ItemGround1 : CursorType::ItemGround2;
+        return;
+    }
+
+    // Check pointing mode for spell/item targeting
+    if (isGetPointingMode) {
+        // Spell targeting mode (100-199)
+        if (commandType >= 100 && commandType < 200) {
+            if (commandAvailable) {
+                if (s_focusedObject.valid && foeResult < 0)
+                    s_cursorType = CursorType::SpellHostile;
+                else
+                    s_cursorType = CursorType::SpellFriendly;
+            } else {
+                s_cursorType = CursorType::Unavailable;
+            }
+            return;
+        }
+
+        // Item use mode (0-49)
+        if (commandType >= 0 && commandType < 50) {
+            s_cursorType = CursorType::ItemUse;
+            return;
+        }
+    }
+
+    // Normal mode - show target cursor based on focus
+    if (s_focusedObject.valid) {
+        if (foeResult < 0)
+            s_cursorType = CursorType::TargetHostile;
+        else
+            s_cursorType = CursorType::TargetNeutral;
+        return;
+    }
+
+    // Default
+    s_cursorType = CursorType::Arrow;
+}
+
+//-----------------------------------------------------------------------------
+// Object Testing
+//-----------------------------------------------------------------------------
+
+void CursorTarget::TestObject(const SpriteLib::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY)
+{
+    // Skip invalid bounds
+    if (bounds.top == -1) return;
+
+    // Skip if mouse is below the valid targeting area (UI region)
+    if (s_mouseY > maxScreenY) return;
+
+    // Hit test - check if mouse is within sprite bounds
+    // Note: Original code used < and > exclusively, not <= and >=
+    if (s_mouseX > bounds.left && s_mouseX < bounds.right &&
+        s_mouseY > bounds.top && s_mouseY < bounds.bottom) {
+
+        // Last valid hit wins (tiles are processed back-to-front)
+        // Copy info to focused object
+        s_focusedObject.valid = true;
+        s_focusedObject.objectID = info.objectID;
+        s_focusedObject.mapX = info.mapX;
+        s_focusedObject.mapY = info.mapY;
+        s_focusedObject.screenX = info.screenX;
+        s_focusedObject.screenY = info.screenY;
+        s_focusedObject.dataX = info.dataX;
+        s_focusedObject.dataY = info.dataY;
+        s_focusedObject.ownerType = info.ownerType;
+        s_focusedObject.type = info.type;
+        s_focusedObject.action = info.action;
+        s_focusedObject.direction = info.direction;
+        s_focusedObject.frame = info.frame;
+        s_focusedObject.appr1 = info.appr1;
+        s_focusedObject.appr2 = info.appr2;
+        s_focusedObject.appr3 = info.appr3;
+        s_focusedObject.appr4 = info.appr4;
+        s_focusedObject.apprColor = info.apprColor;
+        s_focusedObject.status = info.status;
+
+        // Copy name
+        std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
+        if (info.name) {
+            std::strncpy(s_focusedObject.name, info.name, sizeof(s_focusedObject.name) - 1);
+        }
+    }
+}
+
+void CursorTarget::TestGroundItem(int screenX, int screenY, int maxScreenY)
+{
+    // Skip if mouse is below the valid targeting area
+    if (s_mouseY > maxScreenY) return;
+
+    // Check circular proximity (13px radius)
+    if (PointInCircle(s_mouseX, s_mouseY, screenX, screenY, 13)) {
+        s_overGroundItem = true;
+    }
+}
+
+void CursorTarget::TestDynamicObject(const SpriteLib::BoundRect& bounds, short mapX, short mapY, int maxScreenY)
+{
+    // Skip invalid bounds
+    if (bounds.top == -1) return;
+
+    // Skip if mouse is below the valid targeting area
+    if (s_mouseY > maxScreenY) return;
+
+    // Hit test
+    if (s_mouseX >= bounds.left && s_mouseX < bounds.right &&
+        s_mouseY >= bounds.top && s_mouseY < bounds.bottom) {
+
+        // Dynamic objects (minerals) set focus without full object info
+        s_focusedObject.valid = true;
+        s_focusedObject.mapX = mapX;
+        s_focusedObject.mapY = mapY;
+        s_focusedObject.type = FocusedObjectType::DynamicObject;
+        s_focusedObject.status = 0;
+        std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Query Functions
+//-----------------------------------------------------------------------------
+
+const FocusedObject& CursorTarget::GetFocusedObject()
+{
+    return s_focusedObject;
+}
+
+bool CursorTarget::HasFocusedObject()
+{
+    return s_focusedObject.valid;
+}
+
+CursorType CursorTarget::GetCursorType()
+{
+    return s_cursorType;
+}
+
+int CursorTarget::GetCursorFrame()
+{
+    return static_cast<int>(s_cursorType);
+}
+
+short CursorTarget::GetFocusedMapX()
+{
+    return s_focusedObject.valid ? s_focusedObject.mapX : 0;
+}
+
+short CursorTarget::GetFocusedMapY()
+{
+    return s_focusedObject.valid ? s_focusedObject.mapY : 0;
+}
+
+const char* CursorTarget::GetFocusedName()
+{
+    return s_focusedObject.name;
+}
+
+bool CursorTarget::IsOverGroundItem()
+{
+    return s_overGroundItem;
+}
+
+int CursorTarget::GetFocusStatus()
+{
+    return s_focusedObject.status;
+}
+
+//-----------------------------------------------------------------------------
+// Focus Highlight Data
+//-----------------------------------------------------------------------------
+
+bool CursorTarget::GetFocusHighlightData(
+    short& outScreenX, short& outScreenY,
+    uint16_t& outObjectID,
+    short& outOwnerType, char& outAction, char& outDir, char& outFrame,
+    short& outAppr1, short& outAppr2, short& outAppr3, short& outAppr4,
+    int& outApprColor, int& outStatus,
+    short& outDataX, short& outDataY)
+{
+    if (!s_focusedObject.valid) {
+        return false;
+    }
+
+    outScreenX = s_focusedObject.screenX;
+    outScreenY = s_focusedObject.screenY;
+    outObjectID = s_focusedObject.objectID;
+    outOwnerType = s_focusedObject.ownerType;
+    outAction = s_focusedObject.action;
+    outDir = s_focusedObject.direction;
+    outFrame = s_focusedObject.frame;
+    outAppr1 = s_focusedObject.appr1;
+    outAppr2 = s_focusedObject.appr2;
+    outAppr3 = s_focusedObject.appr3;
+    outAppr4 = s_focusedObject.appr4;
+    outApprColor = s_focusedObject.apprColor;
+    outStatus = s_focusedObject.status;
+    outDataX = s_focusedObject.dataX;
+    outDataY = s_focusedObject.dataY;
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// Utilities
+//-----------------------------------------------------------------------------
+
+bool CursorTarget::PointInRect(int x, int y, const SpriteLib::BoundRect& rect)
+{
+    return x >= rect.left && x < rect.right &&
+           y >= rect.top && y < rect.bottom;
+}
+
+bool CursorTarget::PointInCircle(int x, int y, int cx, int cy, int radius)
+{
+    int dx = x - cx;
+    int dy = y - cy;
+    return (dx * dx + dy * dy) <= (radius * radius);
+}

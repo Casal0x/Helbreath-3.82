@@ -1725,11 +1725,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	int ix, iy, indexX, indexY, dX, dY, iDvalue;
 	char cItemColor;
 	bool bIsPlayerDrawed = false;
-	bool bContact = false;
 	bool bRet = false;
 	short sItemSprite, sItemSpriteFrame, sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
-	static DWORD dwMCAnimTime = G_dwGlobalTime;
-	static short sMCAnimFrame = 1;
 	// Xmas
 	static int ix1[100];
 	static int iy2[100];
@@ -1747,13 +1744,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	int res_msy = LOGICAL_HEIGHT - 49;
 
 	if (sDivY < 0 || sDivX < 0) return;
-	m_sMCX = 0;
-	m_sMCY = 0;
-	std::memset(m_cMCName, 0, sizeof(m_cMCName));
+
+	// Initialize Picking system for this frame
+	CursorTarget::BeginFrame();
 
 	//dwTime = G_dwGlobalTime;
 	uint32_t dwTime = m_dwCurTime;
-	m_stMCursor.sCursorFrame = 0;
 
 	indexY = sDivY + sPivotY - 7;
 	for (iy = -sModY - 224; iy <= res_y + 352; iy += 32)
@@ -1832,49 +1828,36 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						iItemSelectedy = iy;
 					}
 
-					if ((ix - 13 < msX) && (ix + 13 > msX) && (iy - 13 < msY) && (iy + 13 > msY))
-					{
-						if ((dwTime - dwMCAnimTime) > 200)
-						{
-							dwMCAnimTime = dwTime;
-							if (sMCAnimFrame == 1)
-								sMCAnimFrame = 2;
-							else sMCAnimFrame = 1;
-						}
-						m_stMCursor.sCursorFrame = sMCAnimFrame;
-					}
+					// Test ground item with Picking system
+					CursorTarget::TestGroundItem(ix, iy, res_msy);
 				}
 
 				if ((bRet == true) && (_tmp_wObjectID != 0))
 				{
-					bContact = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime, msX, msY);
-				}
+					SpriteLib::BoundRect bounds = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime);
 
-				if ((bContact == true) && (msY <= res_msy))
-				{
-					m_sMCX = indexX;
-					m_sMCY = indexY;
-					sFocusX = ix;
-					sFocusY = iy;
-					sFocusOwnerType = _tmp_sOwnerType;
-					cFocusAction = DEF_OBJECTDEAD;
-					wFocusObjectID = _tmp_wObjectID;
-					cFocusFrame = _tmp_cFrame;
-					cFocusDir = _tmp_cDir;
-					sFocusAppr1 = _tmp_sAppr1;
-					sFocusAppr2 = _tmp_sAppr2;
-					sFocusAppr3 = _tmp_sAppr3;
-					sFocusAppr4 = _tmp_sAppr4;
-					iFocusApprColor = _tmp_iApprColor;
-					iFocuiStatus = _tmp_iStatus;
-					std::memset(cFocusName, 0, sizeof(cFocusName));
-					strcpy(cFocusName, _tmp_cName);
-					std::memset(m_cMCName, 0, sizeof(m_cMCName));
-					strcpy(m_cMCName, _tmp_cName);
-					sFocus_dX = _tmp_dX;
-					sFocus_dY = _tmp_dY;
-					_tmp_bSpriteOmit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
-					bContact = false;
+					// Build picking info for dead object
+					TargetObjectInfo info = {};
+					info.objectID = _tmp_wObjectID;
+					info.mapX = indexX;
+					info.mapY = indexY;
+					info.screenX = ix;
+					info.screenY = iy;
+					info.dataX = _tmp_dX;
+					info.dataY = _tmp_dY;
+					info.ownerType = _tmp_sOwnerType;
+					info.action = DEF_OBJECTDEAD;
+					info.direction = _tmp_cDir;
+					info.frame = _tmp_cFrame;
+					info.name = _tmp_cName;
+					info.appr1 = _tmp_sAppr1;
+					info.appr2 = _tmp_sAppr2;
+					info.appr3 = _tmp_sAppr3;
+					info.appr4 = _tmp_sAppr4;
+					info.apprColor = _tmp_iApprColor;
+					info.status = _tmp_iStatus;
+					info.type = FocusedObjectType::DeadBody;
+					CursorTarget::TestObject(bounds, info, iy, res_msy);
 				}
 
 				_tmp_wObjectID = _tmp_sOwnerType = _tmp_sAppr1 = _tmp_sAppr2 = _tmp_sAppr3 = _tmp_sAppr4 = _tmp_iStatus = 0;
@@ -1929,74 +1912,73 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				{
 					_tmp_dx = 0;
 					_tmp_dy = 0;
+					SpriteLib::BoundRect bounds = {0, -1, 0, 0};
 					switch (_tmp_cAction) {
 					case DEF_OBJECTSTOP:
-						bContact = DrawObject_OnStop(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnStop(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTMOVE:
-						bContact = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime, msX, msY, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTDAMAGEMOVE:
-						bContact = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime, msX, msY, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTRUN:
-						bContact = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime, msX, msY, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTATTACK:
-						bContact = DrawObject_OnAttack(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnAttack(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTATTACKMOVE:
-						bContact = DrawObject_OnAttackMove(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnAttackMove(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTMAGIC:
-						bContact = DrawObject_OnMagic(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnMagic(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTGETITEM:
-						bContact = DrawObject_OnGetItem(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnGetItem(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTDAMAGE:
-						bContact = DrawObject_OnDamage(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnDamage(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTDYING:
-						bContact = DrawObject_OnDying(indexX, indexY, ix, iy, false, dwTime, msX, msY);
+						bounds = DrawObject_OnDying(indexX, indexY, ix, iy, false, dwTime);
 						break;
 					}
 
-					if ((bContact == true) && (msY <= res_msy))
-					{
-						m_sMCX = indexX;
-						m_sMCY = indexY;
-						sFocusX = ix;
-						sFocusY = iy;
-						wFocusObjectID = _tmp_wObjectID;
-						sFocusOwnerType = _tmp_sOwnerType;
-						cFocusAction = _tmp_cAction;
-						cFocusFrame = _tmp_cFrame;
-						cFocusDir = _tmp_cDir;
-						sFocusAppr1 = _tmp_sAppr1;
-						sFocusAppr2 = _tmp_sAppr2;
-						sFocusAppr3 = _tmp_sAppr3;
-						sFocusAppr4 = _tmp_sAppr4;
-						iFocusApprColor = _tmp_iApprColor; // v1.4
-						iFocuiStatus = _tmp_iStatus;
-						std::memset(cFocusName, 0, sizeof(cFocusName));
-						strcpy(cFocusName, _tmp_cName);
-						std::memset(m_cMCName, 0, sizeof(m_cMCName));
-						strcpy(m_cMCName, _tmp_cName);
-						sFocus_dX = _tmp_dX; // v2.171
-						sFocus_dY = _tmp_dY; // v2.171
-						bContact = false;
-						frame_omit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
-					}
+					// Build picking info for living object
+					TargetObjectInfo info = {};
+					info.objectID = _tmp_wObjectID;
+					info.mapX = indexX;
+					info.mapY = indexY;
+					info.screenX = ix;
+					info.screenY = iy;
+					info.dataX = _tmp_dX;
+					info.dataY = _tmp_dY;
+					info.ownerType = _tmp_sOwnerType;
+					info.action = _tmp_cAction;
+					info.direction = _tmp_cDir;
+					info.frame = _tmp_cFrame;
+					info.name = _tmp_cName;
+					info.appr1 = _tmp_sAppr1;
+					info.appr2 = _tmp_sAppr2;
+					info.appr3 = _tmp_sAppr3;
+					info.appr4 = _tmp_sAppr4;
+					info.apprColor = _tmp_iApprColor;
+					info.status = _tmp_iStatus;
+					// Determine type based on owner type
+					info.type = (_tmp_sOwnerType >= 1 && _tmp_sOwnerType <= 6) ?
+						FocusedObjectType::Player : FocusedObjectType::NPC;
+					CursorTarget::TestObject(bounds, info, iy, res_msy);
 
 					if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0)
 					{
@@ -2203,35 +2185,13 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				case DEF_DYNAMICOBJECT_MINERAL1:		// 4
 					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0, SpriteLib::DrawParams::Shadow());
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0);
-					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top != -1)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top < msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().bottom > msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().left < msX)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().right > msX))
-					{
-						m_sMCX = indexX;
-						m_sMCY = indexY;
-						iFocuiStatus = 0;
-						std::memset(cFocusName, 0, sizeof(cFocusName));
-						std::memset(m_cMCName, 0, sizeof(m_cMCName));
-					}
+					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case DEF_DYNAMICOBJECT_MINERAL2:		// 5
 					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1, SpriteLib::DrawParams::Shadow());
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1);
-					if ((m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top != -1)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().top < msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().bottom > msY)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().left < msX)
-						&& (m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect().right > msX))
-					{
-						m_sMCX = indexX;
-						m_sMCY = indexY;
-						iFocuiStatus = 0;
-						std::memset(cFocusName, 0, sizeof(cFocusName));
-						std::memset(m_cMCName, 0, sizeof(m_cMCName));
-					}
+					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case DEF_DYNAMICOBJECT_SPIKE:			// 9
@@ -2254,139 +2214,177 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 	if ((dwTime - m_dwEnvEffectTime) > 400) m_dwEnvEffectTime = dwTime;
 
-	if (m_sMCX != 0)	// CLEROTH - STATUS
+	// Finalize Picking system - determines cursor type
+	int foeResult = CursorTarget::HasFocusedObject() ? _iGetFOE(CursorTarget::GetFocusStatus()) : 0;
+	CursorTarget::EndFrame(foeResult, m_iPointCommandType, m_bCommandAvailable, m_bIsGetPointingMode);
+
+	// Update legacy compatibility variables from Picking system
+	m_sMCX = CursorTarget::GetFocusedMapX();
+	m_sMCY = CursorTarget::GetFocusedMapY();
+	std::memset(m_cMCName, 0, sizeof(m_cMCName));
+	std::strncpy(m_cMCName, CursorTarget::GetFocusedName(), sizeof(m_cMCName) - 1);
+	m_stMCursor.sCursorFrame = CursorTarget::GetCursorFrame();
+
+	// Draw focused object with highlight (transparency)
+	if (CursorTarget::HasFocusedObject())
 	{
-		if (_iGetFOE(iFocuiStatus) < 0) m_stMCursor.sCursorFrame = 3;
-		else m_stMCursor.sCursorFrame = 6;
+		short focusSX, focusSY;
+		uint16_t focusObjID;
+		short focusOwnerType;
+		char focusAction, focusDir, focusFrame;
+		short focusAppr1, focusAppr2, focusAppr3, focusAppr4;
+		int focusApprColor, focusStatus;
+		short focusDataX, focusDataY;
 
-		_tmp_wObjectID = wFocusObjectID;
-		_tmp_sOwnerType = sFocusOwnerType;
-		_tmp_cAction = cFocusAction;
-		_tmp_cFrame = cFocusFrame;
-		_tmp_cDir = cFocusDir;
-		_tmp_sAppr1 = sFocusAppr1;
-		_tmp_sAppr2 = sFocusAppr2;
-		_tmp_sAppr3 = sFocusAppr3;
-		_tmp_sAppr4 = sFocusAppr4;
-		_tmp_iApprColor = iFocusApprColor; // v1.4
-		_tmp_iStatus = iFocuiStatus;
-		strcpy(_tmp_cName, cFocusName);
-		_tmp_dX = sFocus_dX; // v2.171
-		_tmp_dY = sFocus_dY; // v2.171
+		if (CursorTarget::GetFocusHighlightData(focusSX, focusSY, focusObjID, focusOwnerType,
+			focusAction, focusDir, focusFrame, focusAppr1, focusAppr2, focusAppr3, focusAppr4,
+			focusApprColor, focusStatus, focusDataX, focusDataY))
+		{
+			// Also update the old global focus variables for compatibility
+			wFocusObjectID = focusObjID;
+			sFocusOwnerType = focusOwnerType;
+			cFocusAction = focusAction;
+			cFocusFrame = focusFrame;
+			cFocusDir = focusDir;
+			sFocusAppr1 = focusAppr1;
+			sFocusAppr2 = focusAppr2;
+			sFocusAppr3 = focusAppr3;
+			sFocusAppr4 = focusAppr4;
+			iFocusApprColor = focusApprColor;
+			iFocuiStatus = focusStatus;
+			sFocusX = focusSX;
+			sFocusY = focusSY;
+			sFocus_dX = focusDataX;
+			sFocus_dY = focusDataY;
+			std::memset(cFocusName, 0, sizeof(cFocusName));
+			std::strncpy(cFocusName, CursorTarget::GetFocusedName(), sizeof(cFocusName) - 1);
 
-		if ((_tmp_cAction != DEF_OBJECTDEAD) && (_tmp_cFrame < 0)) return;
-		switch (_tmp_cAction) {
-		case DEF_OBJECTSTOP:
-			DrawObject_OnStop(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-		case DEF_OBJECTMOVE:
-			switch (_tmp_sOwnerType) {
-			case 1:
-			case 2:
-			case 3: // Human M
-			case 4:
-			case 5:
-			case 6: // Human F
+			// Set up temporary vars for drawing
+			_tmp_wObjectID = focusObjID;
+			_tmp_sOwnerType = focusOwnerType;
+			_tmp_cAction = focusAction;
+			_tmp_cFrame = focusFrame;
+			_tmp_cDir = focusDir;
+			_tmp_sAppr1 = focusAppr1;
+			_tmp_sAppr2 = focusAppr2;
+			_tmp_sAppr3 = focusAppr3;
+			_tmp_sAppr4 = focusAppr4;
+			_tmp_iApprColor = focusApprColor;
+			_tmp_iStatus = focusStatus;
+			_tmp_dX = focusDataX;
+			_tmp_dY = focusDataY;
+			std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
+			std::strncpy(_tmp_cName, CursorTarget::GetFocusedName(), sizeof(_tmp_cName) - 1);
 
-			case 28: // Troll.
-			case 29: // Ogre
-			case 30: // Liche
-			case 31: // DD
-			case 32: // Uni
-			case 33: // WW
-			case 43: // LWB
-			case 44: // GHK
-			case 45: // GHKABS
-			case 46: // TK
-			case 47: // BG
-			case 48: // SK
-			case 49: // HC
-			case 50: // TW
-			case 51: // CP
-			case 52: // GG
-			case 53: // BB
-			case 54: // DE
-			case 55: // Rabbit
-			case 56: // Cat
-			case 57: // Frog
-			case 58: // MG
-			case 59: // Ettin
-			case 60: // Plant
-			case 61: // Rudolph
-			case 62: // DireBoar
-			case 63: // Frost
-			case 65: // Ice-Golem
-			case 66: // Wyvern
-			case 70: // Dragon..........Ajouts par Snoopy
-			case 71: // Centaur
-			case 72: // ClawTurtle
-			case 73: // FireWyvern
-			case 74: // GiantCrayfish
-			case 75: // Gi Lizard
-			case 76: // Gi Tree
-			case 77: // Master Orc
-			case 78: // Minaus
-			case 79: // Nizie
-			case 80: // Tentocle
-			case 81: // Abaddon
-			case 82: // Sorceress
-			case 83: // ATK
-			case 84: // MasterElf
-			case 85: // DSK
-			case 86: // HBT
-			case 87: // CT
-			case 88: // Barbarian
-			case 89: // AGC
-			case 91: // Gate
+			if ((focusAction != DEF_OBJECTDEAD) && (focusFrame < 0)) {
+				// Skip drawing invalid frame
+			} else {
+				switch (focusAction) {
+				case DEF_OBJECTSTOP:
+					DrawObject_OnStop(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+				case DEF_OBJECTMOVE:
+					switch (focusOwnerType) {
+					case 1:
+					case 2:
+					case 3: // Human M
+					case 4:
+					case 5:
+					case 6: // Human F
 
-				/*	case 15: // ShopKeeper // Ils ont 8 sprites Stop
-					case 19: // Gandalf
-					case 20: // Howard
-					case 24: // Tom
-					case 25: // William
-					case 26: // Kenedy
-					case 90: // Gail*/
-				break;
+					case 28: // Troll.
+					case 29: // Ogre
+					case 30: // Liche
+					case 31: // DD
+					case 32: // Uni
+					case 33: // WW
+					case 43: // LWB
+					case 44: // GHK
+					case 45: // GHKABS
+					case 46: // TK
+					case 47: // BG
+					case 48: // SK
+					case 49: // HC
+					case 50: // TW
+					case 51: // CP
+					case 52: // GG
+					case 53: // BB
+					case 54: // DE
+					case 55: // Rabbit
+					case 56: // Cat
+					case 57: // Frog
+					case 58: // MG
+					case 59: // Ettin
+					case 60: // Plant
+					case 61: // Rudolph
+					case 62: // DireBoar
+					case 63: // Frost
+					case 65: // Ice-Golem
+					case 66: // Wyvern
+					case 70: // Dragon..........Ajouts par Snoopy
+					case 71: // Centaur
+					case 72: // ClawTurtle
+					case 73: // FireWyvern
+					case 74: // GiantCrayfish
+					case 75: // Gi Lizard
+					case 76: // Gi Tree
+					case 77: // Master Orc
+					case 78: // Minaus
+					case 79: // Nizie
+					case 80: // Tentocle
+					case 81: // Abaddon
+					case 82: // Sorceress
+					case 83: // ATK
+					case 84: // MasterElf
+					case 85: // DSK
+					case 86: // HBT
+					case 87: // CT
+					case 88: // Barbarian
+					case 89: // AGC
+					case 91: // Gate
+						break;
 
-			default: // 10..27
-				_tmp_cFrame = _tmp_cFrame * 2; //
-				break;
+					default: // 10..27
+						_tmp_cFrame = _tmp_cFrame * 2;
+						break;
+					}
+
+					DrawObject_OnMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime, frame_omit);
+					break;
+
+				case DEF_OBJECTDAMAGEMOVE:
+					DrawObject_OnDamageMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime, frame_omit);
+					break;
+
+				case DEF_OBJECTRUN:
+					DrawObject_OnRun(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime, frame_omit);
+					break;
+
+				case DEF_OBJECTATTACK:
+					DrawObject_OnAttack(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+
+				case DEF_OBJECTATTACKMOVE:
+					DrawObject_OnAttackMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+
+				case DEF_OBJECTMAGIC:
+					DrawObject_OnMagic(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+
+				case DEF_OBJECTDAMAGE:
+					DrawObject_OnDamage(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+
+				case DEF_OBJECTDYING:
+					DrawObject_OnDying(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+
+				case DEF_OBJECTDEAD:
+					DrawObject_OnDead(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
+					break;
+				}
 			}
-
-			DrawObject_OnMove(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY, frame_omit);
-			break;
-
-		case DEF_OBJECTDAMAGEMOVE:
-			DrawObject_OnDamageMove(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY, frame_omit);
-			break;
-
-		case DEF_OBJECTRUN:
-			DrawObject_OnRun(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY, frame_omit);
-			break;
-
-		case DEF_OBJECTATTACK:
-			DrawObject_OnAttack(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-
-		case DEF_OBJECTATTACKMOVE:
-			DrawObject_OnAttackMove(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-
-		case DEF_OBJECTMAGIC:
-			DrawObject_OnMagic(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-
-		case DEF_OBJECTDAMAGE:
-			DrawObject_OnDamage(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-
-		case DEF_OBJECTDYING: //10
-			DrawObject_OnDying(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
-
-		case DEF_OBJECTDEAD: //101
-			DrawObject_OnDead(m_sMCX, m_sMCY, sFocusX, sFocusY, true, dwTime, msX, msY);
-			break;
 		}
 	}
 
@@ -2413,28 +2411,6 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		{
 			PutString(msX, msY + 25 + iLoc, cStr3, RGB(150, 150, 150), false, 1);
 			iLoc += 15;
-		}
-	}
-
-	if (m_bIsGetPointingMode == true)
-	{
-		if ((m_iPointCommandType >= 100) && (m_iPointCommandType < 200)) // spell
-		{
-			if (m_bCommandAvailable == true)
-			{
-				if (m_sMCX != 0)
-				{
-					if (_iGetFOE(iFocuiStatus) < 0)
-						m_stMCursor.sCursorFrame = 5;   // Red enemi for spell
-					else m_stMCursor.sCursorFrame = 4;  // Blue friend for spell
-				}
-				else m_stMCursor.sCursorFrame = 4;     // Blue friend for spell
-			}
-			else m_stMCursor.sCursorFrame = 8;
-		}
-		else if ((m_iPointCommandType >= 0) && (m_iPointCommandType < 50)) // item
-		{
-			m_stMCursor.sCursorFrame = 10;				// hand to grap item
 		}
 	}
 }
@@ -5215,8 +5191,9 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 	}
 }
 
-bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
 	int iWeaponIndex, iWeapon, iAdd, iShieldIndex, iMantleIndex;
 	bool bInv = false;
@@ -5254,7 +5231,7 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 	switch (_tmp_sOwnerType) {
 	case 1:
@@ -5797,16 +5774,12 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 		}
 	}
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
 	int iWeaponIndex, iWeapon, iAdd, iShieldIndex, iMantleIndex, dx, dy, dsx, dsy;
 	int cFrameMoveDots;
@@ -5845,7 +5818,7 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 
 	switch (_tmp_cFrame) {
@@ -6370,17 +6343,12 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 	_tmp_dx = dx;
 	_tmp_dy = dy;
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iR, iG, iB, iHelmIndex, iMantleIndex;
 	bool bInv = false;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
@@ -6429,7 +6397,7 @@ bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bT
 					m_pMapData->ClearChatMsg(indexX, indexY);
 				}
 			}
-			return false;
+			return invalidRect;
 		}
 	}
 
@@ -6649,16 +6617,12 @@ bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bT
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iR, iG, iB, iHelmIndex, iMantleIndex;
 	bool bInv = false;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
@@ -6693,7 +6657,7 @@ bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool 
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 
 	switch (_tmp_sOwnerType) {
@@ -6922,16 +6886,12 @@ bool   CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool 
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iWeaponIndex, iShieldIndex, iHelmIndex, iR, iG, iB;
 	int iAdd, iDrawMode, iMantleIndex;
 	char cFrame;
@@ -6970,7 +6930,7 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 	cFrame = _tmp_cFrame;
 	switch (_tmp_sOwnerType) {
@@ -7824,16 +7784,10 @@ bool CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTr
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iR, iG, iB, iHelmIndex, iMantleIndex;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
@@ -8217,21 +8171,17 @@ bool CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTra
 		}
 	}
 
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	int iBodyIndex, iUndiesIndex, iHairIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iR, iG, iB, iFrame, iMantleIndex, iHelmIndex;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 66) return false;
+	if (_tmp_sOwnerType == 66) return invalidRect;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -8524,15 +8474,10 @@ bool   CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTr
 	{	//m_pEffectSpr[35]->Draw(sX+120, sY+120, rand(), SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[35]->Draw(sX + 20, sY - 15, rand() % 10, SpriteLib::DrawParams::Alpha(0.7f));
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision)
+SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision)
 {
 	int dx, dy;
 	int iBodyIndex, iHairIndex, iUndiesIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
@@ -8541,6 +8486,7 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 	int iWeaponGlare, iShieldGlare;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
 	if (_tmp_sOwnerType == 35 /* || _tmp_sOwnerType == 66 || _tmp_sOwnerType == 73*/)	bInv = true; //Energy-Ball, Wyvern
 
@@ -8572,7 +8518,7 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 
 	switch (_tmp_sOwnerType) {
@@ -9303,15 +9249,10 @@ bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTr
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision)
+SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision)
 {
 	int cFrame, cDir;
 	int dx, dy;
@@ -9321,8 +9262,9 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 	int iWeaponGlare, iShieldGlare;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 67 || _tmp_sOwnerType == 68 || _tmp_sOwnerType == 69 || _tmp_sOwnerType == 81) return false;
+	if (_tmp_sOwnerType == 67 || _tmp_sOwnerType == 68 || _tmp_sOwnerType == 69 || _tmp_sOwnerType == 81) return invalidRect;
 	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
@@ -9353,7 +9295,7 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 	cDir = _tmp_cDir;
 	switch (_tmp_cDir) {
@@ -9799,15 +9741,10 @@ bool CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	short dx, dy;
 	int iBodyIndex, iHairIndex, iUndiesIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
@@ -10215,15 +10152,10 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
-bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
+SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	int iBodyIndex, iUndiesIndex, iHairIndex, iBodyArmorIndex, iArmArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
 	int iWeaponIndex, iShieldIndex, iMantleIndex;
@@ -10231,6 +10163,7 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 	int iWeaponGlare, iShieldGlare;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
 	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/ || _tmp_sOwnerType == 81) bInv = true; //Energy-Ball, Wyvern
 	if (ConfigManager::Get().GetDetailLevel() == 0)
@@ -10262,7 +10195,7 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 
 	// CLEROTH - Single-direction monsters
@@ -10928,12 +10861,7 @@ bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTr
 			break;
 		}
 	}
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX) &&
-		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
 void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
@@ -11857,7 +11785,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 	}
 }
 
-bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision)
+SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision)
 {
 	int dx, dy;
 	int iBodyIndex, iHairIndex, iUndiesIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iWeaponIndex, iShieldIndex, iHelmIndex, iR, iG, iB, iMantleIndex;
@@ -11865,6 +11793,7 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	int iWeaponGlare, iShieldGlare;
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
+	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
 	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
@@ -11896,7 +11825,7 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	{
 		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
 		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
-		else return false;
+		else return invalidRect;
 	}
 
 	switch (_tmp_sOwnerType) {
@@ -12439,12 +12368,7 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	}
 	_tmp_dx = dx;
 	_tmp_dy = dy;
-	if ((m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top != -1)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top < msY)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom > msY)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left < msX)
-		&& (m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
-	return false;
+	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
 }
 
 void CGame::GetPlayerTurn()
@@ -17406,7 +17330,7 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 
 	_Draw_CharacterBody(507 + SCREENX, 267 + SCREENY, _tmp_sOwnerType);
 
-	DrawObject_OnMove_ForMenu(0 + SCREENX, 0 + SCREENY, 500 + SCREENX, 174 + SCREENY, false, dwTime, msX, msY);
+	DrawObject_OnMove_ForMenu(0 + SCREENX, 0 + SCREENY, 500 + SCREENX, 174 + SCREENY, false, dwTime);
 
 	i = 0;
 
@@ -20259,7 +20183,7 @@ void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short 
 				if (CMisc::bCheckValidString(m_pCharList[i]->m_cName) == true)
 				{
 					m_pEffectSpr[0]->Draw(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.5f));
-					DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime, 0, 0);
+					DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime);
 					PutString(sX + 112 + i * 109 + SCREENX, sY + 179 - 9 + SCREENY, m_pCharList[i]->m_cName, RGB(51, 0, 51));//25,35,25);
 					int	_sLevel = m_pCharList[i]->m_sLevel;
 					wsprintf(G_cTxt, "%d", _sLevel);

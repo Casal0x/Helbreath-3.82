@@ -7,6 +7,10 @@
 
 #include <cstdint>
 
+// Forward declare RECT to avoid including windows.h (causes macro pollution)
+struct tagRECT;
+typedef struct tagRECT RECT;
+
 namespace SpriteLib {
 
 // Frame rectangle - matches PAKLib::sprite_rect binary layout exactly

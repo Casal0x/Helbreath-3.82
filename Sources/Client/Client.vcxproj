@@ -328,6 +328,7 @@
     <ClInclude Include="CmdWeather.h" />
     <ClInclude Include="CmdProfile.h" />
     <ClInclude Include="WeatherManager.h" />
+    <ClInclude Include="CursorTarget.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
@@ -427,6 +428,7 @@
     <ClCompile Include="CmdProfile.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
+    <ClCompile Include="CursorTarget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc" />
