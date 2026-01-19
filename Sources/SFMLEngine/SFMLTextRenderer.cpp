@@ -36,8 +36,8 @@ bool SFMLTextRenderer::LoadDefaultFont()
 {
     // Try common Windows system fonts as fallback
     const char* defaultFonts[] = {
-        "C:\\Windows\\Fonts\\arial.ttf",
         "C:\\Windows\\Fonts\\tahoma.ttf",
+        "C:\\Windows\\Fonts\\arial.ttf",
         "C:\\Windows\\Fonts\\segoeui.ttf"
     };
 
