@@ -77,8 +77,7 @@ bool SFMLRenderer::LoadFont()
     if (m_fontLoaded)
         return true;
 
-    // Try Windows system fonts first (guaranteed to exist)
-    // DDraw renderer uses GDI with these same fonts
+    // Fallback to Windows system fonts if client didn't load a font
     const char* fontPaths[] = {
         "C:\\Windows\\Fonts\\tahoma.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",

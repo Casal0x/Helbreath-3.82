@@ -538,6 +538,14 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		}
 	}
 
+	if(TextLib::GetTextRenderer())
+	{
+		if (!TextLib::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
+		{
+			printf("[FONT] Failed to load default.ttf font file!\n");
+		}
+	}
+
 	m_stMCursor.sX = 0;
 	m_stMCursor.sY = 0;
 	m_pMapData = new class CMapData(this);

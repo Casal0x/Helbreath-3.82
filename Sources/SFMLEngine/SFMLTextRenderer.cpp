@@ -34,7 +34,7 @@ SFMLTextRenderer::SFMLTextRenderer(sf::RenderTexture* backBuffer)
 
 bool SFMLTextRenderer::LoadDefaultFont()
 {
-    // Try common Windows system fonts as fallback
+    // Fallback to Windows system fonts if client didn't load a font
     const char* defaultFonts[] = {
         "C:\\Windows\\Fonts\\tahoma.ttf",
         "C:\\Windows\\Fonts\\arial.ttf",
