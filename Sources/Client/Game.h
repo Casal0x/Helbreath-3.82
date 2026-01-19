@@ -33,7 +33,9 @@ using namespace std;
 #include "ISprite.h"
 #include "ISpriteFactory.h"
 #include "SpriteCollection.h"
-#include "DDrawSpriteFactory.h"
+#include "ITextRenderer.h"
+#include "IBitmapFont.h"
+#include "BitmapFontFactory.h"
 #include "InputManager.h"
 #include "XSocket.h"
 #include "SpriteID.h"
@@ -657,10 +659,16 @@ public:
 	} m_stTeleportList[20];
 
 	class IRenderer* m_Renderer;  // Abstract renderer interface
-	DDrawSpriteFactory* m_pSpriteFactory;  // Sprite factory for creating sprites
+	SpriteLib::ISpriteFactory* m_pSpriteFactory;  // Sprite factory for creating sprites
 	SpriteLib::SpriteCollection m_pSprite;
 	SpriteLib::SpriteCollection m_pTileSpr;
 	SpriteLib::SpriteCollection m_pEffectSpr;
+
+	// Bitmap fonts (client-owned, created from sprites)
+	TextLib::IBitmapFont* m_pBitmapFont1;  // Interface font 1 (DEF_SPRID_INTERFACE_FONT1)
+	TextLib::IBitmapFont* m_pBitmapFont2;  // Interface font 2 (DEF_SPRID_INTERFACE_FONT2)
+	TextLib::IBitmapFont* m_pNumFont;      // Number font (DEF_SPRID_INTERFACE_ADDINTERFACE, frames 6-15)
+	TextLib::IBitmapFont* m_pSprFont3[3];  // SPRFONTS2 with type offsets 0, 1, 2
 	class CMapData * m_pMapData;
 	class XSocket * m_pGSock;
 	class XSocket * m_pLSock;
@@ -843,8 +851,9 @@ public:
 	uint16_t m_wCommObjectID;
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
-	uint16_t m_wR[16], m_wG[16], m_wB[16];
-	uint16_t m_wWR[16], m_wWG[16], m_wWB[16];
+	// Color arrays for sprite tinting (RGB888 format, 0-255 range)
+	int16_t m_wR[16], m_wG[16], m_wB[16];
+	int16_t m_wWR[16], m_wWG[16], m_wWB[16];
 
 	unsigned char m_cInputMaxLen;
 	char m_cEdit[4];

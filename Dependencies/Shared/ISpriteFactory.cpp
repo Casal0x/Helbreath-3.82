@@ -52,4 +52,11 @@ int Sprites::GetSpriteCount(const std::string& pakName) {
     return 0;
 }
 
+std::string Sprites::GetSpritePath() {
+    if (s_pFactory) {
+        return s_pFactory->GetSpritePath();
+    }
+    return "sprites";  // Default fallback
+}
+
 } // namespace SpriteLib

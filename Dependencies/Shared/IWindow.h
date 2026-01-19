@@ -34,6 +34,7 @@ public:
     virtual bool Create(const WindowParams& params) = 0;
     virtual void Destroy() = 0;
     virtual bool IsOpen() const = 0;
+    virtual void Close() = 0;  // Request window close (triggers close event)
 
     // ============== Properties ==============
     virtual HWND GetHandle() const = 0;
@@ -44,6 +45,7 @@ public:
 
     // ============== Display ==============
     virtual void SetFullscreen(bool fullscreen) = 0;
+    virtual void SetSize(int width, int height, bool center = true) = 0;  // Resize window
     virtual void Show() = 0;
     virtual void Hide() = 0;
     virtual void SetTitle(const char* title) = 0;

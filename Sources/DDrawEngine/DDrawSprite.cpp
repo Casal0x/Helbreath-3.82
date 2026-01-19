@@ -51,23 +51,11 @@ DDrawSprite::DDrawSprite(DXC_ddraw* pDDraw, const std::string& pakFilePath, int 
 
         // Keep image data for surface creation
         m_imageData = std::move(spriteData.image_data);
-
-        static int s_loadSuccessCount = 0;
-        s_loadSuccessCount++;
-        if (s_loadSuccessCount <= 3) {
-            printf("[DDrawSprite] Loaded %s[%d]: %zu frames, %zu bytes image\n",
-                   pakFilePath.c_str(), spriteIndex, m_frames.size(), m_imageData.size());
-        }
     }
-    catch (const std::exception& e) {
+    catch (const std::exception&) {
         // Failed to load sprite - leave empty
         m_frames.clear();
         m_imageData.clear();
-        static int s_loadFailCount = 0;
-        s_loadFailCount++;
-        if (s_loadFailCount <= 5) {
-            printf("[DDrawSprite] FAILED to load %s[%d]: %s\n", pakFilePath.c_str(), spriteIndex, e.what());
-        }
     }
 }
 
@@ -493,17 +481,6 @@ bool DDrawSprite::ClipCoordinates(int& dX, int& dY, int& sx, int& sy, int& szx, 
 
 void DDrawSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& params)
 {
-    static int s_drawCallCount = 0;
-    static int s_lastReportTime = 0;
-    s_drawCallCount++;
-    int now = GetTickCount();
-    if (now - s_lastReportTime > 2000) {
-        printf("[DDrawSprite::Draw] %d calls in last 2 sec, frames=%d, surface=%d\n",
-               s_drawCallCount, (int)m_frames.size(), m_bSurfaceLoaded ? 1 : 0);
-        s_drawCallCount = 0;
-        s_lastReportTime = now;
-    }
-
     if (m_frames.empty()) return;
     if (frame < 0 || frame >= static_cast<int>(m_frames.size())) return;
 
@@ -513,7 +490,6 @@ void DDrawSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& par
     // Ensure surface is loaded
     if (!m_bSurfaceLoaded) {
         if (!CreateSurface()) {
-            printf("[DDrawSprite::Draw] CreateSurface failed!\n");
             return;
         }
     }

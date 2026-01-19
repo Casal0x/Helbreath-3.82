@@ -6,9 +6,8 @@
 #include "AudioManager.h"
 #include "CommonTypes.h"
 #include "ConfigManager.h"
+#include "RendererFactory.h"
 #include <cstring>
-
-extern HWND G_hWnd;
 
 // 4:3 resolutions from 640x480 to 1440x1080
 const Resolution DialogBox_SysMenu::s_Resolutions[] = {
@@ -67,16 +66,8 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 	ConfigManager::Get().SetWindowSize(newWidth, newHeight);
 	ConfigManager::Get().Save();
 
-	// Get screen dimensions for centering
-	int screenWidth = GetSystemMetrics(SM_CXSCREEN);
-	int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-
-	// Calculate centered position
-	int newX = (screenWidth - newWidth) / 2;
-	int newY = (screenHeight - newHeight) / 2;
-
-	// Resize and center the window
-	SetWindowPos(G_hWnd, HWND_TOP, newX, newY, newWidth, newHeight, SWP_SHOWWINDOW);
+	// Resize and center the window using the abstraction layer
+	Window::SetSize(newWidth, newHeight, true);
 	InputManager::Get().SetActive(true);
 }
 
@@ -423,7 +414,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 		if ((msX >= sX + 110) && (msX <= sX + 168) && (msY >= sY + 200) && (msY <= sY + 213)) {
 			if (isFullscreen) {
 				m_pGame->m_Renderer->SetFullscreen(false);
-				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
+				m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
 				InputManager::Get().SetActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(false);
 				ConfigManager::Get().Save();
@@ -436,7 +427,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 		if ((msX >= sX + 180) && (msX <= sX + 242) && (msY >= sY + 200) && (msY <= sY + 213)) {
 			if (!isFullscreen) {
 				m_pGame->m_Renderer->SetFullscreen(true);
-				m_pGame->m_Renderer->ChangeDisplayMode(G_hWnd);
+				m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
 				InputManager::Get().SetActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(true);
 				ConfigManager::Get().Save();

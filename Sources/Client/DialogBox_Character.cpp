@@ -38,9 +38,9 @@ char DialogBox_Character::DrawEquippedItem(int equipPos, int drawX, int drawY, s
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
-	uint16_t* wR = useWeaponColors ? m_pGame->m_wWR : m_pGame->m_wR;
-	uint16_t* wG = useWeaponColors ? m_pGame->m_wWG : m_pGame->m_wG;
-	uint16_t* wB = useWeaponColors ? m_pGame->m_wWB : m_pGame->m_wB;
+	int16_t* wR = useWeaponColors ? m_pGame->m_wWR : m_pGame->m_wR;
+	int16_t* wG = useWeaponColors ? m_pGame->m_wWG : m_pGame->m_wG;
+	int16_t* wB = useWeaponColors ? m_pGame->m_wWB : m_pGame->m_wB;
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 

@@ -8,6 +8,12 @@
 #include <math.h>
 #include <stdio.h>
 #include <windows.h>
+
+// Undefine Windows DrawText macro to avoid naming conflict with DXC_ddraw::DrawText
+#ifdef DrawText
+#undef DrawText
+#endif
+
 #include <memory.h>
 #include <string.h>
 #include <cstdint>

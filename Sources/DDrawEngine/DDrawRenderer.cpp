@@ -360,8 +360,8 @@ void DDrawRenderer::BltBackBufferFromPDBGS(RECT* srcRect)
     if (!m_ddraw.m_lpBackB4 || !m_ddraw.m_lpPDBGS)
         return;
 
-    m_ddraw.m_lpBackB4->BltFast(srcRect->left, srcRect->top,
-                                 m_ddraw.m_lpPDBGS, srcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+    // Blit from srcRect in PDBGS to (0, 0) in back buffer
+    m_ddraw.m_lpBackB4->BltFast(0, 0, m_ddraw.m_lpPDBGS, srcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
 }
 
 void* DDrawRenderer::GetBackBufferNative()

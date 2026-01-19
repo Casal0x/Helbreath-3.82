@@ -1,0 +1,523 @@
+// SFMLSprite.cpp: SFML implementation of ISprite interface
+//
+// Part of SFMLEngine static library
+//////////////////////////////////////////////////////////////////////
+
+#include "SFMLSprite.h"
+#include "SFMLRenderer.h"
+#include <SFML/Graphics/Sprite.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
+
+SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect)
+    : m_pRenderer(pRenderer)
+    , m_pakFilePath(pakFilePath)
+    , m_spriteIndex(spriteIndex)
+    , m_bitmapWidth(0)
+    , m_bitmapHeight(0)
+    , m_textureLoaded(false)
+    , m_alphaEffect(alphaEffect)
+    , m_alphaDegree(1)
+    , m_inUse(false)
+    , m_lastAccessTime(0)
+{
+    // Load sprite data from PAK file
+    PAKLib::sprite spriteData = PAKLib::get_sprite_fast(pakFilePath, spriteIndex);
+    InitFromSpriteData(spriteData);
+}
+
+SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const PAKLib::sprite& spriteData, bool alphaEffect)
+    : m_pRenderer(pRenderer)
+    , m_spriteIndex(0)
+    , m_bitmapWidth(0)
+    , m_bitmapHeight(0)
+    , m_textureLoaded(false)
+    , m_alphaEffect(alphaEffect)
+    , m_alphaDegree(1)
+    , m_inUse(false)
+    , m_lastAccessTime(0)
+{
+    InitFromSpriteData(spriteData);
+}
+
+SFMLSprite::~SFMLSprite()
+{
+    Unload();
+}
+
+void SFMLSprite::InitFromSpriteData(const PAKLib::sprite& spriteData)
+{
+    // Copy frame data
+    m_frames.clear();
+    m_frames.reserve(spriteData.sprite_rectangles.size());
+    for (const auto& rect : spriteData.sprite_rectangles)
+    {
+        m_frames.push_back(rect);
+    }
+
+    // Copy image data (PNG format) - will be cleared after texture creation
+    m_imageData = spriteData.image_data;
+
+    // Don't create texture yet - lazy load on first draw to save memory
+    // CreateTexture();
+}
+
+bool SFMLSprite::CreateTexture()
+{
+    if (m_textureLoaded)
+        return true;
+
+    if (m_imageData.empty())
+        return false;
+
+    // Load image data - SFML handles PNG natively with alpha channel support
+    sf::Image tempImage;
+    if (!tempImage.loadFromMemory(m_imageData.data(), m_imageData.size()))
+        return false;
+
+    // Get dimensions from loaded image
+    sf::Vector2u size = tempImage.getSize();
+    m_bitmapWidth = static_cast<uint16_t>(size.x);
+    m_bitmapHeight = static_cast<uint16_t>(size.y);
+
+    // Create texture from image
+    if (!m_texture.loadFromImage(tempImage))
+        return false;
+
+    // Disable smooth filtering to prevent edge artifacts and ensure crisp pixel art
+    m_texture.setSmooth(false);
+
+    // Clear PNG data to free memory - we have the texture now
+    m_imageData.clear();
+    m_imageData.shrink_to_fit();
+
+    m_textureLoaded = true;
+    return true;
+}
+
+void SFMLSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& params)
+{
+    // Lazy load texture on first draw
+    if (!m_textureLoaded)
+        CreateTexture();
+
+    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+        return;
+
+    m_inUse = true;
+    m_lastAccessTime = GetTickCount();
+
+    DrawInternal(m_pRenderer->GetBackBuffer(), x, y, frame, params);
+
+    m_inUse = false;
+}
+
+void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const SpriteLib::DrawParams& params)
+{
+    // Lazy load texture on first draw
+    if (!m_textureLoaded)
+        CreateTexture();
+
+    if (!destSurface || !m_textureLoaded || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+        return;
+
+    m_inUse = true;
+    m_lastAccessTime = GetTickCount();
+
+    sf::RenderTexture* target = static_cast<sf::RenderTexture*>(destSurface);
+    DrawInternal(target, x, y, frame, params);
+
+    m_inUse = false;
+}
+
+void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const SpriteLib::DrawParams& params)
+{
+    if (!target)
+        return;
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    // Shadow rendering - replicate DDraw's skewed shadow effect
+    if (params.isShadow)
+    {
+        // DDraw shadow algorithm:
+        // - Reads from bottom of sprite going up
+        // - Every 3 source rows -> 1 shadow row (1/3 height)
+        // - Skews left by 1 pixel per row going UP
+        // - Shadow base (bottom) is anchored at sprite's feet
+
+        int drawX = x + frameRect.pivotX;
+        int drawY = y + frameRect.pivotY;
+
+        // Create sprite for this frame
+        sf::IntRect srcRect(
+            {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y)},
+            {static_cast<int>(frameRect.width), static_cast<int>(frameRect.height)}
+        );
+
+        sf::Sprite sprite(m_texture, srcRect);
+
+        // Semi-transparent black for shadow (darker for visibility)
+        sprite.setColor(sf::Color(0, 0, 0, 140));
+
+        // Set origin to bottom-left of sprite so transforms anchor there (at feet)
+        sprite.setOrigin({0.0f, static_cast<float>(frameRect.height)});
+
+        // Shadow dimensions
+        float scaleY = 1.0f / 3.0f;
+        float shadowHeight = frameRect.height * scaleY;
+
+        // Position: shadow base at sprite's feet (bottom of sprite)
+        float baseX = static_cast<float>(drawX);
+        float baseY = static_cast<float>(drawY + frameRect.height);
+
+        // Build transform:
+        // 1. Translate to feet position
+        // 2. Apply shear (skew left going up) and vertical scale
+        //
+        // The shear matrix skews X based on Y. Since origin is at bottom,
+        // and Y goes negative (upward), we want positive shear to skew left.
+
+        sf::Transform transform;
+        transform.translate({baseX, baseY});
+
+        // Shear and scale matrix (origin at bottom-left):
+        // x' = x + shearX * y
+        // y' = scaleY * y
+        // Since y is negative (going up from origin), positive shearX moves left
+        sf::Transform skewScale(
+            1.0f, 1.0f, 0.0f,   // x' = x + 1*y (shear)
+            0.0f, scaleY, 0.0f, // y' = scaleY * y
+            0.0f, 0.0f, 1.0f
+        );
+        transform.combine(skewScale);
+
+        sf::RenderStates states;
+        states.transform = transform;
+        states.blendMode = sf::BlendAlpha;
+
+        target->draw(sprite, states);
+
+        // Update bounds (approximate)
+        m_boundRect.left = drawX;
+        m_boundRect.top = static_cast<int>(baseY - shadowHeight);
+        m_boundRect.right = drawX + frameRect.width;
+        m_boundRect.bottom = static_cast<int>(baseY);
+
+        return;
+    }
+
+    // Calculate draw position (apply pivot) - must ADD pivot like DDraw does
+    int drawX = x + frameRect.pivotX;
+    int drawY = y + frameRect.pivotY;
+
+    // Update bounds
+    m_boundRect.left = drawX;
+    m_boundRect.top = drawY;
+    m_boundRect.right = drawX + frameRect.width;
+    m_boundRect.bottom = drawY + frameRect.height;
+
+    // Create sprite for this frame
+    sf::IntRect srcRect(
+        {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y)},
+        {static_cast<int>(frameRect.width), static_cast<int>(frameRect.height)}
+    );
+
+    sf::Sprite sprite(m_texture, srcRect);
+    sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
+
+    // Check if we need any color modifications
+    bool needsColorChange = (params.alpha < 1.0f) ||
+                            (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) ||
+                            params.isColorReplace ||
+                            params.isShadow || params.isFade ||
+                            (m_alphaDegree == 2 && m_alphaEffect);
+
+    if (needsColorChange)
+    {
+        sf::Color color = sf::Color::White;
+
+        // Apply alpha
+        if (params.alpha < 1.0f)
+        {
+            color.a = static_cast<uint8_t>(params.alpha * 255.0f);
+        }
+
+        // Apply color replacement or offset-based tinting
+        //
+        // SFML uses MULTIPLICATIVE blending: white × color = color
+        //
+        // Two modes:
+        // 1. ColorReplace (isColorReplace=true): Direct RGB values are the output color
+        //    - (0, 0, 0) = black
+        //    - (255, 255, 255) = white
+        //    - (200, 200, 0) = yellow
+        //
+        // 2. Offset Tint (isColorReplace=false): Values are offsets from base gray (96)
+        //    - Gold offset (32, 8, -72) → final color (128, 104, 24)
+        //
+        if (params.isColorReplace || params.tintR != 0 || params.tintG != 0 || params.tintB != 0)
+        {
+            int r, g, b;
+
+            if (params.isColorReplace)
+            {
+                // Direct color replacement: tint values ARE the desired RGB output
+                r = params.tintR;
+                g = params.tintG;
+                b = params.tintB;
+            }
+            else
+            {
+                // Offset system: color = base_gray (96) + tint_offset
+                const int BASE_GRAY = 96;
+                r = BASE_GRAY + params.tintR;
+                g = BASE_GRAY + params.tintG;
+                b = BASE_GRAY + params.tintB;
+            }
+
+            // Clamp to valid range
+            color.r = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));
+            color.g = static_cast<uint8_t>(g < 0 ? 0 : (g > 255 ? 255 : g));
+            color.b = static_cast<uint8_t>(b < 0 ? 0 : (b > 255 ? 255 : b));
+        }
+
+        // Apply shadow effect (darken)
+        // Use semi-transparent black with alpha blending - the sprite's own alpha
+        // channel will mask where the shadow appears (only on non-transparent pixels)
+        if (params.isShadow)
+        {
+            color.r = 0;
+            color.g = 0;
+            color.b = 0;
+            color.a = 64;  // Semi-transparent black for shadow darkening
+        }
+
+        // Apply fade effect
+        if (params.isFade)
+        {
+            color.r = static_cast<uint8_t>(color.r * 0.5f);
+            color.g = static_cast<uint8_t>(color.g * 0.5f);
+            color.b = static_cast<uint8_t>(color.b * 0.5f);
+        }
+
+        // Apply alpha degree darkening (night mode)
+        if (m_alphaDegree == 2 && m_alphaEffect)
+        {
+            color.r = static_cast<uint8_t>(color.r * 0.7f);
+            color.g = static_cast<uint8_t>(color.g * 0.7f);
+            color.b = static_cast<uint8_t>(color.b * 0.7f);
+        }
+
+        sprite.setColor(color);
+    }
+
+    // Set up render states - always use alpha blending
+    // For bitmap fonts: white sprite × tint = tint, drawn with alpha blending
+    sf::RenderStates states;
+    states.blendMode = sf::BlendAlpha;
+
+    // Draw the sprite
+    target->draw(sprite, states);
+}
+
+void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
+{
+    // Lazy load texture on first draw
+    if (!m_textureLoaded)
+        CreateTexture();
+
+    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+        return;
+
+    m_inUse = true;
+    m_lastAccessTime = GetTickCount();
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    int drawX = x + frameRect.pivotX;
+    int drawY = y + frameRect.pivotY;
+
+    // Clamp width
+    int maxSize = vertical ? frameRect.height : frameRect.width;
+    if (width > maxSize) width = maxSize;
+    if (width < 0) width = 0;
+
+    // Create partial source rect
+    sf::IntRect srcRect;
+    if (vertical)
+    {
+        srcRect = sf::IntRect(
+            {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y)},
+            {static_cast<int>(frameRect.width), width}
+        );
+    }
+    else
+    {
+        srcRect = sf::IntRect(
+            {static_cast<int>(frameRect.x), static_cast<int>(frameRect.y)},
+            {width, static_cast<int>(frameRect.height)}
+        );
+    }
+
+    sf::Sprite sprite(m_texture, srcRect);
+    sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
+
+    // Use explicit alpha blending to respect PNG transparency
+    m_pRenderer->GetBackBuffer()->draw(sprite, sf::RenderStates(sf::BlendAlpha));
+
+    // Update bounds
+    m_boundRect.left = drawX;
+    m_boundRect.top = drawY;
+    m_boundRect.right = drawX + (vertical ? frameRect.width : width);
+    m_boundRect.bottom = drawY + (vertical ? width : frameRect.height);
+
+    m_inUse = false;
+}
+
+void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const SpriteLib::DrawParams& params)
+{
+    Draw(x + shiftX, y + shiftY, frame, params);
+}
+
+int SFMLSprite::GetFrameCount() const
+{
+    return static_cast<int>(m_frames.size());
+}
+
+SpriteLib::SpriteRect SFMLSprite::GetFrameRect(int frame) const
+{
+    if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    {
+        return SpriteLib::SpriteRect{0, 0, 0, 0, 0, 0};
+    }
+
+    const PAKLib::sprite_rect& src = m_frames[frame];
+    SpriteLib::SpriteRect rect;
+    rect.x = src.x;
+    rect.y = src.y;
+    rect.width = src.width;
+    rect.height = src.height;
+    rect.pivotX = src.pivotX;
+    rect.pivotY = src.pivotY;
+    return rect;
+}
+
+void SFMLSprite::GetBoundingRect(int x, int y, int frame, int& left, int& top, int& right, int& bottom)
+{
+    if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    {
+        left = top = right = bottom = 0;
+        return;
+    }
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    left = x + frameRect.pivotX;
+    top = y + frameRect.pivotY;
+    right = left + frameRect.width;
+    bottom = top + frameRect.height;
+}
+
+void SFMLSprite::CalculateBounds(int x, int y, int frame)
+{
+    if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
+    {
+        m_boundRect = SpriteLib::BoundRect{};
+        return;
+    }
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    m_boundRect.left = x + frameRect.pivotX;
+    m_boundRect.top = y + frameRect.pivotY;
+    m_boundRect.right = m_boundRect.left + frameRect.width;
+    m_boundRect.bottom = m_boundRect.top + frameRect.height;
+}
+
+bool SFMLSprite::GetLastDrawBounds(int& left, int& top, int& right, int& bottom) const
+{
+    if (!m_boundRect.IsValid())
+        return false;
+
+    left = m_boundRect.left;
+    top = m_boundRect.top;
+    right = m_boundRect.right;
+    bottom = m_boundRect.bottom;
+    return true;
+}
+
+SpriteLib::BoundRect SFMLSprite::GetBoundRect() const
+{
+    return m_boundRect;
+}
+
+bool SFMLSprite::CheckCollision(int spriteX, int spriteY, int frame, int pointX, int pointY)
+{
+    if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
+        return false;
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    int left = spriteX + frameRect.pivotX;
+    int top = spriteY + frameRect.pivotY;
+    int right = left + frameRect.width;
+    int bottom = top + frameRect.height;
+
+    // Bounding box check (no pixel-perfect collision to save memory)
+    return (pointX >= left && pointX < right && pointY >= top && pointY < bottom);
+}
+
+void SFMLSprite::Preload()
+{
+    if (!m_textureLoaded && !m_imageData.empty())
+    {
+        CreateTexture();
+    }
+}
+
+void SFMLSprite::Unload()
+{
+    // SFML textures don't need explicit unloading
+    // But we can clear the image cache to save memory
+    // Note: Keep m_imageData for potential texture recreation
+}
+
+bool SFMLSprite::IsLoaded() const
+{
+    return m_textureLoaded;
+}
+
+void SFMLSprite::Restore()
+{
+    // SFML textures don't need restoration like DirectDraw surfaces
+    // If needed, recreate from image data
+    if (!m_textureLoaded && !m_imageData.empty())
+    {
+        CreateTexture();
+    }
+}
+
+bool SFMLSprite::IsInUse() const
+{
+    return m_inUse;
+}
+
+uint32_t SFMLSprite::GetLastAccessTime() const
+{
+    return m_lastAccessTime;
+}
+
+void SFMLSprite::SetAlphaDegree(char degree)
+{
+    if (m_alphaDegree != degree && m_alphaEffect)
+    {
+        m_alphaDegree = degree;
+        ApplyAlphaDegree();
+    }
+}
+
+void SFMLSprite::ApplyAlphaDegree()
+{
+    // Alpha degree is now applied at draw time via sprite color
+    // No need to modify the texture
+}

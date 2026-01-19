@@ -5,12 +5,19 @@
 
 #include "RendererFactory.h"
 #include "DDrawRenderer.h"
+#include "DDrawSpriteFactory.h"
+#include "DDrawTextRenderer.h"
+#include "DDrawBitmapFont.h"
 #include "Win32Window.h"
 
 // Static member initialization
 IRenderer* Renderer::s_pRenderer = nullptr;
 RendererType Renderer::s_type = RendererType::DirectDraw;
 IWindow* Window::s_pWindow = nullptr;
+
+// Local statics for text rendering
+static TextLib::DDrawTextRenderer* s_pTextRenderer = nullptr;
+static TextLib::DDrawBitmapFontFactory* s_pBitmapFontFactory = nullptr;
 
 // ============== Renderer Factory Functions ==============
 
@@ -38,6 +45,24 @@ void DestroyGameWindow(IWindow* window)
     delete window;
 }
 
+// ============== Sprite Factory Functions ==============
+
+SpriteLib::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
+{
+    if (!renderer)
+        return nullptr;
+
+    // Get the native DDrawRenderer to access the DXC_ddraw implementation
+    DDrawRenderer* pDDrawRenderer = static_cast<DDrawRenderer*>(renderer);
+    // DDraw uses BMP sprites from SPRITES_BMP folder
+    return new DDrawSpriteFactory(pDDrawRenderer->GetDDrawImpl(), "SPRITES_BMP");
+}
+
+void DestroySpriteFactory(SpriteLib::ISpriteFactory* factory)
+{
+    delete factory;
+}
+
 // ============== Renderer Class Implementation ==============
 
 bool Renderer::Set(RendererType type)
@@ -50,8 +75,23 @@ bool Renderer::Set(RendererType type)
     switch (type)
     {
     case RendererType::DirectDraw:
-        s_pRenderer = new DDrawRenderer();
-        return s_pRenderer != nullptr;
+        {
+            DDrawRenderer* pDDrawRenderer = new DDrawRenderer();
+            s_pRenderer = pDDrawRenderer;
+
+            if (s_pRenderer)
+            {
+                // Create text renderer (will be fully initialized after Init() with DC)
+                s_pTextRenderer = new TextLib::DDrawTextRenderer(pDDrawRenderer->GetDDrawImpl());
+                TextLib::SetTextRenderer(s_pTextRenderer);
+
+                // Create bitmap font factory
+                s_pBitmapFontFactory = new TextLib::DDrawBitmapFontFactory();
+                TextLib::SetBitmapFontFactory(s_pBitmapFontFactory);
+            }
+
+            return s_pRenderer != nullptr;
+        }
 
     // Future renderer types would be handled here
     default:
@@ -66,6 +106,22 @@ IRenderer* Renderer::Get()
 
 void Renderer::Destroy()
 {
+    // Destroy text renderer
+    if (s_pTextRenderer)
+    {
+        TextLib::SetTextRenderer(nullptr);
+        delete s_pTextRenderer;
+        s_pTextRenderer = nullptr;
+    }
+
+    // Destroy bitmap font factory
+    if (s_pBitmapFontFactory)
+    {
+        TextLib::SetBitmapFontFactory(nullptr);
+        delete s_pBitmapFontFactory;
+        s_pBitmapFontFactory = nullptr;
+    }
+
     if (s_pRenderer)
     {
         delete s_pRenderer;
@@ -132,4 +188,20 @@ HWND Window::GetHandle()
 bool Window::IsActive()
 {
     return s_pWindow && s_pWindow->IsOpen() && s_pWindow->IsActive();
+}
+
+void Window::Close()
+{
+    if (s_pWindow)
+    {
+        s_pWindow->Close();
+    }
+}
+
+void Window::SetSize(int width, int height, bool center)
+{
+    if (s_pWindow)
+    {
+        s_pWindow->SetSize(width, height, center);
+    }
 }

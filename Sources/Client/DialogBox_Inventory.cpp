@@ -23,9 +23,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
-	uint16_t* wR = bIsWeapon ? m_pGame->m_wWR : m_pGame->m_wR;
-	uint16_t* wG = bIsWeapon ? m_pGame->m_wWG : m_pGame->m_wG;
-	uint16_t* wB = bIsWeapon ? m_pGame->m_wWB : m_pGame->m_wB;
+	int16_t* wR = bIsWeapon ? m_pGame->m_wWR : m_pGame->m_wR;
+	int16_t* wG = bIsWeapon ? m_pGame->m_wWG : m_pGame->m_wG;
+	int16_t* wB = bIsWeapon ? m_pGame->m_wWB : m_pGame->m_wB;
 
 	if (cItemColor == 0)
 	{

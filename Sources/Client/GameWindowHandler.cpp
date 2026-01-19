@@ -10,6 +10,7 @@
 #include "Game.h"
 #include "InputManager.h"
 #include "RendererFactory.h"
+#include "ISpriteFactory.h"
 
 // Custom message IDs (these should match what's used in the game)
 #define WM_USER_TIMERSIGNAL     (WM_USER + 500)
@@ -76,10 +77,15 @@ void GameWindowHandler::OnActivate(bool active)
         if (m_pGame->m_Renderer != nullptr)
             m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
 
-        if (m_pGame->bCheckImportantFile() == false)
+        // Only check files after game is fully initialized (sprite factory exists)
+        // This prevents false failures during early window activation before bInit completes
+        if (SpriteLib::Sprites::GetFactory() != nullptr)
         {
-            MessageBox(m_pGame->m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
-            PostQuitMessage(0);
+            if (m_pGame->bCheckImportantFile() == false)
+            {
+                MessageBox(m_pGame->m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
+                PostQuitMessage(0);
+            }
         }
     }
 }

@@ -34,7 +34,7 @@ public:
 
     // Set the base path for sprite PAK files
     void SetSpritePath(const std::string& path) { m_spritePath = path; }
-    std::string GetSpritePath() const { return m_spritePath; }
+    std::string GetSpritePath() const override { return m_spritePath; }
 
     // Get the DDraw renderer
     DXC_ddraw* GetDDraw() const { return m_pDDraw; }

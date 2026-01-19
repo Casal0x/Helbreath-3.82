@@ -1,112 +1,80 @@
 # CLAUDE.md
 
-Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (early 2000s codebase).
+Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows.
 
 ## Critical Rules
 
 | Rule | Details |
 |------|---------|
-| **Always build from solution** | Use `Helbreath.sln`, never from `Sources/Client/` or `Sources/Server/` |
-| **Win32 only** | Target x86/Win32 architecture exclusively |
+| **Build from solution** | Use `Helbreath.sln`, never individual project folders |
+| **Win32 only** | Target x86/Win32 exclusively |
 | **No git commits** | Work only in the working tree |
 | **No over-optimization** | Implement only what is requested |
-| **Delete refactored code** | Do not keep old code "for reference" - git has history |
+| **Delete refactored code** | Do not keep old code - git has history |
 | **Build early and often** | Rebuild after each logical change |
-| **Backup before bulk edits** | Create `.bak` files before mass find/replace operations |
+| **Backup before bulk edits** | Create `.bak` files before mass find/replace |
 | **Use Python for file ops** | Prefer Python over PowerShell for text manipulation |
 
 ## Build Commands
 
-**ALWAYS use the full path to batch files (do NOT use `cmd.exe /c "cd && batch"`):**
-
+**ALWAYS use full paths:**
 ```bash
-# Build both Client and Server
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_all.bat"
+# Debug builds
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game_ddraw.bat"   # DDraw client (Debug)
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game_sfml.bat"    # SFML client (Debug)
 
-# Client only
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game.bat"
+# Release builds
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game_release_ddraw.bat"   # DDraw client (Release)
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_game_release_sfml.bat"    # SFML client (Release)
 
-# Server only
-"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_server.bat"
+# Other builds
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_all.bat"    # All projects
+"C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\build_server.bat" # Server only
 ```
-
-Log files are created: `build_all.log`, `build_game.log`, `build_server.log`
-
-**Output:** `Debug\Game.exe`, `Debug\Server.exe` (or `Release\`)
+Logs: `build_*.log` | Output: `Debug\Game.exe`, `Debug-SFML\Game.exe`, `Release\Game.exe`, `Release-SFML\Game.exe`
 
 ## Project Structure
 
-```
-Sources/Client/      - Game client (DirectDraw/DirectInput/DirectSound)
-Sources/Server/      - Game server (networking, AI, world state)
-Dependencies/Shared/ - Shared headers (NetMessages.h, ActionID.h, DynamicObjectID.h)
-Dependencies/Client/ - DirectX SDK headers and libs
-Binaries/Game/       - Client configs and assets
-Binaries/Server/     - Server configs
-PLANS/               - Implementation plans for significant changes
-```
+| Path | Description |
+|------|-------------|
+| `Sources/Client/` | Game client (links DDrawEngine or SFMLEngine) |
+| `Sources/Server/` | Game server (networking, AI, world state) |
+| `Sources/DDrawEngine/` | DirectDraw renderer (static lib) |
+| `Sources/SFMLEngine/` | SFML renderer (static lib) |
+| `Dependencies/Shared/` | Shared headers (NetMessages.h, ActionID.h) |
+| `Dependencies/Client/` | DirectX SDK headers and libs |
+| `Dependencies/SFML/` | SFML 3.x headers and libs |
+| `Binaries/` | Client/Server configs and assets |
+| `PLANS/` | Implementation plans |
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `Sources/Client/Game.cpp` (~1.7MB) | Client game loop, rendering, UI |
-| `Sources/Server/Game.cpp` (~2.1MB) | Server logic, entity management |
+| `Sources/Client/Game.cpp` | Client game loop, rendering, UI |
+| `Sources/Server/Game.cpp` | Server logic, entity management |
 | `Dependencies/Shared/NetMessages.h` | Network protocol (must match both sides) |
-| `XSocket.cpp/h` | Async socket wrapper (both sides) |
+| `Sources/*/IRenderer.h` | Graphics abstraction interface |
 
 ## Code Style
 
 - **Naming:** Hungarian notation (`m_` members, `p` pointers, `i` int, `sz` strings)
 - **Classes:** `C` prefix, PascalCase (`CGame`, `CClient`, `CNpc`)
-- **Constants:** `DEF_` prefix, ALL_CAPS
-- **Formatting:** Tabs, Allman braces
-- **Memory:** Manual `new`/`delete`, no smart pointers
-- **Headers:** `#pragma once`
+- **Constants:** `DEF_` prefix, ALL_CAPS | **Formatting:** Tabs, Allman braces
+- **Memory:** Manual `new`/`delete` | **Headers:** `#pragma once`
 
 ## Architecture
 
-### Client (Game)
-- `CGame` - Monolithic class: rendering, input, network, UI
-- `XSocket` - Async sockets via Windows message pump (`WM_USER_GAMESOCKETEVENT`)
-- DirectX 7/8: DirectDraw, DirectInput, DirectSound
+**Client:** `CGame` core class with graphics abstraction (`IRenderer`/`ISprite`/`ITexture`).
+Two renderer backends: `DDrawEngine` (legacy DirectDraw 7) and `SFMLEngine` (modern SFML 3.x).
+`XSocket` for async networking via Windows message pump.
 
-### Server
-- `CGame` - Central coordinator for all systems
-- `CClient` - Player session (inventory, stats, skills, connection)
-- `CNpc` - NPC behavior and AI
-- `CMap` - Tile-based world, collision, visibility
-- ODBC for database persistence
+**Server:** `CGame` coordinator, `CClient` sessions, `CNpc` AI, `CMap` tile world. ODBC persistence.
 
-### Network Protocol
-- Binary packed structures with message IDs in `NetMessages.h`
-- Both sides must have identical definitions
-- When changing: update both client and server, rebuild both
+**Network:** Binary packed structures in `NetMessages.h`. Update both sides when changing protocol.
 
 ## Workflow
 
 1. **Before significant changes:** Write plan in `PLANS/`
 2. **Adding files:** Update `.vcxproj` to include new source/header files
-3. **After completing TODO items:** Update `DONE.md`, mark complete in `TODO.md`
-4. **Large changes:** Pause after successful build, ask user to test manually
-
-## Testing
-
-No automated tests. Manual only:
-- Run server then client using configs in `Binaries/`
-- For network changes, verify message symmetry between client and server
-
-## Server Limits
-
-```cpp
-DEF_MAXCLIENTS          2000
-DEF_MAXNPCS             5000
-DEF_MAXMAPS             100
-DEF_MAXITEMTYPES        5000
-DEF_MAXDYNAMICOBJECTS   60000
-```
-
-## Known Issues
-
-- 16 header files duplicated between Client and Server (see `TODO.md`)
-- Korean comments in server code
+3. **Large changes:** Pause after successful build, ask user to test manually

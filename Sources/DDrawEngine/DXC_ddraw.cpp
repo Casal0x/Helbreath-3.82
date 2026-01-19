@@ -717,7 +717,8 @@ void DXC_ddraw::_ReleaseBackBufferDC()
 void DXC_ddraw::DrawText(LPRECT pRect, const char *pString, COLORREF rgb)
 {
 	SetTextColor(m_hDC, rgb);
-	::DrawText(m_hDC, pString, strlen(pString), pRect, DT_CENTER | DT_NOCLIP | DT_WORDBREAK | DT_NOPREFIX);//v2.15
+	// Use DrawTextA directly since the DrawText macro is undefined to avoid naming conflicts
+	::DrawTextA(m_hDC, pString, static_cast<int>(strlen(pString)), pRect, DT_CENTER | DT_NOCLIP | DT_WORDBREAK | DT_NOPREFIX);//v2.15
 }
 
 HRESULT DXC_ddraw::InitFlipToGDI(HWND hWnd)

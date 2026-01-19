@@ -1,0 +1,36 @@
+{
+    "audio": {
+        "musicEnabled": true,
+        "musicVolume": 100,
+        "soundEnabled": true,
+        "soundVolume": 100
+    },
+    "display": {
+        "detailLevel": 2,
+        "dialogTransparency": false,
+        "fullscreen": false,
+        "runningMode": false,
+        "showFps": false,
+        "showLatency": false,
+        "zoomMap": true
+    },
+    "server": {
+        "address": "127.0.0.1",
+        "gamePort": 9907,
+        "port": 2500
+    },
+    "shortcuts": {
+        "magic": -1,
+        "slots": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+        ]
+    },
+    "window": {
+        "height": 480,
+        "width": 640
+    }
+}

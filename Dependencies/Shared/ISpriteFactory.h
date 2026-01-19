@@ -49,6 +49,13 @@ public:
     // Get the number of sprites in a PAK file
     // Returns 0 if the file cannot be opened or is invalid
     virtual int GetSpriteCount(const std::string& pakName) const = 0;
+
+    //------------------------------------------------------------------
+    // Path Configuration
+    //------------------------------------------------------------------
+
+    // Get the base path for sprite PAK files (e.g., "SPRITES_PNG" or "SPRITES_BMP")
+    virtual std::string GetSpritePath() const = 0;
 };
 
 //------------------------------------------------------------------
@@ -73,6 +80,9 @@ public:
 
     // PAK file information
     static int GetSpriteCount(const std::string& pakName);
+
+    // Path configuration
+    static std::string GetSpritePath();
 
 private:
     static ISpriteFactory* s_pFactory;

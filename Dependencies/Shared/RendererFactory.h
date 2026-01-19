@@ -8,11 +8,13 @@
 
 #include "IRenderer.h"
 #include "IWindow.h"
+#include "ISpriteFactory.h"
 
 // Available renderer backends
 enum class RendererType
 {
     DirectDraw,     // DirectDraw 7 renderer (DDrawEngine)
+    SFML,           // SFML 3.0 renderer (SFMLEngine)
     // Future: OpenGL, Direct3D9, Direct3D11, Vulkan, etc.
 };
 
@@ -29,6 +31,13 @@ IWindow* CreateGameWindow();
 
 // Destroys a window instance
 void DestroyGameWindow(IWindow* window);
+
+// Creates a sprite factory instance for the current renderer
+// The renderer must be initialized first
+SpriteLib::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer);
+
+// Destroys a sprite factory instance
+void DestroySpriteFactory(SpriteLib::ISpriteFactory* factory);
 
 // Renderer management class - provides static access to the active renderer
 class Renderer
@@ -75,6 +84,12 @@ public:
 
     // Convenience: Check if window is open and active
     static bool IsActive();
+
+    // Request window close (triggers close event, works for both DDraw and SFML)
+    static void Close();
+
+    // Resize the window
+    static void SetSize(int width, int height, bool center = true);
 
 private:
     static IWindow* s_pWindow;

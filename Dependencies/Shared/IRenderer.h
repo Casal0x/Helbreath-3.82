@@ -8,6 +8,11 @@
 
 #include <windows.h>
 #include <cstdint>
+
+// Undefine Windows DrawText macro to avoid naming conflict with IRenderer::DrawText
+#ifdef DrawText
+#undef DrawText
+#endif
 #include "RenderConstants.h"
 
 // Forward declarations

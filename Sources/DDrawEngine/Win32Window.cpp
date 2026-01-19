@@ -123,6 +123,15 @@ bool Win32Window::IsOpen() const
     return m_open;
 }
 
+void Win32Window::Close()
+{
+    if (m_hWnd)
+    {
+        // Post WM_CLOSE to trigger proper shutdown sequence
+        PostMessage(m_hWnd, WM_CLOSE, 0, 0);
+    }
+}
+
 HWND Win32Window::GetHandle() const
 {
     return m_hWnd;
@@ -152,6 +161,31 @@ void Win32Window::SetFullscreen(bool fullscreen)
 {
     // TODO: Implement fullscreen toggle
     m_fullscreen = fullscreen;
+}
+
+void Win32Window::SetSize(int width, int height, bool center)
+{
+    if (width <= 0 || height <= 0)
+        return;
+
+    m_width = width;
+    m_height = height;
+
+    if (m_hWnd)
+    {
+        if (center)
+        {
+            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+            int posX = (screenWidth - width) / 2;
+            int posY = (screenHeight - height) / 2;
+            SetWindowPos(m_hWnd, HWND_TOP, posX, posY, width, height, SWP_SHOWWINDOW);
+        }
+        else
+        {
+            SetWindowPos(m_hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_SHOWWINDOW);
+        }
+    }
 }
 
 void Win32Window::Show()

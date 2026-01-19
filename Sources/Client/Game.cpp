@@ -13,9 +13,8 @@
 #include <cstdio>
 #include <windows.h>
 
-// Renderer - include DXC_ddraw.h for CSprite compatibility (takes DXC_ddraw*)
-#include "DXC_ddraw.h"
-#include "DDrawRenderer.h"
+// Renderer
+#include "RendererFactory.h"
 #include "SpriteLoader.h"
 
 // Manager singletons
@@ -170,6 +169,12 @@ CGame::CGame()
 	for (i = 0; i < DEF_MAXSPRITES; i++) m_pSprite[i] = 0;
 	for (i = 0; i < DEF_MAXTILES; i++) m_pTileSpr[i] = 0;
 	for (i = 0; i < DEF_MAXEFFECTSPR; i++) m_pEffectSpr[i] = 0;
+
+	// Initialize bitmap font pointers
+	m_pBitmapFont1 = nullptr;
+	m_pBitmapFont2 = nullptr;
+	m_pNumFont = nullptr;
+	for (i = 0; i < 3; i++) m_pSprFont3[i] = nullptr;
 
 	for (i = 0; i < 5000; i++) m_pItemConfigList[i] = 0;
 
@@ -350,6 +355,18 @@ CGame::CGame()
 
 CGame::~CGame()
 {
+	// Clean up bitmap fonts (before renderer is destroyed)
+	delete m_pBitmapFont1;
+	m_pBitmapFont1 = nullptr;
+	delete m_pBitmapFont2;
+	m_pBitmapFont2 = nullptr;
+	delete m_pNumFont;
+	m_pNumFont = nullptr;
+	for (int i = 0; i < 3; i++) {
+		delete m_pSprFont3[i];
+		m_pSprFont3[i] = nullptr;
+	}
+
 	Renderer::Destroy();
 	m_Renderer = nullptr;
 }
@@ -413,6 +430,31 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_bIsHideLocalCursor = false;
 	m_cEnterCheck = m_cTabCheck = m_cLeftArrowCheck = 0;
 
+	// Create and initialize the renderer based on build configuration
+#if defined(SFML_ENGINE)
+	if (!Renderer::Set(RendererType::SFML))
+#elif defined(DDRAW_ENGINE)
+	if (!Renderer::Set(RendererType::DirectDraw))
+#else
+#error "No renderer engine defined. Define SFML_ENGINE or DDRAW_ENGINE."
+#endif
+	{
+		MessageBox(m_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		return false;
+	}
+	m_Renderer = Renderer::Get();
+	if (m_Renderer->Init(m_hWnd) == false)
+	{
+		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		return false;
+	}
+
+	// Initialize sprite factory and register it globally
+	m_pSpriteFactory = CreateSpriteFactory(m_Renderer);
+	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
+
+	InputManager::Get().Initialize(m_hWnd);
+
 	if (bCheckImportantFile() == false)
 	{
 		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
@@ -438,26 +480,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		return false;
 	}
 
-	// Create and initialize the renderer
-	if (!Renderer::Set(RendererType::DirectDraw))
-	{
-		MessageBox(m_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-	m_Renderer = Renderer::Get();
-	if (m_Renderer->Init(m_hWnd) == false)
-	{
-		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-
-	// Initialize sprite factory and register it globally
-	DDrawRenderer* pDDrawRenderer = static_cast<DDrawRenderer*>(m_Renderer);
-	m_pSpriteFactory = new DDrawSpriteFactory(pDDrawRenderer->GetDDrawImpl());
-	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
-
-	InputManager::Get().Initialize(m_hWnd);
-
 	// Load early interface sprites using batch loading
 	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = SpriteLib::Sprites::Create("New-Dialog", 0, false);
 
@@ -474,6 +496,50 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = loader.get_sprite(0, false);
 		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = loader.get_sprite(1, false);
 	});
+
+	// Create bitmap fonts from the loaded sprites
+	// Font 1: Characters '!' (33) to 'z' (122), uses __cSpace for widths
+	if (m_pSprite[DEF_SPRID_INTERFACE_FONT1])
+	{
+		// __cSpace array defined near PutString_SprFont contains character widths
+		static const int font1Widths[] = {
+			8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8, 8,6,8,7,8,8,9,10,9,7, 8,8,8,8,8, 8,8,
+			15,16,12,17,14,15,14,16,10,13, 19,10,17,17,15,14,15,16,13,17, 16,16,20,17,16,14,
+			8,8,8,8,8,8, 8,6,7,8,7,7,7,7,4,7,7, 4,11,7,8,8,7,8,6,5,8,9,14,8,9,8, 8,8,8,8,
+			8,8,8,8,8,8,8
+		};
+		TextLib::FontSpacing spacing;
+		spacing.charWidths.assign(font1Widths, font1Widths + sizeof(font1Widths) / sizeof(font1Widths[0]));
+		spacing.defaultWidth = 5;
+		m_pBitmapFont1 = TextLib::CreateBitmapFont(m_pSprite[DEF_SPRID_INTERFACE_FONT1].get(), '!', 'z', 0, spacing);
+	}
+
+	// Font 2: Characters ' ' (32) to '~' (126), uses dynamic spacing from sprite frames
+	if (m_pSprite[DEF_SPRID_INTERFACE_FONT2])
+	{
+		m_pBitmapFont2 = TextLib::CreateBitmapFontDynamic(m_pSprite[DEF_SPRID_INTERFACE_FONT2].get(), ' ', '~', 0);
+	}
+
+	// Number font: Digits '0' to '9', frame offset 6 in ADDINTERFACE sprite
+	if (m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE])
+	{
+		static const int numFontWidths[] = { 6, 4, 6, 6, 6, 6, 6, 6, 6, 6 };
+		TextLib::FontSpacing numSpacing;
+		numSpacing.charWidths.assign(numFontWidths, numFontWidths + 10);
+		numSpacing.defaultWidth = 6;
+		m_pNumFont = TextLib::CreateBitmapFont(m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE].get(), '0', '9', 6, numSpacing);
+	}
+
+	// SPRFONTS2: Characters ' ' (32) to '~' (126), with 3 different sizes (types 0, 1, 2)
+	// Each type has 95 frames offset
+	if (m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2])
+	{
+		for (int type = 0; type < 3; type++)
+		{
+			m_pSprFont3[type] = TextLib::CreateBitmapFontDynamic(
+				m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95 * type);
+		}
+	}
 
 	m_stMCursor.sX = 0;
 	m_stMCursor.sY = 0;
@@ -492,34 +558,34 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_cMenuDirCnt = 0;
 	m_cMenuFrame = 0;
 
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[1], &m_wWG[1], &m_wWB[1]); // Light-blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[2], &m_wWG[2], &m_wWB[2]); // light-blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 70, 80), &m_wWR[3], &m_wWG[3], &m_wWB[3]); // light-blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(70, 100, 70), &m_wWR[4], &m_wWG[4], &m_wWB[4]); // Green
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(130, 90, 10), &m_wWR[5], &m_wWG[5], &m_wWB[5]); // Critical
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(42, 53, 111), &m_wWR[6], &m_wWG[6], &m_wWB[6]); // Heavy-blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(145, 145, 145), &m_wWR[7], &m_wWG[7], &m_wWB[7]); // White
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(120, 100, 120), &m_wWR[8], &m_wWG[8], &m_wWB[8]); // Violet
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(75, 10, 10), &m_wWR[9], &m_wWG[9], &m_wWB[9]); // Heavy-Red
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(135, 104, 30), &m_wR[10], &m_wG[10], &m_wB[10]);	// Gold, buggy
+	// Weapon colors (m_wW* arrays) - 8-bit RGBA format (0-255 range)
+	m_wWR[1] = 64;   m_wWG[1] = 64;   m_wWB[1] = 80;    // Light-blue
+	m_wWR[2] = 64;   m_wWG[2] = 64;   m_wWB[2] = 80;    // Light-blue
+	m_wWR[3] = 64;   m_wWG[3] = 64;   m_wWB[3] = 80;    // Light-blue
+	m_wWR[4] = 64;   m_wWG[4] = 96;   m_wWB[4] = 64;    // Green
+	m_wWR[5] = 128;  m_wWG[5] = 88;   m_wWB[5] = 8;     // Critical
+	m_wWR[6] = 40;   m_wWG[6] = 48;   m_wWB[6] = 104;   // Heavy-blue
+	m_wWR[7] = 144;  m_wWG[7] = 144;  m_wWB[7] = 144;   // White
+	m_wWR[8] = 120;  m_wWG[8] = 96;   m_wWB[8] = 120;   // Violet
+	m_wWR[9] = 72;   m_wWG[9] = 8;    m_wWB[9] = 8;     // Heavy-Red
 
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(200 / 2, 200 / 2, 200 / 2), &m_wR[0], &m_wG[0], &m_wB[0]);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0xC0 / 2), &m_wR[1], &m_wG[1], &m_wB[1]); // Indigo Blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(79, 79, 62), &m_wR[2], &m_wG[2], &m_wB[2]); // Custom-Weapon Color
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(135, 104, 30), &m_wR[3], &m_wG[3], &m_wB[3]); // Gold
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(255 / 2, 36 / 2, 0), &m_wR[4], &m_wG[4], &m_wB[4]); // Crimson
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(10, 60, 10), &m_wR[5], &m_wG[5], &m_wB[5]); // Green
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x50 / 2, 0x50 / 2, 0x50 / 2), &m_wR[6], &m_wG[6], &m_wB[6]); // Gray
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x5F / 2, 0x9E / 2, 0xA0 / 2), &m_wR[7], &m_wG[7], &m_wB[7]); // Aqua
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xFF / 2, 0x69 / 2, 0xB4 / 2), &m_wR[8], &m_wG[8], &m_wB[8]); // Pink
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(90, 60, 90), &m_wR[9], &m_wG[9], &m_wB[9]); // Violet
-
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0, 35, 60), &m_wR[10], &m_wG[10], &m_wB[10]); // Blue
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xD2 / 2, 0xB4 / 2, 0x8C / 2), &m_wR[11], &m_wG[11], &m_wB[11]); // Tan
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0xBD / 2, 0xB7 / 2, 0x6B / 2), &m_wR[12], &m_wG[12], &m_wB[12]); // Khaki
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(85, 85, 8), &m_wR[13], &m_wG[13], &m_wB[13]); // Yellow
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(75, 10, 10), &m_wR[14], &m_wG[14], &m_wB[14]); // Red
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0x30, 0x30, 0x30), &m_wR[15], &m_wG[15], &m_wB[15]); // Black
+	// Equipment/item colors (m_w* arrays) - 8-bit RGBA format (0-255 range)
+	m_wR[0] = 96;    m_wG[0] = 96;    m_wB[0] = 96;     // Base gray
+	m_wR[1] = 40;    m_wG[1] = 40;    m_wB[1] = 96;     // Indigo Blue
+	m_wR[2] = 72;    m_wG[2] = 72;    m_wB[2] = 56;     // Custom-Weapon Color
+	m_wR[3] = 128;   m_wG[3] = 104;   m_wB[3] = 24;     // Gold
+	m_wR[4] = 120;   m_wG[4] = 16;    m_wB[4] = 0;      // Crimson
+	m_wR[5] = 8;     m_wG[5] = 56;    m_wB[5] = 8;      // Green
+	m_wR[6] = 40;    m_wG[6] = 40;    m_wB[6] = 40;     // Gray
+	m_wR[7] = 40;    m_wG[7] = 72;    m_wB[7] = 80;     // Aqua
+	m_wR[8] = 120;   m_wG[8] = 48;    m_wB[8] = 88;     // Pink
+	m_wR[9] = 88;    m_wG[9] = 56;    m_wB[9] = 88;     // Violet
+	m_wR[10] = 0;    m_wG[10] = 32;   m_wB[10] = 56;    // Blue
+	m_wR[11] = 104;  m_wG[11] = 88;   m_wB[11] = 64;    // Tan
+	m_wR[12] = 88;   m_wG[12] = 88;   m_wB[12] = 48;    // Khaki
+	m_wR[13] = 80;   m_wG[13] = 80;   m_wB[13] = 8;     // Yellow
+	m_wR[14] = 72;   m_wG[14] = 8;    m_wB[14] = 8;     // Red
+	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
 
 
@@ -2669,8 +2735,6 @@ void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEf
 					}
 				}
 			}
-			printf("[MakeSprite] %s: pak=%zu, requested=%d, loaded=%zu, withFrames=%zu\n",
-				   FileName, totalInPak, sCount, loaded, withFrames);
 		});
 	} catch (const std::exception& e) {
 		printf("[MakeSprite] FAILED %s: %s\n", FileName, e.what());
@@ -2682,7 +2746,6 @@ void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEf
 void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
 	try {
-		size_t loaded = 0;
 		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
 			size_t totalInPak = loader.get_sprite_count();
 			size_t toLoad = static_cast<size_t>(sCount);
@@ -2690,9 +2753,7 @@ void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaE
 
 			for (size_t i = 0; i < toLoad; i++) {
 				m_pTileSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
-				if (m_pTileSpr[i + sStart]) loaded++;
 			}
-			printf("[MakeTileSpr] %s: pak=%zu, requested=%d, loaded=%zu\n", FileName, totalInPak, sCount, loaded);
 		});
 	} catch (const std::exception& e) {
 		printf("[MakeTileSpr] FAILED %s: %s\n", FileName, e.what());
@@ -2702,7 +2763,6 @@ void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaE
 void CGame::MakeEffectSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
 	try {
-		size_t loaded = 0;
 		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
 			size_t totalInPak = loader.get_sprite_count();
 			size_t toLoad = static_cast<size_t>(sCount);
@@ -2710,9 +2770,7 @@ void CGame::MakeEffectSpr(char* FileName, short sStart, short sCount, bool bAlph
 
 			for (size_t i = 0; i < toLoad; i++) {
 				m_pEffectSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
-				if (m_pEffectSpr[i + sStart]) loaded++;
 			}
-			printf("[MakeEffectSpr] %s: pak=%zu, requested=%d, loaded=%zu\n", FileName, totalInPak, sCount, loaded);
 		});
 	} catch (const std::exception& e) {
 		printf("[MakeEffectSpr] FAILED %s: %s\n", FileName, e.what());
@@ -4737,136 +4795,67 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	}
 }
 
-static char __cSpace[] = { 8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8, 8,6,8,7,8,8,9,10,9,7, 8,8,8,8,8, 8,8,
-						  15,16,12,17,14,15,14,16,10,13, 19,10,17,17,15,14,15,16,13,17, 16,16,20,17,16,14,
-						  8,8,8,8,8,8,	8,6,7,8,7,7,7,7,4,7,7,  4,11,7,8,8,7,8,6,5,8,9,14,8,9,8, 8,8,8,8,
-						  8,8,8,8,8,8,8 };
 void CGame::PutString_SprFont(int iX, int iY, char* pStr, short sR, short sG, short sB)
 {
-	int iXpos;
-	uint32_t iCnt;
-	uint32_t dwTime = G_dwGlobalTime;
-	char  cTmpStr[100];
+	if (!m_pBitmapFont1) return;
 
-	std::memset(cTmpStr, 0, sizeof(cTmpStr));
-	strcpy(cTmpStr, pStr);
-	iXpos = iX;
-	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
-		if ((cTmpStr[iCnt] >= 33) && (cTmpStr[iCnt] <= 122)) {
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(sR + 11, sG + 7, sB + 6));
-			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33);
-			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(sR, sG, sB));
-			iXpos += __cSpace[cTmpStr[iCnt] - 33];
-		}
-		else iXpos += 5;
-	}
+	// Original behavior: draw highlight at +1,0 then main text at 0,0
+	// Uses 8-bit RGB values - the bitmap font handles renderer-specific conversion
+	// Highlight is slightly brighter than main text
+	short hR = (sR + 90 > 255) ? 255 : sR + 90;
+	short hG = (sG + 55 > 255) ? 255 : sG + 55;
+	short hB = (sB + 50 > 255) ? 255 : sB + 50;
+	m_pBitmapFont1->DrawText(iX + 1, iY, pStr, TextLib::BitmapTextParams::ColorReplace(hR, hG, hB));
+
+	// Main text
+	m_pBitmapFont1->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
 }
 
 void CGame::PutString_SprFont2(int iX, int iY, char* pStr, short sR, short sG, short sB)
 {
-	int iXpos, iR, iG, iB;
-	uint32_t iCnt;
-	uint32_t dwTime = G_dwGlobalTime;
-	char  cTmpStr[200];
+	if (!m_pBitmapFont1) return;
 
-	static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->ColorTransferRGB(RGB(sR, sG, sB), &iR, &iG, &iB);
-
-	std::memset(cTmpStr, 0, sizeof(cTmpStr));
-	strcpy(cTmpStr, pStr);
-
-	iXpos = iX;
-	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
-		if ((cTmpStr[iCnt] >= 33) && (cTmpStr[iCnt] <= 122)) {
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY, cTmpStr[iCnt] - 33);
-			m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 33);
-			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33);
-			else m_pSprite[DEF_SPRID_INTERFACE_FONT1]->Draw(iXpos, iY, cTmpStr[iCnt] - 33, SpriteLib::DrawParams::Tint(iR, iG, iB));
-			iXpos += __cSpace[cTmpStr[iCnt] - 33];
-		}
-		else iXpos += 5;
-	}
+	// Draw shadows using WithShadow() which handles shadow internally
+	// Uses 8-bit RGB values - the bitmap font handles renderer-specific conversion
+	m_pBitmapFont1->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplaceWithShadow(sR, sG, sB));
 }
 
 void CGame::PutString_SprFont3(int iX, int iY, char* pStr, short sR, short sG, short sB, bool bTrans, int iType)
 {
-	int iXpos, iAdd;
-	uint32_t iCnt;
-	uint32_t dwTime = G_dwGlobalTime;
-	char  cTmpStr[128];
-
-	std::memset(cTmpStr, 0, sizeof(cTmpStr));
-	strcpy(cTmpStr, pStr);
+	TextLib::IBitmapFont* pFont = nullptr;
 
 	if (iType != -1) {
-		iAdd = 95 * iType;
-		iXpos = iX;
-		for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
-			if ((cTmpStr[iCnt] >= 32) && (cTmpStr[iCnt] <= 126)) {
-
-				if (bTrans == false) {
-					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
-					m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
-					if ((sR == 0) && (sG == 0) && (sB == 0))
-						m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd);
-					else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::Tint(sR, sG, sB));
-
-				}
-				else m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::TintedAlpha(sR, sG, sB, 0.7f));
-
-				iXpos += m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2]->GetFrameRect(cTmpStr[iCnt] - 32 + iAdd).width;
-			}
-			else iXpos += 5;
-		}
+		// Use SPRFONTS2 with type offset (0, 1, or 2)
+		if (iType >= 0 && iType < 3)
+			pFont = m_pSprFont3[iType];
 	}
 	else {
-		iAdd = 0;
-		iXpos = iX;
-		for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++) {
-			if ((cTmpStr[iCnt] >= 32) && (cTmpStr[iCnt] <= 126)) {
+		// Use FONT2
+		pFont = m_pBitmapFont2;
+	}
 
-				if (bTrans == false) {
-					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
-					m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 32 + iAdd);
-					if ((sR == 0) && (sG == 0) && (sB == 0))
-						m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd);
-					else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::Tint(sR, sG, sB));
+	if (!pFont) return;
 
-				}
-				else m_pSprite[DEF_SPRID_INTERFACE_FONT2]->Draw(iXpos, iY, cTmpStr[iCnt] - 32 + iAdd, SpriteLib::DrawParams::TintedAlpha(sR, sG, sB, 0.7f));
-
-				iXpos += m_pSprite[DEF_SPRID_INTERFACE_FONT2]->GetFrameRect(cTmpStr[iCnt] - 32 + iAdd).width;
-			}
-			else iXpos += 5;
-		}
+	if (bTrans == false) {
+		// Draw shadows (black, offset by 1 pixel)
+		pFont->DrawText(iX, iY + 1, pStr, TextLib::BitmapTextParams::ColorReplace(0, 0, 0));
+		pFont->DrawText(iX + 1, iY + 1, pStr, TextLib::BitmapTextParams::ColorReplace(0, 0, 0));
+		// Draw main text
+		pFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
+	}
+	else {
+		// Transparent mode - no shadow, with alpha
+		pFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplaceWithAlpha(sR, sG, sB, 0.7f));
 	}
 }
 
-static char __cSpace2[] = { 6,4,6,6,6,6,6,6,6,6,6 }; //{8,6,9,8,8,9,8,8,8,8};
 void CGame::PutString_SprNum(int iX, int iY, char* pStr, short sR, short sG, short sB)
 {
-	int iXpos;
-	unsigned char iCnt;
-	uint32_t dwTime = G_dwGlobalTime;
-	char  cTmpStr[200];
-	uint16_t wR, wG, wB;
-	std::memset(cTmpStr, 0, sizeof(cTmpStr));
-	strcpy(cTmpStr, pStr);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(sR, sG, sB), &wR, &wG, &wB);
-	iXpos = iX;
-	for (iCnt = 0; iCnt < strlen(cTmpStr); iCnt++)
-	{
-		if ((cTmpStr[iCnt] >= 0x30) && (cTmpStr[iCnt] <= 0x39))
-		{
-			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos + 2, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
-			m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos + 1, iY + 1, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
-			if ((sR == 0) && (sG == 0) && (sB == 0))
-				m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::Alpha(0.5f));
-			else m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(iXpos, iY, cTmpStr[iCnt] - 0x30 + 6, SpriteLib::DrawParams::TintedAlpha(wR, wG, wB, 0.7f));
-			iXpos += __cSpace2[cTmpStr[iCnt] - 0x30];
-		}
-	}
+	if (!m_pNumFont) return;
+
+	// Use the IBitmapFont interface with ColorReplace - direct RGB values
+	// Shadows are handled by caller making separate calls at offset positions
+	m_pNumFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
 }
 
 void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC)
@@ -5097,7 +5086,9 @@ bool CGame::bCheckImportantFile()
 	CloseHandle(hFile);
 #endif
 
-	hFile = CreateFile("SPRITES\\TREES1.PAK", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
+	// Use the sprite factory's configured path
+	std::string spritePath = SpriteLib::Sprites::GetSpritePath() + "\\TREES1.PAK";
+	hFile = CreateFile(spritePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (hFile == INVALID_HANDLE_VALUE) return false;
 
 	//	// FileSize : 1846406.... Anti Tree1.pak hack....inutile ca peut se modifier sans changer la taille!
@@ -11784,7 +11775,7 @@ void CGame::ChatMsgHandler(char* pData)
 	short sCheckByte = 0;
 	while (bFlag == false)
 	{
-		iLoc = CMisc::iGetTextLengthLoc(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_hDC, cMsg, 305);
+		iLoc = CMisc::iGetTextLengthLoc(m_Renderer->GetTextDC(), cMsg, 305);
 		for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
 		if (iLoc == 0)
 		{
@@ -11887,7 +11878,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 		m_bIsRedrawPDBGS = false;
 		m_iPDBGSdivX = sDivX;
 		m_iPDBGSdivY = sDivY;
-		SetRect(&static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
+		m_Renderer->SetClipArea(0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
 		indexY = sDivY + m_pMapData->m_sPivotY;
 		for (iy = -sModY; iy < LOGICAL_MAX_Y + 48; iy += 32) // LOGICAL_HEIGHT 
 		{
@@ -11896,16 +11887,16 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 			{
 				sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
 				sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->DrawToSurface(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpPDBGS, ix - 16 + sModX, iy - 16 + sModY, sSprFrame, SpriteLib::DrawParams::NoColorKey());
+				m_pTileSpr[sSpr]->DrawToSurface(m_Renderer->GetPDBGSNative(), ix - 16 + sModX, iy - 16 + sModY, sSprFrame, SpriteLib::DrawParams::NoColorKey());
 				indexX++;
 			}
 			indexY++;
 		}
-		SetRect(&static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_rcClipArea, 0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+		m_Renderer->SetClipArea(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
 	}
 	RECT rcRect;
 	SetRect(&rcRect, sModX, sModY, LOGICAL_WIDTH + sModX, LOGICAL_HEIGHT + sModY); // our fictitious sprite bitmap is
-	static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpBackB4->BltFast(0, 0, static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpPDBGS, &rcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
+	m_Renderer->BltBackBufferFromPDBGS(&rcRect);
 
 	// Grid overlay removed.
 
@@ -14705,7 +14696,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		if (bIsPreDC == false)
 			m_Renderer->BeginTextBatch();
 
-		GetTextExtentPoint32(static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_hDC, cMsg, strlen(cMsg), &Size);
+		GetTextExtentPoint32(m_Renderer->GetTextDC(), cMsg, strlen(cMsg), &Size);
 
 		switch (Size.cx / 160) {
 		case 0:
@@ -15799,6 +15790,16 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 	WORD* pDst;
 
 	if ((x0 == x1) && (y0 == y1)) return;
+
+	// Get buffer access and transparency tables via interface
+	int pitch = 0;
+	uint16_t* pBuffer = m_Renderer->LockBackBuffer(&pitch);
+	if (!pBuffer) return;
+
+	const long (*transRB100)[64] = m_Renderer->GetTransTableRB100();
+	const long (*transG100)[64] = m_Renderer->GetTransTableG100();
+	int pixelFormat = m_Renderer->GetPixelFormat();
+
 	error = 0;
 	iResultX = x0;
 	iResultY = y0;
@@ -15834,19 +15835,19 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
-				switch (m_Renderer->GetPixelFormat()) {
+				pDst = (WORD*)pBuffer + iResultX + (iResultY * pitch);
+				switch (pixelFormat) {
 				case 1:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)transG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)transRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)transG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)transRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15865,25 +15866,27 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
-				switch (m_Renderer->GetPixelFormat()) {
+				pDst = (WORD*)pBuffer + iResultX + (iResultY * pitch);
+				switch (pixelFormat) {
 				case 1:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB100[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)transG100[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)transRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG100[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB100[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB100[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)transG100[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)transRB100[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
 			}
 		}
 	}
+
+	m_Renderer->UnlockBackBuffer();
 }
 
 
@@ -15894,6 +15897,15 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 	WORD* pDst;
 	if ((x0 == x1) && (y0 == y1)) return;
 
+	// Get buffer access and transparency tables via interface
+	int pitch = 0;
+	uint16_t* pBuffer = m_Renderer->LockBackBuffer(&pitch);
+	if (!pBuffer) return;
+
+	const long (*transRB50)[64] = m_Renderer->GetTransTableRB50();
+	const long (*transG50)[64] = m_Renderer->GetTransTableG50();
+	int pixelFormat = m_Renderer->GetPixelFormat();
+
 	error = 0;
 	iResultX = x0;
 	iResultY = y0;
@@ -15929,19 +15941,19 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultX += x_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
-				switch (m_Renderer->GetPixelFormat()) {
+				pDst = (WORD*)pBuffer + iResultX + ((iResultY) * pitch);
+				switch (pixelFormat) {
 				case 1:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)transG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)transRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)transG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)transRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
@@ -15960,25 +15972,27 @@ void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 			}
 			iResultY += y_inc;
 			if ((iResultX >= 0) && (iResultX < LOGICAL_MAX_X) && (iResultY >= 0) && (iResultY < LOGICAL_MAX_Y)) {
-				pDst = (WORD*)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_pBackB4Addr + iResultX + ((iResultY)*static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_sBackB4Pitch);
-				switch (m_Renderer->GetPixelFormat()) {
+				pDst = (WORD*)pBuffer + iResultX + ((iResultY) * pitch);
+				switch (pixelFormat) {
 				case 1:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0xF800) >> 11][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x7E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB50[(pDst[0] & 0xF800) >> 11][iR];
+					dstG = (int)transG50[(pDst[0] & 0x7E0) >> 5][iG];
+					dstB = (int)transRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 11) | (dstG << 5) | dstB);
 					break;
 
 				case 2:
-					dstR = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x7C00) >> 10][iR];
-					dstG = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransG50[(pDst[0] & 0x3E0) >> 5][iG];
-					dstB = (int)static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lTransRB50[(pDst[0] & 0x1F)][iB];
+					dstR = (int)transRB50[(pDst[0] & 0x7C00) >> 10][iR];
+					dstG = (int)transG50[(pDst[0] & 0x3E0) >> 5][iG];
+					dstB = (int)transRB50[(pDst[0] & 0x1F)][iB];
 					*pDst = (WORD)((dstR << 10) | (dstG << 5) | dstB);
 					break;
 				}
 			}
 		}
 	}
+
+	m_Renderer->UnlockBackBuffer();
 }
 
 void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType)
@@ -17381,7 +17395,7 @@ void CGame::CreateScreenShot()
 		pFile = fopen(cFn, "rb");
 		if (pFile == 0)
 		{
-			static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->Screenshot(cFn, static_cast<DXC_ddraw*>(m_Renderer->GetNativeRenderer())->m_lpBackB4);
+			m_Renderer->Screenshot(cFn);
 
 			wsprintf(G_cTxt, NOTIFYMSG_CREATE_SCREENSHOT1, cFn);
 			AddEventList(G_cTxt, 10);
@@ -17859,8 +17873,14 @@ void CGame::UpdateScreen_Quit()
 	int  iMIbuttonNum;
 
 	static class CMouseInterface* pMI;
+	static uint32_t dwStartTime;
+
+	// Timing constants (milliseconds)
+	const uint32_t INPUT_ACTIVE_MS = 3000;   // 3 seconds before input is active
+	const uint32_t AUTO_QUIT_MS = 10000;     // 10 seconds total
 
 	if (m_cGameModeCount == 0) {
+		dwStartTime = GameClock::GetTimeMS();
 		if (G_pCalcSocket != 0)
 		{
 			delete G_pCalcSocket;
@@ -17878,37 +17898,44 @@ void CGame::UpdateScreen_Quit()
 		InputManager::Get().ClearEnterPressed();
 	}
 
+	// Keep frame counter for draw phase animation (capped at 120 for compatibility)
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 120) m_cGameModeCount = 120;
 
-	// Handle escape/enter to quit immediately
-	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true) {
-		InputManager::Get().ClearEscPressed();
-		InputManager::Get().ClearEnterPressed();
-		delete pMI;
-		ChangeGameMode(DEF_GAMEMODE_NULL);
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
-		return;
-	}
-
-	// Auto-quit after timeout
-	if (m_cGameModeCount == 100)
-	{
-		ChangeGameMode(DEF_GAMEMODE_NULL);
-		delete pMI;
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
-		return;
-	}
+	uint32_t dwElapsed = GameClock::GetTimeMS() - dwStartTime;
 
 	// Poll mouse input and store for Draw phase
 	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 
-	// Check for click
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if ((cMIresult == DEF_MIRESULT_CLICK) && (iMIbuttonNum == 1)) {
+	// After 3 seconds, allow input to skip
+	if (dwElapsed >= INPUT_ACTIVE_MS)
+	{
+		// Handle escape/enter to quit
+		if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true) {
+			InputManager::Get().ClearEscPressed();
+			InputManager::Get().ClearEnterPressed();
+			delete pMI;
+			ChangeGameMode(DEF_GAMEMODE_NULL);
+			Window::Close();
+			return;
+		}
+
+		// Check for mouse click
+		iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
+		if ((cMIresult == DEF_MIRESULT_CLICK) && (iMIbuttonNum == 1)) {
+			ChangeGameMode(DEF_GAMEMODE_NULL);
+			delete pMI;
+			Window::Close();
+			return;
+		}
+	}
+
+	// Auto-quit after 10 seconds
+	if (dwElapsed >= AUTO_QUIT_MS)
+	{
 		ChangeGameMode(DEF_GAMEMODE_NULL);
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
 		delete pMI;
+		Window::Close();
 		return;
 	}
 }
@@ -18024,7 +18051,7 @@ void CGame::DrawScreen_ConnectionLost()
 {
 	uint32_t dwTime = GameClock::GetTimeMS();
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-	PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 7, 0, 0);
+	PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 58, 0, 0);
 	PutString(172 + 50 + SCREENX, 180 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTION_LOST, RGB(0, 0, 0));
 	DrawVersion();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
@@ -18141,7 +18168,7 @@ void CGame::DrawScreen_WaitingResponse()
 
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-	PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 7, 0, 0);
+	PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 58, 0, 0);
 
 	if ((dwTime - m_dwTime) > 7000)
 	{
@@ -18242,7 +18269,7 @@ void CGame::DrawScreen_Connecting()
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	wsprintf(G_cTxt, "Connecting to Server... %3dSec", (dwTime - m_dwTime) / 1000);
-	PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, G_cTxt, 7, 0, 0);
+	PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, G_cTxt, 58, 0, 0);
 
 	if ((dwTime - m_dwTime) > 7000)
 	{
@@ -18342,7 +18369,7 @@ void CGame::DrawScreen_QueryForceLogin()
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
 
-	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", 7, 0, 0);
+	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", 58, 0, 0);
 	PutAlignedString(178 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);
 	PutAlignedString(178 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN2);
 
@@ -18451,7 +18478,7 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
-	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", 7, 0, 0);
+	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", 58, 0, 0);
 	PutString(215 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, RGB(5, 5, 5));
 	PutString(335 + SCREENX, 199 + SCREENY, "__________", RGB(5, 5, 5));
 	PutString(335 + SCREENX, 195 + SCREENY, m_pCharList[m_wEnterGameType - 1]->m_cName, RGB(25, 35, 25));
@@ -18643,7 +18670,7 @@ void CGame::DrawScreen_WaitInitData()
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
 	wsprintf(G_cTxt, "Waiting for response... %dsec", (dwTime - m_dwTime) / 1000);
-	PutString_SprFont(172 + 44 + SCREENX, 190 + SCREENY, G_cTxt, 7, 0, 0);
+	PutString_SprFont(172 + 44 + SCREENX, 190 + SCREENY, G_cTxt, 58, 0, 0);
 	if ((dwTime - m_dwTime) > 7000) {
 		PutAlignedString(174 + SCREENX, 467 + SCREENX, 190 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA1);
 		PutAlignedString(174 + SCREENX, 467 + SCREENX, 190 + 45 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA2);
@@ -20782,99 +20809,99 @@ void CGame::UpdateScreen_OnLogResMsg()
 
 	switch (m_cMsg[1]) {
 	case '1':
-		PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Password is not correct!", 7, 0, 0);
+		PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Password is not correct!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG5);//"
 		break;
 
 	case '2':
-		PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Not existing account!", 7, 0, 0);
+		PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Not existing account!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG6);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG7);//"
 		break;
 
 	case '3':
-		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 7, 0, 0);
+		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG8);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG9);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 225 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG10);//"
 		break;
 
 	case '4':
-		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New account created.", 7, 0, 0);
+		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New account created.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG11);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG12);//"
 		break;
 
 	case '5':
-		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new account!", 7, 0, 0);
+		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new account!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG13);//"
 		break;
 
 	case '6':
-		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new account!", 7, 0, 0);
-		PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing account name.", 7, 0, 0);
+		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new account!", 58, 0, 0);
+		PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing account name.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 205 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG14);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG15);//"
 		break;
 
 	case '7':
-		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New character created.", 7, 0, 0);
+		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New character created.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG16);//"
 		break;
 
 	case '8':
-		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new character!", 7, 0, 0);
+		PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new character!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG17);//"
 		break;
 
 	case '9':
-		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new character!", 7, 0, 0);
-		PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing character name.", 7, 0, 0);
+		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new character!", 58, 0, 0);
+		PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing character name.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 205 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG18);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG19);//"
 		break;
 
 	case 'A':
-		PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Character deleted.", 7, 0, 0);
+		PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Character deleted.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG20);//"
 
 		break;
 	case 'B':
-		PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Password changed.", 7, 0, 0);
+		PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Password changed.", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG21);//"
 		break;
 	case 'C':
-		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not change password!", 7, 0, 0);
+		PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not change password!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG22);//"
 		break;
 
 	case 'D':
-		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 7, 0, 0);
+		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG23);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG24);//"
 		break;
 
 	case 'E':
-		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 7, 0, 0);
+		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG25);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG26);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 225 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG27);//"
 		break;
 
 	case 'F':
-		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 7, 0, 0);
+		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG28);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG29);//"
 		break;
 
 	case 'G':
-		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 7, 0, 0);
+		PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG30);//"
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG31);//"
 		break;
 
 	case 'H':
-		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Connection Rejected!", 7, 0, 0);
+		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Connection Rejected!", 58, 0, 0);
 		if (m_iBlockYear == 0) {
 			PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG32);//"
 			PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG33);//"
@@ -20887,24 +20914,24 @@ void CGame::UpdateScreen_OnLogResMsg()
 		break;
 
 	case 'I': //
-		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Not Enough Point!", 7, 0, 0);
+		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Not Enough Point!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "�I�ƨϥδ����w����, �Ц�GD2S.gamania.com�����ϥδ���");
 
 		break;
 
 	case 'J': // v2.15 2002-5-21
-		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "World Server Full", 7, 0, 0);
+		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "World Server Full", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Please ! Try Other World Server");
 		break;
 
 	case 'M': 	// v2.18
-		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Your password expired", 7, 0, 0);
+		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Your password expired", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Please! Change password");
 		break;
 
 
 	case 'U': // v2.15
-		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Keycode input Success!", 7, 0, 0);
+		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Keycode input Success!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Keycode Registration successed.");
 
 		break;
@@ -21641,12 +21668,6 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 			PutString2(sX, sY+14, DRAW_OBJECT_NAME89, 30,255,30); // "(Friendly)"
 			break;
 	}	}*/
-#ifdef _DEBUG
-	wsprintf(cTxt2, "Status: 0x%.8X ", iStatus);
-	PutString2(sX, sY + 42, cTxt2, 30, 255, 30);
-	std::memset(cTxt2, 0, sizeof(cTxt2));
-#endif
-
 	switch ((iStatus & 0x0F00) >> 8) {
 	case 0: break;
 	case 1: strcpy(cTxt2, DRAW_OBJECT_NAME52); break;//"Clairvoyant"
@@ -21860,12 +21881,6 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 		}
 	}
 	PutString2(sX, sY + 14 + iAddY, cTxt, sR, sG, sB);
-
-#ifdef _DEBUG
-	wsprintf(cTxt2, "Status: 0x%.8X ", iStatus);
-	PutString2(sX, sY + 42, cTxt2, 30, 255, 30);
-	std::memset(cTxt2, 0, sizeof(cTxt2));
-#endif
 }
 
 bool CGame::FindGuildName(char* pName, int* ipIndex)

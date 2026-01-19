@@ -20,6 +20,7 @@ public:
     virtual bool Create(const WindowParams& params) override;
     virtual void Destroy() override;
     virtual bool IsOpen() const override;
+    virtual void Close() override;
 
     // Properties
     virtual HWND GetHandle() const override;
@@ -30,6 +31,7 @@ public:
 
     // Display
     virtual void SetFullscreen(bool fullscreen) override;
+    virtual void SetSize(int width, int height, bool center = true) override;
     virtual void Show() override;
     virtual void Hide() override;
     virtual void SetTitle(const char* title) override;
