@@ -48,7 +48,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_SellOr
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_Manufacture.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\DialogBox_Manufacture.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\FrameTiming.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\FrameTiming.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\HotkeyManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\HotkeyManager.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\InputManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\InputManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Version.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\Version.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.Hotkeys.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\Game.Hotkeys.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\Game.obj
@@ -82,7 +81,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_System.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\NetworkMessages_System.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameMonitor.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\GameMonitor.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MapData.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\MapData.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MouseInterface.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\MouseInterface.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Wmain.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\Wmain.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameWindowHandler.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\GameWindowHandler.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\XSocket.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-SFML\XSocket.obj

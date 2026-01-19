@@ -11,6 +11,8 @@
 #include "SFMLSpriteFactory.h"
 #include "SFMLTextRenderer.h"
 #include "SFMLBitmapFont.h"
+#include "SFMLInput.h"
+#include "IInput.h"
 
 // Static member initialization (matches RendererFactory.h class declarations)
 IRenderer* Renderer::s_pRenderer = nullptr;
@@ -181,6 +183,13 @@ bool Window::Create(const WindowParams& params)
         return false;
     }
 
+    // Create input system and initialize with window handle
+    Input::Create();
+    if (Input::Get())
+    {
+        static_cast<SFMLInput*>(Input::Get())->Initialize(s_pWindow->GetHandle());
+    }
+
     // Link the SFML window's render window to the renderer
     IRenderer* pRenderer = Renderer::Get();
     if (pRenderer && s_pWindow)
@@ -207,6 +216,9 @@ IWindow* Window::Get()
 
 void Window::Destroy()
 {
+    // Destroy input system first
+    Input::Destroy();
+
     if (s_pWindow)
     {
         // Unlink from renderer

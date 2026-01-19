@@ -101,6 +101,7 @@
     <ClInclude Include="SFMLSpriteFactory.h" />
     <ClInclude Include="SFMLTextRenderer.h" />
     <ClInclude Include="SFMLBitmapFont.h" />
+    <ClInclude Include="SFMLInput.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SFMLRenderer.cpp" />
@@ -110,6 +111,7 @@
     <ClCompile Include="SFMLSpriteFactory.cpp" />
     <ClCompile Include="SFMLTextRenderer.cpp" />
     <ClCompile Include="SFMLBitmapFont.cpp" />
+    <ClCompile Include="SFMLInput.cpp" />
     <ClCompile Include="RendererFactory.cpp" />
     <ClCompile Include="..\..\Dependencies\Shared\ISpriteFactory.cpp" />
   </ItemGroup>

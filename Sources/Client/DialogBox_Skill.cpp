@@ -1,6 +1,6 @@
 #include "DialogBox_Skill.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
 
@@ -105,7 +105,6 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 		{
 			if (msZ > 0) Info().sView--;
 			if (msZ < 0) Info().sView++;
-			InputManager::Get().ClearWheelDelta();
 		}
 		if (Info().sView < 0) Info().sView = 0;
 		if (iTotalLines > 17 && Info().sView > iTotalLines - 17) Info().sView = iTotalLines - 17;
@@ -171,5 +170,4 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 	}
 	return false;
 }
-
 

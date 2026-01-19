@@ -36,7 +36,7 @@ using namespace std;
 #include "ITextRenderer.h"
 #include "IBitmapFont.h"
 #include "BitmapFontFactory.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "XSocket.h"
 #include "SpriteID.h"
 #include "Misc.h"
@@ -47,7 +47,6 @@ using namespace std;
 #include "ActionID_Client.h"
 #include "NetMessages.h"
 #include "ClientMessages.h"
-#include "MouseInterface.h"
 #include "CharInfo.h"
 #include "Item/Item.h"
 #include "Magic.h"
@@ -808,10 +807,6 @@ public:
 	int	m_iSpecialAbilityTimeLeftSec;
 	int m_iDrawFlag;
 	bool m_bSkipFrame;  // Set by UpdateScreen_OnGame when iUpdateRet == 0 to skip flip
-
-	// Frame state shared between Update and Draw phases
-	short m_sFrameMouseX, m_sFrameMouseY, m_sFrameMouseZ;
-	char m_cFrameMouseLB, m_cFrameMouseRB;
 
 	int m_iSpecialAbilityType;
 	int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;

@@ -149,7 +149,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
-	if (InputManager::Get().IsCtrlDown())
+	if (Input::IsCtrlDown())
 	{
 		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
 		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);

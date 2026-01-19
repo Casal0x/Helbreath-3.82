@@ -1,7 +1,7 @@
 #include "DialogBox_Text.h"
 #include "ConfigManager.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #define DEF_TEXTDLGMAXLINES 300
 
 DialogBox_Text::DialogBox_Text(CGame* pGame)
@@ -37,7 +37,6 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text && msZ != 0)
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sView -= msZ / 60;
-		InputManager::Get().ClearWheelDelta();
 	}
 
 	// Clamp scroll view
@@ -137,5 +136,4 @@ bool DialogBox_Text::OnClick(short msX, short msY)
 
 	return false;
 }
-
 

@@ -116,7 +116,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (iCurrentStat <= m_pGame->iMaxStats) && (m_pGame->m_iLU_Point > 0))
 	{
-		if (InputManager::Get().IsCtrlDown())
+		if (Input::IsCtrlDown())
 		{
 			if ((m_pGame->m_iLU_Point >= 5) && !bMajesticOpen)
 			{
@@ -140,7 +140,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (cPendingChange > 0))
 	{
-		if (InputManager::Get().IsCtrlDown())
+		if (Input::IsCtrlDown())
 		{
 			if ((cPendingChange >= 5) && !bMajesticOpen)
 			{

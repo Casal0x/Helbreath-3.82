@@ -1,6 +1,6 @@
 #include "DialogBox_Bank.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "lan_eng.h"
 
 DialogBox_Bank::DialogBox_Bank(CGame* pGame)
@@ -170,7 +170,6 @@ void DialogBox_Bank::DrawScrollbar(short sX, short sY, int iTotalLines, short ms
 			if (msZ > 0) Info().sView--;
 			if (msZ < 0) Info().sView++;
 		}
-		InputManager::Get().ClearWheelDelta();
 	}
 
 	if (iTotalLines > Info().sV1 && Info().sView > iTotalLines - Info().sV1)

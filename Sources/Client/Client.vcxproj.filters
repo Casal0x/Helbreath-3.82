@@ -70,9 +70,6 @@
     <ClInclude Include="FrameTiming.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="InputManager.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Version.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -89,9 +86,6 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="FrameTiming.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="InputManager.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Version.cpp">
@@ -313,9 +307,6 @@
     <ClInclude Include="GameMonitor.h">
       <Filter>Entities</Filter>
     </ClInclude>
-    <ClInclude Include="MouseInterface.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
     <ClInclude Include="Misc.h">
       <Filter>Entities</Filter>
     </ClInclude>
@@ -323,9 +314,6 @@
       <Filter>Entities</Filter>
     </ClCompile>
     <ClCompile Include="GameMonitor.cpp">
-      <Filter>Entities</Filter>
-    </ClCompile>
-    <ClCompile Include="MouseInterface.cpp">
       <Filter>Entities</Filter>
     </ClCompile>
     <!-- Language -->

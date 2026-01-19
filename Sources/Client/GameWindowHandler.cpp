@@ -1,6 +1,6 @@
 // GameWindowHandler.cpp: Window event handler adapter for CGame
 //
-// Routes window events to CGame and InputManager
+// Routes window events to CGame and Input::
 //////////////////////////////////////////////////////////////////////
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
@@ -8,7 +8,7 @@
 
 #include "GameWindowHandler.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "RendererFactory.h"
 #include "ISpriteFactory.h"
 
@@ -24,10 +24,15 @@ GameWindowHandler::GameWindowHandler(CGame* pGame)
 void GameWindowHandler::OnClose()
 {
     if (!m_pGame)
+    {
+        // No game, just close via Window abstraction
+        DestroyWindow(Window::GetHandle());
         return;
+    }
 
     if ((m_pGame->m_cGameMode == DEF_GAMEMODE_ONMAINGAME) && (m_pGame->m_bForceDisconn == false))
     {
+        // In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
         if (m_pGame->m_cLogOutCount == -1 || m_pGame->m_cLogOutCount > 2)
             m_pGame->m_cLogOutCount = 1;
@@ -36,14 +41,20 @@ void GameWindowHandler::OnClose()
             m_pGame->m_cLogOutCount = 11;
 #endif
     }
-    else if (m_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
-    {
-        // Let default handler process during loading
-        return;
-    }
     else if (m_pGame->m_cGameMode == DEF_GAMEMODE_ONMAINMENU)
     {
+        // On main menu, show quit screen
         m_pGame->ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+    }
+    else if (m_pGame->m_cGameMode == DEF_GAMEMODE_NULL)
+    {
+        // Game code requested close (e.g., from quit screen), proceed with destruction
+        DestroyWindow(m_pGame->m_hWnd);
+    }
+    else
+    {
+        // Other modes (loading, etc.), proceed with closing
+        DestroyWindow(m_pGame->m_hWnd);
     }
 }
 
@@ -65,13 +76,14 @@ void GameWindowHandler::OnActivate(bool active)
     if (!active)
     {
         m_pGame->m_bIsProgramActive = false;
-        InputManager::Get().SetActive(false);
+        if (Input::Get())
+            Input::Get()->SetWindowActive(false);
     }
     else
     {
         m_pGame->m_bIsProgramActive = true;
-        InputManager::Get().SetActive(true);
-        InputManager::Get().ClearAllKeys();
+        if (Input::Get())
+            Input::Get()->SetWindowActive(true);
 
         m_pGame->m_bIsRedrawPDBGS = true;
         if (m_pGame->m_Renderer != nullptr)
@@ -100,24 +112,19 @@ void GameWindowHandler::OnKeyDown(int keyCode)
     if (!m_pGame)
         return;
 
-    switch (keyCode)
+    // Route all keys through Input system
+    if (Input::Get())
+        Input::Get()->OnKeyDown(keyCode);
+
+    // Also notify game for special key handling (hotkeys, etc.)
+    // Skip modifier keys as they're handled purely through Input::
+    if (keyCode != VK_SHIFT && keyCode != VK_CONTROL && keyCode != VK_MENU &&
+        keyCode != VK_LSHIFT && keyCode != VK_RSHIFT &&
+        keyCode != VK_LCONTROL && keyCode != VK_RCONTROL &&
+        keyCode != VK_LMENU && keyCode != VK_RMENU &&
+        keyCode != VK_RETURN && keyCode != VK_ESCAPE)
     {
-    case VK_SHIFT:
-        InputManager::Get().OnKeyDown(VK_SHIFT);
-        break;
-    case VK_CONTROL:
-        InputManager::Get().OnKeyDown(VK_CONTROL);
-        break;
-    case VK_MENU:
-        InputManager::Get().OnKeyDown(VK_MENU);
-        break;
-    case VK_RETURN:
-        InputManager::Get().OnKeyDown(VK_RETURN);
-        break;
-    default:
-        // Let the game handle other keys
         m_pGame->OnKeyDown(keyCode);
-        break;
     }
 }
 
@@ -126,28 +133,19 @@ void GameWindowHandler::OnKeyUp(int keyCode)
     if (!m_pGame)
         return;
 
-    switch (keyCode)
+    // Route all keys through Input system
+    if (Input::Get())
+        Input::Get()->OnKeyUp(keyCode);
+
+    // Also notify game for special key handling
+    // Skip modifier keys as they're handled purely through Input::
+    if (keyCode != VK_SHIFT && keyCode != VK_CONTROL && keyCode != VK_MENU &&
+        keyCode != VK_LSHIFT && keyCode != VK_RSHIFT &&
+        keyCode != VK_LCONTROL && keyCode != VK_RCONTROL &&
+        keyCode != VK_LMENU && keyCode != VK_RMENU &&
+        keyCode != VK_RETURN && keyCode != VK_ESCAPE)
     {
-    case VK_SHIFT:
-        InputManager::Get().OnKeyUp(VK_SHIFT);
-        break;
-    case VK_CONTROL:
-        InputManager::Get().OnKeyUp(VK_CONTROL);
-        break;
-    case VK_MENU:
-        InputManager::Get().OnKeyUp(VK_MENU);
-        break;
-    case VK_RETURN:
-        InputManager::Get().OnKeyUp(VK_RETURN);
-        InputManager::Get().SetEnterPressed();
-        break;
-    case VK_ESCAPE:
-        InputManager::Get().OnKeyUp(VK_ESCAPE);
-        InputManager::Get().ClearEscPressed();
-        break;
-    default:
         m_pGame->OnKeyUp(keyCode);
-        break;
     }
 }
 
@@ -158,24 +156,35 @@ void GameWindowHandler::OnChar(char character)
 
 void GameWindowHandler::OnMouseMove(int x, int y)
 {
-    InputManager::Get().OnMouseMove(x, y);
+    if (Input::Get())
+        Input::Get()->OnMouseMove(x, y);
 }
 
 void GameWindowHandler::OnMouseButtonDown(int button, int x, int y)
 {
-    InputManager::Get().OnMouseMove(x, y);
-    InputManager::Get().OnMouseDown(button);
+    if (Input::Get())
+    {
+        Input::Get()->OnMouseMove(x, y);
+        Input::Get()->OnMouseDown(button);
+    }
 }
 
 void GameWindowHandler::OnMouseButtonUp(int button, int x, int y)
 {
-    InputManager::Get().OnMouseMove(x, y);
-    InputManager::Get().OnMouseUp(button);
+    if (Input::Get())
+    {
+        Input::Get()->OnMouseMove(x, y);
+        Input::Get()->OnMouseUp(button);
+    }
 }
 
 void GameWindowHandler::OnMouseWheel(int delta, int x, int y)
 {
-    InputManager::Get().OnMouseWheel(delta, x, y);
+    if (Input::Get())
+    {
+        Input::Get()->OnMouseMove(x, y);
+        Input::Get()->OnMouseWheel(delta);
+    }
 }
 
 bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lParam)
@@ -198,17 +207,22 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
         return true;
 
     case WM_SETFOCUS:
-        InputManager::Get().SetActive(true);
+        if (Input::Get())
+            Input::Get()->SetWindowActive(true);
         return true;
 
     case WM_KILLFOCUS:
-        InputManager::Get().SetActive(false);
+        if (Input::Get())
+            Input::Get()->SetWindowActive(false);
         return true;
 
     case WM_LBUTTONDBLCLK:
         // Handle double-click as button down for manual detection
-        InputManager::Get().OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
-        InputManager::Get().OnMouseDown(0);
+        if (Input::Get())
+        {
+            Input::Get()->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            Input::Get()->OnMouseDown(MOUSE_BUTTON_LEFT);
+        }
         return true;
     }
 

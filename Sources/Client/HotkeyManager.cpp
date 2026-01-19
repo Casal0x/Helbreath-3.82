@@ -1,5 +1,5 @@
 #include "HotkeyManager.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include <utility>
 
 HotkeyManager& HotkeyManager::Get()
@@ -34,9 +34,9 @@ bool HotkeyManager::HandleKey(int vk, Trigger trigger)
 		return false;
 	}
 
-	const bool ctrlDown = InputManager::Get().IsCtrlDown();
-	const bool shiftDown = InputManager::Get().IsShiftDown();
-	const bool altDown = InputManager::Get().IsAltDown();
+	const bool ctrlDown = Input::IsCtrlDown();
+	const bool shiftDown = Input::IsShiftDown();
+	const bool altDown = Input::IsAltDown();
 
 	bool handled = false;
 	for (const auto& entry : m_entries)

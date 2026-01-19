@@ -2,7 +2,6 @@
 //
 //////////////////////////////////////////////////////////////////////
 
-
 #include "Game.h"
 #include "CommonTypes.h"
 #include "Benchmark.h"
@@ -184,7 +183,6 @@ CGame::CGame()
 
 	for (i = 0; i < DEF_MAXWHISPERMSG; i++) m_pWhisperMsg[i] = 0;
 
-
 	m_pEffectManager = new EffectManager(this);
 	m_pNetworkMessageManager = new NetworkMessageManager(this);
 
@@ -213,8 +211,6 @@ CGame::CGame()
 	// Crafting:
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pCraftItemList[i] = 0;
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pDispCraftItemList[i] = 0;
-
-
 
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++) m_pGameMsgList[i] = 0;
 
@@ -322,10 +318,6 @@ CGame::CGame()
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sY = 57 + SCREENY;
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeX = 258;
 	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeY = 339;
-
-	InputManager::Get().ClearAllKeys();
-	InputManager::Get().ClearEnterPressed();
-	InputManager::Get().ClearEscPressed();
 	m_dwDialogCloseTime = 0;
 	m_iTimeLeftSecAccount = 0;
 	m_iTimeLeftSecIP = 0;
@@ -452,9 +444,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	// Initialize sprite factory and register it globally
 	m_pSpriteFactory = CreateSpriteFactory(m_Renderer);
 	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
-
-	InputManager::Get().Initialize(m_hWnd);
-
 	if (bCheckImportantFile() == false)
 	{
 		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
@@ -587,8 +576,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_wR[14] = 72;   m_wG[14] = 8;    m_wB[14] = 8;     // Red
 	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
-
-
 #ifndef _DEBUG
 	m_pCGameMonitor = new class CGameMonitor;
 	//===============================================
@@ -703,7 +690,6 @@ void CGame::Quit()
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pDispCraftItemList[i] != 0) delete m_pDispCraftItemList[i];
 
-
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++)
 		if (m_pGameMsgList[i] != 0) delete m_pGameMsgList[i];
 
@@ -717,7 +703,6 @@ void CGame::Quit()
 	if (m_pEffectManager != 0) delete m_pEffectManager;
 	if (m_pNetworkMessageManager != 0) delete m_pNetworkMessageManager;
 }
-
 
 void CGame::UpdateScreen()
 {
@@ -809,7 +794,6 @@ void CGame::UpdateScreen()
 	}
 }
 
-
 // DrawScreen: Dispatches to DrawScreen_* methods based on current game mode
 // Separated from UpdateScreen to allow: Update -> ClearBackB4 -> Draw -> iFlip
 // NOTE: Unsplit screens temporarily call the old combined UpdateScreen_On* method here
@@ -899,7 +883,6 @@ void CGame::DrawScreen()
 	}
 }
 
-
 // RenderFrame: Centralized rendering frame wrapper
 // Handles: Update -> (skip check) -> Clear backbuffer -> Draw -> Flip
 // This centralizes surface operations that were previously scattered across all screen methods
@@ -941,7 +924,6 @@ void CGame::RenderFrame()
 	// Count this as a displayed frame for FPS calculation
 	FrameTiming::CountDisplayedFrame();
 }
-
 
 void CGame::CalcViewPoint()
 {
@@ -1738,7 +1720,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	return true;
 }
 
-
 void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY)
 {
 	int ix, iy, indexX, indexY, dX, dY, iDvalue;
@@ -1844,7 +1825,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						}
 					}
 
-					if (InputManager::Get().IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
+					if (Input::IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
 						sItemSelectedID = sItemID;
 						dwItemSelectedAttr = dwItemAttr;
 						iItemSelectedx = ix;
@@ -2658,7 +2639,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	}
 }
 
-
 void CGame::ConnectionEstablishHandler(char cWhere)
 {
 	ChangeGameMode(DEF_GAMEMODE_ONWAITINGRESPONSE);
@@ -2714,7 +2694,6 @@ void CGame::InitPlayerResponseHandler(char* pData)
 		break;
 	}
 }
-
 
 void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
@@ -3503,7 +3482,6 @@ void CGame::OnTimer()
 			delete m_pGSock;
 			m_pGSock = 0;
 			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-			InputManager::Get().ClearEscPressed();
 			PlaySound('E', 14, 5);
 			AudioManager::Get().StopSound(SoundType::Effect, 38);
 			AudioManager::Get().StopMusic();
@@ -3529,12 +3507,10 @@ void CGame::OnTimer()
 	}
 }
 
-
 bool CGame::_bCheckDlgBoxClick(short msX, short msY)
 {
 	int i;
 	char         cDlgID;
-	InputManager::Get().ClearWheelDelta();
 	// Snoopy: 41->61
 	for (i = 0; i < 61; i++)
 		// Snoopy: 40->60
@@ -3744,7 +3720,6 @@ bool CGame::_bCheckDlgBoxDoubleClick(short msX, short msY)
 		}
 	return false;
 }
-
 
 bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 {
@@ -4040,7 +4015,6 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 		m_bIsItemDisabled[cItemID] = true;
 	}
 }
-
 
 void CGame::CommonEventHandler(char* pData)
 {
@@ -4479,8 +4453,6 @@ void CGame::InitPlayerCharacteristics(char* pData)
 	iMaxBankItems = pkt->max_bank_items;
 }
 
-
-
 void CGame::DisbandGuildResponseHandler(char* pData)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
@@ -4497,7 +4469,6 @@ void CGame::DisbandGuildResponseHandler(char* pData)
 		break;
 	}
 }
-
 
 void CGame::_PutGuildOperationList(char* pName, char cOpMode)
 {
@@ -4528,8 +4499,6 @@ void CGame::_ShiftGuildOperationList()
 			m_stGuildOpList[i].cOpMode = 0;
 		}
 }
-
-
 
 void CGame::AddEventList(char* pTxt, char cColor, bool bDupAllow)
 {
@@ -4902,7 +4871,6 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 	if (bIsPreDC == false) m_Renderer->EndTextBatch();
 }
 
-
 void CGame::PutString(int iX, int iY, char* pString, COLORREF color)
 {
 	m_Renderer->BeginTextBatch();
@@ -5206,7 +5174,6 @@ bool CGame::bInitSkillCfgList()
 	return true;
 }
 
-
 bool CGame::_bGetIsStringIsNumber(char* pStr)
 {
 	int i;
@@ -5215,7 +5182,6 @@ bool CGame::_bGetIsStringIsNumber(char* pStr)
 
 	return true;
 }
-
 
 void CGame::RequestFullObjectData(uint16_t wObjectID)
 {
@@ -5248,7 +5214,6 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 		break;
 	}
 }
-
 
 bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
 {
@@ -5662,7 +5627,6 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
 				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
-
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 			{
 				if (iMantleColor == 0)
@@ -5840,7 +5804,6 @@ bool   CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool b
 		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
-
 
 bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
 {
@@ -6172,7 +6135,6 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
 				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
 
-
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
@@ -6340,7 +6302,6 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
@@ -6417,7 +6378,6 @@ bool   CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bo
 
 	return false;
 }
-
 
 bool   CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
 {
@@ -8572,8 +8532,6 @@ bool   CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTr
 	return false;
 }
 
-
-
 bool   CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision)
 {
 	int dx, dy;
@@ -10067,7 +10025,6 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
 
-
 		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
 		{
 			if (iMantleColor == 0)
@@ -10265,7 +10222,6 @@ bool CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bo
 		(m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right > msX)) return true;
 	return false;
 }
-
 
 bool   CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY)
 {
@@ -11107,7 +11063,6 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 	}
 }
 
-
 void CGame::LogEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
@@ -11523,12 +11478,10 @@ void CGame::LogResponseHandler(char* pData)
 	m_pLSock = 0;
 }
 
-
 void CGame::LogRecvMsgHandler(char* pData)
 {
 	LogResponseHandler(pData);
 }
-
 
 void CGame::_InitOnCreateNewCharacter()
 {
@@ -11597,9 +11550,8 @@ void CGame::UpdateOverlay()
 	{
 	case OverlayType::Connecting:
 		// ESC to cancel connection
-		if (InputManager::Get().IsEscPressed())
+		if (Input::IsKeyPressed(VK_ESCAPE))
 		{
-			InputManager::Get().ClearEscPressed();
 			HideOverlay();
 			if (m_pGSock) m_pGSock->_CloseConn();
 			if (m_pLSock) m_pLSock->_CloseConn();
@@ -11608,9 +11560,8 @@ void CGame::UpdateOverlay()
 
 	case OverlayType::WaitingResponse:
 		// ESC to cancel waiting
-		if (InputManager::Get().IsEscPressed())
+		if (Input::IsKeyPressed(VK_ESCAPE))
 		{
-			InputManager::Get().ClearEscPressed();
 			HideOverlay();
 			if (m_pGSock) m_pGSock->_CloseConn();
 			if (m_pLSock) m_pLSock->_CloseConn();
@@ -11674,7 +11625,6 @@ bool CGame::bReadIp()
 	m_iGameServerPort = DEF_GSERVER_PORT;
 	return true;
 }
-
 
 void CGame::ReleaseUnusedSprites()
 {
@@ -11907,9 +11857,6 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 	}
 }
 
-
-
-
 bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, int msX, int msY, bool frame_omision)
 {
 	int dx, dy;
@@ -12055,7 +12002,6 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 	case 7: dx = value_2 - (_tmp_cFrame << 2) - value; break;
 	case 8: dx = value_2 - (_tmp_cFrame << 2) - value; dy = value_2 - (_tmp_cFrame << 2) - value; break;
 	}
-
 
 	int fix_x = 0;
 	int fix_y = 0;
@@ -12301,7 +12247,6 @@ bool   CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTra
 
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
 				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
-
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 0))
 			{
@@ -12557,7 +12502,6 @@ void CGame::GetPlayerTurn()
 	else m_cPlayerTurn = 1;
 }
 
-
 int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 {
 	int i;
@@ -12805,8 +12749,6 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 	return 0;
 }
 
-
-
 void CGame::InitItemList(char* pData)
 {
 	int     i, iAngelValue;
@@ -12969,7 +12911,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 {
 	int i;
 	if (m_bIsObserverMode == true) return;
-	// Note: Dialogs that handle scroll should read InputManager::Get().GetWheelDelta() and clear it after processing
+	// Note: Dialogs that handle scroll should read Input::GetMouseWheelDelta() and clear it after processing
 	//Snoopy: 41->61
 	bool bIconPanelDrawn = false;
 	for (i = 0; i < 61; i++)
@@ -13160,7 +13102,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	{
 		if (m_iSuperAttackLeft > 0)
 		{
-			if (InputManager::Get().IsAltDown())
+			if (Input::IsAltDown())
 				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX + 368 + resx + 7, iconY + 440 + resy, 3, SpriteLib::DrawParams::Alpha(0.5f));
 			wsprintf(G_cTxt, "%d", m_iSuperAttackLeft);
 			PutString_SprFont2(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 255, 255, 255);
@@ -13197,7 +13139,6 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, (_tmp_sAppr1 & 0x000F));
 	}
 }
-
 
 void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
 {
@@ -13752,7 +13693,6 @@ void CGame::DisableDialogBox(int iBoxID)
 		}
 		break;
 
-
 	case DialogBoxId::SellList:
 		for (i = 0; i < DEF_MAXSELLLIST; i++)
 		{
@@ -13826,7 +13766,6 @@ void CGame::DisableDialogBox(int iBoxID)
 		}
 }
 
-
 int CGame::iGetTopDialogBoxIndex()
 {
 	int i;
@@ -13881,8 +13820,6 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 	m_Renderer->EndTextBatch();
 }
 
-
-
 void CGame::_LoadTextDlgContents(int cType)
 {
 	char* pContents, * token, cTemp[120], cFileName[120];
@@ -13929,8 +13866,6 @@ void CGame::_LoadTextDlgContents(int cType)
 	}
 	delete[] pContents;
 }
-
-
 
 int CGame::_iLoadTextDlgContents2(int iType)
 {
@@ -13981,9 +13916,6 @@ int CGame::_iLoadTextDlgContents2(int iType)
 	return iIndex;
 }
 
-
-
-
 void CGame::_LoadGameMsgTextContents()
 {
 	char* pContents, * token, cTemp[120], cFileName[120];
@@ -14033,7 +13965,6 @@ void CGame::_LoadGameMsgTextContents()
 
 	delete[] pContents;
 }
-
 
 void CGame::_RequestMapStatus(char* pMapName, int iMode)
 {
@@ -14410,7 +14341,6 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 }
 
-
 void CGame::CrusadeWarResult(int iWinnerSide)
 {
 	int i, iPlayerSide;
@@ -14755,19 +14685,12 @@ void CGame::ClearContents_OnSelectCharacter()
 	m_cCurFocus = 1;
 }
 
-
-
 void CGame::UpdateScreen_OnSelectCharacter()
 {
 	short sX, sY, msX, msY, msZ;
 	char  cLB, cRB, cTotalChar;
-	char  cMIresult;
-	static class CMouseInterface* pMI;
 	uint32_t dwTime;
 	static DWORD dwCTime;
-
-	int iMIbuttonNum;
-
 	dwTime = GameClock::GetTimeMS();
 	sX = 0;
 	sY = 0;
@@ -14777,25 +14700,11 @@ void CGame::UpdateScreen_OnSelectCharacter()
 	{
 		G_cSpriteAlphaDegree = 1;
 		InitGameSettings();
-		pMI = new class CMouseInterface;
-		pMI->AddRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY);
-		pMI->AddRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY);
-		pMI->AddRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY);
-		pMI->AddRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY);
-
-		pMI->AddRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY);
-		pMI->AddRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY);
-		pMI->AddRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY);
-		pMI->AddRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY);
-		pMI->AddRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY);
-
 		m_cMaxFocus = 4;
 		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
 		if (m_cCurFocus < 1)		   m_cCurFocus = 1;
 
 		m_cArrowPressed = 0;
-		InputManager::Get().ClearEnterPressed();
-
 		dwCTime = GameClock::GetTimeMS();
 	}
 
@@ -14817,17 +14726,14 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_pCharList[m_cCurFocus - 1] != 0)
@@ -14851,7 +14757,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 					strcpy(m_cMsg, "33");
 					std::memset(m_cMapName, 0, sizeof(m_cMapName));
 					memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-					delete pMI;
 					return;
 				}
 			}
@@ -14860,12 +14765,19 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		{
 			_InitOnCreateNewCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-			delete pMI;
 			return;
 		}
 	}
 
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	UpdateScreen_OnSelectCharacter(sX, sY, msX, msY);
 
 	if ((dwTime - dwCTime) > 100)
@@ -14888,9 +14800,20 @@ void CGame::UpdateScreen_OnSelectCharacter()
 	DrawVersion();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
-	iMIbuttonNum = pMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		PlaySound('E', 14, 5);
+
+		// Determine which button was clicked
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 1;
+		else if (Input::IsMouseInRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 2;
+		else if (Input::IsMouseInRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 3;
+		else if (Input::IsMouseInRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 4;
+		else if (Input::IsMouseInRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY)) iMIbuttonNum = 5;
+		else if (Input::IsMouseInRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY)) iMIbuttonNum = 6;
+		else if (Input::IsMouseInRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY)) iMIbuttonNum = 7;
+		else if (Input::IsMouseInRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY)) iMIbuttonNum = 8;
+		else if (Input::IsMouseInRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY)) iMIbuttonNum = 9;
 
 		switch (iMIbuttonNum) {
 		case 1:
@@ -14922,7 +14845,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 							strcpy(m_cMsg, "33");
 							std::memset(m_cMapName, 0, sizeof(m_cMapName));
 							memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-							delete pMI;
 							return;
 						}
 					}
@@ -14931,7 +14853,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 				{
 					_InitOnCreateNewCharacter();
 					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-					delete pMI;
 					return;
 				}
 			}
@@ -14959,7 +14880,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 						strcpy(m_cMsg, "33");
 						std::memset(m_cMapName, 0, sizeof(m_cMapName));
 						memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-						delete pMI;
 						return;
 					}
 				}
@@ -14971,7 +14891,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 			{
 				_InitOnCreateNewCharacter();
 				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-				delete pMI;
 				return;
 			}
 			break;
@@ -14981,19 +14900,16 @@ void CGame::UpdateScreen_OnSelectCharacter()
 			{
 				ChangeGameMode(DEF_GAMEMODE_ONQUERYDELETECHARACTER);
 				m_wEnterGameType = m_cCurFocus;
-				delete pMI;
 				return;
 			}
 			break;
 
 		case 8:
 			ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD);
-			delete pMI;
 			return;
 
 		case 9:
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete pMI;
 			return;
 		}
 	}
@@ -15450,7 +15366,6 @@ void CGame::PlaySound(char cType, int iNum, int iDist, long lPan)
 	AudioManager::Get().PlaySound(type, iNum, iDist, static_cast<int>(lPan));
 }
 
-
 bool CGame::_bCheckItemByType(char cType)
 {
 	int i;
@@ -15460,7 +15375,6 @@ bool CGame::_bCheckItemByType(char cType)
 
 	return false;
 }
-
 
 void CGame::DynamicObjectHandler(char* pData)
 {
@@ -15719,7 +15633,6 @@ void CGame::WhetherObjectFrameCounter()
 					if ((rand() % 10) != 2) m_stWhetherObject[i].cStep--;
 					if (m_stWhetherObject[i].sBX == 0) m_stWhetherObject[i].sBX = m_stWhetherObject[i].sX - m_sViewPointX;
 
-
 				}
 				else m_stWhetherObject[i].sX += 1 - (rand() % 3);
 			}
@@ -15888,7 +15801,6 @@ void CGame::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 
 	m_Renderer->UnlockBackBuffer();
 }
-
 
 void CGame::DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB)
 {
@@ -16665,7 +16577,6 @@ bool CGame::_ItemDropHistory(char* ItemName)
 	return true;
 }
 
-
 bool CGame::__bDecodeBuildItemContents(char* pBuffer)
 {
 	char* pContents, * token;
@@ -16786,7 +16697,6 @@ bool CGame::__bDecodeBuildItemContents(char* pBuffer)
 	return true;
 }
 
-
 bool CGame::_bCheckCurrentBuildItemStatus()
 {
 	int i, iCount2, iMatch, iIndex, iItemIndex[7];
@@ -16858,7 +16768,6 @@ CCBIS_STEP2:;
 	}
 
 CCBIS_STEP3:;
-
 
 	// Element3
 	std::memset(cTempName, 0, sizeof(cTempName));
@@ -17406,9 +17315,6 @@ void CGame::CreateScreenShot()
 	AddEventList(NOTIFYMSG_CREATE_SCREENSHOT2, 10);
 }
 
-
-
-
 bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int iPoint)
 {
 	bool bFlag = true;
@@ -17519,7 +17425,6 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 	return bFlag;
 }
 
-
 #ifdef DEF_MAKE_ACCOUNT
 
 void CGame::_LoadAgreementTextContents(char cType)
@@ -17574,57 +17479,52 @@ void CGame::UpdateScreen_OnAgreement()
 {
 	short sX, sY, msX, msY, msZ;
 	char  cLB, cRB;
-	char  cMIresult;
-	static class CMouseInterface* pMI;
 	int i, iTotalLines, iPointerLoc;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	double d1, d2, d3;
-	int iMIbuttonNum;
-
 	sX = 121;
 	sY = 22;
 
 	if (m_cGameModeCount == 0) {
 		m_iAgreeView = 0;
 		_LoadAgreementTextContents(0);
-
-		pMI = new class CMouseInterface;
-		pMI->AddRect(sX + 82 - 105, sY + 355, sX + 131 - 105, sY + 374);
-		pMI->AddRect(sX + 235 - 105, sY + 355, sX + 303 - 105, sY + 375);
 	}
 
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-	if (InputManager::Get().IsEnterPressed() == true) {
+	if (Input::IsKeyPressed(VK_RETURN) == true) {
 		PlaySound('E', 14, 5);
 		ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
 		ClearContents_OnCreateNewAccount();
-		delete pMI;
 		return;
 	}
-	if (InputManager::Get().IsEscPressed() == true) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		PlaySound('E', 14, 5);
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
 
-	iMIbuttonNum = pMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
-		switch (iMIbuttonNum) {
-		case 1: // Agree
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
+
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		// Agree button
+		if (Input::IsMouseInRect(98, 377, 147, 396)) {
 			PlaySound('E', 14, 5);
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
 			ClearContents_OnCreateNewAccount();
-			delete pMI;
 			return;
-
-		case 2:	// Disagree
+		}
+		// Disagree button
+		if (Input::IsMouseInRect(251, 377, 319, 397)) {
 			PlaySound('E', 14, 5);
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete pMI;
 			return;
 		}
 	}
@@ -17651,7 +17551,6 @@ void CGame::UpdateScreen_OnAgreement()
 	if (msZ != 0)
 	{
 		m_iAgreeView = m_iAgreeView - msZ / 60;
-		InputManager::Get().ClearWheelDelta();
 	}
 	if (cLB != 0 && iTotalLines > 20)
 	{
@@ -17683,8 +17582,6 @@ void CGame::UpdateScreen_OnAgreement()
 }
 
 #endif //endif from #ifdef DEF_MAKE_ACCOUNT
-
-
 
 void CGame::OnKeyUp(WPARAM wParam)
 {
@@ -17838,7 +17735,7 @@ void CGame::OnKeyDown(WPARAM wParam)
 
 	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
 	{
-		if (InputManager::Get().IsCtrlDown())
+		if (Input::IsCtrlDown())
 		{
 			switch (wParam) {
 			case 48: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break; // 0
@@ -17853,14 +17750,13 @@ void CGame::OnKeyDown(WPARAM wParam)
 			case 57: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break; // 9
 			}
 		}
-		else if ((m_bInputStatus == false) && (!InputManager::Get().IsAltDown()))
+		else if ((m_bInputStatus == false) && (!Input::IsAltDown()))
 		{
 			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
 			ClearInputString();
 		}
 	}
 }
-
 
 // ============================================================================
 // Separated Update/Draw Methods (Phase 3 refactor)
@@ -17869,10 +17765,6 @@ void CGame::OnKeyDown(WPARAM wParam)
 // Quit screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_Quit()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-
-	static class CMouseInterface* pMI;
 	static uint32_t dwStartTime;
 
 	// Timing constants (milliseconds)
@@ -17891,11 +17783,6 @@ void CGame::UpdateScreen_Quit()
 			delete m_pGSock;
 			m_pGSock = 0;
 		}
-		InputManager::Get().ClearEscPressed();
-		InputManager::Get().ClearEnterPressed();
-		pMI = new class CMouseInterface;
-		pMI->AddRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-		InputManager::Get().ClearEnterPressed();
 	}
 
 	// Keep frame counter for draw phase animation (capped at 120 for compatibility)
@@ -17905,26 +17792,20 @@ void CGame::UpdateScreen_Quit()
 	uint32_t dwElapsed = GameClock::GetTimeMS() - dwStartTime;
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// After 3 seconds, allow input to skip
 	if (dwElapsed >= INPUT_ACTIVE_MS)
 	{
 		// Handle escape/enter to quit
-		if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true) {
-			InputManager::Get().ClearEscPressed();
-			InputManager::Get().ClearEnterPressed();
-			delete pMI;
+		if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN) == true) {
 			ChangeGameMode(DEF_GAMEMODE_NULL);
 			Window::Close();
 			return;
 		}
 
 		// Check for mouse click
-		iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-		if ((cMIresult == DEF_MIRESULT_CLICK) && (iMIbuttonNum == 1)) {
+		// Mouse click detection handled by Input::IsMouseButtonPressed()
+		if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 			ChangeGameMode(DEF_GAMEMODE_NULL);
-			delete pMI;
 			Window::Close();
 			return;
 		}
@@ -17934,7 +17815,6 @@ void CGame::UpdateScreen_Quit()
 	if (dwElapsed >= AUTO_QUIT_MS)
 	{
 		ChangeGameMode(DEF_GAMEMODE_NULL);
-		delete pMI;
 		Window::Close();
 		return;
 	}
@@ -17951,16 +17831,12 @@ void CGame::DrawScreen_Quit()
 	DrawVersion();
 
 	// Draw cursor at position captured during Update phase
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // VersionNotMatch screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_VersionNotMatch()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
-
 	if (m_cGameModeCount == 0)
 	{
 		if (G_pCalcSocket != 0)
@@ -17973,32 +17849,23 @@ void CGame::UpdateScreen_VersionNotMatch()
 			delete m_pGSock;
 			m_pGSock = 0;
 		}
-		pMI = new class CMouseInterface;
-		pMI->AddRect(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-		InputManager::Get().ClearEnterPressed();
 	}
 
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 120) m_cGameModeCount = 120;
 
-	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEscPressed();
-		InputManager::Get().ClearEnterPressed();
-		delete pMI;
 		ChangeGameMode(DEF_GAMEMODE_NULL);
 		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
 		return;
 	}
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if ((cMIresult == DEF_MIRESULT_CLICK) && (iMIbuttonNum == 1))
+	// Mouse click detection handled by Input::IsMouseButtonPressed()
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		ChangeGameMode(DEF_GAMEMODE_NULL);
-		delete pMI;
 		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
 		return;
 	}
@@ -18015,7 +17882,7 @@ void CGame::DrawScreen_VersionNotMatch()
 	PutAlignedString(168, 474, 180, UPDATE_SCREEN_ON_VERSION_NO_MATCH2);
 	DrawVersion();
 
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // ConnectionLost screen - Update phase (logic/input handling)
@@ -18032,8 +17899,6 @@ void CGame::UpdateScreen_ConnectionLost()
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// Auto-transition after 5 seconds
 	if ((GameClock::GetTimeMS() - m_dwTime) > 5000)
 	{
@@ -18054,15 +17919,13 @@ void CGame::DrawScreen_ConnectionLost()
 	PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 58, 0, 0);
 	PutString(172 + 50 + SCREENX, 180 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTION_LOST, RGB(0, 0, 0));
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // Msg screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_Msg()
 {
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// Auto-transition after 1.5 seconds
 	if ((G_dwGlobalTime - m_dwTime) > 1500)
 	{
@@ -18076,7 +17939,7 @@ void CGame::DrawScreen_Msg()
 	uint32_t dwTime = G_dwGlobalTime;
 	PutString(10, 10, m_cMsg, RGB(255, 155, 155), false, 1);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // WaitingResponse screen - Update phase (logic/input handling)
@@ -18087,14 +17950,12 @@ void CGame::UpdateScreen_WaitingResponse()
 
 	if (m_cGameModeCount == 0)
 	{
-		InputManager::Get().ClearEnterPressed();
-		InputManager::Get().ClearEscPressed();
 		dwCTime = GameClock::GetTimeMS();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		if ((dwTime - m_dwTime) > 7000)
 		{
@@ -18110,7 +17971,6 @@ void CGame::UpdateScreen_WaitingResponse()
 				m_pGSock = 0;
 			}
 		}
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -18133,7 +17993,6 @@ void CGame::UpdateScreen_WaitingResponse()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // WaitingResponse screen - Draw phase (rendering only)
@@ -18178,7 +18037,7 @@ void CGame::DrawScreen_WaitingResponse()
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // Connecting screen - Update phase (logic/input handling)
@@ -18188,14 +18047,12 @@ void CGame::UpdateScreen_Connecting()
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0) {
-		InputManager::Get().ClearEnterPressed();
-		InputManager::Get().ClearEscPressed();
 		dwCTime = dwMTime = GameClock::GetTimeMS();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		if ((dwTime - m_dwTime) > 1000)
 		{
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
@@ -18210,7 +18067,6 @@ void CGame::UpdateScreen_Connecting()
 				m_pGSock = 0;
 			}
 		}
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -18232,7 +18088,6 @@ void CGame::UpdateScreen_Connecting()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // Connecting screen - Draw phase (rendering only)
@@ -18278,24 +18133,16 @@ void CGame::DrawScreen_Connecting()
 	}
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTING3);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // QueryForceLogin screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_QueryForceLogin()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
 	static DWORD dwCTime;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0) {
-		pMI = new class CMouseInterface;
-		pMI->AddRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		pMI->AddRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		InputManager::Get().ClearEnterPressed();
-		InputManager::Get().ClearEscPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		PlaySound('E', 25, 0);
@@ -18303,16 +18150,12 @@ void CGame::UpdateScreen_QueryForceLogin()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// Animation frame updates
 	if ((dwTime - dwCTime) > 100) {
 		m_cMenuFrame++;
@@ -18328,12 +18171,12 @@ void CGame::UpdateScreen_QueryForceLogin()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		PlaySound('E', 14, 5);
-		switch (iMIbuttonNum) {
-		case 1:
+		// Yes button
+		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
 			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
@@ -18342,13 +18185,11 @@ void CGame::UpdateScreen_QueryForceLogin()
 			m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NOENTER_FORCEDISCONN;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "33");
-			delete pMI;
 			return;
-
-		case 2:
+		}
+		// Cancel button
+		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-			delete pMI;
-			break;
 		}
 	}
 }
@@ -18373,33 +18214,26 @@ void CGame::DrawScreen_QueryForceLogin()
 	PutAlignedString(178 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);
 	PutAlignedString(178 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN2);
 
-	if ((m_sFrameMouseX >= 200 + SCREENX) && (m_sFrameMouseX <= 200 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 244 + SCREENY) && (m_sFrameMouseY <= 244 + DEF_BTNSZY + SCREENY))
+	if ((Input::GetMouseX() >= 200 + SCREENX) && (Input::GetMouseX() <= 200 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 19);
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 18);
 
-	if ((m_sFrameMouseX >= 370 + SCREENX) && (m_sFrameMouseX <= 370 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 244 + SCREENY) && (m_sFrameMouseY <= 244 + DEF_BTNSZY + SCREENY))
+	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 3);
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // QueryDeleteCharacter screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_QueryDeleteCharacter()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
 	static DWORD dwCTime;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0)
 	{
-		pMI = new class CMouseInterface;
-		pMI->AddRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		pMI->AddRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY);
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		PlaySound('E', 25, 0);
@@ -18407,17 +18241,13 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
 	// Poll mouse input and store for Draw phase
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// Animation frame updates
 	if ((dwTime - dwCTime) > 100)
 	{
@@ -18436,12 +18266,12 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		PlaySound('E', 14, 5);
-		switch (iMIbuttonNum) {
-		case 1:
+		// Yes button
+		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
 			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
@@ -18449,13 +18279,11 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 			m_dwConnectMode = MSGID_REQUEST_DELETECHARACTER;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "33");
-			delete pMI;
 			return;
-
-		case 2:
+		}
+		// Cancel button
+		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-			delete pMI;
-			break;
 		}
 	}
 }
@@ -18484,25 +18312,21 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	PutString(335 + SCREENX, 195 + SCREENY, m_pCharList[m_wEnterGameType - 1]->m_cName, RGB(25, 35, 25));
 	PutAlignedString(178 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER2);
 
-	if ((m_sFrameMouseX >= 200 + SCREENX) && (m_sFrameMouseX <= 200 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 244 + SCREENY) && (m_sFrameMouseY <= 244 + DEF_BTNSZY + SCREENY))
+	if ((Input::GetMouseX() >= 200 + SCREENX) && (Input::GetMouseX() <= 200 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 19);
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 18);
 
-	if ((m_sFrameMouseX >= 370 + SCREENX) && (m_sFrameMouseX <= 370 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 244 + SCREENY) && (m_sFrameMouseY <= 244 + DEF_BTNSZY + SCREENY))
+	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 3);
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // MainMenu screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_MainMenu()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
-
 	m_iItemDropCnt = 0;
 	m_bItemDrop = false;
 
@@ -18515,29 +18339,20 @@ void CGame::UpdateScreen_MainMenu()
 		}
 		m_pSprite.remove(DEF_SPRID_INTERFACE_ND_LOADING);
 		EndInputString();
-		pMI = new class CMouseInterface;
-
-		pMI->AddRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY);
-		pMI->AddRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY);
-		pMI->AddRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY);
-		InputManager::Get().SetMousePosition(400, 240);
+		// TODO: SetMousePosition removed
 
 		m_cCurFocus = 1;
 		m_cMaxFocus = 3;
-
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	// Update focus based on mouse position
-	if ((m_sFrameMouseX >= 384 + SCREENX) && (m_sFrameMouseY >= 177 + SCREENY) && (m_sFrameMouseX <= 548 + SCREENX) && (m_sFrameMouseY <= 198 + SCREENY)) m_cCurFocus = 1;
-	if ((m_sFrameMouseX >= 384 + SCREENX) && (m_sFrameMouseY >= 215 + SCREENY) && (m_sFrameMouseX <= 548 + SCREENX) && (m_sFrameMouseY <= 236 + SCREENY)) m_cCurFocus = 2;
-	if ((m_sFrameMouseX >= 384 + SCREENX) && (m_sFrameMouseY >= 254 + SCREENY) && (m_sFrameMouseX <= 548 + SCREENX) && (m_sFrameMouseY <= 275 + SCREENY)) m_cCurFocus = 3;
+	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 177 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 198 + SCREENY)) m_cCurFocus = 1;
+	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 215 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 236 + SCREENY)) m_cCurFocus = 2;
+	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 254 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 275 + SCREENY)) m_cCurFocus = 3;
 
 	if (m_cArrowPressed != 0) {
 		switch (m_cArrowPressed) {
@@ -18553,51 +18368,48 @@ void CGame::UpdateScreen_MainMenu()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true) {
+	if (Input::IsKeyPressed(VK_RETURN) == true) {
 		PlaySound('E', 14, 5);
-		InputManager::Get().ClearEnterPressed();
 		switch (m_cCurFocus) {
 		case 1:
-			delete pMI;
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
 			return;
 		case 2:
 #ifdef DEF_MAKE_ACCOUNT
 			ClearContents_OnSelectCharacter();
-			delete pMI;
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
 #else
 			GoHomepage();
 #endif
 			return;
 		case 3:
-			delete pMI;
 			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
 			return;
 		}
 	}
 
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		PlaySound('E', 14, 5);
-		m_cCurFocus = iMIbuttonNum;
-		switch (iMIbuttonNum)
-		{
-		case 1:
+		// Game button
+		if (Input::IsMouseInRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY)) {
+			m_cCurFocus = 1;
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
-			delete pMI;
-			break;
-		case 2:
+		}
+		// Account button
+		else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
+			m_cCurFocus = 2;
 #ifdef DEF_MAKE_ACCOUNT
 			ClearContents_OnSelectCharacter();
-			delete pMI;
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
 #else
 			GoHomepage();
 #endif
 			return;
-		case 3:
-			delete pMI;
+		}
+		// Quit button
+		else if (Input::IsMouseInRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY)) {
+			m_cCurFocus = 3;
 			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
 			return;
 		}
@@ -18624,7 +18436,7 @@ void CGame::DrawScreen_MainMenu()
 	}
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // WaitInitData screen - Update phase (logic/input handling)
@@ -18633,13 +18445,11 @@ void CGame::UpdateScreen_WaitInitData()
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0) {
-		InputManager::Get().ClearEnterPressed();
-		InputManager::Get().ClearEscPressed();
 	}
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		if ((dwTime - m_dwTime) > 7000)
 		{
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
@@ -18654,12 +18464,10 @@ void CGame::UpdateScreen_WaitInitData()
 				m_pGSock = 0;
 			}
 		}
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
 }
 
 // WaitInitData screen - Draw phase (rendering only)
@@ -18678,30 +18486,23 @@ void CGame::DrawScreen_WaitInitData()
 	else PutAlignedString(174 + SCREENX, 467 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 8);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // SelectServer screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_SelectServer()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
 	static char cPrevFocus;
 
 	if (m_cGameModeCount == 0) {
 		EndInputString();
-
-		pMI = new class CMouseInterface;
-		pMI->AddRect(130, 177, 270, 198);
-		pMI->AddRect(130, 199, 270, 225);
-		pMI->AddRect(256, 279, 331, 308);
+		// Button rect: 130, 177, 270, 198
+		// Button rect: 130, 199, 270, 225
+		// Button rect: 256, 279, 331, 308
 
 		cPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 3;
-
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 	}
 	m_cGameModeCount++;
@@ -18722,9 +18523,8 @@ void CGame::UpdateScreen_SelectServer()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
 		case 1:
@@ -18732,26 +18532,21 @@ void CGame::UpdateScreen_SelectServer()
 				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
 			strcpy(m_cWorldServerName, NAME_WORLDNAME1);
 			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-			delete pMI;
 			return;
 		case 2:
 			std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
 			strcpy(m_cWorldServerName, "WS2");
 			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-			delete pMI;
 			return;
 		case 3:
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete pMI;
 			return;
 		}
 	}
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -18761,11 +18556,15 @@ void CGame::UpdateScreen_SelectServer()
 	}
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		PlaySound('E', 14, 5);
+
+		// Determine which button was clicked
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(130, 177, 270, 198)) iMIbuttonNum = 1;
+		else if (Input::IsMouseInRect(130, 199, 270, 225)) iMIbuttonNum = 2;
+		else if (Input::IsMouseInRect(256, 279, 331, 308)) iMIbuttonNum = 3;
 
 		switch (iMIbuttonNum) {
 		case 1:
@@ -18773,7 +18572,6 @@ void CGame::UpdateScreen_SelectServer()
 				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
 				strcpy(m_cWorldServerName, NAME_WORLDNAME1);
 				ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-				delete pMI;
 				return;
 			}
 			else m_cCurFocus = 1;
@@ -18783,21 +18581,19 @@ void CGame::UpdateScreen_SelectServer()
 				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
 				strcpy(m_cWorldServerName, "WS2");
 				ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-				delete pMI;
 				return;
 			}
 			else m_cCurFocus = 2;
 			break;
 		case 3:
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete pMI;
 			return;
 		}
 	}
 
-	if ((m_sFrameMouseX >= 130) && (m_sFrameMouseX <= 295) && (m_sFrameMouseY >= 175) && (m_sFrameMouseY <= 198)) m_cCurFocus = 1;
-	if ((m_sFrameMouseX >= 130) && (m_sFrameMouseX <= 295) && (m_sFrameMouseY >= 199) && (m_sFrameMouseY <= 225)) m_cCurFocus = 2;
-	if ((m_sFrameMouseX >= 256) && (m_sFrameMouseX <= 331) && (m_sFrameMouseY >= 279) && (m_sFrameMouseY <= 308)) m_cCurFocus = 3;
+	if ((Input::GetMouseX() >= 130) && (Input::GetMouseX() <= 295) && (Input::GetMouseY() >= 175) && (Input::GetMouseY() <= 198)) m_cCurFocus = 1;
+	if ((Input::GetMouseX() >= 130) && (Input::GetMouseX() <= 295) && (Input::GetMouseY() >= 199) && (Input::GetMouseY() <= 225)) m_cCurFocus = 2;
+	if ((Input::GetMouseX() >= 256) && (Input::GetMouseX() <= 331) && (Input::GetMouseY() >= 279) && (Input::GetMouseY() <= 308)) m_cCurFocus = 3;
 }
 
 // SelectServer screen - Draw phase (rendering only)
@@ -18816,7 +18612,7 @@ void CGame::DrawScreen_SelectServer()
 		if (m_cCurFocus == 3) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256, 282, 4, true);
 	}
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // File-scope static variables for Login screen input buffers
@@ -18827,23 +18623,14 @@ static char s_cLoginPassword[12];
 // Login screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_Login()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-	static class CMouseInterface* pMI;
 	static char cPrevFocus;
 
 	if (m_cGameModeCount == 0)
 	{
 		EndInputString();
-		pMI = new class CMouseInterface;
-		pMI->AddRect(80 + SCREENX, 151 + SCREENY, 337 + SCREENX, 179 + SCREENY);
-		pMI->AddRect(80 + SCREENX, 180 + SCREENY, 337 + SCREENX, 205 + SCREENY);
-		pMI->AddRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY);
-		pMI->AddRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY);
 		cPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 4;
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		std::memset(s_cLoginName, 0, sizeof(s_cLoginName));
 		std::memset(s_cLoginPassword, 0, sizeof(s_cLoginPassword));
@@ -18877,9 +18664,8 @@ void CGame::UpdateScreen_Login()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		switch (m_cCurFocus) {
@@ -18901,7 +18687,6 @@ void CGame::UpdateScreen_Login()
 			m_dwConnectMode = MSGID_REQUEST_LOGIN;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "11");
-			delete pMI;
 			return;
 		case 4:
 #ifdef DEF_SELECTSERVER
@@ -18909,17 +18694,14 @@ void CGame::UpdateScreen_Login()
 #else
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 #endif
-			delete pMI;
 			return;
 		}
 	}
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		EndInputString();
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -18941,55 +18723,56 @@ void CGame::UpdateScreen_Login()
 	}
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
-	iMIbuttonNum = pMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		PlaySound('E', 14, 5);
-		switch (iMIbuttonNum) {
-		case 1:
+		// Name field click
+		if (Input::IsMouseInRect(80 + SCREENX, 151 + SCREENY, 337 + SCREENX, 179 + SCREENY)) {
 			m_cCurFocus = 1;
-			break;
-		case 2:
+		}
+		// Password field click
+		else if (Input::IsMouseInRect(80 + SCREENX, 180 + SCREENY, 337 + SCREENX, 205 + SCREENY)) {
 			m_cCurFocus = 2;
-			break;
-		case 3:
-			if ((strlen(s_cLoginName) == 0) || (strlen(s_cLoginPassword) == 0)) break;
-			EndInputString();
-			std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
-			strcpy(m_cAccountName, s_cLoginName);
-			strcpy(m_cAccountPassword, s_cLoginPassword);
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
-			m_dwConnectMode = MSGID_REQUEST_LOGIN;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "11");
-			delete pMI;
-			return;
-		case 4:
+		}
+		// Login button click
+		else if (Input::IsMouseInRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY)) {
+			if ((strlen(s_cLoginName) != 0) && (strlen(s_cLoginPassword) != 0)) {
+				EndInputString();
+				std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
+				std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+				strcpy(m_cAccountName, s_cLoginName);
+				strcpy(m_cAccountPassword, s_cLoginPassword);
+				m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+				m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
+				m_pLSock->bInitBufferSize(30000);
+				ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+				m_dwConnectMode = MSGID_REQUEST_LOGIN;
+				std::memset(m_cMsg, 0, sizeof(m_cMsg));
+				strcpy(m_cMsg, "11");
+				return;
+			}
+		}
+		// Cancel button click
+		else if (Input::IsMouseInRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY)) {
 #ifdef DEF_SELECTSERVER
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
 #else
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 #endif
-			delete pMI;
 			return;
 		}
 	}
 
-	if ((m_sFrameMouseX >= 80 + SCREENX) && (m_sFrameMouseX <= 163 + SCREENX) && (m_sFrameMouseY >= 280 + SCREENY) && (m_sFrameMouseY <= 302 + SCREENY)) m_cCurFocus = 3;
-	if ((m_sFrameMouseX >= 258 + SCREENX) && (m_sFrameMouseX <= 327 + SCREENX) && (m_sFrameMouseY >= 280 + SCREENY) && (m_sFrameMouseY <= 302 + SCREENY)) m_cCurFocus = 4;
+	if ((Input::GetMouseX() >= 80 + SCREENX) && (Input::GetMouseX() <= 163 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 3;
+	if ((Input::GetMouseX() >= 258 + SCREENX) && (Input::GetMouseX() <= 327 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 4;
 }
 
 // Login screen - Draw phase (rendering only)
 void CGame::DrawScreen_Login()
 {
 	// Use shared static buffers from UpdateScreen_Login
-	_Draw_OnLogin(s_cLoginName, s_cLoginPassword, m_sFrameMouseX, m_sFrameMouseY, m_cGameModeCount);
+	_Draw_OnLogin(s_cLoginName, s_cLoginPassword, Input::GetMouseX(), Input::GetMouseY(), m_cGameModeCount);
 }
 
 // Loading screen - Update phase (resource loading)
@@ -19008,10 +18791,8 @@ void CGame::DrawScreen_Loading()
 	DrawScreen_OnLoadingProgress();
 
 	// Poll mouse for cursor
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
 	uint32_t dwTime = GameClock::GetTimeMS();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // LogResMsg screen - Update phase (logic/input handling)
@@ -19035,30 +18816,14 @@ static char s_cChgPwdNewPassword[12];
 static char s_cChgPwdNewPassConfirm[12];
 static char s_cChgPwdPrevFocus;
 static DWORD s_dwChgPwdCTime;
-static class CMouseInterface* s_pChgPwdMI;
-
 // ChangePassword screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_ChangePassword()
 {
-	char cMIresult;
-	int  iMIbuttonNum;
-
 	if (m_cGameModeCount == 0) {
 		EndInputString();
-
-		s_pChgPwdMI = new class CMouseInterface;
-		s_pChgPwdMI->AddRect(300 + SCREENX, 148 + SCREENY, 425 + SCREENX, 170 + SCREENY);
-		s_pChgPwdMI->AddRect(300 + SCREENX, 172 + SCREENY, 425 + SCREENX, 194 + SCREENY);
-		s_pChgPwdMI->AddRect(300 + SCREENX, 196 + SCREENY, 425 + SCREENX, 218 + SCREENY);
-		s_pChgPwdMI->AddRect(300 + SCREENX, 220 + SCREENY, 425 + SCREENX, 242 + SCREENY);
-
-		s_pChgPwdMI->AddRect(197 + SCREENX, 320 + SCREENY, 197 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY);
-		s_pChgPwdMI->AddRect(370 + SCREENX, 320 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY);
-
 		s_cChgPwdPrevFocus = 2;
 		m_cCurFocus = 2;
 		m_cMaxFocus = 6;
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 
 		std::memset(s_cChgPwdName, 0, sizeof(s_cChgPwdName));
@@ -19114,7 +18879,7 @@ void CGame::UpdateScreen_ChangePassword()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
@@ -19146,22 +18911,17 @@ void CGame::UpdateScreen_ChangePassword()
 			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "41");
-			delete s_pChgPwdMI;
 			return;
 
 		case 6:	// Cancel
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-			delete s_pChgPwdMI;
 			return;
 		}
-		InputManager::Get().ClearEnterPressed();
 	}
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete s_pChgPwdMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
@@ -19186,12 +18946,19 @@ void CGame::UpdateScreen_ChangePassword()
 	}
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&m_sFrameMouseX, &m_sFrameMouseY, &m_sFrameMouseZ, &m_cFrameMouseLB, &m_cFrameMouseRB);
-
-	iMIbuttonNum = s_pChgPwdMI->iGetStatus(m_sFrameMouseX, m_sFrameMouseY, m_cFrameMouseLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	// Mouse click detection
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		PlaySound('E', 14, 5);
+
+		// Determine which button was clicked
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(300 + SCREENX, 148 + SCREENY, 425 + SCREENX, 170 + SCREENY)) iMIbuttonNum = 1;
+		else if (Input::IsMouseInRect(300 + SCREENX, 172 + SCREENY, 425 + SCREENX, 194 + SCREENY)) iMIbuttonNum = 2;
+		else if (Input::IsMouseInRect(300 + SCREENX, 196 + SCREENY, 425 + SCREENX, 218 + SCREENY)) iMIbuttonNum = 3;
+		else if (Input::IsMouseInRect(300 + SCREENX, 220 + SCREENY, 425 + SCREENX, 242 + SCREENY)) iMIbuttonNum = 4;
+		else if (Input::IsMouseInRect(197 + SCREENX, 320 + SCREENY, 197 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY)) iMIbuttonNum = 5;
+		else if (Input::IsMouseInRect(370 + SCREENX, 320 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY)) iMIbuttonNum = 6;
 
 		switch (iMIbuttonNum) {
 		case 1:
@@ -19222,18 +18989,16 @@ void CGame::UpdateScreen_ChangePassword()
 			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "41");
-			delete s_pChgPwdMI;
 			return;
 
 		case 6:
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-			delete s_pChgPwdMI;
 			return;
 		}
 	}
 
-	if ((m_sFrameMouseX >= 197 + SCREENX) && (m_sFrameMouseX <= 197 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 320 + SCREENY) && (m_sFrameMouseY <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 5;
-	if ((m_sFrameMouseX >= 370 + SCREENX) && (m_sFrameMouseX <= 370 + DEF_BTNSZX + SCREENX) && (m_sFrameMouseY >= 320 + SCREENY) && (m_sFrameMouseY <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 6;
+	if ((Input::GetMouseX() >= 197 + SCREENX) && (Input::GetMouseX() <= 197 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 320 + SCREENY) && (Input::GetMouseY() <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 5;
+	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 320 + SCREENY) && (Input::GetMouseY() <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 6;
 }
 
 // ChangePassword screen - Draw phase (rendering only)
@@ -19306,7 +19071,7 @@ void CGame::DrawScreen_ChangePassword()
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // File-scope static variables for CreateNewAccount screen input buffers
@@ -19320,7 +19085,6 @@ static char s_cNewAcctQuiz[44];
 static char s_cNewAcctTempQuiz[44];
 static char s_cNewAcctAnswer[20];
 static char s_cNewAcctPrevFocus;
-static class CMouseInterface* s_pNewAcctMI;
 static short s_sNewAcctMsX;
 static short s_sNewAcctMsY;
 static char s_cNewAcctPrevLB;
@@ -19329,33 +19093,18 @@ static char s_cNewAcctPrevLB;
 void CGame::UpdateScreen_CreateNewAccount()
 {
 #ifdef DEF_MAKE_ACCOUNT
-	char cMIresult;
-	int iMIbuttonNum;
 	short msX, msY, msZ;
 	char cLB, cRB;
 
 	if (m_cGameModeCount == 0)
 	{
 		EndInputString();
-
-		s_pNewAcctMI = new class CMouseInterface;
-		// Input field areas
-		s_pNewAcctMI->AddRect(427 + SCREENX, 84 + SCREENY - 5, 550 + SCREENX, 84 + SCREENY + 15);   // 1: Account
-		s_pNewAcctMI->AddRect(427 + SCREENX, 106 + SCREENY - 5, 550 + SCREENX, 106 + SCREENY + 15); // 2: Password
-		s_pNewAcctMI->AddRect(427 + SCREENX, 129 + SCREENY - 5, 550 + SCREENX, 129 + SCREENY + 15); // 3: Confirm
-		s_pNewAcctMI->AddRect(311 + SCREENX, 215 + SCREENY - 5, 550 + SCREENX, 215 + SCREENY + 15); // 4: Email
-		s_pNewAcctMI->AddRect(311 + SCREENX, 253 + SCREENY - 5, 550 + SCREENX, 253 + SCREENY + 15); // 5: Quiz
-		s_pNewAcctMI->AddRect(311 + SCREENX, 291 + SCREENY - 5, 550 + SCREENX, 291 + SCREENY + 15); // 6: Answer
-		// Button areas (left to right: Create, Clear, Cancel)
-		s_pNewAcctMI->AddRect(297 + SCREENX, 398 + SCREENY, 297 + 72 + SCREENX, 398 + 20 + SCREENY); // 7: Create (left)
-		s_pNewAcctMI->AddRect(392 + SCREENX, 398 + SCREENY, 392 + 72 + SCREENX, 398 + 20 + SCREENY); // 8: Clear (center)
-		s_pNewAcctMI->AddRect(488 + SCREENX, 398 + SCREENY, 488 + 72 + SCREENX, 398 + 20 + SCREENY); // 9: Cancel (right)
+		// Input field areas are now detected via direct rect checks
 
 		s_cNewAcctPrevFocus = 1;
 		s_cNewAcctPrevLB = 0;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 9;
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 
 		std::memset(s_cNewAcctName, 0, sizeof(s_cNewAcctName));
@@ -19403,9 +19152,8 @@ void CGame::UpdateScreen_CreateNewAccount()
 	}
 
 	// Handle Enter key
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_cCurFocus <= 6)
@@ -19452,7 +19200,6 @@ void CGame::UpdateScreen_CreateNewAccount()
 				m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;
 				std::memset(m_cMsg, 0, sizeof(m_cMsg));
 				strcpy(m_cMsg, "01");
-				delete s_pNewAcctMI;
 				return;
 			}
 		}
@@ -19473,24 +19220,27 @@ void CGame::UpdateScreen_CreateNewAccount()
 		{
 			// Cancel - go back to main menu (right button)
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete s_pNewAcctMI;
 			return;
 		}
 	}
 
 	// Handle Escape key
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		InputManager::Get().ClearEscPressed();
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete s_pNewAcctMI;
 		return;
 	}
 
 	// Poll mouse input
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
-	m_sFrameMouseX = msX;
-	m_sFrameMouseY = msY;
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	s_sNewAcctMsX = msX;
 	s_sNewAcctMsY = msY;
 
@@ -19498,10 +19248,17 @@ void CGame::UpdateScreen_CreateNewAccount()
 	bool bMouseClick = (s_cNewAcctPrevLB != 0 && cLB == 0);
 	s_cNewAcctPrevLB = cLB;
 
-	// Handle mouse clicks on input fields via CMouseInterface
-	iMIbuttonNum = s_pNewAcctMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	// Handle mouse clicks on input fields
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(427 + SCREENX, 79 + SCREENY, 550 + SCREENX, 99 + SCREENY)) iMIbuttonNum = 1;       // Account
+		else if (Input::IsMouseInRect(427 + SCREENX, 101 + SCREENY, 550 + SCREENX, 121 + SCREENY)) iMIbuttonNum = 2; // Password
+		else if (Input::IsMouseInRect(427 + SCREENX, 124 + SCREENY, 550 + SCREENX, 144 + SCREENY)) iMIbuttonNum = 3; // Confirm
+		else if (Input::IsMouseInRect(311 + SCREENX, 210 + SCREENY, 550 + SCREENX, 230 + SCREENY)) iMIbuttonNum = 4; // Email
+		else if (Input::IsMouseInRect(311 + SCREENX, 248 + SCREENY, 550 + SCREENX, 268 + SCREENY)) iMIbuttonNum = 5; // Quiz
+		else if (Input::IsMouseInRect(311 + SCREENX, 286 + SCREENY, 550 + SCREENX, 306 + SCREENY)) iMIbuttonNum = 6; // Answer
+
 		if (iMIbuttonNum >= 1 && iMIbuttonNum <= 6)
 		{
 			// Clicked on an input field
@@ -19528,7 +19285,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 		{
 			PlaySound('E', 14, 5);
 			m_cCurFocus = 7;
-			InputManager::Get().SetEnterPressed(); // Trigger Enter handling
+			// TODO: Enter press simulation removed // Trigger Enter handling
 		}
 		else if (bOverClear)
 		{
@@ -19547,7 +19304,6 @@ void CGame::UpdateScreen_CreateNewAccount()
 		{
 			PlaySound('E', 14, 5);
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete s_pNewAcctMI;
 			return;
 		}
 	}
@@ -19727,13 +19483,12 @@ void CGame::DrawScreen_CreateNewAccount()
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(m_sFrameMouseX, m_sFrameMouseY, 0);
+	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 #endif
 }
 
 // File-scope static variables for SelectCharacter screen
 // Shared between UpdateScreen_SelectCharacter and DrawScreen_SelectCharacter
-static class CMouseInterface* s_pSelCharMI;
 static DWORD s_dwSelCharCTime;
 static short s_sSelCharMsX;
 static short s_sSelCharMsY;
@@ -19743,33 +19498,17 @@ void CGame::UpdateScreen_SelectCharacter()
 {
 	short msX, msY, msZ;
 	char cLB, cRB;
-	char cMIresult;
-	int iMIbuttonNum;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0)
 	{
 		G_cSpriteAlphaDegree = 1;
 		InitGameSettings();
-		s_pSelCharMI = new class CMouseInterface;
-		s_pSelCharMI->AddRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY);
-		s_pSelCharMI->AddRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY);
-		s_pSelCharMI->AddRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY);
-		s_pSelCharMI->AddRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY);
-
-		s_pSelCharMI->AddRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY);
-		s_pSelCharMI->AddRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY);
-		s_pSelCharMI->AddRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY);
-		s_pSelCharMI->AddRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY);
-		s_pSelCharMI->AddRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY);
-
 		m_cMaxFocus = 4;
 		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
 		if (m_cCurFocus < 1) m_cCurFocus = 1;
 
 		m_cArrowPressed = 0;
-		InputManager::Get().ClearEnterPressed();
-
 		s_dwSelCharCTime = GameClock::GetTimeMS();
 	}
 
@@ -19791,17 +19530,14 @@ void CGame::UpdateScreen_SelectCharacter()
 		m_cArrowPressed = 0;
 	}
 
-	if (InputManager::Get().IsEscPressed() == true)
+	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		delete s_pSelCharMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
 		PlaySound('E', 14, 5);
 
 		if (m_pCharList[m_cCurFocus - 1] != 0)
@@ -19825,7 +19561,6 @@ void CGame::UpdateScreen_SelectCharacter()
 					strcpy(m_cMsg, "33");
 					std::memset(m_cMapName, 0, sizeof(m_cMapName));
 					memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-					delete s_pSelCharMI;
 					return;
 				}
 			}
@@ -19834,12 +19569,19 @@ void CGame::UpdateScreen_SelectCharacter()
 		{
 			_InitOnCreateNewCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-			delete s_pSelCharMI;
 			return;
 		}
 	}
 
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	s_sSelCharMsX = msX;
 	s_sSelCharMsY = msY;
 
@@ -19860,9 +19602,20 @@ void CGame::UpdateScreen_SelectCharacter()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
-	iMIbuttonNum = s_pSelCharMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		PlaySound('E', 14, 5);
+
+		// Determine which button was clicked
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 1;
+		else if (Input::IsMouseInRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 2;
+		else if (Input::IsMouseInRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 3;
+		else if (Input::IsMouseInRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 4;
+		else if (Input::IsMouseInRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY)) iMIbuttonNum = 5;
+		else if (Input::IsMouseInRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY)) iMIbuttonNum = 6;
+		else if (Input::IsMouseInRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY)) iMIbuttonNum = 7;
+		else if (Input::IsMouseInRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY)) iMIbuttonNum = 8;
+		else if (Input::IsMouseInRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY)) iMIbuttonNum = 9;
 
 		switch (iMIbuttonNum) {
 		case 1:
@@ -19894,7 +19647,6 @@ void CGame::UpdateScreen_SelectCharacter()
 							strcpy(m_cMsg, "33");
 							std::memset(m_cMapName, 0, sizeof(m_cMapName));
 							memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-							delete s_pSelCharMI;
 							return;
 						}
 					}
@@ -19903,7 +19655,6 @@ void CGame::UpdateScreen_SelectCharacter()
 				{
 					_InitOnCreateNewCharacter();
 					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-					delete s_pSelCharMI;
 					return;
 				}
 			}
@@ -19931,7 +19682,6 @@ void CGame::UpdateScreen_SelectCharacter()
 						strcpy(m_cMsg, "33");
 						std::memset(m_cMapName, 0, sizeof(m_cMapName));
 						memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-						delete s_pSelCharMI;
 						return;
 					}
 				}
@@ -19943,7 +19693,6 @@ void CGame::UpdateScreen_SelectCharacter()
 			{
 				_InitOnCreateNewCharacter();
 				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
-				delete s_pSelCharMI;
 				return;
 			}
 			break;
@@ -19953,19 +19702,16 @@ void CGame::UpdateScreen_SelectCharacter()
 			{
 				ChangeGameMode(DEF_GAMEMODE_ONQUERYDELETECHARACTER);
 				m_wEnterGameType = m_cCurFocus;
-				delete s_pSelCharMI;
 				return;
 			}
 			break;
 
 		case 8:
 			ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD);
-			delete s_pSelCharMI;
 			return;
 
 		case 9:
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			delete s_pSelCharMI;
 			return;
 		}
 	}
@@ -19985,7 +19731,6 @@ void CGame::DrawScreen_SelectCharacter()
 
 // File-scope static variables for CreateNewCharacter screen
 // Shared between UpdateScreen_CreateNewCharacter and DrawScreen_CreateNewCharacter
-static class CMouseInterface* s_pNewCharMI;
 static int s_iNewCharPoint;
 static char s_cNewCharName[12];
 static char s_cNewCharPrevFocus;
@@ -19997,62 +19742,17 @@ static bool s_bNewCharFlag;
 // CreateNewCharacter screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_CreateNewCharacter()
 {
-	int iMIbuttonNum;
-	char cLB, cRB, cMIresult;
+	char cLB, cRB;
 	short msX, msY, msZ;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_cGameModeCount == 0)
 	{
-		s_pNewCharMI = new class CMouseInterface;
-		s_pNewCharMI->AddRect(65 + 4 + SCREENX, 65 + 45 + SCREENY, 275 + 4 + SCREENX, 82 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 111 + 45 + SCREENY, 274 + 4 - 21 + SCREENX, 124 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 111 + 45 + SCREENY, 289 + 4 - 13 + SCREENX, 124 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 126 + 45 + SCREENY, 274 + 4 - 21 + SCREENX, 139 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 126 + 45 + SCREENY, 289 + 4 - 13 + SCREENX, 139 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 141 + 45 + SCREENY, 274 + 4 - 21 + SCREENX, 154 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 141 + 45 + SCREENY, 289 + 4 - 13 + SCREENX, 154 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 156 + 45 + SCREENY, 274 + 4 - 21 + SCREENX, 169 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 156 + 45 + SCREENY, 289 + 4 - 13 + SCREENX, 169 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 171 + 45 + SCREENY, 274 + 4 - 21 + SCREENX, 184 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 171 + 45 + SCREENY, 289 + 4 - 13 + SCREENX, 184 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 231 + 45 + SCREENY, 253 + 4 + SCREENX, 244 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 231 + 45 + SCREENY, 276 + 4 + SCREENX, 244 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 246 + 45 + SCREENY, 253 + 4 + SCREENX, 259 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 246 + 45 + SCREENY, 276 + 4 + SCREENX, 259 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 261 + 45 + SCREENY, 253 + 4 + SCREENX, 274 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 261 + 45 + SCREENY, 276 + 4 + SCREENX, 274 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 276 + 45 + SCREENY, 253 + 4 + SCREENX, 289 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 276 + 45 + SCREENY, 276 + 4 + SCREENX, 289 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 291 + 45 + SCREENY, 253 + 4 + SCREENX, 304 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 291 + 45 + SCREENY, 276 + 4 + SCREENX, 304 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(232 + 4 + SCREENX, 306 + 45 + SCREENY, 253 + 4 + SCREENX, 319 + 45 + SCREENY);
-		s_pNewCharMI->AddRect(255 + 4 + SCREENX, 306 + 45 + SCREENY, 276 + 4 + SCREENX, 319 + 45 + SCREENY);
-
-		s_pNewCharMI->AddRect(384 + SCREENX, 445 + SCREENY, 384 + 72 + SCREENX, 445 + 15 + SCREENY);
-		s_pNewCharMI->AddRect(500 + SCREENX, 445 + SCREENY, 500 + 72 + SCREENX, 445 + 15 + SCREENY);
-
-		s_pNewCharMI->AddRect(60 + SCREENX, 445 + SCREENY, 60 + 72 + SCREENX, 445 + 15 + SCREENY);
-		s_pNewCharMI->AddRect(145 + SCREENX, 445 + SCREENY, 145 + 72 + SCREENX, 445 + 15 + SCREENY);
-		s_pNewCharMI->AddRect(230 + SCREENX, 445 + SCREENY, 230 + 72 + SCREENX, 445 + 15 + SCREENY);
-
 		s_iNewCharPoint = m_ccStr + m_ccVit + m_ccDex + m_ccInt + m_ccMag + m_ccChr;
 		s_iNewCharPoint = 70 - s_iNewCharPoint;
 		s_cNewCharPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 6;
-		InputManager::Get().ClearEnterPressed();
 		m_cArrowPressed = 0;
 		s_dwNewCharMTime = GameClock::GetTimeMS();
 		std::memset(s_cNewCharName, 0, sizeof(s_cNewCharName));
@@ -20088,14 +19788,20 @@ void CGame::UpdateScreen_CreateNewCharacter()
 		s_cNewCharPrevFocus = m_cCurFocus;
 	}
 
-	if (InputManager::Get().IsEscPressed() == true) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-		delete s_pNewCharMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	s_sNewCharMsX = msX;
 	s_sNewCharMsY = msY;
 
@@ -20123,10 +19829,40 @@ void CGame::UpdateScreen_CreateNewCharacter()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
-	iMIbuttonNum = s_pNewCharMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK)
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		PlaySound('E', 14, 5);
+		// Determine which button was clicked
+		int iMIbuttonNum = 0;
+		if (Input::IsMouseInRect(69 + SCREENX, 110 + SCREENY, 279 + SCREENX, 127 + SCREENY)) iMIbuttonNum = 1;  // Name
+		else if (Input::IsMouseInRect(236 + SCREENX, 156 + SCREENY, 257 + SCREENX, 169 + SCREENY)) iMIbuttonNum = 2;  // Gender -
+		else if (Input::IsMouseInRect(259 + SCREENX, 156 + SCREENY, 280 + SCREENX, 169 + SCREENY)) iMIbuttonNum = 3;  // Gender +
+		else if (Input::IsMouseInRect(236 + SCREENX, 171 + SCREENY, 257 + SCREENX, 184 + SCREENY)) iMIbuttonNum = 4;  // Skin -
+		else if (Input::IsMouseInRect(259 + SCREENX, 171 + SCREENY, 280 + SCREENX, 184 + SCREENY)) iMIbuttonNum = 5;  // Skin +
+		else if (Input::IsMouseInRect(236 + SCREENX, 186 + SCREENY, 257 + SCREENX, 199 + SCREENY)) iMIbuttonNum = 6;  // Hair style -
+		else if (Input::IsMouseInRect(259 + SCREENX, 186 + SCREENY, 280 + SCREENX, 199 + SCREENY)) iMIbuttonNum = 7;  // Hair style +
+		else if (Input::IsMouseInRect(236 + SCREENX, 201 + SCREENY, 257 + SCREENX, 214 + SCREENY)) iMIbuttonNum = 8;  // Hair color -
+		else if (Input::IsMouseInRect(259 + SCREENX, 201 + SCREENY, 280 + SCREENX, 214 + SCREENY)) iMIbuttonNum = 9;  // Hair color +
+		else if (Input::IsMouseInRect(236 + SCREENX, 216 + SCREENY, 257 + SCREENX, 229 + SCREENY)) iMIbuttonNum = 10; // Underwear -
+		else if (Input::IsMouseInRect(259 + SCREENX, 216 + SCREENY, 280 + SCREENX, 229 + SCREENY)) iMIbuttonNum = 11; // Underwear +
+		else if (Input::IsMouseInRect(236 + SCREENX, 276 + SCREENY, 257 + SCREENX, 289 + SCREENY)) iMIbuttonNum = 12; // Str +
+		else if (Input::IsMouseInRect(259 + SCREENX, 276 + SCREENY, 280 + SCREENX, 289 + SCREENY)) iMIbuttonNum = 13; // Str -
+		else if (Input::IsMouseInRect(236 + SCREENX, 291 + SCREENY, 257 + SCREENX, 304 + SCREENY)) iMIbuttonNum = 14; // Vit +
+		else if (Input::IsMouseInRect(259 + SCREENX, 291 + SCREENY, 280 + SCREENX, 304 + SCREENY)) iMIbuttonNum = 15; // Vit -
+		else if (Input::IsMouseInRect(236 + SCREENX, 306 + SCREENY, 257 + SCREENX, 319 + SCREENY)) iMIbuttonNum = 16; // Dex +
+		else if (Input::IsMouseInRect(259 + SCREENX, 306 + SCREENY, 280 + SCREENX, 319 + SCREENY)) iMIbuttonNum = 17; // Dex -
+		else if (Input::IsMouseInRect(236 + SCREENX, 321 + SCREENY, 257 + SCREENX, 334 + SCREENY)) iMIbuttonNum = 18; // Int +
+		else if (Input::IsMouseInRect(259 + SCREENX, 321 + SCREENY, 280 + SCREENX, 334 + SCREENY)) iMIbuttonNum = 19; // Int -
+		else if (Input::IsMouseInRect(236 + SCREENX, 336 + SCREENY, 257 + SCREENX, 349 + SCREENY)) iMIbuttonNum = 20; // Mag +
+		else if (Input::IsMouseInRect(259 + SCREENX, 336 + SCREENY, 280 + SCREENX, 349 + SCREENY)) iMIbuttonNum = 21; // Mag -
+		else if (Input::IsMouseInRect(236 + SCREENX, 351 + SCREENY, 257 + SCREENX, 364 + SCREENY)) iMIbuttonNum = 22; // Chr +
+		else if (Input::IsMouseInRect(259 + SCREENX, 351 + SCREENY, 280 + SCREENX, 364 + SCREENY)) iMIbuttonNum = 23; // Chr -
+		else if (Input::IsMouseInRect(384 + SCREENX, 445 + SCREENY, 456 + SCREENX, 460 + SCREENY)) iMIbuttonNum = 24; // Create
+		else if (Input::IsMouseInRect(500 + SCREENX, 445 + SCREENY, 572 + SCREENX, 460 + SCREENY)) iMIbuttonNum = 25; // Cancel
+		else if (Input::IsMouseInRect(60 + SCREENX, 445 + SCREENY, 132 + SCREENX, 460 + SCREENY)) iMIbuttonNum = 26;  // Aresden
+		else if (Input::IsMouseInRect(145 + SCREENX, 445 + SCREENY, 217 + SCREENX, 460 + SCREENY)) iMIbuttonNum = 27; // Elvine
+		else if (Input::IsMouseInRect(230 + SCREENX, 445 + SCREENY, 302 + SCREENX, 460 + SCREENY)) iMIbuttonNum = 28; // Traveler
+
 		switch (iMIbuttonNum) {
 		case 1:
 			m_cCurFocus = 1;
@@ -20274,7 +20010,6 @@ void CGame::UpdateScreen_CreateNewCharacter()
 			m_dwConnectMode = MSGID_REQUEST_CREATENEWCHARACTER;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "22");
-			delete s_pNewCharMI;
 			return;
 
 		case 25:
@@ -20284,7 +20019,6 @@ void CGame::UpdateScreen_CreateNewCharacter()
 				return;
 			}
 			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
-			delete s_pNewCharMI;
 			return;
 
 		case 26: // WARRIOR
@@ -20479,7 +20213,6 @@ void CGame::DrawScreen_CreateNewCharacter()
 	}
 }
 
-
 void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus)
 {
 	int i;
@@ -20661,7 +20394,6 @@ void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short 
 	PutAlignedString(122, 315, 456, UPDATE_SCREEN_ON_SELECT_CHARACTER36);//"Test Server"
 }
 
-
 void CGame::ReserveFightzoneResponseHandler(char* pData)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseFightzoneReserve>(
@@ -20703,17 +20435,8 @@ void CGame::UpdateScreen_OnLogResMsg()
 	char  cLB, cRB;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	static DWORD dwCTime;
-	static class CMouseInterface* pMI;
-	int   iMIbuttonNum;
-	char  cMIresult;
-
-
 	if (m_cGameModeCount == 0)
 	{
-		pMI = new class CMouseInterface;
-		pMI->AddRect(370 + SCREENX, 240 + SCREENY, 370 + SCREENX + DEF_BTNSZX, 240 + SCREENY + DEF_BTNSZY);
-		InputManager::Get().ClearEnterPressed();
-		InputManager::Get().ClearEscPressed();
 		m_cArrowPressed = 0;
 		dwCTime = GameClock::GetTimeMS();
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
@@ -20721,7 +20444,7 @@ void CGame::UpdateScreen_OnLogResMsg()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	if (InputManager::Get().IsEscPressed() == true || InputManager::Get().IsEnterPressed()) {
+	if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN)) {
 		switch (m_cMsg[0]) {
 		case '0':
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
@@ -20755,13 +20478,18 @@ void CGame::UpdateScreen_OnLogResMsg()
 			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 			break;
 		}
-
-		delete pMI;
-		InputManager::Get().ClearEscPressed();
 		return;
 	}
 
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 
 	switch (m_cMsg[0]) {
 	case '0':
@@ -20929,7 +20657,6 @@ void CGame::UpdateScreen_OnLogResMsg()
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Please! Change password");
 		break;
 
-
 	case 'U': // v2.15
 		PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Keycode input Success!", 58, 0, 0);
 		PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Keycode Registration successed.");
@@ -20952,10 +20679,9 @@ void CGame::UpdateScreen_OnLogResMsg()
 		break;
 	}
 
-	iMIbuttonNum = pMI->iGetStatus(msX, msY, cLB, &cMIresult);
-	if (cMIresult == DEF_MIRESULT_CLICK) {
-		switch (iMIbuttonNum) {
-		case 1:
+	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+		// Check if OK button was clicked
+		if (Input::IsMouseInRect(370 + SCREENX, 240 + SCREENY, 370 + SCREENX + DEF_BTNSZX, 240 + SCREENY + DEF_BTNSZY)) {
 			switch (m_cMsg[0]) {
 			case '0':
 				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
@@ -20989,7 +20715,6 @@ void CGame::UpdateScreen_OnLogResMsg()
 				ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
 				break;
 			}
-			delete pMI;
 			return;
 		}
 	}
@@ -21636,8 +21361,6 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 	}
 }
 
-
-
 void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 {
 	char cTxt[32], cTxt2[64];
@@ -21912,7 +21635,6 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 	*ipIndex = iRet;
 	return false;
 }
-
 
 void CGame::DrawVersion()
 {
@@ -22377,7 +22099,6 @@ void CGame::ClearSkillUsingStatus()
 	m_bSkillUsingStatus = false;
 }
 
-
 void CGame::NpcTalkHandler(char* pData)
 {
 	char cRewardName[21], cTargetName[21], cTemp[21], cTxt[250];
@@ -22687,7 +22408,6 @@ void CGame::_CalcSocketClosed()
 	{
 		delete m_pGSock;
 		m_pGSock = 0;
-		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -22757,7 +22477,15 @@ void CGame::UpdateScreen_OnGame()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 20) m_cGameModeCount = 20;
 
-	InputManager::Get().GetLegacyState(&s_sOnGameMsX, &s_sOnGameMsY, &s_sOnGameMsZ, &s_cOnGameLB, &s_cOnGameRB);
+	s_sOnGameMsX = static_cast<short>(Input::GetMouseX());
+
+	s_sOnGameMsY = static_cast<short>(Input::GetMouseY());
+
+	s_sOnGameMsZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	s_cOnGameLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	s_cOnGameRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	m_dwCurTime = GameClock::GetTimeMS();
 
 	// Sync manager singletons with game state
@@ -22775,13 +22503,10 @@ void CGame::UpdateScreen_OnGame()
 	}
 
 	// Enter key handling
-	if (InputManager::Get().IsEnterPressed() == true)
+	if (Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		InputManager::Get().ClearEnterPressed();
-
 		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
 			EndInputString();
-			InputManager::Get().ClearEnterPressed();
 			if (strlen(m_cGuildName) == 0) return;
 			if (strcmp(m_cGuildName, "NONE") != 0) {
 				bSendCommand(MSGID_REQUEST_CREATENEWGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
@@ -22977,7 +22702,6 @@ void CGame::UpdateScreen_OnGame()
 		WriteSettings(); // Save settings on logout
 		delete m_pGSock;
 		m_pGSock = 0;
-		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -23432,7 +23156,6 @@ void CGame::MotionResponseHandler(char* pData)
 	}
 }
 
-
 void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB)
 {
 	char   cDir, absX, absY, cName[12];
@@ -23477,7 +23200,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	if (m_bIsObserverMode == true) return;
 
-	if (InputManager::Get().IsAltDown()) // [ALT]
+	if (Input::IsAltDown()) // [ALT]
 		m_bSuperAttackMode = true;
 	else m_bSuperAttackMode = false;
 
@@ -23702,7 +23425,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	{
 		delete m_pGSock;
 		m_pGSock = 0;
-		InputManager::Get().ClearEscPressed();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
@@ -23754,7 +23476,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			if (memcmp(m_cMCName, m_cPlayerName, 10) == 0) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
-				if (InputManager::Get().IsCtrlDown() == true)
+				if (Input::IsCtrlDown() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 					if ((iObjectStatus & 0x10) != 0) return;
@@ -23791,7 +23513,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 7: // SS
 							if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 							{
-								if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 								{
 									if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 									{
@@ -23816,7 +23538,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else
 							{
-								if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
+								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
 									&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 									m_cCommand = DEF_OBJECTRUN;	// Staminar
 								else m_cCommand = DEF_OBJECTMOVE;
@@ -23856,7 +23578,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
 									&& (_iGetAttackType() != 5)) // no Dash possible with StormBlade
 								{
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 									{
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
@@ -23881,7 +23603,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 								else
 								{
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
 										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -23902,7 +23624,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -23922,7 +23644,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -23945,7 +23667,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 								{
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 									{
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
@@ -23970,7 +23692,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 								else
 								{
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -23989,7 +23711,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -24009,7 +23731,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -24028,7 +23750,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
 										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 											wType = _iGetAttackType();
@@ -24048,7 +23770,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 								}
 								else {
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -24275,7 +23997,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
 										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 										m_cCommand = DEF_OBJECTRUN;
 									else m_cCommand = DEF_OBJECTMOVE;
@@ -24288,7 +24010,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
 										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24298,7 +24020,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
 										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24315,7 +24037,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									else
 									{
-										if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -24328,7 +24050,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								case 9: // Fencing
 									if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true))
 									{
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24337,7 +24059,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									else
 									{
-										if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -24349,7 +24071,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 								case 10: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24357,7 +24079,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -24368,7 +24090,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 								case 14: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24376,7 +24098,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -24387,7 +24109,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 								case 21: //
 									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
 											m_cCommand = DEF_OBJECTATTACKMOVE;
 										else m_cCommand = DEF_OBJECTATTACK;
 										m_sCommX = m_sMCX;
@@ -24395,7 +24117,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 											m_cCommand = DEF_OBJECTRUN;
 										else m_cCommand = DEF_OBJECTMOVE;
@@ -24410,7 +24132,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 					}
 					else {
-						if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+						if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 							(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 							m_cCommand = DEF_OBJECTRUN;
 						else m_cCommand = DEF_OBJECTMOVE;
@@ -24422,7 +24144,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			}
 			else
 			{
-				if ((InputManager::Get().IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
+				if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
 					(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
 					m_cCommand = DEF_OBJECTRUN;
 				else m_cCommand = DEF_OBJECTMOVE;
@@ -24449,7 +24171,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			absY = abs(m_sPlayerY - m_sMCY);
 			if (absX == 0 && absY == 0) return;
 
-			if (InputManager::Get().IsCtrlDown() == true)
+			if (Input::IsCtrlDown() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if ((iObjectStatus & 0x10) != 0) return;
@@ -24786,11 +24508,11 @@ MOTION_COMMAND_PROCESS:;
 			{
 				if (m_cCommand == DEF_OBJECTMOVE)
 				{
-					if (ConfigManager::Get().IsRunningModeEnabled() || InputManager::Get().IsShiftDown()) m_cCommand = DEF_OBJECTRUN;
+					if (ConfigManager::Get().IsRunningModeEnabled() || Input::IsShiftDown()) m_cCommand = DEF_OBJECTRUN;
 				}
 				if (m_cCommand == DEF_OBJECTRUN)
 				{
-					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (InputManager::Get().IsShiftDown() == false)) m_cCommand = DEF_OBJECTMOVE;
+					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (Input::IsShiftDown() == false)) m_cCommand = DEF_OBJECTMOVE;
 					if (m_iSP < 1) m_cCommand = DEF_OBJECTMOVE;
 				}
 
@@ -24987,7 +24709,7 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 	sTmpSprFrm = m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame;
 
 	char cItemID;
-	if (InputManager::Get().IsShiftDown())
+	if (Input::IsShiftDown())
 	{
 		for (int i = 0; i < DEF_MAXITEMS; i++)
 		{
@@ -26420,7 +26142,7 @@ void CGame::UseShortCut(int num)
 	if (num < 4) index = num;
 	else index = num + 7;
 	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
-	if (InputManager::Get().IsCtrlDown() == true)
+	if (Input::IsCtrlDown() == true)
 	{
 		if (m_sRecentShortCut == -1)
 		{
@@ -26558,7 +26280,6 @@ void CGame::UseMagic(int iMagicNo)
 	//m_bIsGetPointingMode = true;
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
 }
-
 
 void CGame::ReleaseEquipHandler(char cEquipPos)
 {
@@ -27018,6 +26739,4 @@ void CGame::Abaddon_corpse(int sX, int sY)
 			_DrawThunderEffect(x, 0, x, y, ir, ir, 2);
 		}
 }
-
-
 

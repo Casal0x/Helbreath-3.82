@@ -1,6 +1,6 @@
 #include "DialogBox_MagicShop.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
 
@@ -21,7 +21,7 @@ void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Mouse wheel scrolling - read and consume input directly
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::MagicShop)
 	{
-		short sWheelDelta = InputManager::Get().GetWheelDelta();
+		short sWheelDelta = Input::GetMouseWheelDelta();
 		if (sWheelDelta != 0)
 		{
 			if (sWheelDelta > 0)
@@ -29,7 +29,6 @@ void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (sWheelDelta < 0)
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView++;
 			// Consume the input
-			InputManager::Get().ClearWheelDelta();
 		}
 	}
 
@@ -232,5 +231,4 @@ void DialogBox_MagicShop::HandlePageClick(short sX, short sY, short msX, short m
 		(msY >= sY + iAdjY + 248 + 35) && (msY <= sY + iAdjY + 260 + 35))
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 9;
 }
-
 

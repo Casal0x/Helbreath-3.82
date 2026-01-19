@@ -41,7 +41,7 @@ void CGame::RegisterHotkeys()
 
 void CGame::Hotkey_ToggleForceAttack()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	if (m_bForceAttack)
@@ -58,7 +58,7 @@ void CGame::Hotkey_ToggleForceAttack()
 
 void CGame::Hotkey_CycleDetailLevel()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	int detailLevel = ConfigManager::Get().GetDetailLevel();
@@ -80,7 +80,7 @@ void CGame::Hotkey_CycleDetailLevel()
 
 void CGame::Hotkey_ToggleHelp()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
@@ -94,7 +94,7 @@ void CGame::Hotkey_ToggleHelp()
 
 void CGame::Hotkey_ToggleDialogTransparency()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
@@ -103,7 +103,7 @@ void CGame::Hotkey_ToggleDialogTransparency()
 
 void CGame::Hotkey_ToggleSystemMenu()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
@@ -113,7 +113,7 @@ void CGame::Hotkey_ToggleSystemMenu()
 
 void CGame::Hotkey_ToggleGuideMap()
 {
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME || !InputManager::Get().IsCtrlDown()) {
+	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME || !Input::IsCtrlDown()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
@@ -123,7 +123,7 @@ void CGame::Hotkey_ToggleGuideMap()
 void CGame::Hotkey_EnableAdminCommand()
 {
 #ifdef _DEBUG
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME) {
 		return;
 	}
 	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
@@ -134,7 +134,7 @@ void CGame::Hotkey_EnableAdminCommand()
 
 void CGame::Hotkey_ToggleRunningMode()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
@@ -152,7 +152,7 @@ void CGame::Hotkey_ToggleRunningMode()
 
 void CGame::Hotkey_ToggleSoundAndMusic()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	if (AudioManager::Get().IsMusicEnabled())
@@ -184,7 +184,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 
 void CGame::Hotkey_WhisperTarget()
 {
-	if (!InputManager::Get().IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
 		return;
 	}
 	char tempid[100], cLB, cRB;
@@ -192,7 +192,15 @@ void CGame::Hotkey_WhisperTarget()
 	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
 	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
 	std::memset(tempid, 0, sizeof(tempid));
-	InputManager::Get().GetLegacyState(&msX, &msY, &msZ, &cLB, &cRB);
+	msX = static_cast<short>(Input::GetMouseX());
+
+	msY = static_cast<short>(Input::GetMouseY());
+
+	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+
+	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+
+	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
 	{
 		char* token, cBuff[64];
@@ -437,7 +445,7 @@ void CGame::Hotkey_Simple_Screenshot()
 
 void CGame::Hotkey_Simple_TabToggleCombat()
 {
-	if (InputManager::Get().IsShiftDown())
+	if (Input::IsShiftDown())
 	{
 		m_cCurFocus--;
 		if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
@@ -462,11 +470,10 @@ void CGame::Hotkey_Simple_ToggleSafeAttack()
 
 void CGame::Hotkey_Simple_Escape()
 {
-	InputManager::Get().OnKeyUp(VK_ESCAPE);
-	InputManager::Get().SetEscPressed();
+	// Note: Escape handling is automatic through Input::IsKeyPressed(VK_ESCAPE)
 	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
 	{
-		if ((m_bIsObserverMode == true) && (InputManager::Get().IsShiftDown())) {
+		if ((m_bIsObserverMode == true) && (Input::IsShiftDown())) {
 			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
 			PlaySound('E', 14, 5);

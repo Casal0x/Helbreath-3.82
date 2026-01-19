@@ -9,6 +9,8 @@
 #include "DDrawTextRenderer.h"
 #include "DDrawBitmapFont.h"
 #include "Win32Window.h"
+#include "Win32Input.h"
+#include "IInput.h"
 
 // Static member initialization
 IRenderer* Renderer::s_pRenderer = nullptr;
@@ -162,6 +164,13 @@ bool Window::Create(const WindowParams& params)
         return false;
     }
 
+    // Create input system and initialize with window handle
+    Input::Create();
+    if (Input::Get())
+    {
+        static_cast<Win32Input*>(Input::Get())->Initialize(s_pWindow->GetHandle());
+    }
+
     return true;
 }
 
@@ -172,6 +181,9 @@ IWindow* Window::Get()
 
 void Window::Destroy()
 {
+    // Destroy input system first
+    Input::Destroy();
+
     if (s_pWindow)
     {
         s_pWindow->Destroy();

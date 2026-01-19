@@ -113,7 +113,11 @@ void InputManager::OnKeyDown(int vk)
 	if (vk < 0 || vk >= kKeyCount) {
 		return;
 	}
-	m_keyPressed[vk] = true;
+	// Only set pressed on initial key down, not on auto-repeat
+	// This matches mouse button behavior and prevents double-registration
+	if (!m_keyDown[vk]) {
+		m_keyPressed[vk] = true;
+	}
 	m_keyDown[vk] = true;
 }
 

@@ -1,5 +1,5 @@
 #include "DialogBox_SysMenu.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
@@ -68,7 +68,7 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 
 	// Resize and center the window using the abstraction layer
 	Window::SetSize(newWidth, newHeight, true);
-	InputManager::Get().SetActive(true);
+	Input::Get()->SetWindowActive(true);
 }
 
 DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
@@ -415,7 +415,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 			if (isFullscreen) {
 				m_pGame->m_Renderer->SetFullscreen(false);
 				m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
-				InputManager::Get().SetActive(true);
+				Input::Get()->SetWindowActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(false);
 				ConfigManager::Get().Save();
 				m_pGame->m_bIsRedrawPDBGS = true;
@@ -428,7 +428,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 			if (!isFullscreen) {
 				m_pGame->m_Renderer->SetFullscreen(true);
 				m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
-				InputManager::Get().SetActive(true);
+				Input::Get()->SetWindowActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(true);
 				ConfigManager::Get().Save();
 				m_pGame->m_bIsRedrawPDBGS = true;

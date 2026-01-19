@@ -101,6 +101,7 @@
     <ClInclude Include="DDrawSpriteFactory.h" />
     <ClInclude Include="DDrawTextRenderer.h" />
     <ClInclude Include="DDrawBitmapFont.h" />
+    <ClInclude Include="Win32Input.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DXC_ddraw.cpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="DDrawSpriteFactory.cpp" />
     <ClCompile Include="DDrawTextRenderer.cpp" />
     <ClCompile Include="DDrawBitmapFont.cpp" />
+    <ClCompile Include="Win32Input.cpp" />
     <ClCompile Include="..\..\Dependencies\Shared\ISpriteFactory.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

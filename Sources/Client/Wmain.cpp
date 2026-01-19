@@ -20,7 +20,7 @@
 #include "resource.h"
 #include "FrameTiming.h"
 #include "ConfigManager.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "RendererFactory.h"
 #include "GameWindowHandler.h"
 
@@ -124,20 +124,27 @@ void EventLoop()
     if (!pWindow)
         return;
 
-    while (pWindow->ProcessMessages())
+    // Main event loop - BeginFrame must be called BEFORE ProcessMessages
+    // so that events processed in this frame are visible to game code
+    while (true)
     {
+        // Reset per-frame input state from PREVIOUS frame
+        Input::BeginFrame();
+
+        // Process window messages - this sets pressed/released states for THIS frame
+        if (!pWindow->ProcessMessages())
+            break;
+
         if (G_pGame->m_bIsProgramActive)
         {
             FrameTiming::BeginFrame();
             G_pGame->RenderFrame();
-            InputManager::Get().BeginFrame();
             FrameTiming::EndFrame();
         }
         else if (G_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
         {
             FrameTiming::BeginFrame();
             G_pGame->RenderFrame();
-            InputManager::Get().BeginFrame();
             FrameTiming::EndFrame();
         }
         else

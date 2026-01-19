@@ -1,5 +1,7 @@
 // MouseInterface.h: interface for the CMouseInterface class.
 //
+// Legacy UI hit-testing class - used for rectangular button click detection.
+// TODO: Incrementally replace usages with Input::IsClickInRect()
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -13,7 +15,7 @@
 #define DEF_MIRESULT_CLICK		2
 
 
-class CMouseInterface  
+class CMouseInterface
 {
 public:
 	int iGetStatus(int msX, int msY, char cLB, char * pResult);

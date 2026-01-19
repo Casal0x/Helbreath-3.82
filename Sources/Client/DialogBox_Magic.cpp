@@ -1,7 +1,7 @@
 #include "DialogBox_Magic.h"
 #include "ConfigManager.h"
 #include "Game.h"
-#include "InputManager.h"
+#include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
 
@@ -33,7 +33,6 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		if (msZ > 0) Info().sView--;
 		if (msZ < 0) Info().sView++;
-		InputManager::Get().ClearWheelDelta();
 	}
 	if (Info().sView < 0) Info().sView = 9;
 	if (Info().sView > 9) Info().sView = 0;
