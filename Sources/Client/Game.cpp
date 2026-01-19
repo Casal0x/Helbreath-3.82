@@ -222,8 +222,8 @@ CGame::CGame()
 
 	m_pExID = 0;
 
-	m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-	m_stMCursor.dwSelectClickTime = 0;
+	// Previous cursor status tracking removed
+	CursorTarget::ResetSelectionClickTime();
 
 	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
 	m_iGameServerMode = 2; // Snoopy: Default is INTERNET
@@ -546,8 +546,7 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		}
 	}
 
-	m_stMCursor.sX = 0;
-	m_stMCursor.sY = 0;
+	// Mouse position tracking removed - use Input::GetMouseX/Y
 	m_pMapData = new class CMapData(this);
 	std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
 	std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
@@ -2290,7 +2289,6 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	m_sMCY = CursorTarget::GetFocusedMapY();
 	std::memset(m_cMCName, 0, sizeof(m_cMCName));
 	std::strncpy(m_cMCName, CursorTarget::GetFocusedName(), sizeof(m_cMCName) - 1);
-	m_stMCursor.sCursorFrame = CursorTarget::GetCursorFrame();
 
 	// Draw focused object with highlight (transparency)
 	if (CursorTarget::HasFocusedObject())
@@ -3814,10 +3812,7 @@ bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 						}
 						else
 						{
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-							m_stMCursor.sSelectedObjectID = cItemID;
-							m_stMCursor.sDistX = msX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
-							m_stMCursor.sDistY = msY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
+							CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - (sX + 32 + m_pItemList[cItemID]->m_sX), msY - (sY + 44 + m_pItemList[cItemID]->m_sY));
 						}
 						return true;
 					}
@@ -3906,7 +3901,7 @@ bool CGame::_bCheckDraggingItemRelease(short msX, short msY)
 				return true;
 			}
 		}
-	bItemDrop_ExternalScreen((char)m_stMCursor.sSelectedObjectID, msX, msY);
+	bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
 	return false;
 }
 
@@ -4152,8 +4147,8 @@ void CGame::InitGameSettings()
 
 	m_bIsCombatMode = false;
 
-	m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-	m_stMCursor.dwSelectClickTime = 0;
+	// Previous cursor status tracking removed
+	CursorTarget::ResetSelectionClickTime();
 
 	m_bSkillUsingStatus = false;
 	m_bItemUsingStatus = false;
@@ -4328,7 +4323,7 @@ void CGame::InitGameSettings()
 	m_iSpecialAbilityType = 0;
 	m_dwSpecialAbilitySettingTime = 0;
 	m_iSpecialAbilityTimeLeftSec = 0;
-	m_stMCursor.cSelectedObjectType = 0;
+	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
 	m_bIsTeleportRequested = false;
 	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
@@ -4671,7 +4666,7 @@ void CGame::bItemDrop_IconPannel(short msX, short msY)
 	short sX, sY, sItemIndex;
 	sX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;	sY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
 
-	sItemIndex = m_stMCursor.sSelectedObjectID;
+	sItemIndex = CursorTarget::GetSelectedID();
 	if (m_bIsItemDisabled[sItemIndex] == true) return;
 	if (m_cCommand < 0) return;
 	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))
@@ -12586,16 +12581,13 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 				{
 					m_dialogBoxManager.EnableDialogBox(cDlgID, 0, 0, 0);
 
-					m_stMCursor.sPrevX = msX;
-					m_stMCursor.sPrevY = msY;
-					m_stMCursor.sDistX = msX - m_dialogBoxManager.Info(cDlgID).sX;
-					m_stMCursor.sDistY = msY - m_dialogBoxManager.Info(cDlgID).sY;
+					CursorTarget::SetPrevPosition(msX, msY);
+					CursorTarget::SetSelection(CursorTarget::GetSelectedType(), CursorTarget::GetSelectedID(), msX - m_dialogBoxManager.Info(cDlgID).sX, msY - m_dialogBoxManager.Info(cDlgID).sY);
 
 					switch (cDlgID) {
 					case 1:
 						if (bDlgBoxPress_Character(msX, msY) == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						break;
 
@@ -12637,15 +12629,13 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 					case 49:
 					case 54:
 					case 58:
-						m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-						m_stMCursor.sSelectedObjectID = cDlgID;
+						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						break;
 
 					case 2:	// (Sell Item)
 						if (bDlgBoxPress_Inventory(msX, msY) == false)
 						{
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						break;
 
@@ -12658,8 +12648,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if (m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12673,8 +12662,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if ((m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bIsScrollSelected == false)) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12688,8 +12676,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if (m_dialogBoxManager.Info(DialogBoxId::Bank).bIsScrollSelected == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12704,8 +12691,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 						if (m_dialogBoxManager.Info(DialogBoxId::Skill).bIsScrollSelected == false)
 						{
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12719,8 +12705,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if (m_dialogBoxManager.Info(DialogBoxId::Text).bIsScrollSelected == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12738,8 +12723,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if (m_dialogBoxManager.Info(DialogBoxId::SystemMenu).bIsScrollSelected == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12753,8 +12737,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						}
 
 						if (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).bIsScrollSelected == false) {
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						else return -1;
 						break;
@@ -12762,29 +12745,24 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 					case 26:
 						if (bDlgBoxPress_SkillDlg(msX, msY) == false)
 						{
-							m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-							m_stMCursor.sSelectedObjectID = cDlgID;
+							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						break;
 
 					case 27:
-						m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-						m_stMCursor.sSelectedObjectID = cDlgID;
+						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						break;
 
 					case 41: //Snoopy: Drag exchange confirmation dialog
-						m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-						m_stMCursor.sSelectedObjectID = cDlgID;
+						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						break;
 
 					case 42:  // Snoopy: Drag majestic stats
-						m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-						m_stMCursor.sSelectedObjectID = cDlgID;
+						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						break;
 
 					case 51:  // Snoopy: Drag Gail menu
-						m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_DLGBOX;
-						m_stMCursor.sSelectedObjectID = cDlgID;
+						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						break;
 					}
 					return 1;
@@ -15008,10 +14986,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 72, sY + 135, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD], 0, 0);
 				return true;
 			}
 		}
@@ -15021,10 +14996,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER], 0, 0);
 				return true;
 			}
 		}
@@ -15034,10 +15006,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER], 0, 0);
 				return true;
 			}
 		}
@@ -15046,10 +15015,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK], 0, 0);
 				return true;
 			}
 		}
@@ -15059,10 +15025,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15072,10 +15035,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15085,10 +15045,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 90, sY + 170, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15098,10 +15055,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY], 0, 0);
 				return true;
 			}
 		}
@@ -15111,10 +15065,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY], 0, 0);
 				return true;
 			}
 		}
@@ -15124,10 +15075,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS], 0, 0);
 				return true;
 			}
 		}
@@ -15137,10 +15085,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS], 0, 0);
 				return true;
 			}
 		}
@@ -15150,10 +15095,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS], 0, 0);
 				return true;
 			}
 		}
@@ -15163,10 +15105,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 41, sY + 137, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK], 0, 0);
 				return true;
 			}
 		}
@@ -15179,10 +15118,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 72, sY + 139, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD], 0, 0);
 				return true;
 			}
 		}
@@ -15192,10 +15128,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER], 0, 0);
 				return true;
 			}
 		}
@@ -15205,10 +15138,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER], 0, 0);
 				return true;
 			}
 		}
@@ -15218,10 +15148,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK], 0, 0);
 				return true;
 			}
 		}
@@ -15231,10 +15158,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15244,10 +15168,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15257,10 +15178,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 84, sY + 175, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND], 0, 0);
 				return true;
 			}
 		}
@@ -15270,10 +15188,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY], 0, 0);
 				return true;
 			}
 		}
@@ -15283,10 +15198,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY], 0, 0);
 				return true;
 			}
 		}
@@ -15296,10 +15208,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS], 0, 0);
 				return true;
 			}
 		}
@@ -15309,10 +15218,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS], 0, 0);
 				return true;
 			}
 		}
@@ -15322,10 +15228,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS], 0, 0);
 				return true;
 			}
 		}
@@ -15335,10 +15238,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
 			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 45, sY + 143, sFrame, msX, msY))
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK];
-				m_stMCursor.sDistX = 0;
-				m_stMCursor.sDistY = 0;
+				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK], 0, 0);
 				return true;
 			}
 		}
@@ -16047,6 +15947,7 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 	int i, iAdjX, iAdjY;
 	char  cItemID;
 	short sX, sY, x1, y1, x2, y2, sArray[10];
+	short itemDrawX, itemDrawY;
 	sX = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX;
 	sY = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY;
 	iAdjX = 5;
@@ -16065,13 +15966,14 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 55; break;
+				case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 55; break;
+				case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
+				case 4: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 100; break;
+				case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 100; break;
+				case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
 				}
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
 				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
 				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
 				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
@@ -16087,10 +15989,7 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
 					}
 					m_bIsItemDisabled[cItemID] = false;
-					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
+					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
 					return true;
 				}
 			}
@@ -16109,13 +16008,14 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 55 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 1 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55 + 45 * 2 + 30 + 13, sY + iAdjY + 100 + 180, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: itemDrawX = sX + iAdjX + 55 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
+				case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
+				case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
+				case 4: itemDrawX = sX + iAdjX + 55 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
+				case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
+				case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
 				}
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
 				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
 				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
 				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
@@ -16132,10 +16032,7 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
 					}
 					m_bIsItemDisabled[cItemID] = false;
-					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
+					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
 					m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
 					return true;
 				}
@@ -16155,13 +16052,14 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 			{
 				cItemID = (char)sArray[i];
 				switch (i) {
-				case 1: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 55, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 2: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 40, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 3: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 2, sY + iAdjY + 55, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 4: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 5: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 65 + 45 * 1, sY + iAdjY + 115, m_pItemList[cItemID]->m_sSpriteFrame); break;
-				case 6: m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + iAdjX + 75 + 45 * 2, sY + iAdjY + 100, m_pItemList[cItemID]->m_sSpriteFrame); break;
+				case 1: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 55; break;
+				case 2: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 40; break;
+				case 3: itemDrawX = sX + iAdjX + 65 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
+				case 4: itemDrawX = sX + iAdjX + 65; itemDrawY = sY + iAdjY + 100; break;
+				case 5: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 115; break;
+				case 6: itemDrawX = sX + iAdjX + 75 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
 				}
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
 				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
 				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
 				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
@@ -16177,10 +16075,7 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
 					}
 					m_bIsItemDisabled[cItemID] = false;
-					m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-					m_stMCursor.sSelectedObjectID = cItemID;
-					m_stMCursor.sDistX = msX + iAdjX - x1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotX;
-					m_stMCursor.sDistY = msY + iAdjY - y1 + (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetFrameRect(0).pivotY;
+					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
 					return true;
 				}
 			}
@@ -16317,7 +16212,7 @@ void CGame::bItemDrop_ExchangeDialog(short msX, short msY)
 	if (m_cCommand < 0) return;
 	if (m_stDialogBoxExchangeInfo[3].sV1 != -1) return; //Do not accept item's drop if already 4 items.
 
-	cItemID = (char)m_stMCursor.sSelectedObjectID;
+	cItemID = (char)CursorTarget::GetSelectedID();
 	if (((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) || (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
 		(m_pItemList[cItemID]->m_dwCount > 1))
 	{
@@ -21114,21 +21009,21 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 	if ((m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) == true) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24))
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0, m_pItemList[cItemID]->m_cName, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4); // v1.4
 	else {
-		if (m_bIsItemEquipped[m_stMCursor.sSelectedObjectID] == true)
+		if (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true)
 		{
 			char cStr1[64], cStr2[64], cStr3[64];
-			GetItemName(m_pItemList[m_stMCursor.sSelectedObjectID], cStr1, cStr2, cStr3);
+			GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
 			std::memset(G_cTxt, 0, sizeof(G_cTxt));
 			wsprintf(G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);//"
 			AddEventList(G_cTxt, 10);
-			if (memcmp(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cName, "AngelicPendant", 14) == 0) PlaySound('E', 53, 0);
+			if (memcmp(m_pItemList[CursorTarget::GetSelectedID()]->m_cName, "AngelicPendant", 14) == 0) PlaySound('E', 53, 0);
 			else PlaySound('E', 29, 0);
 
 			// Remove Angelic Stats
-			if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos >= 11)
-				&& (m_pItemList[m_stMCursor.sSelectedObjectID]->m_cItemType == 1))
+			if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos >= 11)
+				&& (m_pItemList[CursorTarget::GetSelectedID()]->m_cItemType == 1))
 			{
-				char cItemID = m_stMCursor.sSelectedObjectID;
+				char cItemID = CursorTarget::GetSelectedID();
 				if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 				{
 					m_iAngelicStr = 0;
@@ -21146,19 +21041,17 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 					m_iAngelicMag = 0;
 				}
 			}
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, m_stMCursor.sSelectedObjectID, 0, 0, 0);
-			m_bIsItemEquipped[m_stMCursor.sSelectedObjectID] = false;
-			m_sItemEquipmentStatus[m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos] = -1;
-			m_stMCursor.cSelectedObjectType = 0;
-			m_stMCursor.sSelectedObjectID = 0;
+			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, CursorTarget::GetSelectedID(), 0, 0, 0);
+			m_bIsItemEquipped[CursorTarget::GetSelectedID()] = false;
+			m_sItemEquipmentStatus[m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos] = -1;
+			CursorTarget::ClearSelection();
 		}
 	}
 }
 
 void CGame::DlbBoxDoubleClick_GuideMap(short msX, short msY)
 {
-	short si = m_stMCursor.sCursorFrame;
-	if (si != 0) return;
+	if (CursorTarget::GetCursorFrame() != 0) return;
 	if (m_cMapIndex < 0) return;
 
 	short sX, sY, shX, shY, szX, szY;
@@ -21416,11 +21309,9 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 			}
 			if (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)
 			{
-				m_stMCursor.cSelectedObjectType = DEF_SELECTEDOBJTYPE_ITEM;
-				m_stMCursor.sSelectedObjectID = (short)cItemID;
+				CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
 				bItemDrop_Character();
-				m_stMCursor.cSelectedObjectType = 0;
-				m_stMCursor.sSelectedObjectID = 0;
+				CursorTarget::ClearSelection();
 			}
 			return;
 		}
@@ -22902,24 +22793,24 @@ void CGame::DrawScreen_OnGame()
 	ShowEventList(m_dwCurTime);
 
 	// Item tooltip on cursor
-	if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_ITEM) &&
-		(m_pItemList[m_stMCursor.sSelectedObjectID] != 0)) {
-		cItemColor = m_pItemList[m_stMCursor.sSelectedObjectID]->m_cItemColor;
+	if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
+		(m_pItemList[CursorTarget::GetSelectedID()] != 0)) {
+		cItemColor = m_pItemList[CursorTarget::GetSelectedID()]->m_cItemColor;
 		if (cItemColor != 0) {
-			if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-				(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-				(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
+			if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
+				(m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
+				(m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
 			}
 			else {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
+				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
 			}
 		}
-		else m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite]->Draw(s_sOnGameMsX - m_stMCursor.sDistX, s_sOnGameMsY - m_stMCursor.sDistY, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame);
+		else m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame);
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		int iLoc;
-		GetItemName(m_pItemList[m_stMCursor.sSelectedObjectID], cStr1, cStr2, cStr3);
+		GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
 		iLoc = 0;
 		if (strlen(cStr1) != 0) {
 			if (m_bIsSpecial) PutString(s_sOnGameMsX, s_sOnGameMsY + 25, cStr1, RGB(0, 255, 50), false, 1);
@@ -22928,18 +22819,18 @@ void CGame::DrawScreen_OnGame()
 		}
 		if (strlen(cStr2) != 0) { PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, cStr2, RGB(150, 150, 150), false, 1); iLoc += 15; }
 		if (strlen(cStr3) != 0) { PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, cStr3, RGB(150, 150, 150), false, 1); iLoc += 15; }
-		if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_sLevelLimit != 0) && ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_dwAttribute & 0x00000001) == 0)) {
-			wsprintf(G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pItemList[m_stMCursor.sSelectedObjectID]->m_sLevelLimit);
+		if ((m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit != 0) && ((m_pItemList[CursorTarget::GetSelectedID()]->m_dwAttribute & 0x00000001) == 0)) {
+			wsprintf(G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit);
 			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
 		}
-		if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos != DEF_EQUIPPOS_NONE) && (m_pItemList[m_stMCursor.sSelectedObjectID]->m_wWeight >= 1100)) {
+		if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) && (m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight >= 1100)) {
 			int _wWeight = 0;
-			if (m_pItemList[m_stMCursor.sSelectedObjectID]->m_wWeight % 100) _wWeight = 1;
-			wsprintf(G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pItemList[m_stMCursor.sSelectedObjectID]->m_wWeight / 100 + _wWeight);
+			if (m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight % 100) _wWeight = 1;
+			wsprintf(G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight / 100 + _wWeight);
 			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
 		}
-		if (m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos != DEF_EQUIPPOS_NONE) {
-			wsprintf(G_cTxt, UPDATE_SCREEN_ONGAME10, m_pItemList[m_stMCursor.sSelectedObjectID]->m_wCurLifeSpan, m_pItemList[m_stMCursor.sSelectedObjectID]->m_wMaxLifeSpan);
+		if (m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) {
+			wsprintf(G_cTxt, UPDATE_SCREEN_ONGAME10, m_pItemList[CursorTarget::GetSelectedID()]->m_wCurLifeSpan, m_pItemList[CursorTarget::GetSelectedID()]->m_wMaxLifeSpan);
 			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
 		}
 		if (iLoc == 15) {
@@ -22947,7 +22838,7 @@ void CGame::DrawScreen_OnGame()
 			for (int iTmp = 0; iTmp < DEF_MAXITEMS; iTmp++) {
 				if (m_pItemList[iTmp] != 0) {
 					// Compare by item ID instead of name
-					if (m_pItemList[iTmp]->m_sIDnum == m_pItemList[m_stMCursor.sSelectedObjectID]->m_sIDnum) iLoc++;
+					if (m_pItemList[iTmp]->m_sIDnum == m_pItemList[CursorTarget::GetSelectedID()]->m_sIDnum) iLoc++;
 				}
 			}
 			if (iLoc > 1) {
@@ -22987,7 +22878,7 @@ void CGame::DrawScreen_OnGame()
 		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
 		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
 	}
-	else m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sOnGameMsX, s_sOnGameMsY, m_stMCursor.sCursorFrame);
+	else m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sOnGameMsX, s_sOnGameMsY, CursorTarget::GetCursorFrame());
 	FrameTiming::EndProfile(ProfileStage::DrawMisc);
 
 	// FPS and profiling display
@@ -23287,19 +23178,19 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		m_bSuperAttackMode = true;
 	else m_bSuperAttackMode = false;
 
-	switch (m_stMCursor.cPrevStatus) {
+	switch (static_cast<char>(CursorTarget::GetCursorStatus())) {
 	case DEF_CURSORSTATUS_NULL:
 		if (cLB != 0)
 		{
 			iRet = _iCheckDlgBoxFocus(msX, msY, 1);
 			if (iRet == 1)
 			{
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_SELECTED;
+				CursorTarget::SetCursorStatus(CursorStatus::Selected);
 				return;
 			}
 			else if (iRet == 0)
 			{
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_PRESSED;
+				CursorTarget::SetCursorStatus(CursorStatus::Pressed);
 				// Snoopy: Added Golden LevelUp
 				if ((msX > LEVELUP_TEXT_X) && (msX < (LEVELUP_TEXT_X)+75) && (msY > LEVELUP_TEXT_Y) && (msY < (LEVELUP_TEXT_Y)+21))
 				{
@@ -23323,7 +23214,6 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 						}
 					}
-					m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
 					return;
 				}
 			}
@@ -23341,43 +23231,38 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	case DEF_CURSORSTATUS_PRESSED:
 		if (cLB == 0) // Normal Click
 		{
-			m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
+			CursorTarget::SetCursorStatus(CursorStatus::Null);
 		}
 		break;
 	case DEF_CURSORSTATUS_SELECTED:
 		if (cLB == 0)
 		{
+			CursorTarget::SetCursorStatus(CursorStatus::Null);
 			//ZeroEoyPnk - Bye delay...
-			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (m_stMCursor.sSelectedObjectID != 12))
-				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (m_stMCursor.sSelectedObjectID != 42)))
+			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::GetSelectedID() != 12))
+				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::GetSelectedID() != 42)))
 			{
-				if (((dwTime - m_stMCursor.dwSelectClickTime) < DEF_DOUBLECLICKTIME) 	// Double Click
-					&& (abs(msX - m_stMCursor.sClickX) <= DEF_DOUBLECLICKTOLERANCE)
-					&& (abs(msY - m_stMCursor.sClickY) <= DEF_DOUBLECLICKTOLERANCE))
+				if (((dwTime - CursorTarget::GetSelectionClickTime()) < DEF_DOUBLECLICKTIME) 	// Double Click
+					&& (abs(msX - CursorTarget::GetSelectionClickX()) <= DEF_DOUBLECLICKTOLERANCE)
+					&& (abs(msY - CursorTarget::GetSelectionClickY()) <= DEF_DOUBLECLICKTOLERANCE))
 				{
-					m_stMCursor.dwSelectClickTime = 0; // Reset to prevent triple-click
+					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
 					m_dialogBoxManager._bCheckDlgBoxDoubleClick(msX, msY);
 				}
 				else // Click
 				{
 					m_dialogBoxManager._bCheckDlgBoxClick(msX, msY);
-					m_stMCursor.sClickX = msX;
-					m_stMCursor.sClickY = msY;
 				}
 			}
 			else
 			{
 				m_dialogBoxManager._bCheckDlgBoxClick(msX, msY);
-				m_stMCursor.sClickX = msX;
-				m_stMCursor.sClickY = msY;
 			}
-			m_stMCursor.dwSelectClickTime = dwTime;
-			m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-			if (m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_ITEM)
+			CursorTarget::RecordSelectionClick(msX, msY, dwTime);
+			if (CursorTarget::GetSelectedType() == SelectedObjectType::Item)
 			{
 				_bCheckDraggingItemRelease(msX, msY);
-				m_stMCursor.cSelectedObjectType = 0;
-				m_stMCursor.sSelectedObjectID = 0;
+				CursorTarget::ClearSelection();
 			}
 			return;
 		}
@@ -23385,27 +23270,24 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		{
 			if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
 
-			if ((m_stMCursor.sPrevX != msX) || (m_stMCursor.sPrevY != msY))
+			if ((CursorTarget::GetPrevX() != msX) || (CursorTarget::GetPrevY() != msY))
 			{
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_DRAGGING;
-				m_stMCursor.sPrevX = msX;
-				m_stMCursor.sPrevY = msY;
-				if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX) &&
-					(m_stMCursor.sSelectedObjectID == 30))
+				CursorTarget::SetCursorStatus(CursorStatus::Dragging);
+				CursorTarget::SetPrevPosition(msX, msY);
+				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
+					(CursorTarget::GetSelectedID() == 30))
 				{
-					m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
 				}
 
-				if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX) &&
-					(m_stMCursor.sSelectedObjectID == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1))
+				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
+					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1))
 				{
 					EndInputString();
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 20;
 				}
 				// Query Drop Item Amount
-				if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX) &&
-					(m_stMCursor.sSelectedObjectID == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))
-					// Guild Menu
+				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
+					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))
 				{
 					EndInputString();
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 20;
@@ -23420,26 +23302,26 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		if (cLB != 0)
 		{
 			if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
-			if (m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX)
+			if (CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox)
 			{
 				// HudPanel is fixed and cannot be moved
-				if (m_stMCursor.sSelectedObjectID != DialogBoxId::HudPanel)
+				if (CursorTarget::GetSelectedID() != DialogBoxId::HudPanel)
 				{
-					m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sX = msX - m_stMCursor.sDistX;
-					m_dialogBoxManager.Info(m_stMCursor.sSelectedObjectID).sY = msY - m_stMCursor.sDistY;
+					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sX = msX - CursorTarget::GetDragDistX();
+					m_dialogBoxManager.Info(CursorTarget::GetSelectedID()).sY = msY - CursorTarget::GetDragDistY();
 				}
 			}
-			m_stMCursor.sPrevX = msX;
-			m_stMCursor.sPrevY = msY;
+			CursorTarget::SetPrevPosition(msX, msY);
 
 			if ((m_cCommand == DEF_OBJECTMOVE) || (m_cCommand == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
 			return;
 		}
 		if (cLB == 0) {
-			switch (m_stMCursor.cSelectedObjectType) {
-			case DEF_SELECTEDOBJTYPE_DLGBOX:
-				if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX) &&
-					(m_stMCursor.sSelectedObjectID == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 20))
+			CursorTarget::SetCursorStatus(CursorStatus::Null);
+			switch (static_cast<char>(CursorTarget::GetSelectedType())) {
+			case static_cast<char>(SelectedObjectType::DialogBox):
+				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
+					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 20))
 				{
 					sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
@@ -23447,8 +23329,8 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 1;
 				}
 
-				if ((m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_DLGBOX) &&
-					(m_stMCursor.sSelectedObjectID == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 20))
+				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
+					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 20))
 				{	// Query Drop Item Amount
 					sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
@@ -23456,7 +23338,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 1;
 				}
 
-				if (m_stMCursor.sSelectedObjectID == 9)
+				if (CursorTarget::GetSelectedID() == 9)
 				{
 					{
 						if (msX < 400) //LifeX Fix Map
@@ -23479,22 +23361,16 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					}
 				}
 
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-				m_stMCursor.cSelectedObjectType = 0;
-				m_stMCursor.sSelectedObjectID = 0;
+				CursorTarget::ClearSelection();
 				break;
 
-			case DEF_SELECTEDOBJTYPE_ITEM:
+			case static_cast<char>(SelectedObjectType::Item):
 				_bCheckDraggingItemRelease(msX, msY);
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-				m_stMCursor.cSelectedObjectType = 0;
-				m_stMCursor.sSelectedObjectID = 0;
+				CursorTarget::ClearSelection();
 				break;
 
 			default:
-				m_stMCursor.cPrevStatus = DEF_CURSORSTATUS_NULL;
-				m_stMCursor.cSelectedObjectType = 0;
-				m_stMCursor.sSelectedObjectID = 0;
+				CursorTarget::ClearSelection();
 				break;
 			}
 			return;
@@ -23564,7 +23440,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 					if ((iObjectStatus & 0x10) != 0) return;
 					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
-					m_stMCursor.sCursorFrame = 3;
 					absX = abs(m_sPlayerX - m_sMCX);
 					absY = abs(m_sPlayerY - m_sMCY);
 					if ((absX <= 1) && (absY <= 1))
@@ -24634,7 +24509,6 @@ MOTION_COMMAND_PROCESS:;
 			{
 				m_bIsGetPointingMode = false;
 				m_iPointCommandType = -1;
-				m_stMCursor.sCursorFrame = 0;
 				ClearSkillUsingStatus();
 				m_cCommand = DEF_OBJECTSTOP;
 			}
@@ -24760,7 +24634,7 @@ MOTION_COMMAND_PROCESS:;
 
 void CGame::bItemDrop_Character()
 {
-	ItemEquipHandler((char)m_stMCursor.sSelectedObjectID);
+	ItemEquipHandler((char)CursorTarget::GetSelectedID());
 }
 
 void CGame::bItemDrop_Inventory(short msX, short msY)
@@ -24768,28 +24642,28 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 	short sX, sY, dX, dY;
 	char  cTxt[120];
 	if (m_cCommand < 0) return;
-	if (m_pItemList[m_stMCursor.sSelectedObjectID] == 0) return;
-	if ((m_bSkillUsingStatus == true) && (m_bIsItemEquipped[m_stMCursor.sSelectedObjectID] == true))
+	if (m_pItemList[CursorTarget::GetSelectedID()] == 0) return;
+	if ((m_bSkillUsingStatus == true) && (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true))
 	{
 		AddEventList(BITEMDROP_INVENTORY1, 10);
 		return;
 	}
-	if (m_bIsItemDisabled[m_stMCursor.sSelectedObjectID] == true) return;
+	if (m_bIsItemDisabled[CursorTarget::GetSelectedID()] == true) return;
 	sY = m_dialogBoxManager.Info(DialogBoxId::Inventory).sY;
 	sX = m_dialogBoxManager.Info(DialogBoxId::Inventory).sX;
-	dX = msX - sX - 32 - m_stMCursor.sDistX;
-	dY = msY - sY - 44 - m_stMCursor.sDistY;
+	dX = msX - sX - 32 - CursorTarget::GetDragDistX();
+	dY = msY - sY - 44 - CursorTarget::GetDragDistY();
 	if (dY < -10) dY = -10;
 	if (dX < 0)   dX = 0;
 	if (dX > 170) dX = 170;
 	if (dY > 95) dY = 95;
 
-	m_pItemList[m_stMCursor.sSelectedObjectID]->m_sX = dX;
-	m_pItemList[m_stMCursor.sSelectedObjectID]->m_sY = dY;
+	m_pItemList[CursorTarget::GetSelectedID()]->m_sX = dX;
+	m_pItemList[CursorTarget::GetSelectedID()]->m_sY = dY;
 
 	short sTmpSpr, sTmpSprFrm;
-	sTmpSpr = m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSprite;
-	sTmpSprFrm = m_pItemList[m_stMCursor.sSelectedObjectID]->m_sSpriteFrame;
+	sTmpSpr = m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite;
+	sTmpSprFrm = m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame;
 
 	char cItemID;
 	if (Input::IsShiftDown())
@@ -24799,7 +24673,7 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 			if (m_cItemOrder[DEF_MAXITEMS - 1 - i] != -1)
 			{
 				cItemID = m_cItemOrder[DEF_MAXITEMS - 1 - i];
-				if (m_pItemList[cItemID] != 0 && memcmp(m_pItemList[cItemID]->m_cName, m_pItemList[m_stMCursor.sSelectedObjectID]->m_cName, 20) == 0)
+				if (m_pItemList[cItemID] != 0 && memcmp(m_pItemList[cItemID]->m_cName, m_pItemList[CursorTarget::GetSelectedID()]->m_cName, 20) == 0)
 				{
 					m_pItemList[cItemID]->m_sX = dX;
 					m_pItemList[cItemID]->m_sY = dY;
@@ -24808,23 +24682,23 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 			}
 		}
 	}
-	else bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, (char)(m_stMCursor.sSelectedObjectID), dX, dY, 0, 0);
+	else bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, (char)(CursorTarget::GetSelectedID()), dX, dY, 0, 0);
 
-	if (m_bIsItemEquipped[m_stMCursor.sSelectedObjectID] == true)
+	if (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true)
 	{
 		char cStr1[64], cStr2[64], cStr3[64];
-		GetItemName(m_pItemList[m_stMCursor.sSelectedObjectID], cStr1, cStr2, cStr3);
+		GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
 		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 		AddEventList(cTxt, 10);
 
-		if (memcmp(m_pItemList[m_stMCursor.sSelectedObjectID]->m_cName, "AngelicPendant", 14) == 0) PlaySound('E', 53, 0);
+		if (memcmp(m_pItemList[CursorTarget::GetSelectedID()]->m_cName, "AngelicPendant", 14) == 0) PlaySound('E', 53, 0);
 		else PlaySound('E', 29, 0);
 
 		// Remove Angelic Stats
-		if ((m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos >= 11)
-			&& (m_pItemList[m_stMCursor.sSelectedObjectID]->m_cItemType == 1))
+		if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos >= 11)
+			&& (m_pItemList[CursorTarget::GetSelectedID()]->m_cItemType == 1))
 		{
-			char cItemID = m_stMCursor.sSelectedObjectID;
+			char cItemID = CursorTarget::GetSelectedID();
 			if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 			{
 				m_iAngelicStr = 0;
@@ -24842,9 +24716,9 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 				m_iAngelicMag = 0;
 			}
 		}
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, m_stMCursor.sSelectedObjectID, 0, 0, 0);
-		m_bIsItemEquipped[m_stMCursor.sSelectedObjectID] = false;
-		m_sItemEquipmentStatus[m_pItemList[m_stMCursor.sSelectedObjectID]->m_cEquipPos] = -1;
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, CursorTarget::GetSelectedID(), 0, 0, 0);
+		m_bIsItemEquipped[CursorTarget::GetSelectedID()] = false;
+		m_sItemEquipmentStatus[m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos] = -1;
 	}
 }
 
@@ -24853,7 +24727,7 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 	int i;
 	char cItemID;
 
-	cItemID = (char)m_stMCursor.sSelectedObjectID;
+	cItemID = (char)CursorTarget::GetSelectedID();
 
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
@@ -24909,7 +24783,7 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 void CGame::bItemDrop_ItemUpgrade()
 {
 	char cItemID;
-	cItemID = (char)m_stMCursor.sSelectedObjectID;
+	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_bIsItemDisabled[cItemID] == true) return;
 	if (m_cCommand < 0) return;
 	if (m_pItemList[cItemID]->m_cEquipPos == DEF_EQUIPPOS_NONE) return;
@@ -24933,7 +24807,7 @@ void CGame::bItemDrop_ItemUpgrade()
 
 void CGame::bItemDrop_Bank(short msX, short msY)
 {
-	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1 = m_stMCursor.sSelectedObjectID;
+	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1 = CursorTarget::GetSelectedID();
 	if (m_cCommand < 0) return;
 	if (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1] == 0) return;
 	if (m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1] == true) return;
@@ -24984,7 +24858,7 @@ void CGame::bItemDrop_SkillDialog()
 	char cItemID;
 
 	if (m_cCommand < 0) return;
-	cItemID = (char)m_stMCursor.sSelectedObjectID;
+	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
 
@@ -25237,7 +25111,7 @@ void CGame::bItemDrop_Slates()
 {
 	char cItemID;
 	if (m_cCommand < 0) return;
-	cItemID = (char)m_stMCursor.sSelectedObjectID;
+	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) {
@@ -25930,7 +25804,6 @@ void CGame::MotionEventHandler(char* pData)
 		{
 			m_bIsGetPointingMode = false;
 			m_iPointCommandType = -1;
-			m_stMCursor.sCursorFrame = 0;
 			ClearSkillUsingStatus();
 		}
 		_RemoveChatMsgListByObjectID(static_cast<uint16_t>(wObjectID - 30000));

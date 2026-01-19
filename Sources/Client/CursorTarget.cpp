@@ -26,6 +26,20 @@ namespace {
     // Item cursor animation
     int64_t s_itemAnimTime = 0;
     int s_itemAnimFrame = 1;
+
+    // UI Selection state (for item/dialog dragging)
+    SelectedObjectType s_selectedType = SelectedObjectType::None;
+    short s_selectedID = 0;
+    short s_dragDistX = 0;
+    short s_dragDistY = 0;
+    uint32_t s_selectClickTime = 0;
+    short s_clickX = 0;
+    short s_clickY = 0;
+    short s_prevX = 0;
+    short s_prevY = 0;
+
+    // Cursor interaction status (mouse button state machine)
+    CursorStatus s_cursorStatus = CursorStatus::Null;
 }
 
 //-----------------------------------------------------------------------------
@@ -280,4 +294,106 @@ bool CursorTarget::PointInCircle(int x, int y, int cx, int cy, int radius)
     int dx = x - cx;
     int dy = y - cy;
     return (dx * dx + dy * dy) <= (radius * radius);
+}
+
+//-----------------------------------------------------------------------------
+// UI Selection State
+//-----------------------------------------------------------------------------
+
+void CursorTarget::SetSelection(SelectedObjectType type, short objectID, short distX, short distY)
+{
+    s_selectedType = type;
+    s_selectedID = objectID;
+    s_dragDistX = distX;
+    s_dragDistY = distY;
+}
+
+void CursorTarget::ClearSelection()
+{
+    s_selectedType = SelectedObjectType::None;
+    s_selectedID = 0;
+    s_dragDistX = 0;
+    s_dragDistY = 0;
+}
+
+SelectedObjectType CursorTarget::GetSelectedType()
+{
+    return s_selectedType;
+}
+
+short CursorTarget::GetSelectedID()
+{
+    return s_selectedID;
+}
+
+short CursorTarget::GetDragDistX()
+{
+    return s_dragDistX;
+}
+
+short CursorTarget::GetDragDistY()
+{
+    return s_dragDistY;
+}
+
+bool CursorTarget::HasSelection()
+{
+    return s_selectedType != SelectedObjectType::None;
+}
+
+void CursorTarget::RecordSelectionClick(short x, short y, uint32_t time)
+{
+    s_selectClickTime = time;
+    s_clickX = x;
+    s_clickY = y;
+}
+
+void CursorTarget::ResetSelectionClickTime()
+{
+    s_selectClickTime = 0;
+}
+
+uint32_t CursorTarget::GetSelectionClickTime()
+{
+    return s_selectClickTime;
+}
+
+short CursorTarget::GetSelectionClickX()
+{
+    return s_clickX;
+}
+
+short CursorTarget::GetSelectionClickY()
+{
+    return s_clickY;
+}
+
+void CursorTarget::SetPrevPosition(short x, short y)
+{
+    s_prevX = x;
+    s_prevY = y;
+}
+
+short CursorTarget::GetPrevX()
+{
+    return s_prevX;
+}
+
+short CursorTarget::GetPrevY()
+{
+    return s_prevY;
+}
+
+//-----------------------------------------------------------------------------
+// Cursor Interaction Status
+//-----------------------------------------------------------------------------
+
+void CursorTarget::SetCursorStatus(CursorStatus status)
+{
+    s_cursorStatus = status;
+}
+
+CursorStatus CursorTarget::GetCursorStatus()
+{
+    return s_cursorStatus;
 }

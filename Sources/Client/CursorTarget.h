@@ -88,6 +88,26 @@ struct TargetObjectInfo {
 };
 
 //=============================================================================
+// UI Selection Types (for item/dialog dragging)
+//=============================================================================
+enum class SelectedObjectType : char {
+    None = 0,
+    DialogBox = 1,
+    Item = 2
+};
+
+//=============================================================================
+// Cursor Interaction Status (mouse button state machine)
+// Values match DEF_CURSORSTATUS_* defines in Game.h
+//=============================================================================
+enum class CursorStatus : char {
+    Null = 0,      // No interaction
+    Pressed = 1,   // Mouse pressed outside dialog
+    Selected = 2,  // Mouse pressed on dialog (selection started)
+    Dragging = 3   // Dragging item/dialog
+};
+
+//=============================================================================
 // Cursor Target System API
 //=============================================================================
 namespace CursorTarget {
@@ -157,4 +177,34 @@ namespace CursorTarget {
     //-------------------------------------------------------------------------
     bool PointInRect(int x, int y, const SpriteLib::BoundRect& rect);
     bool PointInCircle(int x, int y, int cx, int cy, int radius);
+
+    //-------------------------------------------------------------------------
+    // UI Selection State (for item/dialog dragging)
+    //-------------------------------------------------------------------------
+    // Set selection when user clicks/drags an item or dialog
+    void SetSelection(SelectedObjectType type, short objectID, short distX, short distY);
+    void ClearSelection();
+
+    // Query selection state
+    SelectedObjectType GetSelectedType();
+    short GetSelectedID();
+    short GetDragDistX();
+    short GetDragDistY();
+    bool HasSelection();
+
+    // Selection click tracking (for double-click detection)
+    void RecordSelectionClick(short x, short y, uint32_t time);
+    void ResetSelectionClickTime();
+    uint32_t GetSelectionClickTime();
+    short GetSelectionClickX();
+    short GetSelectionClickY();
+
+    // Previous position tracking (for drag delta)
+    void SetPrevPosition(short x, short y);
+    short GetPrevX();
+    short GetPrevY();
+
+    // Cursor interaction status (mouse button state machine)
+    void SetCursorStatus(CursorStatus status);
+    CursorStatus GetCursorStatus();
 }

@@ -1,5 +1,6 @@
 #include "DialogBox_Inventory.h"
 #include "Game.h"
+#include "CursorTarget.h"
 #include "lan_eng.h"
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
@@ -75,8 +76,8 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 		if (pItem == nullptr) continue;
 
 		// Skip items that are selected (being dragged) or equipped
-		bool bSelected = (m_pGame->m_stMCursor.cSelectedObjectType == DEF_SELECTEDOBJTYPE_ITEM) &&
-		                 (m_pGame->m_stMCursor.sSelectedObjectID == itemIdx);
+		bool bSelected = (CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
+		                 (CursorTarget::GetSelectedID() == itemIdx);
 		bool bEquipped = m_pGame->m_bIsItemEquipped[itemIdx];
 
 		if (!bSelected && !bEquipped)

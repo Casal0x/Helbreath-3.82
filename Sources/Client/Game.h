@@ -134,9 +134,6 @@ using namespace std;
 #define DEF_CURSORSTATUS_SELECTED	2
 #define DEF_CURSORSTATUS_DRAGGING	3
 
-#define DEF_SELECTEDOBJTYPE_DLGBOX	1
-#define DEF_SELECTEDOBJTYPE_ITEM	2
-
 #define DEF_DOUBLECLICKTIME			300
 #define DEF_DOUBLECLICKTOLERANCE	4
 #define DEF_MAXPARTYMEMBERS			8
@@ -151,53 +148,6 @@ enum class OverlayType {
 	QueryForceLogin,
 	QueryDeleteCharacter
 };
-
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Push(char*& cp, T value) {
-	auto p = (T*)cp;
-	*p = (T)value;
-	cp += sizeof(T);
-}
-
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Pop(char*& cp, T& v) {
-	T* p = (T*)cp;
-	v = *p;
-	cp += sizeof(T);
-}
-
-static void Push(char*& dest, const char* src, uint32_t len) {
-	memcpy(dest, src, len);
-	dest += len;
-}
-
-static void Push(char*& dest, const char* src) {
-
-	strcpy(dest, src);
-	dest += strlen(src) + 1;
-}
-
-static void Push(char*& dest, const string& str) {
-	strcpy(dest, str.c_str());
-	dest += str.length() + 1;
-}
-
-static void Pop(char*& src, char* dest, uint32_t len) {
-	memcpy(dest, src, len);
-	src += len;
-}
-static void Pop(char*& src, char* dest) {
-
-	uint32_t len = strlen(src) + 1;
-	memcpy(dest, src, len);
-	src += len;
-}
-
-static void Pop(char*& src, string& str) {
-	str = src;
-	src += str.length() + 1;
-}
-
 
 
 class CGame
@@ -574,18 +524,6 @@ public:
 	bool _ItemDropHistory(char * ItemName);
 	CGame();
 	virtual ~CGame();
-
-	struct {
-		short sX;
-		short sY;
-		short sCursorFrame;
-		char  cPrevStatus;
-		char  cSelectedObjectType;
-		short sSelectedObjectID;
-		short sPrevX, sPrevY, sDistX, sDistY;
-		uint32_t dwSelectClickTime;
-		short sClickX, sClickY;
-	} m_stMCursor;
 
 	DialogBoxManager m_dialogBoxManager;
 //Snoopy=>>>>>>>>>>>>>>>>>>>>>
