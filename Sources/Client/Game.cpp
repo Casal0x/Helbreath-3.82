@@ -1753,10 +1753,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	const short mapMaxY = m_pMapData->m_sPivotY + MAPDATASIZEY;
 
 	// Tile-based loop bounds (much cleaner than pixel-based)
-	// Buffer: 5 tiles around visible area for smooth object sliding
+	// Buffer: 7 tiles around visible area for smooth object sliding
 	// Extra 2 tiles on bottom for layering/depth sorting of tall objects
 	constexpr int TILE_SIZE = 32;
-	constexpr int BUFFER_TILES = 5;
+	constexpr int BUFFER_TILES = 7;
 	constexpr int EXTRA_BOTTOM_TILES = 2;  // For depth sorting of tall objects
 
 	const int visibleTilesX = (res_x / TILE_SIZE) + 1;  // ~20 tiles
