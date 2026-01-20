@@ -299,6 +299,7 @@
     <ClInclude Include="DialogBox_SellOrRepair.h" />
     <ClInclude Include="DialogBox_Manufacture.h" />
     <ClInclude Include="EffectManager.h" />
+    <ClInclude Include="EntityMotion.h" />
     <ClInclude Include="NetworkMessageManager.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameWindowHandler.h" />
@@ -385,6 +386,7 @@
     <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="EffectManager.cpp" />
+    <ClCompile Include="EntityMotion.cpp" />
     <ClCompile Include="Effect_Add.cpp" />
     <ClCompile Include="Effect_Update.cpp" />
     <ClCompile Include="Effect_Draw.cpp" />

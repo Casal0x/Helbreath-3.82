@@ -6,6 +6,7 @@
 
 #include <windows.h>
 #include <mmsystem.h>
+#include "EntityMotion.h"
 
 class CTile
 {
@@ -59,6 +60,8 @@ public:
 		m_dwEffectTime = 0;
 
 		m_dwOwnerTime        = 0;
+
+		m_motion.Reset();
 	}
 
 	inline CTile() : m_bSpriteOmit(false)
@@ -134,4 +137,7 @@ public:
 	char  m_cDynamicObjectData1, m_cDynamicObjectData2, m_cDynamicObjectData3, m_cDynamicObjectData4;
 	char  m_cOwnerName[12];
 	char  m_cDeadOwnerName[12];
+
+	// Smooth movement interpolation
+	EntityMotion m_motion;
 };

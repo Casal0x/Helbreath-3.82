@@ -8445,34 +8445,13 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		iHelmIndex = -1;
 		break;
 	}
-	dx = 0;
-	dy = 0;
-	bool value = frame_omision;
-	int value_2 = 30;
-	switch (_tmp_cDir) {
-	case 1: dy = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 2: dy = value_2 - (_tmp_cFrame << 2) - value; dx = (_tmp_cFrame << 2) + value - value_2; break;
-	case 3: dx = (_tmp_cFrame << 2) + value - value_2; break;
-	case 4: dx = (_tmp_cFrame << 2) + value - value_2; dy = (_tmp_cFrame << 2) + value - value_2; break;
-	case 5: dy = (_tmp_cFrame << 2) + value - value_2; break;
-	case 6: dy = (_tmp_cFrame << 2) + value - value_2; dx = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 7: dx = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 8: dx = value_2 - (_tmp_cFrame << 2) - value; dy = value_2 - (_tmp_cFrame << 2) - value; break;
-	}
+	// Use smooth interpolated motion offsets
+	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
 
-	int fix_x = 0;
-	int fix_y = 0;
-
-	switch (_tmp_cDir) {
-	case 1: fix_x = sX + dx;		 fix_y = sY + dy - value; break;//listo
-	case 2: fix_x = sX + dx + value; fix_y = sY + dy - value; break;//listo
-	case 3: fix_x = sX + dx + value; fix_y = sY + dy;		  break;//listo
-	case 4: fix_x = sX + dx + value; fix_y = sY + dy + value; break;//listo
-	case 5: fix_x = sX + dx;		 fix_y = sY + dy + value; break;//listo
-	case 6: fix_x = sX + dx - value; fix_y = sY + dy + value; break;//listo
-	case 7: fix_x = sX + dx - value; fix_y = sY + dy;		  break;//listo
-	case 8: fix_x = sX + dx - value; fix_y = sY + dy - value; break;//listo
-	}
+	// Simple offset - no frame-based adjustments for smooth interpolation
+	int fix_x = sX + dx;
+	int fix_y = sY + dy;
 
 	switch (_tmp_sOwnerType) {
 	case 1:
@@ -9161,34 +9140,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		iHelmIndex = -1;
 		break;
 	}
-	dx = 0;
-	dy = 0;
-	bool value = frame_omision;
+	// Use smooth interpolated motion offsets
+	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
 
-	switch (_tmp_cDir) {
-	case 1: dy = 30 - (_tmp_cFrame << 2) - value; break;
-	case 2: dy = 30 - (_tmp_cFrame << 2) - value; dx = (_tmp_cFrame << 2) + value - 30; break;
-	case 3: dx = (_tmp_cFrame << 2) + value - 30; break;
-	case 4: dx = (_tmp_cFrame << 2) + value - 30; dy = (_tmp_cFrame << 2) + value - 30; break;
-	case 5: dy = (_tmp_cFrame << 2) + value - 30; break;
-	case 6: dy = (_tmp_cFrame << 2) + value - 30; dx = 30 - (_tmp_cFrame << 2) - value; break;
-	case 7: dx = 30 - (_tmp_cFrame << 2) - value; break;
-	case 8: dx = 30 - (_tmp_cFrame << 2) - value; dy = 30 - (_tmp_cFrame << 2) - value; break;
-	}
+	// Simple offset - no frame-based adjustments for smooth interpolation
+	int fix_x = sX + dx;
+	int fix_y = sY + dy;
 
-	int fix_x = 0;
-	int fix_y = 0;
-
-	switch (_tmp_cDir) {
-	case 1: fix_x = sX + dx;		 fix_y = sY + dy - value; break;//listo
-	case 2: fix_x = sX + dx + value; fix_y = sY + dy - value; break;//listo
-	case 3: fix_x = sX + dx + value; fix_y = sY + dy;		  break;//listo
-	case 4: fix_x = sX + dx + value; fix_y = sY + dy + value; break;//listo
-	case 5: fix_x = sX + dx;		 fix_y = sY + dy + value; break;//listo
-	case 6: fix_x = sX + dx - value; fix_y = sY + dy + value; break;//listo
-	case 7: fix_x = sX + dx - value; fix_y = sY + dy;		  break;//listo
-	case 8: fix_x = sX + dx - value; fix_y = sY + dy - value; break;//listo
-	}
 	cFrame = _tmp_cFrame;
 	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, cFrame);
 	if (_tmp_iEffectType != 0)
@@ -9927,6 +9886,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+
+	// Apply motion offset if entity is still interpolating (animation finished before movement)
+	sX += static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
+	sY += static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
 
 	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/ || _tmp_sOwnerType == 81) bInv = true; //Energy-Ball, Wyvern
 	if (ConfigManager::Get().GetDetailLevel() == 0)
@@ -11597,34 +11560,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		iHelmIndex = -1;
 		break;
 	}
-	dx = 0;
-	dy = 0;
-	bool value = frame_omision;
-	int value_2 = 30;
-	switch (_tmp_cDir) {
-	case 1: dy = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 2: dy = value_2 - (_tmp_cFrame << 2) - value; dx = (_tmp_cFrame << 2) + value - value_2; break;
-	case 3: dx = (_tmp_cFrame << 2) + value - value_2; break;
-	case 4: dx = (_tmp_cFrame << 2) + value - value_2; dy = (_tmp_cFrame << 2) + value - value_2; break;
-	case 5: dy = (_tmp_cFrame << 2) + value - value_2; break;
-	case 6: dy = (_tmp_cFrame << 2) + value - value_2; dx = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 7: dx = value_2 - (_tmp_cFrame << 2) - value; break;
-	case 8: dx = value_2 - (_tmp_cFrame << 2) - value; dy = value_2 - (_tmp_cFrame << 2) - value; break;
-	}
+	// Use smooth interpolated motion offsets
+	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
 
-	int fix_x = 0;
-	int fix_y = 0;
+	// Simple offset - no frame-based adjustments for smooth interpolation
+	int fix_x = sX + dx;
+	int fix_y = sY + dy;
 
-	switch (_tmp_cDir) {
-	case 1: fix_x = sX + dx;		 fix_y = sY + dy - value; break;//listo
-	case 2: fix_x = sX + dx + value; fix_y = sY + dy - value; break;//listo
-	case 3: fix_x = sX + dx + value; fix_y = sY + dy;		  break;//listo
-	case 4: fix_x = sX + dx + value; fix_y = sY + dy + value; break;//listo
-	case 5: fix_x = sX + dx;		 fix_y = sY + dy + value; break;//listo
-	case 6: fix_x = sX + dx - value; fix_y = sY + dy + value; break;//listo
-	case 7: fix_x = sX + dx - value; fix_y = sY + dy;		  break;//listo
-	case 8: fix_x = sX + dx - value; fix_y = sY + dy - value; break;//listo
-	}
 	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, _tmp_cFrame);
 
 	if (_tmp_iEffectType != 0)
@@ -22127,6 +22070,14 @@ void CGame::DrawScreen_OnGame()
 
 	// Update all dialog boxes first (before drawing)
 	m_dialogBoxManager.UpdateDialogBoxs();
+
+	// Update entity motion interpolation for all tiles
+	uint32_t dwTime = m_dwCurTime;
+	for (int y = 0; y < MAPDATASIZEY; y++) {
+		for (int x = 0; x < MAPDATASIZEX; x++) {
+			m_pMapData->m_pData[x][y].m_motion.Update(dwTime);
+		}
+	}
 
 	// Main scene rendering
 	FrameTiming::BeginProfile(ProfileStage::DrawBackground);

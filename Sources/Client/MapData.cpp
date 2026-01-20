@@ -6,6 +6,7 @@
 #include "MapData.h"
 #include "CommonTypes.h"
 #include "Benchmark.h"
+#include "EntityMotion.h"
 #include <cstring>
 #include <cstdio>
 
@@ -1624,6 +1625,16 @@ EXIT_SEARCH_LOOP:;
 		{
 			m_pData[dX][dY].m_cOwnerFrame = iFrame; // 0
 			m_pData[dX][dY].m_cOwnerAction = (char)sAction;
+
+			// Initialize smooth movement interpolation for movement actions
+			if (sAction == DEF_OBJECTMOVE || sAction == DEF_OBJECTRUN ||
+				sAction == DEF_OBJECTDAMAGEMOVE || sAction == DEF_OBJECTATTACKMOVE)
+			{
+				bool hasHaste = (iStatus & 0x40000) != 0;  // Status flag for haste
+				bool isFrozen = (iStatus & 0x40) != 0;     // Status flag for frozen
+				uint32_t duration = EntityMotion::GetDurationForAction(sAction, hasHaste, isFrozen);
+				m_pData[dX][dY].m_motion.StartMove(cDir, dwTime, duration);
+			}
 		}
 		m_pData[dX][dY].m_dwOwnerTime = dwTime;
 		m_pData[dX][dY].m_iChatMsg = iChatIndex;
