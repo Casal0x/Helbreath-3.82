@@ -12,6 +12,7 @@
 #include "SharedCalculations.h"
 #include <cstdio>
 #include <windows.h>
+#include <charconv>
 
 // Renderer
 #include "RendererFactory.h"
@@ -417,7 +418,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	}
 	m_hWnd = hWnd;
 	m_bCommandAvailable = true;
-	m_pCGameMonitor = 0;
 	m_dwTime = G_dwGlobalTime;
 
 	// Initialize AudioManager (sounds loaded later during loading screen)
@@ -464,7 +464,10 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 		return false;
 	}
 
-	bReadIp();
+	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
+	strcpy(m_cLogServerAddr, DEF_SERVER_IP);
+	m_iLogServerPort = DEF_SERVER_PORT;
+	m_iGameServerPort = DEF_GSERVER_PORT;
 
 	if (bInitMagicCfgList() == false) {
 		MessageBox(m_hWnd, "MAGICCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
@@ -592,30 +595,10 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
 
-#ifndef _DEBUG
-	m_pCGameMonitor = new class CGameMonitor;
-	//===============================================
-	// badword.txt
-	if (!CMisc::_iConvertFileXor("contents\\badword.txt", "contents\\badword.tmp", 35))
-	{
-		MessageBox(m_hWnd, "BADWORD.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-	m_pCGameMonitor->iReadBadWordFileList("contents\\badword.tmp");
-	DeleteFile("contents\\badword.tmp");
-
-	if (!CMisc::_iConvertFileXor("contents\\Curse.txt", "contents\\Curse.tmp", 35))
-	{
-		MessageBox(m_hWnd, "CURSE.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-	m_curse.LoadCurse("contents\\Curse.tmp");
-	DeleteFile("contents\\Curse.tmp");
-	//==============================================
-#endif
 
 	_LoadGameMsgTextContents();
 	std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
+	strcpy(m_cWorldServerName, NAME_WORLDNAME1);
 
 	// Initialize manager singletons (ConfigManager already initialized in ReadSettings)
 	Camera::Get().Initialize();
@@ -631,7 +614,6 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 
 void CGame::Quit()
 {
-	int i;
 	WriteSettings();
 	ChangeGameMode(DEF_GAMEMODE_NULL);
 
@@ -641,7 +623,7 @@ void CGame::Quit()
 	Camera::Get().Shutdown();
 	ConfigManager::Get().Shutdown();
 
-	for (i = 0; i < 5000; i++)
+	for (int i = 0; i < 5000; i++)
 		if (m_pItemConfigList[i] != 0) delete m_pItemConfigList[i];
 
 	m_pSprite.clear();
@@ -657,36 +639,36 @@ void CGame::Quit()
 
 	// Sound cleanup handled by AudioManager::Shutdown()
 
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		if (m_pCharList[i] != 0) delete m_pCharList[i];
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (int i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0)	delete m_pItemList[i];
 
-	for (i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (int i = 0; i < DEF_MAXBANKITEMS; i++)
 		if (m_pBankList[i] != 0)	delete m_pBankList[i];
 
 	// Effects now managed by EffectManager (cleaned up in destructor)
 
-	for (i = 0; i < DEF_MAXCHATMSGS; i++)
+	for (int i = 0; i < DEF_MAXCHATMSGS; i++)
 		if (m_pChatMsgList[i] != 0) delete m_pChatMsgList[i];
 
-	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++)
+	for (int i = 0; i < DEF_MAXCHATSCROLLMSGS; i++)
 		if (m_pChatScrollList[i] != 0) delete m_pChatScrollList[i];
 
-	for (i = 0; i < DEF_MAXWHISPERMSG; i++)
+	for (int i = 0; i < DEF_MAXWHISPERMSG; i++)
 		if (m_pWhisperMsg[i] != 0) delete m_pWhisperMsg[i];
 
-	for (i = 0; i < DEF_MAXMENUITEMS; i++)
+	for (int i = 0; i < DEF_MAXMENUITEMS; i++)
 		if (m_pItemForSaleList[i] != 0) delete m_pItemForSaleList[i];
 
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
+	for (int i = 0; i < DEF_MAXMAGICTYPE; i++)
 		if (m_pMagicCfgList[i] != 0) delete m_pMagicCfgList[i];
 
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
+	for (int i = 0; i < DEF_MAXSKILLTYPE; i++)
 		if (m_pSkillCfgList[i] != 0) delete m_pSkillCfgList[i];
 
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
+	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
 		if (m_pMsgTextList[i] != 0)  delete m_pMsgTextList[i];
 		if (m_pMsgTextList2[i] != 0) delete m_pMsgTextList2[i];
 		if (m_pAgreeMsgTextList[i] != 0) delete m_pAgreeMsgTextList[i];
@@ -694,20 +676,20 @@ void CGame::Quit()
 
 	if (m_pExID != 0) delete m_pExID;
 
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pBuildItemList[i] != 0) delete m_pBuildItemList[i];
 
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pDispBuildItemList[i] != 0) delete m_pDispBuildItemList[i];
 
 	// Crafting:
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pCraftItemList[i] != 0) delete m_pCraftItemList[i];
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pDispCraftItemList[i] != 0) delete m_pDispCraftItemList[i];
 
 
-	for (i = 0; i < DEF_MAXGAMEMSGS; i++)
+	for (int i = 0; i < DEF_MAXGAMEMSGS; i++)
 		if (m_pGameMsgList[i] != 0) delete m_pGameMsgList[i];
 
 	delete m_pMapData;
@@ -715,8 +697,7 @@ void CGame::Quit()
 	if (m_pGSock != 0) delete m_pGSock;
 	if (m_pLSock != 0) delete m_pLSock;
 	if (G_pCalcSocket != 0) delete G_pCalcSocket;
-	if (m_pCGameMonitor != 0) delete m_pCGameMonitor;
-	
+
 	if (m_pEffectManager != 0) delete m_pEffectManager;
 	if (m_pNetworkMessageManager != 0) delete m_pNetworkMessageManager;
 }
@@ -779,10 +760,6 @@ void CGame::UpdateScreen()
 
 	case DEF_GAMEMODE_ONLOGIN:
 		UpdateScreen_Login();
-		break;
-
-	case DEF_GAMEMODE_ONSELECTSERVER:
-		UpdateScreen_SelectServer();
 		break;
 
 	case DEF_GAMEMODE_ONQUIT:
@@ -869,10 +846,6 @@ void CGame::DrawScreen()
 
 	case DEF_GAMEMODE_ONLOGIN:
 		DrawScreen_Login();
-		break;
-
-	case DEF_GAMEMODE_ONSELECTSERVER:
-		DrawScreen_SelectServer();
 		break;
 
 	case DEF_GAMEMODE_ONQUIT:
@@ -1003,20 +976,18 @@ void CGame::OnGameSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
-        printf("[GAMESOCK] Poll returned SOCKETCLOSED\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pGSock;
         m_pGSock = 0;
         return;
     case DEF_XSOCKEVENT_SOCKETERROR:
-        printf("[GAMESOCK] Poll returned SOCKETERROR\n");
+        printf("[ERROR] Game socket error\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pGSock;
         m_pGSock = 0;
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-        printf("[GAMESOCK] Poll returned CONNECTIONESTABLISH\n");
         ConnectionEstablishHandler(DEF_SERVERTYPE_GAME);
         break;
     }
@@ -1030,7 +1001,7 @@ void CGame::OnGameSocketEvent()
     int iDrained = m_pGSock->DrainToQueue();
 
     if (iDrained < 0) {
-        printf("[GAMESOCK] DrainToQueue failed: %d\n", iDrained);
+        printf("[ERROR] Game socket DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pGSock;
         m_pGSock = 0;
@@ -1114,11 +1085,7 @@ char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, bool bMo
 			{
 				if (m_pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
 				{
-					if (_bCheckMoveable(dX + aX, dY + aY) == true) return cTmpDir;
-					else
-					{
-						SetTopMsg(DEF_MSG_GETNEXTMOVEDIR, 5);
-					}
+					return cTmpDir;
 				}
 				else return cTmpDir;
 			}
@@ -1139,41 +1106,12 @@ char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, bool bMo
 			{
 				if (m_pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
 				{
-					if (_bCheckMoveable(dX + aX, dY + aY) == true) return cTmpDir;
-					else
-					{
-						SetTopMsg(DEF_MSG_GETNEXTMOVEDIR, 5);
-					}
+					return cTmpDir;
 				}
 				else return cTmpDir;
 			}
 		}
 	return 0;
-}
-
-bool CGame::_bCheckMoveable(short sx, short sy)
-{	// Snoopy: This function prevents the client from asking at TP from some maps to
-	// ML or PL if not citizen
-	// Incomplete function and useless (the server will handle such cases)
-/*	if( m_bIsCrusadeMode ) return true;
-	if( m_bHunter == false ) return true;
-	if( m_bCitizen == false ) return true;
-	if( m_bAresden == true && m_cMapIndex == 11 )
-	{	if( sy == 20 )
-		{	if( (sx>=39) && (sx<=47) ) return false;
-			if( (sx>=360) && (sx<=368) ) return false;
-		}
-	}
-	if( m_bAresden == false && m_cMapIndex == 3 )
-	{
-		if( sy == 373 )
-		{	if( (sx>=27) && (sx<=32) ) return false;
-		}
-		if( sy == 374 )
-		{	if( (sx>=298) && (sx<=305) ) return false;
-		}
-	}*/
-	return true;
 }
 
 bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4)
@@ -1747,23 +1685,14 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
 		}
 		m_cCommandCount++;
-		{
-			char cDbg[128];
-			wsprintf(cDbg, "[CMD] SEND: count=%d cmd=0x%X\n", (int)m_cCommandCount, wCommand);
-			printf("%s", cDbg);
-		}
 		break;
 	}
 	switch (iRet) {
 	case DEF_XSOCKEVENT_SOCKETCLOSED:
 	case DEF_XSOCKEVENT_SOCKETERROR:
 	case DEF_XSOCKEVENT_QUENEFULL:
-	{
-		char cDbg[160];
-		wsprintf(cDbg, "[NETWARN] bSendCommand: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
-		printf("%s", cDbg);
-	}
-	ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
+		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
 	delete m_pGSock;
 	m_pGSock = 0;
 	break;
@@ -1817,22 +1746,54 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	//dwTime = G_dwGlobalTime;
 	uint32_t dwTime = m_dwCurTime;
 
-	indexY = sDivY + sPivotY - 7;
-	for (iy = -sModY - 224; iy <= res_y + 352; iy += 32)
+	// Pre-calculate map data bounds for efficient boundary checking
+	const short mapMinX = m_pMapData->m_sPivotX;
+	const short mapMaxX = m_pMapData->m_sPivotX + MAPDATASIZEX;
+	const short mapMinY = m_pMapData->m_sPivotY;
+	const short mapMaxY = m_pMapData->m_sPivotY + MAPDATASIZEY;
+
+	// Tile-based loop bounds (much cleaner than pixel-based)
+	// Buffer: 5 tiles around visible area for smooth object sliding
+	// Extra 2 tiles on bottom for layering/depth sorting of tall objects
+	constexpr int TILE_SIZE = 32;
+	constexpr int BUFFER_TILES = 5;
+	constexpr int EXTRA_BOTTOM_TILES = 2;  // For depth sorting of tall objects
+
+	const int visibleTilesX = (res_x / TILE_SIZE) + 1;  // ~20 tiles
+	const int visibleTilesY = (res_y / TILE_SIZE) + 1;  // ~15 tiles
+
+	const int startTileX = -BUFFER_TILES;
+	const int endTileX = visibleTilesX + BUFFER_TILES;
+	const int startTileY = -BUFFER_TILES;
+	const int endTileY = visibleTilesY + BUFFER_TILES + EXTRA_BOTTOM_TILES;
+
+	// Visibility bounds in pixels (for culling non-visible tiles from detailed processing)
+	const int visMinX = -sModX;
+	const int visMaxX = res_x + 16;
+	const int visMinY = -sModY;
+	const int visMaxY = res_y + 32 + 16;
+
+	// Loop over tiles, calculate pixel positions when needed
+	for (int tileY = startTileY; tileY <= endTileY; tileY++)
 	{
-		indexX = sDivX + sPivotX - 4;
-		for (ix = -sModX - 128; ix <= res_x + 128; ix += 32)
+		indexY = sDivY + sPivotY + tileY;
+		iy = tileY * TILE_SIZE - sModY;
+
+		for (int tileX = startTileX; tileX <= endTileX; tileX++)
 		{
+			indexX = sDivX + sPivotX + tileX;
+			ix = tileX * TILE_SIZE - sModX;
+
 			sDynamicObject = 0;
 			bRet = false;
-			if ((ix >= -sModX) && (ix <= res_x + 16) && (iy >= -sModY) && (iy <= res_y + 32 + 16))
+			if ((ix >= visMinX) && (ix <= visMaxX) && (iy >= visMinY) && (iy <= visMaxY))
 			{
 				_tmp_wObjectID = _tmp_sOwnerType = _tmp_sAppr1 = _tmp_sAppr2 = _tmp_sAppr3 = _tmp_sAppr4 = _tmp_iStatus = 0;
 				_tmp_cDir = _tmp_cFrame = 0;
 				_tmp_iEffectType = _tmp_iEffectFrame = _tmp_iChatIndex = 0;
 				std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
-				if ((indexX < m_pMapData->m_sPivotX) || (indexX > m_pMapData->m_sPivotX + MAPDATASIZEX) ||
-					(indexY < m_pMapData->m_sPivotY) || (indexY > m_pMapData->m_sPivotY + MAPDATASIZEY))
+				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
+					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
 					sItemID = 0;
 					bRet = false;
@@ -1841,8 +1802,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				}
 				else
 				{
-					_tmp_dX = dX = indexX - m_pMapData->m_sPivotX;
-					_tmp_dY = dY = indexY - m_pMapData->m_sPivotY;
+					_tmp_dX = dX = indexX - mapMinX;
+					_tmp_dY = dY = indexY - mapMinY;
 					_tmp_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
 					_tmp_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
 					_tmp_cDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
@@ -1931,16 +1892,16 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				_tmp_iEffectType = _tmp_iEffectFrame = _tmp_iApprColor = _tmp_iChatIndex = 0;
 				std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
 
-				if ((indexX < m_pMapData->m_sPivotX) || (indexX > m_pMapData->m_sPivotX + MAPDATASIZEX) ||
-					(indexY < m_pMapData->m_sPivotY) || (indexY > m_pMapData->m_sPivotY + MAPDATASIZEY))
+				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
+					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
 					sItemID = 0;
 					bRet = false;
 				}
 				else
 				{
-					_tmp_dX = dX = indexX - m_pMapData->m_sPivotX; // v2.171 2002-6-14
-					_tmp_dY = dY = indexY - m_pMapData->m_sPivotY; // v2.171 2002-6-14
+					_tmp_dX = dX = indexX - mapMinX;
+					_tmp_dY = dY = indexY - mapMinY;
 					_tmp_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
 					_tmp_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
 					_tmp_cAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
@@ -2059,9 +2020,18 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				}
 			}
 
-			// CLEROTH
-			sObjSpr = m_pMapData->m_tile[indexX][indexY].m_sObjectSprite;
-			sObjSprFrame = m_pMapData->m_tile[indexX][indexY].m_sObjectSpriteFrame;
+			// CLEROTH - Object sprites on tiles
+			// Bounds check for tile array access (752x752)
+			if (indexX >= 0 && indexX < 752 && indexY >= 0 && indexY < 752)
+			{
+				sObjSpr = m_pMapData->m_tile[indexX][indexY].m_sObjectSprite;
+				sObjSprFrame = m_pMapData->m_tile[indexX][indexY].m_sObjectSpriteFrame;
+			}
+			else
+			{
+				sObjSpr = 0;
+				sObjSprFrame = 0;
+			}
 
 			if (sObjSpr != 0)
 			{
@@ -2103,12 +2073,48 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						{
 							if (G_cSpriteAlphaDegree == 2) //nuit
 							{
-								int iDvalue1 = -1 * (rand() % 5);
-								int iDvalue2 = -1 * (rand() % 5);
-								int iDvalue3 = -1 * (rand() % 5);
-								m_pEffectSpr[0]->Draw(ix + 2 - 17, iy - 147 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue1, iDvalue1, iDvalue1, 0.7f));
-								m_pEffectSpr[0]->Draw(ix + 16 - 17, iy - 96 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue2, iDvalue2, iDvalue2, 0.7f));
-								m_pEffectSpr[0]->Draw(ix - 19 - 17, iy - 126 - 15, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue3, iDvalue3, iDvalue3, 0.7f));
+								// Configurable ground lighting parameters
+								int baseX = ix;
+								int baseY = iy;
+								constexpr int LIGHT_RADIUS = 4;           // Radius in tiles
+								constexpr float CENTER_INTENSITY = 0.4f;  // Intensity at center (0.0 - 1.0)
+								constexpr float EDGE_INTENSITY = 0.1f;    // Intensity at edge (0.0 - 1.0)
+								constexpr int TILE_SIZE = 32;             // Pixels per tile
+
+								// Draw ground lights in a circular pattern with distance-based falloff
+								for (int ty = -LIGHT_RADIUS; ty <= LIGHT_RADIUS; ty++) {
+									for (int tx = -LIGHT_RADIUS; tx <= LIGHT_RADIUS; tx++) {
+										// Calculate distance from center (in tiles)
+										float distance = sqrtf(static_cast<float>(tx * tx + ty * ty));
+
+										// Skip if outside radius
+										if (distance > LIGHT_RADIUS) continue;
+
+										// Calculate intensity based on distance (linear falloff)
+										float t = distance / LIGHT_RADIUS;  // 0 at center, 1 at edge
+										float intensity = CENTER_INTENSITY * (1.0f - t) + EDGE_INTENSITY * t;
+
+										// Skip very dim lights for performance
+										if (intensity < 0.05f) continue;
+
+										// Calculate screen position (isometric offset)
+										int lightX = baseX + tx * TILE_SIZE;
+										int lightY = baseY + ty * (TILE_SIZE / 2);  // Half for isometric
+
+										// Warm color that gets slightly cooler at edges
+										int r = 255;
+										int g = static_cast<int>(200 + 30 * (1.0f - t));  // 230 at center, 200 at edge
+										int b = static_cast<int>(150 + 30 * (1.0f - t));  // 180 at center, 150 at edge
+
+										m_pEffectSpr[0]->Draw(lightX, lightY, 1,
+											SpriteLib::DrawParams::AdditiveColored(r, g, b, intensity));
+									}
+								}
+
+								// Lamp fixture lights (the actual light sources on the lamp)
+								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_pEffectSpr[0]->Draw(ix + 16, iy - 94, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_pEffectSpr[0]->Draw(ix - 19, iy - 126, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
 							}
 						}
 						break;
@@ -2167,7 +2173,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						}
 						else
 						{
-							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame);
+							// At night (G_cSpriteAlphaDegree == 2), reduce tree shadow opacity by 50%
+							float shadowAlpha = (G_cSpriteAlphaDegree == 2) ? 0.35f : 0.7f;
+							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Alpha(shadowAlpha));
 							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
 						}
 						if (m_bIsXmas == true)
@@ -2273,9 +2281,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					break;
 				}
 			}
-			indexX++;
 		}
-		indexY++;
 	}
 
 	if ((dwTime - m_dwEnvEffectTime) > 400) m_dwEnvEffectTime = dwTime;
@@ -2486,18 +2492,13 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
-	printf("[ITEM CONFIG] Received packet, size=%u, headerSize=%zu, entrySize=%zu\n",
-		dwMsgSize, headerSize, entrySize);
-
 	if (dwMsgSize < headerSize) {
-		printf("[ITEM CONFIG] Packet too small for header\n");
+		printf("[ERROR] Item config packet too small for header\n");
 		return false;
 	}
 
 	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
 	uint16_t itemCount = pktHeader->itemCount;
-	printf("[ITEM CONFIG] Header says %u items, totalItems=%u, packetIndex=%u\n",
-		itemCount, pktHeader->totalItems, pktHeader->packetIndex);
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
 		return false;
@@ -2550,13 +2551,6 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		pItem->m_cCategory = entry.category;
 		pItem->m_cItemColor = entry.itemColor;
 	}
-
-	// Count how many items we have now
-	int storedCount = 0;
-	for (int j = 0; j < 5000; j++) {
-		if (m_pItemConfigList[j] != nullptr) storedCount++;
-	}
-	printf("[ITEM CONFIG] After processing: %d items in m_pItemConfigList\n", storedCount);
 
 	return true;
 }
@@ -2692,6 +2686,9 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 	case DEF_SERVERTYPE_LOG:
 		switch (m_dwConnectMode) {
 		case MSGID_REQUEST_LOGIN:
+			if (strlen(m_cWorldServerName) == 0) {
+				printf("[ERROR] Login failed - m_cWorldServerName is empty\n");
+			}
 			bSendCommand(MSGID_REQUEST_LOGIN, 0, 0, 0, 0, 0, 0);
 			break;
 		case MSGID_REQUEST_CREATENEWACCOUNT:
@@ -3507,14 +3504,9 @@ void CGame::OnTimer()
 			if (m_cCommandCount >= 6)
 			{
 				m_iNetLagCount++;
-				{
-					char cDbg[128];
-					wsprintf(cDbg, "[CMD] NETLAG: count=%d lagCount=%d (disconnect at 7)\n", (int)m_cCommandCount, m_iNetLagCount);
-					printf("%s", cDbg);
-				}
 				if (m_iNetLagCount >= 7)
 				{
-					printf("[CMD] DISCONNECT: NetLag threshold reached!\n");
+					printf("[ERROR] NetLag threshold reached, disconnecting\n");
 					ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
 					delete m_pGSock;
 					m_pGSock = 0;
@@ -3554,229 +3546,11 @@ void CGame::OnTimer()
 	}
 }
 
-bool CGame::_bCheckDlgBoxClick(short msX, short msY)
-{
-	int i;
-	char         cDlgID;
-	// Snoopy: 41->61
-	for (i = 0; i < 61; i++)
-		// Snoopy: 40->60
-		if (m_dialogBoxManager.OrderAt(60 - i) != 0) {
-			// Snoopy: 40->60
-			cDlgID = m_dialogBoxManager.OrderAt(60 - i);
-			if ((m_dialogBoxManager.Info(cDlgID).sX < msX) && ((m_dialogBoxManager.Info(cDlgID).sX + m_dialogBoxManager.Info(cDlgID).sSizeX) > msX) &&
-				(m_dialogBoxManager.Info(cDlgID).sY < msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) > msY))
-			{
-				switch (cDlgID) {
-				case 1: // DialogBoxId::CharacterInfo
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 2: // DialogBoxId::Inventory
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 3: // DialogBoxId::Magic
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Magic))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 4: // DialogBoxId::ItemDropConfirm
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemDropConfirm))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 6: // DialogBoxId::WarningBattleArea
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::WarningBattleArea))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 7: // DialogBoxId::GuildMenu
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildMenu))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 8: // DialogBoxId::GuildOperation
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildOperation))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 9: // DialogBoxId::GuideMap
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuideMap))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 11: // DialogBoxId::SaleMenu
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SaleMenu))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 12: // DialogBoxId::LevelUpSetting
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::LevelUpSetting))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 13:
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CityHallMenu))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 14: // DialogBoxId::Bank
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Bank))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 15: // DialogBoxId::Skill
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Skill))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 16: // DialogBoxId::MagicShop
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::MagicShop))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 18: // DialogBoxId::Text
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Text))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 19: // DialogBoxId::SystemMenu
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SystemMenu))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 20: // DialogBoxId::NpcActionQuery
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcActionQuery))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 21: // DialogBoxId::NpcTalk
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::NpcTalk))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 23: // DialogBoxId::SellOrRepair
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellOrRepair))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 24: // DialogBoxId::Fishing
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Fishing))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 25: // DialogBoxId::Noticement
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Noticement))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 26: // DialogBoxId::Manufacture
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Manufacture))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 27: // DialogBoxId::Exchange
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Exchange))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 28: // DialogBoxId::Quest
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Quest))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 29: // DialogBoxId::HudPanel
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 31: // DialogBoxId::SellList
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 32: // DialogBoxId::Party
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Party))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 33: // DialogBoxId::CrusadeJob
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeJob))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 34: // DialogBoxId::ItemUpgrade
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 35: // DialogBoxId::Help
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Help))
-						pDlg->OnClick(msX, msY);
-					break;
-
-				case 36: // DialogBoxId::CrusadeCommander
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeCommander))
-						pDlg->OnClick(msX, msY);
-					break;
-
-				case 37: // DialogBoxId::CrusadeConstructor
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeConstructor))
-						pDlg->OnClick(msX, msY);
-					break;
-
-				case 38: // DialogBoxId::CrusadeSoldier
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::CrusadeSoldier))
-						pDlg->OnClick(msX, msY);
-					break;
-
-				case 40: // DialogBoxId::Slates
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Slates))
-						pDlg->OnClick(msX, msY);
-					break;
-					// Snoopy: Boite de dialogue de confirmation d'�change
-				case 41: // DialogBoxId::ConfirmExchange
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ConfirmExchange))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 42: // DialogBoxId::ChangeStatsMajestic
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::ChangeStatsMajestic))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 50: // DialogBoxId::Resurrect
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::Resurrect))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 51: // DialogBoxId::GuildHallMenu
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::GuildHallMenu))
-						pDlg->OnClick(msX, msY);
-					break;
-				case 52: // DialogBoxId::RepairAll
-					if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::RepairAll))
-						pDlg->OnClick(msX, msY);
-					break;
-				}
-
-				return true;
-			}
-		}
-
-	return false;
-}
-
-bool CGame::_bCheckDlgBoxDoubleClick(short msX, short msY)
-{
-	int i;
-	char cDlgID;
-	//	if (m_iHP <= 0) return false;
-		//Snoopy: 41->61
-	for (i = 0; i < 61; i++)
-		//Snoopy: 40->60
-		if (m_dialogBoxManager.OrderAt(60 - i) != 0) {
-			//Snoopy: 40->60
-			cDlgID = m_dialogBoxManager.OrderAt(60 - i);
-			if ((m_dialogBoxManager.Info(cDlgID).sX < msX) && ((m_dialogBoxManager.Info(cDlgID).sX + m_dialogBoxManager.Info(cDlgID).sSizeX) > msX) &&
-				(m_dialogBoxManager.Info(cDlgID).sY < msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) > msY)) {
-				switch (cDlgID) {
-				case 1:
-					DlbBoxDoubleClick_Character(msX, msY);
-					break;
-				case 2:
-					DlbBoxDoubleClick_Inventory(msX, msY);
-					break;
-				case 9:
-					DlbBoxDoubleClick_GuideMap(msX, msY);
-					break;
-				}
-				return true;
-			}
-		}
-	return false;
-}
-
 bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 {
 	int i;
 	char  cItemID;
 	short sX, sY, x1, x2, y1, y2;
-
-#ifdef _DEBUG
-	AddEventList("Press Inventory", 10);
-#endif
 
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Inventory) == false) return false;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) return false;
@@ -3845,64 +3619,6 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 			}
 		break;
 	}
-}
-
-bool CGame::_bCheckDraggingItemRelease(short msX, short msY)
-{
-	int i;
-	char         cDlgID;
-	//Snoopy: 41->61
-	for (i = 0; i < 61; i++)
-		//Snoopy: 40->60
-		if (m_dialogBoxManager.OrderAt(60 - i) != 0) {
-			//Snoopy: 40->60
-			cDlgID = m_dialogBoxManager.OrderAt(60 - i);
-			if ((m_dialogBoxManager.Info(cDlgID).sX < msX) && ((m_dialogBoxManager.Info(cDlgID).sX + m_dialogBoxManager.Info(cDlgID).sSizeX) > msX)
-				&& (m_dialogBoxManager.Info(cDlgID).sY < msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) > msY))
-			{
-				m_dialogBoxManager.EnableDialogBox(cDlgID, 0, 0, 0);
-				switch (cDlgID) {
-				case 1:
-					bItemDrop_Character();
-					break;
-
-				case 2:
-					bItemDrop_Inventory(msX, msY);
-					break;
-
-				case 14:
-					bItemDrop_Bank(msX, msY);
-					break;
-
-				case 26: // Alchim / Manuf
-					bItemDrop_SkillDialog();
-					break;
-
-				case 27:
-					bItemDrop_ExchangeDialog(msX, msY);
-					break;
-
-				case 30:
-					bItemDrop_IconPannel(msX, msY);
-					break;
-
-				case 31:
-					bItemDrop_SellList(msX, msY);
-					break;
-
-				case 34:
-					bItemDrop_ItemUpgrade();
-					break;
-
-				case 40:
-					bItemDrop_Slates();
-					break;
-				}
-				return true;
-			}
-		}
-	bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
-	return false;
 }
 
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
@@ -4661,26 +4377,6 @@ int _iAttackerHeight[] = { 0, 35, 35,35,35,35,35, 0,0,0,
 35  // Gate 91
 };
 
-void CGame::bItemDrop_IconPannel(short msX, short msY)
-{
-	short sX, sY, sItemIndex;
-	sX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;	sY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
-
-	sItemIndex = CursorTarget::GetSelectedID();
-	if (m_bIsItemDisabled[sItemIndex] == true) return;
-	if (m_cCommand < 0) return;
-	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))
-	{
-		bItemDrop_Inventory(m_dialogBoxManager.Info(DialogBoxId::Inventory).sX + (rand() % 148), m_dialogBoxManager.Info(DialogBoxId::Inventory).sY + (rand() % 55));
-		return;
-	}
-	if ((425 < msX) && (448 > msX) && (440 < msY) && (475 > msY))
-	{
-		bItemDrop_Character();
-		return;
-	}
-}
-
 void CGame::_LoadShopMenuContents(char cType)
 {
 	// Request shop contents from server using NPC type
@@ -5220,11 +4916,10 @@ bool CGame::bInitSkillCfgList()
 
 bool CGame::_bGetIsStringIsNumber(char* pStr)
 {
-	int i;
-	for (i = 0; i < (int)strlen(pStr); i++)
-		if ((pStr[i] != '-') && ((pStr[i] < (char)'0') || (pStr[i] > (char)'9'))) return false;
-
-	return true;
+	if (!pStr || *pStr == '\0') return false;
+	int result;
+	auto [ptr, ec] = std::from_chars(pStr, pStr + strlen(pStr), result);
+	return ec == std::errc{} && *ptr == '\0';
 }
 
 void CGame::RequestFullObjectData(uint16_t wObjectID)
@@ -11131,20 +10826,18 @@ void CGame::OnLogSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
-        printf("[LOGSOCK] Poll returned SOCKETCLOSED\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pLSock;
         m_pLSock = 0;
         return;
     case DEF_XSOCKEVENT_SOCKETERROR:
-        printf("[LOGSOCK] Poll returned SOCKETERROR\n");
+        printf("[ERROR] Login socket error\n");
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pLSock;
         m_pLSock = 0;
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-        printf("[LOGSOCK] Poll returned CONNECTIONESTABLISH\n");
         ConnectionEstablishHandler(DEF_SERVERTYPE_LOG);
         break;
     }
@@ -11158,7 +10851,7 @@ void CGame::OnLogSocketEvent()
     int iDrained = m_pLSock->DrainToQueue();
 
     if (iDrained < 0) {
-        printf("[LOGSOCK] DrainToQueue failed: %d\n", iDrained);
+        printf("[ERROR] Login socket DrainToQueue failed: %d\n", iDrained);
         ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
         delete m_pLSock;
         m_pLSock = 0;
@@ -11209,7 +10902,10 @@ void CGame::LogResponseHandler(char* pData)
 	int i;
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
-	if (!header) return;
+	if (!header) {
+		printf("[ERROR] LogResponseHandler - invalid packet header\n");
+		return;
+	}
 	wResponse = header->msg_type;
 
 	switch (wResponse) {
@@ -11254,7 +10950,10 @@ void CGame::LogResponseHandler(char* pData)
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			pData, sizeof(hb::net::PacketLogCharacterListHeader));
-		if (!list) return;
+		if (!list) {
+			printf("[ERROR] LogResponseHandler - CONFIRM packet too small\n");
+			return;
+		}
 		m_iAccntYear = 0;
 		m_iAccntMonth = 0;
 		m_iAccntDay = 0;
@@ -11517,178 +11216,11 @@ void CGame::LogRecvMsgHandler(char* pData)
 	LogResponseHandler(pData);
 }
 
-void CGame::_InitOnCreateNewCharacter()
-{
-	m_cGender = rand() % 2 + 1;
-	m_cSkinCol = rand() % 3 + 1;
-	m_cHairStyle = rand() % 8;
-	m_cHairCol = rand() % 16;
-	m_cUnderCol = rand() % 8;
-	m_ccStr = 10;
-	m_ccVit = 10;
-	m_ccDex = 10;
-	m_ccInt = 10;
-	m_ccMag = 10;
-	m_ccChr = 10;
-}
-
-void CGame::ClearContents_OnCreateNewAccount()
-{
-	std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
-	std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
-	std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
-	std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
-	std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
-	//v1.4334
-	std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
-	std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
-}
-
 void CGame::ChangeGameMode(char cMode)
 {
-	const char* modeName = "UNKNOWN";
-	switch (cMode) {
-	case DEF_GAMEMODE_NULL: modeName = "NULL"; break;
-	case DEF_GAMEMODE_ONQUIT: modeName = "ONQUIT"; break;
-	case DEF_GAMEMODE_ONMAINMENU: modeName = "ONMAINMENU"; break;
-	case DEF_GAMEMODE_ONCONNECTING: modeName = "ONCONNECTING"; break;
-	case DEF_GAMEMODE_ONLOADING: modeName = "ONLOADING"; break;
-	case DEF_GAMEMODE_ONWAITINGINITDATA: modeName = "ONWAITINGINITDATA"; break;
-	case DEF_GAMEMODE_ONMAINGAME: modeName = "ONMAINGAME"; break;
-	case DEF_GAMEMODE_ONCONNECTIONLOST: modeName = "ONCONNECTIONLOST"; break;
-	case DEF_GAMEMODE_ONMSG: modeName = "ONMSG"; break;
-	case DEF_GAMEMODE_ONCREATENEWACCOUNT: modeName = "ONCREATENEWACCOUNT"; break;
-	case DEF_GAMEMODE_ONLOGIN: modeName = "ONLOGIN"; break;
-	case DEF_GAMEMODE_ONQUERYFORCELOGIN: modeName = "ONQUERYFORCELOGIN"; break;
-	case DEF_GAMEMODE_ONSELECTCHARACTER: modeName = "ONSELECTCHARACTER"; break;
-	case DEF_GAMEMODE_ONCREATENEWCHARACTER: modeName = "ONCREATENEWCHARACTER"; break;
-	case DEF_GAMEMODE_ONWAITINGRESPONSE: modeName = "ONWAITINGRESPONSE"; break;
-	case DEF_GAMEMODE_ONQUERYDELETECHARACTER: modeName = "ONQUERYDELETECHARACTER"; break;
-	case DEF_GAMEMODE_ONLOGRESMSG: modeName = "ONLOGRESMSG"; break;
-	case DEF_GAMEMODE_ONCHANGEPASSWORD: modeName = "ONCHANGEPASSWORD"; break;
-	case DEF_GAMEMODE_ONVERSIONNOTMATCH: modeName = "ONVERSIONNOTMATCH"; break;
-	case DEF_GAMEMODE_ONINTRODUCTION: modeName = "ONINTRODUCTION"; break;
-	case DEF_GAMEMODE_ONAGREEMENT: modeName = "ONAGREEMENT"; break;
-	case DEF_GAMEMODE_ONSELECTSERVER: modeName = "ONSELECTSERVER"; break;
-	}
-	{
-		char cDbg[128];
-		wsprintf(cDbg, "[GAMEMODE] Changing to: %s (%d)\n", modeName, (int)cMode);
-		printf("%s", cDbg);
-	}
-
 	m_cGameMode = cMode;
 	m_cGameModeCount = 0;
 	m_dwTime = G_dwGlobalTime;
-
-#ifndef DEF_SELECTSERVER
-	if (cMode == DEF_GAMEMODE_ONSELECTSERVER)
-	{
-		std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-		strcpy(m_cWorldServerName, NAME_WORLDNAME1);
-		m_cGameMode = DEF_GAMEMODE_ONLOGIN;
-	}
-#endif
-}
-
-// Overlay system methods
-void CGame::ShowOverlay(OverlayType type, char context, char message)
-{
-	m_activeOverlay = type;
-	m_cOverlayContext = context;
-	m_cOverlayMessage = message;
-	m_dwOverlayStartTime = G_dwGlobalTime;
-}
-
-void CGame::HideOverlay()
-{
-	m_activeOverlay = OverlayType::None;
-	m_cOverlayContext = 0;
-	m_cOverlayMessage = 0;
-}
-
-void CGame::UpdateOverlay()
-{
-	// Handle input for the active overlay
-	// This will be filled in when we convert each overlay screen
-	switch (m_activeOverlay)
-	{
-	case OverlayType::Connecting:
-		// ESC to cancel connection
-		if (Input::IsKeyPressed(VK_ESCAPE))
-		{
-			HideOverlay();
-			if (m_pGSock) m_pGSock->_CloseConn();
-			if (m_pLSock) m_pLSock->_CloseConn();
-		}
-		break;
-
-	case OverlayType::WaitingResponse:
-		// ESC to cancel waiting
-		if (Input::IsKeyPressed(VK_ESCAPE))
-		{
-			HideOverlay();
-			if (m_pGSock) m_pGSock->_CloseConn();
-			if (m_pLSock) m_pLSock->_CloseConn();
-		}
-		break;
-
-	case OverlayType::LogResMsg:
-		// Click to dismiss
-		// Will be handled in the Draw phase click detection
-		break;
-
-	case OverlayType::QueryForceLogin:
-		// Yes/No button handling
-		break;
-
-	case OverlayType::QueryDeleteCharacter:
-		// Yes/No button handling
-		break;
-
-	default:
-		break;
-	}
-}
-
-void CGame::DrawOverlay()
-{
-	// Draw the overlay on top of the base screen
-	// This will be filled in when we convert each overlay screen
-	switch (m_activeOverlay)
-	{
-	case OverlayType::Connecting:
-		// Draw "Connecting..." message
-		break;
-
-	case OverlayType::WaitingResponse:
-		// Draw "Waiting for response..." message
-		break;
-
-	case OverlayType::LogResMsg:
-		// Draw login response message
-		break;
-
-	case OverlayType::QueryForceLogin:
-		// Draw force login confirmation dialog
-		break;
-
-	case OverlayType::QueryDeleteCharacter:
-		// Draw delete character confirmation dialog
-		break;
-
-	default:
-		break;
-	}
-}
-
-bool CGame::bReadIp()
-{
-	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
-	strcpy(m_cLogServerAddr, DEF_SERVER_IP);
-	m_iLogServerPort = DEF_SERVER_PORT;
-	m_iGameServerPort = DEF_GSERVER_PORT;
-	return true;
 }
 
 void CGame::ReleaseUnusedSprites()
@@ -11790,15 +11322,20 @@ void CGame::ChatMsgHandler(char* pData)
 	short sCheckByte = 0;
 	while (bFlag == false)
 	{
-		iLoc = CMisc::iGetTextLengthLoc(m_Renderer->GetTextDC(), cMsg, 305);
-		for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
-		if (iLoc == 0)
+		int msgLen = static_cast<int>(strlen(cMsg));
+		iLoc = m_Renderer->GetTextLength(cMsg, 305);
+
+		// GetTextLength returns how many chars fit; if all fit, no wrapping needed
+		if (iLoc >= msgLen)
 		{
 			PutChatScrollList(cMsg, cMsgType);
 			bFlag = true;
 		}
-		else
+		else if (iLoc > 0)
 		{
+			// Count double-byte characters for proper splitting
+			for (int i = 0; i < iLoc; i++) if (cMsg[i] < 0) sCheckByte++;
+
 			if ((sCheckByte % 2) == 0)
 			{
 				std::memset(cTemp, 0, sizeof(cTemp));
@@ -11821,6 +11358,12 @@ void CGame::ChatMsgHandler(char* pData)
 				strcpy(cMsg, " ");
 				strcat(cMsg, cTemp);
 			}
+		}
+		else
+		{
+			// Edge case: even a single char doesn't fit, add anyway to avoid infinite loop
+			PutChatScrollList(cMsg, cMsgType);
+			bFlag = true;
 		}
 	}
 
@@ -11850,10 +11393,8 @@ void CGame::ChatMsgHandler(char* pData)
 
 void CGame::ReleaseTimeoverChatMsg()
 {
-	int i;
-	uint32_t dwTime;
-	dwTime = G_dwGlobalTime;
-	for (i = 1; i < DEF_MAXCHATMSGS; i++)
+	uint32_t dwTime = GameClock::GetTimeMS();
+	for (int i = 1; i < DEF_MAXCHATMSGS; i++)
 		if (m_pChatMsgList[i] != 0) {
 
 			if ((m_pChatMsgList[i]->m_cType >= 1) && (m_pChatMsgList[i]->m_cType <= 20)) {
@@ -11885,35 +11426,37 @@ void CGame::ReleaseTimeoverChatMsg()
 
 void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 {
-	int indexX, indexY, ix, iy;
-	short sSpr, sSprFrame;
 	if (sDivX < 0 || sDivY < 0) return;
-	if ((m_bIsRedrawPDBGS == true) || (m_iPDBGSdivX != sDivX) || (m_iPDBGSdivY != sDivY)) {
-		// Pre-Draw Background Surface
-		m_bIsRedrawPDBGS = false;
-		m_iPDBGSdivX = sDivX;
-		m_iPDBGSdivY = sDivY;
-		m_Renderer->SetClipArea(0, 0, LOGICAL_WIDTH + 32, LOGICAL_HEIGHT + 32);
-		indexY = sDivY + m_pMapData->m_sPivotY;
-		for (iy = -sModY; iy < LOGICAL_MAX_Y + 48; iy += 32) // LOGICAL_HEIGHT 
-		{
-			indexX = sDivX + m_pMapData->m_sPivotX;
-			for (ix = -sModX; ix < LOGICAL_MAX_X + 48; ix += 32)
-			{
-				sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
-				sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->DrawToSurface(m_Renderer->GetPDBGSNative(), ix - 16 + sModX, iy - 16 + sModY, sSprFrame, SpriteLib::DrawParams::NoColorKey());
-				indexX++;
-			}
-			indexY++;
-		}
-		m_Renderer->SetClipArea(0, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-	}
-	RECT rcRect;
-	SetRect(&rcRect, sModX, sModY, LOGICAL_WIDTH + sModX, LOGICAL_HEIGHT + sModY); // our fictitious sprite bitmap is
-	m_Renderer->BltBackBufferFromPDBGS(&rcRect);
 
-	// Grid overlay removed.
+	// Tile-based loop constants
+	constexpr int TILE_SIZE = 32;
+	const int visibleTilesX = (LOGICAL_WIDTH / TILE_SIZE) + 2;   // +2 for partial tiles on edges
+	const int visibleTilesY = (LOGICAL_HEIGHT / TILE_SIZE) + 2;
+
+	// Map pivot for tile array access
+	const short pivotX = m_pMapData->m_sPivotX;
+	const short pivotY = m_pMapData->m_sPivotY;
+
+	// Draw tiles directly to backbuffer (no caching)
+	for (int tileY = 0; tileY < visibleTilesY; tileY++)
+	{
+		int indexY = sDivY + pivotY + tileY;
+		int iy = tileY * TILE_SIZE - sModY;
+
+		for (int tileX = 0; tileX < visibleTilesX; tileX++)
+		{
+			int indexX = sDivX + pivotX + tileX;
+			int ix = tileX * TILE_SIZE - sModX;
+
+			// Bounds check for tile array (752x752)
+			if (indexX >= 0 && indexX < 752 && indexY >= 0 && indexY < 752)
+			{
+				short sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
+				short sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
+				m_pTileSpr[sSpr]->Draw(ix - 16, iy - 16, sSprFrame, SpriteLib::DrawParams::NoColorKey());
+			}
+		}
+	}
 
 	if (m_bIsCrusadeMode)
 	{
@@ -12586,7 +12129,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 
 					switch (cDlgID) {
 					case 1:
-						if (bDlgBoxPress_Character(msX, msY) == false) {
+						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false) {
 							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
 						break;
@@ -12633,7 +12176,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						break;
 
 					case 2:	// (Sell Item)
-						if (bDlgBoxPress_Inventory(msX, msY) == false)
+						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false)
 						{
 							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
@@ -12743,7 +12286,7 @@ int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
 						break;
 
 					case 26:
-						if (bDlgBoxPress_SkillDlg(msX, msY) == false)
+						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false)
 						{
 							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
 						}
@@ -14670,9 +14213,9 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		if (bIsPreDC == false)
 			m_Renderer->BeginTextBatch();
 
-		GetTextExtentPoint32(m_Renderer->GetTextDC(), cMsg, strlen(cMsg), &Size);
+		int iTextWidth = m_Renderer->GetTextWidth(cMsg);
 
-		switch (Size.cx / 160) {
+		switch (iTextWidth / 160) {
 		case 0:
 			SetRect(&rcRect, sX - 80 + 1, sY - 65 - iLoc, sX + 80 + 1, sY - iLoc);
 			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
@@ -14807,7 +14350,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		}
 		else
 		{
-			_InitOnCreateNewCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 			return;
 		}
@@ -14895,7 +14437,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 				}
 				else
 				{
-					_InitOnCreateNewCharacter();
 					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 					return;
 				}
@@ -14933,7 +14474,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		case 6:
 			if (m_iTotalChar < 4)
 			{
-				_InitOnCreateNewCharacter();
 				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 				return;
 			}
@@ -16186,22 +15726,6 @@ int CGame::_iGetWeaponSkillType()
 	return 1; // Fishing !
 }
 
-bool CGame::_bCheckBadWords(char* pMsg)
-{
-	char cStr[500];
-	int i, iLen;
-	std::memset(cStr, 0, sizeof(cStr));
-	strcpy(cStr, pMsg);
-	iLen = strlen(cStr);
-
-	for (i = 0; i < iLen; i++) {
-		if (m_pCGameMonitor->bCheckBadWord((char*)(cStr + i)) == true) return true;
-		if ((unsigned char)cStr[i] >= 128) i++;
-	}
-
-	return false;
-}
-
 /*********************************************************************************************************************
 **  void CGame::bItemDrop_ExchangeDialog(short msX, short msY)	(snoopy)											**
 **  description			:: modifyed for MultiTrade																	**
@@ -17319,7 +16843,6 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 	if (strlen(pName) <= 0) bFlag = false;
 	if (iPoint > 0) bFlag = false;
 	if (CMisc::bCheckValidName(pName) == false) bFlag = false;
-	if (_bCheckBadWords(pName) == true) bFlag = false;
 
 	if ((bFlag == true) && (m_cCurFocus == 2)) m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + SCREENX, 445 + SCREENY, 25);
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + SCREENX, 445 + SCREENY, 24);
@@ -17385,8 +16908,6 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 
 	return bFlag;
 }
-
-#ifdef DEF_MAKE_ACCOUNT
 
 void CGame::_LoadAgreementTextContents(char cType)
 {
@@ -17456,7 +16977,13 @@ void CGame::UpdateScreen_OnAgreement()
 	if (Input::IsKeyPressed(VK_RETURN) == true) {
 		PlaySound('E', 14, 5);
 		ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-		ClearContents_OnCreateNewAccount();
+		std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+		std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
+		std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
+		std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
+		std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
+		std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
+		std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
 		return;
 	}
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
@@ -17479,7 +17006,14 @@ void CGame::UpdateScreen_OnAgreement()
 		if (Input::IsMouseInRect(98, 377, 147, 396)) {
 			PlaySound('E', 14, 5);
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-			ClearContents_OnCreateNewAccount();
+			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+			std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
+			std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
+			std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
+			std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
+			//v1.4334
+			std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
+			std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
 			return;
 		}
 		// Disagree button
@@ -17542,114 +17076,104 @@ void CGame::UpdateScreen_OnAgreement()
 	//	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0,0,639,479);
 }
 
-#endif //endif from #ifdef DEF_MAKE_ACCOUNT
-
-void CGame::OnKeyUp(WPARAM wParam)
+void CGame::OnKeyUp(int key)
 {
-	if (HotkeyManager::Get().HandleKeyUp(static_cast<int>(wParam))) {
+	if (HotkeyManager::Get().HandleKeyUp(static_cast<int>(key))) {
 		return;
 	}
 
-	switch (wParam) {
-	case 107: //'+'
+	// Use KeyCode enum for engine-agnostic key handling
+	KeyCode _key = static_cast<KeyCode>(key);
+
+	switch (_key) {
+	case KeyCode::NumpadAdd:      // Numpad +
 		Hotkey_Simple_ZoomIn();
 		break;
-	case 109: //'-'
+	case KeyCode::NumpadSubtract: // Numpad -
 		Hotkey_Simple_ZoomOut();
 		break;
 
-	case VK_F2:
+	case KeyCode::F2:
 		Hotkey_Simple_UseShortcut2();
 		break;
 
-	case VK_F3:
+	case KeyCode::F3:
 		Hotkey_Simple_UseShortcut3();
 		break;
 
-	case VK_INSERT:
+	case KeyCode::Insert:
 		Hotkey_Simple_UseHealthPotion();
 		break;
 
-	case VK_DELETE:
+	case KeyCode::Delete:
 		Hotkey_Simple_UseManaPotion();
 		break;
 
-	case VK_END:
+	case KeyCode::End:
 		Hotkey_Simple_LoadBackupChat();
 		break;
 
-	case VK_F4:
+	case KeyCode::F4:
 		Hotkey_Simple_UseMagicShortcut();
 		break;
 
-	case VK_F5:
+	case KeyCode::F5:
 		Hotkey_Simple_ToggleCharacterInfo();
 		break;
 
-	case VK_F6:
+	case KeyCode::F6:
 		Hotkey_Simple_ToggleInventory();
 		break;
 
-	case VK_F7:
+	case KeyCode::F7:
 		Hotkey_Simple_ToggleMagic();
 		break;
 
-	case VK_F8:
+	case KeyCode::F8:
 		Hotkey_Simple_ToggleSkill();
 		break;
 
-	case VK_F9:
+	case KeyCode::F9:
 		Hotkey_Simple_ToggleChatHistory();
 		break;
 
-	case VK_F12:
+	case KeyCode::F12:
 		Hotkey_Simple_ToggleSystemMenu();
 		break;
 
-	case VK_F1:
-		//if (m_bInputStatus) return;
-		//if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false) // 35 CLEROTH
-		//	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
-		//else
-		//{	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Help);
-		//	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		//}
+	case KeyCode::F1:
 		Hotkey_Simple_UseShortcut1();
 		break;
 
-	case VK_UP:
+	case KeyCode::Up:
 		Hotkey_Simple_WhisperCycleUp();
 		break;
 
-	case VK_RIGHT:
+	case KeyCode::Right:
 		Hotkey_Simple_ArrowRight();
 		break;
 
-	case VK_DOWN:
+	case KeyCode::Down:
 		Hotkey_Simple_WhisperCycleDown();
 		break;
 
-	case VK_LEFT:
+	case KeyCode::Left:
 		Hotkey_Simple_ArrowLeft();
 		break;
 
-	case VK_SNAPSHOT:
-		Hotkey_Simple_Screenshot();
-		break;
-
-	case VK_TAB:
+	case KeyCode::Tab:
 		Hotkey_Simple_TabToggleCombat();
 		break;
 
-	case VK_HOME:
+	case KeyCode::Home:
 		Hotkey_Simple_ToggleSafeAttack();
 		break;
 
-	case VK_ESCAPE:
+	case KeyCode::Escape:
 		Hotkey_Simple_Escape();
 		break;
 
-	case 33:
+	case KeyCode::PageUp:
 		Hotkey_Simple_SpecialAbility();
 		break;
 	default:
@@ -17657,61 +17181,70 @@ void CGame::OnKeyUp(WPARAM wParam)
 	}
 }
 
-void CGame::OnKeyDown(WPARAM wParam)
+void CGame::OnKeyDown(int key)
 {
-	switch (wParam) {
-	case VK_INSERT:
-	case VK_DELETE:
-	case VK_TAB:
-	case VK_RETURN:
-	case VK_ESCAPE:
-	case VK_END:
-	case VK_HOME:
-	case VK_F1:
-	case VK_F2:
-	case VK_F3:
-	case VK_F4:
-	case VK_F5:
-	case VK_F6:
-	case VK_F7:
-	case VK_F8:
-	case VK_F9:
-	case VK_F10:
-	case VK_F11:
-	case VK_F12:
-	case VK_PRIOR: // Page-Up
-	case VK_NEXT: // Page-Down
-	case VK_LWIN:
-	case VK_RWIN:
-	case VK_MULTIPLY:
-	case VK_ADD: //'+'
-	case VK_SEPARATOR:
-	case VK_SUBTRACT: //'-'
-	case VK_DECIMAL:
-	case VK_DIVIDE:
-	case VK_NUMLOCK:
-	case VK_SCROLL:
+	// Use KeyCode enum for engine-agnostic key handling
+	KeyCode _key = static_cast<KeyCode>(key);
+
+	// Filter out keys that should not trigger any action in OnKeyDown
+	// These are handled in OnKeyUp or elsewhere
+	switch (_key) {
+	case KeyCode::Insert:
+	case KeyCode::Delete:
+	case KeyCode::Tab:
+	case KeyCode::Escape:
+	case KeyCode::End:
+	case KeyCode::Home:
+	case KeyCode::F1:
+	case KeyCode::F2:
+	case KeyCode::F3:
+	case KeyCode::F4:
+	case KeyCode::F5:
+	case KeyCode::F6:
+	case KeyCode::F7:
+	case KeyCode::F8:
+	case KeyCode::F9:
+	case KeyCode::F10:
+	case KeyCode::F11:
+	case KeyCode::F12:
+	case KeyCode::PageUp:
+	case KeyCode::PageDown:
+	case KeyCode::LWin:
+	case KeyCode::RWin:
+	case KeyCode::NumpadMultiply:
+	case KeyCode::NumpadAdd:
+	case KeyCode::NumpadSeparator:
+	case KeyCode::NumpadSubtract:
+	case KeyCode::NumpadDecimal:
+	case KeyCode::NumpadDivide:
+	case KeyCode::NumLock:
+	case KeyCode::ScrollLock:
 		return;
+	default:
+		break;
 	}
 
 	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
 	{
 		if (Input::IsCtrlDown())
 		{
-			switch (wParam) {
-			case 48: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break; // 0
-			case 49: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0; break; // 1
-			case 50: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1; break; // 2
-			case 51: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2; break; // 3
-			case 52: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3; break; // 4
-			case 53: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4; break; // 5
-			case 54: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5; break; // 6
-			case 55: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6; break; // 7
-			case 56: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7; break; // 8
-			case 57: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break; // 9
+			// Ctrl+0-9 for magic views
+			switch (_key) {
+			case KeyCode::Num0: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 9; break;
+			case KeyCode::Num1: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 0; break;
+			case KeyCode::Num2: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 1; break;
+			case KeyCode::Num3: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 2; break;
+			case KeyCode::Num4: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 3; break;
+			case KeyCode::Num5: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 4; break;
+			case KeyCode::Num6: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 5; break;
+			case KeyCode::Num7: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 6; break;
+			case KeyCode::Num8: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 7; break;
+			case KeyCode::Num9: m_dialogBoxManager.EnableDialogBox(DialogBoxId::Magic, 0, 0, 0); m_dialogBoxManager.Info(DialogBoxId::Magic).sView = 8; break;
+			default: break;
 			}
 		}
-		else if ((m_bInputStatus == false) && (!Input::IsAltDown()))
+		// Only Enter key activates chat input - not every key press
+		else if (_key == KeyCode::Enter && (m_bInputStatus == false) && (!Input::IsAltDown()))
 		{
 			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
 			ClearInputString();
@@ -18333,15 +17866,11 @@ void CGame::UpdateScreen_MainMenu()
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
 		case 1:
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
+			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
 			return;
 		case 2:
-#ifdef DEF_MAKE_ACCOUNT
 			ClearContents_OnSelectCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-#else
-			GoHomepage();
-#endif
 			return;
 		case 3:
 			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
@@ -18355,17 +17884,13 @@ void CGame::UpdateScreen_MainMenu()
 		// Game button
 		if (Input::IsMouseInRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY)) {
 			m_cCurFocus = 1;
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
+			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
 		}
 		// Account button
 		else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
 			m_cCurFocus = 2;
-#ifdef DEF_MAKE_ACCOUNT
 			ClearContents_OnSelectCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-#else
-			GoHomepage();
-#endif
 			return;
 		}
 		// Quit button
@@ -18448,132 +17973,6 @@ void CGame::DrawScreen_WaitInitData()
 
 	DrawVersion();
 	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
-}
-
-// SelectServer screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_SelectServer()
-{
-	static char cPrevFocus;
-
-	if (m_cGameModeCount == 0) {
-		EndInputString();
-		// Button rect: 130, 177, 270, 198
-		// Button rect: 130, 199, 270, 225
-		// Button rect: 256, 279, 331, 308
-
-		cPrevFocus = 1;
-		m_cCurFocus = 1;
-		m_cMaxFocus = 3;
-		m_cArrowPressed = 0;
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (m_cArrowPressed != 0)
-	{
-		switch (m_cArrowPressed) {
-		case 1:
-			m_cCurFocus--;
-			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
-			break;
-		case 3:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		}
-		m_cArrowPressed = 0;
-	}
-
-	if (Input::IsKeyPressed(VK_RETURN) == true)
-	{
-		PlaySound('E', 14, 5);
-		switch (m_cCurFocus) {
-		case 1:
-			if (strlen(m_cWorldServerName) == 0)
-				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-			strcpy(m_cWorldServerName, NAME_WORLDNAME1);
-			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-			return;
-		case 2:
-			std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-			strcpy(m_cWorldServerName, "WS2");
-			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-			return;
-		case 3:
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			return;
-		}
-	}
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		return;
-	}
-
-	if (cPrevFocus != m_cCurFocus)
-	{
-		cPrevFocus = m_cCurFocus;
-	}
-
-	// Poll mouse input
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-		PlaySound('E', 14, 5);
-
-		// Determine which button was clicked
-		int iMIbuttonNum = 0;
-		if (Input::IsMouseInRect(130, 177, 270, 198)) iMIbuttonNum = 1;
-		else if (Input::IsMouseInRect(130, 199, 270, 225)) iMIbuttonNum = 2;
-		else if (Input::IsMouseInRect(256, 279, 331, 308)) iMIbuttonNum = 3;
-
-		switch (iMIbuttonNum) {
-		case 1:
-			if (m_cCurFocus == 1) {
-				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-				strcpy(m_cWorldServerName, NAME_WORLDNAME1);
-				ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-				return;
-			}
-			else m_cCurFocus = 1;
-			break;
-		case 2:
-			if (m_cCurFocus == 2) {
-				std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-				strcpy(m_cWorldServerName, "WS2");
-				ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
-				return;
-			}
-			else m_cCurFocus = 2;
-			break;
-		case 3:
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-			return;
-		}
-	}
-
-	if ((Input::GetMouseX() >= 130) && (Input::GetMouseX() <= 295) && (Input::GetMouseY() >= 175) && (Input::GetMouseY() <= 198)) m_cCurFocus = 1;
-	if ((Input::GetMouseX() >= 130) && (Input::GetMouseX() <= 295) && (Input::GetMouseY() >= 199) && (Input::GetMouseY() <= 225)) m_cCurFocus = 2;
-	if ((Input::GetMouseX() >= 256) && (Input::GetMouseX() <= 331) && (Input::GetMouseY() >= 279) && (Input::GetMouseY() <= 308)) m_cCurFocus = 3;
-}
-
-// SelectServer screen - Draw phase (rendering only)
-void CGame::DrawScreen_SelectServer()
-{
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0, 0, 0, true);
-	if (m_cGameModeCount > 20) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 40, 121, 1, true);
-	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(40, 121, 1, SpriteLib::DrawParams::Alpha(0.25f));
-
-	if (m_cGameModeCount > 20)
-	{
-		if (m_cCurFocus == 1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 138, 177, 5, true);
-		if (m_cCurFocus == 2) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 130, 205, 6, true);
-		if (m_cCurFocus == 3) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256, 282, 4, true);
-	}
-	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // File-scope static variables for Login screen input buffers
@@ -19528,7 +18927,6 @@ void CGame::UpdateScreen_SelectCharacter()
 		}
 		else
 		{
-			_InitOnCreateNewCharacter();
 			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 			return;
 		}
@@ -19614,7 +19012,6 @@ void CGame::UpdateScreen_SelectCharacter()
 				}
 				else
 				{
-					_InitOnCreateNewCharacter();
 					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 					return;
 				}
@@ -19652,7 +19049,6 @@ void CGame::UpdateScreen_SelectCharacter()
 		case 6:
 			if (m_iTotalChar < 4)
 			{
-				_InitOnCreateNewCharacter();
 				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
 				return;
 			}
@@ -19709,8 +19105,20 @@ void CGame::UpdateScreen_CreateNewCharacter()
 
 	if (m_cGameModeCount == 0)
 	{
-		s_iNewCharPoint = m_ccStr + m_ccVit + m_ccDex + m_ccInt + m_ccMag + m_ccChr;
-		s_iNewCharPoint = 70 - s_iNewCharPoint;
+		// Initialize character creation defaults
+		m_cGender = rand() % 2 + 1;
+		m_cSkinCol = rand() % 3 + 1;
+		m_cHairStyle = rand() % 8;
+		m_cHairCol = rand() % 16;
+		m_cUnderCol = rand() % 8;
+		m_ccStr = 10;
+		m_ccVit = 10;
+		m_ccDex = 10;
+		m_ccInt = 10;
+		m_ccMag = 10;
+		m_ccChr = 10;
+
+		s_iNewCharPoint = 10; // 70 - (6 stats * 10) = 10 bonus points
 		s_cNewCharPrevFocus = 1;
 		m_cCurFocus = 1;
 		m_cMaxFocus = 6;
@@ -19771,7 +19179,6 @@ void CGame::UpdateScreen_CreateNewCharacter()
 	if (strlen(s_cNewCharName) <= 0) s_bNewCharFlag = false;
 	if (s_iNewCharPoint > 0) s_bNewCharFlag = false;
 	if (CMisc::bCheckValidName(s_cNewCharName) == false) s_bNewCharFlag = false;
-	if (_bCheckBadWords(s_cNewCharName) == true) s_bNewCharFlag = false;
 
 	if ((dwTime - s_dwNewCharMTime) > 100)
 	{
@@ -20135,12 +19542,6 @@ void CGame::DrawScreen_CreateNewCharacter()
 			PutAlignedString(370 + SCREENX, 580 + SCREENX, 345 + 16 * i++ + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER39);
 			PutAlignedString(370 + SCREENX, 580 + SCREENX, 345 + 16 * i++ + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER40);
 			PutAlignedString(370 + SCREENX, 580 + SCREENX, 345 + 16 * i++ + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER41);
-		}
-		else if (_bCheckBadWords(s_cNewCharName) == true)
-		{
-			i = 0;
-			PutAlignedString(370 + SCREENX, 580 + SCREENX, 345 + 16 * i++ + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER42);
-			PutAlignedString(370 + SCREENX, 580 + SCREENX, 345 + 16 * i++ + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER43);
 		}
 		else
 		{
@@ -22613,7 +22014,6 @@ void CGame::UpdateScreen_OnGame()
 				strcpy(m_cBackupChatMsg, G_cTxt);
 				if ((m_dwCurTime - s_dwOnGamePrevChatTime) >= 700) {
 					s_dwOnGamePrevChatTime = m_dwCurTime;
-					m_curse.ConvertString(G_cTxt, strlen(G_cTxt));
 					if (strlen(G_cTxt) > 0) {
 						if ((G_cTxt[0] == '!') || (G_cTxt[0] == '~')) {
 							if (CMisc::bCheckIMEString(G_cTxt) == false) return;
@@ -22735,6 +22135,43 @@ void CGame::DrawScreen_OnGame()
 
 	FrameTiming::BeginProfile(ProfileStage::DrawEffectLights);
 	m_pEffectManager->DrawEffectLights();
+
+	// Player ambient light at night
+	if (G_cSpriteAlphaDegree == 2)
+	{
+		// Player is always at screen center
+		constexpr int PLAYER_SCREEN_X = LOGICAL_WIDTH / 2;   // 320
+		constexpr int PLAYER_SCREEN_Y = (LOGICAL_HEIGHT / 2) + 16;  // 240
+
+		// Player light parameters (smaller radius, softer glow)
+		constexpr int PLAYER_LIGHT_RADIUS = 2;        // Radius in tiles
+		constexpr float PLAYER_CENTER_INTENSITY = 0.35f;  // Intensity at center
+		constexpr float PLAYER_EDGE_INTENSITY = 0.05f;    // Intensity at edge
+		constexpr int TILE_SIZE = 32;
+
+		// Draw player ambient light in a circular pattern
+		for (int ty = -PLAYER_LIGHT_RADIUS; ty <= PLAYER_LIGHT_RADIUS; ty++) {
+			for (int tx = -PLAYER_LIGHT_RADIUS; tx <= PLAYER_LIGHT_RADIUS; tx++) {
+				float distance = sqrtf(static_cast<float>(tx * tx + ty * ty));
+				if (distance > PLAYER_LIGHT_RADIUS) continue;
+
+				float t = distance / PLAYER_LIGHT_RADIUS;
+				float intensity = PLAYER_CENTER_INTENSITY * (1.0f - t) + PLAYER_EDGE_INTENSITY * t;
+				if (intensity < 0.05f) continue;
+
+				int lightX = PLAYER_SCREEN_X + tx * TILE_SIZE;
+				int lightY = PLAYER_SCREEN_Y + ty * (TILE_SIZE / 2);
+
+				// Softer, cooler light for player (moonlight/ambient feel)
+				int r = 255;
+				int g = 255;
+				int b = static_cast<int>(200 + 40 * (1.0f - t));  // Slightly blue tint
+
+				m_pEffectSpr[0]->Draw(lightX, lightY, 1,
+					SpriteLib::DrawParams::AdditiveColored(r, g, b, intensity));
+			}
+		}
+	}
 	FrameTiming::EndProfile(ProfileStage::DrawEffectLights);
 
 	FrameTiming::BeginProfile(ProfileStage::DrawObjects);
@@ -22988,20 +22425,10 @@ void CGame::MotionResponseHandler(char* pData)
 	switch (wResponse) {
 	case DEF_OBJECTMOTION_CONFIRM:
 		m_cCommandCount--;
-		{
-			char cDbg[128];
-			wsprintf(cDbg, "[CMD] MOTION_CONFIRM: count=%d\n", (int)m_cCommandCount);
-			printf("%s", cDbg);
-		}
 		break;
 
 	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
 		m_cCommandCount--;
-		{
-			char cDbg[128];
-			wsprintf(cDbg, "[CMD] ATTACK_CONFIRM: count=%d\n", (int)m_cCommandCount);
-			printf("%s", cDbg);
-		}
 		if ((m_wLastAttackTargetID >= 10000) && (m_wLastAttackTargetID < 30000)) {
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETNPCHP, 0, m_wLastAttackTargetID, 0, 0, 0);
 		}
@@ -23026,7 +22453,6 @@ void CGame::MotionResponseHandler(char* pData)
 			m_iPlayerStatus, m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 		m_cCommandCount = 0;
-		printf("[CMD] MOTION_REJECT: count reset to 0\n");
 		m_bIsGetPointingMode = false;
 		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
 		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
@@ -23073,11 +22499,6 @@ void CGame::MotionResponseHandler(char* pData)
 		_ReadMapData(sX, sY, mapData);
 		m_bIsRedrawPDBGS = true;
 		m_cCommandCount--;
-		{
-			char cDbg[128];
-			wsprintf(cDbg, "[CMD] MOVE_CONFIRM: count=%d\n", (int)m_cCommandCount);
-			printf("%s", cDbg);
-		}
 	}
 	break;
 
@@ -23108,7 +22529,6 @@ void CGame::MotionResponseHandler(char* pData)
 			DEF_OBJECTSTOP, 0, 0, 0,
 			0, 7);
 		m_cCommandCount = 0;
-		printf("[CMD] MOVE_REJECT: count reset to 0\n");
 		m_bIsGetPointingMode = false;
 		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
 		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
@@ -23247,21 +22667,24 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 					&& (abs(msY - CursorTarget::GetSelectionClickY()) <= DEF_DOUBLECLICKTOLERANCE))
 				{
 					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
-					m_dialogBoxManager._bCheckDlgBoxDoubleClick(msX, msY);
+					m_dialogBoxManager.HandleDoubleClick(msX, msY);
 				}
 				else // Click
 				{
-					m_dialogBoxManager._bCheckDlgBoxClick(msX, msY);
+					m_dialogBoxManager.HandleClick(msX, msY);
 				}
 			}
 			else
 			{
-				m_dialogBoxManager._bCheckDlgBoxClick(msX, msY);
+				m_dialogBoxManager.HandleClick(msX, msY);
 			}
 			CursorTarget::RecordSelectionClick(msX, msY, dwTime);
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::Item)
 			{
-				_bCheckDraggingItemRelease(msX, msY);
+				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
+				{
+					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
+				}
 				CursorTarget::ClearSelection();
 			}
 			return;
@@ -23365,7 +22788,10 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				break;
 
 			case static_cast<char>(SelectedObjectType::Item):
-				_bCheckDraggingItemRelease(msX, msY);
+				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
+				{
+					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
+				}
 				CursorTarget::ClearSelection();
 				break;
 

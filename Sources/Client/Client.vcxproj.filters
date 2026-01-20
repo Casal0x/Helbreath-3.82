@@ -301,21 +301,9 @@
     <ClInclude Include="BuildItem.h">
       <Filter>Entities</Filter>
     </ClInclude>
-    <ClInclude Include="Curse.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="GameMonitor.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
     <ClInclude Include="Misc.h">
       <Filter>Entities</Filter>
     </ClInclude>
-    <ClCompile Include="Curse.cpp">
-      <Filter>Entities</Filter>
-    </ClCompile>
-    <ClCompile Include="GameMonitor.cpp">
-      <Filter>Entities</Filter>
-    </ClCompile>
     <!-- Language -->
     <ClInclude Include="lan_eng.h">
       <Filter>Language</Filter>

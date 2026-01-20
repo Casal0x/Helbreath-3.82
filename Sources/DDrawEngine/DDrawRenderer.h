@@ -66,6 +66,7 @@ public:
     virtual int GetHeight() const override;
     virtual int GetWidthMid() const override;
     virtual int GetHeightMid() const override;
+    virtual void ResizeBackBuffer(int width, int height) override;
 
     // Pre-Draw Background Surface
     virtual ITexture* GetBackgroundSurface() override;
@@ -104,8 +105,8 @@ public:
     virtual void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) override;
 
     // Text Measurement
-    virtual HDC GetTextDC() override;
     virtual int GetTextLength(const char* text, int maxWidth) override;
+    virtual int GetTextWidth(const char* text) override;
 
     // Surface Operations
     virtual void BltBackBufferFromPDBGS(RECT* srcRect) override;

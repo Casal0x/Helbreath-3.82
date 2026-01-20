@@ -945,10 +945,16 @@ bool CGame::bInit()
 		m_iSkillSSNpoint[i] = _iCalcSkillSSNpoint(i);
 	}
 
-	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= m_iNighttimeDuration)
-		m_cDayOrNight = 2;
-	else m_cDayOrNight = 1;
+	// DEBUG: Force night mode for testing (matches CheckDayOrNightMode)
+	constexpr int DEBUG_FORCE_TIME_INIT = 0; // 0=normal, 1=day, 2=night
+	if constexpr (DEBUG_FORCE_TIME_INIT != 0) {
+		m_cDayOrNight = DEBUG_FORCE_TIME_INIT;
+	} else {
+		GetLocalTime(&SysTime);
+		if (SysTime.wMinute >= m_iNighttimeDuration)
+			m_cDayOrNight = 2;
+		else m_cDayOrNight = 1;
+	}
 
 	bReadNotifyMsgListFile("GameConfigs\\notice.txt");
 	m_dwNoticeTime = dwTime;
@@ -23688,16 +23694,20 @@ void CGame::CheckDayOrNightMode()
 	char cPrevMode;
 	int  i;
 
-	//if (m_bManualTime = true) return;
+	// DEBUG: Force night mode for testing light effects
+	// Set to 0 to use normal day/night cycle, 1 for forced day, 2 for forced night
+	constexpr int DEBUG_FORCE_TIME = 0;
 
-	// ÇöÀç ½Ã°£¿¡ µû¶ó ³· È¤Àº ¹ãÀ» °áÁ¤ÇÑ´Ù. 
-	// ÁÖ, ¾ß°£ ¸ðµå ¼³Á¤ 
 	cPrevMode = m_cDayOrNight;
 
-	GetLocalTime(&SysTime);
-	if (SysTime.wMinute >= m_iNighttimeDuration)
-		m_cDayOrNight = 2;
-	else m_cDayOrNight = 1;
+	if constexpr (DEBUG_FORCE_TIME != 0) {
+		m_cDayOrNight = DEBUG_FORCE_TIME;
+	} else {
+		GetLocalTime(&SysTime);
+		if (SysTime.wMinute >= m_iNighttimeDuration)
+			m_cDayOrNight = 2;
+		else m_cDayOrNight = 1;
+	}
 
 	if (cPrevMode != m_cDayOrNight) {
 		// ÁÖ, ¾ß°£ ¸ðµå°¡ º¯°æµÇ¾ú´Ù. ÁÖ, ¾ß°£ ¸ðµåÀÇ ¿µÇâÀ» ¹Þ´Â ¸Ê¿¡ Á¸ÀçÇÏ´Â Å¬¶óÀÌ¾ðÆ®µé¿¡°Ô ¾Ë¸°´Ù. 

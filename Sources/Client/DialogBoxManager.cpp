@@ -417,18 +417,6 @@ void DialogBoxManager::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	m_game->DrawDialogBoxs(msX, msY, msZ, cLB);
 }
 
-bool DialogBoxManager::_bCheckDlgBoxClick(short msX, short msY)
-{
-	if (!m_game) return false;
-	return m_game->_bCheckDlgBoxClick(msX, msY);
-}
-
-bool DialogBoxManager::_bCheckDlgBoxDoubleClick(short msX, short msY)
-{
-	if (!m_game) return false;
-	return m_game->_bCheckDlgBoxDoubleClick(msX, msY);
-}
-
 void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
 {
 	if (!m_game) return;
@@ -476,12 +464,92 @@ void DialogBoxManager::DrawAll(short msX, short msY, short msZ, char cLB)
 
 bool DialogBoxManager::HandleClick(short msX, short msY)
 {
-	return _bCheckDlgBoxClick(msX, msY);
+	// Iterate through dialogs in reverse z-order (topmost first)
+	for (int i = 0; i < 61; i++)
+	{
+		char cDlgID = m_order[60 - i];
+		if (cDlgID == 0) continue;
+
+		auto& info = m_info[cDlgID];
+		if (msX > info.sX && msX < info.sX + info.sSizeX &&
+			msY > info.sY && msY < info.sY + info.sSizeY)
+		{
+			if (auto* pDlg = m_pDialogBoxes[cDlgID])
+			{
+				pDlg->OnClick(msX, msY);
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 bool DialogBoxManager::HandleDoubleClick(short msX, short msY)
 {
-	return _bCheckDlgBoxDoubleClick(msX, msY);
+	// Iterate through dialogs in reverse z-order (topmost first)
+	for (int i = 0; i < 61; i++)
+	{
+		char cDlgID = m_order[60 - i];
+		if (cDlgID == 0) continue;
+
+		auto& info = m_info[cDlgID];
+		if (msX > info.sX && msX < info.sX + info.sSizeX &&
+			msY > info.sY && msY < info.sY + info.sSizeY)
+		{
+			if (auto* pDlg = m_pDialogBoxes[cDlgID])
+			{
+				pDlg->OnDoubleClick(msX, msY);
+			}
+			return true; // Consumed even if dialog didn't handle it
+		}
+	}
+	return false;
+}
+
+bool DialogBoxManager::HandlePress(int iDlgID, short msX, short msY)
+{
+	if (iDlgID < 0 || iDlgID >= 61) return false;
+
+	if (auto* pDlg = m_pDialogBoxes[iDlgID])
+	{
+		return pDlg->OnPress(msX, msY);
+	}
+	return false;
+}
+
+bool DialogBoxManager::HandleItemDrop(int iDlgID, short msX, short msY)
+{
+	if (iDlgID < 0 || iDlgID >= 61) return false;
+
+	if (auto* pDlg = m_pDialogBoxes[iDlgID])
+	{
+		return pDlg->OnItemDrop(msX, msY);
+	}
+	return false;
+}
+
+bool DialogBoxManager::HandleDraggingItemRelease(short msX, short msY)
+{
+	// Iterate through dialogs in reverse z-order (topmost first)
+	for (int i = 0; i < 61; i++)
+	{
+		char cDlgID = m_order[60 - i];
+		if (cDlgID == 0) continue;
+
+		auto& info = m_info[cDlgID];
+		if (msX > info.sX && msX < info.sX + info.sSizeX &&
+			msY > info.sY && msY < info.sY + info.sSizeY)
+		{
+			// Bring dialog to front
+			EnableDialogBox(cDlgID, 0, 0, 0);
+
+			// Route to dialog's item drop handler
+			HandleItemDrop(cDlgID, msX, msY);
+
+			return true; // Consumed by this dialog
+		}
+	}
+	return false; // Not consumed - should go to external screen
 }
 
 void DialogBoxManager::Enable(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString)

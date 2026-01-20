@@ -101,6 +101,9 @@ private:
     // CPU-based fade drawing
     void DrawFadeInternal(int x, int y, int frame, uint16_t* pDestAddr = nullptr, int16_t destPitch = 0);
 
+    // CPU-based additive blending
+    void DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool isColorReplace, bool useColorKey);
+
     //------------------------------------------------------------------
     // Surface Management
     //------------------------------------------------------------------

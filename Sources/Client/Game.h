@@ -53,9 +53,7 @@ using namespace std;
 #include "Magic.h"
 #include "Skill.h"
 #include "DynamicObjectID.h"
-#include "GameMonitor.h"
 #include "BuildItem.h"
-#include "Curse.h"
 #include "DialogBoxManager.h"
 #include "EffectManager.h"
 #include "NetworkMessageManager.h"
@@ -123,8 +121,7 @@ using namespace std;
 #define DEF_GAMEMODE_ONVERSIONNOTMATCH		17
 #define DEF_GAMEMODE_ONINTRODUCTION			18
 #define DEF_GAMEMODE_ONAGREEMENT			19
-#define DEF_GAMEMODE_ONSELECTSERVER			20
-#define DEF_GAMEMODE_ONINPUTKEYCODE			21
+#define DEF_GAMEMODE_ONINPUTKEYCODE			20
 
 #define DEF_SERVERTYPE_GAME			1
 #define DEF_SERVERTYPE_LOG			2
@@ -157,8 +154,6 @@ public:
 	void CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType);
 	void CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType);
 
-	void NotifyMsg_CurLifeSpan(char* pData);
-
 	// MJ Stats Change Related vars - Alastor
 	char cStateChange1;
 	char cStateChange2;
@@ -190,10 +185,8 @@ public:
 
 	int  iGetManaCost(int iMagicNo);
 	void UseMagic(int iMagicNo);
-	bool _bCheckMoveable( short sx, short sy );
 	bool FindGuildName(char* pName, int* ipIndex);
 	void bItemDrop_SkillDialog();
-	void bItemDrop_IconPannel(short msX, short msY);
 	void bItemDrop_Character();
 	void bItemDrop_Inventory(short msX, short msY);
 	void bItemDrop_ItemUpgrade();
@@ -226,12 +219,8 @@ public:
 	// Slates - Alastor
 	void bItemDrop_Slates();
 
-	bool _bCheckDlgBoxClick(short msX, short msY);
-
-
 	void ResponsePanningHandler(char * pData);
 	void _CalcSocketClosed();
-	void UpdateScreen_OnSelectServer();
 	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
 	void _SetIlusionEffect(int iOwnerH);
 	int _iGetFOE(int iStatus);
@@ -239,50 +228,30 @@ public:
 	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
 	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
 	short FindItemIdByName(const char* cItemName);
-	void _InitOnCreateNewCharacter();
 	void _LoadGameMsgTextContents();
 	bool _bCheckCurrentBuildItemStatus();
 	bool _bCheckBuildItemStatus();
 	bool _bDecodeBuildItemContents();
-	bool _bCheckBadWords(char * pMsg);
 	void GetNpcName(short sType, char * pName);
 
-
-#ifdef DEF_MAKE_ACCOUNT
 	int m_iAgreeView;
 	void _LoadAgreementTextContents(char cType);
 	void UpdateScreen_OnAgreement();
-	void UpdateScreen_OnCreateNewAccount();
-#endif
-
 
 	void UseShortCut( int num );
 	void UpdateScreen();
 	void DrawScreen();        // Dispatches to Draw_* methods based on game mode
 	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
-	void UpdateScreen_OnMainMenu();
 	void UpdateScreen_OnGame();
 	void DrawScreen_OnGame();
-	void UpdateScreen_OnConnecting();
-	void UpdateScreen_OnWaitInitData();
 	void MakeSprite( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeTileSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeEffectSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void UpdateScreen_OnLoading(bool bActive);
-	void UpdateScreen_OnConnectionLost();
-	void UpdateScreen_OnLogin();
-	void UpdateScreen_OnMsg();
-	void UpdateScreen_OnQuit();
-	void UpdateScreen_OnQueryForceLogin();
-	void UpdateScreen_OnQueryDeleteCharacter();
-	void UpdateScreen_OnWaitingResponse();
-	void UpdateScreen_OnCreateNewCharacter();
 	void UpdateScreen_OnSelectCharacter();
 	void UpdateScreen_OnLogResMsg();
 	void UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus = false);
-	void UpdateScreen_OnChangePassword();
 	void DrawScreen_OnLoadingProgress();
-	void UpdateScreen_OnVersionNotMatch();
 
 	// Separated Update/Draw methods (Phase 3 refactor)
 	void UpdateScreen_Quit();
@@ -305,8 +274,6 @@ public:
 	void DrawScreen_MainMenu();
 	void UpdateScreen_Login();
 	void DrawScreen_Login();
-	void UpdateScreen_SelectServer();
-	void DrawScreen_SelectServer();
 	void UpdateScreen_WaitInitData();
 	void DrawScreen_WaitInitData();
 	void UpdateScreen_LogResMsg();
@@ -321,13 +288,6 @@ public:
 	void DrawScreen_CreateNewCharacter();
 	void UpdateScreen_Loading();
 	void DrawScreen_Loading();
-
-	// Overlay system for popup screens that render over base screens
-	void ShowOverlay(OverlayType type, char context, char message = 0);
-	void HideOverlay();
-	bool IsOverlayActive() const { return m_activeOverlay != OverlayType::None; }
-	void UpdateOverlay();
-	void DrawOverlay();
 
 	void NpcTalkHandler(char * pData);
 	int  _iGetWeaponSkillType();
@@ -352,7 +312,6 @@ public:
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(char cType);
-	void _DrawBlackRect(int iSize);
 	void DrawNpcName(   short sX, short sY, short sOwnerType, int iStatus);
 	void DrawObjectName(short sX, short sY, char * pName, int iStatus);
 	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
@@ -366,13 +325,11 @@ public:
 	void DlbBoxDoubleClick_Inventory(short msX, short msY);
 	void DlbBoxDoubleClick_Character(short msX, short msY);
 	void DlbBoxDoubleClick_GuideMap(short msX, short msY);
-	bool _bCheckDlgBoxDoubleClick(short msX, short msY);
 	void EraseItem(char cItemID);
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
 	void ClearContents_OnSelectCharacter();
-	void ClearContents_OnCreateNewAccount();
 	void _Draw_UpdateScreen_OnCreateNewAccount();
 	bool _bDraw_OnCreateNewCharacter(char * pName, short msX, short msY, int iPoint);
 	bool _bGetIsStringIsNumber(char * pStr);
@@ -385,7 +342,6 @@ public:
 	void PointCommandHandler(int indexX, int indexY, char cItemID = -1);
 	void AddEventList(char * pTxt, char cColor = 0, bool bDupAllow = true);
 	void ShowEventList(uint32_t dwTime);
-	void SetItemCount(char * pItemName, uint32_t dwCount);
 	void _ShiftGuildOperationList();
 	void _PutGuildOperationList(char * pName, char cOpMode);
 	void DisbandGuildResponseHandler(char * pData);
@@ -394,7 +350,6 @@ public:
 	void _GetHairColorRGB(int iColorType , int * pR, int * pG, int * pB);
 	void InitGameSettings();
 	void CommonEventHandler(char * pData);
-	bool _bCheckDraggingItemRelease(short msX, short msY);
 	void _SetItemOrder(char cWhere, char cItemID);
 	int iGetTopDialogBoxIndex();
 	void DisableDialogBox(int iBoxID);
@@ -414,15 +369,13 @@ public:
 	SpriteLib::BoundRect __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision);
 	SpriteLib::BoundRect __fastcall DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	bool bEffectFrameCounter();
 	void ClearGuildNameList();
 	void DrawBackground(short sDivX, short sModX, short sDivY, short sModY);
 	void DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC);
 	void ReleaseTimeoverChatMsg();
 	void ChatMsgHandler(char * pData);
 	void ReleaseUnusedSprites();
-	bool bReadIp();
-	void OnKeyUp(WPARAM wParam);
+	void OnKeyUp(int key);
 	void ChangeGameMode(char cMode);
 	void PutString(int iX, int iY, char * pString, COLORREF color);
 	void PutString(int iX, int iY, char * pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
@@ -451,7 +404,7 @@ public:
 	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
 	void CalcViewPoint();
-	void OnKeyDown(WPARAM wParam);
+	void OnKeyDown(int key);
 	void RegisterHotkeys();
 	void Hotkey_ToggleForceAttack();
 	void Hotkey_CycleDetailLevel();
@@ -495,12 +448,9 @@ public:
 	bool __bDecodeBuildItemContents(char * pBuffer);
 	int _iGetBankItemCount();
 	int _iGetTotalItemNum();
-	LONG GetRegKey(HKEY key, LPCTSTR subkey, LPTSTR retdata);
-	void GoHomepage();
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	//Snoopy: added function:
-	bool bReadLoginConfigFile(char * cFn);
 	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
 	void ShowHeldenianVictory(short sSide);
 	void ResponseHeldenianTeleportList(char *pData);
@@ -511,7 +461,6 @@ public:
 
 
 	//50Cent - Repair All
-	void NotifyMsg_RepairAllPrices(char* pData);
 	short totalItemRepair;
 	int totalPrice;
 	struct
@@ -629,13 +578,10 @@ public:
 	class CBuildItem * m_pBuildItemList[DEF_MAXBUILDITEMS];
 	class CBuildItem * m_pDispBuildItemList[DEF_MAXBUILDITEMS];
 
-
-	class CGameMonitor * m_pCGameMonitor;
 	class CItem * m_pItemForSaleList[DEF_MAXMENUITEMS];
 	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
 	class CCharInfo * m_pCharList[4];
 	class CMsg * m_pGameMsgList[DEF_MAXGAMEMSGS];
-	class CCurse m_curse;
 
 	char * m_pInputBuffer;
 

@@ -288,7 +288,7 @@ void DDrawSprite::SetAlphaDegree(char degree)
 
 void DDrawSprite::ApplyAlphaDegree()
 {
-    if (!m_bAlphaEffect || m_pSurfaceAddr == nullptr) {
+    if (!m_bAlphaEffect || m_lpSurface == nullptr) {
         return;
     }
 
@@ -299,19 +299,27 @@ void DDrawSprite::ApplyAlphaDegree()
     m_cAlphaDegree = G_cSpriteAlphaDegree;
     m_bOnCriticalSection = true;
 
-    int16_t sRed = 0, sGreen = 0, sBlue = 0;
+    // Night mode uses 70% brightness to match SFML implementation
+    float multiplier = 1.0f;
     switch (m_cAlphaDegree) {
     case 1:
-        sRed = sGreen = sBlue = 0;
+        multiplier = 1.0f;
         break;
     case 2:
-        sRed = -3;
-        sGreen = -3;
-        sBlue = 2;
+        multiplier = 0.7f;
         break;
     }
 
-    uint16_t* pSrc = m_pSurfaceAddr;
+    // Lock the surface to modify pixels
+    DDSURFACEDESC2 ddsd;
+    ddsd.dwSize = sizeof(DDSURFACEDESC2);
+    if (m_lpSurface->Lock(nullptr, &ddsd, DDLOCK_WAIT, nullptr) != DD_OK) {
+        m_bOnCriticalSection = false;
+        return;
+    }
+
+    uint16_t* pSrc = reinterpret_cast<uint16_t*>(ddsd.lpSurface);
+    int16_t pitch = static_cast<int16_t>(ddsd.lPitch >> 1);
 
     switch (m_pDDraw->m_cPixelFormat) {
     case 1: // RGB565
@@ -322,9 +330,9 @@ void DDrawSprite::ApplyAlphaDegree()
                     int wG = (pSrc[ix] & 0x7E0) >> 5;
                     int wB = pSrc[ix] & 0x1F;
 
-                    int iR = wR + sRed;
-                    int iG = wG + sGreen;
-                    int iB = wB + sBlue;
+                    int iR = static_cast<int>(wR * multiplier);
+                    int iG = static_cast<int>(wG * multiplier);
+                    int iB = static_cast<int>(wB * multiplier);
 
                     iR = std::clamp(iR, 0, 31);
                     iG = std::clamp(iG, 0, 63);
@@ -334,7 +342,7 @@ void DDrawSprite::ApplyAlphaDegree()
                     pSrc[ix] = (wTemp != m_wColorKey) ? wTemp : static_cast<uint16_t>((iR << 11) | (iG << 5) | (iB + 1));
                 }
             }
-            pSrc += m_sPitch;
+            pSrc += pitch;
         }
         break;
 
@@ -346,9 +354,9 @@ void DDrawSprite::ApplyAlphaDegree()
                     int wG = (pSrc[ix] & 0x3E0) >> 5;
                     int wB = pSrc[ix] & 0x1F;
 
-                    int iR = wR + sRed;
-                    int iG = wG + sGreen;
-                    int iB = wB + sBlue;
+                    int iR = static_cast<int>(wR * multiplier);
+                    int iG = static_cast<int>(wG * multiplier);
+                    int iB = static_cast<int>(wB * multiplier);
 
                     iR = std::clamp(iR, 0, 31);
                     iG = std::clamp(iG, 0, 31);
@@ -358,11 +366,12 @@ void DDrawSprite::ApplyAlphaDegree()
                     pSrc[ix] = (wTemp != m_wColorKey) ? wTemp : static_cast<uint16_t>((iR << 10) | (iG << 5) | (iB + 1));
                 }
             }
-            pSrc += m_sPitch;
+            pSrc += pitch;
         }
         break;
     }
 
+    m_lpSurface->Unlock(nullptr);
     m_bOnCriticalSection = false;
 }
 
@@ -504,15 +513,15 @@ void DDrawSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& par
     }
 
     // Determine which drawing method to use based on params
-    bool needsCPU = (params.alpha < 1.0f) ||
-                    (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) ||
-                    params.isShadow || params.isFade;
-
     if (params.isShadow) {
         DrawShadowInternal(x, y, frame, true);
     }
     else if (params.isFade) {
         DrawFadeInternal(x, y, frame);
+    }
+    else if (params.blendMode == SpriteLib::BlendMode::Additive) {
+        // Additive blending - adds source to destination
+        DrawAdditive(x, y, frame, params.tintR, params.tintG, params.tintB, params.alpha, params.isColorReplace, params.useColorKey);
     }
     else if (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) {
         if (params.alpha < 1.0f) {
@@ -1133,32 +1142,65 @@ void DDrawSprite::DrawShadowInternal(int x, int y, int frame, bool clipped)
     uint16_t* pSrc = m_pSurfaceAddr + sx + (sy + szy - 1) * m_sPitch;
     uint16_t* pDst = m_pDDraw->m_pBackB4Addr + dX + (dY + szy - 1) * m_pDDraw->m_sBackB4Pitch;
 
+    // At night (G_cSpriteAlphaDegree == 2), reduce shadow opacity by 50%
+    // Day: >> 2 = 25% brightness (darker shadow)
+    // Night: >> 1 = 50% brightness (lighter shadow)
+    bool isNight = (G_cSpriteAlphaDegree == 2);
+
     switch (m_pDDraw->m_cPixelFormat) {
     case 1: // RGB565
-        for (int iy = 0; iy < szy; iy += 3) {
-            for (int ix = 0; ix < szx; ix++) {
-                if (pSrc[ix] != m_wColorKey) {
-                    if ((dX - (iy / 3) + ix) > 0) {
-                        pDst[ix] = (pDst[ix] & 0xE79C) >> 2;
+        if (isNight) {
+            for (int iy = 0; iy < szy; iy += 3) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        if ((dX - (iy / 3) + ix) > 0) {
+                            pDst[ix] = (pDst[ix] & 0xF7DE) >> 1;  // 50% brightness at night
+                        }
                     }
                 }
+                pSrc -= m_sPitch * 3;
+                pDst -= m_pDDraw->m_sBackB4Pitch + 1;
             }
-            pSrc -= m_sPitch * 3;
-            pDst -= m_pDDraw->m_sBackB4Pitch + 1;
+        } else {
+            for (int iy = 0; iy < szy; iy += 3) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        if ((dX - (iy / 3) + ix) > 0) {
+                            pDst[ix] = (pDst[ix] & 0xE79C) >> 2;  // 25% brightness during day
+                        }
+                    }
+                }
+                pSrc -= m_sPitch * 3;
+                pDst -= m_pDDraw->m_sBackB4Pitch + 1;
+            }
         }
         break;
 
     case 2: // RGB555
-        for (int iy = 0; iy < szy; iy += 3) {
-            for (int ix = 0; ix < szx; ix++) {
-                if (pSrc[ix] != m_wColorKey) {
-                    if ((dX - (iy / 3) + ix) > 0) {
-                        pDst[ix] = (pDst[ix] & 0x739C) >> 2;
+        if (isNight) {
+            for (int iy = 0; iy < szy; iy += 3) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        if ((dX - (iy / 3) + ix) > 0) {
+                            pDst[ix] = (pDst[ix] & 0x7BDE) >> 1;  // 50% brightness at night
+                        }
                     }
                 }
+                pSrc -= m_sPitch * 3;
+                pDst -= m_pDDraw->m_sBackB4Pitch + 1;
             }
-            pSrc -= m_sPitch * 3;
-            pDst -= m_pDDraw->m_sBackB4Pitch + 1;
+        } else {
+            for (int iy = 0; iy < szy; iy += 3) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        if ((dX - (iy / 3) + ix) > 0) {
+                            pDst[ix] = (pDst[ix] & 0x739C) >> 2;  // 25% brightness during day
+                        }
+                    }
+                }
+                pSrc -= m_sPitch * 3;
+                pDst -= m_pDDraw->m_sBackB4Pitch + 1;
+            }
         }
         break;
     }
@@ -1209,30 +1251,169 @@ void DDrawSprite::DrawFadeInternal(int x, int y, int frame, uint16_t* pDestAddr,
     }
 
     // Fade effect: darken destination pixels where source is non-transparent
-    // Uses bit masking and right shift to reduce each color channel to 1/4 value
-    // The mask prevents color channel bleeding when shifting
+    // Uses bit masking and right shift to reduce each color channel
+    // At night (G_cSpriteAlphaDegree == 2), reduce fade intensity by 50%
+    // Day: >> 2 = 25% brightness | Night: >> 1 = 50% brightness
+    bool isNight = (G_cSpriteAlphaDegree == 2);
+
     switch (m_pDDraw->m_cPixelFormat) {
-    case 1: // RGB565 - mask 0xE79C keeps top 3 bits of each color channel
-        for (int iy = 0; iy < szy; iy++) {
-            for (int ix = 0; ix < szx; ix++) {
-                if (pSrc[ix] != m_wColorKey) {
-                    pDst[ix] = ((pDst[ix] & 0xE79C) >> 2);
+    case 1: // RGB565
+        if (isNight) {
+            for (int iy = 0; iy < szy; iy++) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        pDst[ix] = ((pDst[ix] & 0xF7DE) >> 1);  // 50% brightness at night
+                    }
                 }
+                pSrc += m_sPitch;
+                pDst += pitch;
             }
-            pSrc += m_sPitch;
-            pDst += pitch;
+        } else {
+            for (int iy = 0; iy < szy; iy++) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        pDst[ix] = ((pDst[ix] & 0xE79C) >> 2);  // 25% brightness during day
+                    }
+                }
+                pSrc += m_sPitch;
+                pDst += pitch;
+            }
         }
         break;
 
-    case 2: // RGB555 - mask 0x739C keeps top 3 bits of each color channel
+    case 2: // RGB555
+        if (isNight) {
+            for (int iy = 0; iy < szy; iy++) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        pDst[ix] = ((pDst[ix] & 0x7BDE) >> 1);  // 50% brightness at night
+                    }
+                }
+                pSrc += m_sPitch;
+                pDst += pitch;
+            }
+        } else {
+            for (int iy = 0; iy < szy; iy++) {
+                for (int ix = 0; ix < szx; ix++) {
+                    if (pSrc[ix] != m_wColorKey) {
+                        pDst[ix] = ((pDst[ix] & 0x739C) >> 2);  // 25% brightness during day
+                    }
+                }
+                pSrc += m_sPitch;
+                pDst += pitch;
+            }
+        }
+        break;
+    }
+
+    m_bOnCriticalSection = false;
+}
+
+//////////////////////////////////////////////////////////////////////
+// CPU-Based Additive Blending
+//////////////////////////////////////////////////////////////////////
+
+void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool isColorReplace, bool useColorKey)
+{
+    m_rcBound.top = -1;
+    m_bOnCriticalSection = true;
+
+    const auto& f = m_frames[frame];
+    int sx = f.x;
+    int sy = f.y;
+    int szx = f.width;
+    int szy = f.height;
+    int dX = x + f.pivotX;
+    int dY = y + f.pivotY;
+
+    if (!ClipCoordinates(dX, dY, sx, sy, szx, szy)) {
+        m_bOnCriticalSection = false;
+        return;
+    }
+
+    m_rcBound = { dX, dY, dX + szx, dY + szy };
+
+    uint16_t* pSrc = m_pSurfaceAddr + sx + sy * m_sPitch;
+    uint16_t* pDst = m_pDDraw->m_pBackB4Addr + dX + dY * m_pDDraw->m_sBackB4Pitch;
+
+    if (szx == 0 || szy == 0) {
+        m_bOnCriticalSection = false;
+        return;
+    }
+
+    // Color multipliers for isColorReplace mode (normalized to 0-31/63 range)
+    // r,g,b are in 0-255 range, we need to scale them
+    float rMult = isColorReplace ? (r / 255.0f) : 1.0f;
+    float gMult = isColorReplace ? (g / 255.0f) : 1.0f;
+    float bMult = isColorReplace ? (b / 255.0f) : 1.0f;
+
+    // Apply alpha to the multipliers
+    rMult *= alpha;
+    gMult *= alpha;
+    bMult *= alpha;
+
+    switch (m_pDDraw->m_cPixelFormat) {
+    case 1: // RGB565
         for (int iy = 0; iy < szy; iy++) {
             for (int ix = 0; ix < szx; ix++) {
-                if (pSrc[ix] != m_wColorKey) {
-                    pDst[ix] = ((pDst[ix] & 0x739C) >> 2);
+                if (!useColorKey || pSrc[ix] != m_wColorKey) {
+                    // Extract source RGB (5-6-5 bits)
+                    int srcR = (pSrc[ix] & 0xF800) >> 11;
+                    int srcG = (pSrc[ix] & 0x7E0) >> 5;
+                    int srcB = (pSrc[ix] & 0x1F);
+
+                    // Apply color multiplier
+                    srcR = static_cast<int>(srcR * rMult);
+                    srcG = static_cast<int>(srcG * gMult);
+                    srcB = static_cast<int>(srcB * bMult);
+
+                    // Extract destination RGB
+                    int dstR = (pDst[ix] & 0xF800) >> 11;
+                    int dstG = (pDst[ix] & 0x7E0) >> 5;
+                    int dstB = (pDst[ix] & 0x1F);
+
+                    // Additive blend (src + dst, clamped)
+                    int outR = srcR + dstR; if (outR > 31) outR = 31;
+                    int outG = srcG + dstG; if (outG > 63) outG = 63;
+                    int outB = srcB + dstB; if (outB > 31) outB = 31;
+
+                    pDst[ix] = static_cast<uint16_t>((outR << 11) | (outG << 5) | outB);
                 }
             }
             pSrc += m_sPitch;
-            pDst += pitch;
+            pDst += m_pDDraw->m_sBackB4Pitch;
+        }
+        break;
+
+    case 2: // RGB555
+        for (int iy = 0; iy < szy; iy++) {
+            for (int ix = 0; ix < szx; ix++) {
+                if (!useColorKey || pSrc[ix] != m_wColorKey) {
+                    // Extract source RGB (5-5-5 bits)
+                    int srcR = (pSrc[ix] & 0x7C00) >> 10;
+                    int srcG = (pSrc[ix] & 0x3E0) >> 5;
+                    int srcB = (pSrc[ix] & 0x1F);
+
+                    // Apply color multiplier
+                    srcR = static_cast<int>(srcR * rMult);
+                    srcG = static_cast<int>(srcG * gMult);
+                    srcB = static_cast<int>(srcB * bMult);
+
+                    // Extract destination RGB
+                    int dstR = (pDst[ix] & 0x7C00) >> 10;
+                    int dstG = (pDst[ix] & 0x3E0) >> 5;
+                    int dstB = (pDst[ix] & 0x1F);
+
+                    // Additive blend (src + dst, clamped)
+                    int outR = srcR + dstR; if (outR > 31) outR = 31;
+                    int outG = srcG + dstG; if (outG > 31) outG = 31;
+                    int outB = srcB + dstB; if (outB > 31) outB = 31;
+
+                    pDst[ix] = static_cast<uint16_t>((outR << 10) | (outG << 5) | outB);
+                }
+            }
+            pSrc += m_sPitch;
+            pDst += m_pDDraw->m_sBackB4Pitch;
         }
         break;
     }

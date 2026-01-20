@@ -71,6 +71,7 @@ public:
     int GetHeight() const override;
     int GetWidthMid() const override;
     int GetHeightMid() const override;
+    void ResizeBackBuffer(int width, int height) override;
 
     // Pre-Draw Background Surface
     ITexture* GetBackgroundSurface() override;
@@ -109,8 +110,8 @@ public:
     void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) override;
 
     // Text Measurement
-    HDC GetTextDC() override;
     int GetTextLength(const char* text, int maxWidth) override;
+    int GetTextWidth(const char* text) override;
 
     // Surface Operations
     void BltBackBufferFromPDBGS(RECT* srcRect) override;

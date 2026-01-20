@@ -104,7 +104,8 @@ void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailabl
 
     // Normal mode - show target cursor based on focus
     if (s_focusedObject.valid) {
-        if (foeResult < 0)
+        // Holding Control treats neutral targets as hostile (for force-attack)
+        if (foeResult < 0 || Input::IsCtrlDown())
             s_cursorType = CursorType::TargetHostile;
         else
             s_cursorType = CursorType::TargetNeutral;

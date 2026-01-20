@@ -217,3 +217,9 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_SellList::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_SellList(msX, msY);
+	return true;
+}

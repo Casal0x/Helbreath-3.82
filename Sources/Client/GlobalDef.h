@@ -21,13 +21,12 @@
 #include "Version.h"
 
 #define NAME_WORLDNAME1			"WS1" // Name for default (1st) server
-#define DEF_SERVER_IP			"199.187.160.239" //"127.0.0.1"
+#define DEF_SERVER_IP			"127.0.0.1"	//"199.187.160.239"
 #define DEF_SERVER_PORT			2500
 #define DEF_GSERVER_PORT		9907
 
 #define LOGICAL_WIDTH			640
 #define LOGICAL_HEIGHT			480
-// Window size is now in settings.json (ConfigManager)
 #define BASE_SCREEN_WIDTH		LOGICAL_WIDTH
 #define BASE_SCREEN_HEIGHT		LOGICAL_HEIGHT
 #define SCREENX					((LOGICAL_WIDTH - BASE_SCREEN_WIDTH) / 2)

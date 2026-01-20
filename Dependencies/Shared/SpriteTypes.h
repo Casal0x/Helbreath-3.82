@@ -42,6 +42,12 @@ enum class AlphaPreset {
     Alpha25 = 25    // 25% opacity
 };
 
+// Blend modes for sprite rendering
+enum class BlendMode {
+    Alpha,      // Standard alpha blending: result = src * alpha + dst * (1-alpha)
+    Additive    // Additive blending: result = src + dst (for light effects)
+};
+
 // Drawing parameters for sprite rendering
 struct DrawParams {
     // Alpha/transparency (0.0 = invisible, 1.0 = opaque)
@@ -58,7 +64,8 @@ struct DrawParams {
     bool isReverse = false;     // Reverse blend effect
     bool isFade = false;        // Fade effect
     bool isColorReplace = false; // true = tint values are direct RGB, false = offset from base
-    bool isAdditive = false;    // true = additive blending (for bitmap fonts on black sprites)
+    bool isAdditive = false;    // Deprecated: use blendMode instead
+    BlendMode blendMode = BlendMode::Alpha;  // Blend mode for rendering
 
     // Static factory methods for common configurations
     static DrawParams Opaque() {
@@ -128,6 +135,25 @@ struct DrawParams {
     static DrawParams Fade() {
         DrawParams p;
         p.isFade = true;
+        return p;
+    }
+
+    static DrawParams Additive(float a = 1.0f) {
+        DrawParams p;
+        p.alpha = a;
+        p.blendMode = BlendMode::Additive;
+        return p;
+    }
+
+    // Additive with color boost for light effects - multiplies sprite by bright color before adding
+    static DrawParams AdditiveColored(int16_t r, int16_t g, int16_t b, float a = 1.0f) {
+        DrawParams p;
+        p.alpha = a;
+        p.tintR = r;
+        p.tintG = g;
+        p.tintB = b;
+        p.isColorReplace = true;
+        p.blendMode = BlendMode::Additive;
         return p;
     }
 };

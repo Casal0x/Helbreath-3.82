@@ -19,6 +19,78 @@
 #define MOUSE_BUTTON_MIDDLE 2
 #endif
 
+// ============== Abstract Key Codes ==============
+// Engine-agnostic key codes - each engine maps its native keys to these
+// This avoids Windows-specific VK_* codes in game logic
+enum class KeyCode : int
+{
+    // Invalid/unknown key
+    Unknown = 0,
+
+    // Letters (A-Z: 65-90, matches ASCII)
+    A = 'A', B = 'B', C = 'C', D = 'D', E = 'E', F = 'F', G = 'G', H = 'H',
+    I = 'I', J = 'J', K = 'K', L = 'L', M = 'M', N = 'N', O = 'O', P = 'P',
+    Q = 'Q', R = 'R', S = 'S', T = 'T', U = 'U', V = 'V', W = 'W', X = 'X',
+    Y = 'Y', Z = 'Z',
+
+    // Numbers (0-9: 48-57, matches ASCII)
+    Num0 = '0', Num1 = '1', Num2 = '2', Num3 = '3', Num4 = '4',
+    Num5 = '5', Num6 = '6', Num7 = '7', Num8 = '8', Num9 = '9',
+
+    // Function keys (start at 112 to match VK_F1)
+    F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117,
+    F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123,
+
+    // Navigation (match Windows VK codes for compatibility)
+    Insert = 45,
+    Delete = 46,
+    Home = 36,
+    End = 35,
+    PageUp = 33,
+    PageDown = 34,
+
+    // Arrow keys
+    Left = 37,
+    Up = 38,
+    Right = 39,
+    Down = 40,
+
+    // Special keys
+    Escape = 27,
+    Enter = 13,
+    Tab = 9,
+    Backspace = 8,
+    Space = 32,
+
+    // Modifiers
+    LShift = 160,
+    RShift = 161,
+    LControl = 162,
+    RControl = 163,
+    LAlt = 164,
+    RAlt = 165,
+
+    // Numpad
+    Numpad0 = 96, Numpad1 = 97, Numpad2 = 98, Numpad3 = 99, Numpad4 = 100,
+    Numpad5 = 101, Numpad6 = 102, Numpad7 = 103, Numpad8 = 104, Numpad9 = 105,
+
+    // Numpad operators
+    NumpadMultiply = 106,  // *
+    NumpadAdd = 107,       // +
+    NumpadSeparator = 108,
+    NumpadSubtract = 109,  // -
+    NumpadDecimal = 110,   // .
+    NumpadDivide = 111,    // /
+
+    // Lock keys
+    NumLock = 144,
+    ScrollLock = 145,
+
+    // Windows keys
+    LWin = 91,
+    RWin = 92,
+};
+
 // Abstract input interface
 class IInput
 {

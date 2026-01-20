@@ -163,7 +163,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
     </Link>
@@ -229,7 +229,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
@@ -251,7 +251,6 @@
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
     <ClInclude Include="CommonTypes.h" />
-    <ClInclude Include="Curse.h" />
     <ClInclude Include="Effect.h" />
     <ClInclude Include="DialogBoxIDs.h" />
     <ClInclude Include="DialogBoxInfo.h" />
@@ -303,7 +302,6 @@
     <ClInclude Include="NetworkMessageManager.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GameWindowHandler.h" />
-    <ClInclude Include="GameMonitor.h" />
     <ClInclude Include="GlobalDef.h" />
     <ClInclude Include="lan_eng.h" />
     <ClInclude Include="Magic.h" />
@@ -336,7 +334,6 @@
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Curse.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />
     <ClCompile Include="DialogBox_WarningMsg.cpp" />
@@ -415,7 +412,6 @@
     <ClCompile Include="NetworkMessages_Slates.cpp" />
     <ClCompile Include="NetworkMessages_Stats.cpp" />
     <ClCompile Include="NetworkMessages_System.cpp" />
-    <ClCompile Include="GameMonitor.cpp" />
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="MouseInterface.cpp" />
     <ClCompile Include="Wmain.cpp" />

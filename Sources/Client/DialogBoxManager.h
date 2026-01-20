@@ -20,8 +20,6 @@ public:
 	IDialogBox* GetDialogBox(int iBoxID) const;
 	void UpdateDialogBoxs();
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	bool _bCheckDlgBoxClick(short msX, short msY);
-	bool _bCheckDlgBoxDoubleClick(short msX, short msY);
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString = nullptr);
 	void EnableDialogBox(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString = nullptr);
 	void DisableDialogBox(int iBoxID);
@@ -32,6 +30,9 @@ public:
 	void DrawAll(short msX, short msY, short msZ, char cLB);
 	bool HandleClick(short msX, short msY);
 	bool HandleDoubleClick(short msX, short msY);
+	bool HandlePress(int iDlgID, short msX, short msY);
+	bool HandleItemDrop(int iDlgID, short msX, short msY);
+	bool HandleDraggingItemRelease(short msX, short msY);
 	void Enable(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString = nullptr);
 	void Disable(DialogBoxId::Type id);
 	void Toggle(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);

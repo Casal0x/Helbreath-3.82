@@ -251,3 +251,9 @@ bool DialogBox_GuideMap::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
+{
+	m_pGame->DlbBoxDoubleClick_GuideMap(msX, msY);
+	return true;
+}

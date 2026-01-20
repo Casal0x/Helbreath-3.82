@@ -9,6 +9,8 @@ public:
 
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
+	bool OnPress(short msX, short msY) override;
+	bool OnItemDrop(short msX, short msY) override;
 
 private:
 	void DrawAlchemyWaiting(short sX, short sY, short msX, short msY);

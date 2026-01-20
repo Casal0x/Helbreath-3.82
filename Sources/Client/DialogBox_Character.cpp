@@ -407,3 +407,20 @@ bool DialogBox_Character::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_Character::OnDoubleClick(short msX, short msY)
+{
+	m_pGame->DlbBoxDoubleClick_Character(msX, msY);
+	return true;
+}
+
+bool DialogBox_Character::OnPress(short msX, short msY)
+{
+	return m_pGame->bDlgBoxPress_Character(msX, msY);
+}
+
+bool DialogBox_Character::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_Character();
+	return true;
+}

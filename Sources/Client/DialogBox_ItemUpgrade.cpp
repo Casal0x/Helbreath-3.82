@@ -496,3 +496,9 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
 
     return false;
 }
+
+bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
+{
+    m_pGame->bItemDrop_ItemUpgrade();
+    return true;
+}

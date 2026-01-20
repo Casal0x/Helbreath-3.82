@@ -2,6 +2,8 @@
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
+#include "CursorTarget.h"
+#include <cstdlib>
 
 // Static button data shared between draw and click handling
 const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] = {
@@ -237,4 +239,28 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 	}
 
 	return false;
+}
+
+bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
+{
+	short sItemIndex = CursorTarget::GetSelectedID();
+	if (m_pGame->m_bIsItemDisabled[sItemIndex]) return true;
+	if (m_pGame->m_cCommand < 0) return true;
+
+	// Inventory icon area - drop item into inventory
+	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))
+	{
+		auto& invInfo = InfoOf(DialogBoxId::Inventory);
+		m_pGame->bItemDrop_Inventory(invInfo.sX + (rand() % 148), invInfo.sY + (rand() % 55));
+		return true;
+	}
+
+	// Character icon area - equip item
+	if ((425 < msX) && (448 > msX) && (440 < msY) && (475 > msY))
+	{
+		m_pGame->bItemDrop_Character();
+		return true;
+	}
+
+	return true;
 }

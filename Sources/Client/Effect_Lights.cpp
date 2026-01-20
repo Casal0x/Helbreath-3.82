@@ -80,7 +80,7 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::LIGHT_EFFECT_2:
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
-				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::Alpha(0.25f));
+				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 
 			case EffectType::IMPACT_EFFECT:

@@ -215,3 +215,9 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_ExchangeDialog(msX, msY);
+	return true;
+}

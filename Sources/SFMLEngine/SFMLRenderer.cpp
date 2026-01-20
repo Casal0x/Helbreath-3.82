@@ -15,6 +15,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <dxgi.h>
+#pragma comment(lib, "dxgi.lib")
 #endif
 
 // Static dummy tables
@@ -86,44 +88,89 @@ bool SFMLRenderer::LoadFont()
 
     for (const char* path : fontPaths)
     {
-        char debugMsg[256];
-        sprintf_s(debugMsg, "Trying to load font: %s\n", path);
-        printf(debugMsg);
-
         if (m_font.openFromFile(path))
         {
             // Disable texture smoothing for pixel-perfect rendering to match DDraw/GDI
             m_font.setSmooth(false);
             m_fontLoaded = true;
-            sprintf_s(debugMsg, "Font loaded successfully from: %s\n", path);
-            printf(debugMsg);
             return true;
-        }
-        else
-        {
-            printf("  - Failed to load\n");
         }
     }
 
-    printf("ERROR: Failed to load any font!\n");
+    printf("[ERROR] SFMLRenderer::LoadFont - Failed to load any font\n");
     return false;
 }
 
+#ifdef _WIN32
+// Enumerate GPUs and log their VRAM information
+// Returns the index of the GPU with the most dedicated VRAM
+static void LogGPUInfo()
+{
+    IDXGIFactory* pFactory = nullptr;
+    HRESULT hr = CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory);
+    if (FAILED(hr) || !pFactory)
+    {
+        printf("[GPU] Failed to create DXGI factory\n");
+        return;
+    }
+
+    printf("[GPU] Enumerating available graphics adapters:\n");
+
+    IDXGIAdapter* pAdapter = nullptr;
+    UINT adapterIndex = 0;
+    UINT bestAdapterIndex = 0;
+    SIZE_T maxDedicatedVRAM = 0;
+
+    while (pFactory->EnumAdapters(adapterIndex, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+    {
+        DXGI_ADAPTER_DESC desc;
+        if (SUCCEEDED(pAdapter->GetDesc(&desc)))
+        {
+            // Convert wide string to narrow for printf
+            char adapterName[128];
+            WideCharToMultiByte(CP_ACP, 0, desc.Description, -1, adapterName, sizeof(adapterName), nullptr, nullptr);
+
+            SIZE_T dedicatedVRAM_MB = desc.DedicatedVideoMemory / (1024 * 1024);
+            SIZE_T sharedVRAM_MB = desc.SharedSystemMemory / (1024 * 1024);
+
+            printf("[GPU]   Adapter %u: %s\n", adapterIndex, adapterName);
+            printf("[GPU]     Dedicated VRAM: %zu MB\n", dedicatedVRAM_MB);
+            printf("[GPU]     Shared Memory:  %zu MB\n", sharedVRAM_MB);
+
+            if (desc.DedicatedVideoMemory > maxDedicatedVRAM)
+            {
+                maxDedicatedVRAM = desc.DedicatedVideoMemory;
+                bestAdapterIndex = adapterIndex;
+            }
+        }
+        pAdapter->Release();
+        adapterIndex++;
+    }
+
+    if (adapterIndex > 0 && maxDedicatedVRAM > 0)
+    {
+        printf("[GPU] Adapter with most VRAM: Adapter %u (%zu MB)\n", bestAdapterIndex, maxDedicatedVRAM / (1024 * 1024));
+        printf("[GPU] Note: NvOptimusEnablement and AmdPowerXpressRequestHighPerformance exports are set to prefer discrete GPU\n");
+    }
+
+    pFactory->Release();
+}
+#endif
+
 bool SFMLRenderer::Init(HWND hWnd)
 {
-    printf("SFMLRenderer::Init() called\n");
+    // Log GPU information for debugging/verification
+#ifdef _WIN32
+    LogGPUInfo();
+#endif
 
     // Note: RenderTextures will be created when SetRenderWindow is called,
     // because they require an active OpenGL context from the window.
     // For now, just return success - the textures will be created lazily.
 
     // Load font for text rendering (this doesn't need OpenGL context)
-    if (LoadFont())
-        printf("Font loaded successfully\n");
-    else
-        printf("Warning: Failed to load font\n");
+    LoadFont();
 
-    printf("SFMLRenderer::Init() returning true\n");
     return true;
 }
 
@@ -132,31 +179,21 @@ bool SFMLRenderer::CreateRenderTextures()
     if (m_texturesCreated)
         return true;
 
-    printf("SFMLRenderer::CreateRenderTextures() - Starting\n");
-
     // Create back buffer render texture
-    char debugMsg[256];
-    sprintf_s(debugMsg, "Creating back buffer: %dx%d\n", m_width, m_height);
-    printf(debugMsg);
-
     if (!m_backBuffer.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
     {
-        printf("ERROR: Failed to create back buffer render texture!\n");
+        printf("[ERROR] SFMLRenderer::CreateRenderTextures - Failed to create back buffer\n");
         return false;
     }
-    printf("Back buffer created successfully\n");
 
     // Create PDBGS (Pre-Draw Background Surface)
     // PDBGS must be larger than visible area for smooth tile scrolling
     // Game draws tiles with 32-pixel buffer zone and copies with offset
-    sprintf_s(debugMsg, "Creating PDBGS: %dx%d\n", PDBGS_WIDTH, PDBGS_HEIGHT);
-    printf(debugMsg);
     if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH), static_cast<unsigned int>(PDBGS_HEIGHT)}))
     {
-        printf("ERROR: Failed to create PDBGS render texture!\n");
+        printf("[ERROR] SFMLRenderer::CreateRenderTextures - Failed to create PDBGS\n");
         return false;
     }
-    printf("PDBGS created successfully\n");
 
     // Disable texture smoothing for pixel-perfect scaling (matches DDraw sharpness)
     // This uses nearest-neighbor filtering instead of bilinear
@@ -183,7 +220,6 @@ bool SFMLRenderer::CreateRenderTextures()
     m_pdbgs.display();
 
     m_texturesCreated = true;
-    printf("SFMLRenderer::CreateRenderTextures() - Complete\n");
     return true;
 }
 
@@ -349,7 +385,15 @@ void SFMLRenderer::EndFrame()
             backBufferSprite.setPosition({0.0f, 0.0f});
         }
 
+        // Enable bilinear filtering for smooth upscaling at any resolution
+        // This is applied per-draw, so it doesn't affect the back buffer during rendering
+        const_cast<sf::Texture&>(m_backBuffer.getTexture()).setSmooth(true);
+
         m_pRenderWindow->draw(backBufferSprite, sf::RenderStates(sf::BlendAlpha));
+
+        // Restore nearest-neighbor for internal rendering
+        const_cast<sf::Texture&>(m_backBuffer.getTexture()).setSmooth(false);
+
         m_pRenderWindow->display();
     }
 }
@@ -431,15 +475,12 @@ void SFMLRenderer::DrawText(int x, int y, const char* text, uint32_t color)
 void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
 {
     if (!rect || !text) {
-        printf("DrawTextRect: rect or text is null\n");
         return;
     }
     if (!m_fontLoaded) {
-        printf("DrawTextRect: font not loaded!\n");
         return;
     }
     if (!m_texturesCreated) {
-        printf("DrawTextRect: textures not created yet!\n");
         return;
     }
 
@@ -447,16 +488,6 @@ void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
     uint8_t r = static_cast<uint8_t>(color & 0xFF);
     uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
     uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFF);
-
-    // Debug: log the draw call (only first few to avoid spam)
-    static int drawCount = 0;
-    if (drawCount < 10) {
-        char debugMsg[512];
-        sprintf_s(debugMsg, "DrawTextRect: '%s' at rect(%d,%d,%d,%d) color RGB(%d,%d,%d)\n",
-            text, rect->left, rect->top, rect->right, rect->bottom, r, g, b);
-        printf(debugMsg);
-        drawCount++;
-    }
 
     sf::Text sfText(m_font, text, 12);
     sf::FloatRect bounds = sfText.getLocalBounds();
@@ -600,6 +631,13 @@ int SFMLRenderer::GetHeightMid() const
     return m_height / 2;
 }
 
+void SFMLRenderer::ResizeBackBuffer(int width, int height)
+{
+    // The back buffer always stays at 640x480 (logical resolution)
+    // Window scaling is handled in EndFrame() when presenting to the window
+    // This is intentionally a no-op for SFML
+}
+
 ITexture* SFMLRenderer::GetBackgroundSurface()
 {
     if (!m_pdbgsWrapper)
@@ -676,13 +714,6 @@ void SFMLRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* out
     if (outB) *outB = static_cast<int>((rgb >> 16) & 0xFF);
 }
 
-HDC SFMLRenderer::GetTextDC()
-{
-    // SFML doesn't use GDI, return nullptr
-    // Code that needs HDC for text measurement should use GetTextLength instead
-    return nullptr;
-}
-
 int SFMLRenderer::GetTextLength(const char* text, int maxWidth)
 {
     if (!text || !m_fontLoaded)
@@ -703,6 +734,16 @@ int SFMLRenderer::GetTextLength(const char* text, int maxWidth)
     }
 
     return 0;
+}
+
+int SFMLRenderer::GetTextWidth(const char* text)
+{
+    if (!text || !m_fontLoaded)
+        return 0;
+
+    sf::Text sfText(m_font, text, 12);
+    sf::FloatRect bounds = sfText.getLocalBounds();
+    return static_cast<int>(bounds.size.x);
 }
 
 void SFMLRenderer::BltBackBufferFromPDBGS(RECT* srcRect)

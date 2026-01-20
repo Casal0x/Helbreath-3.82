@@ -159,3 +159,20 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
+{
+	m_pGame->DlbBoxDoubleClick_Inventory(msX, msY);
+	return true;
+}
+
+bool DialogBox_Inventory::OnPress(short msX, short msY)
+{
+	return m_pGame->bDlgBoxPress_Inventory(msX, msY);
+}
+
+bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_Inventory(msX, msY);
+	return true;
+}

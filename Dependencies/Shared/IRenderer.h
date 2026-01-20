@@ -77,6 +77,7 @@ public:
     virtual int GetHeight() const = 0;
     virtual int GetWidthMid() const = 0;
     virtual int GetHeightMid() const = 0;
+    virtual void ResizeBackBuffer(int width, int height) = 0;  // Resize back buffer for resolution change
 
     // ============== Pre-Draw Background Surface (PDBGS) ==============
     virtual ITexture* GetBackgroundSurface() = 0;
@@ -115,9 +116,9 @@ public:
     // ============== Color Utilities ==============
     virtual void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) = 0;
 
-    // ============== Text Measurement (requires DC access) ==============
-    virtual HDC GetTextDC() = 0;  // Returns DC for text measurement (call during BeginTextBatch/EndTextBatch)
+    // ============== Text Measurement ==============
     virtual int GetTextLength(const char* text, int maxWidth) = 0;  // Get character count that fits in width
+    virtual int GetTextWidth(const char* text) = 0;  // Get pixel width of text string
 
     // ============== Surface Operations ==============
     virtual void BltBackBufferFromPDBGS(RECT* srcRect) = 0;  // Copy from PDBGS to back buffer

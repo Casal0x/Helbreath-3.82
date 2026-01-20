@@ -1,7 +1,6 @@
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CommonTypes.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\CommonTypes.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\ConfigManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\ConfigManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Camera.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Camera.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Curse.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Curse.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBoxManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\DialogBoxManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IDialogBox.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\IDialogBox.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_WarningMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\DialogBox_WarningMsg.obj
@@ -79,7 +78,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_Slates.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\NetworkMessages_Slates.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_Stats.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\NetworkMessages_Stats.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_System.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\NetworkMessages_System.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameMonitor.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\GameMonitor.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MapData.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\MapData.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MouseInterface.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\MouseInterface.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Wmain.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Wmain.obj

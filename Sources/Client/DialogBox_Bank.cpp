@@ -210,3 +210,9 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 
 	return false;
 }
+
+bool DialogBox_Bank::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_Bank(msX, msY);
+	return true;
+}

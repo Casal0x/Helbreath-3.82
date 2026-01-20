@@ -6,6 +6,7 @@
 #pragma once
 
 #include "IWindow.h"
+#include "IInput.h"  // For KeyCode enum
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
@@ -51,8 +52,8 @@ public:
     const sf::RenderWindow* GetRenderWindow() const { return &m_renderWindow; }
 
 private:
-    // Convert SFML key to Windows virtual key code
-    static int SfmlKeyToVirtualKey(sf::Keyboard::Key key);
+    // Convert SFML key to abstract KeyCode
+    static int SfmlKeyToKeyCode(sf::Keyboard::Key key);
 
     // Transform window coordinates to logical game coordinates (640x480)
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;

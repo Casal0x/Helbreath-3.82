@@ -199,14 +199,14 @@ int XSocket::DrainToQueue()
             return iPacketsQueued;
 
         case DEF_XSOCKEVENT_SOCKETERROR:
-            printf("[XSOCK] DrainToQueue: _iOnRead returned SOCKETERROR\n");
+            printf("[ERROR] XSocket::DrainToQueue - recv socket error\n");
             return -1;
         case DEF_XSOCKEVENT_SOCKETCLOSED:
-            printf("[XSOCK] DrainToQueue: _iOnRead returned SOCKETCLOSED\n");
+            printf("[ERROR] XSocket::DrainToQueue - socket closed by remote\n");
             return -1;
 
         case DEF_XSOCKEVENT_MSGSIZETOOLARGE:
-            printf("[XSOCK] DrainToQueue: _iOnRead returned MSGSIZETOOLARGE\n");
+            printf("[ERROR] XSocket::DrainToQueue - message size too large\n");
             return -1;
 
         case DEF_XSOCKEVENT_ONREAD:
@@ -303,8 +303,10 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 	if (m_Sock != INVALID_SOCKET) closesocket(m_Sock);
 
 	m_Sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (m_Sock == INVALID_SOCKET)
+	if (m_Sock == INVALID_SOCKET) {
+		printf("[ERROR] XSocket::bConnect - socket() failed: %d\n", WSAGetLastError());
 		return false;
+	}
 
 	arg = 1;
 
@@ -319,6 +321,7 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 	}
 	m_hEvent = WSACreateEvent();
 	if (m_hEvent == WSA_INVALID_EVENT) {
+		printf("[ERROR] XSocket::bConnect - WSACreateEvent failed: %d\n", WSAGetLastError());
 		closesocket(m_Sock);
 		m_Sock = INVALID_SOCKET;
 		return false;
@@ -328,8 +331,10 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 
 	iRet = connect(m_Sock, (struct sockaddr*)&saTemp, sizeof(saTemp));
 	if (iRet == SOCKET_ERROR) {
-		if (WSAGetLastError() != WSAEWOULDBLOCK) {
-			m_WSAErr = WSAGetLastError();
+		int err = WSAGetLastError();
+		if (err != WSAEWOULDBLOCK) {
+			m_WSAErr = err;
+			printf("[ERROR] XSocket::bConnect - connect() failed: %d\n", err);
 			return false;
 		}
 	}
@@ -362,7 +367,7 @@ int XSocket::_iOnRead()
 		if (iRet == SOCKET_ERROR) {
 			WSAErr = WSAGetLastError();
 			if (WSAErr != WSAEWOULDBLOCK) {
-				printf("[XSOCK] _iOnRead HEADER: recv SOCKET_ERROR, WSAErr=%d\n", WSAErr);
+				printf("[ERROR] XSocket::_iOnRead - recv failed (header): %d\n", WSAErr);
 				m_WSAErr = WSAErr;
 				return DEF_XSOCKEVENT_SOCKETERROR;
 			}
@@ -370,7 +375,6 @@ int XSocket::_iOnRead()
 		}
 		else
 			if (iRet == 0) {
-				printf("[XSOCK] _iOnRead HEADER: recv returned 0 (server closed connection)\n");
 				m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
 				return DEF_XSOCKEVENT_SOCKETCLOSED;
 			}
@@ -407,7 +411,7 @@ int XSocket::_iOnRead()
 			if (iRet == SOCKET_ERROR) {
 				WSAErr = WSAGetLastError();
 				if (WSAErr != WSAEWOULDBLOCK) {
-					printf("[XSOCK] _iOnRead BODY: recv SOCKET_ERROR, WSAErr=%d\n", WSAErr);
+					printf("[ERROR] XSocket::_iOnRead - recv failed (body): %d\n", WSAErr);
 					m_WSAErr = WSAErr;
 					return DEF_XSOCKEVENT_SOCKETERROR;
 				}
@@ -415,7 +419,6 @@ int XSocket::_iOnRead()
 			}
 			else
 				if (iRet == 0) {
-					printf("[XSOCK] _iOnRead BODY: recv returned 0 (server closed connection)\n");
 					m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
 					return DEF_XSOCKEVENT_SOCKETCLOSED;
 				}
@@ -598,7 +601,9 @@ int XSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
 	if (m_bIsWriteEnabled == false) {
 		iRet = _iRegisterUnsentData(m_pSndBuffer, dwSize + 3);
 	}
-	else iRet = _iSend(m_pSndBuffer, dwSize + 3, true);
+	else {
+		iRet = _iSend(m_pSndBuffer, dwSize + 3, true);
+	}
 
 	if (iRet < 0) return iRet;
 	else return (iRet - 3);

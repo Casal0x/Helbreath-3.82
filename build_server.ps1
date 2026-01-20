@@ -14,4 +14,4 @@ if (Test-Path $logFile) {
 $msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
 $solutionPath = Join-Path $scriptDir "Helbreath.sln"
 
-& $msbuildPath $solutionPath /t:Server /p:Configuration=Debug /p:Platform=x86 2>&1 | Tee-Object -FilePath $logFile
+& $msbuildPath $solutionPath /t:Server /p:Configuration=Debug-DDraw /p:Platform=x86 2>&1 | Tee-Object -FilePath $logFile

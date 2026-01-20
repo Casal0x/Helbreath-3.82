@@ -96,3 +96,9 @@ bool DialogBox_Slates::OnClick(short msX, short msY)
 	}
 	return false;
 }
+
+bool DialogBox_Slates::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_Slates();
+	return true;
+}

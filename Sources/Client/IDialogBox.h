@@ -20,6 +20,8 @@ public:
 	// Optional virtual methods - override as needed
 	virtual void OnUpdate() {}  // Called once per frame for enabled dialogs
 	virtual bool OnDoubleClick(short msX, short msY) { return false; }
+	virtual bool OnPress(short msX, short msY) { return false; }  // Item/equipment selection on mouse press
+	virtual bool OnItemDrop(short msX, short msY) { return false; }  // Item dropped on dialog
 	virtual void OnEnable(int cType, int sV1, int sV2, char* pString) {}
 	virtual void OnDisable() {}
 
@@ -44,6 +46,12 @@ protected:
 	void EnableDialogBox(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
 	void DisableDialogBox(DialogBoxId::Type id);
 	void DisableThisDialog();
+
+	// Inter-dialog communication
+	IDialogBox* GetDialogBox(DialogBoxId::Type id);
+	DialogBoxInfo& InfoOf(DialogBoxId::Type id);
+	template<typename T>
+	T* GetDialogBoxAs(DialogBoxId::Type id) { return static_cast<T*>(GetDialogBox(id)); }
 
 	// Direct access to game - use m_pGame->member for all game state
 	CGame* m_pGame;

@@ -10,6 +10,7 @@ public:
 	void OnUpdate() override;
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
+	bool OnDoubleClick(short msX, short msY) override;
 
 private:
 	void DrawBorder(short sX, short sY);

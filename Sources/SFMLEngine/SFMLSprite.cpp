@@ -8,6 +8,8 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
+extern char G_cSpriteAlphaDegree;
+
 SFMLSprite::SFMLSprite(SFMLRenderer* pRenderer, const std::string& pakFilePath, int spriteIndex, bool alphaEffect)
     : m_pRenderer(pRenderer)
     , m_pakFilePath(pakFilePath)
@@ -103,6 +105,12 @@ void SFMLSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& para
     if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
 
+    // Sync alpha degree with global (day/night mode)
+    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    {
+        m_alphaDegree = G_cSpriteAlphaDegree;
+    }
+
     m_inUse = true;
     m_lastAccessTime = GetTickCount();
 
@@ -119,6 +127,12 @@ void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const
 
     if (!destSurface || !m_textureLoaded || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
+
+    // Sync alpha degree with global (day/night mode)
+    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    {
+        m_alphaDegree = G_cSpriteAlphaDegree;
+    }
 
     m_inUse = true;
     m_lastAccessTime = GetTickCount();
@@ -156,8 +170,10 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
 
         sf::Sprite sprite(m_texture, srcRect);
 
-        // Semi-transparent black for shadow (darker for visibility)
-        sprite.setColor(sf::Color(0, 0, 0, 140));
+        // Semi-transparent black for shadow
+        // At night (G_cSpriteAlphaDegree == 2), reduce shadow opacity by 50%
+        uint8_t shadowAlpha = (G_cSpriteAlphaDegree == 2) ? 70 : 140;
+        sprite.setColor(sf::Color(0, 0, 0, shadowAlpha));
 
         // Set origin to bottom-left of sprite so transforms anchor there (at feet)
         sprite.setOrigin({0.0f, static_cast<float>(frameRect.height)});
@@ -332,12 +348,15 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
             color.a = 64;  // Semi-transparent black for shadow darkening
         }
 
-        // Apply fade effect
+        // Apply fade effect - darkens destination like DDraw's DrawFadeInternal
+        // At night (G_cSpriteAlphaDegree == 2), reduce fade intensity by 50%
+        // Day: 75% alpha -> 25% brightness | Night: 50% alpha -> 50% brightness
         if (params.isFade)
         {
-            color.r = static_cast<uint8_t>(color.r * 0.5f);
-            color.g = static_cast<uint8_t>(color.g * 0.5f);
-            color.b = static_cast<uint8_t>(color.b * 0.5f);
+            color.r = 0;
+            color.g = 0;
+            color.b = 0;
+            color.a = (G_cSpriteAlphaDegree == 2) ? 127 : 191;  // Less darkening at night
         }
 
         // Apply alpha degree darkening (night mode)
@@ -351,13 +370,28 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         sprite.setColor(color);
     }
 
-    // Set up render states - always use alpha blending
-    // For bitmap fonts: white sprite × tint = tint, drawn with alpha blending
+    // Set up render states based on blend mode
     sf::RenderStates states;
-    states.blendMode = sf::BlendAlpha;
+    bool wasSmooth = m_texture.isSmooth();
+
+    if (params.blendMode == SpriteLib::BlendMode::Additive) {
+        states.blendMode = sf::BlendAdd;
+        // Enable smooth filtering for additive blending (light effects)
+        // This produces smooth gradients like DDraw's per-pixel blending
+        if (!wasSmooth) {
+            m_texture.setSmooth(true);
+        }
+    } else {
+        states.blendMode = sf::BlendAlpha;
+    }
 
     // Draw the sprite
     target->draw(sprite, states);
+
+    // Restore smooth setting if we changed it
+    if (params.blendMode == SpriteLib::BlendMode::Additive && !wasSmooth) {
+        m_texture.setSmooth(false);
+    }
 }
 
 void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
@@ -368,6 +402,12 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
 
     if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
         return;
+
+    // Sync alpha degree with global (day/night mode)
+    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    {
+        m_alphaDegree = G_cSpriteAlphaDegree;
+    }
 
     m_inUse = true;
     m_lastAccessTime = GetTickCount();
@@ -416,7 +456,104 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
 
 void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const SpriteLib::DrawParams& params)
 {
-    Draw(x + shiftX, y + shiftY, frame, params);
+    // DrawShifted draws a 128x128 subregion of the sprite starting at (shiftX, shiftY)
+    // This is used for the guide map to show a viewport window into a large map sprite
+    // Matches DDraw's CSprite::PutShiftSpriteFast / PutShiftTransSprite2
+
+    // Lazy load texture on first draw (same as Draw())
+    if (!m_textureLoaded)
+        CreateTexture();
+
+    if (!m_textureLoaded || !m_pRenderer || frame < 0 || frame >= static_cast<int>(m_frames.size()))
+        return;
+
+    // Sync alpha degree with global (day/night mode)
+    if (m_alphaEffect && m_alphaDegree != G_cSpriteAlphaDegree)
+    {
+        m_alphaDegree = G_cSpriteAlphaDegree;
+    }
+
+    sf::RenderTexture* target = m_pRenderer->GetBackBuffer();
+    if (!target)
+        return;
+
+    m_inUse = true;
+
+    const PAKLib::sprite_rect& frameRect = m_frames[frame];
+
+    // Source position within the sprite texture - start at frame origin and add shift
+    int srcX = frameRect.x + shiftX;
+    int srcY = frameRect.y + shiftY;
+    int srcW = 128;  // Guide map viewport is always 128x128
+    int srcH = 128;
+
+    // Destination position with pivot offsets (matching DDraw implementation)
+    int drawX = x + frameRect.pivotX;
+    int drawY = y + frameRect.pivotY;
+
+    // Get render target size for clipping
+    sf::Vector2u targetSize = target->getSize();
+    int targetWidth = static_cast<int>(targetSize.x);
+    int targetHeight = static_cast<int>(targetSize.y);
+
+    // Clip to screen boundaries (matching DDraw's clipping logic)
+    if (drawX < 0)
+    {
+        int diff = -drawX;
+        srcX += diff;
+        srcW -= diff;
+        if (srcW <= 0) { m_inUse = false; return; }
+        drawX = 0;
+    }
+    else if (drawX + srcW > targetWidth)
+    {
+        srcW -= (drawX + srcW) - targetWidth;
+        if (srcW <= 0) { m_inUse = false; return; }
+    }
+
+    if (drawY < 0)
+    {
+        int diff = -drawY;
+        srcY += diff;
+        srcH -= diff;
+        if (srcH <= 0) { m_inUse = false; return; }
+        drawY = 0;
+    }
+    else if (drawY + srcH > targetHeight)
+    {
+        srcH -= (drawY + srcH) - targetHeight;
+        if (srcH <= 0) { m_inUse = false; return; }
+    }
+
+    // Update bounds
+    m_boundRect.left = drawX;
+    m_boundRect.top = drawY;
+    m_boundRect.right = drawX + srcW;
+    m_boundRect.bottom = drawY + srcH;
+
+    // Create sprite with the shifted source rectangle
+    sf::IntRect srcRect(
+        {srcX, srcY},
+        {srcW, srcH}
+    );
+    sf::Sprite sprite(m_texture, srcRect);
+
+    // Apply alpha if specified
+    if (params.alpha < 1.0f)
+    {
+        std::uint8_t alphaVal = static_cast<std::uint8_t>(params.alpha * 255.0f);
+        sprite.setColor(sf::Color(255, 255, 255, alphaVal));
+    }
+
+    // Position at destination
+    sprite.setPosition({static_cast<float>(drawX), static_cast<float>(drawY)});
+
+    // Draw to target
+    sf::RenderStates states;
+    states.blendMode = params.alpha < 1.0f ? sf::BlendAlpha : sf::BlendNone;
+    target->draw(sprite, states);
+
+    m_inUse = false;
 }
 
 int SFMLSprite::GetFrameCount() const

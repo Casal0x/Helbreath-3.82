@@ -699,6 +699,17 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 	return false;
 }
 
+bool DialogBox_Manufacture::OnPress(short msX, short msY)
+{
+	return m_pGame->bDlgBoxPress_SkillDlg(msX, msY);
+}
+
+bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
+{
+	m_pGame->bItemDrop_SkillDialog();
+	return true;
+}
+
 void DialogBox_Manufacture::ResetItemSlots()
 {
 	if ((Info().sV1 != -1) && (m_pGame->m_pItemList[Info().sV1] != 0))

@@ -28,6 +28,16 @@
 #include "GameWindowHandler.h"
 
 // --------------------------------------------------------------
+// GPU Selection - Force discrete GPU on hybrid systems
+// These exports tell NVIDIA Optimus and AMD PowerXpress to prefer
+// the high-performance GPU over integrated graphics
+extern "C"
+{
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
+// --------------------------------------------------------------
 // Global state
 HWND G_hWnd = 0;
 HWND G_hEditWnd = 0;

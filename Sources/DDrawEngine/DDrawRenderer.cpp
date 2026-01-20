@@ -177,6 +177,12 @@ int DDrawRenderer::GetHeightMid() const
     return m_ddraw.res_y_mid;
 }
 
+void DDrawRenderer::ResizeBackBuffer(int width, int height)
+{
+    // DirectDraw handles resolution through ChangeDisplayMode, not dynamic resizing
+    // This is a no-op for DDraw - the back buffer is recreated via ChangeDisplayMode
+}
+
 ITexture* DDrawRenderer::GetBackgroundSurface()
 {
     if (!m_pdbgsWrapper && m_ddraw.m_lpPDBGS)
@@ -331,11 +337,6 @@ void DDrawRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* ou
     m_ddraw.ColorTransferRGB(static_cast<COLORREF>(rgb), outR, outG, outB);
 }
 
-HDC DDrawRenderer::GetTextDC()
-{
-    return m_ddraw.m_hDC;
-}
-
 int DDrawRenderer::GetTextLength(const char* text, int maxWidth)
 {
     // Get text length that fits within maxWidth pixels
@@ -353,6 +354,18 @@ int DDrawRenderer::GetTextLength(const char* text, int maxWidth)
             return i;
     }
     return 0;
+}
+
+int DDrawRenderer::GetTextWidth(const char* text)
+{
+    // Get pixel width of text string
+    // This uses the DC which should be acquired via BeginTextBatch first
+    if (!m_ddraw.m_hDC || !text)
+        return 0;
+
+    SIZE size;
+    GetTextExtentPoint32A(m_ddraw.m_hDC, text, static_cast<int>(strlen(text)), &size);
+    return size.cx;
 }
 
 void DDrawRenderer::BltBackBufferFromPDBGS(RECT* srcRect)

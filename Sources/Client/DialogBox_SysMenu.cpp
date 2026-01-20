@@ -68,6 +68,11 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 
 	// Resize and center the window using the abstraction layer
 	Window::SetSize(newWidth, newHeight, true);
+
+	// Update renderer back buffer to match new resolution
+	if (Renderer::Get())
+		Renderer::Get()->ResizeBackBuffer(newWidth, newHeight);
+
 	Input::Get()->SetWindowActive(true);
 }
 

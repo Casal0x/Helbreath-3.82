@@ -80,3 +80,13 @@ void IDialogBox::DisableThisDialog()
 {
 	m_pGame->m_dialogBoxManager.DisableDialogBox(m_id);
 }
+
+IDialogBox* IDialogBox::GetDialogBox(DialogBoxId::Type id)
+{
+	return m_pGame->m_dialogBoxManager.GetDialogBox(id);
+}
+
+DialogBoxInfo& IDialogBox::InfoOf(DialogBoxId::Type id)
+{
+	return m_pGame->m_dialogBoxManager.Info(id);
+}
