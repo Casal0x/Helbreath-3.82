@@ -9,181 +9,187 @@
 
 #include <windows.h>
 #include "CommonTypes.h"
-#include <winbase.h>
+#include <map>
+#include <memory.h>
 #include <process.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <memory.h>
 #include <vector>
-#include <map>
 
-#include "winmain.h"
-#include "Xsocket.h"
-#include "Client.h"
-#include "Npc.h"
-#include "Map.h"
 #include "ActionID_Server.h"
-#include "UserMessages.h"
-#include "NetMessages.h"
-#include "ServerMessages.h"
-#include "MessageIndex.h"
-#include "Misc.h"
-#include "NetworkMsg.h"
-#include "Magic.h"
-#include "Skill.h"
-#include "DynamicObject.h"
+#include "BuildItem.h"
+#include "Client.h"
 #include "DelayEvent.h"
-#include "Version.h"
-#include "Fish.h"
 #include "DynamicObject.h"
 #include "DynamicObjectID.h"
-#include "Portion.h"
-#include "Mineral.h"
-#include "Quest.h"
-#include "BuildItem.h"
-#include "TeleportLoc.h"
+#include "Fish.h"
 #include "GlobalDef.h"
-#include "TempNpcItem.h"
+#include "Magic.h"
+#include "Map.h"
+#include "MessageIndex.h"
+#include "Mineral.h"
+#include "Misc.h"
+#include "NetMessages.h"
+#include "NetworkMsg.h"
+#include "Npc.h"
 #include "PartyManager.h"
+#include "Portion.h"
+#include "Quest.h"
+#include "ServerMessages.h"
+#include "Skill.h"
+#include "TeleportLoc.h"
+#include "TempNpcItem.h"
+#include "UserMessages.h"
+#include "Version.h"
+#include "Xsocket.h"
+#include "winmain.h"
 
-#define DEF_MAXADMINS				50
-#define DEF_MAXMAPS					100
-#define DEF_MAXAGRICULTURE			200
-#define DEF_MAXNPCTYPES				200
-#define DEF_MAXBUILDITEMS			300
-#define DEF_SERVERSOCKETBLOCKLIMIT	300
-#define DEF_MAXBANNED				500
-#define DEF_MAXNPCITEMS				1000
-#define DEF_MAXCLIENTS				2000
-#define DEF_MAXCLIENTLOGINSOCK		2000
-#define DEF_MAXNPCS					15000
-#define DEF_MAXITEMTYPES			5000
-#define DEF_CLIENTTIMEOUT			30000  // MODERNIZED: Increased from 10s to 30s for heavy entity rendering
-#define DEF_SPUPTIME				10000
-#define DEF_POISONTIME				12000
-#define DEF_HPUPTIME				15000
-#define DEF_MPUPTIME				20000
-#define DEF_HUNGERTIME				60000
-#define DEF_NOTICETIME				80000
-#define DEF_SUMMONTIME				300000
-#define DEF_AUTOSAVETIME			600000
-#define MAX_HELDENIANTOWER			200
-#define DEF_VIEWTILES_X				20
-#define DEF_VIEWTILES_Y				15
-#define DEF_VIEWRANGE_X				(DEF_VIEWTILES_X / 2)
-#define DEF_VIEWRANGE_Y				(DEF_VIEWTILES_Y / 2)
+#define DEF_MAXADMINS 50
+#define DEF_MAXMAPS 100
+#define DEF_MAXAGRICULTURE 200
+#define DEF_MAXNPCTYPES 200
+#define DEF_MAXBUILDITEMS 300
+#define DEF_SERVERSOCKETBLOCKLIMIT 300
+#define DEF_MAXBANNED 500
+#define DEF_MAXNPCITEMS 1000
+#define DEF_MAXCLIENTS 2000
+#define DEF_MAXCLIENTLOGINSOCK 2000
+#define DEF_MAXNPCS 15000
+#define DEF_MAXITEMTYPES 5000
+#define DEF_CLIENTTIMEOUT \
+  30000 // MODERNIZED: Increased from 10s to 30s for heavy entity rendering
+#define DEF_SPUPTIME 10000
+#define DEF_POISONTIME 12000
+#define DEF_HPUPTIME 15000
+#define DEF_MPUPTIME 20000
+#define DEF_HUNGERTIME 60000
+#define DEF_NOTICETIME 80000
+#define DEF_SUMMONTIME 300000
+#define DEF_AUTOSAVETIME 600000
+#define MAX_HELDENIANTOWER 200
+#define DEF_VIEWTILES_X 20
+#define DEF_VIEWTILES_Y 15
+#define DEF_VIEWRANGE_X (DEF_VIEWTILES_X / 2)
+#define DEF_VIEWRANGE_Y (DEF_VIEWTILES_Y / 2)
 
-#define DEF_EXPSTOCKTIME		1000*10		// ExpStock�� ����ϴ�? �ð� ���� 
-#define DEF_MSGQUENESIZE		100000		// �޽��� ť ������ 10���� 
-#define DEF_AUTOEXPTIME			1000*60*6	// �ڵ����� ����ġ�� �ö󰡴� �ð����� 
-#define DEF_TOTALLEVELUPPOINT	3			// �������� �Ҵ��ϴ� �� ����Ʈ �� 
+#define DEF_EXPSTOCKTIME 1000 * 10 // ExpStock�� ����ϴ�? �ð� ����
+#define DEF_MSGQUENESIZE \
+  100000 // �޽��� ť ������ 10����
+#define DEF_AUTOEXPTIME \
+  1000 * 60 * 6                 // �ڵ����� ����ġ�� �ö󰡴�
+                                // �ð�����
+#define DEF_TOTALLEVELUPPOINT 3 // �������� �Ҵ��ϴ� �� ����Ʈ ��
 
+#define DEF_MAXDYNAMICOBJECTS 60000
+#define DEF_MAXDELAYEVENTS 60000
+#define DEF_GUILDSTARTRANK 12
 
-#define DEF_MAXDYNAMICOBJECTS	60000
-#define DEF_MAXDELAYEVENTS		60000
-#define DEF_GUILDSTARTRANK		12
+#define DEF_SSN_LIMIT_MULTIPLY_VALUE 2 // SSN-limit ���ϴ� ��
 
-#define DEF_SSN_LIMIT_MULTIPLY_VALUE	2	// SSN-limit ���ϴ� �� 
+#define DEF_MAXNOTIFYMSGS \
+  300                          // �ִ� �������� �޽���
+#define DEF_MAXSKILLPOINTS 700 // ��ų ����Ʈ�� ����
+#define DEF_NIGHTTIME 30
 
-#define DEF_MAXNOTIFYMSGS		300			// �ִ� �������� �޽��� 
-#define DEF_MAXSKILLPOINTS		700			// ��ų ����Ʈ�� ���� 
-#define DEF_NIGHTTIME			30
+#define DEF_CHARPOINTLIMIT 1000 // ������ Ư��ġ�� �ִ밪
+#define DEF_RAGPROTECTIONTIME \
+  7000                             // �� �� �̻� ������ ������ ���� ��ȣ��
+                                   // �޴���
+#define DEF_MAXREWARDGOLD 99999999 // �����? �ִ�ġ
 
-#define DEF_CHARPOINTLIMIT		1000		// ������ Ư��ġ�� �ִ밪 
-#define DEF_RAGPROTECTIONTIME	7000		// �� �� �̻� ������ ������ ���� ��ȣ�� �޴��� 
-#define DEF_MAXREWARDGOLD		99999999	// �����? �ִ�ġ 
+#define DEF_ATTACKAI_NORMAL 1         // ������ ����
+#define DEF_ATTACKAI_EXCHANGEATTACK 2 // ��ȯ ���� - ����
+#define DEF_ATTACKAI_TWOBYONEATTACK 3 // 2-1 ����, ����
 
-#define DEF_ATTACKAI_NORMAL				1	// ������ ���� 
-#define DEF_ATTACKAI_EXCHANGEATTACK		2	// ��ȯ ���� - ���� 
-#define DEF_ATTACKAI_TWOBYONEATTACK		3	// 2-1 ����, ���� 
+#define DEF_MAXFISHS 200
+#define DEF_MAXMINERALS 200
+#define DEF_MAXCROPS 200
+#define DEF_MAXENGAGINGFISH \
+  30                            // �� �����⿡ ���ø� �õ��� �� �ִ� �ִ�
+                                // �ο�
+#define DEF_MAXPORTIONTYPES 500 // �ִ� ���� ���� ����
 
-#define DEF_MAXFISHS					200
-#define DEF_MAXMINERALS					200
-#define	DEF_MAXCROPS					200
-#define DEF_MAXENGAGINGFISH				30  // �� �����⿡ ���ø� �õ��� �� �ִ� �ִ� �ο� 
-#define DEF_MAXPORTIONTYPES				500 // �ִ� ���� ���� ���� 
+#define DEF_SPECIALEVENTTIME 300000 // 600000 // 10��
+#define DEF_MAXQUESTTYPE 200
+#define DEF_DEF_MAXHELDENIANDOOR 10
 
-#define DEF_SPECIALEVENTTIME			300000 //600000 // 10��
-#define DEF_MAXQUESTTYPE				200
-#define DEF_DEF_MAXHELDENIANDOOR			10
+#define DEF_MAXSUBLOGSOCK 10
 
-#define DEF_MAXSUBLOGSOCK				10
-
-#define DEF_ITEMLOG_GIVE				1
-#define DEF_ITEMLOG_DROP				2
-#define DEF_ITEMLOG_GET					3
-#define DEF_ITEMLOG_DEPLETE				4
-#define DEF_ITEMLOG_NEWGENDROP			5
+#define DEF_ITEMLOG_GIVE 1
+#define DEF_ITEMLOG_DROP 2
+#define DEF_ITEMLOG_GET 3
+#define DEF_ITEMLOG_DEPLETE 4
+#define DEF_ITEMLOG_NEWGENDROP 5
 
 // New 07/05/2004
-#define DEF_ITEMLOG_BUY					7
-#define DEF_ITEMLOG_SELL				8
-#define DEF_ITEMLOG_RETRIEVE			9
-#define DEF_ITEMLOG_DEPOSIT				10
-#define DEF_ITEMLOG_EXCHANGE			11
-#define DEF_ITEMLOG_MAKE				13
-#define DEF_ITEMLOG_SUMMONMONSTER		14
-#define DEF_ITEMLOG_POISONED			15
-#define DEF_ITEMLOG_REPAIR				17
-#define DEF_ITEMLOG_SKILLLEARN			12
-#define DEF_ITEMLOG_MAGICLEARN			16
-#define DEF_ITEMLOG_USE					32
+#define DEF_ITEMLOG_BUY 7
+#define DEF_ITEMLOG_SELL 8
+#define DEF_ITEMLOG_RETRIEVE 9
+#define DEF_ITEMLOG_DEPOSIT 10
+#define DEF_ITEMLOG_EXCHANGE 11
+#define DEF_ITEMLOG_MAKE 13
+#define DEF_ITEMLOG_SUMMONMONSTER 14
+#define DEF_ITEMLOG_POISONED 15
+#define DEF_ITEMLOG_REPAIR 17
+#define DEF_ITEMLOG_SKILLLEARN 12
+#define DEF_ITEMLOG_MAGICLEARN 16
+#define DEF_ITEMLOG_USE 32
 
-#define DEF_MAXGUILDS					1000 // ���ÿ� ������ �� �ִ� ����
+#define DEF_MAXGUILDS 1000 // ���ÿ� ������ �� �ִ� ����
 
-#define DEF_MAXGATESERVERSTOCKMSGSIZE	10000
+#define DEF_MAXGATESERVERSTOCKMSGSIZE 10000
 
-#define DEF_MAXCONSTRUCTNUM				10
-#define DEF_MAXSCHEDULE					10
-#define DEF_MAXAPOCALYPSE				7
-#define DEF_MAXHELDENIAN				10
+#define DEF_MAXCONSTRUCTNUM 10
+#define DEF_MAXSCHEDULE 10
+#define DEF_MAXAPOCALYPSE 7
+#define DEF_MAXHELDENIAN 10
 
-//v1.4311-3  �������� �ִ� ����
+// v1.4311-3  �������� �ִ� ����
 #define DEF_MAXFIGHTZONE 10
 
 //============================
-#define DEF_MINIMUMHITRATIO 15				// ���� ���� Ȯ�� 
-//============================		
-
-//============================
-#define DEF_MAXIMUMHITRATIO	99				// �ִ� ���� Ȯ��
+#define DEF_MINIMUMHITRATIO 15 // ���� ���� Ȯ��
 //============================
 
 //============================
-#define DEF_PLAYERMAXLEVEL	180				// �ִ� ����: Npc.cfg ���Ͽ� �����Ǿ� ���� ���� ���? m_iPlayerMaxLevel�� �Էµȴ�.
+#define DEF_MAXIMUMHITRATIO 99 // �ִ� ���� Ȯ��
+//============================
+
+//============================
+#define DEF_PLAYERMAXLEVEL \
+  180 // �ִ� ����: Npc.cfg ���Ͽ� �����Ǿ� ���� ���� ���? m_iPlayerMaxLevel��
+      // �Էµȴ�.
 //============================
 
 //============================
 // New Changed 12/05/2004
-#define DEF_GMGMANACONSUMEUNIT	15			// Grand Magic Generator ���� ���� ����.
+#define DEF_GMGMANACONSUMEUNIT 15 // Grand Magic Generator ���� ���� ����.
 //============================
 
-#define DEF_MAXCONSTRUCTIONPOINT 30000		// �ִ� ��ȯ ����Ʈ 
-#define DEF_MAXSUMMONPOINTS		 30000
-#define DEF_MAXWARCONTRIBUTION	 200000
-
+#define DEF_MAXCONSTRUCTIONPOINT 30000 // �ִ� ��ȯ ����Ʈ
+#define DEF_MAXSUMMONPOINTS 30000
+#define DEF_MAXWARCONTRIBUTION 200000
 
 // MOG Definitions - 3.51
 // Level up MSG
-#define MSGID_LEVELUPSETTINGS				0x11A01000
+#define MSGID_LEVELUPSETTINGS 0x11A01000
 // 2003-04-14 ���� ����Ʈ�� ���� ������ ���� �ִ�...
 // Stat Point Change MSG
-#define MSGID_STATECHANGEPOINT				0x11A01001
+#define MSGID_STATECHANGEPOINT 0x11A01001
 
-//#define DEF_NOTIFY_STATECHANGE_FAILED 0x11A01002
-//#define DEF_NOTIFY_SETTING_FAILED 0x11A01003
-//#define DEF_NOTIFY_STATECHANGE_SUCCESS 0x11A01004
-//#define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
+// #define DEF_NOTIFY_STATECHANGE_FAILED 0x11A01002
+// #define DEF_NOTIFY_SETTING_FAILED 0x11A01003
+// #define DEF_NOTIFY_STATECHANGE_SUCCESS 0x11A01004
+// #define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
 
-//Mine
-//#define DEF_NOTIFY_SETTING_FAILED 0x11A01003
-//#define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
-//2.24
-//#define DEF_NOTIFY_SETTING_FAILED 0xBB4
-//#define DEF_NOTIFY_SETTING_SUCCESS 0xBB3
-
+// Mine
+// #define DEF_NOTIFY_SETTING_FAILED 0x11A01003
+// #define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
+// 2.24
+// #define DEF_NOTIFY_SETTING_FAILED 0xBB4
+// #define DEF_NOTIFY_SETTING_SUCCESS 0xBB3
 
 #define DEF_STR 0x01
 #define DEF_DEX 0x02
@@ -193,10 +199,9 @@
 #define DEF_CHR 0x06
 
 #define DEF_TEST 0xFFFF0000
-//#define DEF_TESTSERVER
+// #define DEF_TESTSERVER
 
 #define NO_MSGSPEEDCHECK
-
 
 using namespace std;
 typedef unsigned long long u64;
@@ -210,113 +215,121 @@ typedef signed char i8;
 
 struct DropEntry
 {
-	int itemId;
-	int weight;
-	int minCount;
-	int maxCount;
+  int itemId;
+  int weight;
+  int minCount;
+  int maxCount;
 };
 
 struct DropTable
 {
-	int id;
-	char name[64];
-	char description[128];
-	std::vector<DropEntry> tierEntries[3];
-	int totalWeight[3];
+  int id;
+  char name[64];
+  char description[128];
+  std::vector<DropEntry> tierEntries[3];
+  int totalWeight[3];
 };
 
 // Shop system structures
 struct NpcShopMapping
 {
-	int npcType;                    // NPC type (15=ShopKeeper, 24=Blacksmith)
-	int shopId;                     // Which shop inventory to use
-	char description[64];           // For documentation
+  int npcType;          // NPC type (15=ShopKeeper, 24=Blacksmith)
+  int shopId;           // Which shop inventory to use
+  char description[64]; // For documentation
 };
 
 struct ShopData
 {
-	int shopId;
-	std::vector<int16_t> itemIds;   // List of item IDs available in this shop
+  int shopId;
+  std::vector<int16_t> itemIds; // List of item IDs available in this shop
 };
 
 template <typename T>
-static bool In(const T& value, std::initializer_list<T> values) {
-	return std::any_of(values.begin(), values.end(),
-		[&value](const T& x) { return x == value; });
+static bool In(const T &value, std::initializer_list<T> values)
+{
+  return std::any_of(values.begin(), values.end(),
+                     [&value](const T &x)
+                     { return x == value; });
 }
 
 template <typename T>
-static bool NotIn(const T& value, std::initializer_list<T> values) {
-	return !In(value, values);
+static bool NotIn(const T &value, std::initializer_list<T> values)
+{
+  return !In(value, values);
 }
 
-
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Push(char*& cp, T value) {
-	auto p = (T*)cp;
-	*p = (T)value;
-	cp += sizeof(T);
+template <typename T, class = typename enable_if<!is_pointer<T>::value>::type>
+static void Push(char *&cp, T value)
+{
+  auto p = (T *)cp;
+  *p = (T)value;
+  cp += sizeof(T);
 }
 
-template <typename T, class = typename enable_if<!is_pointer<T>::value>::type >
-static void Pop(char*& cp, T& v) {
-	T* p = (T*)cp;
-	v = *p;
-	cp += sizeof(T);
+template <typename T, class = typename enable_if<!is_pointer<T>::value>::type>
+static void Pop(char *&cp, T &v)
+{
+  T *p = (T *)cp;
+  v = *p;
+  cp += sizeof(T);
 }
 
-static void Push(char*& dest, const char* src, u32 len) {
-	memcpy(dest, src, len);
-	dest += len;
+static void Push(char *&dest, const char *src, u32 len)
+{
+  memcpy(dest, src, len);
+  dest += len;
 }
 
-static void Push(char*& dest, const char* src) {
+static void Push(char *&dest, const char *src)
+{
 
-	strcpy(dest, src);
-	dest += strlen(src) + 1;
+  strcpy(dest, src);
+  dest += strlen(src) + 1;
 }
 
-static void Push(char*& dest, const string& str) {
-	strcpy(dest, str.c_str());
-	dest += str.length() + 1;
+static void Push(char *&dest, const string &str)
+{
+  strcpy(dest, str.c_str());
+  dest += str.length() + 1;
 }
 
-static void Pop(char*& src, char* dest, u32 len) {
-	memcpy(dest, src, len);
-	src += len;
+static void Pop(char *&src, char *dest, u32 len)
+{
+  memcpy(dest, src, len);
+  src += len;
 }
-static void Pop(char*& src, char* dest) {
+static void Pop(char *&src, char *dest)
+{
 
-	u32 len = strlen(src) + 1;
-	memcpy(dest, src, len);
-	src += len;
-}
-
-static void Pop(char*& src, string& str) {
-	str = src;
-	src += str.length() + 1;
+  u32 len = strlen(src) + 1;
+  memcpy(dest, src, len);
+  src += len;
 }
 
+static void Pop(char *&src, string &str)
+{
+  str = src;
+  src += str.length() + 1;
+}
 
 struct LoginClient
 {
-	// MODERNIZED: Removed HWND parameter
-	LoginClient(HWND hWnd)
-	{
-		_sock = 0;
-		_sock = new class XSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
-		_sock->bInitBufferSize(DEF_MSGBUFFERSIZE);
-		_timeout_tm = 0;
-	}
+  // MODERNIZED: Removed HWND parameter
+  LoginClient(HWND hWnd)
+  {
+    _sock = 0;
+    _sock = new class XSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
+    _sock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+    _timeout_tm = 0;
+  }
 
-	u32 _timeout_tm;
-	~LoginClient();
-	XSocket* _sock;
-	char _ip[21];
+  u32 _timeout_tm;
+  ~LoginClient();
+  XSocket *_sock;
+  char _ip[21];
 };
 
-
-class CGame  
+class CGame
 {
 public:
 
@@ -1038,94 +1051,56 @@ public:
 	bool m_bAllow100AllSkill;
 	char m_cRepDropModifier;
 
-	// ============================================================================
-	// Configurable Settings (loaded from GameConfigs.db)
-	// ============================================================================
-
-	// Timing Settings (milliseconds)
-	int m_iClientTimeout;           // client-timeout-ms
-	int m_iStaminaRegenInterval;    // stamina-regen-interval
-	int m_iPoisonDamageInterval;    // poison-damage-interval
-	int m_iHealthRegenInterval;     // health-regen-interval
-	int m_iManaRegenInterval;       // mana-regen-interval
-	int m_iHungerConsumeInterval;   // hunger-consume-interval
-	int m_iSummonCreatureDuration;  // summon-creature-duration
-	int m_iAutosaveInterval;        // autosave-interval
-	int m_iLagProtectionInterval;   // lag-protection-interval
-
-	// Character/Leveling Settings
-	int m_iBaseStatValue;           // base-stat-value
-	int m_iCreationStatBonus;       // creation-stat-bonus
-	int m_iLevelupStatGain;         // levelup-stat-gain
-	int m_iMaxLevel;                // max-level (renamed from max-player-level)
-	int m_iMaxStatValue;            // calculated: base + creation + (levelup * max_level) + 16
-
-	// Combat Settings
-	int m_iMinimumHitRatio;         // minimum-hit-ratio
-	int m_iMaximumHitRatio;         // maximum-hit-ratio
-
-	// Gameplay Settings
-	int m_iNighttimeDuration;       // nighttime-duration
-	int m_iStartingGuildRank;       // starting-guild-rank
-	int m_iGrandMagicManaConsumption; // grand-magic-mana-consumption
-	int m_iMaxConstructionPoints;   // maximum-construction-points
-	int m_iMaxSummonPoints;         // maximum-summon-points
-	int m_iMaxWarContribution;      // maximum-war-contribution
-	int m_iMaxBankItems;            // max-bank-items
-
-	// ============================================================================
-
-	bool var_89C, var_8A0;
-	char m_cHeldenianVictoryType, m_sLastHeldenianWinner, m_cHeldenianModeType;
-	int m_iHeldenianAresdenDead, m_iHeldenianElvineDead, var_A38, var_88C;
-	int m_iHeldenianAresdenLeftTower, m_iHeldenianElvineLeftTower;
-	uint32_t m_dwHeldenianGUID, m_dwHeldenianStartHour, m_dwHeldenianStartMinute, m_dwHeldenianStartTime, m_dwHeldenianFinishTime;
-	bool m_bReceivedItemList;
-	bool m_bHeldenianInitiated;
-	bool m_bHeldenianRunning;
-
+	// =====================================================================
 private:
-	int __iSearchForQuest(int iClientH, int iWho, int * pQuestType, int * pMode, int * pRewardType, int * pRewardAmount, int * pContribution, char * pTargetName, int * pTargetType, int * pTargetCount, int * pX, int * pY, int * pRange);
-	int _iTalkToNpcResult_Cityhall(int iClientH, int * pQuestType, int * pMode, int * pRewardType, int * pRewardAmount, int * pContribution, char * pTargetName, int * pTargetType, int * pTargetCount, int * pX, int * pY, int * pRange);
-	void _ClearExchangeStatus(int iToH);
-	int _iGetItemSpaceLeft(int iClientH);
+  int __iSearchForQuest(int iClientH, int iWho, int *pQuestType, int *pMode,
+                        int *pRewardType, int *pRewardAmount,
+                        int *pContribution, char *pTargetName, int *pTargetType,
+                        int *pTargetCount, int *pX, int *pY, int *pRange);
+  int _iTalkToNpcResult_Cityhall(int iClientH, int *pQuestType, int *pMode,
+                                 int *pRewardType, int *pRewardAmount,
+                                 int *pContribution, char *pTargetName,
+                                 int *pTargetType, int *pTargetCount, int *pX,
+                                 int *pY, int *pRange);
+  void _ClearExchangeStatus(int iToH);
+  int _iGetItemSpaceLeft(int iClientH);
 
 public:
-	void RemoveCrusadeNpcs(void);
-	void RemoveCrusadeRecallTime(void);
-	bool _bCrusadeLog(int iAction,int iClientH,int iData, char * cName);
-	int iGetPlayerABSStatus(int iClientH);
-	bool _bInitItemAttr(class CItem * pItem, int iItemID);
-	void ReqCreateSlateHandler(int iClientH, char* pData);
-	void SetSlateFlag(int iClientH, short sType, bool bFlag);
-	void CheckForceRecallTime(int iClientH);
-	void SetPlayingStatus(int iClientH);
-	void ForceChangePlayMode(int iClientH, bool bNotify);
-	void ShowVersion(int iClientH);
-	void ShowClientMsg(int iClientH, char* pMsg);
-	void RequestResurrectPlayer(int iClientH, bool bResurrect);
-	void LoteryHandler(int iClientH);
-	void SetSkillAll(int iClientH,char * pData, uint32_t dwMsgSize);
-	
-	/*void GetAngelMantleHandler(int iClientH,int iItemID,char * pString);
-	void CheckAngelUnequip(int iClientH, int iAngelID);
-	int iAngelEquip(int iClientH);*/
+  void RemoveCrusadeNpcs(void);
+  void RemoveCrusadeRecallTime(void);
+  bool _bCrusadeLog(int iAction, int iClientH, int iData, char *cName);
+  int iGetPlayerABSStatus(int iClientH);
+  bool _bInitItemAttr(class CItem *pItem, int iItemID);
+  void ReqCreateSlateHandler(int iClientH, char *pData);
+  void SetSlateFlag(int iClientH, short sType, bool bFlag);
+  void CheckForceRecallTime(int iClientH);
+  void SetPlayingStatus(int iClientH);
+  void ForceChangePlayMode(int iClientH, bool bNotify);
+  void ShowVersion(int iClientH);
+  void ShowClientMsg(int iClientH, char *pMsg);
+  void RequestResurrectPlayer(int iClientH, bool bResurrect);
+  void LoteryHandler(int iClientH);
+  void SetSkillAll(int iClientH, char *pData, uint32_t dwMsgSize);
 
-	void SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp);
-	void GetAngelHandler(int iClientH, char* pData, uint32_t dwMsgSize);
+  /*void GetAngelMantleHandler(int iClientH,int iItemID,char * pString);
+  void CheckAngelUnequip(int iClientH, int iAngelID);
+  int iAngelEquip(int iClientH);*/
 
-	void RequestEnchantUpgradeHandler(int client, uint32_t type, uint32_t lvl, int iType);
-	int GetRequiredLevelForUpgrade(uint32_t value);
-	void RequestItemEnchantHandler(int iClientH, int sDestItemID, int iType);
-	void RequestItemDisenchantHandler(int iClientH, int iItemIndex);
-	char* GetShardDesc(uint32_t dwType);
-	char* GetFragmentDesc(uint32_t dwType);
-	char* GetShardName(uint32_t dwType);
-	char* GetFragmentName(uint32_t dwType);
+  void SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp);
+  void GetAngelHandler(int iClientH, char *pData, uint32_t dwMsgSize);
 
-	//50Cent - Repair All
-	void RequestRepairAllItemsHandler(int iClientH);
-	void RequestRepairAllItemsDeleteHandler(int iClientH, int index);
-	void RequestRepairAllItemsConfirmHandler(int iClientH);
+  void RequestEnchantUpgradeHandler(int client, uint32_t type, uint32_t lvl,
+                                    int iType);
+  int GetRequiredLevelForUpgrade(uint32_t value);
+  void RequestItemEnchantHandler(int iClientH, int sDestItemID, int iType);
+  void RequestItemDisenchantHandler(int iClientH, int iItemIndex);
+  char *GetShardDesc(uint32_t dwType);
+  char *GetFragmentDesc(uint32_t dwType);
+  char *GetShardName(uint32_t dwType);
+  char *GetFragmentName(uint32_t dwType);
 
+  // 50Cent - Repair All
+  void RequestRepairAllItemsHandler(int iClientH);
+  void RequestRepairAllItemsDeleteHandler(int iClientH, int index);
+  void RequestRepairAllItemsConfirmHandler(int iClientH);
 };

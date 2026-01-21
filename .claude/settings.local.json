@@ -10,7 +10,10 @@
       "Bash(del \"C:\\\\Users\\\\ShadowEvil\\\\source\\\\Repos3\\\\Helbreath-3.82\\\\Sources\\\\Client\\\\Camera.cpp\")",
       "Bash(\"C:\\\\Users\\\\ShadowEvil\\\\source\\\\Repos3\\\\Helbreath-3.82\\\\build_game_sfml.bat\")",
       "Bash(grep:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(git add:*)",
+      "Bash(git rebase:*)",
+      "Bash(GIT_EDITOR=true git rebase:*)"
     ]
   }
 }
