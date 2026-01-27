@@ -37,6 +37,9 @@ public:
     virtual void DrawShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
     virtual void DrawItemShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
 
+    // Screen Effects
+    virtual void DrawFadeOverlay(float alpha) override;
+
     // Text Rendering
     virtual void BeginTextBatch() override;
     virtual void EndTextBatch() override;

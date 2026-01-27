@@ -12,7 +12,7 @@
 class CMsg
 {
 public:
-	inline CMsg(char cType, char * pMsg, uint32_t dwTime)
+	inline CMsg(int cType, const char * pMsg, uint32_t dwTime)
 	{
 		m_cType = cType;
 

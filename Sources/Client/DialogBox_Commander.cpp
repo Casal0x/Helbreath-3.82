@@ -13,7 +13,7 @@ DialogBox_Commander::DialogBox_Commander(CGame* pGame)
 
 void DialogBox_Commander::OnUpdate()
 {
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
+	uint32_t dwTime = GameClock::GetTimeMS();
 	if ((dwTime - m_pGame->m_dwCommanderCommandRequestedTime) > 1000 * 10)
 	{
 		m_pGame->_RequestMapStatus("middleland", 3);
@@ -25,7 +25,6 @@ void DialogBox_Commander::OnUpdate()
 void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short sX, sY, szX, szY, MapSzX, MapSzY;
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
 	double dV1, dV2, dV3;
 	int i, tX, tY;
 	sX = Info().sX;
@@ -120,14 +119,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 3: // Choose summon
-		if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == true))
+		if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == true))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 6);
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 5);
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 7);
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 35);
 		}
-		else if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == false))
+		else if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == false))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 9);
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 8);
@@ -139,14 +138,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER14);
 
-		wsprintf(m_pGame->G_cTxt, "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_iConstructionPoint);
+		wsprintf(m_pGame->G_cTxt, "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_pPlayer->m_iConstructionPoint);
 		PutAlignedString(sX, sX + 323, sY + 190, m_pGame->G_cTxt);
 
-		if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == true))
+		if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == true))
 		{
 			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 11);
 				}
@@ -155,7 +154,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 10);
 				}
@@ -164,7 +163,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
 				}
@@ -173,7 +172,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 5000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 5000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
 				}
@@ -199,11 +198,11 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER27, 255, 255, 255);
 			}
 		}
-		else if ((m_pGame->m_bCitizen == true) && (m_pGame->m_bAresden == false))
+		else if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == false))
 		{
 			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 14);
 				}
@@ -212,7 +211,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 13);
 				}
@@ -221,7 +220,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
 				}
@@ -230,7 +229,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			}
 			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 5000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 5000)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
 				}
@@ -369,14 +368,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 				else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
-			if ((Info().cMode != 2) && (m_pGame->m_iConstructLocX != -1))
+			if ((Info().cMode != 2) && (m_pGame->m_pPlayer->m_iConstructLocX != -1))
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iConstructLocX;
+				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocX;
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iConstructLocY;
+				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 41, false, true);
@@ -384,11 +383,11 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_sPlayerX;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_sPlayerY;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 43);
@@ -524,11 +523,11 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 		break;
 
 	case 3: // Summon Unit
-		if (m_pGame->m_bAresden == true)
+		if (m_pGame->m_pPlayer->m_bAresden == true)
 		{
 			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 47, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -537,7 +536,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 46, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -546,7 +545,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 43, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -555,7 +554,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1500)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1500)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 51, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -563,11 +562,11 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 				}
 			}
 		}
-		else if (m_pGame->m_bAresden == false)
+		else if (m_pGame->m_pPlayer->m_bAresden == false)
 		{
 			if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 3000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 45, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -576,7 +575,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 2000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 44, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -585,7 +584,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1000)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1000)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 43, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);
@@ -594,7 +593,7 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 			}
 			if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
-				if (m_pGame->m_iConstructionPoint >= 1500)
+				if (m_pGame->m_pPlayer->m_iConstructionPoint >= 1500)
 				{
 					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 51, 1, Info().sV1, 0);
 					PlaySoundEffect('E', 14, 5);

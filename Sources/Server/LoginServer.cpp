@@ -673,7 +673,6 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	char cPass[11] = {};
 	int lvl;
 	char ws_name[31] = {};
-	char cmd_line[121] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::EnterGameRequest>(pData, sizeof(hb::net::EnterGameRequest));
 	if (!req) return;
@@ -684,7 +683,6 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	std::memcpy(cPass, req->password, 10);
 	lvl = req->level;
 	std::memcpy(ws_name, req->world_name, 10);
-	std::memcpy(cmd_line, req->cmd_line, 120);
 
 	char cData[112] = {};
 	char* cp2 = cData;

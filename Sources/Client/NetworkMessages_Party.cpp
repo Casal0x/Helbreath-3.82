@@ -75,7 +75,7 @@ void HandleParty(CGame* pGame, char* pData)
 			break;
 
 		case 1: //
-			if (strcmp(cTxt, pGame->m_cPlayerName) == 0) {
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0) {
 				pGame->m_iPartyStatus = 2;
 				pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
@@ -133,7 +133,7 @@ void HandleParty(CGame* pGame, char* pData)
 			break;
 
 		case 1: //
-			if (strcmp(cTxt, pGame->m_cPlayerName) == 0) {
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0) {
 				pGame->m_iPartyStatus = 0;
 				pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;

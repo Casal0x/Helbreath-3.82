@@ -38,6 +38,7 @@ namespace Input {
 SFMLInput::SFMLInput()
     : m_hWnd(nullptr)
     , m_active(false)
+    , m_suppressed(false)
     , m_mouseX(0)
     , m_mouseY(0)
     , m_wheelDelta(0)
@@ -72,6 +73,7 @@ void SFMLInput::BeginFrame()
 
 bool SFMLInput::IsKeyDown(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyDown[key];
@@ -79,6 +81,7 @@ bool SFMLInput::IsKeyDown(int key) const
 
 bool SFMLInput::IsKeyPressed(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyPressed[key];
@@ -86,6 +89,7 @@ bool SFMLInput::IsKeyPressed(int key) const
 
 bool SFMLInput::IsKeyReleased(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyReleased[key];
@@ -120,6 +124,7 @@ void SFMLInput::OnKeyUp(int key)
 
 bool SFMLInput::IsMouseButtonDown(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mouseDown[button];
@@ -127,6 +132,7 @@ bool SFMLInput::IsMouseButtonDown(int button) const
 
 bool SFMLInput::IsMouseButtonPressed(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mousePressed[button];
@@ -134,6 +140,7 @@ bool SFMLInput::IsMouseButtonPressed(int button) const
 
 bool SFMLInput::IsMouseButtonReleased(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mouseReleased[button];
@@ -186,6 +193,7 @@ void SFMLInput::OnMouseMove(int x, int y)
 
 int SFMLInput::GetMouseWheelDelta() const
 {
+    if (m_suppressed) return 0;
     return m_wheelDelta;
 }
 
@@ -198,17 +206,32 @@ void SFMLInput::OnMouseWheel(int delta)
 
 bool SFMLInput::IsShiftDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_SHIFT) || IsKeyDown(VK_LSHIFT) || IsKeyDown(VK_RSHIFT);
 }
 
 bool SFMLInput::IsCtrlDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_CONTROL) || IsKeyDown(VK_LCONTROL) || IsKeyDown(VK_RCONTROL);
 }
 
 bool SFMLInput::IsAltDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_MENU) || IsKeyDown(VK_LMENU) || IsKeyDown(VK_RMENU);
+}
+
+// ============== Input Suppression ==============
+
+void SFMLInput::SetSuppressed(bool suppressed)
+{
+    m_suppressed = suppressed;
+}
+
+bool SFMLInput::IsSuppressed() const
+{
+    return m_suppressed;
 }
 
 // ============== Window Focus ==============

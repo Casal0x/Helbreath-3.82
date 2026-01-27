@@ -64,7 +64,7 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 			wsprintf(cTxt, "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
-			if (m_pGame->m_cMagicMastery[iCPivot + i] != 0)
+			if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0)
 			{
 				// Already mastered - purple color
 				if (CMisc::bCheckIMEString(cTxt) == false)
@@ -172,7 +172,7 @@ bool DialogBox_MagicShop::HandleSpellClick(short sX, short sY, short msX, short 
 			if ((msX >= sX + iAdjX + 44) && (msX <= sX + iAdjX + 135 + 44) &&
 				(msY >= sY + iAdjY + 70 + iYloc + 35) && (msY <= sY + iAdjY + 70 + 14 + iYloc + 35))
 			{
-				if (m_pGame->m_cMagicMastery[iCPivot + i] == 0)
+				if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] == 0)
 				{
 					m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_STUDYMAGIC, 0, 0, 0, 0,
 						m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);

@@ -8,6 +8,7 @@
 #include "IBitmapFont.h"
 #include "ISprite.h"
 #include <vector>
+#include <memory>
 
 // Undefine Windows CreateFont macro to avoid naming conflict
 #ifdef CreateFont
@@ -29,12 +30,12 @@ public:
     virtual ~BitmapFontFactory() = default;
 
     // Create font with explicit character width array
-    virtual IBitmapFont* CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                    int frameOffset, const FontSpacing& spacing) = 0;
+    virtual std::unique_ptr<IBitmapFont> CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                    int frameOffset, const FontSpacing& spacing) = 0;
 
     // Create font using dynamic spacing from sprite frame dimensions
-    virtual IBitmapFont* CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                           int frameOffset) = 0;
+    virtual std::unique_ptr<IBitmapFont> CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                           int frameOffset) = 0;
 };
 
 // Global accessor - set by RendererFactory during initialization
@@ -42,8 +43,8 @@ BitmapFontFactory* GetBitmapFontFactory();
 void SetBitmapFontFactory(BitmapFontFactory* factory);
 
 // Convenience function to create a bitmap font using the global factory
-inline IBitmapFont* CreateBitmapFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                     int frameOffset, const FontSpacing& spacing)
+inline std::unique_ptr<IBitmapFont> CreateBitmapFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                     int frameOffset, const FontSpacing& spacing)
 {
     BitmapFontFactory* factory = GetBitmapFontFactory();
     if (!factory)
@@ -51,8 +52,8 @@ inline IBitmapFont* CreateBitmapFont(SpriteLib::ISprite* sprite, char firstChar,
     return factory->CreateFont(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-inline IBitmapFont* CreateBitmapFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                            int frameOffset)
+inline std::unique_ptr<IBitmapFont> CreateBitmapFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                            int frameOffset)
 {
     BitmapFontFactory* factory = GetBitmapFontFactory();
     if (!factory)

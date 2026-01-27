@@ -43,7 +43,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 	for (int i = 0; i < Info().sV1; i++) {
 		int itemIndex = i + Info().sView;
 		if ((m_pGame->m_pBankList[itemIndex] != 0) && (itemIndex < DEF_MAXBANKITEMS)) {
-			m_pGame->GetItemName(m_pGame->m_pBankList[itemIndex], cStr1, cStr2, cStr3);
+			m_pGame->GetItemName(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				bFlag = true;
@@ -80,7 +80,7 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	std::memset(cStr2, 0, sizeof(cStr2));
 	std::memset(cStr3, 0, sizeof(cStr3));
 
-	m_pGame->GetItemName(m_pGame->m_pBankList[iItemIndex], cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pBankList[iItemIndex].get(), cStr1, cStr2, cStr3);
 
 	if (m_pGame->m_bIsSpecial)
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, 0, 255, 50);

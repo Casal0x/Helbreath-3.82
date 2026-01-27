@@ -35,8 +35,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 	int y = LOGICAL_HEIGHT / 2;
 	int fixx = VIEW_CENTER_TILE_X;
 	int fixy = VIEW_CENTER_TILE_Y;
-	sAbsX = abs(((m_pGame->m_sViewPointX / 32) + fixx) - dX);
-	sAbsY = abs(((m_pGame->m_sViewPointY / 32) + fixy) - dY);
+	sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + fixx) - dX);
+	sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + fixy) - dY);
 	if (sAbsX > sAbsY) sDist = sAbsX; else sDist = sAbsY;
 	short fixdist = sDist;
 	int fixpan = LOGICAL_WIDTH;
@@ -78,11 +78,11 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY * 32;
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 100;
-				sAbsX = abs(((m_pGame->m_sViewPointX / 32) + fixx) - sX);
-				sAbsY = abs(((m_pGame->m_sViewPointY / 32) + fixy) - sY);
+				sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX);
+				sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + fixy) - sY);
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 12, sDist, lPan);
 				break;
 
@@ -91,12 +91,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 11;
 				m_pEffectList[i]->m_dwFrameTime = 10;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
@@ -107,12 +107,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 10;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 2, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
@@ -122,12 +122,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 5;
 				m_pEffectList[i]->m_dwFrameTime = 50;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 3, sDist, lPan);
 				break;
 
@@ -218,8 +218,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 10;
 				m_pEffectList[i]->m_dwFrameTime = 50;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
@@ -247,12 +247,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 9;
 				m_pEffectList[i]->m_dwFrameTime = 40;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist * 2);
 				break;
@@ -263,12 +263,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 8;
 				m_pEffectList[i]->m_dwFrameTime = 40;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
@@ -294,8 +294,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
@@ -307,12 +307,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 18;
 				m_pEffectList[i]->m_dwFrameTime = 40;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist * 2);
 				break;
@@ -322,12 +322,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 15;
 				m_pEffectList[i]->m_dwFrameTime = 40;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
@@ -337,12 +337,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 15;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 45, sDist, lPan);
 				break;
 
@@ -357,12 +357,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_iV1 = 20;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 46, sDist, lPan);
 				break;
 
@@ -374,12 +374,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_iV1 = 20;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 46, sDist, lPan);
 				break;
 
@@ -388,12 +388,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 50;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				if ((rand() % 4) == 1) m_pGame->SetCameraShakingEffect(sDist);
 				m_pGame->PlaySound('E', 47, sDist, lPan);
 				break;
@@ -410,12 +410,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 15;
 				m_pEffectList[i]->m_dwFrameTime = 80;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -424,12 +424,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 15;
 				m_pEffectList[i]->m_dwFrameTime = 80;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -446,12 +446,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				m_pGame->PlaySound('E', 45, sDist, lPan);
 				break;
 
@@ -474,12 +474,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 16;
 				m_pEffectList[i]->m_dwFrameTime = 10;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				break;
@@ -517,12 +517,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				break;
@@ -539,12 +539,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 17;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pEffectList[i]->m_iV1 = sDist;
 				//game->SetCameraShakingEffect(sDist, 2);
@@ -555,12 +555,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 11;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 42, sDist, lPan);
 				break;
 
@@ -569,12 +569,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 11;
 				m_pEffectList[i]->m_dwFrameTime = 30;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 42, sDist, lPan);
 				break;
 
@@ -584,8 +584,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
@@ -597,12 +597,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_mY = sY;
 				m_pEffectList[i]->m_cMaxFrame = 15;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
-				lPan = ((sX - m_pGame->m_sViewPointX) - x) * 30;
+				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				if ((rand() % 4) == 1) m_pGame->SetCameraShakingEffect(sDist);
 				m_pGame->PlaySound('E', 47, sDist, lPan);
 				break;
@@ -654,8 +654,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iV1 = 20;
 				m_pEffectList[i]->m_cMaxFrame = 30;
 				m_pEffectList[i]->m_dwFrameTime = 25;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;
@@ -681,7 +681,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
@@ -692,7 +692,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::GREAT_STAMINA_RECOVERY: // Great-Staminar-Recovery
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 80;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -709,7 +709,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::MASS_CONFUSION: // Mass-Confusion
 				m_pEffectList[i]->m_cMaxFrame = 13;
 				m_pEffectList[i]->m_dwFrameTime = 120;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -719,7 +719,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
@@ -729,7 +729,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::HASTE: // Haste
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 80;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -737,7 +737,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::GREAT_DEFENSE_SHIELD: // Great-Defense-Shield
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 120;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -757,7 +757,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
@@ -781,12 +781,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::TREMOR: // Tremor.
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
@@ -816,7 +816,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_rY = 5 - (rand() % 10);
 				m_pEffectList[i]->m_cMaxFrame = 7;
 				m_pEffectList[i]->m_dwFrameTime = 10;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 40, sDist, lPan);
 				break;
 
@@ -838,7 +838,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::MASS_ILLUSION_MOVEMENT: // Mass-Illusion-Movement
 				m_pEffectList[i]->m_cMaxFrame = 11;
 				m_pEffectList[i]->m_dwFrameTime = 100;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -850,7 +850,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_rY = 5 - (rand() % 10);
 				m_pEffectList[i]->m_cMaxFrame = 10;
 				m_pEffectList[i]->m_dwFrameTime = 10;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 40, sDist, lPan);
 				break;
 
@@ -877,7 +877,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
@@ -887,7 +887,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				break;
 
 			case EffectType::WORM_BITE_MASS: // worm-bite
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 4, sDist, lPan);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
@@ -911,14 +911,14 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			case EffectType::ABSOLUTE_MAGIC_PROTECTION: // Absolute-Magic-Protection
 				m_pEffectList[i]->m_cMaxFrame = 21;
 				m_pEffectList[i]->m_dwFrameTime = 70;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::ARMOR_BREAK: // Armor Break
 				m_pEffectList[i]->m_cMaxFrame = 13;
 				m_pEffectList[i]->m_dwFrameTime = 80;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -941,7 +941,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 23;
 				m_pEffectList[i]->m_dwFrameTime = 60;
 				sDist = sDist / 32;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 5, sDist, lPan);
 				break;
 
@@ -958,7 +958,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
-				lPan = -(((m_pGame->m_sViewPointX / 32) + fixx) - sX) * fixpan;
+				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
 				m_pGame->PlaySound('E', 1, sDist, lPan);
 				break;
 
@@ -998,8 +998,8 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_iErr = 0;
 				m_pEffectList[i]->m_cMaxFrame = 30;
 				m_pEffectList[i]->m_dwFrameTime = 25;
-				sAbsX = abs(x - (sX - m_pGame->m_sViewPointX));
-				sAbsY = abs(y - (sY - m_pGame->m_sViewPointY));
+				sAbsX = abs(x - (sX - m_pGame->m_Camera.GetX()));
+				sAbsY = abs(y - (sY - m_pGame->m_Camera.GetY()));
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				sDist = sDist / 32;

@@ -104,6 +104,9 @@ private:
     // CPU-based additive blending
     void DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool isColorReplace, bool useColorKey);
 
+    // CPU-based 50/50 averaging: result = (src + dst) / 2
+    void DrawAverage(int x, int y, int frame, bool useColorKey);
+
     //------------------------------------------------------------------
     // Surface Management
     //------------------------------------------------------------------

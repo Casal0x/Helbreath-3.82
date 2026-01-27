@@ -37,6 +37,7 @@ namespace Input {
 Win32Input::Win32Input()
     : m_hWnd(nullptr)
     , m_active(false)
+    , m_suppressed(false)
     , m_mouseX(0)
     , m_mouseY(0)
     , m_wheelDelta(0)
@@ -79,6 +80,7 @@ void Win32Input::BeginFrame()
 
 bool Win32Input::IsKeyDown(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyDown[key];
@@ -86,6 +88,7 @@ bool Win32Input::IsKeyDown(int key) const
 
 bool Win32Input::IsKeyPressed(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyPressed[key];
@@ -93,6 +96,7 @@ bool Win32Input::IsKeyPressed(int key) const
 
 bool Win32Input::IsKeyReleased(int key) const
 {
+    if (m_suppressed) return false;
     if (key < 0 || key >= kKeyCount)
         return false;
     return m_keyReleased[key];
@@ -127,6 +131,7 @@ void Win32Input::OnKeyUp(int key)
 
 bool Win32Input::IsMouseButtonDown(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mouseDown[button];
@@ -134,6 +139,7 @@ bool Win32Input::IsMouseButtonDown(int button) const
 
 bool Win32Input::IsMouseButtonPressed(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mousePressed[button];
@@ -141,6 +147,7 @@ bool Win32Input::IsMouseButtonPressed(int button) const
 
 bool Win32Input::IsMouseButtonReleased(int button) const
 {
+    if (m_suppressed) return false;
     if (button < 0 || button > 2)
         return false;
     return m_mouseReleased[button];
@@ -254,6 +261,7 @@ void Win32Input::UpdateLogicalPosition(int clientX, int clientY)
 
 int Win32Input::GetMouseWheelDelta() const
 {
+    if (m_suppressed) return 0;
     return m_wheelDelta;
 }
 
@@ -266,17 +274,32 @@ void Win32Input::OnMouseWheel(int delta)
 
 bool Win32Input::IsShiftDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_SHIFT) || IsKeyDown(VK_LSHIFT) || IsKeyDown(VK_RSHIFT);
 }
 
 bool Win32Input::IsCtrlDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_CONTROL) || IsKeyDown(VK_LCONTROL) || IsKeyDown(VK_RCONTROL);
 }
 
 bool Win32Input::IsAltDown() const
 {
+    if (m_suppressed) return false;
     return IsKeyDown(VK_MENU) || IsKeyDown(VK_LMENU) || IsKeyDown(VK_RMENU);
+}
+
+// ============== Input Suppression ==============
+
+void Win32Input::SetSuppressed(bool suppressed)
+{
+    m_suppressed = suppressed;
+}
+
+bool Win32Input::IsSuppressed() const
+{
+    return m_suppressed;
 }
 
 // ============== Window Focus ==============

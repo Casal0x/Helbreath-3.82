@@ -129,6 +129,12 @@ public:
     virtual bool IsWindowActive() const = 0;
     virtual void SetWindowActive(bool active) = 0;
 
+    // ============== Input Suppression ==============
+    // When suppressed, all input queries return false/zero (except mouse position)
+    // Used internally by overlay system - developers shouldn't call this directly
+    virtual void SetSuppressed(bool suppressed) = 0;
+    virtual bool IsSuppressed() const = 0;
+
     // ============== Input Events ==============
     // Called by window/event handler to feed input
     virtual void OnKeyDown(int key) = 0;
@@ -175,6 +181,10 @@ namespace Input {
 
     // Frame management
     inline void BeginFrame() { Get()->BeginFrame(); }
+
+    // Input suppression (used internally by overlay system)
+    inline void SetSuppressed(bool suppressed) { Get()->SetSuppressed(suppressed); }
+    inline bool IsSuppressed() { return Get()->IsSuppressed(); }
 
     // ============== Hit-Testing Helpers (replaces CMouseInterface) ==============
 

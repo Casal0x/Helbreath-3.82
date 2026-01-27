@@ -36,7 +36,7 @@ void DialogBox_CityHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, short msX, short msY)
 {
 	// Citizenship request
-	if (m_pGame->m_bCitizen == false)
+	if (m_pGame->m_pPlayer->m_bCitizen == false)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 70, DRAW_DIALOGBOX_CITYHALL_MENU1, 255, 255, 255);
@@ -47,7 +47,7 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 70, DRAW_DIALOGBOX_CITYHALL_MENU1, 65, 65, 65);
 
 	// Reward gold
-	if (m_pGame->m_iRewardGold > 0)
+	if (m_pGame->m_pPlayer->m_iRewardGold > 0)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU4, 255, 255, 255);
@@ -58,7 +58,7 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU4, 65, 65, 65);
 
 	// Hero's Items
-	if ((m_pGame->m_iEnemyKillCount >= 100) && (m_pGame->m_iContribution >= 10))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 10))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 120, DRAW_DIALOGBOX_CITYHALL_MENU8, 255, 255, 255);
@@ -80,16 +80,16 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_CITYHALL_MENU11, 65, 65, 65);
 
 	// Change playmode
-	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_bCitizen && (m_pGame->m_iPKCount == 0))
+	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_pPlayer->m_bCitizen && (m_pGame->m_pPlayer->m_iPKCount == 0))
 	{
-		if (m_pGame->m_bHunter == true)
+		if (m_pGame->m_pPlayer->m_bHunter == true)
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
 				m_pGame->PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 255, 255, 255);
 			else
 				m_pGame->PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 4, 0, 50);
 		}
-		else if (m_pGame->m_iLevel < 100)
+		else if (m_pGame->m_pPlayer->m_iLevel < 100)
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
 				m_pGame->PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 255, 255, 255);
@@ -103,7 +103,7 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 170, DRAW_DIALOGBOX_CITYHALL_MENU56, 65, 65, 65);
 
 	// Teleport menu
-	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_bCitizen && (m_pGame->m_iPKCount == 0))
+	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_pPlayer->m_bCitizen && (m_pGame->m_pPlayer->m_iPKCount == 0))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 195, DRAW_DIALOGBOX_CITYHALL_MENU69, 255, 255, 255);
@@ -114,7 +114,7 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 195, DRAW_DIALOGBOX_CITYHALL_MENU69, 65, 65, 65);
 
 	// Change crusade role
-	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_bCitizen)
+	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_pPlayer->m_bCitizen)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 220))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 220, DRAW_DIALOGBOX_CITYHALL_MENU14, 255, 255, 255);
@@ -183,7 +183,7 @@ void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX,
 	char cTxt[120];
 
 	m_pGame->PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU33, 55, 25, 25);
-	wsprintf(cTxt, DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_iRewardGold);
+	wsprintf(cTxt, DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
 	m_pGame->PutAlignedString(sX, sX + szX, sY + 140, cTxt, 55, 25, 25);
 	m_pGame->PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU35, 55, 25, 25);
 
@@ -203,7 +203,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 	m_pGame->PutAlignedString(sX, sX + szX, sY + 60, DRAW_DIALOGBOX_CITYHALL_MENU46, 255, 255, 255);
 
 	// Hero's Cape (EK 300)
-	if (m_pGame->m_iEnemyKillCount >= 300)
+	if (m_pGame->m_pPlayer->m_iEnemyKillCount >= 300)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 110))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU47, 255, 255, 255);
@@ -214,7 +214,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_CITYHALL_MENU47, 65, 65, 65);
 
 	// Hero's Helm (EK 150 - Contrib 20)
-	if ((m_pGame->m_iEnemyKillCount >= 150) && (m_pGame->m_iContribution >= 20))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 150) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 125) && (msY < sY + 140))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU48, 255, 255, 255);
@@ -225,7 +225,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU48, 65, 65, 65);
 
 	// Hero's Cap (EK 100 - Contrib 20)
-	if ((m_pGame->m_iEnemyKillCount >= 100) && (m_pGame->m_iContribution >= 20))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 155) && (msY < sY + 170))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU49, 255, 255, 255);
@@ -236,7 +236,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 155, DRAW_DIALOGBOX_CITYHALL_MENU49, 65, 65, 65);
 
 	// Hero's Armor (EK 300 - Contrib 30)
-	if ((m_pGame->m_iEnemyKillCount >= 300) && (m_pGame->m_iContribution >= 30))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 300) && (m_pGame->m_pPlayer->m_iContribution >= 30))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 185) && (msY < sY + 200))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_CITYHALL_MENU50, 255, 255, 255);
@@ -247,7 +247,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_CITYHALL_MENU50, 65, 65, 65);
 
 	// Hero's Robe (EK 200 - Contrib 20)
-	if ((m_pGame->m_iEnemyKillCount >= 200) && (m_pGame->m_iContribution >= 20))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 200) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 215) && (msY < sY + 230))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU51, 255, 255, 255);
@@ -258,7 +258,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_CITYHALL_MENU51, 65, 65, 65);
 
 	// Hero's Hauberk (EK 100 - Contrib 10)
-	if ((m_pGame->m_iEnemyKillCount >= 100) && (m_pGame->m_iContribution >= 10))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 10))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 245) && (msY < sY + 260))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_CITYHALL_MENU52, 255, 255, 255);
@@ -269,7 +269,7 @@ void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, 
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_CITYHALL_MENU52, 65, 65, 65);
 
 	// Hero's Leggings (EK 150 - Contrib 15)
-	if ((m_pGame->m_iEnemyKillCount >= 150) && (m_pGame->m_iContribution >= 15))
+	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 150) && (m_pGame->m_pPlayer->m_iContribution >= 15))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 275) && (msY < sY + 290))
 			m_pGame->PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_CITYHALL_MENU53, 255, 255, 255);
@@ -298,7 +298,7 @@ void DialogBox_CityHallMenu::DrawMode8_CancelQuest(short sX, short sY, short szX
 
 void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short szX, short msX, short msY)
 {
-	if (m_pGame->m_bHunter)
+	if (m_pGame->m_pPlayer->m_bHunter)
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 53, DRAW_DIALOGBOX_CITYHALL_MENU57, 200, 200, 25);
 	else
 		m_pGame->PutAlignedString(sX, sX + szX, sY + 53, DRAW_DIALOGBOX_CITYHALL_MENU58, 200, 200, 25);
@@ -404,7 +404,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	// Citizenship request
 	if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
 	{
-		if (m_pGame->m_bCitizen == true) return false;
+		if (m_pGame->m_pPlayer->m_bCitizen == true) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 1;
 		m_pGame->PlaySound('E', 14, 5);
 		return true;
@@ -413,7 +413,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	// Reward gold
 	if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
 	{
-		if (m_pGame->m_iRewardGold <= 0) return false;
+		if (m_pGame->m_pPlayer->m_iRewardGold <= 0) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 5;
 		m_pGame->PlaySound('E', 14, 5);
 		return true;
@@ -422,7 +422,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	// Hero items
 	if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
 	{
-		if (m_pGame->m_iEnemyKillCount < 100) return false;
+		if (m_pGame->m_pPlayer->m_iEnemyKillCount < 100) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
 		m_pGame->PlaySound('E', 14, 5);
 		return true;
@@ -441,9 +441,9 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
 	{
 		if (m_pGame->m_bIsCrusadeMode) return false;
-		if (m_pGame->m_iPKCount != 0) return false;
-		if (m_pGame->m_bCitizen == false) return false;
-		if ((m_pGame->m_iLevel > 100) && (m_pGame->m_bHunter == false)) return false;
+		if (m_pGame->m_pPlayer->m_iPKCount != 0) return false;
+		if (m_pGame->m_pPlayer->m_bCitizen == false) return false;
+		if ((m_pGame->m_pPlayer->m_iLevel > 100) && (m_pGame->m_pPlayer->m_bHunter == false)) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 9;
 		m_pGame->PlaySound('E', 14, 5);
 		return true;
@@ -534,7 +534,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Cape
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 95) && (msY <= sY + 110))
 	{
-		if (m_pGame->m_bAresden == true) iReqHeroItemID = 400;
+		if (m_pGame->m_pPlayer->m_bAresden == true) iReqHeroItemID = 400;
 		else iReqHeroItemID = 401;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU47, strlen(DRAW_DIALOGBOX_CITYHALL_MENU47));
@@ -547,10 +547,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Helm
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 125) && (msY <= sY + 140))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 403;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 404;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 405;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 406;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 403;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 404;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 405;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 406;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU48, strlen(DRAW_DIALOGBOX_CITYHALL_MENU48));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
@@ -562,10 +562,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Cap
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 155) && (msY <= sY + 170))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 407;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 408;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 409;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 410;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 407;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 408;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 409;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 410;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU49, strlen(DRAW_DIALOGBOX_CITYHALL_MENU49));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
@@ -577,10 +577,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Armor
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 185) && (msY <= sY + 200))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 411;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 412;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 413;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 414;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 411;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 412;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 413;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 414;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU50, strlen(DRAW_DIALOGBOX_CITYHALL_MENU50));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
@@ -592,10 +592,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Robe
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 215) && (msY <= sY + 230))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 415;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 416;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 417;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 418;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 415;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 416;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 417;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 418;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU51, strlen(DRAW_DIALOGBOX_CITYHALL_MENU51));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
@@ -607,10 +607,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Hauberk
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 245) && (msY <= sY + 260))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 419;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 420;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 421;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 422;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 419;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 420;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 421;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 422;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU52, strlen(DRAW_DIALOGBOX_CITYHALL_MENU52));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
@@ -622,10 +622,10 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 	// Hero's Leggings
 	if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 275) && (msY <= sY + 290))
 	{
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 423;
-		if ((m_pGame->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 424;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 425;
-		if ((m_pGame->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 426;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 423;
+		if ((m_pGame->m_pPlayer->m_bAresden == true) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 424;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 1)) iReqHeroItemID = 425;
+		if ((m_pGame->m_pPlayer->m_bAresden == false) && (m_pGame->m_pCharList[m_pGame->m_cCurFocus - 1]->m_sSex == 2)) iReqHeroItemID = 426;
 		std::memset(m_pGame->m_cTakeHeroItemName, 0, sizeof(m_pGame->m_cTakeHeroItemName));
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU53, strlen(DRAW_DIALOGBOX_CITYHALL_MENU53));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;

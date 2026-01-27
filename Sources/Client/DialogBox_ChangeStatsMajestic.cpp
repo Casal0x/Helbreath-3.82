@@ -41,11 +41,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Strength
 	PutString(sX + 24, sY + 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iStr);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iStr);
 	PutString(sX + 109, sY + 125, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iStr + m_pGame->m_cLU_Str;
+	iStats = m_pGame->m_pPlayer->m_iStr + m_pGame->m_pPlayer->m_wLU_Str;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iStr)
+	if (iStats < m_pGame->m_pPlayer->m_iStr)
 	{
 		PutString(sX + 162, sY + 125, cTxt, RGB(255, 0, 0));
 	}
@@ -58,11 +58,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Vitality
 	PutString(sX + 24, sY + 144, DRAW_DIALOGBOX_LEVELUP_SETTING5, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iVit);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iVit);
 	PutString(sX + 109, sY + 144, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iVit + m_pGame->m_cLU_Vit;
+	iStats = m_pGame->m_pPlayer->m_iVit + m_pGame->m_pPlayer->m_wLU_Vit;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iVit)
+	if (iStats < m_pGame->m_pPlayer->m_iVit)
 	{
 		PutString(sX + 162, sY + 144, cTxt, RGB(255, 0, 0));
 	}
@@ -75,11 +75,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Dexterity
 	PutString(sX + 24, sY + 163, DRAW_DIALOGBOX_LEVELUP_SETTING6, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iDex);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iDex);
 	PutString(sX + 109, sY + 163, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iDex + m_pGame->m_cLU_Dex;
+	iStats = m_pGame->m_pPlayer->m_iDex + m_pGame->m_pPlayer->m_wLU_Dex;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iDex)
+	if (iStats < m_pGame->m_pPlayer->m_iDex)
 	{
 		PutString(sX + 162, sY + 163, cTxt, RGB(255, 0, 0));
 	}
@@ -92,11 +92,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Intelligence
 	PutString(sX + 24, sY + 182, DRAW_DIALOGBOX_LEVELUP_SETTING7, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iInt);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iInt);
 	PutString(sX + 109, sY + 182, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iInt + m_pGame->m_cLU_Int;
+	iStats = m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_wLU_Int;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iInt)
+	if (iStats < m_pGame->m_pPlayer->m_iInt)
 	{
 		PutString(sX + 162, sY + 182, cTxt, RGB(255, 0, 0));
 	}
@@ -109,11 +109,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Magic
 	PutString(sX + 24, sY + 201, DRAW_DIALOGBOX_LEVELUP_SETTING8, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iMag);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iMag);
 	PutString(sX + 109, sY + 201, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iMag + m_pGame->m_cLU_Mag;
+	iStats = m_pGame->m_pPlayer->m_iMag + m_pGame->m_pPlayer->m_wLU_Mag;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iMag)
+	if (iStats < m_pGame->m_pPlayer->m_iMag)
 	{
 		PutString(sX + 162, sY + 201, cTxt, RGB(255, 0, 0));
 	}
@@ -126,11 +126,11 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Charisma
 	PutString(sX + 24, sY + 220, DRAW_DIALOGBOX_LEVELUP_SETTING9, RGB(5, 5, 5));
-	wsprintf(cTxt, "%d", m_pGame->m_iCharisma);
+	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iCharisma);
 	PutString(sX + 109, sY + 220, cTxt, RGB(25, 35, 25));
-	iStats = m_pGame->m_iCharisma + m_pGame->m_cLU_Char;
+	iStats = m_pGame->m_pPlayer->m_iCharisma + m_pGame->m_pPlayer->m_wLU_Char;
 	wsprintf(cTxt, "%d", iStats);
-	if (iStats < m_pGame->m_iCharisma)
+	if (iStats < m_pGame->m_pPlayer->m_iCharisma)
 	{
 		PutString(sX + 162, sY + 220, cTxt, RGB(255, 0, 0));
 	}
@@ -159,128 +159,128 @@ bool DialogBox_ChangeStatsMajestic::OnClick(short msX, short msY)
 
 	if ((m_pGame->cStateChange1 != 0) || (m_pGame->cStateChange2 != 0) || (m_pGame->cStateChange3 != 0)) {
 		// Strength UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_cLU_Str < 0))
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_pPlayer->m_wLU_Str < 0))
 		{
 			if (m_pGame->cStateChange1 == DEF_STR)
 			{
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Str += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_STR)
 			{
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Str += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_STR)
 			{
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Str += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Str += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Vitality UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_cLU_Vit < 0)) {
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_pPlayer->m_wLU_Vit < 0)) {
 			if (m_pGame->cStateChange1 == DEF_VIT)
 			{
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Vit += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_VIT)
 			{
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Vit += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_VIT)
 			{
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Vit += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Vit += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Dexterity UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_cLU_Dex < 0)) {
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_pPlayer->m_wLU_Dex < 0)) {
 			if (m_pGame->cStateChange1 == DEF_DEX) {
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Dex += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_DEX) {
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Dex += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_DEX) {
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Dex += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Dex += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Intelligence UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_cLU_Int < 0)) {
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_pPlayer->m_wLU_Int < 0)) {
 			if (m_pGame->cStateChange1 == DEF_INT) {
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Int += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_INT) {
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Int += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_INT) {
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Int += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Int += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Magic UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_cLU_Mag < 0)) {
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_pPlayer->m_wLU_Mag < 0)) {
 			if (m_pGame->cStateChange1 == DEF_MAG) {
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Mag += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_MAG) {
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Mag += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_MAG) {
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Mag += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Mag += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Charisma UP
-		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_cLU_Char < 0)) {
+		if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_pPlayer->m_wLU_Char < 0)) {
 			if (m_pGame->cStateChange1 == DEF_CHR) {
 				m_pGame->cStateChange1 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Char += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange2 == DEF_CHR) {
 				m_pGame->cStateChange2 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Char += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			else if (m_pGame->cStateChange3 == DEF_CHR) {
 				m_pGame->cStateChange3 = 0;
-				m_pGame->m_cLU_Char += 1;
-				m_pGame->m_iLU_Point -= 1;
+				m_pGame->m_pPlayer->m_wLU_Char += 1;
+				m_pGame->m_pPlayer->m_iLU_Point -= 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
@@ -289,129 +289,129 @@ bool DialogBox_ChangeStatsMajestic::OnClick(short msX, short msY)
 	if ((m_pGame->cStateChange1 == 0) || (m_pGame->cStateChange2 == 0) || (m_pGame->cStateChange3 == 0) && (m_pGame->m_iGizonItemUpgradeLeft > 0))
 	{
 		// Strength DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_iStr > 10))
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133) && (m_pGame->m_pPlayer->m_iStr > 10))
 		{
 			if (m_pGame->cStateChange1 == 0)
 			{
 				m_pGame->cStateChange1 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Str -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0)
 			{
 				m_pGame->cStateChange2 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Str -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else
 			{
 				m_pGame->cStateChange3 = DEF_STR;
-				m_pGame->m_cLU_Str -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Str -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Vitality DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_iVit > 10)) {
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152) && (m_pGame->m_pPlayer->m_iVit > 10)) {
 			if (m_pGame->cStateChange1 == 0) {
 				m_pGame->cStateChange1 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Vit -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0) {
 				m_pGame->cStateChange2 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Vit -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else {
 				m_pGame->cStateChange3 = DEF_VIT;
-				m_pGame->m_cLU_Vit -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Vit -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Dexterity DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_iDex > 10)) {
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171) && (m_pGame->m_pPlayer->m_iDex > 10)) {
 			if (m_pGame->cStateChange1 == 0) {
 				m_pGame->cStateChange1 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Dex -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0) {
 				m_pGame->cStateChange2 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Dex -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else {
 				m_pGame->cStateChange3 = DEF_DEX;
-				m_pGame->m_cLU_Dex -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Dex -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Intelligence DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_iInt > 10))
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190) && (m_pGame->m_pPlayer->m_iInt > 10))
 		{
 			if (m_pGame->cStateChange1 == 0)
 			{
 				m_pGame->cStateChange1 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Int -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0)
 			{
 				m_pGame->cStateChange2 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Int -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else
 			{
 				m_pGame->cStateChange3 = DEF_INT;
-				m_pGame->m_cLU_Int -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Int -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Magic DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_iMag > 10)) {
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209) && (m_pGame->m_pPlayer->m_iMag > 10)) {
 			if (m_pGame->cStateChange1 == 0) {
 				m_pGame->cStateChange1 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Mag -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0) {
 				m_pGame->cStateChange2 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Mag -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else {
 				m_pGame->cStateChange3 = DEF_MAG;
-				m_pGame->m_cLU_Mag -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Mag -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}
 
 		// Charisma DOWN
-		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_iCharisma > 10)) {
+		if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228) && (m_pGame->m_pPlayer->m_iCharisma > 10)) {
 			if (m_pGame->cStateChange1 == 0) {
 				m_pGame->cStateChange1 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Char -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else if (m_pGame->cStateChange2 == 0) {
 				m_pGame->cStateChange2 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Char -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			else {
 				m_pGame->cStateChange3 = DEF_CHR;
-				m_pGame->m_cLU_Char -= 1;
-				m_pGame->m_iLU_Point += 1;
+				m_pGame->m_pPlayer->m_wLU_Char -= 1;
+				m_pGame->m_pPlayer->m_iLU_Point += 1;
 			}
 			PlaySoundEffect('E', 14, 5);
 		}

@@ -28,8 +28,8 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::FIREBALL_EXPLOSION:	// Fire Explosion
 				if (m_pEffectList[i]->m_cFrame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					iDvalue = (m_pEffectList[i]->m_cFrame - 7) * (-1);
 					if (m_pEffectList[i]->m_cFrame < 6)
 						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
@@ -41,8 +41,8 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::LIGHTNING_ARROW_EXPLOSION: // Lightning Arrow
 				if (m_pEffectList[i]->m_cFrame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					iDvalue = (m_pEffectList[i]->m_cFrame - 9) * (-1);
 					if (m_pEffectList[i]->m_cFrame < 8)
 						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
@@ -52,8 +52,8 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::MAGIC_MISSILE_EXPLOSION: // Magic Missile Explosion
 				if (m_pEffectList[i]->m_cFrame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					iDvalue = (m_pEffectList[i]->m_cFrame - 2) * (-1);
 					if (m_pEffectList[i]->m_cFrame < 2)
 						(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
@@ -70,16 +70,16 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::FIRE_STRIKE_FLYING:
 			case EffectType::LIGHTNING_ARROW_FLYING: // Lightning arrow
 				// Light on ground below the flying effect
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				iDvalue = -5;
 				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
 				break;
 
 			case EffectType::LIGHT_EFFECT_1:
 			case EffectType::LIGHT_EFFECT_2:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[0]->Draw(dX, dY + 30, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 
@@ -90,8 +90,8 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::MASS_CHILL_WIND:
 				if (m_pEffectList[i]->m_cFrame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					iDvalue = (m_pEffectList[i]->m_cFrame - 7) * (-1);
 					if (m_pEffectList[i]->m_cFrame < 6)
 						(*m_pEffectSpr)[0]->Draw(dX, dY, 1, SpriteLib::DrawParams::Alpha(0.5f));
@@ -102,76 +102,76 @@ void EffectManager::DrawEffectLightsImpl()
 			case EffectType::PROTECTION_RING: // Protection Ring
 				if (m_pEffectList[i]->m_cFrame >= 0)
 				{
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					(*m_pEffectSpr)[24]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				}
 				break;
 
 			case EffectType::BUFF_EFFECT_LIGHT:
 				if (m_pEffectList[i]->m_cFrame >= 0) {
-					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+					dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+					dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 					(*m_pEffectSpr)[30]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				}
 				break;
 
 			case EffectType::AURA_EFFECT_1:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[74]->Draw(dX, dY - 34, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
 
 			case EffectType::AURA_EFFECT_2:
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[75]->Draw(dX, dY + 35, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_1: // Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[76]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_2:// Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[77]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				break;
 
 			case EffectType::ICE_GOLEM_EFFECT_3:// Icegolem
-				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[78]->Draw(dX + m_pEffectList[i]->m_dX * m_pEffectList[i]->m_cFrame, dY + m_pEffectList[i]->m_dY * m_pEffectList[i]->m_cFrame, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				break;
 
 			case EffectType::BERSERK: // Berserk : Cirlcle 6 magic
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[58]->Draw(dX, dY, m_pEffectList[i]->m_cFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 
 			case EffectType::ILLUSION: // Ilusion
 			case EffectType::MASS_ILLUSION: // Mass Illusion
 				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[59]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 
 			case EffectType::ILLUSION_MOVEMENT: // Illusion mvt
 			case EffectType::MASS_ILLUSION_MOVEMENT: // Mass Illusion mvt
 				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[102]->Draw(dX, dY + 30, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 
 			case EffectType::INHIBITION_CASTING: // Inhibition casting
 				cTempFrame = m_pEffectList[i]->m_cFrame;
-				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_sViewPointX;
-				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_sViewPointY;
+				dX = (m_pEffectList[i]->m_dX * 32) - m_pGame->m_Camera.GetX();
+				dY = (m_pEffectList[i]->m_dY * 32) - m_pGame->m_Camera.GetY();
 				(*m_pEffectSpr)[95]->Draw(dX, dY + 40, cTempFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
 				break;
 			}

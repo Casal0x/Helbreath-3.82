@@ -51,7 +51,7 @@ void HandleRewardGold(CGame* pGame, char* pData)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRewardGold>(
 		pData, sizeof(hb::net::PacketNotifyRewardGold));
 	if (!pkt) return;
-	pGame->m_iRewardGold = pkt->gold;
+	pGame->m_pPlayer->m_iRewardGold = pkt->gold;
 }
 
 void HandleServerShutdown(CGame* pGame, char* pData)

@@ -86,7 +86,7 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
@@ -105,7 +105,7 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -130,7 +130,7 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1], cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -297,8 +297,8 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 
 	case 1: // On other player
 		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
+			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
+			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 4) && (absY <= 4))
 				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
@@ -306,8 +306,8 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 			return true;
 		}
 		else if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
+			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
+			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 4) && (absY <= 4))
 				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY8, 10);
@@ -333,8 +333,8 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 
 	case 3: // Put item in the WH
 		if ((msX > sX + 25) && (msX < sX + 105) && (msY > sY + 55) && (msY < sY + 70)) {
-			absX = abs(Info().sV5 - m_pGame->m_sPlayerX);
-			absY = abs(Info().sV6 - m_pGame->m_sPlayerY);
+			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
+			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 8) && (absY <= 8)) {
 				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
 					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);

@@ -37,9 +37,9 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyAngelicStats>(
 			pData, sizeof(hb::net::PacketNotifyAngelicStats));
 		if (!pkt) return;
-		pGame->m_iAngelicStr = pkt->str;
-		pGame->m_iAngelicInt = pkt->intel;
-		pGame->m_iAngelicDex = pkt->dex;
-		pGame->m_iAngelicMag = pkt->mag;
+		pGame->m_pPlayer->m_iAngelicStr = pkt->str;
+		pGame->m_pPlayer->m_iAngelicInt = pkt->intel;
+		pGame->m_pPlayer->m_iAngelicDex = pkt->dex;
+		pGame->m_pPlayer->m_iAngelicMag = pkt->mag;
 	}
 } // namespace NetworkMessageHandlers

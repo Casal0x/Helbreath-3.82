@@ -25,18 +25,18 @@ namespace NetworkMessageHandlers {
 			if (iV1 != 0) // begin crusade
 			{
 				pGame->m_bIsCrusadeMode = true;
-				pGame->m_iCrusadeDuty = iV2;
-				if ((pGame->m_iCrusadeDuty != 3) && (pGame->m_bCitizen == true))
+				pGame->m_pPlayer->m_iCrusadeDuty = iV2;
+				if ((pGame->m_pPlayer->m_iCrusadeDuty != 3) && (pGame->m_pPlayer->m_bCitizen == true))
 					pGame->_RequestMapStatus("middleland", 3);
-				if (pGame->m_iCrusadeDuty != 0)
+				if (pGame->m_pPlayer->m_iCrusadeDuty != 0)
 					pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
 				else pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
 				
-				if (pGame->m_bCitizen == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH, 0, 0);
-				else if (pGame->m_bAresden == true) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 801, 0, 0);
-				else if (pGame->m_bAresden == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
+				if (pGame->m_pPlayer->m_bCitizen == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH, 0, 0);
+				else if (pGame->m_pPlayer->m_bAresden == true) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 801, 0, 0);
+				else if (pGame->m_pPlayer->m_bAresden == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
 				
-				if (pGame->m_bCitizen == false) pGame->SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
+				if (pGame->m_pPlayer->m_bCitizen == false) pGame->SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
 				else pGame->SetTopMsg(pGame->m_pGameMsgList[9]->m_pMsg, 10);
 				pGame->PlaySound('E', 25, 0, 0);
 			}
@@ -54,15 +54,15 @@ namespace NetworkMessageHandlers {
 			if (iV1 == 0) // crusade finished show result (1st result: winner)
 			{
 				pGame->m_bIsCrusadeMode = false;
-				pGame->m_iCrusadeDuty = 0;
+				pGame->m_pPlayer->m_iCrusadeDuty = 0;
 				pGame->CrusadeWarResult(iV4);
 				pGame->SetTopMsg(pGame->m_pGameMsgList[57]->m_pMsg, 8);
 			}
 			else
 			{
-				if (pGame->m_iCrusadeDuty != iV2)
+				if (pGame->m_pPlayer->m_iCrusadeDuty != iV2)
 				{
-					pGame->m_iCrusadeDuty = iV2;
+					pGame->m_pPlayer->m_iCrusadeDuty = iV2;
 					pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
 					pGame->PlaySound('E', 25, 0, 0);
 				}
@@ -113,7 +113,7 @@ namespace NetworkMessageHandlers {
 		int i;
 		pGame->SetTopMsg(pGame->m_pGameMsgList[17]->m_pMsg, 5);
 		for (i = 0; i < 36; i++)
-			pGame->m_pEffectManager->AddEffect(EffectType::METEOR_FLYING, pGame->m_sViewPointX + (rand() % LOGICAL_MAX_X), pGame->m_sViewPointY + (rand() % LOGICAL_MAX_Y), 0, 0, -(rand() % 80));
+			pGame->m_pEffectManager->AddEffect(EffectType::METEOR_FLYING, pGame->m_Camera.GetX() + (rand() % LOGICAL_MAX_X), pGame->m_Camera.GetY() + (rand() % LOGICAL_MAX_Y), 0, 0, -(rand() % 80));
 	}
 
 	void HandleCannotConstruct(CGame* pGame, char* pData)
@@ -136,8 +136,8 @@ namespace NetworkMessageHandlers {
 		pGame->m_iTeleportLocY = pkt->dest_y;
 		std::memset(pGame->m_cTeleportMapName, 0, sizeof(pGame->m_cTeleportMapName));
 		memcpy(pGame->m_cTeleportMapName, pkt->teleport_map, sizeof(pkt->teleport_map));
-		pGame->m_iConstructLocX = pkt->construct_x;
-		pGame->m_iConstructLocY = pkt->construct_y;
+		pGame->m_pPlayer->m_iConstructLocX = pkt->construct_x;
+		pGame->m_pPlayer->m_iConstructLocY = pkt->construct_y;
 		std::memset(pGame->m_cConstructMapName, 0, sizeof(pGame->m_cConstructMapName));
 		memcpy(pGame->m_cConstructMapName, pkt->construct_map, sizeof(pkt->construct_map));
 	}
@@ -153,43 +153,43 @@ namespace NetworkMessageHandlers {
 		sV3 = static_cast<short>(pkt->notify_type);
 
 		if (sV3 == 0) {
-			if ((sV1 > pGame->m_iConstructionPoint) && (sV2 > pGame->m_iWarContribution)) {
-				wsprintf(pGame->G_cTxt, "%s +%d, %s +%d", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_iWarContribution));
+			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
+				wsprintf(pGame->G_cTxt, "%s +%d, %s +%d", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
 				pGame->PlaySound('E', 23, 0, 0);
 			}
 
-			if ((sV1 > pGame->m_iConstructionPoint) && (sV2 == pGame->m_iWarContribution)) {
-				if (pGame->m_iCrusadeDuty == 3) {
-					wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_iConstructionPoint);
+			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 == pGame->m_pPlayer->m_iWarContribution)) {
+				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
+					wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
 					pGame->SetTopMsg(pGame->G_cTxt, 5);
 					pGame->PlaySound('E', 23, 0, 0);
 				}
 			}
 
-			if ((sV1 == pGame->m_iConstructionPoint) && (sV2 > pGame->m_iWarContribution)) {
-				wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_iWarContribution);
+			if ((sV1 == pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
+				wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
 				pGame->PlaySound('E', 23, 0, 0);
 			}
 
-			if (sV1 < pGame->m_iConstructionPoint) {
-				if (pGame->m_iCrusadeDuty == 3) {
-					wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_iConstructionPoint - sV1);
+			if (sV1 < pGame->m_pPlayer->m_iConstructionPoint) {
+				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
+					wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
 					pGame->SetTopMsg(pGame->G_cTxt, 5);
 					pGame->PlaySound('E', 25, 0, 0);
 				}
 			}
 
-			if (sV2 < pGame->m_iWarContribution) {
-				wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_iWarContribution - sV2);
+			if (sV2 < pGame->m_pPlayer->m_iWarContribution) {
+				wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
 				pGame->PlaySound('E', 24, 0, 0);
 			}
 		}
 
-		pGame->m_iConstructionPoint = sV1;
-		pGame->m_iWarContribution = sV2;
+		pGame->m_pPlayer->m_iConstructionPoint = sV1;
+		pGame->m_pPlayer->m_iWarContribution = sV2;
 	}
 
 	void HandleNoMoreCrusadeStructure(CGame* pGame, char* pData)
@@ -214,26 +214,26 @@ namespace NetworkMessageHandlers {
 		if (sV2 == sV3)
 		{
 			pGame->PlaySound('E', 24, 0);
-			if (strcmp(cTxt, pGame->m_cPlayerName) == 0)
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
 			{
 				pGame->AddEventList(NOTIFY_MSG_HANDLER33, 10); // "You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
-				pGame->m_iContribution += sV1; // fixed, server must match...
+				pGame->m_pPlayer->m_iContribution += sV1; // fixed, server must match...
 				pGame->m_iContributionPrice = 0;
-				if (pGame->m_iContribution < 0) pGame->m_iContribution = 0;
+				if (pGame->m_pPlayer->m_iContribution < 0) pGame->m_pPlayer->m_iContribution = 0;
 			}
 			else {
 				std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
-				if (pGame->m_bAresden == true) wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER34, cTxt); // "%s(Aresden) pushed energy sphere to enemy's portal!!..."
-				else if (pGame->m_bAresden == false) wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER34_ELV, cTxt); // "%s(Elvine) pushed energy sphere to enemy's portal!!..."
+				if (pGame->m_pPlayer->m_bAresden == true) wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER34, cTxt); // "%s(Aresden) pushed energy sphere to enemy's portal!!..."
+				else if (pGame->m_pPlayer->m_bAresden == false) wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER34_ELV, cTxt); // "%s(Elvine) pushed energy sphere to enemy's portal!!..."
 				pGame->AddEventList(pGame->G_cTxt, 10);
 			}
 		}
 		else
 		{
 			pGame->PlaySound('E', 23, 0);
-			if (strcmp(cTxt, pGame->m_cPlayerName) == 0)
+			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
 			{
-				switch (pGame->m_sPlayerType) {
+				switch (pGame->m_pPlayer->m_sPlayerType) {
 				case 1:
 				case 2:
 				case 3:
@@ -246,8 +246,8 @@ namespace NetworkMessageHandlers {
 					break;
 				}
 				pGame->AddEventList(NOTIFY_MSG_HANDLER35, 10); // "Congulaturations! You brought energy sphere to energy portal and earned experience and prize gold!"
-				pGame->m_iContribution += 5;
-				if (pGame->m_iContribution < 0) pGame->m_iContribution = 0;
+				pGame->m_pPlayer->m_iContribution += 5;
+				if (pGame->m_pPlayer->m_iContribution < 0) pGame->m_pPlayer->m_iContribution = 0;
 			}
 			else
 			{

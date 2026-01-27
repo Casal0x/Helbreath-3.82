@@ -377,3 +377,12 @@ FodyWeavers.xsd
 
 # Claude AI - auto-generated files
 tmpclaude*cwd
+/Sources/Client/nul
+/nul
+/Binaries/Server/GameLogs/ItemLog-2026-1-27.txt
+/Debug-DDraw/Game.exe
+/Debug-SFML/Game.exe
+/Sources/Client/Debug-DDraw/Game.tlog/link.read.1.tlog
+/Sources/Client/Debug-DDraw/Game.tlog/link.write.1.tlog
+/Sources/Client/Debug-DDraw/Game.tlog/rc.read.1.tlog
+/Sources/Client/Debug-DDraw/Game.tlog/rc.write.1.tlog

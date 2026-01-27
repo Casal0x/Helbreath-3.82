@@ -56,7 +56,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyMagicStudySuccess));
 		if (!pkt) return;
 		cMagicNum = static_cast<char>(pkt->magic_id);
-		pGame->m_cMagicMastery[cMagicNum] = 1;
+		pGame->m_pPlayer->m_iMagicMastery[cMagicNum] = 1;
 	  // Magic learned - affects magic list
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->magic_name, 30);
@@ -78,7 +78,7 @@ namespace NetworkMessageHandlers {
 		wsprintf(cTemp, NOTIFYMSG_SKILL_TRAIN_SUCCESS1, pGame->m_pSkillCfgList[cSkillNum]->m_cName, cSkillLevel);
 		pGame->AddEventList(cTemp, 10);
 		pGame->m_pSkillCfgList[cSkillNum]->m_iLevel = cSkillLevel;
-		pGame->m_cSkillMastery[cSkillNum] = (unsigned char)cSkillLevel;
+		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = (unsigned char)cSkillLevel;
 		pGame->PlaySound('E', 23, 0);
 	}
 
@@ -93,7 +93,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sSkillIndex = static_cast<short>(pkt->skill_index);
 		sValue = static_cast<short>(pkt->skill_value);
-		pGame->_RemoveChatMsgListByObjectID(pGame->m_sPlayerObjectID);
+		pGame->_RemoveChatMsgListByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel < sValue)
 		{
 			wsprintf(cTxt, NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
@@ -104,12 +104,12 @@ namespace NetworkMessageHandlers {
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
 					wsprintf(cTxt, "%s +%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-					pGame->m_pChatMsgList[i] = new class CMsg(20, cTxt, pGame->m_dwCurTime);
-					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_sPlayerObjectID;
-					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_sPlayerObjectID, -10, -10, i) == false)
+					pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(20, cTxt, pGame->m_dwCurTime);
+					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
+					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false)
 					{
-						delete pGame->m_pChatMsgList[i];
-						pGame->m_pChatMsgList[i] = 0;
+						pGame->m_pChatMsgList[i].reset();
+						pGame->m_pChatMsgList[i].reset();
 					}
 					break;
 				}
@@ -123,18 +123,18 @@ namespace NetworkMessageHandlers {
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
 					wsprintf(cTxt, "%s -%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-					pGame->m_pChatMsgList[i] = new class CMsg(20, cTxt, pGame->m_dwCurTime);
-					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_sPlayerObjectID;
-					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_sPlayerObjectID, -10, -10, i) == false)
+					pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(20, cTxt, pGame->m_dwCurTime);
+					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
+					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false)
 					{
-						delete pGame->m_pChatMsgList[i];
-						pGame->m_pChatMsgList[i] = 0;
+						pGame->m_pChatMsgList[i].reset();
+						pGame->m_pChatMsgList[i].reset();
 					}
 					break;
 				}
 		}
 		pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel = sValue;
-		pGame->m_cSkillMastery[sSkillIndex] = (unsigned char)sValue;
+		pGame->m_pPlayer->m_iSkillMastery[sSkillIndex] = (unsigned char)sValue;
 	}
 
 	void HandleSkillUsingEnd(CGame* pGame, char* pData)
@@ -186,11 +186,11 @@ namespace NetworkMessageHandlers {
 		case DEF_MAGICTYPE_HOLDOBJECT:
 			switch (sMagicEffect) {
 			case 1: // "You were bounded by a Hold Person spell! Unable to move!"
-				pGame->m_bParalyze = true;
+				pGame->m_pPlayer->m_bParalyze = true;
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON4, 10);
 				break;
 			case 2: // "You were bounded by a Paralysis spell! Unable to move!"
-				pGame->m_bParalyze = true;
+				pGame->m_pPlayer->m_bParalyze = true;
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON5, 10);
 				break;
 			}
@@ -212,7 +212,7 @@ namespace NetworkMessageHandlers {
 
 			case 2: // Confusion "Confusion magic casted, impossible to determine player allegience."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON8, 10);
-				pGame->m_bIsConfusion = true;
+				pGame->m_pPlayer->m_bIsConfusion = true;
 				break;
 
 			case 3:	// Illusion "Illusion magic casted, impossible to tell who is who!"
@@ -229,7 +229,7 @@ namespace NetworkMessageHandlers {
 
 		case DEF_MAGICTYPE_POISON:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON10, 10);
-			pGame->m_bIsPoisoned = true;
+			pGame->m_pPlayer->m_bIsPoisoned = true;
 			break;
 
 		case DEF_MAGICTYPE_BERSERK:
@@ -284,12 +284,12 @@ namespace NetworkMessageHandlers {
 		case DEF_MAGICTYPE_HOLDOBJECT:
 			switch (sMagicEffect) {
 			case 1:	// "Hold person magic effect has vanished."
-				pGame->m_bParalyze = false;
+				pGame->m_pPlayer->m_bParalyze = false;
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF4, 10);
 				break;
 
 			case 2:	// "Paralysis magic effect has vanished."
-				pGame->m_bParalyze = false;
+				pGame->m_pPlayer->m_bParalyze = false;
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF5, 10);
 				break;
 			}
@@ -310,7 +310,7 @@ namespace NetworkMessageHandlers {
 				break;
 			case 2:	// "Confusion magic has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF8, 10);
-				pGame->m_bIsConfusion = false;
+				pGame->m_pPlayer->m_bIsConfusion = false;
 				break;
 			case 3:	// "Illusion magic has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF9, 10);
@@ -324,8 +324,8 @@ namespace NetworkMessageHandlers {
 			break;
 
 		case DEF_MAGICTYPE_POISON:
-			if (pGame->m_bIsPoisoned) pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
-			pGame->m_bIsPoisoned = false;
+			if (pGame->m_pPlayer->m_bIsPoisoned) pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
+			pGame->m_pPlayer->m_bIsPoisoned = false;
 			break;
 
 		case DEF_MAGICTYPE_BERSERK:
@@ -357,10 +357,10 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifySpellSkill));
 		if (!pkt) return;
 		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
-			pGame->m_cMagicMastery[i] = pkt->magic_mastery[i];
+			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
 		}
 		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
-			pGame->m_cSkillMastery[i] = pkt->skill_mastery[i];
+			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
 			if (pGame->m_pSkillCfgList[i] != 0)
 				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
 		}
@@ -373,36 +373,36 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyStateChangeSuccess));
 		if (!pkt) return;
 		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
-			pGame->m_cMagicMastery[i] = pkt->magic_mastery[i];
+			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
 		}
 		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
-			pGame->m_cSkillMastery[i] = pkt->skill_mastery[i];
+			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
 			if (pGame->m_pSkillCfgList[i] != 0)
 				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
 		}
-		pGame->m_iStr += pGame->m_cLU_Str;
-		pGame->m_iVit += pGame->m_cLU_Vit;
-		pGame->m_iDex += pGame->m_cLU_Dex;
-		pGame->m_iInt += pGame->m_cLU_Int;
-		pGame->m_iMag += pGame->m_cLU_Mag;
-		pGame->m_iCharisma += pGame->m_cLU_Char;
-		pGame->m_iLU_Point = pGame->m_iLevel * 3 - ((pGame->m_iStr + pGame->m_iVit + pGame->m_iDex + pGame->m_iInt + pGame->m_iMag + pGame->m_iCharisma) - 70) - 3;
-		pGame->m_cLU_Str = pGame->m_cLU_Vit = pGame->m_cLU_Dex = pGame->m_cLU_Int = pGame->m_cLU_Mag = pGame->m_cLU_Char = 0;
+		pGame->m_pPlayer->m_iStr += pGame->m_pPlayer->m_wLU_Str;
+		pGame->m_pPlayer->m_iVit += pGame->m_pPlayer->m_wLU_Vit;
+		pGame->m_pPlayer->m_iDex += pGame->m_pPlayer->m_wLU_Dex;
+		pGame->m_pPlayer->m_iInt += pGame->m_pPlayer->m_wLU_Int;
+		pGame->m_pPlayer->m_iMag += pGame->m_pPlayer->m_wLU_Mag;
+		pGame->m_pPlayer->m_iCharisma += pGame->m_pPlayer->m_wLU_Char;
+		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
 		pGame->AddEventList("Your stat has been changed.", 10);
 	}
 
 	void HandleStateChangeFailed(CGame* pGame, char* pData)
 	{
-		pGame->m_cLU_Str = pGame->m_cLU_Vit = pGame->m_cLU_Dex = pGame->m_cLU_Int = pGame->m_cLU_Mag = pGame->m_cLU_Char = 0;
-		pGame->m_iLU_Point = pGame->m_iLevel * 3 - ((pGame->m_iStr + pGame->m_iVit + pGame->m_iDex + pGame->m_iInt + pGame->m_iMag + pGame->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
+		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
 		pGame->AddEventList("Your stat has not been changed.", 10);
 	}
 
 	void HandleSettingFailed(CGame* pGame, char* pData)
 	{
 		pGame->AddEventList("Your stat has not been changed.", 10);
-		pGame->m_cLU_Str = pGame->m_cLU_Vit = pGame->m_cLU_Dex = pGame->m_cLU_Int = pGame->m_cLU_Mag = pGame->m_cLU_Char = 0;
-		pGame->m_iLU_Point = pGame->m_iLevel * 3 - ((pGame->m_iStr + pGame->m_iVit + pGame->m_iDex + pGame->m_iInt + pGame->m_iMag + pGame->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
+		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
 	}
 
 	void HandleSpecialAbilityStatus(CGame* pGame, char* pData)
@@ -439,7 +439,7 @@ namespace NetworkMessageHandlers {
 		}
 		else if (sV1 == 2) // Finished using
 		{
-			if (pGame->m_iSpecialAbilityType != (int)sV2)
+			if (pGame->m_pPlayer->m_iSpecialAbilityType != (int)sV2)
 			{
 				pGame->PlaySound('E', 34, 0);
 				pGame->AddEventList(NOTIFY_MSG_HANDLER13, 10);
@@ -470,22 +470,22 @@ namespace NetworkMessageHandlers {
 					}
 				}
 			}
-			pGame->m_iSpecialAbilityType = (int)sV2;
+			pGame->m_pPlayer->m_iSpecialAbilityType = (int)sV2;
 			pGame->m_dwSpecialAbilitySettingTime = pGame->m_dwCurTime;
-			pGame->m_iSpecialAbilityTimeLeftSec = (int)sV3;
+			pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = (int)sV3;
 		}
 		else if (sV1 == 3)  // End of using time
 		{
-			pGame->m_bIsSpecialAbilityEnabled = false;
+			pGame->m_pPlayer->m_bIsSpecialAbilityEnabled = false;
 			pGame->m_dwSpecialAbilitySettingTime = pGame->m_dwCurTime;
 			if (sV3 == 0)
 			{
-				pGame->m_iSpecialAbilityTimeLeftSec = 1200;
+				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = 1200;
 				pGame->AddEventList(NOTIFY_MSG_HANDLER30, 10);
 			}
 			else
 			{
-				pGame->m_iSpecialAbilityTimeLeftSec = (int)sV3;
+				pGame->m_pPlayer->m_iSpecialAbilityTimeLeftSec = (int)sV3;
 				if (sV3 > 90)
 					wsprintf(pGame->G_cTxt, "Special ability has run out! Will be available in %d minutes.", sV3 / 60);
 				else wsprintf(pGame->G_cTxt, "Special ability has run out! Will be available in %d seconds.", sV3);
@@ -495,7 +495,7 @@ namespace NetworkMessageHandlers {
 		else if (sV1 == 4) // Unequiped the SA item
 		{
 			pGame->AddEventList(NOTIFY_MSG_HANDLER31, 10);
-			pGame->m_iSpecialAbilityType = 0;
+			pGame->m_pPlayer->m_iSpecialAbilityType = 0;
 		}
 		else if (sV1 == 5) // Angel
 		{
@@ -505,11 +505,11 @@ namespace NetworkMessageHandlers {
 
 	void HandleSpecialAbilityEnabled(CGame* pGame, char* pData)
 	{
-		if (pGame->m_bIsSpecialAbilityEnabled == false) {
+		if (pGame->m_pPlayer->m_bIsSpecialAbilityEnabled == false) {
 			pGame->PlaySound('E', 30, 5);
 			pGame->AddEventList(NOTIFY_MSG_HANDLER32, 10);
 		}
-		pGame->m_bIsSpecialAbilityEnabled = true;
+		pGame->m_pPlayer->m_bIsSpecialAbilityEnabled = true;
 	}
 
 	void HandleSkillTrainFail(CGame* pGame, char* pData)

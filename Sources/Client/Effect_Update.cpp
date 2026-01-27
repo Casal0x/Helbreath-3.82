@@ -579,7 +579,7 @@ void EffectManager::UpdateEffectsImpl()
 					AddEffectImpl(EffectType::ENERGY_BOLT_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 						m_pEffectList[i]->m_dX + 1, m_pEffectList[i]->m_dY + 1, 0);
 					AddEffectImpl(EffectType::BURST_SMALL, m_pEffectList[i]->m_mX + (rand() % 20) - 10, m_pEffectList[i]->m_mY + (rand() % 20) - 10, 0, 0, -1 * (rand() % 4));
-					lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH;
+					lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH;
 					m_pGame->PlaySound('E', 1, sDist, lPan);
 					AddEffectImpl(EffectType::MAGIC_MISSILE_EXPLOSION, m_pEffectList[i]->m_dX * 32, m_pEffectList[i]->m_dY * 32, 0, 0, 0, 0);
 					delete m_pEffectList[i];
@@ -596,11 +596,11 @@ void EffectManager::UpdateEffectsImpl()
 					{
 						AddEffectImpl(EffectType::LIGHTNING_ARROW_FLYING, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX, m_pEffectList[i]->m_dY, 0);
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX;
 						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH;
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX) * LOGICAL_WIDTH;
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;
@@ -629,11 +629,11 @@ void EffectManager::UpdateEffectsImpl()
 					{
 						AddEffectImpl(EffectType::PROJECTILE_GENERIC, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX * 32 + 50 - (rand() % 100), m_pEffectList[i]->m_dY * 32 + 50 - (rand() % 100), 0);
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX;
 						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;
@@ -687,11 +687,11 @@ void EffectManager::UpdateEffectsImpl()
 					{
 						AddEffectImpl(EffectType::BLOODY_SHOCK_STRIKE, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX * 32 + 30 - (rand() % 60), m_pEffectList[i]->m_dY * 32 + 30 - (rand() % 60), 0);
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX;
 						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;
@@ -728,11 +728,11 @@ void EffectManager::UpdateEffectsImpl()
 					{
 						AddEffectImpl(EffectType::LIGHTNING_BOLT, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX + (rand() % 3) - 1, m_pEffectList[i]->m_dY + (rand() % 3) - 1, 0);
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX;
 						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;
@@ -772,11 +772,11 @@ void EffectManager::UpdateEffectsImpl()
 					{
 						AddEffectImpl(EffectType::BLIZZARD_PROJECTILE, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX * 32 + (rand() % 120) - 60, m_pEffectList[i]->m_dY * 32 + (rand() % 120) - 60, 0);
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX;
 						else sDist = sAbsY;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;
@@ -799,11 +799,11 @@ void EffectManager::UpdateEffectsImpl()
 					}
 					else
 					{
-						sAbsX = abs(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
-						sAbsY = abs(((m_pGame->m_sViewPointY / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
+						sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y) - m_pEffectList[i]->m_dY);
 						if (sAbsX > sAbsY) sDist = sAbsX - 10;
 						else sDist = sAbsY - 10;
-						lPan = -(((m_pGame->m_sViewPointX / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
+						lPan = -(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - m_pEffectList[i]->m_dX);
 						m_pGame->PlaySound('E', 1, sDist, lPan);
 					}
 					break;

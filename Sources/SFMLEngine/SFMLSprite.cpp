@@ -381,6 +381,13 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
         if (!wasSmooth) {
             m_texture.setSmooth(true);
         }
+    } else if (params.blendMode == SpriteLib::BlendMode::Average) {
+        // 50/50 averaging: result = (src + dst) / 2
+        // Achieved with alpha blending at 50% opacity
+        states.blendMode = sf::BlendAlpha;
+        sf::Color color = sprite.getColor();
+        color.a = 127;  // 50% alpha for averaging blend
+        sprite.setColor(color);
     } else {
         states.blendMode = sf::BlendAlpha;
     }

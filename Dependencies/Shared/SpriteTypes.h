@@ -45,7 +45,8 @@ enum class AlphaPreset {
 // Blend modes for sprite rendering
 enum class BlendMode {
     Alpha,      // Standard alpha blending: result = src * alpha + dst * (1-alpha)
-    Additive    // Additive blending: result = src + dst (for light effects)
+    Additive,   // Additive blending: result = src + dst (for light effects)
+    Average     // 50/50 averaging: result = (src + dst) / 2 (original PutTransSprite2)
 };
 
 // Drawing parameters for sprite rendering
@@ -154,6 +155,14 @@ struct DrawParams {
         p.tintB = b;
         p.isColorReplace = true;
         p.blendMode = BlendMode::Additive;
+        return p;
+    }
+
+    // 50/50 averaging blend: result = (src + dst) / 2
+    // Makes sprites semi-transparent by blending equally with background
+    static DrawParams Average() {
+        DrawParams p;
+        p.blendMode = BlendMode::Average;
         return p;
     }
 };

@@ -48,8 +48,8 @@ void HandleQuestReward(CGame* pGame, char* pData)
 	iAmount = pkt->amount;
 	std::memset(cRewardName, 0, sizeof(cRewardName));
 	memcpy(cRewardName, pkt->reward_name, 20);
-	iPreCon = pGame->m_iContribution;
-	pGame->m_iContribution = pkt->contribution;
+	iPreCon = pGame->m_pPlayer->m_iContribution;
+	pGame->m_pPlayer->m_iContribution = pkt->contribution;
 
 	if (sFlag == 1)
 	{
@@ -66,7 +66,7 @@ void HandleQuestReward(CGame* pGame, char* pData)
 		std::memset(pGame->m_stQuest.cTargetName, 0, sizeof(pGame->m_stQuest.cTargetName));
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, sWho + 110, 0);
 		iIndex = pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
-		pGame->m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (memcmp(cRewardName, "ġ", 6) == 0)
@@ -77,16 +77,16 @@ void HandleQuestReward(CGame* pGame, char* pData)
 		{
 			wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
 		}
-		pGame->m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 		iIndex++;
-		pGame->m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
 		std::memset(cTxt, 0, sizeof(cTxt));
-		if (iPreCon < pGame->m_iContribution)
-			wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD3, pGame->m_iContribution - iPreCon);
-		else wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD4, iPreCon - pGame->m_iContribution);
+		if (iPreCon < pGame->m_pPlayer->m_iContribution)
+			wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD3, pGame->m_pPlayer->m_iContribution - iPreCon);
+		else wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD4, iPreCon - pGame->m_pPlayer->m_iContribution);
 
-		pGame->m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
 	}
 	else pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, sWho + 120, 0);
@@ -97,7 +97,7 @@ void HandleQuestCompleted(CGame* pGame, char* pData)
 	pGame->m_stQuest.bIsQuestCompleted = true;
 	pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Quest);
 	pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Quest, 1, 0, 0);
-	switch (pGame->m_sPlayerType) {
+	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:

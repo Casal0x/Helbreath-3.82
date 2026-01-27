@@ -38,9 +38,9 @@ char DialogBox_Character::DrawEquippedItem(int equipPos, int drawX, int drawY, s
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
-	int16_t* wR = useWeaponColors ? m_pGame->m_wWR : m_pGame->m_wR;
-	int16_t* wG = useWeaponColors ? m_pGame->m_wWG : m_pGame->m_wG;
-	int16_t* wB = useWeaponColors ? m_pGame->m_wWB : m_pGame->m_wB;
+	const int16_t* wR = useWeaponColors ? m_pGame->m_wWR.data() : m_pGame->m_wR.data();
+	const int16_t* wG = useWeaponColors ? m_pGame->m_wWG.data() : m_pGame->m_wG.data();
+	const int16_t* wB = useWeaponColors ? m_pGame->m_wWB.data() : m_pGame->m_wB.data();
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 
@@ -87,63 +87,63 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// Player name and PK/contribution
 	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-	strcpy(m_pGame->G_cTxt, m_pGame->m_cPlayerName);
+	strcpy(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_cPlayerName);
 	strcat(m_pGame->G_cTxt, " : ");
 
 	char cTxt2[120];
-	if (m_pGame->m_iPKCount > 0) {
-		wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_iPKCount);
+	if (m_pGame->m_pPlayer->m_iPKCount > 0) {
+		wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
 		strcat(m_pGame->G_cTxt, cTxt2);
 	}
-	wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_iContribution);
+	wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
 	strcat(m_pGame->G_cTxt, cTxt2);
 	PutAlignedString(sX + 24, sX + 252, sY + 52, m_pGame->G_cTxt, 45, 20, 20);
 
 	// Citizenship / Guild status
 	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-	if (!m_pGame->m_bCitizen)
+	if (!m_pGame->m_pPlayer->m_bCitizen)
 	{
 		strcpy(m_pGame->G_cTxt, DRAW_DIALOGBOX_CHARACTER7);
 	}
 	else
 	{
-		strcat(m_pGame->G_cTxt, m_pGame->m_bHunter
-			? (m_pGame->m_bAresden ? DEF_MSG_ARECIVIL : DEF_MSG_ELVCIVIL)
-			: (m_pGame->m_bAresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER));
+		strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_bHunter
+			? (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARECIVIL : DEF_MSG_ELVCIVIL)
+			: (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER));
 
-		if (m_pGame->m_iGuildRank >= 0)
+		if (m_pGame->m_pPlayer->m_iGuildRank >= 0)
 		{
 			strcat(m_pGame->G_cTxt, "(");
-			strcat(m_pGame->G_cTxt, m_pGame->m_cGuildName);
-			strcat(m_pGame->G_cTxt, m_pGame->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1);
+			strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_cGuildName);
+			strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1);
 		}
 	}
 	PutAlignedString(sX, sX + 275, sY + 69, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Level, Exp, Next Exp
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_iLevel);
+	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iLevel);
 	PutAlignedString(sX + 180, sX + 250, sY + 106, m_pGame->G_cTxt, 45, 25, 25);
 
-	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->m_iExp);
+	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->m_pPlayer->m_iExp);
 	PutAlignedString(sX + 180, sX + 250, sY + 125, m_pGame->G_cTxt, 45, 25, 25);
 
-	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1));
+	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1));
 	PutAlignedString(sX + 180, sX + 250, sY + 142, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Calculate max stats
-	int iMaxHP = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel, m_pGame->m_iStr, m_pGame->m_iAngelicStr);
-	int iMaxMP = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag, m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
-	int iMaxSP = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
-	int iMaxLoad = CalculateMaxLoad(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
+	int iMaxHP = CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
+	int iMaxMP = CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
+	int iMaxSP = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	int iMaxLoad = CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
 
 	// HP, MP, SP
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iHP, iMaxHP);
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iHP, iMaxHP);
 	PutAlignedString(sX + 180, sX + 250, sY + 173, m_pGame->G_cTxt, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iMP, iMaxMP);
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iMP, iMaxMP);
 	PutAlignedString(sX + 180, sX + 250, sY + 191, m_pGame->G_cTxt, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_iSP, iMaxSP);
+	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iSP, iMaxSP);
 	PutAlignedString(sX + 180, sX + 250, sY + 208, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Max Load
@@ -152,19 +152,19 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX + 180, sX + 250, sY + 240, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Enemy Kills
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_iEnemyKillCount);
+	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iEnemyKillCount);
 	PutAlignedString(sX + 180, sX + 250, sY + 257, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Stats with angelic bonuses
-	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_iStr, m_pGame->m_iAngelicStr);   // Str
-	DrawStat(sX + 48, sX + 82, sY + 302, m_pGame->m_iDex, m_pGame->m_iAngelicDex);   // Dex
-	DrawStat(sX + 135, sX + 167, sY + 285, m_pGame->m_iInt, m_pGame->m_iAngelicInt); // Int
-	DrawStat(sX + 135, sX + 167, sY + 302, m_pGame->m_iMag, m_pGame->m_iAngelicMag); // Mag
+	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);   // Str
+	DrawStat(sX + 48, sX + 82, sY + 302, m_pGame->m_pPlayer->m_iDex, m_pGame->m_pPlayer->m_iAngelicDex);   // Dex
+	DrawStat(sX + 135, sX + 167, sY + 285, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt); // Int
+	DrawStat(sX + 135, sX + 167, sY + 302, m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag); // Mag
 
 	// Vit and Chr (no angelic bonus)
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_iVit);
+	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iVit);
 	PutAlignedString(sX + 218, sX + 251, sY + 285, m_pGame->G_cTxt, 45, 25, 25);
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_iCharisma);
+	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iCharisma);
 	PutAlignedString(sX + 218, sX + 251, sY + 302, m_pGame->G_cTxt, 45, 25, 25);
 
 	// Build equipment status array
@@ -177,11 +177,11 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Draw character model based on gender
-	if (m_pGame->m_sPlayerType >= 1 && m_pGame->m_sPlayerType <= 3)
+	if (m_pGame->m_pPlayer->m_sPlayerType >= 1 && m_pGame->m_pPlayer->m_sPlayerType <= 3)
 	{
 		DrawMaleCharacter(sX, sY, msX, msY, cEquipPoiStatus, cCollison);
 	}
-	else if (m_pGame->m_sPlayerType >= 4 && m_pGame->m_sPlayerType <= 6)
+	else if (m_pGame->m_pPlayer->m_sPlayerType >= 4 && m_pGame->m_pPlayer->m_sPlayerType <= 6)
 	{
 		DrawFemaleCharacter(sX, sY, msX, msY, cEquipPoiStatus, cCollison);
 	}
@@ -200,17 +200,17 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	char cItemColor;
 
 	// Base body
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX + 171, sY + 290, m_pGame->m_sPlayerType - 1);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 1);
 
 	// Hair (if no helmet)
 	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
 	{
-		m_pGame->_GetHairColorRGB(((m_pGame->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F));
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x000F));
 
 	// Equipment slots at character position (171, 290)
 	char result;
@@ -282,17 +282,17 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	int iSkirtDraw = 0;
 
 	// Base body (female uses +40 offset from male sprites)
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX + 171, sY + 290, m_pGame->m_sPlayerType - 4);
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 4);
 
 	// Hair (if no helmet) - female hair is at +18+40 = +58
 	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
 	{
-		m_pGame->_GetHairColorRGB(((m_pGame->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_sPlayerAppr1 & 0x000F));
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x000F));
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
 	if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)

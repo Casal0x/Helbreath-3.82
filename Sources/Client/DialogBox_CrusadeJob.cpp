@@ -16,9 +16,9 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 	PutAlignedString(sX + 24, sX + 246, sY + 75 + 20, DRAWDIALOGBOX_CRUSADEJOB3);
 	PutAlignedString(sX + 24, sX + 246, sY + 90 + 20, DRAWDIALOGBOX_CRUSADEJOB4);
 
-	if (m_pGame->m_bCitizen)
+	if (m_pGame->m_pPlayer->m_bCitizen)
 	{
-		if (m_pGame->m_iGuildRank == 0)
+		if (m_pGame->m_pPlayer->m_iGuildRank == 0)
 		{
 			// Guild master can be Commander
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
@@ -35,7 +35,7 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 4, 0, 50);
 
 			// Guild members can also be Constructor
-			if (m_pGame->m_iGuildRank != -1)
+			if (m_pGame->m_pPlayer->m_iGuildRank != -1)
 			{
 				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
 					PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 255, 255, 255);
@@ -59,7 +59,7 @@ void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short 
 {
 	PutAlignedString(sX + 24, sX + 246, sY + 90 + 20, DRAWDIALOGBOX_CRUSADEJOB18);
 
-	switch (m_pGame->m_iCrusadeDuty)
+	switch (m_pGame->m_pPlayer->m_iCrusadeDuty)
 	{
 	case 1: PutAlignedString(sX + 24, sX + 246, sY + 125, DRAWDIALOGBOX_CRUSADEJOB19); break;
 	case 2: PutAlignedString(sX + 24, sX + 246, sY + 125, DRAWDIALOGBOX_CRUSADEJOB20); break;
@@ -111,14 +111,14 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 	switch (Info().cMode)
 	{
 	case 1:
-		if (!m_pGame->m_bCitizen)
+		if (!m_pGame->m_pPlayer->m_bCitizen)
 		{
 			DisableDialogBox(DialogBoxId::CrusadeJob);
 			m_pGame->PlaySound('E', 14, 5);
 			return true;
 		}
 
-		if (m_pGame->m_iGuildRank == 0)
+		if (m_pGame->m_pPlayer->m_iGuildRank == 0)
 		{
 			// Guild master - Commander option
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
@@ -141,7 +141,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			}
 
 			// Constructor option (guild members only)
-			if (m_pGame->m_iGuildRank != -1)
+			if (m_pGame->m_pPlayer->m_iGuildRank != -1)
 			{
 				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
 				{
@@ -167,7 +167,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 		// View details link
 		if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 160) && (msY < sY + 175))
 		{
-			switch (m_pGame->m_iCrusadeDuty)
+			switch (m_pGame->m_pPlayer->m_iCrusadeDuty)
 			{
 			case 1: m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 803, 0, 0); break;
 			case 2: m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 805, 0, 0); break;

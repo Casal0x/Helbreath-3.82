@@ -1,8 +1,8 @@
 #include "Game.h"
+#include "GameModeManager.h"
 #include "AudioManager.h"
 
 extern char G_cSpriteAlphaDegree;
-extern char G_cCmdLineTokenA[120];
 
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
@@ -41,8 +41,7 @@ void HandleTimeChange(CGame* pGame, char* pData)
 		pGame->PlaySound('E', 31, 0);
 		G_cSpriteAlphaDegree = 2; break;
 	}
-	pGame->m_cGameModeCount = 1;
-	pGame->m_bIsRedrawPDBGS = true;
+	GameModeManager::ResetFrameCount();
 }
 
 void HandleNoticeMsg(CGame* pGame, char* pData)
@@ -70,14 +69,11 @@ void HandleForceDisconn(CGame* pGame, char* pData)
 	}
 	else
 	{
-		delete pGame->m_pGSock;
-		pGame->m_pGSock = 0;
-        // /* cleared automatically */ // Not needed here
+		pGame->m_pGSock.reset();
+		pGame->m_pGSock.reset();
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
-		if (strlen(G_cCmdLineTokenA) != 0)
-			pGame->ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-		else pGame->ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		pGame->ChangeGameMode(GameMode::MainMenu);
 	}
 }
 
@@ -85,22 +81,22 @@ void HandleSettingSuccess(CGame* pGame, char* pData)
 {
 	int iPrevLevel;
 	char cTxt[120];
-	iPrevLevel = pGame->m_iLevel;
+	iPrevLevel = pGame->m_pPlayer->m_iLevel;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyLevelUp>(
 		pData, sizeof(hb::net::PacketNotifyLevelUp));
 	if (!pkt) return;
-	pGame->m_iLevel = pkt->level;
-	pGame->m_iStr = pkt->str;
-	pGame->m_iVit = pkt->vit;
-	pGame->m_iDex = pkt->dex;
-	pGame->m_iInt = pkt->intel;
-	pGame->m_iMag = pkt->mag;
-	pGame->m_iCharisma = pkt->chr;
+	pGame->m_pPlayer->m_iLevel = pkt->level;
+	pGame->m_pPlayer->m_iStr = pkt->str;
+	pGame->m_pPlayer->m_iVit = pkt->vit;
+	pGame->m_pPlayer->m_iDex = pkt->dex;
+	pGame->m_pPlayer->m_iInt = pkt->intel;
+	pGame->m_pPlayer->m_iMag = pkt->mag;
+	pGame->m_pPlayer->m_iCharisma = pkt->chr;
 	wsprintf(cTxt, "Your stat has been changed.");
 	pGame->AddEventList(cTxt, 10);
 	// CLEROTH - LU
-	pGame->m_iLU_Point = pGame->m_iLevel * 3 - ((pGame->m_iStr + pGame->m_iVit + pGame->m_iDex + pGame->m_iInt + pGame->m_iMag + pGame->m_iCharisma) - 70) - 3;
-	pGame->m_cLU_Str = pGame->m_cLU_Vit = pGame->m_cLU_Dex = pGame->m_cLU_Int = pGame->m_cLU_Mag = pGame->m_cLU_Char = 0;
+	pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+	pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
 }
 
 void HandleServerChange(CGame* pGame, char* pData)
@@ -121,21 +117,21 @@ void HandleServerChange(CGame* pGame, char* pData)
 	iWorldServerPort = pkt->log_server_port;
 	if (pGame->m_pGSock != 0)
 	{
-		delete pGame->m_pGSock;
-		pGame->m_pGSock = 0;
+		pGame->m_pGSock.reset();
+		pGame->m_pGSock.reset();
 	}
 	if (pGame->m_pLSock != 0)
 	{
-		delete pGame->m_pLSock;
-		pGame->m_pLSock = 0;
+		pGame->m_pLSock.reset();
+		pGame->m_pLSock.reset();
 	}
-	pGame->m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+	pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr, iWorldServerPort);
 	pGame->m_pLSock->bInitBufferSize(30000);
 
-	pGame->m_bIsPoisoned = false;
+	pGame->m_pPlayer->m_bIsPoisoned = false;
 
-	pGame->ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+	pGame->ChangeGameMode(GameMode::Connecting);
 	pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 	//m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW; //Gateway
 	pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW_TOWLSBUTMLS;
@@ -163,33 +159,33 @@ void HandleChangePlayMode(CGame* pGame, char* pData)
 
 	if (memcmp(pGame->m_cLocation, "aresden", 7) == 0)
 	{
-		pGame->m_bAresden = true;
-		pGame->m_bCitizen = true;
-		pGame->m_bHunter = false;
+		pGame->m_pPlayer->m_bAresden = true;
+		pGame->m_pPlayer->m_bCitizen = true;
+		pGame->m_pPlayer->m_bHunter = false;
 	}
 	else if (memcmp(pGame->m_cLocation, "arehunter", 9) == 0)
 	{
-		pGame->m_bAresden = true;
-		pGame->m_bCitizen = true;
-		pGame->m_bHunter = true;
+		pGame->m_pPlayer->m_bAresden = true;
+		pGame->m_pPlayer->m_bCitizen = true;
+		pGame->m_pPlayer->m_bHunter = true;
 	}
 	else if (memcmp(pGame->m_cLocation, "elvine", 6) == 0)
 	{
-		pGame->m_bAresden = false;
-		pGame->m_bCitizen = true;
-		pGame->m_bHunter = false;
+		pGame->m_pPlayer->m_bAresden = false;
+		pGame->m_pPlayer->m_bCitizen = true;
+		pGame->m_pPlayer->m_bHunter = false;
 	}
 	else if (memcmp(pGame->m_cLocation, "elvhunter", 9) == 0)
 	{
-		pGame->m_bAresden = false;
-		pGame->m_bCitizen = true;
-		pGame->m_bHunter = true;
+		pGame->m_pPlayer->m_bAresden = false;
+		pGame->m_pPlayer->m_bCitizen = true;
+		pGame->m_pPlayer->m_bHunter = true;
 	}
 	else
 	{
-		pGame->m_bAresden = true;
-		pGame->m_bCitizen = false;
-		pGame->m_bHunter = true;
+		pGame->m_pPlayer->m_bAresden = true;
+		pGame->m_pPlayer->m_bCitizen = false;
+		pGame->m_pPlayer->m_bHunter = true;
 	}
 	pGame->AddEventList(DEF_MSG_GAMEMODE_CHANGED, 10);
 }

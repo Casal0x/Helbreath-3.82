@@ -1,6 +1,12 @@
 #pragma once
 
 #include <windows.h>
+// Undefine Windows PlaySound macro (from mmsystem.h included via windows.h) to prevent
+// name collision with AudioManager::PlaySound method
+#ifdef PlaySound
+#undef PlaySound
+#endif
+
 #include "miniaudio.h"
 #include <string>
 #include <cstdint>

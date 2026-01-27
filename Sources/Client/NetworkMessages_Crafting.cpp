@@ -12,12 +12,12 @@ namespace NetworkMessageHandlers {
 
 void HandleCraftingSuccess(CGame* pGame, char* pData)
 {
-	pGame->m_iContribution -= pGame->m_iContributionPrice;
+	pGame->m_pPlayer->m_iContribution -= pGame->m_iContributionPrice;
 	pGame->m_iContributionPrice = 0;
 	pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Noticement);
 	pGame->AddEventList(NOTIFY_MSG_HANDLER42, 10);		// "Item manufacture success!"
 	pGame->PlaySound('E', 23, 5);
-	switch (pGame->m_sPlayerType) {
+	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:
@@ -81,7 +81,7 @@ void HandleBuildItemSuccess(CGame* pGame, char* pData)
 	}
 	pGame->AddEventList(NOTIFY_MSG_HANDLER42, 10);
 	pGame->PlaySound('E', 23, 5);
-	switch (pGame->m_sPlayerType) {
+	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:

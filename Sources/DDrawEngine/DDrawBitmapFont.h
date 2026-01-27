@@ -9,6 +9,7 @@
 #include "BitmapFontFactory.h"
 #include "ISprite.h"
 #include <vector>
+#include <memory>
 
 // Undefine Windows CreateFont macro to avoid naming conflict
 #ifdef CreateFont
@@ -49,10 +50,10 @@ class DDrawBitmapFontFactory : public BitmapFontFactory
 public:
     ~DDrawBitmapFontFactory() override = default;
 
-    IBitmapFont* CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                            int frameOffset, const FontSpacing& spacing) override;
-    IBitmapFont* CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                   int frameOffset) override;
+    std::unique_ptr<IBitmapFont> CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                            int frameOffset, const FontSpacing& spacing) override;
+    std::unique_ptr<IBitmapFont> CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                   int frameOffset) override;
 };
 
 } // namespace TextLib

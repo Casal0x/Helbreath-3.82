@@ -42,17 +42,17 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	// HP bar
-	iMaxPoint = CalculateMaxHP(m_pGame->m_iVit, m_pGame->m_iLevel,
-	                           m_pGame->m_iStr, m_pGame->m_iAngelicStr);
-	if (m_pGame->m_iHP > iMaxPoint) m_pGame->m_iHP = iMaxPoint;
-	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
+	iMaxPoint = CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel,
+	                           m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
+	if (m_pGame->m_pPlayer->m_iHP > iMaxPoint) m_pGame->m_pPlayer->m_iHP = iMaxPoint;
+	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
 	pSprite->DrawWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth);
 
 	// HP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iHP);
-	if (m_pGame->m_bIsPoisoned)
+	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iHP);
+	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
 		m_pGame->PutString_SprNum(85, HP_NUM_Y, m_pGame->G_cTxt,
 			m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11);
@@ -66,37 +66,37 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	}
 
 	// MP bar
-	iMaxPoint = CalculateMaxMP(m_pGame->m_iMag, m_pGame->m_iAngelicMag,
-	                           m_pGame->m_iLevel, m_pGame->m_iInt, m_pGame->m_iAngelicInt);
-	if (m_pGame->m_iMP > iMaxPoint) m_pGame->m_iMP = iMaxPoint;
-	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
+	iMaxPoint = CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag,
+	                           m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
+	if (m_pGame->m_pPlayer->m_iMP > iMaxPoint) m_pGame->m_pPlayer->m_iMP = iMaxPoint;
+	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
 	pSprite->DrawWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth);
 
 	// MP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iMP);
+	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iMP);
 	m_pGame->PutString_SprNum(HP_NUM_X + 1, MP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
 	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
 
 	// SP bar
-	iMaxPoint = CalculateMaxSP(m_pGame->m_iStr, m_pGame->m_iAngelicStr, m_pGame->m_iLevel);
-	if (m_pGame->m_iSP > iMaxPoint) m_pGame->m_iSP = iMaxPoint;
-	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
+	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	if (m_pGame->m_pPlayer->m_iSP > iMaxPoint) m_pGame->m_pPlayer->m_iSP = iMaxPoint;
+	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > SP_BAR_WIDTH) iBarWidth = SP_BAR_WIDTH;
 	pSprite->DrawWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth);
 
 	// SP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_iSP);
+	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iSP);
 	m_pGame->PutString_SprNum(SP_NUM_X + 1, SP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
 	m_pGame->PutString_SprNum(SP_NUM_X, SP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
 
 	// Experience bar
-	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
-	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);
+	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
+	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);
 	uint32_t iExpRange = iNextLevelExp - iCurLevelExp;
-	uint32_t iExpProgress = m_pGame->m_iExp - iCurLevelExp;
+	uint32_t iExpProgress = m_pGame->m_pPlayer->m_iExp - iCurLevelExp;
 	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH) / iExpRange;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > ICON_PANEL_WIDTH) iBarWidth = ICON_PANEL_WIDTH;
@@ -109,9 +109,9 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
 	// Level up / Restart text
-	if (m_pGame->m_iHP > 0)
+	if (m_pGame->m_pPlayer->m_iHP > 0)
 	{
-		if ((m_pGame->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
+		if ((m_pGame->m_pPlayer->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
 		{
 			int flashColor = (GameClock::GetTimeMS() / 3) % 255;
 			m_pGame->PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", flashColor, flashColor, 0);
@@ -124,27 +124,27 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 
 	// Combat mode / Safe attack icon
-	if (m_pGame->m_bIsSafeAttackMode)
+	if (m_pGame->m_pPlayer->m_bIsSafeAttackMode)
 		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 4);
-	else if (m_pGame->m_bIsCombatMode)
+	else if (m_pGame->m_pPlayer->m_bIsCombatMode)
 		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 5);
 
 	// Combat mode button hover
 	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
 	{
 		pSprite->Draw(BTN_COMBAT_X1, BTN_Y1, 16);
-		const char* tooltip = m_pGame->m_bIsCombatMode
-			? (m_pGame->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
+		const char* tooltip = m_pGame->m_pPlayer->m_bIsCombatMode
+			? (m_pGame->m_pPlayer->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
 		wsprintf(m_pGame->G_cTxt, "%s", tooltip);
 		PutString(msX - 10, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
 	}
 
 	// Crusade icon
-	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_iCrusadeDuty != 0)
+	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_pPlayer->m_iCrusadeDuty != 0)
 	{
 		bool bHover = IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2);
-		if (m_pGame->m_bAresden)
+		if (m_pGame->m_pPlayer->m_bAresden)
 			pSprite->Draw(BTN_CRUSADE_X1 + (bHover ? 1 : 0), BTN_Y1, bHover ? 1 : 2);
 		else
 			pSprite->Draw(BTN_CRUSADE_X1, BTN_Y1, bHover ? 0 : 15);
@@ -153,18 +153,18 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
 	if (Input::IsCtrlDown())
 	{
-		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel);
-		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_iLevel + 1);
-		if (m_pGame->m_iExp < iNextExp)
+		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
+		uint32_t iNextExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);
+		if (m_pGame->m_pPlayer->m_iExp < iNextExp)
 		{
 			uint32_t iExpRange = iNextExp - iCurExp;
-			uint32_t iExpProgress = (m_pGame->m_iExp > iCurExp) ? (m_pGame->m_iExp - iCurExp) : 0;
+			uint32_t iExpProgress = (m_pGame->m_pPlayer->m_iExp > iCurExp) ? (m_pGame->m_pPlayer->m_iExp - iCurExp) : 0;
 			wsprintf(m_pGame->G_cTxt, "Rest Exp: %d", iExpRange - iExpProgress);
 		}
 	}
 	else
 	{
-		wsprintf(m_pGame->G_cTxt, "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_sPlayerX, m_pGame->m_sPlayerY);
+		wsprintf(m_pGame->G_cTxt, "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
 	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
 	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, m_pGame->G_cTxt, 200, 200, 120);
@@ -208,7 +208,7 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 	if (IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2))
 	{
 		if (!m_pGame->m_bIsCrusadeMode) return false;
-		switch (m_pGame->m_iCrusadeDuty)
+		switch (m_pGame->m_pPlayer->m_iCrusadeDuty)
 		{
 		case 1: EnableDialogBox(DialogBoxId::CrusadeSoldier, 0, 0, 0); break;
 		case 2: EnableDialogBox(DialogBoxId::CrusadeConstructor, 0, 0, 0); break;
@@ -245,7 +245,7 @@ bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 {
 	short sItemIndex = CursorTarget::GetSelectedID();
 	if (m_pGame->m_bIsItemDisabled[sItemIndex]) return true;
-	if (m_pGame->m_cCommand < 0) return true;
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return true;
 
 	// Inventory icon area - drop item into inventory
 	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))

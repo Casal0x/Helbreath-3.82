@@ -52,6 +52,10 @@ public:
     virtual bool IsWindowActive() const override;
     virtual void SetWindowActive(bool active) override;
 
+    // Input suppression
+    virtual void SetSuppressed(bool suppressed) override;
+    virtual bool IsSuppressed() const override;
+
     // Input events (called by SFMLWindow with logical coordinates)
     virtual void OnKeyDown(int key) override;
     virtual void OnKeyUp(int key) override;
@@ -65,6 +69,7 @@ private:
 
     HWND m_hWnd;
     bool m_active;
+    bool m_suppressed;
 
     // Mouse state
     int m_mouseX;

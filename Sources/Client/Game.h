@@ -15,7 +15,13 @@
 #include <time.h>
 #include <mmsystem.h>
 #include <winbase.h>
-#include <memory.h>
+
+// Undefine Windows PlaySound macro (from mmsystem.h) to prevent name collision
+// with CGame::PlaySound method. We use AudioManager for audio, not Windows API.
+#ifdef PlaySound
+#undef PlaySound
+#endif
+#include <memory>
 #include <string.h>
 #include <process.h>
 #include <direct.h>
@@ -25,7 +31,7 @@
 #include <iosfwd>
 #include <vector>
 #include <sstream>
-using namespace std;
+#include <array>
 
 #include "GlobalDef.h"
 #include "IRenderer.h"
@@ -57,8 +63,11 @@ using namespace std;
 #include "DialogBoxManager.h"
 #include "EffectManager.h"
 #include "NetworkMessageManager.h"
-#include "MotionState.h" // v4 Smooth Movement
 #include "CursorTarget.h"
+#include "Player.h"
+#include "EntityRenderState.h"
+#include "Camera.h"
+#include "GameModeManager.h"
 
 //v2.18
 #define DEF_BTNSZX				74
@@ -100,29 +109,6 @@ using namespace std;
 #define WM_USER_GAMESOCKETEVENT	WM_USER + 2000
 #define WM_USER_LOGSOCKETEVENT	WM_USER + 2001
 
-#define DEF_GAMEMODE_NULL					-2
-#define DEF_GAMEMODE_ONQUIT					-1
-#define DEF_GAMEMODE_ONMAINMENU				0
-#define DEF_GAMEMODE_ONCONNECTING			1
-#define DEF_GAMEMODE_ONLOADING				2
-#define DEF_GAMEMODE_ONWAITINGINITDATA		3
-#define DEF_GAMEMODE_ONMAINGAME				4
-#define DEF_GAMEMODE_ONCONNECTIONLOST		5
-#define DEF_GAMEMODE_ONMSG					6
-#define DEF_GAMEMODE_ONCREATENEWACCOUNT		7
-#define DEF_GAMEMODE_ONLOGIN				8
-#define DEF_GAMEMODE_ONQUERYFORCELOGIN		9
-#define DEF_GAMEMODE_ONSELECTCHARACTER		10
-#define DEF_GAMEMODE_ONCREATENEWCHARACTER	11
-#define DEF_GAMEMODE_ONWAITINGRESPONSE		12
-#define DEF_GAMEMODE_ONQUERYDELETECHARACTER 13
-#define DEF_GAMEMODE_ONLOGRESMSG			14
-#define DEF_GAMEMODE_ONCHANGEPASSWORD		15
-#define DEF_GAMEMODE_ONVERSIONNOTMATCH		17
-#define DEF_GAMEMODE_ONINTRODUCTION			18
-#define DEF_GAMEMODE_ONAGREEMENT			19
-#define DEF_GAMEMODE_ONINPUTKEYCODE			20
-
 #define DEF_SERVERTYPE_GAME			1
 #define DEF_SERVERTYPE_LOG			2
 
@@ -146,13 +132,15 @@ enum class OverlayType {
 	QueryDeleteCharacter
 };
 
-
 class CGame
 {
 public:
 	// CLEROTH - AURAS
 	void CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType);
 	void CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType);
+
+	// Camera for viewport management
+	CCamera m_Camera;
 
 	// MJ Stats Change Related vars - Alastor
 	char cStateChange1;
@@ -240,10 +228,10 @@ public:
 
 	void UseShortCut( int num );
 	void UpdateScreen();
-	void DrawScreen();        // Dispatches to Draw_* methods based on game mode
+	void DrawScreen();
+	void DrawCursor();        // Dispatches to Draw_* methods based on game mode
 	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
-	void UpdateScreen_OnGame();
-	void DrawScreen_OnGame();
+	// UpdateScreen_OnGame/DrawScreen_OnGame removed - now handled by Screen_OnGame
 	void MakeSprite( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeTileSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeEffectSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
@@ -356,7 +344,6 @@ public:
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
 	void InitItemList(char * pData);
 	int _iCheckDlgBoxFocus(short msX, short msY, char cButtonSide);
-	void GetPlayerTurn();
 	SpriteLib::BoundRect __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
@@ -376,7 +363,7 @@ public:
 	void ChatMsgHandler(char * pData);
 	void ReleaseUnusedSprites();
 	void OnKeyUp(int key);
-	void ChangeGameMode(char cMode);
+	void ChangeGameMode(GameMode mode);
 	void PutString(int iX, int iY, char * pString, COLORREF color);
 	void PutString(int iX, int iY, char * pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
 	void PutString2(int iX, int iY, char * pString, short sR, short sG, short sB);
@@ -399,11 +386,9 @@ public:
 	void GameRecvMsgHandler(uint32_t dwMsgSize, char * pData);
 	void DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY);
 	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char * pString, int iV4 = 0); // v1.4
-	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, bool bMoveCheck = false, bool bMIM = false);
 	void RestoreSprites();
 	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
-	void CalcViewPoint();
 	void OnKeyDown(int key);
 	void RegisterHotkeys();
 	void Hotkey_ToggleForceAttack();
@@ -412,7 +397,6 @@ public:
 	void Hotkey_ToggleDialogTransparency();
 	void Hotkey_ToggleSystemMenu();
 	void Hotkey_ToggleGuideMap();
-	void Hotkey_EnableAdminCommand();
 	void Hotkey_ToggleRunningMode();
 	void Hotkey_ToggleSoundAndMusic();
 	void Hotkey_WhisperTarget();
@@ -441,7 +425,7 @@ public:
 	void Hotkey_Simple_ZoomIn();
 	void Hotkey_Simple_ZoomOut();
 	void Quit();
-	bool bInit(HWND hWnd, HINSTANCE hInst, char * pCmdLine);
+	bool bInit();
 
 	void ReserveFightzoneResponseHandler(char * pData);
 	int _iGetAttackType();
@@ -459,7 +443,6 @@ public:
 	void Abaddon_corpse(int sX, int sY);
 	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);
 
-
 	//50Cent - Repair All
 	short totalItemRepair;
 	int totalPrice;
@@ -468,7 +451,6 @@ public:
 		char index;
 		short price;
 	} m_stRepairAll[DEF_MAXITEMS];
-
 
 	bool _ItemDropHistory(char * ItemName);
 	CGame();
@@ -548,45 +530,43 @@ public:
 	} m_stTeleportList[20];
 
 	class IRenderer* m_Renderer;  // Abstract renderer interface
-	SpriteLib::ISpriteFactory* m_pSpriteFactory;  // Sprite factory for creating sprites
+	std::unique_ptr<SpriteLib::ISpriteFactory> m_pSpriteFactory;  // Sprite factory for creating sprites
 	SpriteLib::SpriteCollection m_pSprite;
 	SpriteLib::SpriteCollection m_pTileSpr;
 	SpriteLib::SpriteCollection m_pEffectSpr;
 
 	// Bitmap fonts (client-owned, created from sprites)
-	TextLib::IBitmapFont* m_pBitmapFont1;  // Interface font 1 (DEF_SPRID_INTERFACE_FONT1)
-	TextLib::IBitmapFont* m_pBitmapFont2;  // Interface font 2 (DEF_SPRID_INTERFACE_FONT2)
-	TextLib::IBitmapFont* m_pNumFont;      // Number font (DEF_SPRID_INTERFACE_ADDINTERFACE, frames 6-15)
-	TextLib::IBitmapFont* m_pSprFont3[3];  // SPRFONTS2 with type offsets 0, 1, 2
-	class CMapData * m_pMapData;
-	class XSocket * m_pGSock;
-	class XSocket * m_pLSock;
-	class CMsg    * m_pChatMsgList[DEF_MAXCHATMSGS];
-	class CMsg    * m_pChatScrollList[DEF_MAXCHATSCROLLMSGS];
-	class CMsg    * m_pWhisperMsg[DEF_MAXWHISPERMSG];
-	EffectManager* m_pEffectManager;
-	NetworkMessageManager* m_pNetworkMessageManager;
-	EntityMotionManager m_EntityMotion; // v4 Smooth Movement Manager
-	class CItem   * m_pItemList[DEF_MAXITEMS];
-	class CItem   * m_pBankList[DEF_MAXBANKITEMS];
-	class CMagic * m_pMagicCfgList[DEF_MAXMAGICTYPE];
-	class CSkill * m_pSkillCfgList[DEF_MAXSKILLTYPE];
-	class CMsg * m_pMsgTextList[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pMsgTextList2[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pAgreeMsgTextList[DEF_TEXTDLGMAXLINES];
-	class CMsg * m_pExID;
-	class CBuildItem * m_pBuildItemList[DEF_MAXBUILDITEMS];
-	class CBuildItem * m_pDispBuildItemList[DEF_MAXBUILDITEMS];
+	std::unique_ptr<TextLib::IBitmapFont> m_pBitmapFont1;  // Interface font 1 (DEF_SPRID_INTERFACE_FONT1)
+	std::unique_ptr<TextLib::IBitmapFont> m_pBitmapFont2;  // Interface font 2 (DEF_SPRID_INTERFACE_FONT2)
+	std::unique_ptr<TextLib::IBitmapFont> m_pNumFont;      // Number font (DEF_SPRID_INTERFACE_ADDINTERFACE, frames 6-15)
+	std::array<std::unique_ptr<TextLib::IBitmapFont>, 3> m_pSprFont3{};  // SPRFONTS2 with type offsets 0, 1, 2
+	std::unique_ptr<CPlayer> m_pPlayer;  // Main player data
+	std::unique_ptr<class CMapData> m_pMapData;
+	std::unique_ptr<class XSocket> m_pGSock;
+	std::unique_ptr<class XSocket> m_pLSock;
+	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATMSGS> m_pChatMsgList;
+	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATSCROLLMSGS> m_pChatScrollList;
+	std::array<std::unique_ptr<class CMsg>, DEF_MAXWHISPERMSG> m_pWhisperMsg;
+	std::unique_ptr<EffectManager> m_pEffectManager;
+	std::unique_ptr<NetworkMessageManager> m_pNetworkMessageManager;
+	std::array<std::unique_ptr<class CItem>, DEF_MAXITEMS> m_pItemList;
+	std::array<std::unique_ptr<class CItem>, DEF_MAXBANKITEMS> m_pBankList;
+	std::array<std::unique_ptr<class CMagic>, DEF_MAXMAGICTYPE> m_pMagicCfgList;
+	std::array<std::unique_ptr<class CSkill>, DEF_MAXSKILLTYPE> m_pSkillCfgList;
+	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList;
+	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList2;
+	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pAgreeMsgTextList;
+	std::unique_ptr<class CMsg> m_pExID;
+	std::array<std::unique_ptr<class CBuildItem>, DEF_MAXBUILDITEMS> m_pBuildItemList;
+	std::array<std::unique_ptr<class CBuildItem>, DEF_MAXBUILDITEMS> m_pDispBuildItemList;
 
-	class CItem * m_pItemForSaleList[DEF_MAXMENUITEMS];
+	std::array<std::unique_ptr<class CItem>, DEF_MAXMENUITEMS> m_pItemForSaleList;
 	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
-	class CCharInfo * m_pCharList[4];
-	class CMsg * m_pGameMsgList[DEF_MAXGAMEMSGS];
+	std::array<std::unique_ptr<class CCharInfo>, 4> m_pCharList;
+	std::array<std::unique_ptr<class CMsg>, DEF_MAXGAMEMSGS> m_pGameMsgList;
 
 	char * m_pInputBuffer;
 
-	uint32_t G_dwGlobalTime;
-	uint32_t m_dwCommandTime; //v2.15 SpeedHack
 	uint32_t m_dwConnectMode;
 	uint32_t m_dwTime;
 	uint32_t m_dwCurTime;
@@ -608,43 +588,27 @@ public:
 	short m_sMonsterID;
 	short m_sEventX, m_sEventY;
 
-
-	//v2.183 Hunter Mode;
-	bool m_bHunter;
-	bool m_bAresden;
-	bool m_bCitizen;
-	//v2.183 Hunter Mode;
+	//v2.183 Hunter Mode - Moved to CPlayer
 
 	bool m_bIsProgramActive;
-	bool m_bCommandAvailable;
-	bool m_bIsItemEquipped[DEF_MAXITEMS];
-	bool m_bIsItemDisabled[DEF_MAXITEMS];
+	std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
+	std::array<bool, DEF_MAXITEMS> m_bIsItemDisabled{};
 	bool m_bIsGetPointingMode;
-	bool m_bIsCombatMode;
-	bool m_bIsSafeAttackMode;
 	bool m_bSkillUsingStatus;
 	bool m_bItemUsingStatus;
 	bool m_bIsWhetherEffect;
-	bool m_bSuperAttackMode;	//
 	bool m_bIsObserverMode, m_bIsObserverCommanded;
-	bool m_bIsPoisoned;
-	bool m_bIsFirstConn;
-	bool m_bIsConfusion;
-	bool m_bIsRedrawPDBGS;
+		bool m_bIsFirstConn;
 	bool m_bDrawFlagDir;
 	bool m_bIsCrusadeMode;
-	bool m_bIsSpecialAbilityEnabled;
-	bool m_bInputStatus;
+		bool m_bInputStatus;
 	bool m_bIsSpecial;
 
 	bool m_bIsF1HelpWindowEnabled;
 	bool m_bIsTeleportRequested;
-	bool m_bIsPrevMoveBlocked;
-	bool m_bIsHideLocalCursor;
+	bool m_bHideLocalCursor;
 
 	bool m_bForceDisconn;
-	bool m_bForceAttack;
-	bool m_bParalyze;
 
 	short m_sFrameCount;
 	short m_sFPS;
@@ -658,86 +622,45 @@ public:
 
 	int m_iFightzoneNumber;
 	int m_iFightzoneNumberTemp;
-	int m_iPlayerApprColor; // v1.4
-	int m_iHP;//was int			// Hit Point
-	int m_iMP;//was int			// Mana Point
-	int m_iSP;//was int			// Staminar Point
-	int m_iAC;						// Armour Class
-	int m_iTHAC0;					// To Hit Armour Class 0
-	int m_iHungerStatus;
 
-	uint32_t m_iExp;
-	int m_iLevel, m_iStr, m_iInt, m_iVit, m_iDex, m_iMag, m_iCharisma, m_iContribution;
-	// Snoopy: Added Angels
-	int m_iAngelicStr, m_iAngelicInt, m_iAngelicDex, m_iAngelicMag;
-
-	int m_iEnemyKillCount;
-	int m_iPKCount;
-	int m_iRewardGold;
-	int m_iGuildRank, m_iTotalGuildsMan;
-	int m_iPointCommandType;
+								int m_iPointCommandType;
 	int m_iTotalChar;
 //	int m_iAccountStatus;
 	short m_sMagicShortCut;
-	int m_iLU_Point;
-	int m_iCameraShakingDegree;
-	int m_iSuperAttackLeft;
-	int m_iAccntYear, m_iAccntMonth, m_iAccntDay;
+		int m_iAccntYear, m_iAccntMonth, m_iAccntDay;
 	int m_iIpYear, m_iIpMonth, m_iIpDay;
 	int m_iDownSkillIndex;
 
 	int m_iIlusionOwnerH;
-	int m_iApprColor_IE;
-	int m_iInputX, m_iInputY;
-	int m_iPDBGSdivX, m_iPDBGSdivY;			   // Pre-Draw Background Surface
+		int m_iInputX, m_iInputY;
 	short m_sRecentShortCut;
-	short m_sShortCut[6]; // Snoopy: 6 shortcuts
-	int	m_iSpecialAbilityTimeLeftSec;
-	int m_iDrawFlag;
-	bool m_bSkipFrame;  // Set by UpdateScreen_OnGame when iUpdateRet == 0 to skip flip
+	std::array<short, 6> m_sShortCut{}; // Snoopy: 6 shortcuts
+		int m_iDrawFlag;
 
-
-	int m_iSpecialAbilityType;
-	int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;
-	int m_iCrusadeDuty;
-	int m_iLogServerPort, m_iGameServerPort;
+		int m_iTimeLeftSecAccount, m_iTimeLeftSecIP;
+		int m_iLogServerPort, m_iGameServerPort;
 	int m_iRating; //Rating
 
-	int m_iPrevMoveX, m_iPrevMoveY;
 	int m_iBlockYear, m_iBlockMonth, m_iBlockDay;
 	unsigned char m_iTopMsgLastSec;
-	int m_iConstructionPoint;
-	int m_iWarContribution;
-	int m_iConstructLocX, m_iConstructLocY;
-	int m_iNetLagCount;
+				int m_iNetLagCount;
 	int m_iTeleportLocX, m_iTeleportLocY;
 	int m_iTotalPartyMember;
 	int m_iPartyStatus;
 	int m_iGizonItemUpgradeLeft;
 	//int m_iFeedBackCardIndex; // removed by Snoopy
 
-	short m_sItemEquipmentStatus[DEF_MAXITEMEQUIPPOS];
-	short m_sPlayerX, m_sPlayerY;
-	short m_sPlayerObjectID;
-	short m_sPlayerType;
-	short m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4;
-	int m_iPlayerStatus;
+	std::array<short, DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
 	short m_sMCX, m_sMCY;
-	short m_sCommX, m_sCommY;
 	int   m_iCastingMagicType;
-	short m_sDamageMove, m_sDamageMoveAmount;
-	short m_sAppr1_IE, m_sAppr2_IE, m_sAppr3_IE, m_sAppr4_IE;
-	int m_iStatus_IE;
-	short m_sViewDstX, m_sViewDstY;
-	short m_sViewPointX, m_sViewPointY;
 	short m_sVDL_X, m_sVDL_Y;
 
 	uint16_t m_wCommObjectID;
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
 	// Color arrays for sprite tinting (RGB888 format, 0-255 range)
-	int16_t m_wR[16], m_wG[16], m_wB[16];
-	int16_t m_wWR[16], m_wWG[16], m_wWB[16];
+	std::array<int16_t, 16> m_wR{}, m_wG{}, m_wB{};
+	std::array<int16_t, 16> m_wWR{}, m_wWG{}, m_wWB{};
 
 	unsigned char m_cInputMaxLen;
 	char m_cEdit[4];
@@ -757,48 +680,31 @@ public:
 	uint32_t m_dwOverlayStartTime;  // When overlay was shown
 
 	char m_cWhisperIndex;
-	char m_cAccountName[12];
-	char m_cAccountPassword[12];
-	char m_cAccountAge[12];
+			char m_cAccountAge[12];
 	char m_cNewPassword[12];
 	char m_cNewPassConfirm[12];
-	char m_cAccountCountry[18];
-	char m_cAccountSSN[32];
 	char m_cEmailAddr[52];
 	char m_cAccountQuiz[46];// Quiz
 	char m_cAccountAnswer[22];
-	char m_cPlayerName[12];
-	char m_cPlayerDir;
-	char m_cMsg[200];
+			char m_cMsg[200];
 	char m_cLocation[12];
 	char m_cCurLocation[12];
-   	char m_cGuildName[22];
-	char m_cMCName[12];
+		char m_cMCName[12];
 	char m_cMapName[12];
 	char m_cMapMessage[32];
 	char m_cMapIndex;
-	char m_cPlayerTurn;
-	char m_cCommand;
 	char m_cCurFocus, m_cMaxFocus;
-	char m_cEnterCheck, m_cTabCheck, m_cLeftArrowCheck;
 	char m_cArrowPressed;
 	char m_cLogServerAddr[16];
 	char m_cChatMsg[64];
 	char m_cBackupChatMsg[64];
-	char m_cGender, m_cSkinCol, m_cHairStyle, m_cHairCol, m_cUnderCol;
-	char m_ccStr, m_ccVit, m_ccDex, m_ccInt, m_ccMag, m_ccChr;
-	uint16_t m_cLU_Str, m_cLU_Vit, m_cLU_Dex, m_cLU_Int, m_cLU_Mag, m_cLU_Char;
 
-	char m_cMagicMastery[DEF_MAXMAGICTYPE];
-	unsigned char m_cSkillMastery[DEF_MAXSKILLTYPE]; // v1.4
-	char m_cWorldServerName[32];
+			char m_cWorldServerName[32];
 	char m_cMenuDir, m_cMenuDirCnt, m_cMenuFrame;
 	char m_cWhetherEffectType;
 	char m_cWhetherStatus;
 	char m_cIlusionOwnerType;
 	char m_cName_IE[12];
-	char m_sViewDX, m_sViewDY;
-	char m_cCommandCount;
 	char m_cLoading;
 	char m_cDiscount;
 
@@ -808,7 +714,7 @@ public:
 	char m_cConstructMapName[12];
 	char m_cGameServerName[22]; //  Gateway
 
-	class CItem* m_pItemConfigList[5000];
+	std::array<std::unique_ptr<class CItem>, 5000> m_pItemConfigList;
 	bool _bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize);
 
 	int iNpcHP, iNpcMaxHP;
@@ -816,15 +722,12 @@ public:
 	char m_cItemDrop[25][25];
 
 	RECT m_rcPlayerRect, m_rcBodyRect;
-	HWND m_hWnd;
-
-	HANDLE m_hPakFile;
 
 	bool m_bWhisper;
 	bool m_bShout;
 
 	bool m_bItemDrop;
-    int  m_iItemDropCnt;
+	int  m_iItemDropCnt;
 
 	// Snoopy: Apocalypse Gate
 	char m_cGateMapName[12];
@@ -838,11 +741,9 @@ public:
 	bool m_bIsXmas;
 	bool m_bUsingSlate;
 
-	bool _tmp_bSpriteOmit;
+	// Entity render state (temporary state for currently rendered entity)
+	CEntityRenderState m_entityState;
 
-	//Snoopy: Avatar
-	bool m_bIsAvatarMode;
-	bool m_bIsAvatarMessenger;
 
 	//Snoopy: Crafting
 	//bool _bDecodeCraftItemContents();
@@ -850,8 +751,6 @@ public:
 	//bool _bCheckCraftItemStatus();
 	//bool _bCheckCurrentCraftItemStatus();
 
-	class CBuildItem * m_pCraftItemList[DEF_MAXBUILDITEMS];
-	class CBuildItem * m_pDispCraftItemList[DEF_MAXBUILDITEMS];
 	int   m_iContributionPrice;
 
 	char m_cTakeHeroItemName[100]; //Drajwer - hero item str

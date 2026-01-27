@@ -24,9 +24,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
-	int16_t* wR = bIsWeapon ? m_pGame->m_wWR : m_pGame->m_wR;
-	int16_t* wG = bIsWeapon ? m_pGame->m_wWG : m_pGame->m_wG;
-	int16_t* wB = bIsWeapon ? m_pGame->m_wWB : m_pGame->m_wB;
+	int16_t* wR = bIsWeapon ? m_pGame->m_wWR.data() : m_pGame->m_wR.data();
+	int16_t* wG = bIsWeapon ? m_pGame->m_wWG.data() : m_pGame->m_wG.data();
+	int16_t* wB = bIsWeapon ? m_pGame->m_wWB.data() : m_pGame->m_wB.data();
 
 	if (cItemColor == 0)
 	{
@@ -72,7 +72,7 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 		int itemIdx = m_pGame->m_cItemOrder[i];
 		if (itemIdx == -1) continue;
 
-		CItem* pItem = m_pGame->m_pItemList[itemIdx];
+		CItem* pItem = m_pGame->m_pItemList[itemIdx].get();
 		if (pItem == nullptr) continue;
 
 		// Skip items that are selected (being dragged) or equipped
@@ -119,7 +119,7 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 	if ((msX >= sX + BTN_MANUFACTURE_X1) && (msX <= sX + BTN_MANUFACTURE_X2) &&
 	    (msY >= sY + BTN_Y1) && (msY <= sY + BTN_Y2))
 	{
-		if (m_pGame->m_cSkillMastery[13] == 0)
+		if (m_pGame->m_pPlayer->m_iSkillMastery[13] == 0)
 		{
 			AddEventList(DLGBOXCLICK_INVENTORY1, 10);
 			AddEventList(DLGBOXCLICK_INVENTORY2, 10);
@@ -139,7 +139,7 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 			// Look for manufacturing hammer
 			for (int i = 0; i < DEF_MAXITEMS; i++)
 			{
-				CItem* pItem = m_pGame->m_pItemList[i];
+				CItem* pItem = m_pGame->m_pItemList[i].get();
 				if (pItem != nullptr &&
 				    pItem->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX &&
 				    pItem->m_sSpriteFrame == 113 &&
