@@ -192,6 +192,7 @@ public:
 	void GrandMagicResult(char * pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4) ;
 	void MeteorStrikeComing(int iCode);
 	void _Draw_OnLogin(char * pAccount, char * pPassword, int msX, int msY, int iFrame = 60000);
+
 	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
 	void AddMapStatusInfo(char * pData, bool bIsLastData);
 	void _RequestMapStatus(char * pMapName, int iMode);
@@ -258,10 +259,8 @@ public:
 	void DrawScreen_QueryForceLogin();
 	void UpdateScreen_QueryDeleteCharacter();
 	void DrawScreen_QueryDeleteCharacter();
-	void UpdateScreen_MainMenu();
-	void DrawScreen_MainMenu();
-	void UpdateScreen_Login();
-	void DrawScreen_Login();
+
+
 	void UpdateScreen_WaitInitData();
 	void DrawScreen_WaitInitData();
 	void UpdateScreen_LogResMsg();
