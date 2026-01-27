@@ -4,10 +4,6 @@
 #include "HotkeyManager.h"
 #include "LAN_ENG.H"
 
-extern int _tmp_iStatus;
-extern char _tmp_cName[21];
-extern short _tmp_sOwnerType;
-
 void CGame::RegisterHotkeys()
 {
 	auto& hotkeys = HotkeyManager::Get();
@@ -27,10 +23,6 @@ void CGame::RegisterHotkeys()
 		[this]() { Hotkey_ToggleSystemMenu(); });
 	hotkeys.Register({ 'M', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleGuideMap(); });
-#ifdef _DEBUG
-	hotkeys.Register({ 'Q', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
-		[this]() { Hotkey_EnableAdminCommand(); });
-#endif
 	hotkeys.Register({ 'R', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleRunningMode(); });
 	hotkeys.Register({ 'S', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
@@ -41,24 +33,24 @@ void CGame::RegisterHotkeys()
 
 void CGame::Hotkey_ToggleForceAttack()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
-	if (m_bForceAttack)
+	if (m_pPlayer->m_bForceAttack)
 	{
-		m_bForceAttack = false;
+		m_pPlayer->m_bForceAttack = false;
 		AddEventList(DEF_MSG_FORCEATTACK_OFF, 10);
 	}
 	else
 	{
-		m_bForceAttack = true;
+		m_pPlayer->m_bForceAttack = true;
 		AddEventList(DEF_MSG_FORCEATTACK_ON, 10);
 	}
 }
 
 void CGame::Hotkey_CycleDetailLevel()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	int detailLevel = ConfigManager::Get().GetDetailLevel();
@@ -80,7 +72,7 @@ void CGame::Hotkey_CycleDetailLevel()
 
 void CGame::Hotkey_ToggleHelp()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
@@ -94,7 +86,7 @@ void CGame::Hotkey_ToggleHelp()
 
 void CGame::Hotkey_ToggleDialogTransparency()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
@@ -103,7 +95,7 @@ void CGame::Hotkey_ToggleDialogTransparency()
 
 void CGame::Hotkey_ToggleSystemMenu()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
@@ -113,28 +105,16 @@ void CGame::Hotkey_ToggleSystemMenu()
 
 void CGame::Hotkey_ToggleGuideMap()
 {
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME || !Input::IsCtrlDown()) {
+	if (GameModeManager::GetMode() != GameMode::MainGame || !Input::IsCtrlDown()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
 	else m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0, 0);
 }
 
-void CGame::Hotkey_EnableAdminCommand()
-{
-#ifdef _DEBUG
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME) {
-		return;
-	}
-	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-	strcpy(m_cChatMsg, "/enableadmincommand 147258 ");
-	StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-#endif
-}
-
 void CGame::Hotkey_ToggleRunningMode()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
@@ -152,7 +132,7 @@ void CGame::Hotkey_ToggleRunningMode()
 
 void CGame::Hotkey_ToggleSoundAndMusic()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (AudioManager::Get().IsMusicEnabled())
@@ -184,7 +164,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 
 void CGame::Hotkey_WhisperTarget()
 {
-	if (!Input::IsCtrlDown() || m_cGameMode != DEF_GAMEMODE_ONMAINGAME || m_bInputStatus) {
+	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	char tempid[100], cLB, cRB;
@@ -213,10 +193,10 @@ void CGame::Hotkey_WhisperTarget()
 		wsprintf(tempid, "/to %s", token);
 		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
 	}
-	else if (_tmp_sOwnerType < 7 && (strlen(_tmp_cName) > 0) && (m_iIlusionOwnerH == 0)
-		&& ((m_bIsCrusadeMode == false) || _iGetFOE(_tmp_iStatus) >= 0))
+	else if (m_entityState.m_sOwnerType < 7 && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
+		&& ((m_bIsCrusadeMode == false) || _iGetFOE(m_entityState.m_iStatus) >= 0))
 	{
-		wsprintf(tempid, "/to %s", _tmp_cName);
+		wsprintf(tempid, "/to %s", m_entityState.m_cName.data());
 		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
 	}
 	else
@@ -230,7 +210,7 @@ void CGame::Hotkey_WhisperTarget()
 void CGame::Hotkey_Simple_UseHealthPotion()
 {
 	int i = 0;
-	if (m_iHP <= 0) return;
+	if (m_pPlayer->m_iHP <= 0) return;
 	if (m_bItemUsingStatus == true)
 	{
 		AddEventList(USE_RED_POTION1, 10);
@@ -265,7 +245,7 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 void CGame::Hotkey_Simple_UseManaPotion()
 {
 	int i = 0;
-	if (m_iHP <= 0) return;
+	if (m_pPlayer->m_iHP <= 0) return;
 	if (m_bItemUsingStatus == true)
 	{
 		AddEventList(USE_BLUE_POTION1, 10);
@@ -316,7 +296,7 @@ void CGame::Hotkey_Simple_LoadBackupChat()
 
 void CGame::Hotkey_Simple_UseMagicShortcut()
 {
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
+	if (GameModeManager::GetMode() != GameMode::MainGame) return;
 	UseMagic(m_sMagicShortCut);
 }
 
@@ -381,7 +361,7 @@ void CGame::Hotkey_Simple_UseShortcut3()
 void CGame::Hotkey_Simple_WhisperCycleUp()
 {
 	m_cArrowPressed = 1;
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		int iTotalMsg = 0;
 		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
@@ -406,7 +386,7 @@ void CGame::Hotkey_Simple_WhisperCycleUp()
 void CGame::Hotkey_Simple_WhisperCycleDown()
 {
 	m_cArrowPressed = 3;
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		int iTotalMsg = 0;
 		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
@@ -455,7 +435,7 @@ void CGame::Hotkey_Simple_TabToggleCombat()
 		m_cCurFocus++;
 		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
 	}
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
 	}
@@ -463,7 +443,7 @@ void CGame::Hotkey_Simple_TabToggleCombat()
 
 void CGame::Hotkey_Simple_ToggleSafeAttack()
 {
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME) {
+	if (GameModeManager::GetMode() == GameMode::MainGame) {
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLESAFEATTACKMODE, 0, 0, 0, 0, 0);
 	}
 }
@@ -471,7 +451,7 @@ void CGame::Hotkey_Simple_ToggleSafeAttack()
 void CGame::Hotkey_Simple_Escape()
 {
 	// Note: Escape handling is automatic through Input::IsKeyPressed(VK_ESCAPE)
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		if ((m_bIsObserverMode == true) && (Input::IsShiftDown())) {
 			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
@@ -496,31 +476,31 @@ void CGame::Hotkey_Simple_SpecialAbility()
 {
 	int i = 0;
 	uint32_t dwTime = GameClock::GetTimeMS();
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
+	if (GameModeManager::GetMode() != GameMode::MainGame) return;
 	if (m_bInputStatus) return;
-	if (m_bIsSpecialAbilityEnabled == true)
+	if (m_pPlayer->m_bIsSpecialAbilityEnabled == true)
 	{
-		if (m_iSpecialAbilityType != 0) {
+		if (m_pPlayer->m_iSpecialAbilityType != 0) {
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACTIVATESPECABLTY, 0, 0, 0, 0, 0);
-			m_bIsSpecialAbilityEnabled = false;
+			m_pPlayer->m_bIsSpecialAbilityEnabled = false;
 		}
 		else AddEventList(ON_KEY_UP26, 10);
 	}
 	else {
-		if (m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
+		if (m_pPlayer->m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
 		else {
-			if ((m_sPlayerAppr4 & 0x00F0) != 0) {
+			if ((m_pPlayer->m_sPlayerAppr4 & 0x00F0) != 0) {
 				AddEventList(ON_KEY_UP28, 10);
 				return;
 			}
 
 			i = (dwTime - m_dwSpecialAbilitySettingTime) / 1000;
-			i = m_iSpecialAbilityTimeLeftSec - i;
+			i = m_pPlayer->m_iSpecialAbilityTimeLeftSec - i;
 			if (i < 0) i = 0;
 
 			std::memset(G_cTxt, 0, sizeof(G_cTxt));
 			if (i < 60) {
-				switch (m_iSpecialAbilityType) {
+				switch (m_pPlayer->m_iSpecialAbilityType) {
 				case 1: wsprintf(G_cTxt, ON_KEY_UP29, i); break;//"
 				case 2: wsprintf(G_cTxt, ON_KEY_UP30, i); break;//"
 				case 3: wsprintf(G_cTxt, ON_KEY_UP31, i); break;//"
@@ -532,7 +512,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 				}
 			}
 			else {
-				switch (m_iSpecialAbilityType) {
+				switch (m_pPlayer->m_iSpecialAbilityType) {
 				case 1: wsprintf(G_cTxt, ON_KEY_UP37, i / 60); break;//"
 				case 2: wsprintf(G_cTxt, ON_KEY_UP38, i / 60); break;//"
 				case 3: wsprintf(G_cTxt, ON_KEY_UP39, i / 60); break;//"

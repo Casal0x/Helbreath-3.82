@@ -18,7 +18,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 1: // Not yet confirmed exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_cPlayerName, 35, 55, 35);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, 35, 55, 35);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
 			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, 35, 55, 35);
 
@@ -59,7 +59,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 2: // You have confirmed the exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_cPlayerName, 35, 55, 35);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, 35, 55, 35);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
 			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, 35, 55, 35);
 

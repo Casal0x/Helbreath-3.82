@@ -16,6 +16,9 @@
     <Filter Include="Network">
       <UniqueIdentifier>{5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="NetworkMessages">
+      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567891}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Graphics">
       <UniqueIdentifier>{6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c}</UniqueIdentifier>
     </Filter>
@@ -37,31 +40,22 @@
     <Filter Include="Effects">
       <UniqueIdentifier>{b2c3d4e5-f6a7-8901-bcde-f12345678901}</UniqueIdentifier>
     </Filter>
-    <Filter Include="NetworkMessages">
-      <UniqueIdentifier>{a1b2c3d4-e5f6-7890-abcd-ef1234567891}</UniqueIdentifier>
+    <Filter Include="Screens">
+      <UniqueIdentifier>{c3d4e5f6-a7b8-9012-cdef-234567890123}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Screens\Overlays">
+      <UniqueIdentifier>{e5f6a7b8-c9d0-1234-efab-456789012345}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{d4e5f6a7-b8c9-0123-defa-345678901234}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <!-- Core -->
-    <ClInclude Include="Game.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogBoxIDs.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogBoxInfo.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogBoxManager.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalDef.h">
-      <Filter>Core</Filter>
-    </ClInclude>
+    <ClInclude Include="Game.h" />
     <ClInclude Include="CommonTypes.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="ActionID_Client.h">
+    <ClInclude Include="GlobalDef.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
@@ -76,34 +70,9 @@
     <ClInclude Include="Benchmark.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClCompile Include="Game.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="DialogBoxManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="CommonTypes.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="FrameTiming.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Version.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClInclude Include="EffectManager.h">
+    <ClInclude Include="ActionID_Client.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClCompile Include="EffectManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClInclude Include="NetworkMessageManager.h">
-      <Filter>Core</Filter>
-    </ClInclude>
-    <ClCompile Include="NetworkMessageManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <!-- Managers -->
     <ClInclude Include="ConfigManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
@@ -113,35 +82,30 @@
     <ClInclude Include="WeatherManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
+    <ClInclude Include="GameModeManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
-    <ClCompile Include="ConfigManager.cpp">
+    <ClInclude Include="DialogBoxManager.h">
       <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="AudioManager.cpp">
+    </ClInclude>
+    <ClInclude Include="DialogBoxIDs.h">
       <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="miniaudio_impl.cpp">
+    </ClInclude>
+    <ClInclude Include="DialogBoxInfo.h">
       <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="WeatherManager.cpp">
+    </ClInclude>
+    <ClInclude Include="EffectManager.h">
       <Filter>Managers</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
+    </ClInclude>
+    <ClInclude Include="NetworkMessageManager.h">
       <Filter>Managers</Filter>
-    </ClCompile>
-    <!-- Chat -->
+    </ClInclude>
     <ClInclude Include="ChatCommandManager.h">
       <Filter>Chat</Filter>
     </ClInclude>
     <ClInclude Include="ChatMsg.h">
       <Filter>Chat</Filter>
     </ClInclude>
-    <ClCompile Include="ChatCommandManager.cpp">
-      <Filter>Chat</Filter>
-    </ClCompile>
-    <!-- Chat\Commands -->
     <ClInclude Include="CmdShowFrame.h">
       <Filter>Chat\Commands</Filter>
     </ClInclude>
@@ -160,6 +124,268 @@
     <ClInclude Include="CmdWeather.h">
       <Filter>Chat\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="CmdProfile.h">
+      <Filter>Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="XSocket.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="ClientMessages.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteID.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Effects</Filter>
+    </ClInclude>
+    <ClInclude Include="MapData.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="TileSpr.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="CharInfo.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Magic.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Skill.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="BuildItem.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerController.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityRenderState.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityMotion.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
+    <ClInclude Include="lan_eng.h">
+      <Filter>Language</Filter>
+    </ClInclude>
+    <ClInclude Include="IDialogBox.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_WarningMsg.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Resurrect.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Noticement.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_RepairAll.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ConfirmExchange.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Help.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ItemDrop.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_LevelUpSetting.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Character.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Inventory.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Skill.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Magic.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_HudPanel.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_GuideMap.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Fishing.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_CrusadeJob.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ItemDropAmount.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Map.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_NpcActionQuery.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_SysMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Text.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_MagicShop.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_NpcTalk.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ChatHistory.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_CityHallMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Shop.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ItemUpgrade.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_SellList.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_GuildMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_GuildOperation.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Bank.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Exchange.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Party.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Quest.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Commander.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Constructor.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Soldier.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Slates.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_ChangeStatsMajestic.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_GuildHallMenu.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_SellOrRepair.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogBox_Manufacture.h">
+      <Filter>DialogBox</Filter>
+    </ClInclude>
+    <ClInclude Include="IGameScreen.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen_OnGame.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_Connecting.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_WaitingResponse.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_LogResMsg.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_QueryForceLogin.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_QueryDeleteCharacter.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_ChangePassword.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="MouseInterface.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="CursorTarget.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWindowHandler.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Game.cpp" />
+    <ClCompile Include="Wmain.cpp" />
+    <ClCompile Include="CommonTypes.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameTiming.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Version.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="ConfigManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="AudioManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="miniaudio_impl.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="WeatherManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="GameModeManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="DialogBoxManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessageManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="HotkeyManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatCommandManager.cpp">
+      <Filter>Chat</Filter>
+    </ClCompile>
     <ClCompile Include="CmdShowFrame.cpp">
       <Filter>Chat\Commands</Filter>
     </ClCompile>
@@ -178,30 +404,58 @@
     <ClCompile Include="CmdWeather.cpp">
       <Filter>Chat\Commands</Filter>
     </ClCompile>
-    <!-- DirectX -->
-    <!-- Network -->
-    <ClInclude Include="XSocket.h">
-      <Filter>Network</Filter>
-    </ClInclude>
-    <ClInclude Include="ClientMessages.h">
-      <Filter>Network</Filter>
-    </ClInclude>
+    <ClCompile Include="CmdProfile.cpp">
+      <Filter>Chat\Commands</Filter>
+    </ClCompile>
     <ClCompile Include="XSocket.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Stats.cpp">
+    <ClCompile Include="NetworkMessages_Admin.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Items.cpp">
+    <ClCompile Include="NetworkMessages_Agriculture.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Guild.cpp">
+    <ClCompile Include="NetworkMessages_Angels.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Apocalypse.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Bank.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
     <ClCompile Include="NetworkMessages_Combat.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Skills.cpp">
+    <ClCompile Include="NetworkMessages_Crafting.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Crusade.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Events.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Exchange.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Fish.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Guild.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Heldenian.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Items.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Map.cpp">
+      <Filter>NetworkMessages</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMessages_Party.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
     <ClCompile Include="NetworkMessages_Player.cpp">
@@ -210,59 +464,18 @@
     <ClCompile Include="NetworkMessages_Quest.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Party.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Apocalypse.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Heldenian.cpp">
+    <ClCompile Include="NetworkMessages_Skills.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
     <ClCompile Include="NetworkMessages_Slates.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkMessages_Map.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Exchange.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Bank.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Angels.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Events.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Agriculture.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Fish.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Crafting.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Admin.cpp">
-      <Filter>NetworkMessages</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkMessages_Crusade.cpp">
+    <ClCompile Include="NetworkMessages_Stats.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
     <ClCompile Include="NetworkMessages_System.cpp">
       <Filter>NetworkMessages</Filter>
     </ClCompile>
-    <!-- Graphics -->
-    <ClInclude Include="SpriteID.h">
-      <Filter>Graphics</Filter>
-    </ClInclude>
-    <!-- Effects -->
-    <ClInclude Include="Effect.h">
-      <Filter>Effects</Filter>
-    </ClInclude>
     <ClCompile Include="Effect_Add.cpp">
       <Filter>Effects</Filter>
     </ClCompile>
@@ -275,296 +488,186 @@
     <ClCompile Include="Effect_Lights.cpp">
       <Filter>Effects</Filter>
     </ClCompile>
-    <!-- World -->
-    <ClInclude Include="MapData.h">
-      <Filter>World</Filter>
-    </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>World</Filter>
-    </ClInclude>
-    <ClInclude Include="TileSpr.h">
-      <Filter>World</Filter>
-    </ClInclude>
     <ClCompile Include="MapData.cpp">
       <Filter>World</Filter>
     </ClCompile>
-    <!-- Entities -->
-    <ClInclude Include="CharInfo.h">
+    <ClCompile Include="Player.cpp">
       <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="Magic.h">
+    </ClCompile>
+    <ClCompile Include="PlayerController.cpp">
       <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="Skill.h">
+    </ClCompile>
+    <ClCompile Include="EntityMotion.cpp">
       <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="BuildItem.h">
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
       <Filter>Entities</Filter>
-    </ClInclude>
-    <ClInclude Include="Misc.h">
-      <Filter>Entities</Filter>
-    </ClInclude>
-    <!-- Language -->
-    <ClInclude Include="lan_eng.h">
-      <Filter>Language</Filter>
-    </ClInclude>
-    <!-- DialogBox -->
-    <ClInclude Include="IDialogBox.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
+    </ClCompile>
     <ClCompile Include="IDialogBox.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_WarningMsg.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_WarningMsg.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Resurrect.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Resurrect.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Noticement.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Noticement.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_RepairAll.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_RepairAll.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ConfirmExchange.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ConfirmExchange.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Help.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Help.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ItemDrop.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ItemDrop.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_LevelUpSetting.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_LevelUpSetting.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
     <ClCompile Include="DialogBox_Character.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Character.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Inventory.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Inventory.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Skill.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Skill.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Magic.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Magic.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_HudPanel.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_HudPanel.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_GuideMap.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_GuideMap.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Fishing.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Fishing.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_CrusadeJob.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_CrusadeJob.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ItemDropAmount.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ItemDropAmount.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Map.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Map.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_NpcActionQuery.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_NpcActionQuery.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_SysMenu.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_SysMenu.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Text.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Text.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_MagicShop.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_MagicShop.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_NpcTalk.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_NpcTalk.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ChatHistory.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ChatHistory.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_CityHallMenu.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_CityHallMenu.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Shop.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Shop.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ItemUpgrade.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ItemUpgrade.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_SellList.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_SellList.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_GuildMenu.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_GuildMenu.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_GuildOperation.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_GuildOperation.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Bank.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Bank.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Exchange.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Exchange.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Party.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Party.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Quest.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Quest.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Commander.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Commander.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Constructor.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Constructor.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Soldier.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Soldier.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_Slates.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_Slates.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_ChangeStatsMajestic.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_ChangeStatsMajestic.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
     <ClCompile Include="DialogBox_GuildHallMenu.cpp">
       <Filter>DialogBox</Filter>
     </ClCompile>
-    <ClInclude Include="DialogBox_GuildHallMenu.h">
+    <ClCompile Include="DialogBox_SellOrRepair.cpp">
       <Filter>DialogBox</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdProfile.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogBox_SellOrRepair.h">
+    </ClCompile>
+    <ClCompile Include="DialogBox_Manufacture.cpp">
       <Filter>DialogBox</Filter>
-    </ClInclude>
-    <ClInclude Include="DialogBox_Manufacture.h">
-      <Filter>DialogBox</Filter>
-    </ClInclude>
-    <ClInclude Include="GameWindowHandler.h" />
+    </ClCompile>
+    <ClCompile Include="IGameScreen.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_OnGame.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_Connecting.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_WaitingResponse.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_LogResMsg.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_QueryForceLogin.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_QueryDeleteCharacter.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_ChangePassword.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="MouseInterface.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="CursorTarget.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="GameWindowHandler.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.Hotkeys.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">
@@ -575,24 +678,5 @@
     <Image Include="icon1.ico">
       <Filter>Resources</Filter>
     </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Game.Hotkeys.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="HotkeyManager.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdProfile.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="DialogBox_Manufacture.cpp">
-      <Filter>DialogBox</Filter>
-    </ClCompile>
-    <ClCompile Include="DialogBox_SellOrRepair.cpp">
-      <Filter>DialogBox</Filter>
-    </ClCompile>
-    <ClCompile Include="Wmain.cpp" />
-    <ClCompile Include="GameWindowHandler.cpp" />
   </ItemGroup>
 </Project>

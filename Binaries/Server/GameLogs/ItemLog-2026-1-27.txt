@@ -1,0 +1,1 @@
+(127.0.0.1) PC(ShadowEvil)	Deplete	Recall Scroll(1 0 0 0 0)	elvine(158 57)(127.0.0.1) PC(ShadowEvil)	Get	Gold(33 7461 17011 -13986 0)	elvine(199 109)

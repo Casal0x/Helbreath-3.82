@@ -66,7 +66,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	case 2: // Soldier diag
 		PutAlignedString(sX, sX + szX, sY + 45, "You will hire a soldier by summon points", 255, 255, 255);
-		if ((m_pGame->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
 				PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", 255, 255, 255);
@@ -74,7 +74,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		else PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", 65, 65, 65);
 
-		if ((m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
 				PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", 255, 255, 255);
@@ -82,7 +82,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		else PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", 65, 65, 65);
 
-		if ((m_pGame->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
 				PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", 255, 255, 255);
@@ -90,7 +90,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		else PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", 65, 65, 65);
 
-		if ((m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 171))
 				PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", 255, 255, 255);
@@ -98,7 +98,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		else PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", 65, 65, 65);
 
-		if ((m_pGame->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
 				PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", 255, 255, 255);
@@ -106,7 +106,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		else PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", 65, 65, 65);
 
-		if ((m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
 				PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 255, 255, 255);
@@ -115,7 +115,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 65, 65, 65);
 
 		PutAlignedString(sX, sX + szX, sY + 220, "You should join a guild to hire soldiers.", 4, 0, 50);
-		wsprintf(m_pGame->G_cTxt, "Summon points : %d", m_pGame->m_iConstructionPoint);
+		wsprintf(m_pGame->G_cTxt, "Summon points : %d", m_pGame->m_pPlayer->m_iConstructionPoint);
 		PutAlignedString(sX, sX + szX, sY + 250, m_pGame->G_cTxt, 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 280, "Maximum summon points : 12000 points.", 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 300, "Maximum hiring number : 5 ", 4, 0, 50);
@@ -209,37 +209,37 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 
 	case 2: // Buy a soldier scroll
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 70) && (msY < sY + 95)
-			&& (m_pGame->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 875, 1, 2, 3, 4, "Gail", 5);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 95) && (msY < sY + 120)
-			&& (m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 876, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 120) && (msY < sY + 145)
-			&& (m_pGame->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 877, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 145) && (msY < sY + 170)
-			&& (m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 878, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 170) && (msY < sY + 195)
-			&& (m_pGame->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 879, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 195) && (msY < sY + 220)
-			&& (m_pGame->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
+			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 880, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
@@ -248,7 +248,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 
 	case 3: // Buy a Flag
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 140) && (msY <= sY + 165)
-			&& (m_pGame->m_iEnemyKillCount >= 3))
+			&& (m_pGame->m_pPlayer->m_iEnemyKillCount >= 3))
 		{
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETOCCUPYFLAG, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);

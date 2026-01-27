@@ -519,6 +519,10 @@ void DDrawSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& par
     else if (params.isFade) {
         DrawFadeInternal(x, y, frame);
     }
+    else if (params.blendMode == SpriteLib::BlendMode::Average) {
+        // 50/50 averaging blend: result = (src + dst) / 2
+        DrawAverage(x, y, frame, params.useColorKey);
+    }
     else if (params.blendMode == SpriteLib::BlendMode::Additive) {
         // Additive blending - adds source to destination
         DrawAdditive(x, y, frame, params.tintR, params.tintG, params.tintB, params.alpha, params.isColorReplace, params.useColorKey);
@@ -810,6 +814,73 @@ void DDrawSprite::DrawTransparent(int x, int y, int frame, float alpha, bool use
                         (pTransRB[(pDst[ix] & 0x7C00) >> 10][(pSrc[ix] & 0x7C00) >> 10] << 10) |
                         (pTransG[(pDst[ix] & 0x3E0) >> 5][(pSrc[ix] & 0x3E0) >> 5] << 5) |
                         pTransRB[(pDst[ix] & 0x1F)][(pSrc[ix] & 0x1F)]
+                    );
+                }
+            }
+            pSrc += m_sPitch;
+            pDst += m_pDDraw->m_sBackB4Pitch;
+        }
+        break;
+    }
+
+    m_bOnCriticalSection = false;
+}
+
+void DDrawSprite::DrawAverage(int x, int y, int frame, bool useColorKey)
+{
+    // 50/50 averaging blend: result = (source + destination) / 2
+    // Uses G_lTransRB2/G_lTransG2 tables for accurate color blending
+    m_rcBound.top = -1;
+    m_bOnCriticalSection = true;
+
+    const auto& f = m_frames[frame];
+    int sx = f.x;
+    int sy = f.y;
+    int szx = f.width;
+    int szy = f.height;
+    int dX = x + f.pivotX;
+    int dY = y + f.pivotY;
+
+    if (!ClipCoordinates(dX, dY, sx, sy, szx, szy)) {
+        m_bOnCriticalSection = false;
+        return;
+    }
+
+    m_rcBound = { dX, dY, dX + szx, dY + szy };
+
+    uint16_t* pSrc = m_pSurfaceAddr + sx + sy * m_sPitch;
+    uint16_t* pDst = m_pDDraw->m_pBackB4Addr + dX + dY * m_pDDraw->m_sBackB4Pitch;
+
+    if (szx == 0 || szy == 0) {
+        m_bOnCriticalSection = false;
+        return;
+    }
+
+    switch (m_pDDraw->m_cPixelFormat) {
+    case 1: // RGB565
+        for (int iy = 0; iy < szy; iy++) {
+            for (int ix = 0; ix < szx; ix++) {
+                if (!useColorKey || pSrc[ix] != m_wColorKey) {
+                    pDst[ix] = static_cast<uint16_t>(
+                        (G_lTransRB2[(pDst[ix] & 0xF800) >> 11][(pSrc[ix] & 0xF800) >> 11] << 11) |
+                        (G_lTransG2[(pDst[ix] & 0x7E0) >> 5][(pSrc[ix] & 0x7E0) >> 5] << 5) |
+                        G_lTransRB2[(pDst[ix] & 0x1F)][(pSrc[ix] & 0x1F)]
+                    );
+                }
+            }
+            pSrc += m_sPitch;
+            pDst += m_pDDraw->m_sBackB4Pitch;
+        }
+        break;
+
+    case 2: // RGB555
+        for (int iy = 0; iy < szy; iy++) {
+            for (int ix = 0; ix < szx; ix++) {
+                if (!useColorKey || pSrc[ix] != m_wColorKey) {
+                    pDst[ix] = static_cast<uint16_t>(
+                        (G_lTransRB2[(pDst[ix] & 0x7C00) >> 10][(pSrc[ix] & 0x7C00) >> 10] << 10) |
+                        (G_lTransG2[(pDst[ix] & 0x3E0) >> 5][(pSrc[ix] & 0x3E0) >> 5] << 5) |
+                        G_lTransRB2[(pDst[ix] & 0x1F)][(pSrc[ix] & 0x1F)]
                     );
                 }
             }

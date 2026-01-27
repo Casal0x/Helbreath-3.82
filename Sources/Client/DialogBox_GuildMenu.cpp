@@ -29,7 +29,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 	case 3:
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU20, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_cGuildName, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_pPlayer->m_cGuildName, 55, 25, 25);
 		PutAlignedString(sX, sX + szX, sY + 144, "____________________", 25, 35, 25);
 		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU21, 55, 25, 25);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -143,7 +143,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 void DialogBox_GuildMenu::DrawMode0_MainMenu(short sX, short sY, short szX, short msX, short msY)
 {
 	// Create new guild option
-	if ((m_pGame->m_iGuildRank == -1) && (m_pGame->m_iCharisma >= 20) && (m_pGame->m_iLevel >= 20)) {
+	if ((m_pGame->m_pPlayer->m_iGuildRank == -1) && (m_pGame->m_pPlayer->m_iCharisma >= 20) && (m_pGame->m_pPlayer->m_iLevel >= 20)) {
 		if ((msX > sX + ADJX + 80) && (msX < sX + ADJX + 210) && (msY > sY + ADJY + 63) && (msY < sY + ADJY + 78))
 			PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 255, 255, 255);
 		else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 4, 0, 50);
@@ -151,7 +151,7 @@ void DialogBox_GuildMenu::DrawMode0_MainMenu(short sX, short sY, short szX, shor
 	else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 65, 65, 65);
 
 	// Disband guild option
-	if (m_pGame->m_iGuildRank == 0) {
+	if (m_pGame->m_pPlayer->m_iGuildRank == 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 82) && (msY < sY + ADJY + 99))
 			PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, 255, 255, 255);
 		else PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, 4, 0, 50);
@@ -169,12 +169,12 @@ void DialogBox_GuildMenu::DrawMode0_MainMenu(short sX, short sY, short szX, shor
 	else PutAlignedString(sX, sX + szX, sY + ADJY + 125, DRAW_DIALOGBOX_GUILDMENU9, 4, 0, 50);
 
 	// Fightzone options
-	if (m_pGame->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber == 0) {
+	if (m_pGame->m_pPlayer->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber == 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 228) && (msY > sY + ADJY + 143) && (msY < sY + ADJY + 169))
 			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, 255, 255, 255);
 		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, 4, 0, 50);
 	}
-	else if (m_pGame->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber > 0) {
+	else if (m_pGame->m_pPlayer->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber > 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 216) && (msY > sY + ADJY + 143) && (msY < sY + ADJY + 169))
 			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, 255, 255, 255);
 		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, 4, 0, 50);
@@ -193,10 +193,10 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
 
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu)
-		m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_cGuildName, RGB(255, 255, 255), true, false, true);
+		m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, RGB(255, 255, 255), true, false, true);
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		if ((strcmp(m_pGame->m_cGuildName, "NONE") == 0) || (strlen(m_pGame->m_cGuildName) == 0)) {
+		if ((strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) || (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0)) {
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 24);
 		}
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 25);
@@ -211,7 +211,7 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 void DialogBox_GuildMenu::DrawMode5_DisbandConfirm(short sX, short sY, short szX, short msX, short msY)
 {
 	PutAlignedString(sX, sX + szX, sY + 90, DRAW_DIALOGBOX_GUILDMENU24);
-	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_cGuildName, 35, 35, 35);
+	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_pPlayer->m_cGuildName, 35, 35, 35);
 	PutAlignedString(sX, sX + szX, sY + 109, "____________________", 0, 0, 0);
 	PutAlignedString(sX, sX + szX, sY + 130, DRAW_DIALOGBOX_GUILDMENU25);
 	PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_GUILDMENU26);
@@ -309,7 +309,7 @@ void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX
 {
 	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, 55, 25, 25);
 	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
-	m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_cGuildName, RGB(255, 255, 255), false, 2);
+	m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, RGB(255, 255, 255), false, 2);
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 25);
 	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 24);
@@ -358,12 +358,12 @@ bool DialogBox_GuildMenu::OnClickMode0(short sX, short sY, short msX, short msY)
 {
 	// Create new guild
 	if ((msX > sX + ADJX + 80) && (msX < sX + ADJX + 210) && (msY > sY + ADJY + 63) && (msY < sY + ADJY + 78)) {
-		if (m_pGame->m_iGuildRank != -1) return false;
-		if (m_pGame->m_iCharisma < 20) return false;
-		if (m_pGame->m_iLevel < 20) return false;
+		if (m_pGame->m_pPlayer->m_iGuildRank != -1) return false;
+		if (m_pGame->m_pPlayer->m_iCharisma < 20) return false;
+		if (m_pGame->m_pPlayer->m_iLevel < 20) return false;
 		if (m_pGame->m_bIsCrusadeMode) return false;
 		m_pGame->EndInputString();
-		m_pGame->StartInputString(sX + 75, sY + 140, 21, m_pGame->m_cGuildName);
+		m_pGame->StartInputString(sX + 75, sY + 140, 21, m_pGame->m_pPlayer->m_cGuildName);
 		Info().cMode = 1;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -371,7 +371,7 @@ bool DialogBox_GuildMenu::OnClickMode0(short sX, short sY, short msX, short msY)
 
 	// Disband guild
 	if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 82) && (msY < sY + ADJY + 99)) {
-		if (m_pGame->m_iGuildRank != 0) return false;
+		if (m_pGame->m_pPlayer->m_iGuildRank != 0) return false;
 		if (m_pGame->m_bIsCrusadeMode) return false;
 		Info().cMode = 5;
 		PlaySoundEffect('E', 14, 5);
@@ -395,7 +395,7 @@ bool DialogBox_GuildMenu::OnClickMode0(short sX, short sY, short msX, short msY)
 	// Fightzone
 	if (m_pGame->m_iFightzoneNumber < 0) return false;
 	if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 228) && (msY > sY + ADJY + 143) && (msY < sY + ADJY + 169)) {
-		if (m_pGame->m_iGuildRank != 0) return false;
+		if (m_pGame->m_pPlayer->m_iGuildRank != 0) return false;
 		if (m_pGame->m_iFightzoneNumber == 0)
 			Info().cMode = 13;
 		else
@@ -411,8 +411,8 @@ bool DialogBox_GuildMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 {
 	// Submit button
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
-		if (strcmp(m_pGame->m_cGuildName, "NONE") == 0) return false;
-		if (strlen(m_pGame->m_cGuildName) == 0) return false;
+		if (strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) return false;
+		if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return false;
 		bSendCommand(MSGID_REQUEST_CREATENEWGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
 		Info().cMode = 2;
 		m_pGame->EndInputString();

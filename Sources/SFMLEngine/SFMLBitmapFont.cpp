@@ -150,17 +150,17 @@ void SFMLBitmapFont::DrawTextCentered(int x1, int x2, int y, const char* text, c
 
 // SFMLBitmapFontFactory implementation
 
-IBitmapFont* SFMLBitmapFontFactory::CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                                int frameOffset, const FontSpacing& spacing)
+std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                                int frameOffset, const FontSpacing& spacing)
 {
     if (!sprite)
         return nullptr;
 
-    return new SFMLBitmapFont(sprite, firstChar, lastChar, frameOffset, spacing);
+    return std::make_unique<SFMLBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-IBitmapFont* SFMLBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                                       int frameOffset)
+std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                                       int frameOffset)
 {
     if (!sprite)
         return nullptr;
@@ -169,7 +169,7 @@ IBitmapFont* SFMLBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite
     spacing.useDynamicSpacing = true;
     spacing.defaultWidth = 5;
 
-    return new SFMLBitmapFont(sprite, firstChar, lastChar, frameOffset, spacing);
+    return std::make_unique<SFMLBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
 } // namespace TextLib

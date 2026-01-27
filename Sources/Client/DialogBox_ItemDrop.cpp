@@ -16,7 +16,7 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
 
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView], cStr1, cStr2, cStr3);
+	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 	if (strlen(Info().cStr) == 0)
 		wsprintf(cTxt, "%s", cStr1);
@@ -85,7 +85,7 @@ bool DialogBox_ItemDrop::OnClick(short msX, short msY)
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	if (m_pGame->m_cCommand < 0) return false;
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
 	// Yes button - drop item
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))

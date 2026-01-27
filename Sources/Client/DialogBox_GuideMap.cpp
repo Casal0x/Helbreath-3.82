@@ -47,8 +47,8 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 	if (m_pGame->m_cMapIndex >= 35)
 		m_iMaxMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + m_pGame->m_cMapIndex + 1;
 
-	short shX = m_pGame->m_sPlayerX - 64;
-	short shY = m_pGame->m_sPlayerY - 64;
+	short shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
+	short shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
 	if (shX < 0) shX = 0;
 	if (shY < 0) shY = 0;
 	if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;
@@ -59,7 +59,7 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 	else
 		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX - shX + m_pGame->m_sPlayerX, sY - shY + m_pGame->m_sPlayerY, 37);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX - shX + m_pGame->m_pPlayer->m_sPlayerX, sY - shY + m_pGame->m_pPlayer->m_sPlayerY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
 	{
@@ -91,8 +91,8 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 	else
 		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, SpriteLib::DrawParams::NoColorKey());
 
-	short shX = (m_pGame->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-	short shY = (m_pGame->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
+	short shX = (m_pGame->m_pPlayer->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
+	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + shX, sY + shY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
@@ -113,8 +113,8 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 
 	if (ConfigManager::Get().IsZoomMapEnabled())
 	{
-		shX = m_pGame->m_sPlayerX - 64;
-		shY = m_pGame->m_sPlayerY - 64;
+		shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
+		shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
 		if (shX < 0) shX = 0;
 		if (shY < 0) shY = 0;
 		if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;

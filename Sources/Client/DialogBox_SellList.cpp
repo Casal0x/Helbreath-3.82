@@ -41,7 +41,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 			std::memset(cStr1, 0, sizeof(cStr1));
 			std::memset(cStr2, 0, sizeof(cStr2));
 			std::memset(cStr3, 0, sizeof(cStr3));
-			m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex], cStr1, cStr2, cStr3);
+			m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
 
 			bool bHover = (msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15);
 

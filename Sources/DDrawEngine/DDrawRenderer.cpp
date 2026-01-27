@@ -84,6 +84,83 @@ void DDrawRenderer::DrawItemShadowBox(int x1, int y1, int x2, int y2, int type)
                                static_cast<short>(x2), static_cast<short>(y2), type);
 }
 
+void DDrawRenderer::DrawFadeOverlay(float alpha)
+{
+    if (alpha <= 0.0f) return;  // Fully transparent, nothing to draw
+
+    uint16_t* pDst = m_ddraw.m_pBackB4Addr;
+    if (!pDst) return;
+
+    int width = m_ddraw.res_x;
+    int height = m_ddraw.res_y;
+    int pitch = m_ddraw.m_sBackB4Pitch;
+
+    // Clamp alpha to [0, 1]
+    if (alpha > 1.0f) alpha = 1.0f;
+
+    // Convert alpha to inverse multiplier (1.0 - alpha) as fixed point
+    // We want to darken, so we multiply by (1 - alpha)
+    // For alpha = 0: multiply by 1 (no change)
+    // For alpha = 1: multiply by 0 (black)
+    int invAlpha = static_cast<int>((1.0f - alpha) * 256.0f);
+
+    // Fast path for fully opaque (black screen)
+    if (alpha >= 1.0f)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            memset(pDst, 0, width * sizeof(uint16_t));
+            pDst += pitch;
+        }
+        return;
+    }
+
+    // Variable alpha: multiply each pixel's color channels
+    // RGB565: RRRRRGGGGGGBBBBB (5-6-5 bits)
+    // RGB555: 0RRRRRGGGGGBBBBB (5-5-5 bits)
+
+    if (m_ddraw.m_cPixelFormat == 1) // RGB565
+    {
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                uint16_t pixel = pDst[x];
+                int r = (pixel >> 11) & 0x1F;
+                int g = (pixel >> 5) & 0x3F;
+                int b = pixel & 0x1F;
+
+                r = (r * invAlpha) >> 8;
+                g = (g * invAlpha) >> 8;
+                b = (b * invAlpha) >> 8;
+
+                pDst[x] = static_cast<uint16_t>((r << 11) | (g << 5) | b);
+            }
+            pDst += pitch;
+        }
+    }
+    else // RGB555
+    {
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                uint16_t pixel = pDst[x];
+                int r = (pixel >> 10) & 0x1F;
+                int g = (pixel >> 5) & 0x1F;
+                int b = pixel & 0x1F;
+
+                r = (r * invAlpha) >> 8;
+                g = (g * invAlpha) >> 8;
+                b = (b * invAlpha) >> 8;
+
+                pDst[x] = static_cast<uint16_t>((r << 10) | (g << 5) | b);
+            }
+            pDst += pitch;
+        }
+    }
+}
+
 void DDrawRenderer::BeginTextBatch()
 {
     m_ddraw._GetBackBufferDC();

@@ -81,7 +81,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
         if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) &&
             (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
             std::memset(cTemp, 0, sizeof(cTemp));
-            m_pGame->GetItemName(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView], cTemp, cStr2, cStr3);
+            m_pGame->GetItemName(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get(), cTemp, cStr2, cStr3);
             if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79)) {
                 m_pGame->PutAlignedString(sX + 10, sX + 190, sY + i * 18 + 65, cTemp, 255, 255, 255);
             }
@@ -92,7 +92,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     for (int i = 0; i < 13; i++)
         if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) &&
             (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
-            iDiscountRatio = ((m_pGame->m_iCharisma - 10) / 4);
+            iDiscountRatio = ((m_pGame->m_pPlayer->m_iCharisma - 10) / 4);
             dTmp1 = (double)iDiscountRatio;
             dTmp2 = dTmp1 / 100.0f;
             dTmp1 = (double)m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice;
@@ -114,7 +114,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
 
 int DialogBox_Shop::CalculateDiscountedPrice(int iItemIndex)
 {
-    int iDiscountRatio = ((m_pGame->m_iCharisma - 10) / 4);
+    int iDiscountRatio = ((m_pGame->m_pPlayer->m_iCharisma - 10) / 4);
     double dTmp1 = (double)iDiscountRatio;
     double dTmp2 = dTmp1 / 100.0f;
     dTmp1 = (double)m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice;
@@ -140,7 +140,7 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame);
 
     std::memset(cTemp, 0, sizeof(cTemp));
-    m_pGame->GetItemName(m_pGame->m_pItemForSaleList[iItemIndex], cTemp, cStr2, cStr3);
+    m_pGame->GetItemName(m_pGame->m_pItemForSaleList[iItemIndex].get(), cTemp, cStr2, cStr3);
 
     m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 50, cTemp, 255, 255, 255);
     m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 50, cTemp, 255, 255, 255);
@@ -234,7 +234,7 @@ void DialogBox_Shop::DrawWeaponStats(short sX, short sY, int iItemIndex, bool& b
     else wsprintf(cTemp, ": %d(%d ~ %d)", m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed, iTemp, m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed * 13);
     m_pGame->PutString(sX + 140, sY + 175, cTemp, RGB(45, 25, 25));
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_iStr) {
+    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
         m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25); // *Your STR should be at least %d to use this item."
@@ -252,7 +252,7 @@ void DialogBox_Shop::DrawShieldStats(short sX, short sY, int iItemIndex, bool& b
     wsprintf(cTemp, ": +%d%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
     m_pGame->PutString(sX + 140, sY + 145, cTemp, RGB(45, 25, 25));
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_iStr) {
+    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25); // "*Your STR should be at least %d to use this item."
         m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
@@ -274,7 +274,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
     switch (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4) {
     case 10://"Available for above Str %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iStr >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iStr >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -286,7 +286,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     case 11: // "Available for above Dex %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP16, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iDex >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iDex >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -298,7 +298,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     case 12: // "Available for above Vit %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP17, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iVit >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iVit >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -310,7 +310,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     case 13: // "Available for above Int %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP18, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iInt >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iInt >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -322,7 +322,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     case 14: // "Available for above Mag %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP19, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iMag >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iMag >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -334,7 +334,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     case 15: // "Available for above Chr %d"
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP20, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_iCharisma >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        if (m_pGame->m_pPlayer->m_iCharisma >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 160, cTemp, 45, 25, 25);
             m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 160, cTemp, 45, 25, 25);
         }
@@ -348,7 +348,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     }
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_iStr) {
+    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
         wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 288, cTemp, 195, 25, 25);
         m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 288, cTemp, 195, 25, 25); // "*Your STR should be at least %d to use this item."
@@ -361,14 +361,14 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         bFlagRedShown = true;
     }
     else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(M)") != 0)
-        && (m_pGame->m_sPlayerType > 3)) {
+        && (m_pGame->m_pPlayer->m_sPlayerType > 3)) {
         strcpy(cTemp, DRAW_DIALOGBOX_SHOP22); // "(Warning!) only for male."
         m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
         m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
         bFlagRedShown = true;
     }
     else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(W)") != 0)
-        && (m_pGame->m_sPlayerType <= 3)) {
+        && (m_pGame->m_pPlayer->m_sPlayerType <= 3)) {
         strcpy(cTemp, DRAW_DIALOGBOX_SHOP23); // "(Warning!) only for female."
         m_pGame->PutAlignedString(sX + 25, sX + 240, sY + 258, cTemp, 195, 25, 25);
         m_pGame->PutAlignedString(sX + 26, sX + 241, sY + 258, cTemp, 195, 25, 25);
@@ -382,7 +382,7 @@ void DialogBox_Shop::DrawLevelRequirement(short sX, short sY, int iItemIndex, bo
 
     if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit != 0) {
         strcpy(cTemp, DRAW_DIALOGBOX_SHOP24); // "Level"
-        if (m_pGame->m_iLevel >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit) {
+        if (m_pGame->m_pPlayer->m_iLevel >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit) {
             m_pGame->PutString(sX + 90, sY + 190, cTemp, RGB(40, 10, 10));
             m_pGame->PutString(sX + 91, sY + 190, cTemp, RGB(40, 10, 10));
             wsprintf(cTemp, DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
@@ -520,7 +520,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
         }
         else {
             std::memset(cTemp, 0, sizeof(cTemp));
-            CItem* pShopItem = m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1];
+            CItem* pShopItem = m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1].get();
             strcpy(cTemp, pShopItem->m_cName);
             // Send item ID in iV2 for reliable item lookup on server
             int iItemId = pShopItem->m_sIDnum;

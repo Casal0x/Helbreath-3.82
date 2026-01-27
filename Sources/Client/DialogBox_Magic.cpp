@@ -58,14 +58,14 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	iYloc = 0;
 	for (i = 0; i < 9; i++)
 	{
-		if ((m_pGame->m_cMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
+		if ((m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
 		{
 			wsprintf(cTxt, "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
 			iManaCost = m_pGame->iGetManaCost(iCPivot + i);
 
-			if (iManaCost > m_pGame->m_iMP)
+			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
 				// Insufficient mana - grayed out
 				if (CMisc::bCheckIMEString(cTxt) == false)
@@ -142,25 +142,25 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	static int _tmp_iMCProb[] = { 0, 300, 250, 200, 150, 100, 80, 70, 60, 50, 40 };
 	static int _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,  10, 14, 28, 32, 36, 40 };
 
-	if (m_pGame->m_cSkillMastery[4] == 0)
+	if (m_pGame->m_pPlayer->m_iSkillMastery[4] == 0)
 		dV1 = 1.0f;
 	else
-		dV1 = (double)m_pGame->m_cSkillMastery[4];
+		dV1 = (double)m_pGame->m_pPlayer->m_iSkillMastery[4];
 
 	dV2 = (double)(dV1 / 100.0f);
 	dV3 = (double)_tmp_iMCProb[iMagicCircle];
 	dV1 = dV2 * dV3;
 	iResult = (int)dV1;
 
-	if ((m_pGame->m_iInt + m_pGame->m_iAngelicInt) > 50)
-		iResult += ((m_pGame->m_iInt + m_pGame->m_iAngelicInt) - 50) / 2;
+	if ((m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_iAngelicInt) > 50)
+		iResult += ((m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_iAngelicInt) - 50) / 2;
 
-	sLevelMagic = (m_pGame->m_iLevel / 10);
+	sLevelMagic = (m_pGame->m_pPlayer->m_iLevel / 10);
 	if (iMagicCircle != sLevelMagic)
 	{
 		if (iMagicCircle > sLevelMagic)
 		{
-			dV1 = (double)(m_pGame->m_iLevel - sLevelMagic * 10);
+			dV1 = (double)(m_pGame->m_pPlayer->m_iLevel - sLevelMagic * 10);
 			dV2 = (double)abs(iMagicCircle - sLevelMagic) * _tmp_iMLevelPenalty[iMagicCircle];
 			dV3 = (double)abs(iMagicCircle - sLevelMagic) * 10;
 			dV4 = (dV1 / dV3) * dV2;
@@ -199,7 +199,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	if (iResult > 100) iResult = 100;
-	if (m_pGame->m_iSP < 1) iResult = iResult * 9 / 10;
+	if (m_pGame->m_pPlayer->m_iSP < 1) iResult = iResult * 9 / 10;
 	if (iResult < 1) iResult = 1;
 
 	// Display magic probability
@@ -226,7 +226,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 	iYloc = 0;
 	for (i = 0; i < 9; i++)
 	{
-		if ((m_pGame->m_cMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
+		if ((m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
 		{
 			if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 18 + iYloc))
 			{
@@ -260,7 +260,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 285) && (msY <= sY + 285 + DEF_BTNSZY))
 	{
-		if (m_pGame->m_cSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
+		if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
 		else
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)

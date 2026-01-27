@@ -1,7 +1,5 @@
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CommonTypes.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CommonTypes.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\ConfigManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\ConfigManager.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Camera.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Camera.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Curse.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Curse.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBoxManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\DialogBoxManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IDialogBox.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\IDialogBox.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_WarningMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\DialogBox_WarningMsg.obj
@@ -51,7 +49,11 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\HotkeyManager.cp
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Version.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Version.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.Hotkeys.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Game.Hotkeys.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Game.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameModeManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\GameModeManager.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IGameScreen.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\IGameScreen.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_OnGame.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Screen_OnGame.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EffectManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\EffectManager.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EntityMotion.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\EntityMotion.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Effect_Add.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Effect_Add.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Effect_Update.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Effect_Update.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Effect_Draw.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Effect_Draw.obj
@@ -79,7 +81,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_Slates.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\NetworkMessages_Slates.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_Stats.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\NetworkMessages_Stats.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\NetworkMessages_System.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\NetworkMessages_System.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameMonitor.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\GameMonitor.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MapData.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\MapData.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\MouseInterface.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\MouseInterface.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Wmain.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Wmain.obj
@@ -97,3 +98,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdProfile.cpp;C
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\miniaudio_impl.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\miniaudio_impl.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\WeatherManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\WeatherManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CursorTarget.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CursorTarget.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Player.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Player.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\PlayerController.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\PlayerController.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Camera.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Camera.obj

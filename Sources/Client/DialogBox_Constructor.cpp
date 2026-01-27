@@ -13,7 +13,7 @@ DialogBox_Constructor::DialogBox_Constructor(CGame* pGame)
 
 void DialogBox_Constructor::OnUpdate()
 {
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
+	uint32_t dwTime = GameClock::GetTimeMS();
 	if ((dwTime - m_pGame->m_dwCommanderCommandRequestedTime) > 1000 * 10)
 	{
 		m_pGame->_RequestMapStatus("middleland", 1);
@@ -24,7 +24,6 @@ void DialogBox_Constructor::OnUpdate()
 void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short sX, sY, szX, szY, MapSzX, MapSzY;
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
 	double dV1, dV2, dV3;
 	int tX, tY;
 	char cMapName[12];
@@ -37,11 +36,11 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 0: // Main dlg
-		if (m_pGame->m_iConstructLocX != -1)
+		if (m_pGame->m_pPlayer->m_iConstructLocX != -1)
 		{
 			std::memset(cMapName, 0, sizeof(cMapName));
 			m_pGame->GetOfficialMapName(m_pGame->m_cConstructMapName, cMapName);
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_CONSTRUCTOR1, cMapName, m_pGame->m_iConstructLocX, m_pGame->m_iConstructLocY);
+			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_CONSTRUCTOR1, cMapName, m_pGame->m_pPlayer->m_iConstructLocX, m_pGame->m_pPlayer->m_iConstructLocY);
 			PutAlignedString(sX, sX + szX, sY + 40, m_pGame->G_cTxt);
 		}
 		else PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_CONSTRUCTOR2);
@@ -256,14 +255,14 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
-			if ((Info().cMode != 2) && (m_pGame->m_iConstructLocX != -1))
+			if ((Info().cMode != 2) && (m_pGame->m_pPlayer->m_iConstructLocX != -1))
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iConstructLocX;
+				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocX;
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iConstructLocY;
+				dV2 = (double)m_pGame->m_pPlayer->m_iConstructLocY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 41, false, true);
@@ -271,11 +270,11 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_sPlayerX;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_sPlayerY;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 43);
@@ -314,7 +313,7 @@ bool DialogBox_Constructor::OnClick(short msX, short msY)
 	case 0: // Main
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			if (m_pGame->m_iConstructLocX == -1)
+			if (m_pGame->m_pPlayer->m_iConstructLocX == -1)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[14]->m_pMsg, 5);
 			}

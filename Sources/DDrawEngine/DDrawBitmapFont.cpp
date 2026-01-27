@@ -142,17 +142,17 @@ void DDrawBitmapFont::DrawTextCentered(int x1, int x2, int y, const char* text, 
 
 // DDrawBitmapFontFactory implementation
 
-IBitmapFont* DDrawBitmapFontFactory::CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                                 int frameOffset, const FontSpacing& spacing)
+std::unique_ptr<IBitmapFont> DDrawBitmapFontFactory::CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                                 int frameOffset, const FontSpacing& spacing)
 {
     if (!sprite)
         return nullptr;
 
-    return new DDrawBitmapFont(sprite, firstChar, lastChar, frameOffset, spacing);
+    return std::make_unique<DDrawBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-IBitmapFont* DDrawBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
-                                                        int frameOffset)
+std::unique_ptr<IBitmapFont> DDrawBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+                                                                        int frameOffset)
 {
     if (!sprite)
         return nullptr;
@@ -161,7 +161,7 @@ IBitmapFont* DDrawBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprit
     spacing.useDynamicSpacing = true;
     spacing.defaultWidth = 5;
 
-    return new DDrawBitmapFont(sprite, firstChar, lastChar, frameOffset, spacing);
+    return std::make_unique<DDrawBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
 } // namespace TextLib

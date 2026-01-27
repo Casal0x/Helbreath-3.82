@@ -74,7 +74,7 @@ namespace NetworkMessageHandlers {
 		for (i = 0; i < DEF_MAXITEMS; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
-				pGame->m_pItemList[i] = new class CItem;
+				pGame->m_pItemList[i] = std::make_unique<CItem>();
 				memcpy(pGame->m_pItemList[i]->m_cName, cName, 20);
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
@@ -144,7 +144,7 @@ namespace NetworkMessageHandlers {
 		pGame->AddEventList(cTxt, 10);
 		pGame->PlaySound('E', 20, 0);
 
-		pGame->m_pMapData->bSetItem(pGame->m_sPlayerX, pGame->m_sPlayerY, 0, 0, 0, false);
+		pGame->m_pMapData->bSetItem(pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, 0, 0, 0, false);
 
 		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
 		{
@@ -176,7 +176,7 @@ namespace NetworkMessageHandlers {
 		for (i = 0; i < DEF_MAXITEMS; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
-				pGame->m_pItemList[i] = new class CItem;
+				pGame->m_pItemList[i] = std::make_unique<CItem>();
 				memcpy(pGame->m_pItemList[i]->m_cName, cName, 20);
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
@@ -219,7 +219,7 @@ namespace NetworkMessageHandlers {
 		sItemIndex = static_cast<short>(pkt->item_index);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 		wsprintf(cTxt, NOTIFYMSG_ITEMLIFE_SPANEND1, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
@@ -241,7 +241,7 @@ namespace NetworkMessageHandlers {
 		sItemIndex = static_cast<short>(pkt->item_index);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
@@ -286,7 +286,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cTxt, 0, sizeof(cTxt));
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
 			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
@@ -310,9 +310,9 @@ namespace NetworkMessageHandlers {
 			else if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_EAT) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
-					if ((pGame->m_sPlayerType >= 1) && (pGame->m_sPlayerType <= 3))
+					if ((pGame->m_pPlayer->m_sPlayerType >= 1) && (pGame->m_pPlayer->m_sPlayerType <= 3))
 						pGame->PlaySound('C', 19, 0);
-					if ((pGame->m_sPlayerType >= 4) && (pGame->m_sPlayerType <= 6))
+					if ((pGame->m_pPlayer->m_sPlayerType >= 4) && (pGame->m_pPlayer->m_sPlayerType <= 6))
 						pGame->PlaySound('C', 20, 0);
 				}
 			}
@@ -348,7 +348,7 @@ namespace NetworkMessageHandlers {
 		iAmount = static_cast<int>(pkt->amount);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true)
@@ -358,7 +358,7 @@ namespace NetworkMessageHandlers {
 			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
-		if (pGame->m_iHP > 0)
+		if (pGame->m_pPlayer->m_iHP > 0)
 		{
 			wsprintf(cTxt, NOTIFYMSG_THROW_ITEM2, cStr1);
 		}
@@ -434,7 +434,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = (WORD)dwLife;
 		pGame->m_bIsItemDisabled[dwItemID] = false;
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[dwItemID], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[dwItemID].get(), cStr1, cStr2, cStr3);
 
 		wsprintf(cTxt, NOTIFYMSG_ITEMREPAIRED1, cStr1);
 
@@ -513,7 +513,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cStr1, 0, sizeof(cStr1));
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
 
 		switch (wV2) {
 		case 1:
@@ -541,7 +541,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cStr1, 0, sizeof(cStr1));
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
 
 		switch (wV2) {
 		case 1:
@@ -581,7 +581,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, 20);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[wItemIndex], cStr1, cStr2, cStr3);
+		pGame->GetItemName(pGame->m_pItemList[wItemIndex].get(), cStr1, cStr2, cStr3);
 		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM2, cStr1, cName);
 		else wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM1, iAmount, cStr1, cName);
 
@@ -601,7 +601,7 @@ namespace NetworkMessageHandlers {
 
 		if (pGame->m_pItemList[sItemIndex] != 0) {
 			char cStr1[64], cStr2[64], cStr3[64];
-			pGame->GetItemName(pGame->m_pItemList[sItemIndex], cStr1, cStr2, cStr3);
+			pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 			if (sItemColor != -1) {
 				pGame->m_pItemList[sItemIndex]->m_cItemColor = (char)sItemColor;
 				wsprintf(cTxt, NOTIFYMSG_ITEMCOLOR_CHANGE1, cStr1);
@@ -832,7 +832,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // Success
 			}
 			pGame->PlaySound('E', 23, 5);
-			switch (pGame->m_sPlayerType) {
+			switch (pGame->m_pPlayer->m_sPlayerType) {
 			case 1:
 			case 2:
 			case 3:
@@ -904,7 +904,7 @@ namespace NetworkMessageHandlers {
 			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // success
 		}
 		pGame->PlaySound('E', 23, 5);
-		switch (pGame->m_sPlayerType) {
+		switch (pGame->m_pPlayer->m_sPlayerType) {
 		case 1:
 		case 2:
 		case 3:

@@ -13,7 +13,7 @@ DialogBox_Soldier::DialogBox_Soldier(CGame* pGame)
 
 void DialogBox_Soldier::OnUpdate()
 {
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
+	uint32_t dwTime = GameClock::GetTimeMS();
 	if ((dwTime - m_pGame->m_dwCommanderCommandRequestedTime) > 1000 * 10)
 	{
 		m_pGame->_RequestMapStatus("middleland", 1);
@@ -24,7 +24,6 @@ void DialogBox_Soldier::OnUpdate()
 void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short sX, sY, szX, szY, MapSzX, MapSzY;
-	uint32_t dwTime = m_pGame->G_dwGlobalTime;
 	char cMapName[120];
 	double dV1, dV2, dV3;
 	int tX, tY;
@@ -173,11 +172,11 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_sPlayerX;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerX;
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_sPlayerY;
+				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 43);

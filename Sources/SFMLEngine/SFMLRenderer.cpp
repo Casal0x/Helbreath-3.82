@@ -445,6 +445,21 @@ void SFMLRenderer::DrawItemShadowBox(int x1, int y1, int x2, int y2, int type)
     DrawShadowBox(x1, y1, x2, y2, type);
 }
 
+void SFMLRenderer::DrawFadeOverlay(float alpha)
+{
+    if (alpha <= 0.0f) return;  // Fully transparent, nothing to draw
+
+    // Clamp alpha to [0, 1]
+    if (alpha > 1.0f) alpha = 1.0f;
+
+    // Create a full-screen black rectangle with the given alpha
+    sf::RectangleShape overlay(sf::Vector2f(static_cast<float>(m_width), static_cast<float>(m_height)));
+    overlay.setPosition({0.f, 0.f});
+    overlay.setFillColor(sf::Color(0, 0, 0, static_cast<uint8_t>(alpha * 255.0f)));
+
+    m_backBuffer.draw(overlay);
+}
+
 void SFMLRenderer::BeginTextBatch()
 {
     // No-op for SFML - we don't need a DC

@@ -19,6 +19,7 @@
 #include <chrono>
 
 #include "Game.h"
+#include "GameModeManager.h"
 #include "GlobalDef.h"
 #include "resource.h"
 #include "FrameTiming.h"
@@ -41,7 +42,6 @@ extern "C"
 // Global state
 HWND G_hWnd = 0;
 HWND G_hEditWnd = 0;
-HINSTANCE G_hInstance = 0;
 class CGame* G_pGame = nullptr;
 
 // Timer thread state (replaces Windows multimedia timer)
@@ -52,8 +52,6 @@ class XSocket* G_pCalcSocket = 0;
 bool G_bIsCalcSocketConnected = true;
 uint32_t G_dwCalcSocketTime = 0, G_dwCalcSocketSendTime = 0;
 
-char G_cCmdLine[256], G_cCmdLineTokenA[120], G_cCmdLineTokenA_Lowercase[120];
-char G_cCmdLineTokenB[120], G_cCmdLineTokenC[120], G_cCmdLineTokenD[120], G_cCmdLineTokenE[120];
 
 // Window event handler
 static GameWindowHandler* g_pWindowHandler = nullptr;
@@ -91,7 +89,6 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     // Create game instance
     G_pGame = new class CGame;
-    G_hInstance = hInstance;
 
     // Create window using engine abstraction
     WindowParams params = {};
@@ -160,7 +157,7 @@ void EventLoop()
         if (!pWindow->ProcessMessages())
             break;
 
-        if (G_pGame->m_bIsProgramActive || G_pGame->m_cGameMode == DEF_GAMEMODE_ONLOADING)
+        if (G_pGame->m_bIsProgramActive || GameModeManager::GetMode() == GameMode::Loading)
         {
             FrameTiming::BeginFrame();
             G_pGame->RenderFrame();
@@ -193,7 +190,7 @@ void Initialize(char* pCmdLine)
     }
 
     // Initialize game
-    if (G_pGame->bInit(G_hWnd, G_hInstance, pCmdLine) == false)
+    if (G_pGame->bInit() == false)
     {
         PostQuitMessage(0);
         return;

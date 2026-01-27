@@ -69,7 +69,7 @@ void HandleFishSuccess(CGame* pGame, char* pData)
 	pGame->AddEventList(NOTIFY_MSG_HANDLER55, 10);
 	pGame->PlaySound('E', 23, 5);
 	pGame->PlaySound('E', 17, 5);
-	switch (pGame->m_sPlayerType) {
+	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:

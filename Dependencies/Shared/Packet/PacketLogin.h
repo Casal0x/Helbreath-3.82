@@ -103,7 +103,6 @@ namespace net {
 		char password[10];
 		std::int32_t level;
 		char world_name[10];
-		char cmd_line[120];
 	};
 	HB_PACK_END
 
@@ -117,7 +116,6 @@ namespace net {
 		char password[10];
 		std::int32_t level;
 		char world_name[30];
-		char cmd_line[120];
 	};
 	HB_PACK_END
 }

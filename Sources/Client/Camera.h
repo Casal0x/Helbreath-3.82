@@ -1,127 +1,109 @@
+// Camera.h: Game camera/viewport management
+//
+// Handles smooth camera movement, tracking player position, and viewport calculations.
+// The camera smoothly interpolates towards its target destination with deceleration.
+//
+//////////////////////////////////////////////////////////////////////
+
 #pragma once
 
 #include <cstdint>
+#include <cstdlib>
 
-enum class CameraMode
-{
-	FollowPlayer,       // Normal gameplay
-	FollowEntity,       // Spectating/cutscene
-	FreeCamera,         // Debug/cinematic
-	Fixed               // Static position
-};
-
-class Camera
+class CCamera
 {
 public:
-	static Camera& Get();
+    CCamera();
 
-	// Lifecycle
-	void Initialize();
-	void Shutdown();
+    // Reset camera to initial state
+    void Reset();
 
-	// Viewport setup
-	void SetViewportSize(int width, int height);
-	void SetTileSize(int tileWidth, int tileHeight);
+    // Update camera position (smooth interpolation towards destination)
+    // Call this once per frame
+    void Update();
 
-	// Following target
-	void AttachToPlayer();
-	void AttachToEntity(uint32_t entityId);
-	void Detach();
-	void SetFixedPosition(int worldX, int worldY);
+    //------------------------------------------------------------------
+    // Position Accessors
+    //------------------------------------------------------------------
 
-	CameraMode GetMode() const { return m_mode; }
-	uint32_t GetAttachedEntityId() const { return m_attachedEntityId; }
-	bool IsAttachedToPlayer() const { return m_mode == CameraMode::FollowPlayer; }
+    // Get current camera position in world pixels
+    int GetX() const { return m_iPositionX; }
+    int GetY() const { return m_iPositionY; }
 
-	// Position (in tiles)
-	int GetViewX() const;
-	int GetViewY() const;
-	int GetCenterX() const;
-	int GetCenterY() const;
-	void GetViewPosition(int& x, int& y) const;
+    // Get target destination in world pixels
+    int GetDestinationX() const { return m_iDestinationX; }
+    int GetDestinationY() const { return m_iDestinationY; }
 
-	// For free camera mode
-	void SetPosition(int tileX, int tileY);
-	void Move(int deltaTileX, int deltaTileY);
+    //------------------------------------------------------------------
+    // Position Modifiers
+    //------------------------------------------------------------------
 
-	// Smooth following
-	void SetSmoothFollow(bool enabled);
-	void SetFollowSpeed(float speed);
-	bool IsSmoothFollow() const { return m_bSmoothFollow; }
+    // Snap camera immediately to position (no interpolation)
+    void SetPosition(int x, int y);
 
-	// Screen effects
-	void Shake(int intensity, float duration);
-	void StopShake();
-	bool IsShaking() const { return m_bShaking; }
-	int GetShakeOffsetX() const { return m_shakeOffsetX; }
-	int GetShakeOffsetY() const { return m_shakeOffsetY; }
-	int GetShakeDegree() const { return m_shakeDegree; }
+    // Set target destination (camera will smoothly move there)
+    void SetDestination(int x, int y);
 
-	// Coordinate conversion
-	void WorldToScreen(int worldX, int worldY, int& screenX, int& screenY) const;
-	void ScreenToWorld(int screenX, int screenY, int& worldX, int& worldY) const;
+    // Snap both position and destination (teleport)
+    void SnapTo(int x, int y);
 
-	// Visibility testing
-	bool IsWorldPosVisible(int worldX, int worldY) const;
-	bool IsTileVisible(int tileX, int tileY) const;
-	void GetVisibleTileBounds(int& left, int& top, int& right, int& bottom) const;
+    // Move destination by delta (relative movement)
+    void MoveDestination(int dx, int dy);
 
-	// Viewport dimensions
-	int GetViewWidth() const { return m_viewWidth; }
-	int GetViewHeight() const { return m_viewHeight; }
-	int GetViewWidthTiles() const { return m_viewWidthTiles; }
-	int GetViewHeightTiles() const { return m_viewHeightTiles; }
-	int GetTileWidth() const { return m_tileWidth; }
-	int GetTileHeight() const { return m_tileHeight; }
+    //------------------------------------------------------------------
+    // Utility Methods
+    //------------------------------------------------------------------
 
-	// World bounds clamping
-	void SetWorldBounds(int minX, int minY, int maxX, int maxY);
-	void ClearWorldBounds();
+    // Center camera on a tile position
+    // viewCenterTileX/Y are the center offsets (typically VIEW_CENTER_TILE_X/Y)
+    void CenterOnTile(int tileX, int tileY, int viewCenterTileX, int viewCenterTileY);
 
-	// Per-frame update
-	void Update(double deltaTime);
+    // Convert world coordinates to screen coordinates
+    int WorldToScreenX(int worldX) const { return worldX - m_iPositionX; }
+    int WorldToScreenY(int worldY) const { return worldY - m_iPositionY; }
 
-	// Direct position setting (for external control during transition)
-	void SetViewPosition(int tileX, int tileY);
+    // Convert screen coordinates to world coordinates
+    int ScreenToWorldX(int screenX) const { return screenX + m_iPositionX; }
+    int ScreenToWorldY(int screenY) const { return screenY + m_iPositionY; }
+
+    //------------------------------------------------------------------
+    // Camera Effects
+    //------------------------------------------------------------------
+
+    // Set shake intensity (will decrement over time)
+    void SetShake(int degree) { m_iShakeDegree = degree; }
+
+    // Get current shake degree
+    int GetShakeDegree() const { return m_iShakeDegree; }
+
+    // Apply and update camera shake effect
+    // Saves position, applies random shake based on current degree, then decrements degree
+    // Returns true if shake was applied (caller should RestorePosition after rendering)
+    bool ApplyShake();
+
+    // Save current position (for shake effect)
+    void SavePosition();
+
+    // Restore saved position (after shake effect)
+    void RestorePosition();
 
 private:
-	Camera() = default;
-	~Camera() = default;
-	Camera(const Camera&) = delete;
-	Camera& operator=(const Camera&) = delete;
+    // Current camera position in world pixels
+    int m_iPositionX;
+    int m_iPositionY;
 
-	void UpdateFollow(double deltaTime);
-	void UpdateShake(double deltaTime);
-	void ClampToBounds();
-	int GenerateShakeOffset(int intensity) const;
+    // Target destination in world pixels
+    int m_iDestinationX;
+    int m_iDestinationY;
 
-	// Mode and target
-	CameraMode m_mode;
-	uint32_t m_attachedEntityId;
+    // Movement velocity for smooth interpolation
+    int m_iVelocityX;
+    int m_iVelocityY;
 
-	// Position (in tiles)
-	int m_viewX, m_viewY;               // Current view position (top-left)
-	float m_exactX, m_exactY;           // Smooth position
-	int m_targetX, m_targetY;           // Target position for smooth follow
+    // Saved position for shake effect restoration
+    int m_iSavedPositionX;
+    int m_iSavedPositionY;
 
-	// Smooth follow
-	bool m_bSmoothFollow;
-	float m_followSpeed;
-
-	// Viewport
-	int m_viewWidth, m_viewHeight;      // In pixels
-	int m_viewWidthTiles, m_viewHeightTiles;
-	int m_tileWidth, m_tileHeight;
-
-	// Shake effect
-	bool m_bShaking;
-	int m_shakeDegree;
-	float m_shakeDuration;
-	float m_shakeTimer;
-	int m_shakeOffsetX, m_shakeOffsetY;
-
-	// World bounds (optional clamping)
-	int m_worldMinX, m_worldMinY;
-	int m_worldMaxX, m_worldMaxY;
-	bool m_bClampToBounds;
+    // Camera shake degree (decrements each frame)
+    int m_iShakeDegree;
 };

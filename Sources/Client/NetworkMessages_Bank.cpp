@@ -45,7 +45,7 @@ namespace NetworkMessageHandlers {
 		cStr3[0] = 0;
 
 		if (pGame->m_pBankList[cIndex] == 0) {
-			pGame->m_pBankList[cIndex] = new class CItem;
+			pGame->m_pBankList[cIndex] = std::make_unique<CItem>();
 
 			memcpy(pGame->m_pBankList[cIndex]->m_cName, cName, 20);
 			pGame->m_pBankList[cIndex]->m_dwCount = dwCount;

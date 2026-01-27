@@ -136,7 +136,7 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 							AddEventList(DLGBOX_CLICK_SKILL1, 10); // "You are already using other skill."
 							return true;
 						}
-						if ((m_pGame->m_bCommandAvailable == false) || (m_pGame->m_iHP <= 0))
+						if ((m_pGame->m_pPlayer->m_Controller.IsCommandAvailable() == false) || (m_pGame->m_pPlayer->m_iHP <= 0))
 						{
 							AddEventList(DLGBOX_CLICK_SKILL2, 10); // "You can't use a skill while you are moving."
 							return true;

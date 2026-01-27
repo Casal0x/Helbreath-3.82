@@ -12,6 +12,8 @@
 #include "RendererFactory.h"
 #include "ISpriteFactory.h"
 
+extern HWND G_hWnd;
+
 // Custom message IDs (these should match what's used in the game)
 #define WM_USER_CALCSOCKETEVENT (WM_USER + 600)
 
@@ -29,7 +31,7 @@ void GameWindowHandler::OnClose()
         return;
     }
 
-    if ((m_pGame->m_cGameMode == DEF_GAMEMODE_ONMAINGAME) && (m_pGame->m_bForceDisconn == false))
+    if ((GameModeManager::GetMode() == GameMode::MainGame) && (m_pGame->m_bForceDisconn == false))
     {
         // In main game, start logout countdown instead of closing immediately
 #ifdef _DEBUG
@@ -40,20 +42,20 @@ void GameWindowHandler::OnClose()
             m_pGame->m_cLogOutCount = 11;
 #endif
     }
-    else if (m_pGame->m_cGameMode == DEF_GAMEMODE_ONMAINMENU)
+    else if (GameModeManager::GetMode() == GameMode::MainMenu)
     {
         // On main menu, show quit screen
-        m_pGame->ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+        m_pGame->ChangeGameMode(GameMode::Quit);
     }
-    else if (m_pGame->m_cGameMode == DEF_GAMEMODE_NULL)
+    else if (GameModeManager::GetMode() == GameMode::Null)
     {
         // Game code requested close (e.g., from quit screen), proceed with destruction
-        DestroyWindow(m_pGame->m_hWnd);
+        DestroyWindow(G_hWnd);
     }
     else
     {
         // Other modes (loading, etc.), proceed with closing
-        DestroyWindow(m_pGame->m_hWnd);
+        DestroyWindow(G_hWnd);
     }
 }
 
@@ -84,7 +86,6 @@ void GameWindowHandler::OnActivate(bool active)
         if (Input::Get())
             Input::Get()->SetWindowActive(true);
 
-        m_pGame->m_bIsRedrawPDBGS = true;
         if (m_pGame->m_Renderer != nullptr)
             m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
 
@@ -94,7 +95,7 @@ void GameWindowHandler::OnActivate(bool active)
         {
             if (m_pGame->bCheckImportantFile() == false)
             {
-                MessageBox(m_pGame->m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
+                MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
                 PostQuitMessage(0);
             }
         }

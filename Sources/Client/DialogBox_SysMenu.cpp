@@ -239,7 +239,7 @@ void DialogBox_SysMenu::DrawButtons(short sX, short sY, short msX, short msY)
 	}
 
 	// Restart button (only when dead)
-	if ((m_pGame->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
+	if ((m_pGame->m_pPlayer->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY))
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 37);
 		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 225, 36);
@@ -414,7 +414,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 	}
 
 	// Resolution button click (only when alive and not restarting)
-	if ((m_pGame->m_iHP > 0) && (m_pGame->m_cRestartCount == -1)) {
+	if ((m_pGame->m_pPlayer->m_iHP > 0) && (m_pGame->m_cRestartCount == -1)) {
 		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 		if ((msX >= sX + 110) && (msX <= sX + 168) && (msY >= sY + 200) && (msY <= sY + 213)) {
 			if (isFullscreen) {
@@ -423,7 +423,6 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 				Input::Get()->SetWindowActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(false);
 				ConfigManager::Get().Save();
-				m_pGame->m_bIsRedrawPDBGS = true;
 				PlaySoundEffect('E', 14, 5);
 			}
 			return true;
@@ -436,7 +435,6 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 				Input::Get()->SetWindowActive(true);
 				ConfigManager::Get().SetFullscreenEnabled(true);
 				ConfigManager::Get().Save();
-				m_pGame->m_bIsRedrawPDBGS = true;
 				PlaySoundEffect('E', 14, 5);
 			}
 			return true;
@@ -444,7 +442,6 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 
 		if (!isFullscreen && (msX >= sX + 112) && (msX <= sX + 242) && (msY >= sY + 220) && (msY <= sY + 234)) {
 			CycleResolution();
-			m_pGame->m_bIsRedrawPDBGS = true;
 			PlaySoundEffect('E', 14, 5);
 			AddEventList("Resolution changed.", 10);
 			return true;
@@ -472,7 +469,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 	}
 
 	// Restart button (only when dead)
-	if ((m_pGame->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
+	if ((m_pGame->m_pPlayer->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1)) {
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY)) {
 			m_pGame->m_cRestartCount = 5;
 			m_pGame->m_dwRestartCountTime = GameClock::GetTimeMS();

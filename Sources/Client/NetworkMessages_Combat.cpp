@@ -11,10 +11,10 @@ namespace NetworkMessageHandlers {
 	void HandleKilled(CGame* pGame, char* pData)
 	{
 		char cAttackerName[21];
-		pGame->m_bCommandAvailable = false;
-		pGame->m_cCommand = DEF_OBJECTSTOP;
-		pGame->m_iHP = 0;
-		pGame->m_cCommand = -1;
+		pGame->m_pPlayer->m_Controller.SetCommandAvailable(false);
+		pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		pGame->m_pPlayer->m_iHP = 0;
+		pGame->m_pPlayer->m_Controller.SetCommand(-1);
 		// Restart
 		pGame->m_bItemUsingStatus = false;
 		pGame->ClearSkillUsingStatus();
@@ -43,9 +43,9 @@ namespace NetworkMessageHandlers {
 		iExp = pkt->exp;
 		wsprintf(cTxt, NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
 		pGame->AddEventList(cTxt, 10);
-		wsprintf(cTxt, EXP_INCREASED, iExp - pGame->m_iExp);
+		wsprintf(cTxt, EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
 		pGame->AddEventList(cTxt, 10);
-		wsprintf(cTxt, NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_iExp);
+		wsprintf(cTxt, NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
 		pGame->AddEventList(cTxt, 10);
 	}
 
@@ -66,19 +66,19 @@ namespace NetworkMessageHandlers {
 		iPKcount = pkt->pk_count;
 		wsprintf(pGame->G_cTxt, NOTIFYMSG_PK_PENALTY1, iPKcount);
 		pGame->AddEventList(pGame->G_cTxt, 10);
-		if (pGame->m_iExp > iExp)
+		if (pGame->m_pPlayer->m_iExp > iExp)
 		{
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_PK_PENALTY2, pGame->m_iExp - iExp);
+			wsprintf(pGame->G_cTxt, NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
 			pGame->AddEventList(pGame->G_cTxt, 10);
 		}
-		pGame->m_iExp = iExp;
-		pGame->m_iStr = iStr;
-		pGame->m_iVit = iVit;
-		pGame->m_iDex = iDex;
-		pGame->m_iInt = iInt;
-		pGame->m_iMag = iMag;
-		pGame->m_iCharisma = iChr;
-		pGame->m_iPKCount = iPKcount;
+		pGame->m_pPlayer->m_iExp = iExp;
+		pGame->m_pPlayer->m_iStr = iStr;
+		pGame->m_pPlayer->m_iVit = iVit;
+		pGame->m_pPlayer->m_iDex = iDex;
+		pGame->m_pPlayer->m_iInt = iInt;
+		pGame->m_pPlayer->m_iMag = iMag;
+		pGame->m_pPlayer->m_iCharisma = iChr;
+		pGame->m_pPlayer->m_iPKCount = iPKcount;
 	}
 
 	void HandleEnemyKills(CGame* pGame, char* pData)
@@ -86,7 +86,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEnemyKills>(
 			pData, sizeof(hb::net::PacketNotifyEnemyKills));
 		if (!pkt) return;
-		pGame->m_iEnemyKillCount = pkt->count;
+		pGame->m_pPlayer->m_iEnemyKillCount = pkt->count;
 	}
 
 	void HandleEnemyKillReward(CGame* pGame, char* pData)
@@ -110,15 +110,15 @@ namespace NetworkMessageHandlers {
 		sGuildRank = pkt->killer_rank;
 		iWarContribution = pkt->war_contribution;
 
-		if (iWarContribution > pGame->m_iWarContribution)
+		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution)
 		{
-			wsprintf(pGame->G_cTxt, "%s +%d!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_iWarContribution);
+			wsprintf(pGame->G_cTxt, "%s +%d!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
 			pGame->SetTopMsg(pGame->G_cTxt, 5);
 		}
-		else if (iWarContribution < pGame->m_iWarContribution)
+		else if (iWarContribution < pGame->m_pPlayer->m_iWarContribution)
 		{
 		}
-		pGame->m_iWarContribution = iWarContribution;
+		pGame->m_pPlayer->m_iWarContribution = iWarContribution;
 
 		if (sGuildRank == -1)
 		{
@@ -131,34 +131,34 @@ namespace NetworkMessageHandlers {
 			pGame->AddEventList(cTxt, 10);
 		}
 
-		if (pGame->m_iEnemyKillCount != iEnemyKillCount)
+		if (pGame->m_pPlayer->m_iEnemyKillCount != iEnemyKillCount)
 		{
-			if (pGame->m_iEnemyKillCount > iEnemyKillCount)
+			if (pGame->m_pPlayer->m_iEnemyKillCount > iEnemyKillCount)
 			{
-				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_iEnemyKillCount - iEnemyKillCount);
+				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
 				pGame->AddEventList(cTxt, 10);
 			}
 			else
 			{
-				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_iEnemyKillCount);
+				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
 				pGame->AddEventList(cTxt, 10);
 			}
 		}
 
-		if (iExp >= 0) pGame->m_iExp = iExp;
-		if (iEnemyKillCount >= 0) pGame->m_iEnemyKillCount = iEnemyKillCount;
+		if (iExp >= 0) pGame->m_pPlayer->m_iExp = iExp;
+		if (iEnemyKillCount >= 0) pGame->m_pPlayer->m_iEnemyKillCount = iEnemyKillCount;
 		pGame->PlaySound('E', 23, 0);
 
-		pGame->_RemoveChatMsgListByObjectID(pGame->m_sPlayerObjectID);
+		pGame->_RemoveChatMsgListByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		for (int i = 1; i < DEF_MAXCHATMSGS; i++) {
 			if (pGame->m_pChatMsgList[i] == 0) {
 				std::memset(cTxt, 0, sizeof(cTxt));
 				strcpy(cTxt, "Enemy Kill!");
-				pGame->m_pChatMsgList[i] = new class CMsg(23, cTxt, pGame->m_dwCurTime);
-				pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_sPlayerObjectID;
-				if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_sPlayerObjectID, -10, -10, i) == false) {
-					delete pGame->m_pChatMsgList[i];
-					pGame->m_pChatMsgList[i] = 0;
+				pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(23, cTxt, pGame->m_dwCurTime);
+				pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
+				if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {
+					pGame->m_pChatMsgList[i].reset();
+					pGame->m_pChatMsgList[i].reset();
 				}
 				break;
 			}
@@ -188,8 +188,8 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyDamageMove>(
 			pData, sizeof(hb::net::PacketNotifyDamageMove));
 		if (!pkt) return;
-		pGame->m_sDamageMove = pkt->dir;
-		pGame->m_sDamageMoveAmount = pkt->amount;
+		pGame->m_pPlayer->m_sDamageMove = pkt->dir;
+		pGame->m_pPlayer->m_sDamageMoveAmount = pkt->amount;
 	}
 
 	void HandleObserverMode(CGame* pGame, char* pData)
@@ -204,14 +204,14 @@ namespace NetworkMessageHandlers {
 			pGame->m_dwObserverCamTime = GameClock::GetTimeMS();
 			char cName[12];
 			std::memset(cName, 0, sizeof(cName));
-			memcpy(cName, pGame->m_cPlayerName, 10);
-			pGame->m_pMapData->bSetOwner(pGame->m_sPlayerObjectID, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, cName, 0, 0, 0, 0);
+			memcpy(cName, pGame->m_pPlayer->m_cPlayerName, 10);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, cName, 0, 0, 0, 0);
 		}
 		else
 		{
 			pGame->AddEventList(NOTIFY_MSG_HANDLER41); // "Observer Mode Off"
 			pGame->m_bIsObserverMode = false;
-			pGame->m_pMapData->bSetOwner(pGame->m_sPlayerObjectID, pGame->m_sPlayerX, pGame->m_sPlayerY, pGame->m_sPlayerType, pGame->m_cPlayerDir, pGame->m_sPlayerAppr1, pGame->m_sPlayerAppr2, pGame->m_sPlayerAppr3, pGame->m_sPlayerAppr4, pGame->m_iPlayerApprColor, pGame->m_iPlayerStatus, pGame->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_sPlayerAppr1, pGame->m_pPlayer->m_sPlayerAppr2, pGame->m_pPlayer->m_sPlayerAppr3, pGame->m_pPlayer->m_sPlayerAppr4, pGame->m_pPlayer->m_iPlayerApprColor, pGame->m_pPlayer->m_iPlayerStatus, pGame->m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
 		}
 	}
 
@@ -220,7 +220,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySuperAttackLeft>(
 			pData, sizeof(hb::net::PacketNotifySuperAttackLeft));
 		if (!pkt) return;
-		pGame->m_iSuperAttackLeft = pkt->left;
+		pGame->m_pPlayer->m_iSuperAttackLeft = pkt->left;
 	}
 
 	void HandleSafeAttackMode(CGame* pGame, char* pData)
@@ -230,12 +230,12 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		switch (pkt->enabled) {
 		case 1:
-			if (!pGame->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER50, 10);
-			pGame->m_bIsSafeAttackMode = true;
+			if (!pGame->m_pPlayer->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER50, 10);
+			pGame->m_pPlayer->m_bIsSafeAttackMode = true;
 			break;
 		case 0:
-			if (pGame->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER51, 10);
-			pGame->m_bIsSafeAttackMode = false;
+			if (pGame->m_pPlayer->m_bIsSafeAttackMode) pGame->AddEventList(NOTIFY_MSG_HANDLER51, 10);
+			pGame->m_pPlayer->m_bIsSafeAttackMode = false;
 			break;
 		}
 	}

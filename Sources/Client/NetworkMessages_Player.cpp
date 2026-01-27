@@ -13,21 +13,21 @@ namespace NetworkMessageHandlers {
 		int  iPrevChar;
 		char cTxt[120];
 
-		iPrevChar = pGame->m_iCharisma;
+		iPrevChar = pGame->m_pPlayer->m_iCharisma;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCharisma>(
 			pData, sizeof(hb::net::PacketNotifyCharisma));
 		if (!pkt) return;
-		pGame->m_iCharisma = static_cast<int>(pkt->charisma);
+		pGame->m_pPlayer->m_iCharisma = static_cast<int>(pkt->charisma);
 
-		if (pGame->m_iCharisma > iPrevChar)
+		if (pGame->m_pPlayer->m_iCharisma > iPrevChar)
 		{
-			wsprintf(cTxt, NOTIFYMSG_CHARISMA_UP, pGame->m_iCharisma - iPrevChar);
+			wsprintf(cTxt, NOTIFYMSG_CHARISMA_UP, pGame->m_pPlayer->m_iCharisma - iPrevChar);
 			pGame->AddEventList(cTxt, 10);
 			pGame->PlaySound('E', 21, 0);
 		}
 		else
 		{
-			wsprintf(cTxt, NOTIFYMSG_CHARISMA_DOWN, iPrevChar - pGame->m_iCharisma);
+			wsprintf(cTxt, NOTIFYMSG_CHARISMA_DOWN, iPrevChar - pGame->m_pPlayer->m_iCharisma);
 			pGame->AddEventList(cTxt, 10);
 		}
 	}
@@ -38,9 +38,9 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyHunger>(
 			pData, sizeof(hb::net::PacketNotifyHunger));
 		if (!pkt) return;
-		pGame->m_iHungerStatus = pkt->hunger;
+		pGame->m_pPlayer->m_iHungerStatus = pkt->hunger;
 
-		cHLv = pGame->m_iHungerStatus;
+		cHLv = pGame->m_pPlayer->m_iHungerStatus;
 		if ((cHLv <= 40) && (cHLv > 30)) pGame->AddEventList(NOTIFYMSG_HUNGER1, 10);
 		if ((cHLv <= 25) && (cHLv > 20)) pGame->AddEventList(NOTIFYMSG_HUNGER2, 10);
 		if ((cHLv <= 20) && (cHLv > 15)) pGame->AddEventList(NOTIFYMSG_HUNGER3, 10);
@@ -97,14 +97,14 @@ namespace NetworkMessageHandlers {
 		{
 			wsprintf(pGame->G_cTxt, NOTIFYMSG_WHISPERMODE1, cName);
 			if (pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1] != 0) {
-				delete pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1];
-				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1] = 0;
+				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
+				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
 			}
 			for (int i = DEF_MAXWHISPERMSG - 2; i >= 0; i--) {
-				pGame->m_pWhisperMsg[i + 1] = pGame->m_pWhisperMsg[i];
-				pGame->m_pWhisperMsg[i] = 0;
+				pGame->m_pWhisperMsg[i + 1] = std::move(pGame->m_pWhisperMsg[i]);
+				pGame->m_pWhisperMsg[i].reset();
 			}
-			pGame->m_pWhisperMsg[0] = new class CMsg(0, cName, 0);
+			pGame->m_pWhisperMsg[0] = std::make_unique<CMsg>(0, cName, 0);
 			pGame->m_cWhisperIndex = 0;
 		}
 		else wsprintf(pGame->G_cTxt, NOTIFYMSG_WHISPERMODE2, cName);
@@ -122,7 +122,7 @@ namespace NetworkMessageHandlers {
 		wTime = pkt->time;
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
-		if (memcmp(pGame->m_cPlayerName, cName, 10) == 0)
+		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
 			wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_SHUTUP1, wTime);
 		else wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_SHUTUP2, cName, wTime);
 
@@ -140,7 +140,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
 		std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
-		if (memcmp(pGame->m_cPlayerName, cName, 10) == 0)
+		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
 		{
 			if (cValue == 1)
 			{

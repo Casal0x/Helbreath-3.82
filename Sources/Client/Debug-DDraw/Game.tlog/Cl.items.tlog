@@ -1,6 +1,5 @@
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CommonTypes.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\CommonTypes.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\ConfigManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\ConfigManager.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Camera.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Camera.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBoxManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\DialogBoxManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IDialogBox.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\IDialogBox.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_WarningMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\DialogBox_WarningMsg.obj
@@ -50,6 +49,15 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\HotkeyManager.cp
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Version.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Version.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.Hotkeys.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Game.Hotkeys.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Game.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Game.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameModeManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\GameModeManager.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IGameScreen.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\IGameScreen.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_OnGame.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Screen_OnGame.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_Connecting.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_Connecting.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_WaitingResponse.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_WaitingResponse.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_LogResMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_LogResMsg.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_QueryForceLogin.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_QueryForceLogin.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_QueryDeleteCharacter.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_QueryDeleteCharacter.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_ChangePassword.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Overlay_ChangePassword.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EffectManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\EffectManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EntityMotion.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\EntityMotion.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Effect_Add.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Effect_Add.obj
@@ -96,3 +104,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdProfile.cpp;C
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\miniaudio_impl.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\miniaudio_impl.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\WeatherManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\WeatherManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CursorTarget.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\CursorTarget.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Player.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Player.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\PlayerController.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\PlayerController.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Camera.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Debug-DDraw\Camera.obj

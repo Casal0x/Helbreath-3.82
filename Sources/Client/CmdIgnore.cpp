@@ -31,20 +31,19 @@ bool CmdIgnoreOn::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Can't ignore yourself
-	if (std::memcmp(pGame->m_cPlayerName, cName, 10) == 0)
+	if (std::memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
 	{
 		pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND2, 10);
 		return true;
 	}
 
 	// Delete existing ignore entry
-	if (pGame->m_pExID != nullptr)
-		delete pGame->m_pExID;
+	pGame->m_pExID.reset();
 
 	char cTxt[120];
 	wsprintf(cTxt, BCHECK_LOCAL_CHAT_COMMAND3, cName);
 	pGame->AddEventList(cTxt, 10);
-	pGame->m_pExID = new class CMsg(0, cName, 0);
+	pGame->m_pExID = std::make_unique<CMsg>(0, cName, 0);
 
 	return true;
 }
@@ -86,8 +85,7 @@ bool CmdIgnoreOff::Execute(CGame* pGame, const char* pArgs)
 			char cTxt[120];
 			wsprintf(cTxt, BCHECK_LOCAL_CHAT_COMMAND1, cName);
 			pGame->AddEventList(cTxt, 10);
-			delete pGame->m_pExID;
-			pGame->m_pExID = nullptr;
+			pGame->m_pExID.reset();
 		}
 	}
 

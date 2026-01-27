@@ -20,7 +20,6 @@
 
 // Manager singletons
 #include "ConfigManager.h"
-#include "Camera.h"
 #include "AudioManager.h"
 #include "WeatherManager.h"
 #include "ChatCommandManager.h"
@@ -29,50 +28,24 @@
 // DialogBox system
 #include "IDialogBox.h"
 
+// Entity render state
+#include "EntityRenderState.h"
+
+// Screen system
+#include "IGameScreen.h"
+#include "Screen_OnGame.h"
+#include "IInput.h"
+
 extern char G_cSpriteAlphaDegree;
 
-extern char G_cCmdLine[256], G_cCmdLineTokenA[120], G_cCmdLineTokenA_Lowercase[120], G_cCmdLineTokenB[120], G_cCmdLineTokenC[120], G_cCmdLineTokenD[120], G_cCmdLineTokenE[120];
 extern class XSocket* G_pCalcSocket;
 extern bool G_bIsCalcSocketConnected;
 extern uint32_t G_dwCalcSocketTime, G_dwCalcSocketSendTime;
 extern HWND	G_hWnd, G_hEditWnd;
-extern HINSTANCE G_hInstance;
 
 char _cDrawingOrder[] = { 0, 1, 0, 0, 0, 0, 0, 1, 1 };
 char _cMantleDrawingOrder[] = { 0, 1, 1, 1, 0, 0, 0, 2, 2 };
 char _cMantleDrawingOrderOnRun[] = { 0, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-short _tmp_sOwnerType, _tmp_sAppr1, _tmp_sAppr2, _tmp_sAppr3, _tmp_sAppr4;//, _tmp_iStatus;
-//CInt _tmp_iStatus;
-int _tmp_iStatus;
-char  _tmp_cAction, _tmp_cDir, _tmp_cFrame, _tmp_cName[12];
-int   _tmp_iChatIndex, _tmp_dx, _tmp_dy, _tmp_iApprColor, _tmp_iEffectType, _tmp_iEffectFrame, _tmp_dX, _tmp_dY; // 21.171 2002-6-14
-uint16_t _tmp_wObjectID;
-char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
-uint16_t wFocusObjectID;
-short sFocus_dX, sFocus_dY;
-char  cFocusAction, cFocusFrame, cFocusDir, cFocusName[12];
-short sFocusX, sFocusY, sFocusOwnerType, sFocusAppr1, sFocusAppr2, sFocusAppr3, sFocusAppr4;
-int iFocuiStatus;
-int   iFocusApprColor;
-
-static void EnsureNetDebugConsole()
-{
-	static bool s_bConsoleReady = false;
-	if (s_bConsoleReady) return;
-
-	if (GetConsoleWindow() == nullptr) {
-		AllocConsole();
-	}
-
-	FILE* pOut = nullptr;
-	FILE* pIn = nullptr;
-	freopen_s(&pOut, "CONOUT$", "w", stdout);
-	freopen_s(&pOut, "CONOUT$", "w", stderr);
-	freopen_s(&pIn, "CONIN$", "r", stdin);
-	SetConsoleTitleA("Helbreath Client Net Debug");
-	s_bConsoleReady = true;
-}
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -121,15 +94,10 @@ void CGame::WriteSettings()
 
 CGame::CGame()
 {
-	int i;
-
-	// Initialize critical pointers first to avoid 0xCDCDCDCD debug heap issues
 	m_pInputBuffer = nullptr;
 	m_Renderer = nullptr;
-	EnsureNetDebugConsole();
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
-
 	srand((unsigned)time(0));
 	ReadSettings();
 	RegisterHotkeys();
@@ -143,94 +111,41 @@ CGame::CGame()
 	m_iItemDropCnt = 0;
 	m_bItemDrop = false;
 	m_bIsSpecial = false;
-	m_cGameMode = DEF_GAMEMODE_ONLOADING;
+	m_cGameMode = static_cast<char>(GameMode::Loading);
 	m_cWhisperIndex = DEF_MAXWHISPERMSG;
 	m_cGameModeCount = 0;
 	std::memset(m_cMapName, 0, sizeof(m_cMapName));
 	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-	m_pGSock = 0;
-	m_pLSock = 0;
-	m_pMapData = 0;
-	m_cCommandCount = 0;
-	m_dwCommandTime = 0; //v2.15 SpeedHack
-	m_sPlayerX = 0;
-	m_sPlayerY = 0;
-	m_sViewDX = 0;
-	m_sViewDY = 0;
-	m_sViewDstX = 0;
-	m_sViewDstY = 0;
-	m_sViewPointX = 0;
-	m_sViewPointY = 0;
+
+	// Initialize CPlayer first since it's used below
+	m_pPlayer = std::make_unique<CPlayer>();
+	m_pPlayer->m_sPlayerX = 0;
+	m_pPlayer->m_sPlayerY = 0;
+	m_pPlayer->m_Controller.ResetCommandCount();
+	m_pPlayer->m_Controller.SetCommandTime(0); //v2.15 SpeedHack
+	// Camera is initialized via its default constructor (calls Reset())
 	m_sVDL_X = 0;
 	m_sVDL_Y = 0;
 	m_wCommObjectID = 0;
 	m_wLastAttackTargetID = 0;
 	m_wEnterGameType = 0;
-	m_cCommand = DEF_OBJECTSTOP;
+	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 	m_bIsObserverMode = false;
-	for (i = 0; i < DEF_MAXSPRITES; i++) m_pSprite[i] = 0;
-	for (i = 0; i < DEF_MAXTILES; i++) m_pTileSpr[i] = 0;
-	for (i = 0; i < DEF_MAXEFFECTSPR; i++) m_pEffectSpr[i] = 0;
 
-	// Initialize bitmap font pointers
-	m_pBitmapFont1 = nullptr;
-	m_pBitmapFont2 = nullptr;
-	m_pNumFont = nullptr;
-	for (i = 0; i < 3; i++) m_pSprFont3[i] = nullptr;
+	// Initialize Managers (Networking v4) - using make_unique
+	m_pEffectManager = std::make_unique<EffectManager>(this);
+	m_pNetworkMessageManager = std::make_unique<NetworkMessageManager>(this);
 
-	for (i = 0; i < 5000; i++) m_pItemConfigList[i] = 0;
-
-	for (i = 0; i < DEF_MAXCHATMSGS; i++) m_pChatMsgList[i] = 0;
-
-	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++) m_pChatScrollList[i] = 0;
-
-	// Initialize legacy pointers
-	for (i = 0; i < DEF_MAXWHISPERMSG; i++) m_pWhisperMsg[i] = 0;
-
-	// Initialize New Managers (Networking v4)
-	m_pEffectManager = new EffectManager(this);
-	m_pNetworkMessageManager = new NetworkMessageManager(this);
-
-
-	for (i = 0; i < DEF_MAXITEMS; i++) m_pItemList[i] = 0;
-
-	for (i = 0; i < DEF_MAXBANKITEMS; i++) m_pBankList[i] = 0;
-
-	for (i = 0; i < 4; i++) m_pCharList[i] = 0;
-
-	for (i = 0; i < 61; i++) m_dialogBoxManager.SetOrderAt(i, 0);
-
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++) m_pMagicCfgList[i] = 0;
-
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++) m_pSkillCfgList[i] = 0;
-
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
-		m_pMsgTextList[i] = 0;
-		m_pMsgTextList2[i] = 0;
-		m_pAgreeMsgTextList[i] = 0;
-	}
-
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pBuildItemList[i] = 0;
-
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pDispBuildItemList[i] = 0;
-
-	// Crafting:
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pCraftItemList[i] = 0;
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++) m_pDispCraftItemList[i] = 0;
-
-
-	for (i = 0; i < DEF_MAXGAMEMSGS; i++) m_pGameMsgList[i] = 0;
-
-	m_pExID = 0;
+	// All pointer arrays (std::array<std::unique_ptr<T>, N>) default to nullptr
+	// Dialog box order initialization
+	for (int i = 0; i < 61; i++) m_dialogBoxManager.SetOrderAt(i, 0);
 
 	// Previous cursor status tracking removed
 	CursorTarget::ResetSelectionClickTime();
 
 	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
 	m_iGameServerMode = 2; // Snoopy: Default is INTERNET
-
-	for (i = 0; i < DEF_MAXMENUITEMS; i++)
-		m_pItemForSaleList[i] = 0;
+	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
 	m_sPendingShopType = 0;
 
 	// CLEROTh - INIT DIALOG BOXES
@@ -344,8 +259,6 @@ CGame::CGame()
 	std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
 	std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
 	std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-	std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
-	std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
 	std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
 	std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
 	std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
@@ -355,79 +268,25 @@ CGame::CGame()
 
 CGame::~CGame()
 {
-	// Clean up bitmap fonts (before renderer is destroyed)
-	delete m_pBitmapFont1;
-	m_pBitmapFont1 = nullptr;
-	delete m_pBitmapFont2;
-	m_pBitmapFont2 = nullptr;
-	delete m_pNumFont;
-	m_pNumFont = nullptr;
-	for (int i = 0; i < 3; i++) {
-		delete m_pSprFont3[i];
-		m_pSprFont3[i] = nullptr;
-	}
-
 	Renderer::Destroy();
 	m_Renderer = nullptr;
 }
 
-bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
+bool CGame::bInit()
 {
-	int iIndex;
-	int i;
-	char seps[] = "&= ,\t\n";
-	char* token;
-	// CLEROTH - BUG
-	for (i = 0; i < DEF_MAXSPRITES; i++)
-		m_pSprite[i] = 0;
-	if (pCmdLine != 0)
-	{
-		std::memset(G_cCmdLine, 0, sizeof(G_cCmdLine));
-		std::memset(G_cCmdLineTokenA, 0, sizeof(G_cCmdLineTokenA));
-		std::memset(G_cCmdLineTokenB, 0, sizeof(G_cCmdLineTokenB));
-		std::memset(G_cCmdLineTokenC, 0, sizeof(G_cCmdLineTokenC));
-		std::memset(G_cCmdLineTokenD, 0, sizeof(G_cCmdLineTokenD));
-		std::memset(G_cCmdLineTokenE, 0, sizeof(G_cCmdLineTokenE));
-
-		strcpy(G_cCmdLine, pCmdLine);
-
-		iIndex = 0;
-		token = strtok(pCmdLine, seps);
-		while (token != 0)
-		{
-			switch (iIndex) {
-			case 0:	strcpy(G_cCmdLineTokenA, token); break;
-			case 1: strcpy(G_cCmdLineTokenB, token); break;
-			case 2: strcpy(G_cCmdLineTokenC, token); break;
-			case 3: strcpy(G_cCmdLineTokenD, token); break;
-			case 4: strcpy(G_cCmdLineTokenE, token); break;
-			}
-			token = strtok(0, seps);
-			iIndex++;
-		}
-	}
-
-	std::memset(G_cCmdLineTokenA_Lowercase, 0, sizeof(G_cCmdLineTokenA_Lowercase));
-	strcpy(G_cCmdLineTokenA_Lowercase, G_cCmdLineTokenA);
-	_strlwr(G_cCmdLineTokenA_Lowercase);
-
-	if (memcmp(G_cCmdLineTokenA_Lowercase, "/egparam", 8) == 0)
-	{
-		std::memset(G_cCmdLineTokenA, 0, sizeof(G_cCmdLineTokenA));
-		memcpy(G_cCmdLineTokenA, "dataq", 5);
-	}
-	m_hWnd = hWnd;
-	m_bCommandAvailable = true;
-	m_dwTime = G_dwGlobalTime;
+	m_pPlayer->m_Controller.SetCommandAvailable(true);
+	m_dwTime = GameClock::GetTimeMS();
 
 	// Initialize AudioManager (sounds loaded later during loading screen)
-	AudioManager::Get().Initialize(m_hWnd);
+	AudioManager::Get().Initialize(G_hWnd);
 
 	// Initialize ChatCommandManager
 	ChatCommandManager::Get().Initialize(this);
 
-	m_bIsHideLocalCursor = false;
-	m_cEnterCheck = m_cTabCheck = m_cLeftArrowCheck = 0;
+	// Initialize GameModeManager
+	GameModeManager::Initialize(this);
+
+	m_bHideLocalCursor = false;
 
 	// Create and initialize the renderer based on build configuration
 #if defined(SFML_ENGINE)
@@ -438,29 +297,29 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 #error "No renderer engine defined. Define SFML_ENGINE or DDRAW_ENGINE."
 #endif
 	{
-		MessageBox(m_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 	m_Renderer = Renderer::Get();
-	if (m_Renderer->Init(m_hWnd) == false)
+	if (m_Renderer->Init(G_hWnd) == false)
 	{
-		MessageBox(m_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
 	// Initialize sprite factory and register it globally
-	m_pSpriteFactory = CreateSpriteFactory(m_Renderer);
-	SpriteLib::Sprites::SetFactory(m_pSpriteFactory);
+	m_pSpriteFactory.reset(CreateSpriteFactory(m_Renderer));
+	SpriteLib::Sprites::SetFactory(m_pSpriteFactory.get());
 
 	if (bCheckImportantFile() == false)
 	{
-		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
 	if (_bDecodeBuildItemContents() == false)
 	{
-		MessageBox(m_hWnd, "File checksum error! Get Update again please!", "ERROR2", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR2", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
@@ -470,13 +329,13 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_iGameServerPort = DEF_GSERVER_PORT;
 
 	if (bInitMagicCfgList() == false) {
-		MessageBox(m_hWnd, "MAGICCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "MAGICCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 	// Skill
 	if (bInitSkillCfgList() == false)
 	{
-		MessageBox(m_hWnd, "SKILLCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "SKILLCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
@@ -534,10 +393,11 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	// Each type has 95 frames offset
 	if (m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2])
 	{
-		for (int type = 0; type < 3; type++)
+		for (auto& font : m_pSprFont3)
 		{
-			m_pSprFont3[type] = TextLib::CreateBitmapFontDynamic(
-				m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95 * type);
+			size_t idx = &font - &m_pSprFont3[0];
+			font = TextLib::CreateBitmapFontDynamic(
+				m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95 * idx);
 		}
 	}
 
@@ -550,13 +410,13 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	}
 
 	// Mouse position tracking removed - use Input::GetMouseX/Y
-	m_pMapData = new class CMapData(this);
-	std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-	std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-	std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+	m_pMapData = std::make_unique<CMapData>(this);
+	std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+	std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+	std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 
-	m_sPlayerType = 2;
-	m_cPlayerTurn = 0;
+	m_pPlayer->m_sPlayerType = 2;
+	m_pPlayer->m_Controller.SetPlayerTurn(0);
 	// Snoopy: fixed here
 	m_dialogBoxManager.SetOrderAt(60, DialogBoxId::HudPanel);
 	m_dialogBoxManager.SetOrderAt(59, DialogBoxId::HudPanel); // 29�� GaugePannel
@@ -594,20 +454,12 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 	m_wR[14] = 72;   m_wG[14] = 8;    m_wB[14] = 8;     // Red
 	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
-
-
 	_LoadGameMsgTextContents();
 	std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
 	strcpy(m_cWorldServerName, NAME_WORLDNAME1);
 
-	// Initialize manager singletons (ConfigManager already initialized in ReadSettings)
-	Camera::Get().Initialize();
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
-
-	// Set Camera viewport to match screen dimensions
-	Camera::Get().SetViewportSize(SCREENX * 2 + 640, SCREENY * 2 + 480);
-	Camera::Get().SetTileSize(32, 32);
 
 	return true;
 }
@@ -615,16 +467,15 @@ bool CGame::bInit(HWND hWnd, HINSTANCE hInst, char* pCmdLine)
 void CGame::Quit()
 {
 	WriteSettings();
-	ChangeGameMode(DEF_GAMEMODE_NULL);
+	ChangeGameMode(GameMode::Null);
 
 	// Shutdown manager singletons
 	WeatherManager::Get().Shutdown();
 	AudioManager::Get().Shutdown();
-	Camera::Get().Shutdown();
 	ConfigManager::Get().Shutdown();
 
-	for (int i = 0; i < 5000; i++)
-		if (m_pItemConfigList[i] != 0) delete m_pItemConfigList[i];
+	// Clear all unique_ptr arrays using range-based for loops
+	for (auto& item : m_pItemConfigList) item.reset();
 
 	m_pSprite.clear();
 	m_pTileSpr.clear();
@@ -633,164 +484,119 @@ void CGame::Quit()
 	// Clean up sprite factory
 	SpriteLib::Sprites::SetFactory(nullptr);
 	if (m_pSpriteFactory) {
-		delete m_pSpriteFactory;
-		m_pSpriteFactory = nullptr;
+		m_pSpriteFactory.reset();
 	}
 
 	// Sound cleanup handled by AudioManager::Shutdown()
-
-	for (int i = 0; i < 4; i++)
-		if (m_pCharList[i] != 0) delete m_pCharList[i];
-
-	for (int i = 0; i < DEF_MAXITEMS; i++)
-		if (m_pItemList[i] != 0)	delete m_pItemList[i];
-
-	for (int i = 0; i < DEF_MAXBANKITEMS; i++)
-		if (m_pBankList[i] != 0)	delete m_pBankList[i];
-
 	// Effects now managed by EffectManager (cleaned up in destructor)
 
-	for (int i = 0; i < DEF_MAXCHATMSGS; i++)
-		if (m_pChatMsgList[i] != 0) delete m_pChatMsgList[i];
+	for (auto& ch : m_pCharList) ch.reset();
+	for (auto& item : m_pItemList) item.reset();
+	for (auto& item : m_pBankList) item.reset();
+	for (auto& msg : m_pChatMsgList) msg.reset();
+	for (auto& msg : m_pChatScrollList) msg.reset();
+	for (auto& msg : m_pWhisperMsg) msg.reset();
+	for (auto& item : m_pItemForSaleList) item.reset();
+	for (auto& magic : m_pMagicCfgList) magic.reset();
+	for (auto& skill : m_pSkillCfgList) skill.reset();
+	for (auto& msg : m_pMsgTextList) msg.reset();
+	for (auto& msg : m_pMsgTextList2) msg.reset();
+	for (auto& msg : m_pAgreeMsgTextList) msg.reset();
+	m_pExID.reset();
+	for (auto& item : m_pBuildItemList) item.reset();
+	for (auto& item : m_pDispBuildItemList) item.reset();
+	for (auto& msg : m_pGameMsgList) msg.reset();
 
-	for (int i = 0; i < DEF_MAXCHATSCROLLMSGS; i++)
-		if (m_pChatScrollList[i] != 0) delete m_pChatScrollList[i];
-
-	for (int i = 0; i < DEF_MAXWHISPERMSG; i++)
-		if (m_pWhisperMsg[i] != 0) delete m_pWhisperMsg[i];
-
-	for (int i = 0; i < DEF_MAXMENUITEMS; i++)
-		if (m_pItemForSaleList[i] != 0) delete m_pItemForSaleList[i];
-
-	for (int i = 0; i < DEF_MAXMAGICTYPE; i++)
-		if (m_pMagicCfgList[i] != 0) delete m_pMagicCfgList[i];
-
-	for (int i = 0; i < DEF_MAXSKILLTYPE; i++)
-		if (m_pSkillCfgList[i] != 0) delete m_pSkillCfgList[i];
-
-	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
-		if (m_pMsgTextList[i] != 0)  delete m_pMsgTextList[i];
-		if (m_pMsgTextList2[i] != 0) delete m_pMsgTextList2[i];
-		if (m_pAgreeMsgTextList[i] != 0) delete m_pAgreeMsgTextList[i];
-	}
-
-	if (m_pExID != 0) delete m_pExID;
-
-	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
-		if (m_pBuildItemList[i] != 0) delete m_pBuildItemList[i];
-
-	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
-		if (m_pDispBuildItemList[i] != 0) delete m_pDispBuildItemList[i];
-
-	// Crafting:
-	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
-		if (m_pCraftItemList[i] != 0) delete m_pCraftItemList[i];
-	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
-		if (m_pDispCraftItemList[i] != 0) delete m_pDispCraftItemList[i];
-
-
-	for (int i = 0; i < DEF_MAXGAMEMSGS; i++)
-		if (m_pGameMsgList[i] != 0) delete m_pGameMsgList[i];
-
-	delete m_pMapData;
-
-	if (m_pGSock != 0) delete m_pGSock;
-	if (m_pLSock != 0) delete m_pLSock;
+	// Clean up single pointers (unique_ptr handles null checks automatically)
+	m_pMapData.reset();
+	m_pGSock.reset();
+	m_pLSock.reset();
 	if (G_pCalcSocket != 0) delete G_pCalcSocket;
-
-	if (m_pEffectManager != 0) delete m_pEffectManager;
-	if (m_pNetworkMessageManager != 0) delete m_pNetworkMessageManager;
+	m_pEffectManager.reset();
+	m_pNetworkMessageManager.reset();
 }
 
 
 void CGame::UpdateScreen()
 {
-	G_dwGlobalTime = GameClock::GetTimeMS();
+	// NOTE: Timer and socket events are now processed in RenderFrame() before this is called
+	// This ensures they run regardless of whether legacy UpdateScreen or new screen objects are used
 
-	// Check if timer thread signaled (thread-safe flag check)
-	extern std::atomic<bool> G_bTimerSignal;
-	if (G_bTimerSignal.exchange(false)) {
-		OnTimer();
-	}
-
-	OnGameSocketEvent();
-	OnLogSocketEvent();
-	switch (m_cGameMode) {
+	// Dispatch based on current game mode from manager (source of truth)
+	switch (GameModeManager::GetMode()) {
 #ifdef DEF_MAKE_ACCOUNT
-	case DEF_GAMEMODE_ONAGREEMENT:
+	case GameMode::Agreement:
 		// UpdateScreen_OnAgreement(); //unused by HBx server..
 		break;
 
-	case DEF_GAMEMODE_ONCREATENEWACCOUNT:
+	case GameMode::CreateNewAccount:
 		UpdateScreen_CreateNewAccount();
 		break;
 #endif
 
-	case DEF_GAMEMODE_ONVERSIONNOTMATCH:
+	case GameMode::VersionNotMatch:
 		UpdateScreen_VersionNotMatch();
 		break;
 
-	case DEF_GAMEMODE_ONCONNECTING:
+	case GameMode::Connecting:
 		UpdateScreen_Connecting();
 		break;
 
-	case DEF_GAMEMODE_ONMAINMENU:
+	case GameMode::MainMenu:
 		UpdateScreen_MainMenu();
 		break;
 
-	case DEF_GAMEMODE_ONLOADING:
+	case GameMode::Loading:
 		UpdateScreen_Loading();
 		break;
 
-	case DEF_GAMEMODE_ONMAINGAME:
-		UpdateScreen_OnGame();
-		break;
+	// GameMode::MainGame is now handled by Screen_OnGame
 
-	case DEF_GAMEMODE_ONWAITINGINITDATA:
+	case GameMode::WaitingInitData:
 		UpdateScreen_WaitInitData();
 		break;
 
-	case DEF_GAMEMODE_ONCONNECTIONLOST:
+	case GameMode::ConnectionLost:
 		UpdateScreen_ConnectionLost();
 		break;
 
-	case DEF_GAMEMODE_ONMSG:
+	case GameMode::Msg:
 		UpdateScreen_Msg();
 		break;
 
-	case DEF_GAMEMODE_ONLOGIN:
+	case GameMode::Login:
 		UpdateScreen_Login();
 		break;
 
-	case DEF_GAMEMODE_ONQUIT:
+	case GameMode::Quit:
 		UpdateScreen_Quit();
 		break;
 
-	case DEF_GAMEMODE_ONQUERYFORCELOGIN:
+	case GameMode::QueryForceLogin:
 		UpdateScreen_QueryForceLogin();
 		break;
 
-	case DEF_GAMEMODE_ONSELECTCHARACTER:
+	case GameMode::SelectCharacter:
 		UpdateScreen_SelectCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONCREATENEWCHARACTER:
+	case GameMode::CreateNewCharacter:
 		UpdateScreen_CreateNewCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONWAITINGRESPONSE:
+	case GameMode::WaitingResponse:
 		UpdateScreen_WaitingResponse();
 		break;
 
-	case DEF_GAMEMODE_ONQUERYDELETECHARACTER:
+	case GameMode::QueryDeleteCharacter:
 		UpdateScreen_QueryDeleteCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONLOGRESMSG:
+	case GameMode::LogResMsg:
 		UpdateScreen_LogResMsg();
 		break;
 
-	case DEF_GAMEMODE_ONCHANGEPASSWORD:
+	case GameMode::ChangePassword:
 		UpdateScreen_ChangePassword();
 		break;
 	}
@@ -802,118 +608,249 @@ void CGame::UpdateScreen()
 // NOTE: Unsplit screens temporarily call the old combined UpdateScreen_On* method here
 void CGame::DrawScreen()
 {
-	switch (m_cGameMode) {
+	// Dispatch based on current game mode from manager (source of truth)
+	switch (GameModeManager::GetMode()) {
 #ifdef DEF_MAKE_ACCOUNT
-	case DEF_GAMEMODE_ONAGREEMENT:
+	case GameMode::Agreement:
 		break;
 
-	case DEF_GAMEMODE_ONCREATENEWACCOUNT:
+	case GameMode::CreateNewAccount:
 		DrawScreen_CreateNewAccount();
 		break;
 #endif
 
-	case DEF_GAMEMODE_ONVERSIONNOTMATCH:
+	case GameMode::VersionNotMatch:
 		DrawScreen_VersionNotMatch();
 		break;
 
-	case DEF_GAMEMODE_ONCONNECTING:
+	case GameMode::Connecting:
 		DrawScreen_Connecting();
 		break;
 
-	case DEF_GAMEMODE_ONMAINMENU:
+	case GameMode::MainMenu:
 		DrawScreen_MainMenu();
 		break;
 
-	case DEF_GAMEMODE_ONLOADING:
+	case GameMode::Loading:
 		DrawScreen_Loading();
 		break;
 
-	case DEF_GAMEMODE_ONMAINGAME:
-		DrawScreen_OnGame();
-		break;
+	// GameMode::MainGame is now handled by Screen_OnGame
 
-	case DEF_GAMEMODE_ONWAITINGINITDATA:
+	case GameMode::WaitingInitData:
 		DrawScreen_WaitInitData();
 		break;
 
-	case DEF_GAMEMODE_ONCONNECTIONLOST:
+	case GameMode::ConnectionLost:
 		DrawScreen_ConnectionLost();
 		break;
 
-	case DEF_GAMEMODE_ONMSG:
+	case GameMode::Msg:
 		DrawScreen_Msg();
 		break;
 
-	case DEF_GAMEMODE_ONLOGIN:
+	case GameMode::Login:
 		DrawScreen_Login();
 		break;
 
-	case DEF_GAMEMODE_ONQUIT:
+	case GameMode::Quit:
 		DrawScreen_Quit();
 		break;
 
-	case DEF_GAMEMODE_ONQUERYFORCELOGIN:
+	case GameMode::QueryForceLogin:
 		DrawScreen_QueryForceLogin();
 		break;
 
-	case DEF_GAMEMODE_ONSELECTCHARACTER:
+	case GameMode::SelectCharacter:
 		DrawScreen_SelectCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONCREATENEWCHARACTER:
+	case GameMode::CreateNewCharacter:
 		DrawScreen_CreateNewCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONWAITINGRESPONSE:
+	case GameMode::WaitingResponse:
 		DrawScreen_WaitingResponse();
 		break;
 
-	case DEF_GAMEMODE_ONQUERYDELETECHARACTER:
+	case GameMode::QueryDeleteCharacter:
 		DrawScreen_QueryDeleteCharacter();
 		break;
 
-	case DEF_GAMEMODE_ONLOGRESMSG:
+	case GameMode::LogResMsg:
 		DrawScreen_LogResMsg();
 		break;
 
-	case DEF_GAMEMODE_ONCHANGEPASSWORD:
+	case GameMode::ChangePassword:
 		DrawScreen_ChangePassword();
 		break;
 	}
+
+	// Draw cursor on top of everything
+	DrawCursor();
 }
 
 
+// DrawCursor: Centralized cursor drawing at end of frame
+// Called at the end of DrawScreen() to ensure cursor is always on top
+void CGame::DrawCursor()
+{
+	// Check if cursor should be hidden
+	if (m_bHideLocalCursor)
+		return;
+
+	// Get mouse position
+	int msX = Input::GetMouseX();
+	int msY = Input::GetMouseY();
+
+	// Skip if mouse position is invalid (not yet initialized)
+	if (msX == 0 && msY == 0)
+		return;
+
+	// Determine cursor frame based on game mode from manager (source of truth)
+	int iCursorFrame = 0;  // Default arrow cursor
+
+	switch (GameModeManager::GetMode()) {
+	case GameMode::MainGame:
+		// In-game uses context-sensitive cursor from CursorTarget
+		if (m_bIsObserverMode) {
+			// Observer mode shows a small crosshair instead of cursor sprite
+			m_Renderer->PutPixel(msX, msY, 255, 255, 255);
+			m_Renderer->PutPixel(msX + 1, msY, 255, 255, 255);
+			m_Renderer->PutPixel(msX - 1, msY, 255, 255, 255);
+			m_Renderer->PutPixel(msX, msY + 1, 255, 255, 255);
+			m_Renderer->PutPixel(msX, msY - 1, 255, 255, 255);
+			return;
+		}
+		iCursorFrame = CursorTarget::GetCursorFrame();
+		break;
+
+	case GameMode::Connecting:
+	case GameMode::WaitingResponse:
+	case GameMode::WaitingInitData:
+		// Waiting/connecting states use hourglass cursor (frame 8)
+		iCursorFrame = 8;
+		break;
+
+	default:
+		// All other modes use default arrow cursor (frame 0)
+		iCursorFrame = 0;
+		break;
+	}
+
+	// Draw the cursor sprite
+	if (m_pSprite[DEF_SPRID_MOUSECURSOR])
+		m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, iCursorFrame);
+}
+
+
+
 // RenderFrame: Centralized rendering frame wrapper
-// Handles: Update -> (skip check) -> Clear backbuffer -> Draw -> Flip
+// Handles: Update -> (skip check) -> Clear backbuffer -> Draw -> Fade overlay -> Flip
 // This centralizes surface operations that were previously scattered across all screen methods
 void CGame::RenderFrame()
 {
-	// Reset skip flag - screens can set this to skip rendering (e.g., UpdateScreen_OnGame when iUpdateRet == 0)
-	m_bSkipFrame = false;
-
 	// Update manager singletons with frame delta time
 	double deltaTime = FrameTiming::GetDeltaTime();
-	Camera::Get().Update(deltaTime);
 	AudioManager::Get().Update(deltaTime);
 
-	// Update phase: Logic, input handling, state changes
-	// May set m_bSkipFrame = true to skip rendering entirely
-	FrameTiming::BeginProfile(ProfileStage::Update);
-	UpdateScreen();
-	FrameTiming::EndProfile(ProfileStage::Update);
+	// Process timer and network events (must happen before any update logic)
+	// These were previously in UpdateScreen but need to run regardless of screen system
+	extern std::atomic<bool> G_bTimerSignal;
+	if (G_bTimerSignal.exchange(false)) {
+		OnTimer();
+	}
+	OnGameSocketEvent();
+	OnLogSocketEvent();
 
-	// Skip rendering if update phase indicated nothing needs to be drawn
-	// This saves ClearBackB4 and iFlip operations when frame is skipped
-	if (m_bSkipFrame)
-		return;
+	// Update game mode transition state (fade in/out progress)
+	GameModeManager::Update();
 
-	// Clear backbuffer before drawing
-	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
-	m_Renderer->BeginFrame();
-	FrameTiming::EndProfile(ProfileStage::ClearBuffer);
+	// Sync legacy variables from manager (manager is source of truth)
+	// This keeps backwards compatibility with code that reads these variables
+	m_cGameMode = GameModeManager::GetModeValue();
+	m_cGameModeCount = GameModeManager::GetFrameCount();
 
-	// Draw phase: Pure rendering based on current state
-	DrawScreen();
+	// Check if we're in the middle of switching screens (at full black)
+	// During this phase, skip update/render - the switch happens in Update() above
+	if (GameModeManager::GetTransitionState() != TransitionState::Switching)
+	{
+		// Get the active screen and overlay (if any)
+		IGameScreen* pScreen = GameModeManager::GetActiveScreen();
+		IGameScreen* pOverlay = GameModeManager::GetActiveOverlay();
+
+		// ============== Update Phase ==============
+		FrameTiming::BeginProfile(ProfileStage::Update);
+
+		// If overlay exists, suppress input for base screen (completely transparent to screen code)
+		if (pOverlay)
+		{
+			Input::SetSuppressed(true);
+		}
+
+		// Update base screen (input suppressed if overlay active)
+		if (pScreen)
+		{
+			pScreen->on_update();
+		}
+		else
+		{
+			UpdateScreen();  // Legacy dispatch
+		}
+
+		// Restore input for overlay
+		if (pOverlay)
+		{
+			Input::SetSuppressed(false);
+			pOverlay->on_update();
+		}
+
+		FrameTiming::EndProfile(ProfileStage::Update);
+
+		// ============== Render Phase ==============
+		FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
+		m_Renderer->BeginFrame();
+		FrameTiming::EndProfile(ProfileStage::ClearBuffer);
+
+		// Render base screen
+		if (pScreen)
+		{
+			pScreen->on_render();
+		}
+		else
+		{
+			DrawScreen();  // Legacy dispatch (includes cursor)
+		}
+
+		// Render overlay on top with shadow box
+		if (pOverlay)
+		{
+			// Draw shadow box to dim the base screen
+			m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+			pOverlay->on_render();
+		}
+
+		// Cursor always on top (for IGameScreen-based screens)
+		if (pScreen)
+		{
+			DrawCursor();
+		}
+
+		// Increment the frame counter for next frame (used by screen initialization/fade logic)
+		GameModeManager::IncrementFrameCount();
+	}
+	else
+	{
+		// During Switching phase, just clear to black
+		m_Renderer->BeginFrame();
+	}
+
+	// Draw fade overlay if transitioning between game modes
+	if (GameModeManager::IsTransitioning())
+	{
+		float alpha = GameModeManager::GetFadeAlpha();
+		m_Renderer->DrawFadeOverlay(alpha);
+	}
 
 	// Flip to show the drawn content
 	FrameTiming::BeginProfile(ProfileStage::Flip);
@@ -926,46 +863,6 @@ void CGame::RenderFrame()
 }
 
 
-void CGame::CalcViewPoint()
-{
-	short dX, dY;
-	dX = m_sViewPointX - m_sViewDstX;
-	dY = m_sViewPointY - m_sViewDstY;
-	if (abs(dX) < abs(m_sViewDX))
-	{
-		m_sViewPointX = m_sViewDstX;
-		m_sViewDX = 0;
-	}
-	else
-	{
-		if (dX > 0) m_sViewDX--;
-		if (dX < 0) m_sViewDX++;
-		if (dX == 0) m_sViewDX = 0;
-		if (abs(dX) < 40) {
-			if (m_sViewDX > 2)  m_sViewDX = 2;
-			else if (m_sViewDX < -2) m_sViewDX = -2;
-		}
-		m_sViewPointX += m_sViewDX;
-	}
-
-	if (abs(dY) < abs(m_sViewDY))
-	{
-		m_sViewPointY = m_sViewDstY;
-		m_sViewDY = 0;
-	}
-	else
-	{
-		if (dY > 0) m_sViewDY--;
-		if (dY < 0) m_sViewDY++;
-		if (dY == 0) m_sViewDY = 0;
-		if (abs(dY) < 40) {
-			if (m_sViewDY > 2)  m_sViewDY = 2;
-			else if (m_sViewDY < -2) m_sViewDY = -2;
-		}
-		m_sViewPointY += m_sViewDY;
-	}
-}
-
 // MODERNIZED: v4 Networking Architecture (Drain -> Queue -> Process)
 void CGame::OnGameSocketEvent()
 {
@@ -976,15 +873,15 @@ void CGame::OnGameSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pGSock;
-        m_pGSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pGSock.reset();
+        m_pGSock.reset();
         return;
     case DEF_XSOCKEVENT_SOCKETERROR:
         printf("[ERROR] Game socket error\n");
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pGSock;
-        m_pGSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pGSock.reset();
+        m_pGSock.reset();
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
@@ -1002,9 +899,9 @@ void CGame::OnGameSocketEvent()
 
     if (iDrained < 0) {
         printf("[ERROR] Game socket DrainToQueue failed: %d\n", iDrained);
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pGSock;
-        m_pGSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pGSock.reset();
+        m_pGSock.reset();
         return;
     }
 
@@ -1031,7 +928,7 @@ void CGame::OnGameSocketEvent()
 
         // Update functionality timestamps (legacy requirement)
         m_dwLastNetRecvTime = GameClock::GetTimeMS();
-        m_dwTime = G_dwGlobalTime;
+        m_dwTime = GameClock::GetTimeMS();
 
         // Process (using the pointer directly from the packet vector)
         if (!packet.empty()) {
@@ -1050,68 +947,10 @@ void CGame::OnGameSocketEvent()
 
 void CGame::RestoreSprites()
 {
-	for (int i = 0; i < DEF_MAXSPRITES; i++)
-		if (m_pSprite[i] != 0) m_pSprite[i]->Restore();
-}
-
-char _tmp_cTmpDirX[9] = { 0,0,1,1,1,0,-1,-1,-1 };
-char _tmp_cTmpDirY[9] = { 0,-1,-1,0,1,1,1,0,-1 };
-char CGame::cGetNextMoveDir(short sX, short sY, short dstX, short dstY, bool bMoveCheck, bool bMIM)
-{
-	char  cDir, cTmpDir;
-	//int   aX, aY, aX2, aY2, dX, dY;
-	int   aX, aY, dX, dY;
-	int   i;
-	if ((sX == dstX) && (sY == dstY)) return 0;
-	dX = sX;
-	dY = sY;
-
-	if (bMIM == false) // MIM Fix
-		cDir = CMisc::cGetNextMoveDir(dX, dY, dstX, dstY);
-	else cDir = CMisc::cGetNextMoveDir(dstX, dstY, dX, dY);
-
-	if (m_cPlayerTurn == 0)
-		for (i = cDir; i <= cDir + 2; i++)
-		{
-			cTmpDir = i;
-			if (cTmpDir > 8) cTmpDir -= 8;
-			aX = _tmp_cTmpDirX[cTmpDir];
-			aY = _tmp_cTmpDirY[cTmpDir];
-			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
-			{
-				m_bIsPrevMoveBlocked = false;
-			}
-			else if (m_pMapData->bGetIsLocateable(dX + aX, dY + aY) == true)
-			{
-				if (m_pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
-				{
-					return cTmpDir;
-				}
-				else return cTmpDir;
-			}
-		}
-
-	if (m_cPlayerTurn == 1)
-		for (i = cDir; i >= cDir - 2; i--)
-		{
-			cTmpDir = i;
-			if (cTmpDir < 1) cTmpDir += 8;
-			aX = _tmp_cTmpDirX[cTmpDir];
-			aY = _tmp_cTmpDirY[cTmpDir];
-			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
-			{
-				m_bIsPrevMoveBlocked = false;
-			}
-			else if (m_pMapData->bGetIsLocateable(dX + aX, dY + aY) == true)
-			{
-				if (m_pMapData->bIsTeleportLoc(dX + aX, dY + aY) == true)
-				{
-					return cTmpDir;
-				}
-				else return cTmpDir;
-			}
-		}
-	return 0;
+	for (auto& [idx, spr] : m_pSprite)
+	{
+		spr->Restore();
+	}
 }
 
 bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4)
@@ -1240,9 +1079,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.new_password, 0, sizeof(req.new_password));
 		std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
 		std::memset(req.new_password_confirm, 0, sizeof(req.new_password_confirm));
@@ -1258,9 +1097,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.email, 0, sizeof(req.email));
 		std::memcpy(req.email, m_cEmailAddr, sizeof(req.email));
 		std::memset(req.quiz, 0, sizeof(req.quiz));
@@ -1279,9 +1118,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
 		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
@@ -1296,24 +1135,24 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
 		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_pPlayer->m_cPlayerName, sizeof(req.character_name));
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
 		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-		req.gender = static_cast<uint8_t>(m_cGender);
-		req.skin = static_cast<uint8_t>(m_cSkinCol);
-		req.hairstyle = static_cast<uint8_t>(m_cHairStyle);
-		req.haircolor = static_cast<uint8_t>(m_cHairCol);
-		req.underware = static_cast<uint8_t>(m_cUnderCol);
-		req.str = static_cast<uint8_t>(m_ccStr);
-		req.vit = static_cast<uint8_t>(m_ccVit);
-		req.dex = static_cast<uint8_t>(m_ccDex);
-		req.intl = static_cast<uint8_t>(m_ccInt);
-		req.mag = static_cast<uint8_t>(m_ccMag);
-		req.chr = static_cast<uint8_t>(m_ccChr);
+		req.gender = static_cast<uint8_t>(m_pPlayer->m_iGender);
+		req.skin = static_cast<uint8_t>(m_pPlayer->m_iSkinCol);
+		req.hairstyle = static_cast<uint8_t>(m_pPlayer->m_iHairStyle);
+		req.haircolor = static_cast<uint8_t>(m_pPlayer->m_iHairCol);
+		req.underware = static_cast<uint8_t>(m_pPlayer->m_iUnderCol);
+		req.str = static_cast<uint8_t>(m_pPlayer->m_iStatModStr);
+		req.vit = static_cast<uint8_t>(m_pPlayer->m_iStatModVit);
+		req.dex = static_cast<uint8_t>(m_pPlayer->m_iStatModDex);
+		req.intl = static_cast<uint8_t>(m_pPlayer->m_iStatModInt);
+		req.mag = static_cast<uint8_t>(m_pPlayer->m_iStatModMag);
+		req.chr = static_cast<uint8_t>(m_pPlayer->m_iStatModChr);
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -1325,18 +1164,16 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = static_cast<uint16_t>(m_wEnterGameType);
 		std::memset(req.character_name, 0, sizeof(req.character_name));
-		std::memcpy(req.character_name, m_cPlayerName, sizeof(req.character_name));
+		std::memcpy(req.character_name, m_pPlayer->m_cPlayerName, sizeof(req.character_name));
 		std::memset(req.map_name, 0, sizeof(req.map_name));
 		std::memcpy(req.map_name, m_cMapName, sizeof(req.map_name));
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
-		req.level = m_iLevel;
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
+		req.level = m_pPlayer->m_iLevel;
 		std::memset(req.world_name, 0, sizeof(req.world_name));
 		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
-		std::memset(req.cmd_line, 0, sizeof(req.cmd_line));
-		std::memcpy(req.cmd_line, G_cCmdLineTokenA, sizeof(req.cmd_line));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -1350,9 +1187,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		std::memset(req.character_name, 0, sizeof(req.character_name));
 		std::memcpy(req.character_name, m_pCharList[m_wEnterGameType - 1]->m_cName, sizeof(req.character_name));
 		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.world_name, 0, sizeof(req.world_name));
 		std::memcpy(req.world_name, m_cWorldServerName, sizeof(req.world_name));
 		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
@@ -1391,11 +1228,11 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
 		std::memset(req.player, 0, sizeof(req.player));
-		std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
+		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
 		std::memset(req.account, 0, sizeof(req.account));
-		std::memcpy(req.account, m_cAccountName, sizeof(req.account));
+		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
 		std::memset(req.server, 0, sizeof(req.server));
 		std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
@@ -1410,12 +1247,12 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestLevelUpSettings req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		req.str = m_cLU_Str;
-		req.vit = m_cLU_Vit;
-		req.dex = m_cLU_Dex;
-		req.intel = m_cLU_Int;
-		req.mag = m_cLU_Mag;
-		req.chr = m_cLU_Char;
+		req.str = m_pPlayer->m_wLU_Str;
+		req.vit = m_pPlayer->m_wLU_Vit;
+		req.dex = m_pPlayer->m_wLU_Dex;
+		req.intel = m_pPlayer->m_wLU_Int;
+		req.mag = m_pPlayer->m_wLU_Mag;
+		req.chr = m_pPlayer->m_wLU_Char;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -1429,10 +1266,10 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandChatMsgHeader req{};
 			req.header.msg_id = dwMsgID;
 			req.header.msg_type = 0;
-			req.x = m_sPlayerX;
-			req.y = m_sPlayerY;
+			req.x = m_pPlayer->m_sPlayerX;
+			req.y = m_pPlayer->m_sPlayerY;
 			std::memset(req.name, 0, sizeof(req.name));
-			std::memcpy(req.name, m_cPlayerName, sizeof(req.name));
+			std::memcpy(req.name, m_pPlayer->m_cPlayerName, sizeof(req.name));
 			req.chat_type = static_cast<uint8_t>(iV1);
 			if (bCheckLocalChatCommand(pString) == true) return false;
 			std::size_t text_len = std::strlen(pString);
@@ -1451,8 +1288,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			std::memset(req.name, 0, sizeof(req.name));
 			if (pString != 0) {
@@ -1475,8 +1312,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2);
@@ -1495,8 +1332,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			std::memset(req.name, ' ', sizeof(req.name));
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1);
@@ -1515,8 +1352,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			req.item_ids[0] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV1);
 			req.item_ids[1] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV2);
@@ -1535,8 +1372,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 				hb::net::PacketCommandCommonWithTime req{};
 				req.base.header.msg_id = dwMsgID;
 				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
+				req.base.x = m_pPlayer->m_sPlayerX;
+				req.base.y = m_pPlayer->m_sPlayerY;
 				req.base.dir = static_cast<uint8_t>(cDir);
 				req.v1 = iV1;
 				req.v2 = iV2;
@@ -1549,8 +1386,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 				hb::net::PacketCommandCommonWithString req{};
 				req.base.header.msg_id = dwMsgID;
 				req.base.header.msg_type = wCommand;
-				req.base.x = m_sPlayerX;
-				req.base.y = m_sPlayerY;
+				req.base.x = m_pPlayer->m_sPlayerX;
+				req.base.y = m_pPlayer->m_sPlayerY;
 				req.base.dir = static_cast<uint8_t>(cDir);
 				req.v1 = iV1;
 				req.v2 = iV2;
@@ -1575,15 +1412,15 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
 		std::memset(req.player, 0, sizeof(req.player));
-		std::memcpy(req.player, m_cPlayerName, sizeof(req.player));
+		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
 		std::memset(req.account, 0, sizeof(req.account));
-		std::memcpy(req.account, m_cAccountName, sizeof(req.account));
+		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
 		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_cAccountPassword, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
 		std::memset(req.guild, 0, sizeof(req.guild));
 		char cTemp[21];
 		std::memset(cTemp, 0, sizeof(cTemp));
-		std::memcpy(cTemp, m_cGuildName, 20);
+		std::memcpy(cTemp, m_pPlayer->m_cGuildName, 20);
 		CMisc::ReplaceString(cTemp, ' ', '_');
 		std::memcpy(req.guild, cTemp, sizeof(req.guild));
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
@@ -1660,8 +1497,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandMotionAttack req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			req.base.dx = static_cast<int16_t>(iV1);
 			req.base.dy = static_cast<int16_t>(iV2);
@@ -1675,8 +1512,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			hb::net::PacketCommandMotionSimple req{};
 			req.base.header.msg_id = dwMsgID;
 			req.base.header.msg_type = wCommand;
-			req.base.x = m_sPlayerX;
-			req.base.y = m_sPlayerY;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
 			req.base.dir = static_cast<uint8_t>(cDir);
 			req.base.dx = static_cast<int16_t>(iV1);
 			req.base.dy = static_cast<int16_t>(iV2);
@@ -1684,7 +1521,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.time_ms = dwTime;
 			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req)); //v2.171
 		}
-		m_cCommandCount++;
+		m_pPlayer->m_Controller.IncrementCommandCount();
 		break;
 	}
 	switch (iRet) {
@@ -1692,9 +1529,9 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case DEF_XSOCKEVENT_SOCKETERROR:
 	case DEF_XSOCKEVENT_QUENEFULL:
 		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-	delete m_pGSock;
-	m_pGSock = 0;
+		ChangeGameMode(GameMode::ConnectionLost);
+	m_pGSock.reset();
+	m_pGSock.reset();
 	break;
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
@@ -1703,13 +1540,13 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		wsprintf(cDbg, "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		printf("%s", cDbg);
 	}
-	delete m_pGSock;
-	m_pGSock = 0;
+	m_pGSock.reset();
+	m_pGSock.reset();
 	if (G_pCalcSocket != 0) {
 		delete G_pCalcSocket;
 		G_pCalcSocket = 0;
 	}
-	SendMessage(m_hWnd, WM_DESTROY, 0, 0);
+	SendMessage(G_hWnd, WM_DESTROY, 0, 0);
 	break;
 	}
 	return true;
@@ -1722,6 +1559,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	bool bIsPlayerDrawed = false;
 	bool bRet = false;
 	short sItemSprite, sItemSpriteFrame, sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
+	char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
 	// Xmas
 	static int ix1[100];
 	static int iy2[100];
@@ -1743,7 +1581,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	// Initialize Picking system for this frame
 	CursorTarget::BeginFrame();
 
-	//dwTime = G_dwGlobalTime;
+	//dwTime = GameClock::GetTimeMS();
 	uint32_t dwTime = m_dwCurTime;
 
 	// Pre-calculate map data bounds for efficient boundary checking
@@ -1788,10 +1626,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			bRet = false;
 			if ((ix >= visMinX) && (ix <= visMaxX) && (iy >= visMinY) && (iy <= visMaxY))
 			{
-				_tmp_wObjectID = _tmp_sOwnerType = _tmp_sAppr1 = _tmp_sAppr2 = _tmp_sAppr3 = _tmp_sAppr4 = _tmp_iStatus = 0;
-				_tmp_cDir = _tmp_cFrame = 0;
-				_tmp_iEffectType = _tmp_iEffectFrame = _tmp_iChatIndex = 0;
-				std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
+				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
+				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
+				std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
@@ -1802,20 +1640,20 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				}
 				else
 				{
-					_tmp_dX = dX = indexX - mapMinX;
-					_tmp_dY = dY = indexY - mapMinY;
-					_tmp_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
-					_tmp_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
-					_tmp_cDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
-					_tmp_sAppr1 = m_pMapData->m_pData[dX][dY].m_sDeadAppr1;
-					_tmp_sAppr2 = m_pMapData->m_pData[dX][dY].m_sDeadAppr2;
-					_tmp_sAppr3 = m_pMapData->m_pData[dX][dY].m_sDeadAppr3;
-					_tmp_sAppr4 = m_pMapData->m_pData[dX][dY].m_sDeadAppr4;
-					_tmp_iApprColor = m_pMapData->m_pData[dX][dY].m_iDeadApprColor;
-					_tmp_cFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
-					_tmp_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
-					_tmp_iStatus = m_pMapData->m_pData[dX][dY].m_iDeadStatus;
-					strcpy(_tmp_cName, m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
+					m_entityState.m_iDataX = dX = indexX - mapMinX;
+					m_entityState.m_iDataY = dY = indexY - mapMinY;
+					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
+					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
+					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
+					m_entityState.m_sAppr1 = m_pMapData->m_pData[dX][dY].m_sDeadAppr1;
+					m_entityState.m_sAppr2 = m_pMapData->m_pData[dX][dY].m_sDeadAppr2;
+					m_entityState.m_sAppr3 = m_pMapData->m_pData[dX][dY].m_sDeadAppr3;
+					m_entityState.m_sAppr4 = m_pMapData->m_pData[dX][dY].m_sDeadAppr4;
+					m_entityState.m_iApprColor = m_pMapData->m_pData[dX][dY].m_iDeadApprColor;
+					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
+					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
+					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iDeadStatus;
+					strcpy(m_entityState.m_cName.data(), m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
 					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
 					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
 					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor;
@@ -1825,7 +1663,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					cDynamicObjectData2 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData2;
 					cDynamicObjectData3 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData3;
 					cDynamicObjectData4 = m_pMapData->m_pData[dX][dY].m_cDynamicObjectData4;
-					_tmp_bSpriteOmit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
+					m_entityState.m_bSpriteOmit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
 					bRet = true;
 				}
 
@@ -1859,38 +1697,38 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					CursorTarget::TestGroundItem(ix, iy, res_msy);
 				}
 
-				if ((bRet == true) && (_tmp_wObjectID != 0))
+				if ((bRet == true) && (m_entityState.m_wObjectID != 0))
 				{
 					SpriteLib::BoundRect bounds = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime);
 
 					// Build picking info for dead object
 					TargetObjectInfo info = {};
-					info.objectID = _tmp_wObjectID;
+					info.objectID = m_entityState.m_wObjectID;
 					info.mapX = indexX;
 					info.mapY = indexY;
 					info.screenX = ix;
 					info.screenY = iy;
-					info.dataX = _tmp_dX;
-					info.dataY = _tmp_dY;
-					info.ownerType = _tmp_sOwnerType;
+					info.dataX = m_entityState.m_iDataX;
+					info.dataY = m_entityState.m_iDataY;
+					info.ownerType = m_entityState.m_sOwnerType;
 					info.action = DEF_OBJECTDEAD;
-					info.direction = _tmp_cDir;
-					info.frame = _tmp_cFrame;
-					info.name = _tmp_cName;
-					info.appr1 = _tmp_sAppr1;
-					info.appr2 = _tmp_sAppr2;
-					info.appr3 = _tmp_sAppr3;
-					info.appr4 = _tmp_sAppr4;
-					info.apprColor = _tmp_iApprColor;
-					info.status = _tmp_iStatus;
+					info.direction = m_entityState.m_iDir;
+					info.frame = m_entityState.m_iFrame;
+					info.name = m_entityState.m_cName.data();
+					info.appr1 = m_entityState.m_sAppr1;
+					info.appr2 = m_entityState.m_sAppr2;
+					info.appr3 = m_entityState.m_sAppr3;
+					info.appr4 = m_entityState.m_sAppr4;
+					info.apprColor = m_entityState.m_iApprColor;
+					info.status = m_entityState.m_iStatus;
 					info.type = FocusedObjectType::DeadBody;
 					CursorTarget::TestObject(bounds, info, iy, res_msy);
 				}
 
-				_tmp_wObjectID = _tmp_sOwnerType = _tmp_sAppr1 = _tmp_sAppr2 = _tmp_sAppr3 = _tmp_sAppr4 = _tmp_iStatus = 0;
-				_tmp_cFrame = _tmp_cDir = 0;
-				_tmp_iEffectType = _tmp_iEffectFrame = _tmp_iApprColor = _tmp_iChatIndex = 0;
-				std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
+				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
+				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iApprColor = m_entityState.m_iChatIndex = 0;
+				std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
 
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
@@ -1900,61 +1738,61 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				}
 				else
 				{
-					_tmp_dX = dX = indexX - mapMinX;
-					_tmp_dY = dY = indexY - mapMinY;
-					_tmp_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
-					_tmp_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
-					_tmp_cAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
-					_tmp_iStatus = m_pMapData->m_pData[dX][dY].m_iStatus;
-					_tmp_cDir = m_pMapData->m_pData[dX][dY].m_cDir;
-					_tmp_sAppr1 = m_pMapData->m_pData[dX][dY].m_sAppr1;
-					_tmp_sAppr2 = m_pMapData->m_pData[dX][dY].m_sAppr2;
-					_tmp_sAppr3 = m_pMapData->m_pData[dX][dY].m_sAppr3;
-					_tmp_sAppr4 = m_pMapData->m_pData[dX][dY].m_sAppr4;
-					_tmp_iApprColor = m_pMapData->m_pData[dX][dY].m_iApprColor; // v1.4
-					_tmp_cFrame = m_pMapData->m_pData[dX][dY].m_cOwnerFrame;
-					_tmp_iChatIndex = m_pMapData->m_pData[dX][dY].m_iChatMsg;
-					_tmp_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
-					_tmp_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;
-					_tmp_bSpriteOmit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
-					strcpy(_tmp_cName, m_pMapData->m_pData[dX][dY].m_cOwnerName);
+					m_entityState.m_iDataX = dX = indexX - mapMinX;
+					m_entityState.m_iDataY = dY = indexY - mapMinY;
+					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
+					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
+					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
+					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iStatus;
+					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDir;
+					m_entityState.m_sAppr1 = m_pMapData->m_pData[dX][dY].m_sAppr1;
+					m_entityState.m_sAppr2 = m_pMapData->m_pData[dX][dY].m_sAppr2;
+					m_entityState.m_sAppr3 = m_pMapData->m_pData[dX][dY].m_sAppr3;
+					m_entityState.m_sAppr4 = m_pMapData->m_pData[dX][dY].m_sAppr4;
+					m_entityState.m_iApprColor = m_pMapData->m_pData[dX][dY].m_iApprColor; // v1.4
+					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cOwnerFrame;
+					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iChatMsg;
+					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
+					m_entityState.m_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;
+					m_entityState.m_bSpriteOmit = m_pMapData->m_pData[dX][dY].m_bSpriteOmit;
+					strcpy(m_entityState.m_cName.data(), m_pMapData->m_pData[dX][dY].m_cOwnerName);
 					bRet = true;
 
 					if (m_iIlusionOwnerH != 0)
 					{
-						if ((strcmp(_tmp_cName, m_cPlayerName) != 0) && (_tmp_sOwnerType < 10))
+						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (m_entityState.m_sOwnerType < 10))
 						{
-							_tmp_sOwnerType = m_cIlusionOwnerType;
-							_tmp_iStatus = m_iStatus_IE;
-							_tmp_sAppr1 = m_sAppr1_IE;
-							_tmp_sAppr2 = m_sAppr2_IE;
-							_tmp_sAppr3 = m_sAppr3_IE;
-							_tmp_sAppr4 = m_sAppr4_IE;
-							_tmp_iApprColor = m_iApprColor_IE;
+							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
+							m_entityState.m_iStatus = m_pPlayer->m_iStatus_IE;
+							m_entityState.m_sAppr1 = m_pPlayer->m_sAppr1_IE;
+							m_entityState.m_sAppr2 = m_pPlayer->m_sAppr2_IE;
+							m_entityState.m_sAppr3 = m_pPlayer->m_sAppr3_IE;
+							m_entityState.m_sAppr4 = m_pPlayer->m_sAppr4_IE;
+							m_entityState.m_iApprColor = m_pPlayer->m_iApprColor_IE;
 						}
 					}
 				}
 
-				if ((bRet == true) && (strlen(_tmp_cName) > 0))
+				if ((bRet == true) && (strlen(m_entityState.m_cName.data()) > 0))
 				{
-					_tmp_dx = 0;
-					_tmp_dy = 0;
+					m_entityState.m_iMoveOffsetX = 0;
+					m_entityState.m_iMoveOffsetY = 0;
 					SpriteLib::BoundRect bounds = {0, -1, 0, 0};
-					switch (_tmp_cAction) {
+					switch (m_entityState.m_iAction) {
 					case DEF_OBJECTSTOP:
 						bounds = DrawObject_OnStop(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
 					case DEF_OBJECTMOVE:
-						bounds = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime, m_entityState.m_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTDAMAGEMOVE:
-						bounds = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime, m_entityState.m_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTRUN:
-						bounds = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime, _tmp_bSpriteOmit);
+						bounds = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime, m_entityState.m_bSpriteOmit);
 						break;
 
 					case DEF_OBJECTATTACK:
@@ -1984,35 +1822,34 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 					// Build picking info for living object
 					TargetObjectInfo info = {};
-					info.objectID = _tmp_wObjectID;
+					info.objectID = m_entityState.m_wObjectID;
 					info.mapX = indexX;
 					info.mapY = indexY;
 					info.screenX = ix;
 					info.screenY = iy;
-					info.dataX = _tmp_dX;
-					info.dataY = _tmp_dY;
-					info.ownerType = _tmp_sOwnerType;
-					info.action = _tmp_cAction;
-					info.direction = _tmp_cDir;
-					info.frame = _tmp_cFrame;
-					info.name = _tmp_cName;
-					info.appr1 = _tmp_sAppr1;
-					info.appr2 = _tmp_sAppr2;
-					info.appr3 = _tmp_sAppr3;
-					info.appr4 = _tmp_sAppr4;
-					info.apprColor = _tmp_iApprColor;
-					info.status = _tmp_iStatus;
+					info.dataX = m_entityState.m_iDataX;
+					info.dataY = m_entityState.m_iDataY;
+					info.ownerType = m_entityState.m_sOwnerType;
+					info.action = m_entityState.m_iAction;
+					info.direction = m_entityState.m_iDir;
+					info.frame = m_entityState.m_iFrame;
+					info.name = m_entityState.m_cName.data();
+					info.appr1 = m_entityState.m_sAppr1;
+					info.appr2 = m_entityState.m_sAppr2;
+					info.appr3 = m_entityState.m_sAppr3;
+					info.appr4 = m_entityState.m_sAppr4;
+					info.apprColor = m_entityState.m_iApprColor;
+					info.status = m_entityState.m_iStatus;
 					// Determine type based on owner type
-					info.type = (_tmp_sOwnerType >= 1 && _tmp_sOwnerType <= 6) ?
+					info.type = (m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6) ?
 						FocusedObjectType::Player : FocusedObjectType::NPC;
 					CursorTarget::TestObject(bounds, info, iy, res_msy);
 
-					if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0)
+					if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
 					{
 						if (m_bIsObserverMode == false)
 						{
-							m_sViewDstX = (indexX - VIEW_CENTER_TILE_X) * 32;
-							m_sViewDstY = (indexY - (VIEW_CENTER_TILE_Y + 1)) * 32;
+							m_Camera.SetDestination((indexX - VIEW_CENTER_TILE_X) * 32, (indexY - (VIEW_CENTER_TILE_Y + 1)) * 32);
 						}
 						SetRect(&m_rcPlayerRect, m_rcBodyRect.left, m_rcBodyRect.top, m_rcBodyRect.right, m_rcBodyRect.bottom);
 						bIsPlayerDrawed = true;
@@ -2120,36 +1957,36 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						break;
 
 					case 370: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 16 + 30, m_sViewPointY + iy - 16 - 334, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 16 + 17, m_sViewPointY + iy - 16 - 300, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 30, m_Camera.GetY() + iy - 16 - 334, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16 + 17, m_Camera.GetY() + iy - 16 - 300, 0, 0, 0, 0);
 						break;
 
 					case 374: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 7, m_sViewPointY + iy - 122, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 6) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 14, m_sViewPointY + iy - 321, 0, 0, 0, 0);
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 7) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix + 7, m_sViewPointY + iy - 356, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 7, m_Camera.GetY() + iy - 122, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 6) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 14, m_Camera.GetY() + iy - 321, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 7) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 7, m_Camera.GetY() + iy - 356, 0, 0, 0, 0);
 						break;
 
 					case 376: // nuit
 						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 12) && (G_cSpriteAlphaDegree == 2)) {
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 16, m_sViewPointY + iy - 346, 0, 0, 0, 0);
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix + 11, m_sViewPointY + iy - 308, 0, 0, 0, 0);
+							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 16, m_Camera.GetY() + iy - 346, 0, 0, 0, 0);
+							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 11, m_Camera.GetY() + iy - 308, 0, 0, 0, 0);
 						}
 						break;
 
 					case 378: // nuit
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix, m_sViewPointY + iy - 91, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 11) && (G_cSpriteAlphaDegree == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix, m_Camera.GetY() + iy - 91, 0, 0, 0, 0);
 						break;
 
 					case 382: // nuit
 						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 9) && (G_cSpriteAlphaDegree == 2)) {
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix + 73, m_sViewPointY + iy - 264, 0, 0, 0, 0);
-							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix + 23, m_sViewPointY + iy - 228, 0, 0, 0, 0);
+							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 73, m_Camera.GetY() + iy - 264, 0, 0, 0, 0);
+							m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix + 23, m_Camera.GetY() + iy - 228, 0, 0, 0, 0);
 						}
 						break;
 
 					case 429:
-						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_sViewPointX + ix - 15, m_sViewPointY + iy - 224, 0, 0, 0, 0);
+						if (((dwTime - m_dwEnvEffectTime) > 400) && (sObjSprFrame == 2)) m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, m_Camera.GetX() + ix - 15, m_Camera.GetY() + iy - 224, 0, 0, 0, 0);
 						break;
 					}
 				}
@@ -2169,13 +2006,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.left) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.right))
 						{
 							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Fade());
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Alpha(0.25f));
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Average());
 						}
 						else
 						{
-							// At night (G_cSpriteAlphaDegree == 2), reduce tree shadow opacity by 50%
-							float shadowAlpha = (G_cSpriteAlphaDegree == 2) ? 0.35f : 0.7f;
-							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Alpha(shadowAlpha));
+							// Normal rendering - draw shadow and tree opaque (matches original PutSpriteFast)
+							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame);
 							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame);
 						}
 						if (m_bIsXmas == true)
@@ -2288,7 +2124,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 	// Finalize Picking system - determines cursor type
 	int foeResult = CursorTarget::HasFocusedObject() ? _iGetFOE(CursorTarget::GetFocusStatus()) : 0;
-	CursorTarget::EndFrame(foeResult, m_iPointCommandType, m_bCommandAvailable, m_bIsGetPointingMode);
+	CursorTarget::EndFrame(foeResult, m_iPointCommandType, m_pPlayer->m_Controller.IsCommandAvailable(), m_bIsGetPointingMode);
 
 	// Update legacy compatibility variables from Picking system
 	m_sMCX = CursorTarget::GetFocusedMapX();
@@ -2311,41 +2147,22 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			focusAction, focusDir, focusFrame, focusAppr1, focusAppr2, focusAppr3, focusAppr4,
 			focusApprColor, focusStatus, focusDataX, focusDataY))
 		{
-			// Also update the old global focus variables for compatibility
-			wFocusObjectID = focusObjID;
-			sFocusOwnerType = focusOwnerType;
-			cFocusAction = focusAction;
-			cFocusFrame = focusFrame;
-			cFocusDir = focusDir;
-			sFocusAppr1 = focusAppr1;
-			sFocusAppr2 = focusAppr2;
-			sFocusAppr3 = focusAppr3;
-			sFocusAppr4 = focusAppr4;
-			iFocusApprColor = focusApprColor;
-			iFocuiStatus = focusStatus;
-			sFocusX = focusSX;
-			sFocusY = focusSY;
-			sFocus_dX = focusDataX;
-			sFocus_dY = focusDataY;
-			std::memset(cFocusName, 0, sizeof(cFocusName));
-			std::strncpy(cFocusName, CursorTarget::GetFocusedName(), sizeof(cFocusName) - 1);
-
 			// Set up temporary vars for drawing
-			_tmp_wObjectID = focusObjID;
-			_tmp_sOwnerType = focusOwnerType;
-			_tmp_cAction = focusAction;
-			_tmp_cFrame = focusFrame;
-			_tmp_cDir = focusDir;
-			_tmp_sAppr1 = focusAppr1;
-			_tmp_sAppr2 = focusAppr2;
-			_tmp_sAppr3 = focusAppr3;
-			_tmp_sAppr4 = focusAppr4;
-			_tmp_iApprColor = focusApprColor;
-			_tmp_iStatus = focusStatus;
-			_tmp_dX = focusDataX;
-			_tmp_dY = focusDataY;
-			std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
-			std::strncpy(_tmp_cName, CursorTarget::GetFocusedName(), sizeof(_tmp_cName) - 1);
+			m_entityState.m_wObjectID = focusObjID;
+			m_entityState.m_sOwnerType = focusOwnerType;
+			m_entityState.m_iAction = focusAction;
+			m_entityState.m_iFrame = focusFrame;
+			m_entityState.m_iDir = focusDir;
+			m_entityState.m_sAppr1 = focusAppr1;
+			m_entityState.m_sAppr2 = focusAppr2;
+			m_entityState.m_sAppr3 = focusAppr3;
+			m_entityState.m_sAppr4 = focusAppr4;
+			m_entityState.m_iApprColor = focusApprColor;
+			m_entityState.m_iStatus = focusStatus;
+			m_entityState.m_iDataX = focusDataX;
+			m_entityState.m_iDataY = focusDataY;
+			std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+			std::strncpy(m_entityState.m_cName.data(), CursorTarget::GetFocusedName(), sizeof(m_entityState.m_cName.data()) - 1);
 
 			if ((focusAction != DEF_OBJECTDEAD) && (focusFrame < 0)) {
 				// Skip drawing invalid frame
@@ -2416,7 +2233,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						break;
 
 					default: // 10..27
-						_tmp_cFrame = _tmp_cFrame * 2;
+						m_entityState.m_iFrame = m_entityState.m_iFrame * 2;
 						break;
 					}
 
@@ -2462,7 +2279,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	if (sItemSelectedID != -1) {
 		char cStr1[64], cStr2[64], cStr3[64];
 		int  iLoc;
-		GetItemName(m_pItemConfigList[sItemSelectedID], cStr1, cStr2, cStr3);
+		GetItemName(m_pItemConfigList[sItemSelectedID].get(), cStr1, cStr2, cStr3);
 
 		iLoc = 0;
 		if (strlen(cStr1) != 0)
@@ -2516,11 +2333,11 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		// Delete existing item if present (shouldn't happen, but be safe)
 		if (m_pItemConfigList[itemId] != 0) {
-			delete m_pItemConfigList[itemId];
+			m_pItemConfigList[itemId].reset();
 		}
 
-		m_pItemConfigList[itemId] = new class CItem;
-		CItem* pItem = m_pItemConfigList[itemId];
+		m_pItemConfigList[itemId] = std::make_unique<CItem>();
+		CItem* pItem = m_pItemConfigList[itemId].get();
 
 		pItem->m_sIDnum = entry.itemId;
 		std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
@@ -2676,7 +2493,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 
 void CGame::ConnectionEstablishHandler(char cWhere)
 {
-	ChangeGameMode(DEF_GAMEMODE_ONWAITINGRESPONSE);
+	ChangeGameMode(GameMode::WaitingResponse);
 
 	switch (cWhere) {
 	case DEF_SERVERTYPE_GAME:
@@ -2722,11 +2539,11 @@ void CGame::InitPlayerResponseHandler(char* pData)
 	switch (header->msg_type) {
 	case DEF_MSGTYPE_CONFIRM:
 		bSendCommand(MSGID_REQUEST_INITDATA, 0, 0, 0, 0, 0, 0);
-		ChangeGameMode(DEF_GAMEMODE_ONWAITINGINITDATA);
+		ChangeGameMode(GameMode::WaitingInitData);
 		break;
 
 	case DEF_MSGTYPE_REJECT:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3J");
 		break;
@@ -3452,7 +3269,7 @@ void CGame::UpdateScreen_OnLoading(bool bActive)
 		// Pre-load all sound effects into memory
 		AudioManager::Get().LoadSounds();
 
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 	}
 	break;
 	}
@@ -3475,7 +3292,7 @@ void CGame::OnTimer()
 	if (m_cGameMode < 0) return;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
-	if (m_cGameMode != DEF_GAMEMODE_ONLOADING) {
+	if (GameModeManager::GetMode() != GameMode::Loading) {
 		if ((dwTime - m_dwCheckSprTime) > 8000)
 		{
 			m_dwCheckSprTime = dwTime;
@@ -3489,27 +3306,27 @@ void CGame::OnTimer()
 		}
 	}
 
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		if ((dwTime - m_dwCheckConnTime) > 5000)
 		{
 			m_dwCheckConnTime = dwTime;
-			if ((m_bIsCrusadeMode) && (m_iCrusadeDuty == 0)) m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
+			if ((m_bIsCrusadeMode) && (m_pPlayer->m_iCrusadeDuty == 0)) m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
 		}
 
 		if ((dwTime - m_dwCheckChatTime) > 2000)
 		{
 			m_dwCheckChatTime = m_dwTime;
 			ReleaseTimeoverChatMsg();
-			if (m_cCommandCount >= 6)
+			if (m_pPlayer->m_Controller.GetCommandCount() >= 6)
 			{
 				m_iNetLagCount++;
 				if (m_iNetLagCount >= 7)
 				{
 					printf("[ERROR] NetLag threshold reached, disconnecting\n");
-					ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-					delete m_pGSock;
-					m_pGSock = 0;
+					ChangeGameMode(GameMode::ConnectionLost);
+					m_pGSock.reset();
+					m_pGSock.reset();
 					return;
 				}
 			}
@@ -3518,9 +3335,9 @@ void CGame::OnTimer()
 
 		if ((G_bIsCalcSocketConnected == false) && ((dwTime - G_dwCalcSocketTime) > 5000))
 		{
-			delete m_pGSock;
-			m_pGSock = 0;
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+			m_pGSock.reset();
+			m_pGSock.reset();
+			ChangeGameMode(GameMode::Quit);
 			PlaySound('E', 14, 5);
 			AudioManager::Get().StopSound(SoundType::Effect, 38);
 			AudioManager::Get().StopMusic();
@@ -3529,17 +3346,11 @@ void CGame::OnTimer()
 
 		if ((G_pCalcSocket != 0) && (G_bIsCalcSocketConnected == true)) {
 			if ((dwTime - G_dwCalcSocketSendTime) > 1000 * 5) {
-				if (memcmp(G_cCmdLineTokenA_Lowercase, "wisetop", 7) == 0)
-				{
-				}
-				else
-				{
-					hb::net::PacketCalcSocketPing ping{};
-					ping.key = 0;
-					ping.length = static_cast<std::uint16_t>(sizeof(ping));
-					ping.reserved = 0;
-					G_pCalcSocket->iSendMsgBlockingMode(reinterpret_cast<char*>(&ping), sizeof(ping));
-				}
+				hb::net::PacketCalcSocketPing ping{};
+				ping.key = 0;
+				ping.length = static_cast<std::uint16_t>(sizeof(ping));
+				ping.reserved = 0;
+				G_pCalcSocket->iSendMsgBlockingMode(reinterpret_cast<char*>(&ping), sizeof(ping));
 				G_dwCalcSocketSendTime = dwTime;
 			}
 		}
@@ -3581,7 +3392,7 @@ bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
 							&& (m_iPointCommandType != cItemID))
 						{
 							PointCommandHandler(0, 0, cItemID);
-							//m_bCommandAvailable  = false;
+							//m_pPlayer->m_Controller.SetCommandAvailable(false);
 							m_bIsGetPointingMode = false;
 						}
 						else
@@ -3629,11 +3440,11 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 
 	if (bCheckItemOperationEnabled(cItemID) == false) return;
 
-	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_sPlayerX - m_sMCX) <= 8) && (abs(m_sPlayerY - m_sMCY) <= 8))
+	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_pPlayer->m_sPlayerX - m_sMCX) <= 8) && (abs(m_pPlayer->m_sPlayerY - m_sMCY) <= 8))
 	{
 		std::memset(cName, 0, sizeof(cName));
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sType, &iStatus, &m_wCommObjectID);
-		if (memcmp(m_cPlayerName, cName, 10) == 0)
+		if (memcmp(m_pPlayer->m_cPlayerName, cName, 10) == 0)
 		{
 		}
 		else
@@ -3842,26 +3653,22 @@ void CGame::InitGameSettings()
 {
 	int i;
 
-	m_bForceAttack = false;
-	m_dwCommandTime = 0;
+	m_pPlayer->m_bForceAttack = false;
+	m_pPlayer->m_Controller.SetCommandTime(0);
 	m_dwCheckConnectionTime = 0;
 
 	m_bInputStatus = false;
 	m_pInputBuffer = 0;
 
-	m_iPDBGSdivX = 0;
-	m_iPDBGSdivY = 0;
-	m_bIsRedrawPDBGS = true;
+	m_Camera.SetShake(0);
 
-	m_iCameraShakingDegree = 0;
-
-	m_cCommand = DEF_OBJECTSTOP;
-	m_cCommandCount = 0;
+	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+	m_pPlayer->m_Controller.ResetCommandCount();
 
 	m_bIsGetPointingMode = false;
 	m_iPointCommandType = -1; //v2.15 0 -> -1
 
-	m_bIsCombatMode = false;
+	m_pPlayer->m_bIsCombatMode = false;
 
 	// Previous cursor status tracking removed
 	CursorTarget::ResetSelectionClickTime();
@@ -3876,18 +3683,15 @@ void CGame::InitGameSettings()
 	m_iDownSkillIndex = -1;
 	m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag = false;
 
-	m_bIsConfusion = false;
+	m_pPlayer->m_bIsConfusion = false;
 
 	m_iIlusionOwnerH = 0;
 	m_cIlusionOwnerType = 0;
 
 	m_iDrawFlag = 0;
-	m_bSkipFrame = false;
 	m_bDrawFlagDir = false;
 	m_bIsCrusadeMode = false;
-	m_iCrusadeDuty = 0;
-	m_bIsAvatarMode = false;
-	m_bIsAvatarMessenger = false;
+	m_pPlayer->m_iCrusadeDuty = 0;
 
 	m_iNetLagCount = 0;
 	m_iLatencyMs = -1;
@@ -3920,25 +3724,22 @@ void CGame::InitGameSettings()
 	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
 
 	for (i = 0; i < DEF_MAXCHATMSGS; i++) {
-		if (m_pChatMsgList[i] != 0) delete m_pChatMsgList[i];
-		m_pChatMsgList[i] = 0;
+		if (m_pChatMsgList[i] != 0) m_pChatMsgList[i].reset();
 	}
 
 	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++) {
-		if (m_pChatScrollList[i] != 0) delete m_pChatScrollList[i];
-		m_pChatScrollList[i] = 0;
+		if (m_pChatScrollList[i] != 0) m_pChatScrollList[i].reset();
 	}
 
 	for (i = 0; i < DEF_MAXWHISPERMSG; i++) {
-		if (m_pWhisperMsg[i] != 0) delete m_pWhisperMsg[i];
-		m_pWhisperMsg[i] = 0;
+		if (m_pWhisperMsg[i] != 0) m_pWhisperMsg[i].reset();
 	}
 
 	std::memset(m_cLocation, 0, sizeof(m_cLocation));
 
-	std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
-	m_iGuildRank = -1;
-	m_iTotalGuildsMan = 0;
+	std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
+	m_pPlayer->m_iGuildRank = -1;
+	m_pPlayer->m_iTotalGuildsMan = 0;
 
 	for (i = 0; i < 100; i++) {
 		m_stGuildOpList[i].cOpMode = 0;
@@ -3947,15 +3748,14 @@ void CGame::InitGameSettings()
 
 	for (i = 0; i < 6; i++) {
 		std::memset(m_stEventHistory[i].cTxt, 0, sizeof(m_stEventHistory[i].cTxt));
-		m_stEventHistory[i].dwTime = G_dwGlobalTime;
+		m_stEventHistory[i].dwTime = GameClock::GetTimeMS();
 
 		std::memset(m_stEventHistory2[i].cTxt, 0, sizeof(m_stEventHistory2[i].cTxt));
-		m_stEventHistory2[i].dwTime = G_dwGlobalTime;
+		m_stEventHistory2[i].dwTime = GameClock::GetTimeMS();
 	}
 
 	for (i = 0; i < DEF_MAXMENUITEMS; i++) {
-		if (m_pItemForSaleList[i] != 0) delete m_pItemForSaleList[i];
-		m_pItemForSaleList[i] = 0;
+		if (m_pItemForSaleList[i] != 0) m_pItemForSaleList[i].reset();
 	}
 
 	for (i = 0; i < 41; i++) {
@@ -3966,8 +3766,7 @@ void CGame::InitGameSettings()
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0) {
-			delete m_pItemList[i];
-			m_pItemList[i] = 0;
+			m_pItemList[i].reset();
 		}
 
 	for (i = 0; i < DEF_MAXSELLLIST; i++) {
@@ -3977,28 +3776,24 @@ void CGame::InitGameSettings()
 
 	for (i = 0; i < DEF_MAXBANKITEMS; i++)
 		if (m_pBankList[i] != 0) {
-			delete m_pBankList[i];
-			m_pBankList[i] = 0;
+			m_pBankList[i].reset();
 		}
 
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
-		m_cMagicMastery[i] = 0;
+		m_pPlayer->m_iMagicMastery[i] = 0;
 
 	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
-		m_cSkillMastery[i] = 0;
+		m_pPlayer->m_iSkillMastery[i] = 0;
 
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 
 		if (m_pMsgTextList2[i] != 0)
-			delete m_pMsgTextList2[i];
-		m_pMsgTextList2[i] = 0;
+			m_pMsgTextList2[i].reset();
 
 		if (m_pAgreeMsgTextList[i] != 0)
-			delete m_pAgreeMsgTextList[i];
-		m_pAgreeMsgTextList[i] = 0;
+			m_pAgreeMsgTextList[i].reset();
 	}
 
 	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
@@ -4006,13 +3801,13 @@ void CGame::InitGameSettings()
 		std::memset(m_stPartyMember[i].cName, 0, sizeof(m_stPartyMember[i].cName));
 	}
 
-	m_iLU_Point = 0;
-	m_cLU_Str = m_cLU_Vit = m_cLU_Dex = m_cLU_Int = m_cLU_Mag = m_cLU_Char = 0;
+	m_pPlayer->m_iLU_Point = 0;
+	m_pPlayer->m_wLU_Str = m_pPlayer->m_wLU_Vit = m_pPlayer->m_wLU_Dex = m_pPlayer->m_wLU_Int = m_pPlayer->m_wLU_Mag = m_pPlayer->m_wLU_Char = 0;
 	m_cWhetherStatus = 0;
 	m_cLogOutCount = -1;
 	m_dwLogOutCountTime = 0;
-	m_iSuperAttackLeft = 0;
-	m_bSuperAttackMode = false;
+	m_pPlayer->m_iSuperAttackLeft = 0;
+	m_pPlayer->m_bSuperAttackMode = false;
 	m_iFightzoneNumber = 0;
 	std::memset(m_cBGMmapName, 0, sizeof(m_cBGMmapName));
 	m_dwWOFtime = 0;
@@ -4029,16 +3824,16 @@ void CGame::InitGameSettings()
 	std::memset(m_stQuest.cTargetName, 0, sizeof(m_stQuest.cTargetName));
 	m_bIsObserverMode = false;
 	m_bIsObserverCommanded = false;
-	m_bIsPoisoned = false;
-	m_bIsPrevMoveBlocked = false;
-	m_iPrevMoveX = m_iPrevMoveY = -1;
-	m_sDamageMove = 0;
-	m_sDamageMoveAmount = 0;
+	m_pPlayer->m_bIsPoisoned = false;
+	m_pPlayer->m_Controller.SetPrevMoveBlocked(false);
+	m_pPlayer->m_Controller.SetPrevMove(-1, -1);
+	m_pPlayer->m_sDamageMove = 0;
+	m_pPlayer->m_sDamageMoveAmount = 0;
 	m_bForceDisconn = false;
-	m_bIsSpecialAbilityEnabled = false;
-	m_iSpecialAbilityType = 0;
+	m_pPlayer->m_bIsSpecialAbilityEnabled = false;
+	m_pPlayer->m_iSpecialAbilityType = 0;
 	m_dwSpecialAbilitySettingTime = 0;
-	m_iSpecialAbilityTimeLeftSec = 0;
+	m_pPlayer->m_iSpecialAbilityTimeLeftSec = 0;
 	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
 	m_bIsTeleportRequested = false;
@@ -4054,12 +3849,12 @@ void CGame::InitGameSettings()
 	std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
 	m_iTopMsgLastSec = 0;
 	m_dwTopMsgTime = 0;
-	m_iConstructionPoint = 0;
-	m_iWarContribution = 0;
+	m_pPlayer->m_iConstructionPoint = 0;
+	m_pPlayer->m_iWarContribution = 0;
 	std::memset(m_cTeleportMapName, 0, sizeof(m_cTeleportMapName));
 	m_iTeleportLocX = m_iTeleportLocY = -1;
 	std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
-	m_iConstructLocX = m_iConstructLocY = -1;
+	m_pPlayer->m_iConstructLocX = m_pPlayer->m_iConstructLocY = -1;
 
 	//Snoopy: Apocalypse Gate
 	std::memset(m_cGateMapName, 0, sizeof(m_cGateMapName));
@@ -4124,11 +3919,11 @@ void CGame::CreateNewGuildResponseHandler(char* pData)
 	if (!header) return;
 	switch (header->msg_type) {
 	case DEF_MSGTYPE_CONFIRM:
-		m_iGuildRank = 0;
+		m_pPlayer->m_iGuildRank = 0;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 3;
 		break;
 	case DEF_MSGTYPE_REJECT:
-		m_iGuildRank = -1;
+		m_pPlayer->m_iGuildRank = -1;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 4;
 		break;
 	}
@@ -4137,76 +3932,76 @@ void CGame::CreateNewGuildResponseHandler(char* pData)
 void CGame::InitPlayerCharacteristics(char* pData)
 {
 	// Snoopy: Angels
-	m_iAngelicStr = 0;
-	m_iAngelicDex = 0;
-	m_iAngelicInt = 0;
-	m_iAngelicMag = 0;
+	m_pPlayer->m_iAngelicStr = 0;
+	m_pPlayer->m_iAngelicDex = 0;
+	m_pPlayer->m_iAngelicInt = 0;
+	m_pPlayer->m_iAngelicMag = 0;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponsePlayerCharacterContents>(
 		pData, sizeof(hb::net::PacketResponsePlayerCharacterContents));
 	if (!pkt) return;
 
-	m_iHP = pkt->hp;
-	m_iMP = pkt->mp;
-	m_iSP = pkt->sp;
-	m_iAC = pkt->ac;		//? m_iDefenseRatio
-	m_iTHAC0 = pkt->thac0;    //? m_iHitRatio
-	m_iLevel = pkt->level;
-	m_iStr = pkt->str;
-	m_iInt = pkt->intel;
-	m_iVit = pkt->vit;
-	m_iDex = pkt->dex;
-	m_iMag = pkt->mag;
-	m_iCharisma = pkt->chr;
+	m_pPlayer->m_iHP = pkt->hp;
+	m_pPlayer->m_iMP = pkt->mp;
+	m_pPlayer->m_iSP = pkt->sp;
+	m_pPlayer->m_iAC = pkt->ac;		//? m_iDefenseRatio
+	m_pPlayer->m_iTHAC0 = pkt->thac0;    //? m_iHitRatio
+	m_pPlayer->m_iLevel = pkt->level;
+	m_pPlayer->m_iStr = pkt->str;
+	m_pPlayer->m_iInt = pkt->intel;
+	m_pPlayer->m_iVit = pkt->vit;
+	m_pPlayer->m_iDex = pkt->dex;
+	m_pPlayer->m_iMag = pkt->mag;
+	m_pPlayer->m_iCharisma = pkt->chr;
 
 	// CLEROTH - LU
-	m_iLU_Point = pkt->lu_point - 3;
+	m_pPlayer->m_iLU_Point = pkt->lu_point - 3;
 
-	m_iExp = pkt->exp;
-	m_iEnemyKillCount = pkt->enemy_kills;
-	m_iPKCount = pkt->pk_count;
-	m_iRewardGold = pkt->reward_gold;
+	m_pPlayer->m_iExp = pkt->exp;
+	m_pPlayer->m_iEnemyKillCount = pkt->enemy_kills;
+	m_pPlayer->m_iPKCount = pkt->pk_count;
+	m_pPlayer->m_iRewardGold = pkt->reward_gold;
 
 	memcpy(m_cLocation, pkt->location, sizeof(pkt->location));
 	if (memcmp(m_cLocation, "aresden", 7) == 0)
 	{
-		m_bAresden = true;
-		m_bCitizen = true;
-		m_bHunter = false;
+		m_pPlayer->m_bAresden = true;
+		m_pPlayer->m_bCitizen = true;
+		m_pPlayer->m_bHunter = false;
 	}
 	else if (memcmp(m_cLocation, "arehunter", 9) == 0)
 	{
-		m_bAresden = true;
-		m_bCitizen = true;
-		m_bHunter = true;
+		m_pPlayer->m_bAresden = true;
+		m_pPlayer->m_bCitizen = true;
+		m_pPlayer->m_bHunter = true;
 	}
 	else if (memcmp(m_cLocation, "elvine", 6) == 0)
 	{
-		m_bAresden = false;
-		m_bCitizen = true;
-		m_bHunter = false;
+		m_pPlayer->m_bAresden = false;
+		m_pPlayer->m_bCitizen = true;
+		m_pPlayer->m_bHunter = false;
 	}
 	else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
 	{
-		m_bAresden = false;
-		m_bCitizen = true;
-		m_bHunter = true;
+		m_pPlayer->m_bAresden = false;
+		m_pPlayer->m_bCitizen = true;
+		m_pPlayer->m_bHunter = true;
 	}
 	else
 	{
-		m_bAresden = true;
-		m_bCitizen = false;
-		m_bHunter = true;
+		m_pPlayer->m_bAresden = true;
+		m_pPlayer->m_bCitizen = false;
+		m_pPlayer->m_bHunter = true;
 	}
 
-	memcpy(m_cGuildName, pkt->guild_name, sizeof(pkt->guild_name));
+	memcpy(m_pPlayer->m_cGuildName, pkt->guild_name, sizeof(pkt->guild_name));
 
-	if (strcmp(m_cGuildName, "NONE") == 0)
-		std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
+	if (strcmp(m_pPlayer->m_cGuildName, "NONE") == 0)
+		std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 
-	CMisc::ReplaceString(m_cGuildName, '_', ' ');
-	m_iGuildRank = pkt->guild_rank;
-	m_iSuperAttackLeft = pkt->super_attack_left;
+	CMisc::ReplaceString(m_pPlayer->m_cGuildName, '_', ' ');
+	m_pPlayer->m_iGuildRank = pkt->guild_rank;
+	m_pPlayer->m_iSuperAttackLeft = pkt->super_attack_left;
 	m_iFightzoneNumber = pkt->fightzone_number;
 	iMaxStats = pkt->max_stats;
 	iMaxLevel = pkt->max_level;
@@ -4220,8 +4015,8 @@ void CGame::DisbandGuildResponseHandler(char* pData)
 	if (!header) return;
 	switch (header->msg_type) {
 	case DEF_MSGTYPE_CONFIRM:
-		std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
-		m_iGuildRank = -1;
+		std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
+		m_pPlayer->m_iGuildRank = -1;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 7;
 		break;
 	case DEF_MSGTYPE_REJECT:
@@ -4388,8 +4183,8 @@ void CGame::_RequestShopContents(int16_t npcType)
 	// Clear existing shop items
 	for (int i = 0; i < DEF_MAXSELLLIST; i++) {
 		if (m_pItemForSaleList[i] != nullptr) {
-			delete m_pItemForSaleList[i];
-			m_pItemForSaleList[i] = nullptr;
+			m_pItemForSaleList[i].reset();
+			m_pItemForSaleList[i].reset();
 		}
 	}
 
@@ -4432,8 +4227,8 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	// Clear existing shop items
 	for (int i = 0; i < DEF_MAXMENUITEMS; i++) {
 		if (m_pItemForSaleList[i] != nullptr) {
-			delete m_pItemForSaleList[i];
-			m_pItemForSaleList[i] = nullptr;
+			m_pItemForSaleList[i].reset();
+			m_pItemForSaleList[i].reset();
 		}
 	}
 
@@ -4459,8 +4254,9 @@ void CGame::ResponseShopContentsHandler(char* pData)
 		}
 
 		// Create new item for shop based on config
-		CItem* pItem = new CItem();
-		CItem* pConfig = m_pItemConfigList[itemId];
+		m_pItemForSaleList[shopIndex] = std::make_unique<CItem>();
+		CItem* pItem = m_pItemForSaleList[shopIndex].get();
+		CItem* pConfig = m_pItemConfigList[itemId].get();
 
 		// Copy item data from config
 		pItem->m_sIDnum = itemId;
@@ -4485,8 +4281,6 @@ void CGame::ResponseShopContentsHandler(char* pData)
 
 		// Copy display name
 		pItem->SetDisplayName(pConfig->GetDisplayName());
-
-		m_pItemForSaleList[shopIndex] = pItem;
 		shopIndex++;
 	}
 
@@ -4536,11 +4330,11 @@ void CGame::PutString_SprFont3(int iX, int iY, char* pStr, short sR, short sG, s
 	if (iType != -1) {
 		// Use SPRFONTS2 with type offset (0, 1, or 2)
 		if (iType >= 0 && iType < 3)
-			pFont = m_pSprFont3[iType];
+			pFont = m_pSprFont3[iType].get();
 	}
 	else {
 		// Use FONT2
-		pFont = m_pBitmapFont2;
+		pFont = m_pBitmapFont2.get();
 	}
 
 	if (!pFont) return;
@@ -4690,7 +4484,7 @@ bool CGame::bInitMagicCfgList()
 						delete[] pContents;
 						return false;
 					}
-					m_pMagicCfgList[atoi(token)] = new class CMagic;
+					m_pMagicCfgList[atoi(token)] = std::make_unique<CMagic>();
 					iMagicCfgListIndex = atoi(token);
 
 					cReadModeB = 2;
@@ -4860,7 +4654,7 @@ bool CGame::bInitSkillCfgList()
 						delete[] pContents;
 						return false;
 					}
-					m_pSkillCfgList[atoi(token)] = new class CSkill;
+					m_pSkillCfgList[atoi(token)] = std::make_unique<CSkill>();
 					iSkillCfgListIndex = atoi(token);
 					cReadModeB = 2;
 					break;
@@ -4935,21 +4729,21 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 	case DEF_XSOCKEVENT_SOCKETCLOSED:
 	case DEF_XSOCKEVENT_SOCKETERROR:
 	case DEF_XSOCKEVENT_QUENEFULL:
-		ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
+		ChangeGameMode(GameMode::ConnectionLost);
 
-		delete m_pGSock;
-		m_pGSock = 0;
+		m_pGSock.reset();
+		m_pGSock.reset();
 		break;
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
-		delete m_pGSock;
-		m_pGSock = 0;
+		m_pGSock.reset();
+		m_pGSock.reset();
 
 		if (G_pCalcSocket != 0) {
 			delete G_pCalcSocket;
 			G_pCalcSocket = 0;
 		}
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
+		SendMessage(G_hWnd, WM_DESTROY, 0, 0);
 		break;
 	}
 }
@@ -4964,7 +4758,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (_tmp_sOwnerType == 35 || _tmp_sOwnerType == 81 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -4979,89 +4773,89 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((_tmp_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((_tmp_sAppr2 & 0x0FF0) >> 4);
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
+			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 4;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
@@ -5070,87 +4864,87 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
-			iWeapon = ((_tmp_sAppr2 & 0x0FF0) >> 4);
+			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 4;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
 		break;
 
 	default:
-		if (_tmp_sAppr2 != 0)
+		if (m_entityState.m_sAppr2 != 0)
 		{
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-			_tmp_cFrame = _tmp_sAppr2 - 1;
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			m_entityState.m_iFrame = m_entityState.m_sAppr2 - 1;
 		}
-		else if (_tmp_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
+		else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iBodyArmorIndex = -1;
@@ -5163,40 +4957,40 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		iHelmIndex = -1;
 		break;
 	}
-	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, _tmp_cFrame);
-	if (_tmp_iEffectType != 0)
+	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX, sY, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
 				{
-					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
 				}
 				else
 				{
-					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -5212,94 +5006,94 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (((_tmp_sAppr2 & 0x000F) == 8) && (iShieldGlare == 1))
+			if (((m_entityState.m_sAppr2 & 0x000F) == 8) && (iShieldGlare == 1))
 			{
 				m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -5307,27 +5101,27 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -5343,147 +5137,147 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel((_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 8, dwTime);
-		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel((m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 8, dwTime);
+		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
@@ -5492,52 +5286,52 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 
 	// Snoopy: Abaddon effects
-	if (_tmp_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == 81)
 	{
-		int randFrame = _tmp_cFrame % 12;
+		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1:
-			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 108, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 105, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
 
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -5551,7 +5345,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (_tmp_sOwnerType == 35 || _tmp_sOwnerType == 81 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -5566,102 +5360,102 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
 
-	switch (_tmp_cFrame) {
-	case 4:  _tmp_cFrame = 4; break;
-	case 5:  _tmp_cFrame = 4; break;
-	case 6:  _tmp_cFrame = 4; break;
-	case 7:  _tmp_cFrame = 4; break;
-	case 8:  _tmp_cFrame = 4; break;
-	case 9:  _tmp_cFrame = 4; break;
-	case 10: _tmp_cFrame = 5; break;
-	case 11: _tmp_cFrame = 6; break;
-	case 12: _tmp_cFrame = 7; break;
+	switch (m_entityState.m_iFrame) {
+	case 4:  m_entityState.m_iFrame = 4; break;
+	case 5:  m_entityState.m_iFrame = 4; break;
+	case 6:  m_entityState.m_iFrame = 4; break;
+	case 7:  m_entityState.m_iFrame = 4; break;
+	case 8:  m_entityState.m_iFrame = 4; break;
+	case 9:  m_entityState.m_iFrame = 4; break;
+	case 10: m_entityState.m_iFrame = 5; break;
+	case 11: m_entityState.m_iFrame = 6; break;
+	case 12: m_entityState.m_iFrame = 7; break;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((_tmp_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((_tmp_sAppr2 & 0x0FF0) >> 4);
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
+			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 4;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
@@ -5670,75 +5464,75 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((_tmp_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((_tmp_sAppr2 & 0x0FF0) >> 4);
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
+			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 4;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
 		break;
 	default:
-		iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
+		iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iBodyArmorIndex = -1;
@@ -5753,14 +5547,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	dx = 0;
 	dy = 0;
-	if ((_tmp_cFrame >= 1) && (_tmp_cFrame <= 3))
+	if ((m_entityState.m_iFrame >= 1) && (m_entityState.m_iFrame <= 3))
 	{
-		switch (_tmp_cFrame) {
+		switch (m_entityState.m_iFrame) {
 		case 1: cFrameMoveDots = 26; break;
 		case 2: cFrameMoveDots = 16; break;
 		case 3: cFrameMoveDots = 0;  break;
 		}
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1: dy = cFrameMoveDots; break;
 		case 2: dy = cFrameMoveDots; dx = -cFrameMoveDots; break;
 		case 3: dx = -cFrameMoveDots; break;
@@ -5770,18 +5564,18 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		case 7: dx = cFrameMoveDots; break;
 		case 8: dx = cFrameMoveDots; dy = cFrameMoveDots; break;
 		}
-		switch (_tmp_cFrame) {
+		switch (m_entityState.m_iFrame) {
 		case 1: dy++;    break;
 		case 2: dy += 2; break;
 		case 3: dy++;    break;
 		}
-		switch (_tmp_cFrame) {
+		switch (m_entityState.m_iFrame) {
 		case 2: bDashDraw = true; cFrameMoveDots = 26; break;
 		case 3: bDashDraw = true; cFrameMoveDots = 16; break;
 		}
 		dsx = 0;
 		dsy = 0;
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1: dsy = cFrameMoveDots; break;
 		case 2: dsy = cFrameMoveDots; dsx = -cFrameMoveDots; break;
 		case 3: dsx = -cFrameMoveDots; break;
@@ -5792,14 +5586,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		case 8: dsx = cFrameMoveDots; dsy = cFrameMoveDots; break;
 		}
 	}
-	else if (_tmp_cFrame > 3)
+	else if (m_entityState.m_iFrame > 3)
 	{
 		dx = 0;
 		dy = 0;
 	}
 	else
 	{
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1: dy = 32; break;
 		case 2: dy = 32; dx = -32; break;
 		case 3: dx = -32; break;
@@ -5811,35 +5605,35 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		}
 	}
 
-	if (m_bIsCrusadeMode) DrawObjectFOE(sX + dx, sY + dy, _tmp_cFrame);
+	if (m_bIsCrusadeMode) DrawObjectFOE(sX + dx, sY + dy, m_entityState.m_iFrame);
 
-	if (_tmp_iEffectType != 0) {
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX + dx, sY + dy, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX + dx, sY + dy, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+	if (m_entityState.m_iEffectType != 0) {
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX + dx, sY + dy, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX + dx, sY + dy, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX + dx, sY + dy, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -5855,101 +5649,101 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2)) {
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
-				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1)) {
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -5965,148 +5759,148 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(sX - 13 + dx, sY - 34 + dy, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1)) {
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1)) {
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
-					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (_tmp_cFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 			}
 		}
 
 		// Berserk
-		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(8 + (_tmp_cDir - 1), sX + dx + 20, sY + dy - 20, _tmp_cFrame % 8, dwTime);
-		CheckActiveAura2(sX + dx, sY + dy, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0)
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(8 + (m_entityState.m_iDir - 1), sX + dx + 20, sY + dy - 20, m_entityState.m_iFrame % 8, dwTime);
+		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
 
 		if (bDashDraw == true) {
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dsx, sY + dsy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
-			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->Draw(sX + dsx, sY + dsy, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
-			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->Draw(sX + dsx, sY + dsy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->Draw(sX + dsx, sY + dsy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
 		}
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX + dx, sY + dy, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX + dx, sY + dy, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX + dx, sY + dy, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX + dx, sY + dy, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID)) {
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX + dx;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY + dy;
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID)) {
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX + dx;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY + dy;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	_tmp_dx = dx;
-	_tmp_dy = dy;
+	m_entityState.m_iMoveOffsetX = dx;
+	m_entityState.m_iMoveOffsetY = dy;
 
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -6117,7 +5911,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -6132,28 +5926,28 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	if ((_tmp_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0)
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
 			bInv = true;
 		else
 		{
-			if (_tmp_iChatIndex != 0)
+			if (m_entityState.m_iChatIndex != 0)
 			{
-				if (m_pChatMsgList[_tmp_iChatIndex] != 0)
+				if (m_pChatMsgList[m_entityState.m_iChatIndex] != 0)
 				{
-					m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-					m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+					m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+					m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 				}
 				else
 				{
@@ -6164,112 +5958,112 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		}
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (8 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 8;
-		iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 8;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (8 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 8;
+		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 8;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 8;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 8;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 8;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 8;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 8;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 8;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 8;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 8;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 8;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 8;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 8;
+		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 8;
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
 
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (8 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 8;
-		iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 8;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (8 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 8;
+		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 8;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 8;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 8;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 8;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 8;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 8;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 8;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 8;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 8;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 8;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 8;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 8;
+		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 8;
 		break;
 	}
 
 	/*
-	switch (_tmp_cFrame) {
+	switch (m_entityState.m_iFrame) {
 	case 15:
-		_tmp_cFrame = 14;
+		m_entityState.m_iFrame = 14;
 		break;
 	case 16:
-		_tmp_cFrame = 14;
+		m_entityState.m_iFrame = 14;
 		break;
 	case 17:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 18:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 19:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 20:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 21:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 22:
-		_tmp_cFrame = 15;
+		m_entityState.m_iFrame = 15;
 		break;
 	case 23:
-		_tmp_cFrame = 14;
+		m_entityState.m_iFrame = 14;
 		break;
 	}
 	*/
-	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, _tmp_cFrame);
+	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX, sY, dwTime, _tmp_sOwnerType);
-		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
+		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
 		case 35: // Energy Sphere
 		case 50: // TW
@@ -6284,103 +6078,103 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		default:
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else {
-			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+			if ((m_entityState.m_iStatus & 0x40) != 0)
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 16 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(32 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 16, dwTime);
-		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(32 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 16, dwTime);
+		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -6391,7 +6185,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -6406,80 +6200,80 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	if ((_tmp_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (9 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 9;
-		iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 9;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (9 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 9;
+		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 9;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 9;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 9;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 9;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 9;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 9;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 9;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 9;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 9;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 9;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 9;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 9; 		break;
+		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 9; 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (9 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 9;
-		iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 9;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (9 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 9;
+		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 9;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 9;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 9;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 9;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 9;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 9;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 9;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 9;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 9;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 9;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 9;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 9;
+		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 9;
 		break;
 	default:
 		iUndiesIndex = -1;
@@ -6492,20 +6286,20 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		iHelmIndex = -1;
 		break;
 	}
-	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, _tmp_cFrame);
+	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX, sY, dwTime, _tmp_sOwnerType);
-		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
+		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
 		case 35: // Energy Sphere
 		case 50: // TW
@@ -6521,135 +6315,135 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else {
-			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+			if ((m_entityState.m_iStatus & 0x40) != 0)
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
 		if (iUndiesIndex != -1)
 		{
-			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
+			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
 		}
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
-			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 		}
 
 		if (iPantsIndex != -1)
 		{
-			if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 		}
 
 		if (iArmArmorIndex != -1)
 		{
-			if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
-			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
-			if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 		}
 
 		if (iHelmIndex != -1)
 		{
-			if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 		}
 
 		if (iMantleIndex != -1)
 		{
-			if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(40 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 4, dwTime);
-		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
+		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -6663,7 +6457,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (_tmp_sOwnerType == 35 || _tmp_sOwnerType == 81 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -6678,173 +6472,173 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
-	cFrame = _tmp_cFrame;
-	switch (_tmp_sOwnerType) {
+	cFrame = m_entityState.m_iFrame;
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
 		if (cFrame < 4)
 		{
-			if ((_tmp_sAppr2 & 0xF000) != 0) iAdd = 1;
+			if ((m_entityState.m_sAppr2 & 0xF000) != 0) iAdd = 1;
 			else iAdd = 0;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (_tmp_cDir - 1);
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 			iDrawMode = 0;
 		}
 		else
 		{
 			cFrame -= 4;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (10 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 10;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 10;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 10;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 10;
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 5;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
 			iDrawMode = 1;
 		}
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
 		if (cFrame < 4)
 		{
-			if ((_tmp_sAppr2 & 0xF000) != 0) iAdd = 1;
+			if ((m_entityState.m_sAppr2 & 0xF000) != 0) iAdd = 1;
 			else iAdd = 0;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (_tmp_cDir - 1);
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 			iDrawMode = 0;
 		}
 		else
 		{
 			cFrame -= 4;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (10 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 10;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 10;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 10;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 10;
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 5;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
 			iDrawMode = 1;
 		}
 		break;
@@ -6852,42 +6646,42 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	default:
 		if (cFrame < 4)
 		{
-			if (_tmp_sAppr2 != 0)
+			if (m_entityState.m_sAppr2 != 0)
 			{
-				iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = _tmp_sAppr2 - 1;
+				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+				cFrame = m_entityState.m_sAppr2 - 1;
 			}
-			else if (_tmp_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		}
 		else
 		{
 			cFrame -= 4;
-			if (_tmp_sAppr2 != 0)
+			if (m_entityState.m_sAppr2 != 0)
 			{
-				iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = _tmp_sAppr2 - 1;
+				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+				cFrame = m_entityState.m_sAppr2 - 1;
 			}
-			else if (_tmp_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (_tmp_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
-			else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 		}
 		iUndiesIndex = -1;
 		iHairIndex = -1;
@@ -6904,20 +6698,20 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, cFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX, sY, dwTime, _tmp_sOwnerType);
+		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		if (iDrawMode == 1) // Etrange, 1 semble impossible avec des mobs !
 		{
-			if (_cDrawingOrder[_tmp_cDir] == 1)
+			if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 			{
 				if (iWeaponIndex != -1)
 				{
@@ -6927,12 +6721,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
-				switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 				case 10: // Slime
 				case 35: // Energy Sphere
 				case 50: // TW
@@ -6947,117 +6741,117 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+							m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
-				if (_tmp_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == 35)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (_tmp_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
+					if ((m_entityState.m_iStatus & 0x40) != 0)
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 			else
 			{
-				switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 				case 10: // Slime
 				case 35: // Energy Sphere
 				case 50: // TW
@@ -7072,112 +6866,112 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+							m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
-				if (_tmp_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == 35)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (_tmp_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
+					if ((m_entityState.m_iStatus & 0x40) != 0)
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iWeaponIndex != -1)
@@ -7188,22 +6982,22 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
-					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 			}
 
-			if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-			DrawAngel(16 + (_tmp_cDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
-			CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+			if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
+			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 		}
 		else // DrawMode != 1
 		{
-			if (_cDrawingOrder[_tmp_cDir] == 1)
+			if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 			{
 				if (iWeaponIndex != -1)
 				{
@@ -7218,7 +7012,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
-				switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 				case 10: // Slime
 				case 35: // Energy Sphere
 				case 50: // TW
@@ -7234,114 +7028,114 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 					{
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+							m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
-				if (_tmp_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == 35)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (_tmp_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
+					if ((m_entityState.m_iStatus & 0x40) != 0)
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 			else
 			{
-				switch (_tmp_sOwnerType) {
+				switch (m_entityState.m_sOwnerType) {
 				case 10: // Slime
 				case 35: // Energy Sphere
 				case 50: // TW
@@ -7356,112 +7150,112 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 						if (sX < 50)
-							m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
-						else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+							m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+						else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 					}
 					break;
 				}
-				if (_tmp_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == 35)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (_tmp_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == 81) // Abaddon
 				{
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
 				else if (bInv == true)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((_tmp_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
+					if ((m_entityState.m_iStatus & 0x40) != 0)
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
-				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-					m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 					switch (iShieldGlare) {
 					case 0: break;
-						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 					case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+					case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+					case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 					}
 				}
 
-				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 
 				if (iWeaponIndex != -1)
@@ -7479,23 +7273,23 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				}
 			}
 
-			if ((_tmp_iStatus & 0x20) != 0)	// Berserk
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-			DrawAngel(16 + (_tmp_cDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
-			CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+			if ((m_entityState.m_iStatus & 0x20) != 0)	// Berserk
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
+			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		}
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
@@ -7503,51 +7297,51 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (_tmp_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == 81)
 	{
-		int randFrame = _tmp_cFrame % 12;
+		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1:
-			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 108, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 105, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -7571,155 +7365,155 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	cFrame = _tmp_cFrame;
+	cFrame = m_entityState.m_iFrame;
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
 		if (cFrame < 6)
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 0;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 0;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 0;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 0;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 0;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 0;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 0;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 0;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 0;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 0;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 0;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 0;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
 		}
 		else
 		{
 			cFrame -= 6;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (11 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 11;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 11;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 11;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 11;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
 		}
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
 		if (cFrame < 6)
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 0;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 0;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 0;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 0;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 0;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 0;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 0;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 0;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 0;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 0;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 0;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 0;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
 		}
 		else
 		{
 			cFrame -= 6;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (11 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 11;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 11;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 11;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 11;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
 		}
 		break;
 
 	default:
 		if (cFrame < 4)
 		{
-			if (_tmp_sAppr2 != 0)
+			if (m_entityState.m_sAppr2 != 0)
 			{
-				iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = _tmp_sAppr2 - 1;
+				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+				cFrame = m_entityState.m_sAppr2 - 1;
 			}
-			else if (_tmp_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 			iUndiesIndex = -1;
 			iHairIndex = -1;
 			iArmArmorIndex = -1;
@@ -7728,7 +7522,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			iBootsIndex = -1;
 			iMantleIndex = -1;
 			iHelmIndex = -1;
-			switch (_tmp_sOwnerType) {
+			switch (m_entityState.m_sOwnerType) {
 			case 36: // AGT
 			case 37: // CGT
 			case 38: // MS
@@ -7736,30 +7530,30 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			case 40: // ESG
 			case 41: // GMG
 			case 42: // ManaStone
-				if (_tmp_sAppr2 == 0) cFrame = 0;
+				if (m_entityState.m_sAppr2 == 0) cFrame = 0;
 				break;
 			case 51: cFrame = 0; break;
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) {
+			switch (m_entityState.m_sOwnerType) {
 			case 51: cFrame = 0; break;
 			default: cFrame -= 4; break;
 			}
-			if (_tmp_sAppr2 != 0)
+			if (m_entityState.m_sAppr2 != 0)
 			{
-				iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = _tmp_sAppr2 - 1;
+				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+				cFrame = m_entityState.m_sAppr2 - 1;
 			}
-			else if (_tmp_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (_tmp_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (_tmp_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			iUndiesIndex = -1;
 			iHairIndex = -1;
 			iArmArmorIndex = -1;
@@ -7773,17 +7567,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	}
 	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, cFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
 		case 35: // Energy Sphere
 		case 50: // TW
@@ -7799,24 +7593,24 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			if (ConfigManager::Get().GetDetailLevel() != 0)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
-		if (_tmp_sOwnerType == 81)
+		if (m_entityState.m_sOwnerType == 81)
 		{
-			m_pEffectSpr[152]->Draw(sX - 80, sY - 15, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f)); // Explosion Abaddon
-			m_pEffectSpr[152]->Draw(sX, sY - 15, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[152]->Draw(sX - 40, sY, _tmp_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[163]->Draw(sX - 90, sY - 80, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f)); // Ames qui s'envolent
-			m_pEffectSpr[160]->Draw(sX - 60, sY - 50, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[161]->Draw(sX - 30, sY - 20, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[162]->Draw(sX, sY - 100, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[163]->Draw(sX + 30, sY - 30, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[162]->Draw(sX + 60, sY - 90, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[163]->Draw(sX + 90, sY - 50, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
-			switch (_tmp_cDir) {
+			m_pEffectSpr[152]->Draw(sX - 80, sY - 15, m_entityState.m_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f)); // Explosion Abaddon
+			m_pEffectSpr[152]->Draw(sX, sY - 15, m_entityState.m_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[152]->Draw(sX - 40, sY, m_entityState.m_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX - 90, sY - 80, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f)); // Ames qui s'envolent
+			m_pEffectSpr[160]->Draw(sX - 60, sY - 50, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[161]->Draw(sX - 30, sY - 20, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[162]->Draw(sX, sY - 100, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX + 30, sY - 30, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[162]->Draw(sX + 60, sY - 90, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[163]->Draw(sX + 90, sY - 50, m_entityState.m_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.7f));
+			switch (m_entityState.m_iDir) {
 			case 1: m_pEffectSpr[140]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break; // Abbadon dying
 			case 2: m_pEffectSpr[141]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break; // fixed sprit IDs
 			case 3: m_pEffectSpr[142]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
@@ -7827,11 +7621,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			case 8: m_pEffectSpr[147]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
 			}
 		}
-		else if (_tmp_sOwnerType == 66) m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else if (_tmp_sOwnerType == 73)
-		{	//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else if (m_entityState.m_sOwnerType == 66) m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else if (m_entityState.m_sOwnerType == 73)
+		{	//m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			m_pSprite[33]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
-			switch (_tmp_cDir) {
+			switch (m_entityState.m_iDir) {
 			case 1: m_pEffectSpr[141]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break; // Abbadon qui meurt
 			case 2: m_pEffectSpr[142]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
 			case 3: m_pEffectSpr[143]->Draw(sX, sY, cFrame + 8, SpriteLib::DrawParams::Alpha(0.7f)); break;
@@ -7845,88 +7639,88 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 		else
 		{
-			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame);
+			if ((m_entityState.m_iStatus & 0x40) != 0)
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 		}
 
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(24 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame, dwTime);
-		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(24 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame, dwTime);
+		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
@@ -7934,7 +7728,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 	}
 
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -7944,7 +7738,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 66) return invalidRect;
+	if (m_entityState.m_sOwnerType == 66) return invalidRect;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -7959,86 +7753,86 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
 		iFrame = 7;
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (11 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 11;
-		iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
+		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 11;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 11;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 11;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
 		iFrame = 7;
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (11 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 11;
-		iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
+		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 11;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 11;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 11;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
 		break;
 	default:
-		switch (_tmp_sOwnerType) {
+		switch (m_entityState.m_sOwnerType) {
 		case 28: // Troll
 		case 29: // Ogre
 		case 30: // Liche
 		case 31: // DD		// les 2 dernieres sont pas bonnes pour un mort !
 		case 63: // Frost	// les 2 dernieres sont pas bonnes pour un mort !
 			iFrame = 5;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
 		case 32: // Uni
@@ -8079,51 +7873,51 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		case 85: // DSK
 		case 88: // Barbarian
 			iFrame = 7;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
 		case 86: // HBT
 		case 87: // CT
 		case 89: // AGC
 			iFrame = 7;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 			break;
 
 		case 66: // Wyvern
 			iFrame = 15;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			break;
 
 		case 73: // FireWyvern
 			iFrame = 7;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			bTrans = true; // Prevents showing hugly corpse
 			break;
 
 		case 81: // Abaddon
 			iFrame = 0;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 			bTrans = true; // Prevents showing hugly corpse
 			break;
 
 		case 51: // CP
 			iFrame = 0;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
 		case 52: // GG
 			iFrame = 11;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
 		case 91: // Gate
 			iFrame = 5;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			break;
 
 		default: // 40*4 (10...27)
 			iFrame = 3;
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 		}
 		iUndiesIndex = -1;
@@ -8138,90 +7932,90 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	}
 	if (bTrans == false)
 	{
-		if (_tmp_cFrame == -1)
+		if (m_entityState.m_iFrame == -1)
 		{
-			_tmp_cFrame = 7;
-			if ((_tmp_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-			else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame);
+			m_entityState.m_iFrame = 7;
+			if ((m_entityState.m_iStatus & 0x40) != 0)
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame);
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
 			if (iMantleIndex != -1)
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
-		else if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * _tmp_cFrame + 5, -2 * _tmp_cFrame - 5, -2 * _tmp_cFrame - 5, 0.7f));
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * _tmp_cFrame, -2 * _tmp_cFrame, -2 * _tmp_cFrame, 0.7f));
+		else if ((m_entityState.m_iStatus & 0x20) != 0)
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame + 5, -2 * m_entityState.m_iFrame - 5, -2 * m_entityState.m_iFrame - 5, 0.7f));
+		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, 0.7f));
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
@@ -8229,15 +8023,15 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (_tmp_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == 81)
 	{
 		Abaddon_corpse(sX, sY); // By Snoopy....
 	}
-	else if (_tmp_sOwnerType == 73)
+	else if (m_entityState.m_sOwnerType == 73)
 	{	//m_pEffectSpr[35]->Draw(sX+120, sY+120, rand(), SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[35]->Draw(sX + 20, sY - 15, rand() % 10, SpriteLib::DrawParams::Alpha(0.7f));
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision)
@@ -8251,7 +8045,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 35 /* || _tmp_sOwnerType == 66 || _tmp_sOwnerType == 73*/)	bInv = true; //Energy-Ball, Wyvern
+	if (m_entityState.m_sOwnerType == 35 /* || m_entityState.m_sOwnerType == 66 || m_entityState.m_sOwnerType == 73*/)	bInv = true; //Energy-Ball, Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -8266,173 +8060,173 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
 			iAdd = 3;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 3;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else  iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else  iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 2;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
 		}
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
 			iAdd = 3;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 3;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 2;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
 		}
 		break;
 
 	default:
-		if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iBodyArmorIndex = -1;
@@ -8446,14 +8240,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		break;
 	}
 	// Use smooth interpolated motion offsets
-	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
-	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
+	dx = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetY);
 
 	// Simple offset - no frame-based adjustments for smooth interpolation
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
@@ -8517,50 +8311,50 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		break;
 
 	default:
-		_tmp_cFrame = _tmp_cFrame / 2;
+		m_entityState.m_iFrame = m_entityState.m_iFrame / 2;
 		break;
 	}
-	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, _tmp_cFrame);
+	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, m_entityState.m_iFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
-	if (_tmp_sOwnerType == 65) // IceGolem
-	{	/*m_pEffectSpr[77]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f));*/
+	if (m_entityState.m_sOwnerType == 65) // IceGolem
+	{	/*m_pEffectSpr[77]->Draw(sX+dx, sY+dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f));*/
 		switch (rand() % 3) {
-		case 0:	m_pEffectSpr[76]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
-		case 1:	m_pEffectSpr[77]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
-		case 2:	m_pEffectSpr[78]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+		case 0:	m_pEffectSpr[76]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+		case 1:	m_pEffectSpr[77]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
+		case 2:	m_pEffectSpr[78]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
 		}
 	}
 	if (bTrans == false)
 	{
-		CheckActiveAura(fix_x, fix_y, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -8575,163 +8369,163 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
-				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				//m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX+dx, sY+dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -8747,251 +8541,251 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.7f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f));
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
 
 		// Berserk
-		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(40 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, _tmp_cFrame % 4, dwTime);
-		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0)
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
+		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(fix_x, fix_y, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = fix_x;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = fix_y;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = fix_x;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = fix_y;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	_tmp_dx = dx;
-	_tmp_dy = dy;
+	m_entityState.m_iMoveOffsetX = dx;
+	m_entityState.m_iMoveOffsetY = dy;
 	// Snoopy: Abaddon effects
-	if (_tmp_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == 81)
 	{
-		int randFrame = _tmp_iEffectFrame % 12;
+		int randFrame = m_entityState.m_iEffectFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1:
-			m_pEffectSpr[153]->Draw(fix_x, fix_y + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 50, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 108, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 50, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 70, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 70, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->Draw(fix_x, fix_y + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 90, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 105, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 90, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->Draw(fix_x - 35, fix_y + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 80, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x - 35, fix_y + 100, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 80, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 65, fix_y - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x, fix_y + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 65, fix_y - 5, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->Draw(fix_x + 45, fix_y + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 31, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x + 45, fix_y + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 31, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->Draw(fix_x + 40, fix_y + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 30, fix_y + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x + 40, fix_y + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 30, fix_y + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->Draw(fix_x + 20, fix_y + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(fix_x - 20, fix_y + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(fix_x + 20, fix_y + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(fix_x - 20, fix_y + 16, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision)
@@ -9006,8 +8800,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 67 || _tmp_sOwnerType == 68 || _tmp_sOwnerType == 69 || _tmp_sOwnerType == 81) return invalidRect;
-	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 67 || m_entityState.m_sOwnerType == 68 || m_entityState.m_sOwnerType == 69 || m_entityState.m_sOwnerType == 81) return invalidRect;
+	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -9022,112 +8816,112 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
-	cDir = _tmp_cDir;
-	switch (_tmp_cDir) {
-	case 1: _tmp_cDir = 5; break;
-	case 2: _tmp_cDir = 6; break;
-	case 3: _tmp_cDir = 7; break;
-	case 4: _tmp_cDir = 8; break;
-	case 5: _tmp_cDir = 1; break;
-	case 6: _tmp_cDir = 2; break;
-	case 7: _tmp_cDir = 3; break;
-	case 8: _tmp_cDir = 4; break;
+	cDir = m_entityState.m_iDir;
+	switch (m_entityState.m_iDir) {
+	case 1: m_entityState.m_iDir = 5; break;
+	case 2: m_entityState.m_iDir = 6; break;
+	case 3: m_entityState.m_iDir = 7; break;
+	case 4: m_entityState.m_iDir = 8; break;
+	case 5: m_entityState.m_iDir = 1; break;
+	case 6: m_entityState.m_iDir = 2; break;
+	case 7: m_entityState.m_iDir = 3; break;
+	case 8: m_entityState.m_iDir = 4; break;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (10 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 10;
-		iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
+		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 10;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 10;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 10;
-		if ((_tmp_sAppr2 & 0x000F) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
+		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 5;
-		if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
+		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 			iWeaponIndex = -1;
-		else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (_tmp_cDir - 1);
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (10 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 10;
-		iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
+		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 10;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 10;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 10;
-		if ((_tmp_sAppr2 & 0x000F) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
+		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 5;
-		if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
+		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 			iWeaponIndex = -1;
-		else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (_tmp_cDir - 1);
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
 		break;
 	default:
-		if (_tmp_sOwnerType == 66)      iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (_tmp_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (_tmp_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);
-		else if (_tmp_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
-		else if (_tmp_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
-		else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (3 * 8);
+		if (m_entityState.m_sOwnerType == 66)      iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+		else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
+		else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
+		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iArmArmorIndex = -1;
@@ -9141,27 +8935,27 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		break;
 	}
 	// Use smooth interpolated motion offsets
-	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
-	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
+	dx = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetY);
 
 	// Simple offset - no frame-based adjustments for smooth interpolation
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
-	cFrame = _tmp_cFrame;
+	cFrame = m_entityState.m_iFrame;
 	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, cFrame);
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(fix_x, fix_y, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
@@ -9176,7 +8970,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -9192,116 +8986,116 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame);
-				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + cFrame);
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -9317,110 +9111,110 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
-					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
-					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
-					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
-					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
-					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
-					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
 				if (iMantleColor == 0)
-					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 			}
 
 			if (iWeaponIndex != -1)
@@ -9438,32 +9232,32 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			}
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(16 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
-		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(16 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
+		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(fix_x, fix_y, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = fix_x;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = fix_y;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = fix_x;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = fix_y;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	_tmp_dx = dx;
-	_tmp_dy = dy;
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	m_entityState.m_iMoveOffsetX = dx;
+	m_entityState.m_iMoveOffsetY = dy;
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -9475,169 +9269,169 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-	iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-	iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-	iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-	iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-	iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-	iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-	iHelmColor = (_tmp_iApprColor & 0x0000000F);
+	iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+	iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+	iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+	iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+	iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+	iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+	iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+	iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
 			iAdd = 3;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
 				else
 				{
-					iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+					iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 				}
 			}
 			else iBodyArmorIndex = -1;
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
 
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 3;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
 			}
 			else iBodyArmorIndex = -1;
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 2;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
 		}
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
 			iAdd = 3;
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
 			}
 			else  iBodyArmorIndex = -1;
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 3;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
 			}
 			else iBodyArmorIndex = -1;
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 2;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
 		}
 		break;
 	default:
-		iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iBodyArmorIndex = -1;
@@ -9651,15 +9445,15 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	}
 	dx = 0;
 	dy = 0;
-	if (_cDrawingOrder[_tmp_cDir] == 1)
+	if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 	{
 		if (iWeaponIndex != -1)
 		{
 			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
-			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
+			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 		}
-		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
 		case 35: // Energy Sphere
 		case 50: // TW
@@ -9675,91 +9469,91 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 		if (iUndiesIndex != -1)
 		{
-			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			else m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 		}
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if (iShieldIndex != -1)
 		{
 			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 	}
 	else
 	{
-		switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 		case 10: // Slime
 		case 35: // Energy Sphere
 		case 50: // TW
@@ -9775,106 +9569,106 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 			{
 				if (sX < 50)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 			}
 			break;
 		}
 
 		if (bInv == true)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX + dx, sY + dy, _tmp_cFrame);
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 		}
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 		}
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 		}
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 		}
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 
 		if (iShieldIndex != -1)
 		{
 			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 		{
 			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 		}
 		if (iWeaponIndex != -1)
 		{
 			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame);
-			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
+			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 		}
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if (m_pChatMsgList[_tmp_iChatIndex] != 0)
+		if (m_pChatMsgList[m_entityState.m_iChatIndex] != 0)
 		{
-			DrawChatMsgBox(sX + dx, sY + dy, _tmp_iChatIndex, false);
+			DrawChatMsgBox(sX + dx, sY + dy, m_entityState.m_iChatIndex, false);
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	_tmp_dx = dx;
-	_tmp_dy = dy;
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	m_entityState.m_iMoveOffsetX = dx;
+	m_entityState.m_iMoveOffsetY = dy;
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -9888,10 +9682,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
 	// Apply motion offset if entity is still interpolating (animation finished before movement)
-	sX += static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
-	sY += static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
+	sX += static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetX);
+	sY += static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetY);
 
-	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/ || _tmp_sOwnerType == 81) bInv = true; //Energy-Ball, Wyvern
+	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/ || m_entityState.m_sOwnerType == 81) bInv = true; //Energy-Ball, Wyvern
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
 		iWeaponColor = 0;
@@ -9905,191 +9699,191 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
 
 	// CLEROTH - Single-direction monsters
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 110: // Air Elemental
-		_tmp_cDir = 1; // North
+		m_entityState.m_iDir = 1; // North
 		break;
 	case 91: // Snoopy: Gate
-		if (_tmp_cDir <= 3) _tmp_cDir = 3;
-		else  _tmp_cDir = 5;
+		if (m_entityState.m_iDir <= 3) m_entityState.m_iDir = 3;
+		else  m_entityState.m_iDir = 5;
 		break;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		_tmp_cFrame = _tmp_cFrame / 2;
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		m_entityState.m_iFrame = m_entityState.m_iFrame / 2;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (1 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 1;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 1;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (1 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 1;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 1;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 1;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 1;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 1;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 1;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 1;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 1;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 1;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 1;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 1;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 1;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 1;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 1;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 1;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 1;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15;
+			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 0;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 0;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
 		}
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		_tmp_cFrame = _tmp_cFrame / 2;
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((_tmp_sAppr2 & 0xF000) != 0)
+		m_entityState.m_iFrame = m_entityState.m_iFrame / 2;
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (1 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 1;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 1;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (1 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 1;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 1;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 1;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 1;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 1;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 1;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 1;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 1;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 1;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 1;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 1;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 1;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 1;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 1;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 1;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 1;
 		}
 		else
 		{
-			iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15;
-			if ((_tmp_sAppr4 & 0x80) == 0)
+			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
+			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15;
+			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15;
+			if ((m_entityState.m_sAppr4 & 0x80) == 0)
 			{
-				if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15;
 			}
-			if ((_tmp_sAppr3 & 0x000F) == 0)
+			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15;
-			if ((_tmp_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15;
+			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15;
-			if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15;
+			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15;
-			if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15;
+			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (_tmp_cDir - 1);
-			if ((_tmp_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
+			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 0;
-			if ((_tmp_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 0;
+			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15;
-			if ((_tmp_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15;
+			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
 		}
 		break;
 	default:
-		if (_tmp_sAppr2 != 0)
+		if (m_entityState.m_sAppr2 != 0)
 		{
-			iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (4 * 8);
-			_tmp_cFrame = (_tmp_sAppr2 & 0x00FF) - 1;
+			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+			m_entityState.m_iFrame = (m_entityState.m_sAppr2 & 0x00FF) - 1;
 		}
-		/*	else if (_tmp_sOwnerType == 66) iBodyIndex =  DEF_SPRID_MOB  +  (_tmp_sOwnerType - 10 )*8*7 + (0 * 8);
-			else if (_tmp_sOwnerType == 73) iBodyIndex =  DEF_SPRID_MOB  +  (_tmp_sOwnerType - 10 )*8*7 + (0 * 8);
-			else if (_tmp_sOwnerType == 81) iBodyIndex =  DEF_SPRID_MOB  +  (_tmp_sOwnerType - 10 )*8*7 + (0 * 8);*/
-		else iBodyIndex = DEF_SPRID_MOB + (_tmp_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		/*	else if (m_entityState.m_sOwnerType == 66) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 73) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == 81) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);*/
+		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
 		iBodyArmorIndex = -1;
@@ -10102,8 +9896,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		iHelmIndex = -1;
 		break;
 	}
-	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, _tmp_cFrame);
-	switch (_tmp_sOwnerType) { // hum? la lumiere en dessous ?
+	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
+	switch (m_entityState.m_sOwnerType) { // hum? la lumiere en dessous ?
 	case 15: // ShopKeeper
 	case 19: // Gandalf
 	case 20: // Howard
@@ -10116,37 +9910,37 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 		break;
 	}
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(sX, sY, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(sX, sY, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 	if (bTrans == false)
 	{
-		CheckActiveAura(sX, sY, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -10162,162 +9956,162 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
 			}
 			else if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0)) {
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -10333,180 +10127,180 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
-			if (_tmp_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == 35)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
-			if (_tmp_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == 81) // Abaddon
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if (bInv == true)
 			{
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
-		if (_tmp_sOwnerType == 64) // crop
+		if (m_entityState.m_sOwnerType == 64) // crop
 		{
-			switch (_tmp_cFrame) {
+			switch (m_entityState.m_iFrame) {
 			case 0: // color effect for crop
 				m_pEffectSpr[84]->Draw(sX + 52, sY + 54, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f));
 				break;
@@ -10519,23 +10313,23 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 		}
 		// Berserk
-		if ((_tmp_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX, sY, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(40 + (_tmp_cDir - 1), sX + 20, sY - 20, _tmp_cFrame % 4, dwTime);
-		CheckActiveAura2(sX, sY, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0)
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
+		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(sX, sY, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(sX, sY, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID)) {
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = sX;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = sY;
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID)) {
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = sX;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = sY;
 		}
 		else
 		{
@@ -10543,51 +10337,51 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (_tmp_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == 81)
 	{
-		int randFrame = _tmp_cFrame % 12;
+		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-		switch (_tmp_cDir) {
+		switch (m_entityState.m_iDir) {
 		case 1:
-			m_pEffectSpr[153]->Draw(sX, sY + 108, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 108, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 50, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 2:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 70, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 3:
-			m_pEffectSpr[153]->Draw(sX, sY + 105, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 105, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 90, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 4:
-			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX - 35, sY + 100, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 80, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 5:
-			m_pEffectSpr[153]->Draw(sX, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 65, sY - 5, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 6:
-			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 45, sY + 95, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 31, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 7:
-			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 40, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 30, sY + 10, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		case 8:
-			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, _tmp_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
-			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[153]->Draw(sX + 20, sY + 110, m_entityState.m_iEffectFrame % 28, SpriteLib::DrawParams::Alpha(0.7f));
+			m_pEffectSpr[164]->Draw(sX - 20, sY + 16, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 			break;
 		}
 	}
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
@@ -10789,15 +10583,15 @@ void CGame::OnLogSocketEvent()
 
     switch (iRet) {
     case DEF_XSOCKEVENT_SOCKETCLOSED:
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pLSock;
-        m_pLSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pLSock.reset();
+        m_pLSock.reset();
         return;
     case DEF_XSOCKEVENT_SOCKETERROR:
         printf("[ERROR] Login socket error\n");
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pLSock;
-        m_pLSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pLSock.reset();
+        m_pLSock.reset();
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
@@ -10815,9 +10609,9 @@ void CGame::OnLogSocketEvent()
 
     if (iDrained < 0) {
         printf("[ERROR] Login socket DrainToQueue failed: %d\n", iDrained);
-        ChangeGameMode(DEF_GAMEMODE_ONCONNECTIONLOST);
-        delete m_pLSock;
-        m_pLSock = 0;
+        ChangeGameMode(GameMode::ConnectionLost);
+        m_pLSock.reset();
+        m_pLSock.reset();
         return;
     }
 
@@ -10881,15 +10675,14 @@ void CGame::LogResponseHandler(char* pData)
 		for (i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
-				delete m_pCharList[i];
-				m_pCharList[i] = 0;
+				m_pCharList[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
 			pData + sizeof(hb::net::PacketLogCharacterListHeader));
 		for (i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
-			m_pCharList[i] = new class CCharInfo;
+			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
 			m_pCharList[i]->m_sAppr1 = entry.appr1;
 			m_pCharList[i]->m_sAppr2 = entry.appr2;
@@ -10903,7 +10696,7 @@ void CGame::LogResponseHandler(char* pData)
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3A");
 	}
@@ -10927,8 +10720,7 @@ void CGame::LogResponseHandler(char* pData)
 		for (i = 0; i < 4; i++)
 			if (m_pCharList[i] != 0)
 			{
-				delete m_pCharList[i];
-				m_pCharList[i] = 0;
+				m_pCharList[i].reset();
 			}
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
@@ -10936,7 +10728,7 @@ void CGame::LogResponseHandler(char* pData)
 		for (i = 0; i < m_iTotalChar; i++)
 		{
 			const auto& entry = entries[i];
-			m_pCharList[i] = new class CCharInfo;
+			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
 			m_pCharList[i]->m_sAppr1 = entry.appr1;
 			m_pCharList[i]->m_sAppr2 = entry.appr2;
@@ -10950,7 +10742,7 @@ void CGame::LogResponseHandler(char* pData)
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
-		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+		ChangeGameMode(GameMode::SelectCharacter);
 		ClearContents_OnSelectCharacter();
 	}
 	break;
@@ -10963,74 +10755,74 @@ void CGame::LogResponseHandler(char* pData)
 		m_iBlockMonth = pkt->block_month;
 		m_iBlockDay = pkt->block_day;
 
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7H");
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NOTENOUGHPOINT:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7I");
 		break;
 
 	case DEF_LOGRESMSGTYPE_ACCOUNTLOCKED:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7K");
 		break;
 
 	case DEF_LOGRESMSGTYPE_SERVICENOTAVAILABLE:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7L");
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6B");
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6C");
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDMISMATCH:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "11");
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "12");
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "54");
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "05");
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "06");
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGCHARACTER:
-		ChangeGameMode(DEF_GAMEMODE_ONMSG);
+		ChangeGameMode(GameMode::Msg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "Not existing character!");
 		break;
@@ -11045,13 +10837,13 @@ void CGame::LogResponseHandler(char* pData)
 
 		m_iTotalChar = list->total_chars;
 		for (i = 0; i < 4; i++)
-			if (m_pCharList[i] != 0) delete m_pCharList[i];
+			if (m_pCharList[i] != 0) m_pCharList[i].reset();
 
 		const auto* entries = reinterpret_cast<const hb::net::PacketLogCharacterEntry*>(
 			pData + sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
 		for (i = 0; i < m_iTotalChar; i++) {
 			const auto& entry = entries[i];
-			m_pCharList[i] = new class CCharInfo;
+			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
 			m_pCharList[i]->m_sAppr1 = entry.appr1;
 			m_pCharList[i]->m_sAppr2 = entry.appr2;
@@ -11065,26 +10857,26 @@ void CGame::LogResponseHandler(char* pData)
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "47");
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "28");
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGCHARACTER:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "29");
 		break;
 
 	case DEF_ENTERGAMERESTYPE_PLAYING:
-		ChangeGameMode(DEF_GAMEMODE_ONQUERYFORCELOGIN);
+		ChangeGameMode(GameMode::QueryForceLogin);
 		break;
 
 	case DEF_ENTERGAMERESTYPE_CONFIRM:
@@ -11100,7 +10892,7 @@ void CGame::LogResponseHandler(char* pData)
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
 
-		m_pGSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+		m_pGSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
 		m_pGSock->bInitBufferSize(30000);
 	}
@@ -11110,7 +10902,7 @@ void CGame::LogResponseHandler(char* pData)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
 		case 1:	strcpy(m_cMsg, "3E"); break;
@@ -11125,13 +10917,13 @@ void CGame::LogResponseHandler(char* pData)
 	break;
 
 	case DEF_ENTERGAMERESTYPE_FORCEDISCONN:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3X");
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGWORLDSERVER:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1Y");
 		break;
@@ -11140,7 +10932,7 @@ void CGame::LogResponseHandler(char* pData)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
 		case 1:	strcpy(m_cMsg, "8U"); break; //MainMenu, Keycode registration success
@@ -11153,25 +10945,25 @@ void CGame::LogResponseHandler(char* pData)
 	break;
 
 	case DEF_LOGRESMSGTYPE_FORCECHANGEPASSWORD:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6M");
 		break;
 
 	case DEF_LOGRESMSGTYPE_INVALIDKOREANSSN:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1a");
 		break;
 
 	case DEF_LOGRESMSGTYPE_LESSTHENFIFTEEN:
-		ChangeGameMode(DEF_GAMEMODE_ONLOGRESMSG);
+		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1b");
 		break;
 	}
-	delete m_pLSock;
-	m_pLSock = 0;
+	m_pLSock.reset();
+	m_pLSock.reset();
 }
 
 void CGame::LogRecvMsgHandler(char* pData)
@@ -11179,59 +10971,96 @@ void CGame::LogRecvMsgHandler(char* pData)
 	LogResponseHandler(pData);
 }
 
-void CGame::ChangeGameMode(char cMode)
+void CGame::ChangeGameMode(GameMode mode)
 {
-	m_cGameMode = cMode;
-	m_cGameModeCount = 0;
-	m_dwTime = G_dwGlobalTime;
+	// Determine if this mode change should be instant (no fade-out)
+	// Instant transitions are used for:
+	// - Error states that need immediate feedback
+	// - Transitions FROM loading/waiting states that don't need fade-outs
+	bool instant = false;
+
+	// Check if TARGET mode should be instant (error states)
+	switch (mode)
+	{
+	case GameMode::ConnectionLost:  // Error - show immediately
+	case GameMode::VersionNotMatch: // Error - show immediately
+	case GameMode::Msg:             // Error/info - show immediately
+	case GameMode::Quit:            // Already fading out visually
+		instant = true;
+		break;
+	default:
+		break;
+	}
+
+	// Check if CURRENT mode shouldn't have fade-out (loading/waiting states)
+	// Use manager's current mode as source of truth
+	if (!instant)
+	{
+		switch (GameModeManager::GetMode())
+		{
+		case GameMode::Loading:         // Loading screen - no fade needed
+		case GameMode::Connecting:      // Waiting screen - no fade needed
+		case GameMode::WaitingInitData: // Waiting screen - no fade needed
+		case GameMode::WaitingResponse: // Waiting screen - no fade needed
+			instant = true;
+			break;
+		default:
+			break;
+		}
+	}
+
+	// GameModeManager is the single source of truth
+	GameModeManager::ChangeMode(mode, instant);
+
+	// Immediately sync legacy variables after mode change
+	// This ensures that if the mode change happens mid-frame (during UpdateScreen),
+	// the new screen's initialization code (checking m_cGameModeCount == 0) will work
+	m_cGameMode = GameModeManager::GetModeValue();
+	m_cGameModeCount = GameModeManager::GetFrameCount();
 }
 
 void CGame::ReleaseUnusedSprites()
 {
-	int i;
-	for (i = 0; i < DEF_MAXSPRITES; i++)
-		if ((m_pSprite[i] != 0))
+	for (auto& [idx, spr] : m_pSprite)
+	{
+		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (m_pSprite[i]->IsLoaded() && !m_pSprite[i]->IsInUse())
-			{
-				if ((G_dwGlobalTime - m_pSprite[i]->GetLastAccessTime()) > 60000) m_pSprite[i]->Unload();
-			}
+			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+				spr->Unload();
 		}
-	for (i = 0; i < DEF_MAXTILES; i++)
-		if ((m_pTileSpr[i] != 0))
+	}
+	for(auto& [idx, spr] : m_pTileSpr)
+	{
+		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (m_pTileSpr[i]->IsLoaded() && !m_pTileSpr[i]->IsInUse())
-			{
-				if ((G_dwGlobalTime - m_pTileSpr[i]->GetLastAccessTime()) > 60000) m_pTileSpr[i]->Unload();
-			}
+			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+				spr->Unload();
 		}
-	for (i = 0; i < DEF_MAXEFFECTSPR; i++)
-		if ((m_pEffectSpr[i] != 0))
+	}
+	for (auto& [idx, spr] : m_pEffectSpr)
+	{
+		if (spr->IsLoaded() && !spr->IsInUse())
 		{
-			if (m_pEffectSpr[i]->IsLoaded() && !m_pEffectSpr[i]->IsInUse())
-			{
-				if ((G_dwGlobalTime - m_pEffectSpr[i]->GetLastAccessTime()) > 60000) m_pEffectSpr[i]->Unload();
-			}
+			if (GameClock::GetTimeMS() - spr->GetLastAccessTime() > 60000)
+				spr->Unload();
 		}
+	}
 
 	// Stale sound buffer release is now handled by AudioManager::Update()
-	AudioManager::Get().Update(G_dwGlobalTime);
+	AudioManager::Get().Update(GameClock::GetTimeMS());
 }
 
 void CGame::PutChatScrollList(char* pMsg, char cType)
 {
-	int i;
 	if (m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1] != 0)
 	{
-		delete m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1];
-		m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1] = 0;
+		m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1].reset();
 	}
-	for (i = DEF_MAXCHATSCROLLMSGS - 2; i >= 0; i--)
+	for (int i = DEF_MAXCHATSCROLLMSGS - 2; i >= 0; i--)
 	{
-		m_pChatScrollList[i + 1] = m_pChatScrollList[i];
-		m_pChatScrollList[i] = 0;
+		m_pChatScrollList[i + 1] = std::move(m_pChatScrollList[i]);
 	}
-	m_pChatScrollList[0] = new class CMsg(1, pMsg, cType);
+	m_pChatScrollList[0] = std::make_unique<CMsg>(1, pMsg, cType);
 }
 
 void CGame::ChatMsgHandler(char* pData)
@@ -11337,12 +11166,11 @@ void CGame::ChatMsgHandler(char* pData)
 	const char* cp = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
 	for (i = 1; i < DEF_MAXCHATMSGS; i++)
 		if (m_pChatMsgList[i] == 0) {
-			m_pChatMsgList[i] = new class CMsg(1, (char*)(cp), dwTime);
+			m_pChatMsgList[i] = std::make_unique<CMsg>(1, (char*)(cp), dwTime);
 			m_pChatMsgList[i]->m_iObjectID = iObjectID;
 
 			if (m_pMapData->bSetChatMsgOwner(iObjectID, sX, sY, i) == false) {
-				delete m_pChatMsgList[i];
-				m_pChatMsgList[i] = 0;
+				m_pChatMsgList[i].reset();
 			}
 
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
@@ -11362,27 +11190,23 @@ void CGame::ReleaseTimeoverChatMsg()
 
 			if ((m_pChatMsgList[i]->m_cType >= 1) && (m_pChatMsgList[i]->m_cType <= 20)) {
 				if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_A) {
-					delete m_pChatMsgList[i];
-					m_pChatMsgList[i] = 0;
+					m_pChatMsgList[i].reset();
 				}
 			}
 			else
 				if ((m_pChatMsgList[i]->m_cType >= 21) && (m_pChatMsgList[i]->m_cType <= 40)) {
 					if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_B) {
-						delete m_pChatMsgList[i];
-						m_pChatMsgList[i] = 0;
+						m_pChatMsgList[i].reset();
 					}
 				}
 				else
 					if ((m_pChatMsgList[i]->m_cType >= 41) && (m_pChatMsgList[i]->m_cType <= 60)) {
 						if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_C) {
-							delete m_pChatMsgList[i];
-							m_pChatMsgList[i] = 0;
+							m_pChatMsgList[i].reset();
 						}
 					}
 					else if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_A) {
-						delete m_pChatMsgList[i];
-						m_pChatMsgList[i] = 0;
+						m_pChatMsgList[i].reset();
 					}
 		}
 }
@@ -11423,8 +11247,8 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 
 	if (m_bIsCrusadeMode)
 	{
-		if (m_iConstructLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_iConstructLocX * 32 - m_sViewPointX, m_iConstructLocY * 32 - m_sViewPointY, 41);
-		if (m_iTeleportLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_iTeleportLocX * 32 - m_sViewPointX, m_iTeleportLocY * 32 - m_sViewPointY, 42);
+		if (m_pPlayer->m_iConstructLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_pPlayer->m_iConstructLocX * 32 - m_Camera.GetX(), m_pPlayer->m_iConstructLocY * 32 - m_Camera.GetY(), 41);
+		if (m_iTeleportLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_iTeleportLocX * 32 - m_Camera.GetX(), m_iTeleportLocY * 32 - m_Camera.GetY(), 42);
 	}
 }
 
@@ -11438,7 +11262,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (_tmp_sOwnerType == 35 /*|| _tmp_sOwnerType == 73 || _tmp_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -11453,100 +11277,100 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	else
 	{
-		iWeaponColor = (_tmp_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (_tmp_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (_tmp_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (_tmp_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (_tmp_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (_tmp_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (_tmp_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (_tmp_iApprColor & 0x0000000F);
+		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
-	iWeaponGlare = (_tmp_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (_tmp_sAppr4 & 0x0003);
-	if ((_tmp_iStatus & 0x10) != 0)
+	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
+	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if (memcmp(m_cPlayerName, _tmp_cName, 10) == 0) bInv = true;
-		else if (_iGetFOE(_tmp_iStatus) == 1) bInv = true;
+		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
 		else return invalidRect;
 	}
 
-	switch (_tmp_sOwnerType) {
+	switch (m_entityState.m_sOwnerType) {
 	case 1:
 	case 2:
 	case 3:
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (4 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (_tmp_sAppr1 & 0x000F) * 15 + 4;
-		iHairIndex = DEF_SPRID_HAIR_M + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 4;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (4 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 4;
+		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 4;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 4;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 4;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (_tmp_sAppr3 & 0x000F) * 15 + 4;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 4;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 4;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 4;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 4;
-		if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 4;
+		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 			iWeaponIndex = -1;
 		else
 		{
-			iWeaponIndex = DEF_SPRID_WEAPON_M + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (_tmp_cDir - 1);
+			iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
 		}
-		if ((_tmp_sAppr2 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_M + (_tmp_sAppr2 & 0x000F) * 8 + 6;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 6;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 4;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 4;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 4;
+		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 4;
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((_tmp_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		iBodyIndex = 500 + (_tmp_sOwnerType - 1) * 8 * 15 + (4 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (_tmp_sAppr1 & 0x000F) * 15 + 4;
-		iHairIndex = DEF_SPRID_HAIR_W + ((_tmp_sAppr1 & 0x0F00) >> 8) * 15 + 4;
-		if ((_tmp_sAppr4 & 0x80) == 0)
+		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (4 * 8);
+		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 4;
+		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 4;
+		if ((m_entityState.m_sAppr4 & 0x80) == 0)
 		{
-			if (((_tmp_sAppr3 & 0xF000) >> 12) == 0)
+			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((_tmp_sAppr3 & 0xF000) >> 12) * 15 + 4;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 4;
 		}
-		if ((_tmp_sAppr3 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (_tmp_sAppr3 & 0x000F) * 15 + 4;
-		if ((_tmp_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 4;
+		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((_tmp_sAppr3 & 0x0F00) >> 8) * 15 + 4;
-		if (((_tmp_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 4;
+		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((_tmp_sAppr4 & 0xF000) >> 12) * 15 + 4;
-		if (((_tmp_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 4;
+		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
 			iWeaponIndex = -1;
 		else
 		{
-			iWeaponIndex = DEF_SPRID_WEAPON_W + ((_tmp_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (_tmp_cDir - 1);
+			iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
 		}
-		if ((_tmp_sAppr2 & 0x000F) == 0)
+		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_W + (_tmp_sAppr2 & 0x000F) * 8 + 6;
-		if ((_tmp_sAppr4 & 0x0F00) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 6;
+		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((_tmp_sAppr4 & 0x0F00) >> 8) * 15 + 4;
-		if ((_tmp_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 4;
+		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((_tmp_sAppr3 & 0x00F0) >> 4) * 15 + 4;
+		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 4;
 		break;
 
 	default:
@@ -11561,47 +11385,47 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		break;
 	}
 	// Use smooth interpolated motion offsets
-	dx = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetX);
-	dy = static_cast<int>(m_pMapData->m_pData[_tmp_dX][_tmp_dY].m_motion.fCurrentOffsetY);
+	dx = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetX);
+	dy = static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetY);
 
 	// Simple offset - no frame-based adjustments for smooth interpolation
 	int fix_x = sX + dx;
 	int fix_y = sY + dy;
 
-	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, _tmp_cFrame);
+	if (m_bIsCrusadeMode) DrawObjectFOE(fix_x, fix_y, m_entityState.m_iFrame);
 
-	if (_tmp_iEffectType != 0)
+	if (m_entityState.m_iEffectType != 0)
 	{
-		switch (_tmp_iEffectType) {
-		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
-		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, _tmp_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
+		switch (m_entityState.m_iEffectType) {
+		case 1: m_pEffectSpr[26]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Attack Effect
+		case 2: m_pEffectSpr[27]->Draw(fix_x, fix_y, m_entityState.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break; // Special Ability: Protect Effect
 		}
 	}
 
 	if (bTrans == false)
 	{
-		CheckActiveAura(fix_x, fix_y, dwTime, _tmp_sOwnerType);
-		if (_cDrawingOrder[_tmp_cDir] == 1)
+		CheckActiveAura(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
+		if (_cDrawingOrder[m_entityState.m_iDir] == 1)
 		{
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -11617,156 +11441,156 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				//m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(sX+dx, sY+dy, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				//m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX+dx, sY+dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				else m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f)); // GM effect
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 		}
 		else
 		{
-			switch (_tmp_sOwnerType) { // Pas d'ombre pour ces mobs
+			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
 			case 35: // Energy Sphere
 			case 50: // TW
@@ -11782,271 +11606,216 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
 				{
 					if (sX < 50)
-						m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
-					else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Shadow());
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
 				}
 				break;
 			}
 
 			if (bInv == true)
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
-				if ((_tmp_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
-				else m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame);
+				if ((m_entityState.m_iStatus & 0x40) != 0)
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect().bottom);
+			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 0))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 0))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iUndiesIndex != -1)
 			{
-				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
-				m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
+				if (bInv) m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				m_pSprite[iUndiesIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 			}
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iPantsIndex != -1)
 			{
-				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iPantsColor == 0)
-						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
 				}
 			}
 
 			if (iArmArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmColor == 0)
-						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
 				}
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
-				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iBootsColor == 0)
-						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
 				}
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
-				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iArmorColor == 0)
-						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
 				}
 			}
 
 			if (iHelmIndex != -1)
 			{
-				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iHelmColor == 0)
-						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 2))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 2))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iShieldIndex != -1)
 			{
-				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iShieldColor == 0)
-						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
-					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (_tmp_cDir-1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
 				case 1: m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 2: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 
-			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[_tmp_cDir] == 1))
+			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 1))
 			{
-				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iMantleColor == 0)
-						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (_tmp_cDir - 1) * 8 + _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
 				}
 			}
 
 			if (iWeaponIndex != -1)
 			{
-				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Alpha(0.25f));
+				if (bInv) m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 				else
 				{
 					if (iWeaponColor == 0)
-						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
-				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
-				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
-				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
+				case 1: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
+				case 2: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
+				case 3: m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
 			}
 		}
 
-		if ((_tmp_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
-		DrawAngel(40 + (_tmp_cDir - 1), fix_x + 20, fix_y - 20, _tmp_cFrame % 4, dwTime);
-		CheckActiveAura2(fix_x, fix_y, dwTime, _tmp_sOwnerType);
+		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
+		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
 		// Centuu : Haste effect
-		if ((_tmp_iStatus & 0x40000) != 0) {
+		if ((m_entityState.m_iStatus & 0x40000) != 0) {
 			for (int i = 1; i <= 5; i++)
 			{
-				switch (_tmp_cDir) {
-				case 1: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 2: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 3: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 4: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x - (i * 5), fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 5: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x, fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 6: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y - (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 7: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y, _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 8: m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->Draw(fix_x + (i * 5), fix_y + (i * 5), _tmp_cFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				switch (m_entityState.m_iDir) {
+				case 1: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 2: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 3: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 4: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 5: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 6: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 7: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 8: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
 				}
 			}
 		}
 
 	}
-	else if (strlen(_tmp_cName) > 0)
+	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((_tmp_sOwnerType >= 1) && (_tmp_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, _tmp_cName, _tmp_iStatus);
-		else DrawNpcName(fix_x, fix_y, _tmp_sOwnerType, _tmp_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
 	}
 
-	if (_tmp_iChatIndex != 0)
+	if (m_entityState.m_iChatIndex != 0)
 	{
-		if ((m_pChatMsgList[_tmp_iChatIndex] != 0) && (m_pChatMsgList[_tmp_iChatIndex]->m_iObjectID == _tmp_wObjectID))
+		if ((m_pChatMsgList[m_entityState.m_iChatIndex] != 0) && (m_pChatMsgList[m_entityState.m_iChatIndex]->m_iObjectID == m_entityState.m_wObjectID))
 		{
-			m_pChatMsgList[_tmp_iChatIndex]->m_sX = fix_x;
-			m_pChatMsgList[_tmp_iChatIndex]->m_sY = fix_y;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sX = fix_x;
+			m_pChatMsgList[m_entityState.m_iChatIndex]->m_sY = fix_y;
 		}
 		else
 		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
 		}
 	}
-	_tmp_dx = dx;
-	_tmp_dy = dy;
-	return m_pSprite[iBodyIndex + (_tmp_cDir - 1)]->GetBoundRect();
-}
-
-void CGame::GetPlayerTurn()
-{
-	char cDir;
-	short sX, sY, sCnt1, sCnt2;
-	int   iError;
-
-	sX = m_sPlayerX;
-	sY = m_sPlayerY;
-	sCnt1 = 0;
-	m_cPlayerTurn = 0;
-	iError = 0;
-	while (1) {
-		cDir = cGetNextMoveDir(sX, sY, m_sCommX, m_sCommY);
-		if (cDir == 0) break;
-		switch (cDir) {
-		case 1: sY--;       break;
-		case 2: sX++; sY--; break;
-		case 3: sX++;       break;
-		case 4: sX++; sY++; break;
-		case 5: sY++;       break;
-		case 6: sX--; sY++; break;
-		case 7: sX--;       break;
-		case 8: sX--; sY--; break;
-		}
-		sCnt1++;
-		if (sCnt1 > 30) break;
-	}
-
-	sX = m_sPlayerX;
-	sY = m_sPlayerY;
-	sCnt2 = 0;
-	m_cPlayerTurn = 1;
-	iError = 0;
-	while (1) {
-		cDir = cGetNextMoveDir(sX, sY, m_sCommX, m_sCommY);
-		if (cDir == 0) break;
-		switch (cDir) {
-		case 1: sY--;       break;
-		case 2: sX++; sY--; break;
-		case 3: sX++;       break;
-		case 4: sX++; sY++; break;
-		case 5: sY++;       break;
-		case 6: sX--; sY++; break;
-		case 7: sX--;       break;
-		case 8: sX--; sY--; break;
-		}
-		sCnt2++;
-		if (sCnt2 > 30) break;
-	}
-
-	if (sCnt1 > sCnt2)
-		m_cPlayerTurn = 0;
-	else m_cPlayerTurn = 1;
+	m_entityState.m_iMoveOffsetX = dx;
+	m_entityState.m_iMoveOffsetY = dy;
+	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
@@ -12303,22 +12072,20 @@ void CGame::InitItemList(char* pData)
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0)
 		{
-			delete m_pItemList[i];
-			m_pItemList[i] = 0;
+			m_pItemList[i].reset();
 		}
 
 	for (i = 0; i < DEF_MAXBANKITEMS; i++)
 		if (m_pBankList[i] != 0)
 		{
-			delete m_pBankList[i];
-			m_pBankList[i] = 0;
+			m_pBankList[i].reset();
 		}
 
 	const auto* itemEntries = reinterpret_cast<const hb::net::PacketResponseItemListEntry*>(cp);
 	for (i = 0; i < cTotalItems; i++)
 	{
 		const auto& entry = itemEntries[i];
-		m_pItemList[i] = new class CItem;
+		m_pItemList[i] = std::make_unique<CItem>();
 		memcpy(m_pItemList[i]->m_cName, entry.name, 20);
 		m_pItemList[i]->m_dwCount = entry.count;
 		m_pItemList[i]->m_sX = 40;
@@ -12357,22 +12124,22 @@ void CGame::InitItemList(char* pData)
 			if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(STR)", 19) == 0)
 			{
 				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-				m_iAngelicStr = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
 			}
 			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(DEX)", 19) == 0)
 			{
 				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-				m_iAngelicDex = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
 			}
 			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(INT)", 19) == 0)
 			{
 				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-				m_iAngelicInt = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
 			}
 			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(MAG)", 19) == 0)
 			{
 				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-				m_iAngelicMag = 1 + iAngelValue;
+				m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
 			}
 		}
 	}
@@ -12384,15 +12151,14 @@ void CGame::InitItemList(char* pData)
 	for (i = 0; i < DEF_MAXBANKITEMS; i++)
 		if (m_pBankList[i] != 0)
 		{
-			delete m_pBankList[i];
-			m_pBankList[i] = 0;
+			m_pBankList[i].reset();
 		}
 
 	const auto* bankEntries = reinterpret_cast<const hb::net::PacketResponseBankItemEntry*>(cp);
 	for (i = 0; i < cTotalItems; i++)
 	{
 		const auto& entry = bankEntries[i];
-		m_pBankList[i] = new class CItem;
+		m_pBankList[i] = std::make_unique<CItem>();
 		memcpy(m_pBankList[i]->m_cName, entry.name, 20);
 		m_pBankList[i]->m_dwCount = entry.count;
 
@@ -12424,13 +12190,13 @@ void CGame::InitItemList(char* pData)
 	// Magic, Skill Mastery
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
 	{
-		m_cMagicMastery[i] = *cp;
+		m_pPlayer->m_iMagicMastery[i] = *cp;
 		cp++;
 	}
 
 	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
 	{
-		m_cSkillMastery[i] = (unsigned char)*cp;
+		m_pPlayer->m_iSkillMastery[i] = (unsigned char)*cp;
 		if (m_pSkillCfgList[i] != 0)
 			m_pSkillCfgList[i]->m_iLevel = (int)*cp;
 		cp++;
@@ -12628,21 +12394,21 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	int resx = 0;
 	short iconX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;
 	short iconY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
-	if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
+	if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 	{
-		if (m_iSuperAttackLeft > 0)
+		if (m_pPlayer->m_iSuperAttackLeft > 0)
 		{
 			if (Input::IsAltDown())
 				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX + 368 + resx + 7, iconY + 440 + resy, 3, SpriteLib::DrawParams::Alpha(0.5f));
-			wsprintf(G_cTxt, "%d", m_iSuperAttackLeft);
+			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
 			PutString_SprFont2(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 255, 255, 255);
 		}
 	}
 	else
 	{
-		if (m_iSuperAttackLeft > 0)
+		if (m_pPlayer->m_iSuperAttackLeft > 0)
 		{
-			wsprintf(G_cTxt, "%d", m_iSuperAttackLeft);
+			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
 			PutString_SprFont(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 10, 10, 10);
 		}
 	}
@@ -12656,17 +12422,17 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 	if (sType <= 3)
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
-		_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, (_tmp_sAppr1 & 0x000F));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x000F));
 	}
 	else
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
-		_GetHairColorRGB(((_tmp_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, (_tmp_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, (_tmp_sAppr1 & 0x000F));
+		_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x000F));
 	}
 }
 
@@ -12709,7 +12475,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		{
 			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX + 20;
 			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY + 20;
-			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sV1 = m_iLU_Point;
+			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sV1 = m_pPlayer->m_iLU_Point;
 		}
 		break;
 
@@ -12733,7 +12499,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 			sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
 			sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
 			EndInputString();
-			StartInputString(sX + 75, sY + 140, 21, m_cGuildName);
+			StartInputString(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
 		}
 		break;
 
@@ -12982,7 +12748,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		break;
 
 	case DialogBoxId::CrusadeJob:
-		if ((m_iHP <= 0) || (m_bCitizen == false)) return;
+		if ((m_pPlayer->m_iHP <= 0) || (m_pPlayer->m_bCitizen == false)) return;
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CrusadeJob) == false)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode = cType;
@@ -13035,7 +12801,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 
 	case DialogBoxId::MagicShop:
 		if (m_dialogBoxManager.IsEnabled(iBoxID) == false) {
-			if (m_cSkillMastery[4] == 0) {
+			if (m_pPlayer->m_iSkillMastery[4] == 0) {
 				m_dialogBoxManager.DisableDialogBox(DialogBoxId::MagicShop);
 				m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, 480, 0);
 				return;
@@ -13160,8 +12926,7 @@ void CGame::DisableDialogBox(int iBoxID)
 	case DialogBoxId::SaleMenu:
 		for (i = 0; i < DEF_MAXMENUITEMS; i++)
 			if (m_pItemForSaleList[i] != 0) {
-				delete m_pItemForSaleList[i];
-				m_pItemForSaleList[i] = 0;
+				m_pItemForSaleList[i].reset();
 			}
 		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 0;
 		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = 0; // v1.4
@@ -13267,12 +13032,12 @@ void CGame::DisableDialogBox(int iBoxID)
 		cStateChange1 = 0;
 		cStateChange2 = 0;
 		cStateChange3 = 0;
-		/*	m_cLU_Str = 0;
-			m_cLU_Vit = 0;
-			m_cLU_Dex = 0;
-			m_cLU_Int = 0;
-			m_cLU_Mag = 0;
-			m_cLU_Char = 0;*/
+		/*	m_pPlayer->m_wLU_Str = 0;
+			m_pPlayer->m_wLU_Vit = 0;
+			m_pPlayer->m_wLU_Dex = 0;
+			m_pPlayer->m_wLU_Int = 0;
+			m_pPlayer->m_wLU_Mag = 0;
+			m_pPlayer->m_wLU_Char = 0;*/
 		break;
 
 	}
@@ -13361,8 +13126,7 @@ void CGame::_LoadTextDlgContents(int cType)
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 	}
 	// cType
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -13390,7 +13154,7 @@ void CGame::_LoadTextDlgContents(int cType)
 	token = strtok(pContents, seps);
 	while (token != 0)
 	{
-		m_pMsgTextList[iIndex] = new class CMsg(0, token, 0);
+		m_pMsgTextList[iIndex] = std::make_unique<CMsg>(0, token, 0);
 		token = strtok(NULL, seps);
 		iIndex++;
 	}
@@ -13408,8 +13172,7 @@ int CGame::_iLoadTextDlgContents2(int iType)
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList2[i] != 0)
-			delete m_pMsgTextList2[i];
-		m_pMsgTextList2[i] = 0;
+			m_pMsgTextList2[i].reset();
 	}
 	// cType
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -13438,7 +13201,7 @@ int CGame::_iLoadTextDlgContents2(int iType)
 	token = strtok(pContents, seps);
 	while (token != 0)
 	{
-		m_pMsgTextList2[iIndex] = new class CMsg(0, token, 0);
+		m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, token, 0);
 		token = strtok(NULL, seps);
 		iIndex++;
 	}
@@ -13457,8 +13220,7 @@ void CGame::_LoadGameMsgTextContents()
 
 	for (i = 0; i < DEF_MAXGAMEMSGS; i++) {
 		if (m_pGameMsgList[i] != 0)
-			delete m_pGameMsgList[i];
-		m_pGameMsgList[i] = 0;
+			m_pGameMsgList[i].reset();
 	}
 
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -13488,7 +13250,7 @@ void CGame::_LoadGameMsgTextContents()
 
 	token = strtok(pContents, seps);
 	while (token != 0) {
-		m_pGameMsgList[iIndex] = new class CMsg(0, token, 0);
+		m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token, 0);
 		token = strtok(NULL, seps);
 		iIndex++;
 	}
@@ -13637,7 +13399,7 @@ void CGame::ShowReceivedString(bool bIsHide)
 			if (G_cTxt[i] != 0) G_cTxt[i] = '*';
 	}
 
-	if ((G_dwGlobalTime % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
+	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
 
 	PutString(m_iInputX + 1, m_iInputY + 1, G_cTxt, RGB(0, 0, 0));
 	PutString(m_iInputX, m_iInputY + 1, G_cTxt, RGB(0, 0, 0));
@@ -13680,8 +13442,6 @@ void CGame::ReceiveString(char* pString)
 
 void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey, bool bIsTrans)
 {
-	uint32_t dwTime = G_dwGlobalTime;
-
 	if (m_pSprite[cType] == 0) return;
 	if (bIsNoColorKey == false)
 	{
@@ -13694,9 +13454,7 @@ void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoC
 
 void CGame::SetCameraShakingEffect(short sDist, int iMul)
 {
-	int iDegree;
-
-	iDegree = 5 - sDist;
+	int iDegree = 5 - sDist;
 	if (iDegree <= 0) iDegree = 0;
 	iDegree *= 2;
 
@@ -13704,7 +13462,7 @@ void CGame::SetCameraShakingEffect(short sDist, int iMul)
 
 	if (iDegree <= 2) return;
 
-	m_iCameraShakingDegree = iDegree;
+	m_Camera.SetShake(iDegree);
 }
 
 void CGame::MeteorStrikeComing(int iCode)
@@ -13727,7 +13485,7 @@ void CGame::MeteorStrikeComing(int iCode)
 
 void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 {
-	if (_iGetFOE(_tmp_iStatus) < 0) // red crusade circle
+	if (_iGetFOE(m_entityState.m_iStatus) < 0) // red crusade circle
 	{
 		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 	}
@@ -13739,7 +13497,7 @@ void CGame::SetTopMsg(char* pString, unsigned char iLastSec)
 	strcpy(m_cTopMsg, pString);
 
 	m_iTopMsgLastSec = iLastSec;
-	m_dwTopMsgTime = G_dwGlobalTime;
+	m_dwTopMsgTime = GameClock::GetTimeMS();
 }
 
 void CGame::DrawTopMsg()
@@ -13747,10 +13505,10 @@ void CGame::DrawTopMsg()
 	if (strlen(m_cTopMsg) == 0) return;
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
 
-	if ((((G_dwGlobalTime - m_dwTopMsgTime) / 250) % 2) == 0)
+	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
 		PutAlignedString(0, LOGICAL_MAX_X, 10, m_cTopMsg, 255, 255, 0);
 
-	if (G_dwGlobalTime > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
+	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
 	}
 }
@@ -13763,7 +13521,7 @@ void CGame::CannotConstruct(int iCode)
 		break;
 
 	case 2: //
-		wsprintf(G_cTxt, "%s XY(%d, %d)", m_pGameMsgList[19]->m_pMsg, m_iConstructLocX, m_iConstructLocY);
+		wsprintf(G_cTxt, "%s XY(%d, %d)", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
 		SetTopMsg(G_cTxt, 5);
 		break;
 
@@ -13814,27 +13572,26 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 	}
 	if (iWarContribution > 0)
 	{
 		PlaySound('E', 23, 0, 0);
 		PlaySound('C', 21, 0, 0);
 		PlaySound('C', 22, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[22]->m_pMsg, 0); // Congratulations! Your nation
-		m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[23]->m_pMsg, 0); // was victory in the battle!
-		m_pMsgTextList[2] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[3] = new class CMsg(0, m_pGameMsgList[24]->m_pMsg, 0); // As a victorious citizen
-		m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[25]->m_pMsg, 0); // You will receive
-		m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[26]->m_pMsg, 0); // a prize
-		m_pMsgTextList[6] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[22]->m_pMsg, 0); // Congratulations! Your nation
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[23]->m_pMsg, 0); // was victory in the battle!
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, m_pGameMsgList[24]->m_pMsg, 0); // As a victorious citizen
+		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[25]->m_pMsg, 0); // You will receive
+		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[26]->m_pMsg, 0); // a prize
+		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
 		std::memset(cTemp, 0, sizeof(cTemp));											//
 		wsprintf(cTemp, "+%dExp Points!", iWarContribution);
-		m_pMsgTextList[8] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[8] = std::make_unique<CMsg>(0, cTemp, 0);
 		for (i = 9; i < 18; i++)
-			m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 
 	}
 	else if (iWarContribution < 0)
@@ -13842,31 +13599,31 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		PlaySound('E', 24, 0, 0);
 		PlaySound('C', 12, 0, 0);
 		PlaySound('C', 13, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[28]->m_pMsg, 0); // Unfortunately! Your country
-		m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[29]->m_pMsg, 0); // have lost the all out war.
-		m_pMsgTextList[2] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[3] = new class CMsg(0, m_pGameMsgList[30]->m_pMsg, 0); // As a losser citizen;
-		m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[31]->m_pMsg, 0); // the prize that accomplishes
-		m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[32]->m_pMsg, 0); // will not be given.
-		m_pMsgTextList[6] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[33]->m_pMsg, 0); // I hope you to win
-		m_pMsgTextList[8] = new class CMsg(0, m_pGameMsgList[34]->m_pMsg, 0); // in the next battle
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[28]->m_pMsg, 0); // Unfortunately! Your country
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[29]->m_pMsg, 0); // have lost the all out war.
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, m_pGameMsgList[30]->m_pMsg, 0); // As a losser citizen;
+		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[31]->m_pMsg, 0); // the prize that accomplishes
+		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[32]->m_pMsg, 0); // will not be given.
+		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[33]->m_pMsg, 0); // I hope you to win
+		m_pMsgTextList[8] = std::make_unique<CMsg>(0, m_pGameMsgList[34]->m_pMsg, 0); // in the next battle
 		for (i = 9; i < 18; i++)
-			m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else if (iWarContribution == 0)
 	{
 		PlaySound('E', 25, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[50]->m_pMsg, 0); // The battle that you have participated
-		m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[51]->m_pMsg, 0); // is already finished;
-		m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[52]->m_pMsg, 0); //
-		m_pMsgTextList[3] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[53]->m_pMsg, 0); // You must connect after finishing
-		m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[54]->m_pMsg, 0); // the previous and before starting
-		m_pMsgTextList[6] = new class CMsg(0, m_pGameMsgList[55]->m_pMsg, 0); // the next battle so you can receive
-		m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[56]->m_pMsg, 0); // the prize
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[50]->m_pMsg, 0); // The battle that you have participated
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[51]->m_pMsg, 0); // is already finished;
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[52]->m_pMsg, 0); //
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[53]->m_pMsg, 0); // You must connect after finishing
+		m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[54]->m_pMsg, 0); // the previous and before starting
+		m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[55]->m_pMsg, 0); // the next battle so you can receive
+		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[56]->m_pMsg, 0); // the prize
 		for (i = 8; i < 18; i++)
-			m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 }
@@ -13878,51 +13635,50 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 	}
-	if (m_bCitizen == false) iPlayerSide = 0;
-	else if (m_bAresden == true) iPlayerSide = 1;
-	else if (m_bAresden == false) iPlayerSide = 2;
+	if (m_pPlayer->m_bCitizen == false) iPlayerSide = 0;
+	else if (m_pPlayer->m_bAresden == true) iPlayerSide = 1;
+	else if (m_pPlayer->m_bAresden == false) iPlayerSide = 2;
 	if (iPlayerSide == 0)
 	{
 		switch (iWinnerSide) {
 		case 0:
 			PlaySound('E', 25, 0, 0);
-			m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
-			m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
-			m_pMsgTextList[3] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
+			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
+			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 1:
 			PlaySound('E', 25, 0, 0);
-			m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious
-			m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-			m_pMsgTextList[3] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious
+			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
+			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 2:
 			PlaySound('E', 25, 0, 0);
-			m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-			m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-			m_pMsgTextList[3] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
+			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
+			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		}
 		for (i = 4; i < 18; i++)
-			m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else
 	{
 		if (iWinnerSide == 0)
 		{
 			PlaySound('E', 25, 0, 0);
-			m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-			m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
-			m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
-			m_pMsgTextList[3] = new class CMsg(0, " ", 0);
+			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
+			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
+			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			for (i = 4; i < 18; i++)
-				m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+				m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 		}
 		else
 		{
@@ -13933,28 +13689,28 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 				PlaySound('C', 22, 0, 0);
 				switch (iWinnerSide) {
 				case 1:
-					m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!;
-					m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
-					m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = new class CMsg(0, " ", 0);
-					m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
-					m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
-					m_pMsgTextList[6] = new class CMsg(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
-					m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
+					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!;
+					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
+					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
+					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
+					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
+					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
+					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
 					break;
 				case 2:
-					m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-					m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = new class CMsg(0, " ", 0);
-					m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
-					m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
-					m_pMsgTextList[6] = new class CMsg(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
-					m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
+					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
+					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
+					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[42]->m_pMsg, 0); // Congratulations!
+					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[43]->m_pMsg, 0); // As a victorious citizen
+					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[44]->m_pMsg, 0); // You will receive
+					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[45]->m_pMsg, 0); // a prize
 					break;
 				}
 				for (i = 8; i < 18; i++)
-					m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else if (iWinnerSide != iPlayerSide)
 			{
@@ -13963,28 +13719,28 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 				PlaySound('C', 13, 0, 0);
 				switch (iWinnerSide) {
 				case 1:
-					m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
-					m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = new class CMsg(0, " ", 0);
-					m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
-					m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
-					m_pMsgTextList[6] = new class CMsg(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
-					m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
+					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious;
+					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
+					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
+					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
+					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
+					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
 					break;
 				case 2:
-					m_pMsgTextList[0] = new class CMsg(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
-					m_pMsgTextList[1] = new class CMsg(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
-					m_pMsgTextList[2] = new class CMsg(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
-					m_pMsgTextList[3] = new class CMsg(0, " ", 0);
-					m_pMsgTextList[4] = new class CMsg(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
-					m_pMsgTextList[5] = new class CMsg(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
-					m_pMsgTextList[6] = new class CMsg(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
-					m_pMsgTextList[7] = new class CMsg(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
+					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
+					m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
+					m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
+					m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
+					m_pMsgTextList[4] = std::make_unique<CMsg>(0, m_pGameMsgList[46]->m_pMsg, 0); // Unfortunately,
+					m_pMsgTextList[5] = std::make_unique<CMsg>(0, m_pGameMsgList[47]->m_pMsg, 0); // As a losser citizen
+					m_pMsgTextList[6] = std::make_unique<CMsg>(0, m_pGameMsgList[48]->m_pMsg, 0); // the prize that accomplishes
+					m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[49]->m_pMsg, 0); // will not be given.
 					break;
 				}
 				for (i = 8; i < 18; i++)
-					m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 		}
 	}
@@ -13997,11 +13753,9 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 void CGame::_Draw_UpdateScreen_OnCreateNewAccount()
 {
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, SCREENX, SCREENY, 0, true);
-	PutString2(329 + SCREENX, 110 + SCREENY, m_cAccountName, 200, 200, 200);
-	PutString(329 + SCREENX, 125 + SCREENY, m_cAccountPassword, RGB(200, 200, 200), true, 1);
-	PutString(329 + SCREENX, 140 + SCREENY, m_cAccountPassword, RGB(200, 200, 200), true, 1);
-	PutString2(300 + SCREENX, 202 + SCREENY, m_cAccountCountry, 200, 200, 200);
-	PutString2(300 + SCREENX, 218 + SCREENY, m_cAccountSSN, 200, 200, 200);
+	PutString2(329 + SCREENX, 110 + SCREENY, m_pPlayer->m_cAccountName, 200, 200, 200);
+	PutString(329 + SCREENX, 125 + SCREENY, m_pPlayer->m_cAccountPassword, RGB(200, 200, 200), true, 1);
+	PutString(329 + SCREENX, 140 + SCREENY, m_pPlayer->m_cAccountPassword, RGB(200, 200, 200), true, 1);
 	PutString2(194 + SCREENX, 257 + SCREENY, m_cEmailAddr, 200, 200, 200);
 }
 
@@ -14258,7 +14012,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 
@@ -14270,17 +14024,17 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		{
 			if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 			{
-				std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-				strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-				m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-				if (CMisc::bCheckValidString(m_cPlayerName) == true)
+				std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+				strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+				m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+				if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
 				{
 					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-					m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+					m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 					m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 					m_pLSock->bInitBufferSize(30000);
-					ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+					ChangeGameMode(GameMode::Connecting);
 					m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 					m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 					std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -14293,7 +14047,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		}
 		else
 		{
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+			ChangeGameMode(GameMode::CreateNewCharacter);
 			return;
 		}
 	}
@@ -14327,7 +14081,6 @@ void CGame::UpdateScreen_OnSelectCharacter()
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
 	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 		PlaySound('E', 14, 5);
@@ -14357,17 +14110,17 @@ void CGame::UpdateScreen_OnSelectCharacter()
 				{
 					if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 					{
-						std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-						strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-						m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-						if (CMisc::bCheckValidString(m_cPlayerName) == true)
+						std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+						strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+						m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+						if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
 						{
 							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-							m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+							m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 							m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 							m_pLSock->bInitBufferSize(30000);
-							ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+							ChangeGameMode(GameMode::Connecting);
 							m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 							m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 							std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -14380,7 +14133,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 				}
 				else
 				{
-					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+					ChangeGameMode(GameMode::CreateNewCharacter);
 					return;
 				}
 			}
@@ -14391,17 +14144,17 @@ void CGame::UpdateScreen_OnSelectCharacter()
 			{
 				if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 				{
-					std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-					strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-					m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+					std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+					strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+					m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
-					if (CMisc::bCheckValidString(m_cPlayerName) == true) {
+					if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true) {
 						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-						m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+						m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 						m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 						m_pLSock->bInitBufferSize(30000);
-						ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+						ChangeGameMode(GameMode::Connecting);
 						m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 						m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 						std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -14417,7 +14170,7 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		case 6:
 			if (m_iTotalChar < 4)
 			{
-				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+				ChangeGameMode(GameMode::CreateNewCharacter);
 				return;
 			}
 			break;
@@ -14425,18 +14178,18 @@ void CGame::UpdateScreen_OnSelectCharacter()
 		case 7:
 			if (m_pCharList[m_cCurFocus - 1] != 0)
 			{
-				ChangeGameMode(DEF_GAMEMODE_ONQUERYDELETECHARACTER);
+				ChangeGameMode(GameMode::QueryDeleteCharacter);
 				m_wEnterGameType = m_cCurFocus;
 				return;
 			}
 			break;
 
 		case 8:
-			ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD);
+			ChangeGameMode(GameMode::ChangePassword);
 			return;
 
 		case 9:
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -14461,7 +14214,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))	cEquipPoiStatus[m_pItemList[i]->m_cEquipPos] = i;
 	}
 
-	if ((m_sPlayerType >= 1) && (m_sPlayerType <= 3))
+	if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 3))
 	{
 		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
 		{
@@ -14593,7 +14346,7 @@ bool CGame::bDlgBoxPress_Character(short msX, short msY)
 			}
 		}
 	}
-	else if ((m_sPlayerType >= 4) && (m_sPlayerType <= 6))
+	else if ((m_pPlayer->m_sPlayerType >= 4) && (m_pPlayer->m_sPlayerType <= 6))
 	{
 		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
 		{
@@ -14751,33 +14504,33 @@ void CGame::CivilRightAdmissionHandler(char* pData)
 		memcpy(m_cLocation, pkt->location, 10);
 		if (memcmp(m_cLocation, "aresden", 7) == 0)
 		{
-			m_bAresden = true;
-			m_bCitizen = true;
-			m_bHunter = false;
+			m_pPlayer->m_bAresden = true;
+			m_pPlayer->m_bCitizen = true;
+			m_pPlayer->m_bHunter = false;
 		}
 		else if (memcmp(m_cLocation, "arehunter", 9) == 0)
 		{
-			m_bAresden = true;
-			m_bCitizen = true;
-			m_bHunter = true;
+			m_pPlayer->m_bAresden = true;
+			m_pPlayer->m_bCitizen = true;
+			m_pPlayer->m_bHunter = true;
 		}
 		else if (memcmp(m_cLocation, "elvine", 6) == 0)
 		{
-			m_bAresden = false;
-			m_bCitizen = true;
-			m_bHunter = false;
+			m_pPlayer->m_bAresden = false;
+			m_pPlayer->m_bCitizen = true;
+			m_pPlayer->m_bHunter = false;
 		}
 		else if (memcmp(m_cLocation, "elvhunter", 9) == 0)
 		{
-			m_bAresden = false;
-			m_bCitizen = true;
-			m_bHunter = true;
+			m_pPlayer->m_bAresden = false;
+			m_pPlayer->m_bCitizen = true;
+			m_pPlayer->m_bHunter = true;
 		}
 		else
 		{
-			m_bAresden = true;
-			m_bCitizen = false;
-			m_bHunter = true;
+			m_pPlayer->m_bAresden = true;
+			m_pPlayer->m_bCitizen = false;
+			m_pPlayer->m_bHunter = true;
 		}
 		break;
 	}
@@ -14789,8 +14542,7 @@ void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
 
 	for (i = 1; i < DEF_MAXCHATMSGS; i++)
 		if ((m_pChatMsgList[i] != 0) && (m_pChatMsgList[i]->m_iObjectID == iObjectID)) {
-			delete m_pChatMsgList[i];
-			m_pChatMsgList[i] = 0;
+			m_pChatMsgList[i].reset();
 		}
 }
 
@@ -14864,7 +14616,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 		{
 			if (m_pItemList[i]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
 			{
-				wWeaponType = ((m_sPlayerAppr2 & 0x0FF0) >> 4);
+				wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
 				// Snoopy 34 for all wands.
 				if ((wWeaponType >= 34) && (wWeaponType < 40)) return false;
 				//else if( wWeaponType == 27 ) return false; // Farming's hoe !
@@ -14912,7 +14664,7 @@ int CGame::_iGetTotalItemNum()
 bool CGame::bCheckExID(char* pName)
 {
 	if (m_pExID == 0) return false;
-	if (memcmp(m_cPlayerName, pName, 10) == 0) return false;
+	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0) return false;
 	char cTxt[12];
 	std::memset(cTxt, 0, sizeof(cTxt));
 	memcpy(cTxt, m_pExID->m_pMsg, strlen(m_pExID->m_pMsg));
@@ -14946,15 +14698,15 @@ void CGame::DrawWhetherEffects()
 		{
 			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 20) && (m_stWhetherObject[i].sX != 0))
 			{
-				dX = m_stWhetherObject[i].sX - m_sViewPointX;
-				dY = m_stWhetherObject[i].sY - m_sViewPointY;
+				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
+				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
 				cTempFrame = 16 + (m_stWhetherObject[i].cStep / 6);
 				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 			else if ((m_stWhetherObject[i].cStep >= 20) && (m_stWhetherObject[i].cStep < 25) && (m_stWhetherObject[i].sX != 0))
 			{
-				dX = m_stWhetherObject[i].sX - m_sViewPointX;
-				dY = m_stWhetherObject[i].sY - m_sViewPointY;
+				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
+				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
 				m_pEffectSpr[11]->Draw(dX, dY, m_stWhetherObject[i].cStep, SpriteLib::DrawParams::Alpha(0.5f));
 			}
 		}
@@ -14972,8 +14724,8 @@ void CGame::DrawWhetherEffects()
 		{
 			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 80))
 			{
-				dX = m_stWhetherObject[i].sX - m_sViewPointX;
-				dY = m_stWhetherObject[i].sY - m_sViewPointY;
+				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
+				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
 
 				// Snoopy: Snow on lower bar
 				if (dY >= 460)
@@ -15076,11 +14828,11 @@ void CGame::WhetherObjectFrameCounter()
 				m_stWhetherObject[i].sY = m_stWhetherObject[i].sY + cAdd;
 
 				//Snoopy: Snow on lower bar
-				if (m_stWhetherObject[i].sY > (426 + m_sViewPointY))
+				if (m_stWhetherObject[i].sY > (426 + m_Camera.GetY()))
 				{
-					m_stWhetherObject[i].sY = 470 + m_sViewPointY;
+					m_stWhetherObject[i].sY = 470 + m_Camera.GetY();
 					if ((rand() % 10) != 2) m_stWhetherObject[i].cStep--;
-					if (m_stWhetherObject[i].sBX == 0) m_stWhetherObject[i].sBX = m_stWhetherObject[i].sX - m_sViewPointX;
+					if (m_stWhetherObject[i].sBX == 0) m_stWhetherObject[i].sBX = m_stWhetherObject[i].sX - m_Camera.GetX();
 
 				}
 				else m_stWhetherObject[i].sX += 1 - (rand() % 3);
@@ -15571,58 +15323,58 @@ bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
 int CGame::_iGetAttackType()
 {
 	uint16_t wWeaponType;
-	wWeaponType = ((m_sPlayerAppr2 & 0x0FF0) >> 4);
+	wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
 	if (wWeaponType == 0)
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[5] >= 100)) return 20;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[5] >= 100)) return 20;
 		else return 1;		// Boxe
 	}
 	else if ((wWeaponType >= 1) && (wWeaponType <= 2))
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[7] >= 100)) return 21;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[7] >= 100)) return 21;
 		else return 1;		//Dag, SS
 	}
 	else if ((wWeaponType > 2) && (wWeaponType < 20))
 	{
 		if ((wWeaponType == 7) || (wWeaponType == 18)) // Added Kloness Esterk
 		{
-			if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[9] >= 100)) return 22;
+			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[9] >= 100)) return 22;
 			else return 1;  // Esterk
 		}
 		else if (wWeaponType == 15)
 		{
-			if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[8] >= 100)) return 30;
+			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 30;
 			else return 5;  // StormBlade
 		}
 		else
 		{
-			if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[8] >= 100)) return 23;
+			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
 			else return 1;	// LongSwords
 		}
 	}
 	else if ((wWeaponType >= 20) && (wWeaponType < 29))
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[10] >= 100)) return 24;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[10] >= 100)) return 24;
 		else return 1;		// Haches
 	}
 	else if ((wWeaponType >= 30) && (wWeaponType < 33))
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[14] >= 100)) return 26;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[14] >= 100)) return 26;
 		else return 1;		// Hammers
 	}
 	else if ((wWeaponType >= 34) && (wWeaponType < 40))
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[21] >= 100)) return 27;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[21] >= 100)) return 27;
 		else return 1;		// Wands
 	}
 	else if (wWeaponType >= 40)
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[6] >= 100)) return 25;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[6] >= 100)) return 25;
 		else return 2;		// Bows
 	}
 	else if ((wWeaponType == 29) || (wWeaponType == 33))
 	{
-		if ((m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true) && (m_cSkillMastery[8] >= 100)) return 23;
+		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
 		else return 1;		// LS
 	}
 	return 0;
@@ -15631,7 +15383,7 @@ int CGame::_iGetAttackType()
 int CGame::_iGetWeaponSkillType()
 {
 	uint16_t wWeaponType;
-	wWeaponType = ((m_sPlayerAppr2 & 0x0FF0) >> 4);
+	wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
 	if (wWeaponType == 0)
 	{
 		return 5; // Openhand
@@ -15676,7 +15428,7 @@ int CGame::_iGetWeaponSkillType()
 void CGame::bItemDrop_ExchangeDialog(short msX, short msY)
 {
 	char cItemID;
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	if (m_stDialogBoxExchangeInfo[3].sV1 != -1) return; //Do not accept item's drop if already 4 items.
 
 	cItemID = (char)CursorTarget::GetSelectedID();
@@ -15686,8 +15438,8 @@ void CGame::bItemDrop_ExchangeDialog(short msX, short msY)
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = msY - 70;
 		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0) m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_sPlayerX + 1;
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_sPlayerY + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_pPlayer->m_sPlayerX + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_pPlayer->m_sPlayerY + 1;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = 1000;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = cItemID;
 		//m_dialogBoxManager.Info(DialogBoxId::Exchange).sView = cItemID;
@@ -15742,8 +15494,7 @@ bool CGame::_bDecodeBuildItemContents()
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pBuildItemList[i] != 0)
 		{
-			delete m_pBuildItemList[i];
-			m_pBuildItemList[i] = 0;
+			m_pBuildItemList[i].reset();
 		}
 
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -15783,17 +15534,16 @@ bool CGame::_bCheckBuildItemStatus()
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pDispBuildItemList[i] != 0)
 		{
-			delete m_pDispBuildItemList[i];
-			m_pDispBuildItemList[i] = 0;
+			m_pDispBuildItemList[i].reset();
 		}
 	iIndex = 0;
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pBuildItemList[i] != 0)
 		{	// Skill-Limit
-			if (m_cSkillMastery[13] >= m_pBuildItemList[i]->m_iSkillLimit)
+			if (m_pPlayer->m_iSkillMastery[13] >= m_pBuildItemList[i]->m_iSkillLimit)
 			{
 				iMatch = 0;
-				m_pDispBuildItemList[iIndex] = new class CBuildItem;
+				m_pDispBuildItemList[iIndex] = std::make_unique<CBuildItem>();
 				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, 20);
 
 				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, 20);
@@ -16116,7 +15866,7 @@ bool CGame::__bDecodeBuildItemContents(char* pBuffer)
 			{
 				cReadModeA = 1;
 				cReadModeB = 1;
-				m_pBuildItemList[iIndex] = new class CBuildItem;
+				m_pBuildItemList[iIndex] = std::make_unique<CBuildItem>();
 			}
 		}
 		token = strtok(NULL, seps);
@@ -16634,7 +16384,7 @@ void CGame::NoticementHandler(char* pData)
 int CGame::_iGetFOE(int iStatus)
 {
 	bool bPK, bCitizen, bAresden, bHunter;
-	if (m_iPKCount != 0) return -1;
+	if (m_pPlayer->m_iPKCount != 0) return -1;
 	//	CLEROTH			0x00000000 status is int NOT short ( 3.51 )
 	if (iStatus & 0x80000000) bPK = true;
 	else bPK = false;
@@ -16646,13 +16396,13 @@ int CGame::_iGetFOE(int iStatus)
 	else bHunter = false;
 	if (bPK == true) return -2;
 	if (bCitizen == false) return 0;
-	if (m_bCitizen == false) return 0;
-	if ((m_bAresden == true) && (bAresden == true)) return 1;
-	if ((m_bAresden == false) && (bAresden == false)) return 1;
+	if (m_pPlayer->m_bCitizen == false) return 0;
+	if ((m_pPlayer->m_bAresden == true) && (bAresden == true)) return 1;
+	if ((m_pPlayer->m_bAresden == false) && (bAresden == false)) return 1;
 	if (m_bIsCrusadeMode == true) return -1;
 	else
 	{
-		if ((m_bHunter == false) && (bHunter == false)) return -1;
+		if ((m_pPlayer->m_bHunter == false) && (bHunter == false)) return -1;
 		else return 0;
 	}
 }
@@ -16664,7 +16414,7 @@ void CGame::_SetIlusionEffect(int iOwnerH)
 	m_iIlusionOwnerH = iOwnerH;
 
 	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
-	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_sAppr1_IE, &m_sAppr2_IE, &m_sAppr3_IE, &m_sAppr4_IE, &m_iStatus_IE, &m_iApprColor_IE, m_cName_IE);
+	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_sAppr1_IE, &m_pPlayer->m_sAppr2_IE, &m_pPlayer->m_sAppr3_IE, &m_pPlayer->m_sAppr4_IE, &m_pPlayer->m_iStatus_IE, &m_pPlayer->m_iApprColor_IE, m_cName_IE);
 }
 
 void CGame::ResponsePanningHandler(char* pData)
@@ -16679,21 +16429,19 @@ void CGame::ResponsePanningHandler(char* pData)
 	cDir = static_cast<char>(pkt->dir);
 
 	switch (cDir) {
-	case 1: m_sViewDstY -= 32; m_sPlayerY--; break;
-	case 2: m_sViewDstY -= 32; m_sPlayerY--; m_sViewDstX += 32; m_sPlayerX++; break;
-	case 3: m_sViewDstX += 32; m_sPlayerX++; break;
-	case 4: m_sViewDstY += 32; m_sPlayerY++; m_sViewDstX += 32; m_sPlayerX++; break;
-	case 5: m_sViewDstY += 32; m_sPlayerY++; break;
-	case 6: m_sViewDstY += 32; m_sPlayerY++; m_sViewDstX -= 32; m_sPlayerX--; break;
-	case 7: m_sViewDstX -= 32; m_sPlayerX--; break;
-	case 8: m_sViewDstY -= 32; m_sPlayerY--; m_sViewDstX -= 32; m_sPlayerX--; break;
+	case 1: m_Camera.MoveDestination(0, -32); m_pPlayer->m_sPlayerY--; break;
+	case 2: m_Camera.MoveDestination(32, -32); m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++; break;
+	case 3: m_Camera.MoveDestination(32, 0); m_pPlayer->m_sPlayerX++; break;
+	case 4: m_Camera.MoveDestination(32, 32); m_pPlayer->m_sPlayerY++; m_pPlayer->m_sPlayerX++; break;
+	case 5: m_Camera.MoveDestination(0, 32); m_pPlayer->m_sPlayerY++; break;
+	case 6: m_Camera.MoveDestination(-32, 32); m_pPlayer->m_sPlayerY++; m_pPlayer->m_sPlayerX--; break;
+	case 7: m_Camera.MoveDestination(-32, 0); m_pPlayer->m_sPlayerX--; break;
+	case 8: m_Camera.MoveDestination(-32, -32); m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX--; break;
 	}
 
 	m_pMapData->ShiftMapData(cDir);
 	const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponsePanningHeader);
 	_ReadMapData(sX, sY, mapData);
-
-	m_bIsRedrawPDBGS = true;
 
 	m_bIsObserverCommanded = false;
 }
@@ -16770,17 +16518,17 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 	PutString(100 + SCREENX, 343 + SCREENY, DEF_MSG_MAGIC, RGB(5, 5, 5));//"Magic"
 	PutString(100 + SCREENX, 360 + SCREENY, DEF_MSG_CHARISMA, RGB(5, 5, 5));//"Charisma"
 
-	wsprintf(G_cTxt, "%d", m_ccStr);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModStr);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
-	wsprintf(G_cTxt, "%d", m_ccVit);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModVit);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
-	wsprintf(G_cTxt, "%d", m_ccDex);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModDex);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
-	wsprintf(G_cTxt, "%d", m_ccInt);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModInt);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
-	wsprintf(G_cTxt, "%d", m_ccMag);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModMag);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
-	wsprintf(G_cTxt, "%d", m_ccChr);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModChr);
 	PutString(204 + SCREENX, 277 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
 
 	if (strlen(pName) <= 0) bFlag = false;
@@ -16813,40 +16561,40 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 
 	ShowReceivedString();
 
-	switch (m_cGender) {
-	case 1:	_tmp_sOwnerType = 1; break;
-	case 2:	_tmp_sOwnerType = 4; break; //@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!
+	switch (m_pPlayer->m_iGender) {
+	case 1:	m_entityState.m_sOwnerType = 1; break;
+	case 2:	m_entityState.m_sOwnerType = 4; break; //@@@@@@@@@@@@@@@@@!!!!!!!!!!!!!!!!!
 	}
-	_tmp_sOwnerType += m_cSkinCol - 1;
-	_tmp_cDir = m_cMenuDir;
-	_tmp_sAppr1 = 0;
-	_tmp_sAppr1 = _tmp_sAppr1 | (m_cUnderCol);
-	_tmp_sAppr1 = _tmp_sAppr1 | (m_cHairStyle << 8);
-	_tmp_sAppr1 = _tmp_sAppr1 | (m_cHairCol << 4);
-	_tmp_sAppr2 = 0;
-	_tmp_sAppr3 = 0;
-	_tmp_sAppr4 = 0;
-	std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
-	memcpy(_tmp_cName, m_cPlayerName, 10);
-	_tmp_cAction = DEF_OBJECTMOVE;
-	_tmp_cFrame = m_cMenuFrame;
+	m_entityState.m_sOwnerType += m_pPlayer->m_iSkinCol - 1;
+	m_entityState.m_iDir = m_cMenuDir;
+	m_entityState.m_sAppr1 = 0;
+	m_entityState.m_sAppr1 = m_entityState.m_sAppr1 | (m_pPlayer->m_iUnderCol);
+	m_entityState.m_sAppr1 = m_entityState.m_sAppr1 | (m_pPlayer->m_iHairStyle << 8);
+	m_entityState.m_sAppr1 = m_entityState.m_sAppr1 | (m_pPlayer->m_iHairCol << 4);
+	m_entityState.m_sAppr2 = 0;
+	m_entityState.m_sAppr3 = 0;
+	m_entityState.m_sAppr4 = 0;
+	std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+	memcpy(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName, 10);
+	m_entityState.m_iAction = DEF_OBJECTMOVE;
+	m_entityState.m_iFrame = m_cMenuFrame;
 
-	_Draw_CharacterBody(507 + SCREENX, 267 + SCREENY, _tmp_sOwnerType);
+	_Draw_CharacterBody(507 + SCREENX, 267 + SCREENY, m_entityState.m_sOwnerType);
 
 	DrawObject_OnMove_ForMenu(0 + SCREENX, 0 + SCREENY, 500 + SCREENX, 174 + SCREENY, false, dwTime);
 
 	i = 0;
 
 	PutString(445 + SCREENX, 192 + SCREENY, DEF_MSG_HITPOINT, RGB(5, 5, 5));//"Hit Point"
-	wsprintf(G_cTxt, "%d", m_ccVit * 3 + 2 + m_ccStr / 2);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModVit * 3 + 2 + m_pPlayer->m_iStatModStr / 2);
 	PutString(550 + SCREENX, 192 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
 
 	PutString(445 + SCREENX, 208 + SCREENY, DEF_MSG_MANAPOINT, RGB(5, 5, 5));//"Mana Point"
-	wsprintf(G_cTxt, "%d", m_ccMag * 2 + 2 + m_ccInt / 2);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModMag * 2 + 2 + m_pPlayer->m_iStatModInt / 2);
 	PutString(550 + SCREENX, 192 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
 
 	PutString(445 + SCREENX, 224 + SCREENY, DEF_MSG_STAMINARPOINT, RGB(5, 5, 5));//"Staminar Point"
-	wsprintf(G_cTxt, "%d", m_ccStr * 2 + 2);
+	wsprintf(G_cTxt, "%d", m_pPlayer->m_iStatModStr * 2 + 2);
 	PutString(550 + SCREENX, 192 + 16 * i++ + SCREENY, G_cTxt, RGB(25, 35, 25));
 
 	return bFlag;
@@ -16863,8 +16611,7 @@ void CGame::_LoadAgreementTextContents(char cType)
 
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
 		if (m_pAgreeMsgTextList[i] != 0)
-			delete m_pAgreeMsgTextList[i];
-		m_pAgreeMsgTextList[i] = 0;
+			m_pAgreeMsgTextList[i].reset();
 	}
 
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -16893,7 +16640,7 @@ void CGame::_LoadAgreementTextContents(char cType)
 	fclose(pFile);
 	token = strtok(pContents, seps);
 	while (token != 0) {
-		m_pAgreeMsgTextList[iIndex] = new class CMsg(0, token, 0);
+		m_pAgreeMsgTextList[iIndex] = std::make_unique<CMsg>(0, token, 0);
 		token = strtok(NULL, seps);
 		iIndex++;
 	}
@@ -16905,7 +16652,6 @@ void CGame::UpdateScreen_OnAgreement()
 	short sX, sY, msX, msY, msZ;
 	char  cLB, cRB;
 	int i, iTotalLines, iPointerLoc;
-	uint32_t dwTime = GameClock::GetTimeMS();
 	double d1, d2, d3;
 	sX = 121;
 	sY = 22;
@@ -16919,11 +16665,9 @@ void CGame::UpdateScreen_OnAgreement()
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 	if (Input::IsKeyPressed(VK_RETURN) == true) {
 		PlaySound('E', 14, 5);
-		ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-		std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+		ChangeGameMode(GameMode::CreateNewAccount);
+		std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 		std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
-		std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
-		std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
 		std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
 		std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
 		std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
@@ -16931,7 +16675,7 @@ void CGame::UpdateScreen_OnAgreement()
 	}
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		PlaySound('E', 14, 5);
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 	msX = static_cast<short>(Input::GetMouseX());
@@ -16948,11 +16692,9 @@ void CGame::UpdateScreen_OnAgreement()
 		// Agree button
 		if (Input::IsMouseInRect(98, 377, 147, 396)) {
 			PlaySound('E', 14, 5);
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
-			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+			ChangeGameMode(GameMode::CreateNewAccount);
+			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 			std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
-			std::memset(m_cAccountCountry, 0, sizeof(m_cAccountCountry));
-			std::memset(m_cAccountSSN, 0, sizeof(m_cAccountSSN));
 			std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
 			//v1.4334
 			std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
@@ -16962,7 +16704,7 @@ void CGame::UpdateScreen_OnAgreement()
 		// Disagree button
 		if (Input::IsMouseInRect(251, 377, 319, 397)) {
 			PlaySound('E', 14, 5);
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -17013,7 +16755,6 @@ void CGame::UpdateScreen_OnAgreement()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 158 + 57 - 23 + 45 - 105, sY + 265 + 90, 14);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
 	//	if (m_cGameModeCount < 6) m_Renderer->DrawShadowBox(0,0,639,479);
 	//	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0,0,639,479);
@@ -17119,6 +16860,11 @@ void CGame::OnKeyUp(int key)
 	case KeyCode::PageUp:
 		Hotkey_Simple_SpecialAbility();
 		break;
+
+	case KeyCode::F11:
+		Hotkey_Simple_Screenshot();
+		break;
+
 	default:
 		return;
 	}
@@ -17167,7 +16913,7 @@ void CGame::OnKeyDown(int key)
 		break;
 	}
 
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		if (Input::IsCtrlDown())
 		{
@@ -17217,8 +16963,8 @@ void CGame::UpdateScreen_Quit()
 		}
 		if (m_pGSock != 0)
 		{
-			delete m_pGSock;
-			m_pGSock = 0;
+			m_pGSock.reset();
+			m_pGSock.reset();
 		}
 	}
 
@@ -17234,7 +16980,7 @@ void CGame::UpdateScreen_Quit()
 	{
 		// Handle escape/enter to quit
 		if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN) == true) {
-			ChangeGameMode(DEF_GAMEMODE_NULL);
+			ChangeGameMode(GameMode::Null);
 			Window::Close();
 			return;
 		}
@@ -17242,7 +16988,7 @@ void CGame::UpdateScreen_Quit()
 		// Check for mouse click
 		// Mouse click detection handled by Input::IsMouseButtonPressed()
 		if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-			ChangeGameMode(DEF_GAMEMODE_NULL);
+			ChangeGameMode(GameMode::Null);
 			Window::Close();
 			return;
 		}
@@ -17251,7 +16997,7 @@ void CGame::UpdateScreen_Quit()
 	// Auto-quit after 10 seconds
 	if (dwElapsed >= AUTO_QUIT_MS)
 	{
-		ChangeGameMode(DEF_GAMEMODE_NULL);
+		ChangeGameMode(GameMode::Null);
 		Window::Close();
 		return;
 	}
@@ -17260,15 +17006,12 @@ void CGame::UpdateScreen_Quit()
 // Quit screen - Draw phase (rendering only)
 void CGame::DrawScreen_Quit()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0 + SCREENX, 0 + SCREENY, 0, true);
 	if (m_cGameModeCount > 20) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 255 + SCREENX, 123 + SCREENY, 1, true);
 	else if ((m_cGameModeCount >= 15) && (m_cGameModeCount <= 20)) m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(255 + SCREENX, 123 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.25f));
 	DrawVersion();
 
 	// Draw cursor at position captured during Update phase
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // VersionNotMatch screen - Update phase (logic/input handling)
@@ -17283,8 +17026,8 @@ void CGame::UpdateScreen_VersionNotMatch()
 		}
 		if (m_pGSock != 0)
 		{
-			delete m_pGSock;
-			m_pGSock = 0;
+			m_pGSock.reset();
+			m_pGSock.reset();
 		}
 	}
 
@@ -17293,8 +17036,8 @@ void CGame::UpdateScreen_VersionNotMatch()
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_NULL);
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
+		ChangeGameMode(GameMode::Null);
+		SendMessage(G_hWnd, WM_DESTROY, 0, 0);
 		return;
 	}
 
@@ -17302,8 +17045,8 @@ void CGame::UpdateScreen_VersionNotMatch()
 	// Mouse click detection handled by Input::IsMouseButtonPressed()
 	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		ChangeGameMode(DEF_GAMEMODE_NULL);
-		SendMessage(m_hWnd, WM_DESTROY, 0, 0);
+		ChangeGameMode(GameMode::Null);
+		SendMessage(G_hWnd, WM_DESTROY, 0, 0);
 		return;
 	}
 }
@@ -17311,15 +17054,12 @@ void CGame::UpdateScreen_VersionNotMatch()
 // VersionNotMatch screen - Draw phase (rendering only)
 void CGame::DrawScreen_VersionNotMatch()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0, 0, 0, true);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162, 125, 2);
 	PutAlignedString(168, 474, 160, UPDATE_SCREEN_ON_VERSION_NO_MATCH1);
 	PutAlignedString(168, 474, 180, UPDATE_SCREEN_ON_VERSION_NO_MATCH2);
 	DrawVersion();
 
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // ConnectionLost screen - Update phase (logic/input handling)
@@ -17339,24 +17079,17 @@ void CGame::UpdateScreen_ConnectionLost()
 	// Auto-transition after 5 seconds
 	if ((GameClock::GetTimeMS() - m_dwTime) > 5000)
 	{
-		if (strlen(G_cCmdLineTokenA) != 0)
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-		else
-		{
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		}
+		ChangeGameMode(GameMode::MainMenu);
 	}
 }
 
 // ConnectionLost screen - Draw phase (rendering only)
 void CGame::DrawScreen_ConnectionLost()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 	PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 58, 0, 0);
 	PutString(172 + 50 + SCREENX, 180 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTION_LOST, RGB(0, 0, 0));
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // Msg screen - Update phase (logic/input handling)
@@ -17364,19 +17097,17 @@ void CGame::UpdateScreen_Msg()
 {
 	// Poll mouse input and store for Draw phase
 	// Auto-transition after 1.5 seconds
-	if ((G_dwGlobalTime - m_dwTime) > 1500)
+	if ((GameClock::GetTimeMS() - m_dwTime) > 1500)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 	}
 }
 
 // Msg screen - Draw phase (rendering only)
 void CGame::DrawScreen_Msg()
 {
-	uint32_t dwTime = G_dwGlobalTime;
 	PutString(10, 10, m_cMsg, RGB(255, 155, 155), false, 1);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // WaitingResponse screen - Update phase (logic/input handling)
@@ -17396,16 +17127,16 @@ void CGame::UpdateScreen_WaitingResponse()
 	{
 		if ((dwTime - m_dwTime) > 7000)
 		{
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			if (m_pLSock != 0)
 			{
-				delete m_pLSock;
-				m_pLSock = 0;
+				m_pLSock.reset();
+				m_pLSock.reset();
 			}
 			if (m_pGSock != 0)
 			{
-				delete m_pGSock;
-				m_pGSock = 0;
+				m_pGSock.reset();
+				m_pGSock.reset();
 			}
 		}
 		return;
@@ -17438,7 +17169,7 @@ void CGame::DrawScreen_WaitingResponse()
 	short sX, sY;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
-	m_bIsHideLocalCursor = true;
+	m_bHideLocalCursor = true;
 	switch (m_cMsg[0]) {
 	case '0':
 		_Draw_UpdateScreen_OnCreateNewAccount();
@@ -17446,10 +17177,10 @@ void CGame::DrawScreen_WaitingResponse()
 	case '1':
 		sX = 146;
 		sY = 114;
-		_Draw_OnLogin(m_cAccountName, m_cAccountPassword, 0, 0);
+		_Draw_OnLogin(m_pPlayer->m_cAccountName, m_pPlayer->m_cAccountPassword, 0, 0);
 		break;
 	case '2':
-		_bDraw_OnCreateNewCharacter(m_cPlayerName, 0, 0, 0);
+		_bDraw_OnCreateNewCharacter(m_pPlayer->m_cPlayerName, 0, 0, 0);
 		break;
 	case '3':
 		UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
@@ -17460,7 +17191,7 @@ void CGame::DrawScreen_WaitingResponse()
 	case '5':
 		break;
 	}
-	m_bIsHideLocalCursor = false;
+	m_bHideLocalCursor = false;
 
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
@@ -17474,7 +17205,6 @@ void CGame::DrawScreen_WaitingResponse()
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // Connecting screen - Update phase (logic/input handling)
@@ -17492,16 +17222,16 @@ void CGame::UpdateScreen_Connecting()
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		if ((dwTime - m_dwTime) > 1000)
 		{
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			if (m_pLSock != 0)
 			{
-				delete m_pLSock;
-				m_pLSock = 0;
+				m_pLSock.reset();
+				m_pLSock.reset();
 			}
 			if (m_pGSock != 0)
 			{
-				delete m_pGSock;
-				m_pGSock = 0;
+				m_pGSock.reset();
+				m_pGSock.reset();
 			}
 		}
 		return;
@@ -17533,7 +17263,7 @@ void CGame::DrawScreen_Connecting()
 	short sX, sY;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
-	m_bIsHideLocalCursor = true;
+	m_bHideLocalCursor = true;
 	switch (m_cMsg[0]) {
 	case '0':
 		_Draw_UpdateScreen_OnCreateNewAccount();
@@ -17541,10 +17271,10 @@ void CGame::DrawScreen_Connecting()
 	case '1':
 		sX = 146;
 		sY = 114;
-		_Draw_OnLogin(m_cAccountName, m_cAccountPassword, 0, 0);
+		_Draw_OnLogin(m_pPlayer->m_cAccountName, m_pPlayer->m_cAccountPassword, 0, 0);
 		break;
 	case '2':
-		_bDraw_OnCreateNewCharacter(m_cPlayerName, 0, 0, 0);
+		_bDraw_OnCreateNewCharacter(m_pPlayer->m_cPlayerName, 0, 0, 0);
 		break;
 	case '3':
 		UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
@@ -17556,7 +17286,7 @@ void CGame::DrawScreen_Connecting()
 	case '5':
 		break;
 	}
-	m_bIsHideLocalCursor = false;
+	m_bHideLocalCursor = false;
 
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
@@ -17570,7 +17300,6 @@ void CGame::DrawScreen_Connecting()
 	}
 	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTING3);
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // QueryForceLogin screen - Update phase (logic/input handling)
@@ -17588,7 +17317,7 @@ void CGame::UpdateScreen_QueryForceLogin()
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
-		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+		ChangeGameMode(GameMode::SelectCharacter);
 		return;
 	}
 
@@ -17614,10 +17343,10 @@ void CGame::UpdateScreen_QueryForceLogin()
 		PlaySound('E', 14, 5);
 		// Yes button
 		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 			m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NOENTER_FORCEDISCONN;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -17626,7 +17355,7 @@ void CGame::UpdateScreen_QueryForceLogin()
 		}
 		// Cancel button
 		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 		}
 	}
 }
@@ -17634,8 +17363,6 @@ void CGame::UpdateScreen_QueryForceLogin()
 // QueryForceLogin screen - Draw phase (rendering only)
 void CGame::DrawScreen_QueryForceLogin()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6)) {
 		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
@@ -17660,7 +17387,6 @@ void CGame::DrawScreen_QueryForceLogin()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // QueryDeleteCharacter screen - Update phase (logic/input handling)
@@ -17680,7 +17406,7 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+		ChangeGameMode(GameMode::SelectCharacter);
 		return;
 	}
 
@@ -17709,10 +17435,10 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 		PlaySound('E', 14, 5);
 		// Yes button
 		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_DELETECHARACTER;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "33");
@@ -17720,7 +17446,7 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 		}
 		// Cancel button
 		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 		}
 	}
 }
@@ -17728,8 +17454,6 @@ void CGame::UpdateScreen_QueryDeleteCharacter()
 // QueryDeleteCharacter screen - Draw phase (rendering only)
 void CGame::DrawScreen_QueryDeleteCharacter()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	UpdateScreen_OnSelectCharacter(0, 0, 500, 70);
 	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6))
 	{
@@ -17758,7 +17482,6 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // MainMenu screen - Update phase (logic/input handling)
@@ -17809,14 +17532,14 @@ void CGame::UpdateScreen_MainMenu()
 		PlaySound('E', 14, 5);
 		switch (m_cCurFocus) {
 		case 1:
-			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
+			ChangeGameMode(GameMode::Login);
 			return;
 		case 2:
 			ClearContents_OnSelectCharacter();
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
+			ChangeGameMode(GameMode::CreateNewAccount);
 			return;
 		case 3:
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+			ChangeGameMode(GameMode::Quit);
 			return;
 		}
 	}
@@ -17827,19 +17550,19 @@ void CGame::UpdateScreen_MainMenu()
 		// Game button
 		if (Input::IsMouseInRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY)) {
 			m_cCurFocus = 1;
-			ChangeGameMode(DEF_GAMEMODE_ONLOGIN);
+			ChangeGameMode(GameMode::Login);
 		}
 		// Account button
 		else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
 			m_cCurFocus = 2;
 			ClearContents_OnSelectCharacter();
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
+			ChangeGameMode(GameMode::CreateNewAccount);
 			return;
 		}
 		// Quit button
 		else if (Input::IsMouseInRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY)) {
 			m_cCurFocus = 3;
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+			ChangeGameMode(GameMode::Quit);
 			return;
 		}
 	}
@@ -17848,8 +17571,6 @@ void CGame::UpdateScreen_MainMenu()
 // MainMenu screen - Draw phase (rendering only)
 void CGame::DrawScreen_MainMenu()
 {
-	uint32_t dwTime = G_dwGlobalTime;
-
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_MAINMENU, 0 + SCREENX, 0 + SCREENY, 0, true);
 
 	switch (m_cCurFocus) {
@@ -17865,7 +17586,6 @@ void CGame::DrawScreen_MainMenu()
 	}
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // WaitInitData screen - Update phase (logic/input handling)
@@ -17881,16 +17601,16 @@ void CGame::UpdateScreen_WaitInitData()
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
 		if ((dwTime - m_dwTime) > 7000)
 		{
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			if (m_pLSock != 0)
 			{
-				delete m_pLSock;
-				m_pLSock = 0;
+				m_pLSock.reset();
+				m_pLSock.reset();
 			}
 			if (m_pGSock != 0)
 			{
-				delete m_pGSock;
-				m_pGSock = 0;
+				m_pGSock.reset();
+				m_pGSock.reset();
 			}
 		}
 		return;
@@ -17915,7 +17635,6 @@ void CGame::DrawScreen_WaitInitData()
 	else PutAlignedString(174 + SCREENX, 467 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 8);
 }
 
 // File-scope static variables for Login screen input buffers
@@ -17979,24 +17698,20 @@ void CGame::UpdateScreen_Login()
 		case 2:
 		case 3:
 			if ((strlen(s_cLoginName) == 0) || (strlen(s_cLoginPassword) == 0)) break;
-			std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
-			strcpy(m_cAccountName, s_cLoginName);
-			strcpy(m_cAccountPassword, s_cLoginPassword);
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
+			strcpy(m_pPlayer->m_cAccountName, s_cLoginName);
+			strcpy(m_pPlayer->m_cAccountPassword, s_cLoginPassword);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_LOGIN;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "11");
 			return;
 		case 4:
-#ifdef DEF_SELECTSERVER
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
-#else
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-#endif
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -18004,7 +17719,7 @@ void CGame::UpdateScreen_Login()
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
 		EndInputString();
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 
@@ -18042,14 +17757,14 @@ void CGame::UpdateScreen_Login()
 		else if (Input::IsMouseInRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY)) {
 			if ((strlen(s_cLoginName) != 0) && (strlen(s_cLoginPassword) != 0)) {
 				EndInputString();
-				std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-				std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
-				strcpy(m_cAccountName, s_cLoginName);
-				strcpy(m_cAccountPassword, s_cLoginPassword);
-				m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+				std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+				std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
+				strcpy(m_pPlayer->m_cAccountName, s_cLoginName);
+				strcpy(m_pPlayer->m_cAccountPassword, s_cLoginPassword);
+				m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 				m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 				m_pLSock->bInitBufferSize(30000);
-				ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+				ChangeGameMode(GameMode::Connecting);
 				m_dwConnectMode = MSGID_REQUEST_LOGIN;
 				std::memset(m_cMsg, 0, sizeof(m_cMsg));
 				strcpy(m_cMsg, "11");
@@ -18058,11 +17773,7 @@ void CGame::UpdateScreen_Login()
 		}
 		// Cancel button click
 		else if (Input::IsMouseInRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY)) {
-#ifdef DEF_SELECTSERVER
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTSERVER);
-#else
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-#endif
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -18094,8 +17805,6 @@ void CGame::DrawScreen_Loading()
 	DrawScreen_OnLoadingProgress();
 
 	// Poll mouse for cursor
-	uint32_t dwTime = GameClock::GetTimeMS();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // LogResMsg screen - Update phase (logic/input handling)
@@ -18122,6 +17831,8 @@ static DWORD s_dwChgPwdCTime;
 // ChangePassword screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_ChangePassword()
 {
+	uint32_t dwTime = GameClock::GetTimeMS();
+
 	if (m_cGameModeCount == 0) {
 		EndInputString();
 		s_cChgPwdPrevFocus = 2;
@@ -18134,7 +17845,7 @@ void CGame::UpdateScreen_ChangePassword()
 		std::memset(s_cChgPwdNewPassword, 0, sizeof(s_cChgPwdNewPassword));
 		std::memset(s_cChgPwdNewPassConfirm, 0, sizeof(s_cChgPwdNewPassConfirm));
 
-		strcpy(s_cChgPwdName, m_cAccountName);
+		strcpy(s_cChgPwdName, m_pPlayer->m_cAccountName);
 		StartInputString(314 + SCREENX, 179 + SCREENY, 11, s_cChgPwdPassword);
 		ClearInputString();
 		s_dwChgPwdCTime = GameClock::GetTimeMS();
@@ -18142,7 +17853,6 @@ void CGame::UpdateScreen_ChangePassword()
 	m_cGameModeCount++;
 	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
 
-	uint32_t dwTime = GameClock::GetTimeMS();
 	if ((dwTime - s_dwChgPwdCTime) > 100) {
 		m_cMenuFrame++;
 		s_dwChgPwdCTime = dwTime;
@@ -18199,32 +17909,32 @@ void CGame::UpdateScreen_ChangePassword()
 				(CMisc::bCheckValidName(s_cChgPwdNewPassword) == false) || (CMisc::bCheckValidName(s_cChgPwdNewPassConfirm) == false) ||
 				(strlen(s_cChgPwdNewPassword) == 0) || (memcmp(s_cChgPwdNewPassword, s_cChgPwdNewPassConfirm, 10) != 0)) break;
 
-			std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 			std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
 			std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-			strcpy(m_cAccountName, s_cChgPwdName);
-			strcpy(m_cAccountPassword, s_cChgPwdPassword);
+			strcpy(m_pPlayer->m_cAccountName, s_cChgPwdName);
+			strcpy(m_pPlayer->m_cAccountPassword, s_cChgPwdPassword);
 			strcpy(m_cNewPassword, s_cChgPwdNewPassword);
 			strcpy(m_cNewPassConfirm, s_cChgPwdNewPassConfirm);
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "41");
 			return;
 
 		case 6:	// Cancel
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 			return;
 		}
 	}
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 
@@ -18277,25 +17987,25 @@ void CGame::UpdateScreen_ChangePassword()
 				(strlen(s_cChgPwdNewPassword) == 0) || (memcmp(s_cChgPwdNewPassword, s_cChgPwdNewPassConfirm, 10) != 0)) break;
 
 			EndInputString();
-			std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-			std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 			std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
 			std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-			strcpy(m_cAccountName, s_cChgPwdName);
-			strcpy(m_cAccountPassword, s_cChgPwdPassword);
+			strcpy(m_pPlayer->m_cAccountName, s_cChgPwdName);
+			strcpy(m_pPlayer->m_cAccountPassword, s_cChgPwdPassword);
 			strcpy(m_cNewPassword, s_cChgPwdNewPassword);
 			strcpy(m_cNewPassConfirm, s_cChgPwdNewPassConfirm);
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "41");
 			return;
 
 		case 6:
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 			return;
 		}
 	}
@@ -18307,7 +18017,6 @@ void CGame::UpdateScreen_ChangePassword()
 // ChangePassword screen - Draw phase (rendering only)
 void CGame::DrawScreen_ChangePassword()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
 	bool bFlag = true;
 
 	// Draw background (SelectCharacter screen)
@@ -18374,7 +18083,6 @@ void CGame::DrawScreen_ChangePassword()
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 }
 
 // File-scope static variables for CreateNewAccount screen input buffers
@@ -18486,20 +18194,20 @@ void CGame::UpdateScreen_CreateNewAccount()
 			if (bValid)
 			{
 				// Copy to game account fields
-				std::memset(m_cAccountName, 0, sizeof(m_cAccountName));
-				std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
+				std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
+				std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
 				std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
 				std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
-				strcpy(m_cAccountName, s_cNewAcctName);
-				strcpy(m_cAccountPassword, s_cNewAcctPassword);
+				strcpy(m_pPlayer->m_cAccountName, s_cNewAcctName);
+				strcpy(m_pPlayer->m_cAccountPassword, s_cNewAcctPassword);
 				strcpy(m_cAccountQuiz, s_cNewAcctQuiz);
 				strcpy(m_cAccountAnswer, s_cNewAcctAnswer);
 
 				// Connect to server
-				m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+				m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 				m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort);
 				m_pLSock->bInitBufferSize(30000);
-				ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+				ChangeGameMode(GameMode::Connecting);
 				m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;
 				std::memset(m_cMsg, 0, sizeof(m_cMsg));
 				strcpy(m_cMsg, "01");
@@ -18522,7 +18230,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 		else if (m_cCurFocus == 9)
 		{
 			// Cancel - go back to main menu (right button)
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -18530,7 +18238,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 	// Handle Escape key
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 
@@ -18606,7 +18314,7 @@ void CGame::UpdateScreen_CreateNewAccount()
 		else if (bOverCancel)
 		{
 			PlaySound('E', 14, 5);
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -18617,7 +18325,6 @@ void CGame::UpdateScreen_CreateNewAccount()
 void CGame::DrawScreen_CreateNewAccount()
 {
 #ifdef DEF_MAKE_ACCOUNT
-	uint32_t dwTime = GameClock::GetTimeMS();
 	int iFlag = 0;
 
 	// Compute validation flags for display
@@ -18786,7 +18493,6 @@ void CGame::DrawScreen_CreateNewAccount()
 	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 16);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(Input::GetMouseX(), Input::GetMouseY(), 0);
 #endif
 }
 
@@ -18835,7 +18541,7 @@ void CGame::UpdateScreen_SelectCharacter()
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true)
 	{
-		ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
 
@@ -18847,17 +18553,17 @@ void CGame::UpdateScreen_SelectCharacter()
 		{
 			if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 			{
-				std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-				strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-				m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-				if (CMisc::bCheckValidString(m_cPlayerName) == true)
+				std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+				strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+				m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+				if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
 				{
 					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-					m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+					m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 					m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 					m_pLSock->bInitBufferSize(30000);
-					ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+					ChangeGameMode(GameMode::Connecting);
 					m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 					m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 					std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -18870,7 +18576,7 @@ void CGame::UpdateScreen_SelectCharacter()
 		}
 		else
 		{
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+			ChangeGameMode(GameMode::CreateNewCharacter);
 			return;
 		}
 	}
@@ -18932,17 +18638,17 @@ void CGame::UpdateScreen_SelectCharacter()
 				{
 					if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 					{
-						std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-						strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-						m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-						if (CMisc::bCheckValidString(m_cPlayerName) == true)
+						std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+						strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+						m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+						if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
 						{
 							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-							m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+							m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 							m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 							m_pLSock->bInitBufferSize(30000);
-							ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+							ChangeGameMode(GameMode::Connecting);
 							m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 							m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 							std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -18955,7 +18661,7 @@ void CGame::UpdateScreen_SelectCharacter()
 				}
 				else
 				{
-					ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+					ChangeGameMode(GameMode::CreateNewCharacter);
 					return;
 				}
 			}
@@ -18966,17 +18672,17 @@ void CGame::UpdateScreen_SelectCharacter()
 			{
 				if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
 				{
-					std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-					strcpy(m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-					m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
+					std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+					strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
+					m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
-					if (CMisc::bCheckValidString(m_cPlayerName) == true) {
+					if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true) {
 						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
 						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-						m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+						m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 						m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 						m_pLSock->bInitBufferSize(30000);
-						ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+						ChangeGameMode(GameMode::Connecting);
 						m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
 						m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
 						std::memset(m_cMsg, 0, sizeof(m_cMsg));
@@ -18992,7 +18698,7 @@ void CGame::UpdateScreen_SelectCharacter()
 		case 6:
 			if (m_iTotalChar < 4)
 			{
-				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+				ChangeGameMode(GameMode::CreateNewCharacter);
 				return;
 			}
 			break;
@@ -19000,18 +18706,18 @@ void CGame::UpdateScreen_SelectCharacter()
 		case 7:
 			if (m_pCharList[m_cCurFocus - 1] != 0)
 			{
-				ChangeGameMode(DEF_GAMEMODE_ONQUERYDELETECHARACTER);
+				ChangeGameMode(GameMode::QueryDeleteCharacter);
 				m_wEnterGameType = m_cCurFocus;
 				return;
 			}
 			break;
 
 		case 8:
-			ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD);
+			ChangeGameMode(GameMode::ChangePassword);
 			return;
 
 		case 9:
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			return;
 		}
 	}
@@ -19020,13 +18726,10 @@ void CGame::UpdateScreen_SelectCharacter()
 // SelectCharacter screen - Draw phase (rendering only)
 void CGame::DrawScreen_SelectCharacter()
 {
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	// Call the parametered draw version with stored mouse coordinates
 	UpdateScreen_OnSelectCharacter(0, 10, s_sSelCharMsX, s_sSelCharMsY);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sSelCharMsX, s_sSelCharMsY, 0);
 }
 
 // File-scope static variables for CreateNewCharacter screen
@@ -19049,17 +18752,17 @@ void CGame::UpdateScreen_CreateNewCharacter()
 	if (m_cGameModeCount == 0)
 	{
 		// Initialize character creation defaults
-		m_cGender = rand() % 2 + 1;
-		m_cSkinCol = rand() % 3 + 1;
-		m_cHairStyle = rand() % 8;
-		m_cHairCol = rand() % 16;
-		m_cUnderCol = rand() % 8;
-		m_ccStr = 10;
-		m_ccVit = 10;
-		m_ccDex = 10;
-		m_ccInt = 10;
-		m_ccMag = 10;
-		m_ccChr = 10;
+		m_pPlayer->m_iGender = rand() % 2 + 1;
+		m_pPlayer->m_iSkinCol = rand() % 3 + 1;
+		m_pPlayer->m_iHairStyle = rand() % 8;
+		m_pPlayer->m_iHairCol = rand() % 16;
+		m_pPlayer->m_iUnderCol = rand() % 8;
+		m_pPlayer->m_iStatModStr = 10;
+		m_pPlayer->m_iStatModVit = 10;
+		m_pPlayer->m_iStatModDex = 10;
+		m_pPlayer->m_iStatModInt = 10;
+		m_pPlayer->m_iStatModMag = 10;
+		m_pPlayer->m_iStatModChr = 10;
 
 		s_iNewCharPoint = 10; // 70 - (6 stats * 10) = 10 bonus points
 		s_cNewCharPrevFocus = 1;
@@ -19101,7 +18804,7 @@ void CGame::UpdateScreen_CreateNewCharacter()
 	}
 
 	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
-		ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+		ChangeGameMode(GameMode::SelectCharacter);
 		return;
 	}
 
@@ -19179,127 +18882,127 @@ void CGame::UpdateScreen_CreateNewCharacter()
 			m_cCurFocus = 1;
 			break;
 		case 2:
-			m_cGender--;
-			if (m_cGender < 1) m_cGender = 2;
+			m_pPlayer->m_iGender--;
+			if (m_pPlayer->m_iGender < 1) m_pPlayer->m_iGender = 2;
 			break;
 		case 3:
-			m_cGender++;
-			if (m_cGender > 2) m_cGender = 1;
+			m_pPlayer->m_iGender++;
+			if (m_pPlayer->m_iGender > 2) m_pPlayer->m_iGender = 1;
 			break;
 		case 4:
-			m_cSkinCol--;
-			if (m_cSkinCol < 1) m_cSkinCol = 3;
+			m_pPlayer->m_iSkinCol--;
+			if (m_pPlayer->m_iSkinCol < 1) m_pPlayer->m_iSkinCol = 3;
 			break;
 		case 5:
-			m_cSkinCol++;
-			if (m_cSkinCol > 3) m_cSkinCol = 1;
+			m_pPlayer->m_iSkinCol++;
+			if (m_pPlayer->m_iSkinCol > 3) m_pPlayer->m_iSkinCol = 1;
 			break;
 		case 6:
-			m_cHairStyle--;
-			if (m_cHairStyle < 0) m_cHairStyle = 7;
+			m_pPlayer->m_iHairStyle--;
+			if (m_pPlayer->m_iHairStyle < 0) m_pPlayer->m_iHairStyle = 7;
 			break;
 		case 7:
-			m_cHairStyle++;
-			if (m_cHairStyle > 7) m_cHairStyle = 0;
+			m_pPlayer->m_iHairStyle++;
+			if (m_pPlayer->m_iHairStyle > 7) m_pPlayer->m_iHairStyle = 0;
 			break;
 		case 8:
-			m_cHairCol--;
-			if (m_cHairCol < 0) m_cHairCol = 15;
+			m_pPlayer->m_iHairCol--;
+			if (m_pPlayer->m_iHairCol < 0) m_pPlayer->m_iHairCol = 15;
 			break;
 		case 9:
-			m_cHairCol++;
-			if (m_cHairCol > 15) m_cHairCol = 0;
+			m_pPlayer->m_iHairCol++;
+			if (m_pPlayer->m_iHairCol > 15) m_pPlayer->m_iHairCol = 0;
 			break;
 		case 10:
-			m_cUnderCol--;
-			if (m_cUnderCol < 0) m_cUnderCol = 7;
+			m_pPlayer->m_iUnderCol--;
+			if (m_pPlayer->m_iUnderCol < 0) m_pPlayer->m_iUnderCol = 7;
 			break;
 		case 11:
-			m_cUnderCol++;
-			if (m_cUnderCol > 7) m_cUnderCol = 0;
+			m_pPlayer->m_iUnderCol++;
+			if (m_pPlayer->m_iUnderCol > 7) m_pPlayer->m_iUnderCol = 0;
 			break;
 		case 12:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccStr < 14) {
-					m_ccStr++;
+				if (m_pPlayer->m_iStatModStr < 14) {
+					m_pPlayer->m_iStatModStr++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 13:
-			if (m_ccStr > 10) {
-				m_ccStr--;
+			if (m_pPlayer->m_iStatModStr > 10) {
+				m_pPlayer->m_iStatModStr--;
 				s_iNewCharPoint++;
 			}
 			break;
 		case 14:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccVit < 14) {
-					m_ccVit++;
+				if (m_pPlayer->m_iStatModVit < 14) {
+					m_pPlayer->m_iStatModVit++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 15:
-			if (m_ccVit > 10) {
-				m_ccVit--;
+			if (m_pPlayer->m_iStatModVit > 10) {
+				m_pPlayer->m_iStatModVit--;
 				s_iNewCharPoint++;
 			}
 			break;
 		case 16:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccDex < 14) {
-					m_ccDex++;
+				if (m_pPlayer->m_iStatModDex < 14) {
+					m_pPlayer->m_iStatModDex++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 17:
-			if (m_ccDex > 10) {
-				m_ccDex--;
+			if (m_pPlayer->m_iStatModDex > 10) {
+				m_pPlayer->m_iStatModDex--;
 				s_iNewCharPoint++;
 			}
 			break;
 		case 18:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccInt < 14) {
-					m_ccInt++;
+				if (m_pPlayer->m_iStatModInt < 14) {
+					m_pPlayer->m_iStatModInt++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 19:
-			if (m_ccInt > 10) {
-				m_ccInt--;
+			if (m_pPlayer->m_iStatModInt > 10) {
+				m_pPlayer->m_iStatModInt--;
 				s_iNewCharPoint++;
 			}
 			break;
 		case 20:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccMag < 14) {
-					m_ccMag++;
+				if (m_pPlayer->m_iStatModMag < 14) {
+					m_pPlayer->m_iStatModMag++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 21:
-			if (m_ccMag > 10) {
-				m_ccMag--;
+			if (m_pPlayer->m_iStatModMag > 10) {
+				m_pPlayer->m_iStatModMag--;
 				s_iNewCharPoint++;
 			}
 			break;
 		case 22:
 			if (s_iNewCharPoint > 0) {
-				if (m_ccChr < 14) {
-					m_ccChr++;
+				if (m_pPlayer->m_iStatModChr < 14) {
+					m_pPlayer->m_iStatModChr++;
 					s_iNewCharPoint--;
 				}
 			}
 			break;
 		case 23:
-			if (m_ccChr > 10)
+			if (m_pPlayer->m_iStatModChr > 10)
 			{
-				m_ccChr--;
+				m_pPlayer->m_iStatModChr--;
 				s_iNewCharPoint++;
 			}
 			break;
@@ -19312,12 +19015,12 @@ void CGame::UpdateScreen_CreateNewCharacter()
 			}
 			if (s_bNewCharFlag == false) return;
 			if (CMisc::bCheckValidName(s_cNewCharName) == false) break;
-			std::memset(m_cPlayerName, 0, sizeof(m_cPlayerName));
-			strcpy(m_cPlayerName, s_cNewCharName);
-			m_pLSock = new class XSocket(DEF_SOCKETBLOCKLIMIT);
+			std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
+			strcpy(m_pPlayer->m_cPlayerName, s_cNewCharName);
+			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
 			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(DEF_GAMEMODE_ONCONNECTING);
+			ChangeGameMode(GameMode::Connecting);
 			m_dwConnectMode = MSGID_REQUEST_CREATENEWCHARACTER;
 			std::memset(m_cMsg, 0, sizeof(m_cMsg));
 			strcpy(m_cMsg, "22");
@@ -19329,7 +19032,7 @@ void CGame::UpdateScreen_CreateNewCharacter()
 				m_cCurFocus = 3;
 				return;
 			}
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 			return;
 
 		case 26: // WARRIOR
@@ -19339,13 +19042,13 @@ void CGame::UpdateScreen_CreateNewCharacter()
 				return;
 			}
 
-			m_ccMag = 10;
-			m_ccInt = 10;
-			m_ccChr = 10;
-			m_ccStr = 14;
-			m_ccVit = 12;
-			m_ccDex = 14;
-			s_iNewCharPoint = m_ccStr + m_ccVit + m_ccDex + m_ccInt + m_ccMag + m_ccChr;
+			m_pPlayer->m_iStatModMag = 10;
+			m_pPlayer->m_iStatModInt = 10;
+			m_pPlayer->m_iStatModChr = 10;
+			m_pPlayer->m_iStatModStr = 14;
+			m_pPlayer->m_iStatModVit = 12;
+			m_pPlayer->m_iStatModDex = 14;
+			s_iNewCharPoint = m_pPlayer->m_iStatModStr + m_pPlayer->m_iStatModVit + m_pPlayer->m_iStatModDex + m_pPlayer->m_iStatModInt + m_pPlayer->m_iStatModMag + m_pPlayer->m_iStatModChr;
 			s_iNewCharPoint = 70 - s_iNewCharPoint;
 			break;
 
@@ -19355,13 +19058,13 @@ void CGame::UpdateScreen_CreateNewCharacter()
 				return;
 			}
 
-			m_ccMag = 14;
-			m_ccInt = 14;
-			m_ccChr = 10;
-			m_ccStr = 10;
-			m_ccVit = 12;
-			m_ccDex = 10;
-			s_iNewCharPoint = m_ccStr + m_ccVit + m_ccDex + m_ccInt + m_ccMag + m_ccChr;
+			m_pPlayer->m_iStatModMag = 14;
+			m_pPlayer->m_iStatModInt = 14;
+			m_pPlayer->m_iStatModChr = 10;
+			m_pPlayer->m_iStatModStr = 10;
+			m_pPlayer->m_iStatModVit = 12;
+			m_pPlayer->m_iStatModDex = 10;
+			s_iNewCharPoint = m_pPlayer->m_iStatModStr + m_pPlayer->m_iStatModVit + m_pPlayer->m_iStatModDex + m_pPlayer->m_iStatModInt + m_pPlayer->m_iStatModMag + m_pPlayer->m_iStatModChr;
 			s_iNewCharPoint = 70 - s_iNewCharPoint;
 			break;
 
@@ -19371,13 +19074,13 @@ void CGame::UpdateScreen_CreateNewCharacter()
 				return;
 			}
 
-			m_ccMag = 12;
-			m_ccInt = 10;
-			m_ccChr = 14;
-			m_ccStr = 14;
-			m_ccVit = 10;
-			m_ccDex = 10;
-			s_iNewCharPoint = m_ccStr + m_ccVit + m_ccDex + m_ccInt + m_ccMag + m_ccChr;
+			m_pPlayer->m_iStatModMag = 12;
+			m_pPlayer->m_iStatModInt = 10;
+			m_pPlayer->m_iStatModChr = 14;
+			m_pPlayer->m_iStatModStr = 14;
+			m_pPlayer->m_iStatModVit = 10;
+			m_pPlayer->m_iStatModDex = 10;
+			s_iNewCharPoint = m_pPlayer->m_iStatModStr + m_pPlayer->m_iStatModVit + m_pPlayer->m_iStatModDex + m_pPlayer->m_iStatModInt + m_pPlayer->m_iStatModMag + m_pPlayer->m_iStatModChr;
 			s_iNewCharPoint = 70 - s_iNewCharPoint;
 			break;
 		}
@@ -19390,13 +19093,10 @@ void CGame::DrawScreen_CreateNewCharacter()
 	int i = 0;
 	short msX = s_sNewCharMsX;
 	short msY = s_sNewCharMsY;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	// Draw the main character creation UI
 	_bDraw_OnCreateNewCharacter(s_cNewCharName, msX, msY, s_iNewCharPoint);
 
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 
 	// Tooltip drawing based on mouse position
 	if ((msX >= 65 + 4 - 127 + SCREENX) && (msX <= 275 + 4 + SCREENX) && (msY >= 65 + 45 + SCREENY) && (msY <= 82 + 45 + SCREENY)) {
@@ -19542,22 +19242,22 @@ void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short 
 		{
 			cTotalChar++;
 			switch (m_pCharList[i]->m_sSex) {
-			case 1:	_tmp_sOwnerType = 1; break;
-			case 2:	_tmp_sOwnerType = 4; break;
+			case 1:	m_entityState.m_sOwnerType = 1; break;
+			case 2:	m_entityState.m_sOwnerType = 4; break;
 			}
-			_tmp_sOwnerType += m_pCharList[i]->m_sSkinCol - 1;
-			_tmp_cDir = m_cMenuDir;
-			_tmp_sAppr1 = m_pCharList[i]->m_sAppr1;
-			_tmp_sAppr2 = m_pCharList[i]->m_sAppr2;
-			_tmp_sAppr3 = m_pCharList[i]->m_sAppr3;
-			_tmp_sAppr4 = m_pCharList[i]->m_sAppr4;
-			_tmp_iApprColor = m_pCharList[i]->m_iApprColor; // v1.4
+			m_entityState.m_sOwnerType += m_pCharList[i]->m_sSkinCol - 1;
+			m_entityState.m_iDir = m_cMenuDir;
+			m_entityState.m_sAppr1 = m_pCharList[i]->m_sAppr1;
+			m_entityState.m_sAppr2 = m_pCharList[i]->m_sAppr2;
+			m_entityState.m_sAppr3 = m_pCharList[i]->m_sAppr3;
+			m_entityState.m_sAppr4 = m_pCharList[i]->m_sAppr4;
+			m_entityState.m_iApprColor = m_pCharList[i]->m_iApprColor; // v1.4
 
-			std::memset(_tmp_cName, 0, sizeof(_tmp_cName));
-			memcpy(_tmp_cName, m_pCharList[i]->m_cName, 10);
+			std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+			memcpy(m_entityState.m_cName.data(), m_pCharList[i]->m_cName, 10);
 			// CLEROTH - NO USE
-			_tmp_cAction = DEF_OBJECTMOVE;
-			_tmp_cFrame = m_cMenuFrame;
+			m_entityState.m_iAction = DEF_OBJECTMOVE;
+			m_entityState.m_iFrame = m_cMenuFrame;
 
 			if (m_pCharList[i]->m_sSex != 0)
 			{
@@ -19752,35 +19452,35 @@ void CGame::UpdateScreen_OnLogResMsg()
 	if (Input::IsKeyPressed(VK_ESCAPE) == true || Input::IsKeyPressed(VK_RETURN)) {
 		switch (m_cMsg[0]) {
 		case '0':
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
+			ChangeGameMode(GameMode::CreateNewAccount);
 			break;
 		case '1':
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			break;
 		case '2':
-			ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+			ChangeGameMode(GameMode::CreateNewCharacter);
 			break;
 		case '3':
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 			break;
 		case '4':
-			ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+			ChangeGameMode(GameMode::SelectCharacter);
 			break;
 		case '5':
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			break;
 		case '6':
 			switch (m_cMsg[1]) {
 			case 'B':
-				ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+				ChangeGameMode(GameMode::MainMenu);
 				break;
-			case 'C': ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD); break;
-			case 'M': ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD); break;
+			case 'C': ChangeGameMode(GameMode::ChangePassword); break;
+			case 'M': ChangeGameMode(GameMode::ChangePassword); break;
 			}
 			break;
 		case '7':
 		case '8':
-			ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+			ChangeGameMode(GameMode::MainMenu);
 			break;
 		}
 		return;
@@ -19807,12 +19507,12 @@ void CGame::UpdateScreen_OnLogResMsg()
 		sX = 146;
 		sY = 114;
 
-		_Draw_OnLogin(m_cAccountName, m_cAccountPassword, 0, 0);
+		_Draw_OnLogin(m_pPlayer->m_cAccountName, m_pPlayer->m_cAccountPassword, 0, 0);
 		break;
 
 	case '2':
 	case '4':
-		_bDraw_OnCreateNewCharacter(m_cPlayerName, 0, 0, 0);
+		_bDraw_OnCreateNewCharacter(m_pPlayer->m_cPlayerName, 0, 0, 0);
 		break;
 
 	case '3':
@@ -19989,35 +19689,35 @@ void CGame::UpdateScreen_OnLogResMsg()
 		if (Input::IsMouseInRect(370 + SCREENX, 240 + SCREENY, 370 + SCREENX + DEF_BTNSZX, 240 + SCREENY + DEF_BTNSZY)) {
 			switch (m_cMsg[0]) {
 			case '0':
-				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWACCOUNT);
+				ChangeGameMode(GameMode::CreateNewAccount);
 				break;
 			case '1':
-				ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+				ChangeGameMode(GameMode::MainMenu);
 				break;
 			case '2':
-				ChangeGameMode(DEF_GAMEMODE_ONCREATENEWCHARACTER);
+				ChangeGameMode(GameMode::CreateNewCharacter);
 				break;
 			case '3':
-				ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+				ChangeGameMode(GameMode::SelectCharacter);
 				break;
 			case '4':
-				ChangeGameMode(DEF_GAMEMODE_ONSELECTCHARACTER);
+				ChangeGameMode(GameMode::SelectCharacter);
 				break;
 			case '5':
-				ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+				ChangeGameMode(GameMode::MainMenu);
 				break;
 			case '6':
 				switch (m_cMsg[1]) {
 				case 'B':
-					ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+					ChangeGameMode(GameMode::MainMenu);
 					break;
-				case 'C': ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD); break;
-				case 'M': ChangeGameMode(DEF_GAMEMODE_ONCHANGEPASSWORD); break;
+				case 'C': ChangeGameMode(GameMode::ChangePassword); break;
+				case 'M': ChangeGameMode(GameMode::ChangePassword); break;
 				}
 				break;
 			case '7':
 			case '8':
-				ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+				ChangeGameMode(GameMode::MainMenu);
 				break;
 			}
 			return;
@@ -20041,7 +19741,6 @@ void CGame::UpdateScreen_OnLogResMsg()
 	}
 	if (m_cMenuDir > 8) m_cMenuDir = 1;
 	DrawVersion();
-	m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
 }
 
 void CGame::RetrieveItemHandler(char* pData)
@@ -20062,7 +19761,7 @@ void CGame::RetrieveItemHandler(char* pData)
 		if (m_pBankList[cBankItemIndex] != 0) {
 			// v1.42
 			char cStr1[64], cStr2[64], cStr3[64];
-			GetItemName(m_pBankList[cBankItemIndex], cStr1, cStr2, cStr3);
+			GetItemName(m_pBankList[cBankItemIndex].get(), cStr1, cStr2, cStr3);
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			wsprintf(cTxt, RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
@@ -20072,14 +19771,12 @@ void CGame::RetrieveItemHandler(char* pData)
 				(m_pBankList[cBankItemIndex]->m_cItemType == DEF_ITEMTYPE_ARROW))
 			{
 				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
-				delete m_pBankList[cBankItemIndex];
-				m_pBankList[cBankItemIndex] = 0;
+				m_pBankList[cBankItemIndex].reset();
 				for (j = 0; j <= DEF_MAXBANKITEMS - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
-						m_pBankList[j] = m_pBankList[j + 1];
-						m_pBankList[j + 1] = 0;
+						m_pBankList[j] = std::move(m_pBankList[j + 1]);
 					}
 				}
 			}
@@ -20099,7 +19796,7 @@ void CGame::RetrieveItemHandler(char* pData)
 						break;
 					}
 				}
-				m_pItemList[cItemIndex] = m_pBankList[cBankItemIndex];
+				m_pItemList[cItemIndex] = std::move(m_pBankList[cBankItemIndex]);
 				m_pItemList[cItemIndex]->m_sX = nX;
 				m_pItemList[cItemIndex]->m_sY = nY;
 				bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cItemIndex, nX, nY, 0, 0);
@@ -20112,13 +19809,12 @@ void CGame::RetrieveItemHandler(char* pData)
 					}
 				m_bIsItemEquipped[cItemIndex] = false;
 				m_bIsItemDisabled[cItemIndex] = false;
-				m_pBankList[cBankItemIndex] = 0;
+				// m_pBankList[cBankItemIndex] already moved above
 				for (j = 0; j <= DEF_MAXBANKITEMS - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
-						m_pBankList[j] = m_pBankList[j + 1];
-						m_pBankList[j + 1] = 0;
+						m_pBankList[j] = std::move(m_pBankList[j + 1]);
 					}
 				}
 			}
@@ -20138,7 +19834,7 @@ void CGame::EraseItem(char cItemID)
 	{
 		if (m_sShortCut[i] == cItemID)
 		{
-			GetItemName(m_pItemList[cItemID], cStr1, cStr2, cStr3);
+			GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 			if (i < 3) wsprintf(G_cTxt, ERASE_ITEM, cStr1, cStr2, cStr3, i + 1);
 			else wsprintf(G_cTxt, ERASE_ITEM, cStr1, cStr2, cStr3, i + 7);
 			AddEventList(G_cTxt, 10);
@@ -20159,8 +19855,7 @@ void CGame::EraseItem(char cItemID)
 			m_cItemOrder[i] = -1;
 		}
 	// ItemList
-	delete m_pItemList[cItemID];
-	m_pItemList[cItemID] = 0;
+	m_pItemList[cItemID].reset();
 	m_bIsItemEquipped[cItemID] = false;
 	m_bIsItemDisabled[cItemID] = false;
 }
@@ -20180,7 +19875,7 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 	for (i = 0; i < DEF_MAXITEMS; i++) {
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))	cEquipPoiStatus[m_pItemList[i]->m_cEquipPos] = i;
 	}
-	if ((m_sPlayerType >= 1) && (m_sPlayerType <= 3))
+	if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 3))
 	{
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
@@ -20261,7 +19956,7 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_HEAD];
 		}
 	}
-	else if ((m_sPlayerType >= 4) && (m_sPlayerType <= 6)) {
+	else if ((m_pPlayer->m_sPlayerType >= 4) && (m_pPlayer->m_sPlayerType <= 6)) {
 		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
 			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
 			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
@@ -20356,7 +20051,7 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 		if (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true)
 		{
 			char cStr1[64], cStr2[64], cStr3[64];
-			GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
+			GetItemName(m_pItemList[CursorTarget::GetSelectedID()].get(), cStr1, cStr2, cStr3);
 			std::memset(G_cTxt, 0, sizeof(G_cTxt));
 			wsprintf(G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);//"
 			AddEventList(G_cTxt, 10);
@@ -20370,19 +20065,19 @@ void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
 				char cItemID = CursorTarget::GetSelectedID();
 				if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 				{
-					m_iAngelicStr = 0;
+					m_pPlayer->m_iAngelicStr = 0;
 				}
 				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
 				{
-					m_iAngelicDex = 0;
+					m_pPlayer->m_iAngelicDex = 0;
 				}
 				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
 				{
-					m_iAngelicInt = 0;
+					m_pPlayer->m_iAngelicInt = 0;
 				}
 				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
 				{
-					m_iAngelicMag = 0;
+					m_pPlayer->m_iAngelicMag = 0;
 				}
 			}
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, CursorTarget::GetSelectedID(), 0, 0, 0);
@@ -20409,8 +20104,8 @@ void CGame::DlbBoxDoubleClick_GuideMap(short msX, short msY)
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 	if (ConfigManager::Get().IsZoomMapEnabled())
 	{
-		shX = m_sPlayerX - 64;
-		shY = m_sPlayerY - 64;
+		shX = m_pPlayer->m_sPlayerX - 64;
+		shY = m_pPlayer->m_sPlayerY - 64;
 		if (shX < 0) shX = 0;
 		if (shY < 0) shY = 0;
 		if (shX > m_pMapData->m_sMapSizeX - 128) shX = m_pMapData->m_sMapSizeX - 128;
@@ -20425,12 +20120,11 @@ void CGame::DlbBoxDoubleClick_GuideMap(short msX, short msY)
 	}
 	if (shX < 30 || shY < 30) return;
 	if (shX > m_pMapData->m_sMapSizeX - 30 || shY > m_pMapData->m_sMapSizeY - 30) return;
-	if ((ConfigManager::Get().IsRunningModeEnabled() == true) && (m_iSP > 0))
-		m_cCommand = DEF_OBJECTRUN;
-	else m_cCommand = DEF_OBJECTMOVE;
-	m_sCommX = shX;
-	m_sCommY = shY;
-	GetPlayerTurn();
+	if ((ConfigManager::Get().IsRunningModeEnabled() == true) && (m_pPlayer->m_iSP > 0))
+		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+	else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+	m_pPlayer->m_Controller.SetDestination(shX, shY);
+	m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 }
 
 void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
@@ -20439,7 +20133,7 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 	char  cItemID, cTxt[120];
 	short sX, sY, x1, x2, y1, y2;
 	char cStr1[64], cStr2[64], cStr3[64];
-	//if (m_iHP <= 0) return;
+	//if (m_pPlayer->m_iHP <= 0) return;
 	if (m_bItemUsingStatus == true)
 	{
 		AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY1, 10);
@@ -20463,7 +20157,7 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 		if ((m_bIsItemDisabled[cItemID] == false) && (m_bIsItemEquipped[cItemID] == false) && (msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
 		{	// Order
 			_SetItemOrder(0, cItemID);
-			GetItemName(m_pItemList[cItemID], cStr1, cStr2, cStr3);
+			GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 
 			if (m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24))
 			{
@@ -20592,7 +20286,7 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 				{
 					switch (m_pItemList[cItemID]->m_sSpriteFrame) {
 					case 55: // Alchemy pot
-						if (m_cSkillMastery[12] == 0)
+						if (m_pPlayer->m_iSkillMastery[12] == 0)
 						{
 							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY9, 10);//"You should learn alchemy skill to use this item."
 						}
@@ -20603,7 +20297,7 @@ void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
 						}
 						break;
 					case 113: // Smith's Anvil
-						if (m_cSkillMastery[13] == 0)
+						if (m_pPlayer->m_iSkillMastery[13] == 0)
 						{
 							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY11, 10);//"You should learn manufacturing skill to use this item.."
 						}
@@ -20672,26 +20366,27 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
 	PutString2(sX, sY, cTxt, 255, 255, 255);
 	if (m_bIsObserverMode == true) PutString2(sX, sY + 14, cTxt, 50, 50, 255);
-	else if (m_bIsConfusion || (m_iIlusionOwnerH != 0))
+	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
 		strcpy(cTxt, DRAW_OBJECT_NAME87);//"(Unknown)"
 		PutString2(sX, sY + 14, cTxt, 150, 150, 150); // v2.171
-	}/*else
-	{	switch( _iGetFOE(iStatus) ){
+	}
+	else
+	{
+		switch (_iGetFOE(iStatus)) {
 		case -2:
-			PutString2(sX, sY+14, DRAW_OBJECT_NAME90, 255, 0, 0); // "(Enemy)"
-			break;
 		case -1:
-			PutString2(sX, sY+14, DRAW_OBJECT_NAME90, 255, 0, 0); // "(Enemy)"
+			PutString2(sX, sY + 14, DRAW_OBJECT_NAME90, 255, 0, 0); // "(Enemy)"
 			break;
 		case 0:
-			PutString2(sX, sY+14, DRAW_OBJECT_NAME88, 50,50,255); // "Neutral"
+			PutString2(sX, sY + 14, DRAW_OBJECT_NAME88, 50, 50, 255); // "(Neutral)"
 			break;
 		case 1:
-			PutString2(sX, sY+14, DRAW_OBJECT_NAME89, 30,255,30); // "(Friendly)"
+			PutString2(sX, sY + 14, DRAW_OBJECT_NAME89, 30, 255, 30); // "(Friendly)"
 			break;
-	}	}*/
+		}
+	}
 	switch ((iStatus & 0x0F00) >> 8) {
 	case 0: break;
 	case 1: strcpy(cTxt2, DRAW_OBJECT_NAME52); break;//"Clairvoyant"
@@ -20722,7 +20417,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	case 69:
 	case 64:
 	{
-		switch ((_tmp_sAppr2 & 0xFF00) >> 8) {
+		switch ((m_entityState.m_sAppr2 & 0xFF00) >> 8) {
 		case 1:
 		case 2:
 		case 3:
@@ -20783,10 +20478,10 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 		if (m_bIsCrusadeMode == false) wsprintf(cTxt, "%s", pName);
 		else
 		{
-			if (_tmp_wObjectID >= 10000) strcpy(cTxt, NPC_NAME_MERCENARY); //"Mercenary"
+			if (m_entityState.m_wObjectID >= 10000) strcpy(cTxt, NPC_NAME_MERCENARY); //"Mercenary"
 			else
 			{
-				if (iFOE == -1) wsprintf(cTxt, "%d", _tmp_wObjectID);
+				if (iFOE == -1) wsprintf(cTxt, "%d", m_entityState.m_wObjectID);
 				else strcpy(cTxt, pName);
 			}
 		}
@@ -20810,21 +20505,21 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	PutString2(sX, sY, cTxt, 255, 255, 255);
 	std::memset(cTxt, 0, sizeof(cTxt));
 
-	if (memcmp(m_cPlayerName, pName, 10) == 0)
+	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0)
 	{
-		if (m_iGuildRank == 0)
+		if (m_pPlayer->m_iGuildRank == 0)
 		{
-			wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_cGuildName);//" Guildmaster)"
+			wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
 			PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
 			iAddY = 14;
 		}
-		if (m_iGuildRank > 0)
+		if (m_pPlayer->m_iGuildRank > 0)
 		{
-			wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_cGuildName);//" Guildsman)"
+			wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
 			PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
 			iAddY = 14;
 		}
-		if (m_iPKCount != 0)
+		if (m_pPlayer->m_iPKCount != 0)
 		{
 			bPK = true;
 			sR = 255; sG = 0; sB = 0;
@@ -20834,9 +20529,9 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 			bPK = false;
 			sR = 30; sG = 200; sB = 30;
 		}
-		bCitizen = m_bCitizen;
-		bAresden = m_bAresden;
-		bHunter = m_bHunter;
+		bCitizen = m_pPlayer->m_bCitizen;
+		bAresden = m_pPlayer->m_bAresden;
+		bHunter = m_pPlayer->m_bHunter;
 	}
 	else
 	{	// CLEROTH - CRASH BUG ( STATUS )
@@ -20877,7 +20572,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 					}
 				}
 			}
-			else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQGUILDNAME, 0, _tmp_wObjectID, iGuildIndex, 0, 0);
+			else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQGUILDNAME, 0, m_entityState.m_wObjectID, iGuildIndex, 0, 0);
 		}
 	}
 
@@ -21324,7 +21019,7 @@ bool CGame::bCheckLocalChatCommand(char* pMsg)
 bool CGame::bCheckItemOperationEnabled(char cItemID)
 {
 	if (m_pItemList[cItemID] == 0) return false;
-	if (m_cCommand < 0) return false;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	if (m_bIsTeleportRequested == true) return false;
 	if (m_bIsItemDisabled[cItemID] == true) return false;
 
@@ -21391,10 +21086,9 @@ void CGame::ClearSkillUsingStatus()
 		AddEventList(CLEAR_SKILL_USING_STATUS1, 10);//"
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		if ((m_sPlayerType >= 1) && (m_sPlayerType <= 6)/* && ((m_sPlayerAppr2 & 0xF000) == 0)*/) {
-			m_cCommand = DEF_OBJECTSTOP;
-			m_sCommX = m_sPlayerX;
-			m_sCommY = m_sPlayerY;
+		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0)*/) {
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		}
 	}
 	m_bSkillUsingStatus = false;
@@ -21431,7 +21125,7 @@ void CGame::NpcTalkHandler(char* pData)
 	if ((sType >= 1) && (sType <= 100))
 	{
 		iIndex = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1;
-		m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+		m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;
 		iQuestionType = 0;
 		switch (sType) {
@@ -21440,32 +21134,32 @@ void CGame::NpcTalkHandler(char* pData)
 			GetNpcName(iTargetType, cTemp);
 			std::memset(cTxt, 0, sizeof(cTxt));
 			wsprintf(cTxt, NPC_TALK_HANDLER16, iTargetCount, cTemp);
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
 				strcpy(cTxt, NPC_TALK_HANDLER17);//"
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
 				wsprintf(cTxt, NPC_TALK_HANDLER18, cTemp);//"Map : %s"
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 
 				if (iX != 0) {
 					std::memset(cTxt, 0, sizeof(cTxt));
 					wsprintf(cTxt, NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
-					m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 					iIndex++;
 				}
 
 				std::memset(cTxt, 0, sizeof(cTxt));
 				wsprintf(cTxt, NPC_TALK_HANDLER20, iContribution);//"
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			iQuestionType = 1;
@@ -21473,32 +21167,32 @@ void CGame::NpcTalkHandler(char* pData)
 
 		case 7: //
 			std::memset(cTxt, 0, sizeof(cTxt));
-			m_pMsgTextList2[iIndex] = new class CMsg(0, NPC_TALK_HANDLER21, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER21, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
 				strcpy(cTxt, NPC_TALK_HANDLER22);
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
 				wsprintf(cTxt, NPC_TALK_HANDLER23, cTemp);
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 
 				if (iX != 0) {
 					std::memset(cTxt, 0, sizeof(cTxt));
 					wsprintf(cTxt, NPC_TALK_HANDLER24, iX, iY, iRange);
-					m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 					iIndex++;
 				}
 
 				std::memset(cTxt, 0, sizeof(cTxt));
 				wsprintf(cTxt, NPC_TALK_HANDLER25, iContribution);
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			iQuestionType = 1;
@@ -21506,45 +21200,45 @@ void CGame::NpcTalkHandler(char* pData)
 
 		case 10: // Crusade
 			std::memset(cTxt, 0, sizeof(cTxt));
-			m_pMsgTextList2[iIndex] = new class CMsg(0, NPC_TALK_HANDLER26, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			strcpy(cTxt, NPC_TALK_HANDLER27);//"
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			strcpy(cTxt, NPC_TALK_HANDLER28);//"
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			strcpy(cTxt, NPC_TALK_HANDLER29);//"
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			strcpy(cTxt, NPC_TALK_HANDLER30);//"
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			strcpy(cTxt, " ");
-			m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
 				strcpy(cTxt, NPC_TALK_HANDLER31);//"
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
 				wsprintf(cTxt, NPC_TALK_HANDLER32, cTemp);//"
-				m_pMsgTextList2[iIndex] = new class CMsg(0, cTxt, 0);
+				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			iQuestionType = 2;
@@ -21553,22 +21247,22 @@ void CGame::NpcTalkHandler(char* pData)
 
 		switch (iQuestionType) {
 		case 1:
-			m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 			iIndex++;
-			m_pMsgTextList2[iIndex] = new class CMsg(0, NPC_TALK_HANDLER33, 0);//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER33, 0);//"
 			iIndex++;
-			m_pMsgTextList2[iIndex] = new class CMsg(0, NPC_TALK_HANDLER34, 0);//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER34, 0);//"
 			iIndex++;
-			m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 			iIndex++;
 			break;
 
 		case 2:
-			m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 			iIndex++;
-			m_pMsgTextList2[iIndex] = new class CMsg(0, NPC_TALK_HANDLER35, 0);//"
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER35, 0);//"
 			iIndex++;
-			m_pMsgTextList2[iIndex] = new class CMsg(0, "  ", 0);
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 			iIndex++;
 			break;
 
@@ -21608,19 +21302,19 @@ void CGame::GetNpcName(short sType, char* pName)
 	case 34: strcpy(pName, NPC_NAME_DUMMY); break;
 	case 35: strcpy(pName, NPC_NAME_ENERGYSPHERE); break;
 	case 36:
-		if (_tmp_sAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
+		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_ARROWGUARDTOWER);
 		break;
 	case 37:
-		if (_tmp_sAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
+		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_CANNONGUARDTOWER);
 		break;
 	case 38:
-		if (_tmp_sAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
+		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
 		else strcpy(pName, NPC_NAME_MANACOLLECTOR);
 		break;
 	case 39:
-		if (_tmp_sAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
+		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
 		else strcpy(pName, NPC_NAME_DETECTOR);
 		break;
 	case 40: strcpy(pName, NPC_NAME_ENERGYSHIELD); break;
@@ -21649,7 +21343,7 @@ void CGame::GetNpcName(short sType, char* pName)
 	case 63: strcpy(pName, NPC_NAME_FROST); break;
 	case 64:
 	{
-		switch ((_tmp_sAppr2 & 0xFF00) >> 8) {
+		switch ((m_entityState.m_sAppr2 & 0xFF00) >> 8) {
 		case 1:	strcpy(pName, NPC_NAME_WATERMELON);	break;
 		case 2: strcpy(pName, NPC_NAME_PUMPKIN); break;
 		case 3: strcpy(pName, NPC_NAME_GARLIC); break;
@@ -21705,14 +21399,14 @@ void CGame::GetNpcName(short sType, char* pName)
 
 void CGame::_CalcSocketClosed()
 {
-	if (m_cGameMode == DEF_GAMEMODE_ONMAINGAME)
+	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		delete m_pGSock;
-		m_pGSock = 0;
+		m_pGSock.reset();
+		m_pGSock.reset();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
-		ChangeGameMode(DEF_GAMEMODE_ONQUIT);
+		ChangeGameMode(GameMode::Quit);
 	}
 }
 
@@ -21732,7 +21426,7 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 	}
 	else if (m_iPointCommandType == 200) // Normal Hand
 	{
-		if ((strlen(m_cMCName) == 0) || (strcmp(m_cMCName, m_cPlayerName) == 0) || (m_cMCName[0] == '_'))
+		if ((strlen(m_cMCName) == 0) || (strcmp(m_cMCName, m_pPlayer->m_cPlayerName) == 0) || (m_cMCName[0] == '_'))
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 0;
 			PlaySound('E', 14, 5);
@@ -21750,560 +21444,6 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 	}
 }
 
-// File-scope static variables for OnGame screen
-// Shared between UpdateScreen_OnGame and DrawScreen_OnGame
-static short s_sOnGameMsX, s_sOnGameMsY, s_sOnGameMsZ;
-static char s_cOnGameLB, s_cOnGameRB;
-static uint32_t s_dwOnGameTime;
-static short s_sOnGameDivX, s_sOnGameModX, s_sOnGameDivY, s_sOnGameModY;
-static short s_sOnGamePivotX, s_sOnGamePivotY;
-static short s_sOnGameVPXsave, s_sOnGameVPYsave;
-static DWORD s_dwOnGamePrevChatTime = 0;
-
-// OnGame screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_OnGame()
-{
-	short sVal, absX, absY, tX, tY;
-	int i, iAmount;
-
-	s_dwOnGameTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0)
-	{
-		m_dwFPStime = m_dwCheckConnTime = m_dwCheckSprTime = m_dwCheckChatTime = s_dwOnGameTime;
-		m_sFrameCount = 0;
-		if (AudioManager::Get().IsMusicEnabled()) StartBGM();
-	}
-
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 20) m_cGameModeCount = 20;
-
-	s_sOnGameMsX = static_cast<short>(Input::GetMouseX());
-
-	s_sOnGameMsY = static_cast<short>(Input::GetMouseY());
-
-	s_sOnGameMsZ = static_cast<short>(Input::GetMouseWheelDelta());
-
-	s_cOnGameLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
-
-	s_cOnGameRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
-	m_dwCurTime = GameClock::GetTimeMS();
-
-	// Sync manager singletons with game state
-	// Camera: sync view position (pixel coords to tile coords)
-	Camera::Get().SetViewPosition(m_sViewPointX / 32, m_sViewPointY / 32);
-
-	// AudioManager: update listener position to player location
-	AudioManager::Get().SetListenerPosition(m_sPlayerX, m_sPlayerY);
-
-	// WeatherManager: sync with legacy weather status
-	WeatherType currentWeather = WeatherManager::FromLegacyWeather(m_cWhetherStatus);
-	if (WeatherManager::Get().GetCurrentWeather() != currentWeather)
-	{
-		WeatherManager::Get().SetWeatherImmediate(currentWeather);
-	}
-
-	// Enter key handling
-	if (Input::IsKeyPressed(VK_RETURN) == true)
-	{
-		if ((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
-			EndInputString();
-			if (strlen(m_cGuildName) == 0) return;
-			if (strcmp(m_cGuildName, "NONE") != 0) {
-				bSendCommand(MSGID_REQUEST_CREATENEWGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
-				m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 2;
-			}
-		}
-		else if ((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) && (m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ItemDropExternal)) {
-			EndInputString();
-
-			if (m_bSkillUsingStatus == true) {
-				AddEventList(UPDATE_SCREEN_ONGAME1, 10);
-				return;
-			}
-
-			if ((m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) == true) && ((m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1) || (m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))) {
-				AddEventList(UPDATE_SCREEN_ONGAME1, 10);
-				return;
-			}
-
-			if ((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == true) || (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == true) || (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true)) {
-				AddEventList(UPDATE_SCREEN_ONGAME1, 10);
-				return;
-			}
-
-			if (strlen(m_cAmountString) == 0) return;
-			iAmount = atoi(m_cAmountString);
-
-			if ((int)(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) < iAmount) {
-				iAmount = m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount;
-			}
-
-			if (iAmount != 0) {
-				if ((int)(m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_dwCount) >= iAmount) {
-					if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 != 0) {
-						absX = abs(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 - m_sPlayerX);
-						absY = abs(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 - m_sPlayerY);
-
-						if ((absX == 0) && (absY == 0))
-							AddEventList(UPDATE_SCREEN_ONGAME5, 10);
-						else if ((absX <= 8) && (absY <= 8)) {
-							switch (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3) {
-							case 1: case 2: case 3: case 4: case 5: case 6:
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 1, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
-								tX = s_sOnGameMsX - 117; tY = s_sOnGameMsY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-								std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-								strcpy(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);
-								break;
-							case 20:
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV5 = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
-								tX = s_sOnGameMsX - 117; tY = s_sOnGameMsY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-								std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-								GetNpcName(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
-								break;
-							case 15: case 24:
-								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = iAmount;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID;
-								tX = s_sOnGameMsX - 117; tY = s_sOnGameMsY - 50;
-								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
-								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
-								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
-								std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-								GetNpcName(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
-								break;
-							case 1000:
-								if (m_stDialogBoxExchangeInfo[0].sV1 == -1) m_stDialogBoxExchangeInfo[0].sItemID = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-								else if (m_stDialogBoxExchangeInfo[1].sV1 == -1) m_stDialogBoxExchangeInfo[1].sItemID = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-								else if (m_stDialogBoxExchangeInfo[2].sV1 == -1) m_stDialogBoxExchangeInfo[2].sItemID = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-								else if (m_stDialogBoxExchangeInfo[3].sV1 == -1) m_stDialogBoxExchangeInfo[3].sItemID = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-								else return;
-								bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETEXCHANGEITEM, 0, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4, iAmount, 0, 0);
-								break;
-							case 1001:
-								for (i = 0; i < DEF_MAXSELLLIST; i++)
-									if (m_stSellItemList[i].iIndex == -1) {
-										m_stSellItemList[i].iIndex = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
-										m_stSellItemList[i].iAmount = iAmount;
-										m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4] = true;
-										break;
-									}
-								if (i == DEF_MAXSELLLIST) AddEventList(UPDATE_SCREEN_ONGAME6, 10);
-								break;
-							case 1002:
-								if (_iGetBankItemCount() >= (iMaxBankItems - 1)) AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
-								else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1, iAmount, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1]->m_cName, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
-								break;
-							default:
-								bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, (char)(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName);
-								break;
-							}
-							m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
-						}
-						else AddEventList(UPDATE_SCREEN_ONGAME7, 10);
-					}
-					else {
-						if (iAmount <= 0) AddEventList(UPDATE_SCREEN_ONGAME8, 10);
-						else {
-							bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, iAmount, 0, m_pItemList[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName);
-							m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
-						}
-					}
-				}
-				else AddEventList(UPDATE_SCREEN_ONGAME9, 10);
-			}
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-		}
-		else
-		{
-			if (!m_bInputStatus) {
-				switch (m_cBackupChatMsg[0]) {
-				case '!': case '@': case '#': case '$': case '^':
-					std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
-					m_cChatMsg[0] = m_cBackupChatMsg[0];
-					StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-					break;
-				default:
-					StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
-					ClearInputString();
-					break;
-				}
-			}
-			else {
-				EndInputString();
-				std::memset(G_cTxt, 0, sizeof(G_cTxt));
-				ReceiveString((char*)G_cTxt);
-				std::memset(m_cBackupChatMsg, 0, sizeof(m_cBackupChatMsg));
-				strcpy(m_cBackupChatMsg, G_cTxt);
-				if ((m_dwCurTime - s_dwOnGamePrevChatTime) >= 700) {
-					s_dwOnGamePrevChatTime = m_dwCurTime;
-					if (strlen(G_cTxt) > 0) {
-						if ((G_cTxt[0] == '!') || (G_cTxt[0] == '~')) {
-							if (CMisc::bCheckIMEString(G_cTxt) == false) return;
-						}
-						bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, G_cTxt);
-					}
-				}
-			}
-		}
-	}
-
-	// Save viewport and apply camera shake
-	s_sOnGameVPXsave = m_sViewPointX;
-	s_sOnGameVPYsave = m_sViewPointY;
-
-	if (m_iCameraShakingDegree > 0) {
-		m_sViewPointX += m_iCameraShakingDegree - (rand() % m_iCameraShakingDegree * 2);
-		m_sViewPointY += m_iCameraShakingDegree - (rand() % m_iCameraShakingDegree * 2);
-		m_iCameraShakingDegree--;
-		if (m_iCameraShakingDegree <= 0) m_iCameraShakingDegree = 0;
-	}
-
-	// Calculate viewport tile coordinates
-	s_sOnGamePivotX = m_pMapData->m_sPivotX;
-	s_sOnGamePivotY = m_pMapData->m_sPivotY;
-	sVal = m_sViewPointX - (s_sOnGamePivotX * 32);
-	s_sOnGameDivX = sVal / 32;
-	s_sOnGameModX = sVal % 32;
-	sVal = m_sViewPointY - (s_sOnGamePivotY * 32);
-	s_sOnGameDivY = sVal / 32;
-	s_sOnGameModY = sVal % 32;
-
-	// Logout countdown
-	if (m_cLogOutCount > 0) {
-		if ((s_dwOnGameTime - m_dwLogOutCountTime) > 1000) {
-			m_cLogOutCount--;
-			m_dwLogOutCountTime = s_dwOnGameTime;
-			wsprintf(G_cTxt, UPDATE_SCREEN_ONGAME13, m_cLogOutCount);
-			AddEventList(G_cTxt, 10);
-		}
-	}
-	if (m_cLogOutCount == 0) {
-		WriteSettings(); // Save settings on logout
-		delete m_pGSock;
-		m_pGSock = 0;
-		PlaySound('E', 14, 5);
-		AudioManager::Get().StopSound(SoundType::Effect, 38);
-		AudioManager::Get().StopMusic();
-		if (strlen(G_cCmdLineTokenA) != 0)
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-		else ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
-		return;
-	}
-
-	// Restart countdown
-	if (m_cRestartCount > 0) {
-		if ((s_dwOnGameTime - m_dwRestartCountTime) > 1000) {
-			m_cRestartCount--;
-			m_dwRestartCountTime = s_dwOnGameTime;
-			wsprintf(G_cTxt, UPDATE_SCREEN_ONGAME14, m_cRestartCount);
-			AddEventList(G_cTxt, 10);
-		}
-	}
-	if (m_cRestartCount == 0) {
-		m_cRestartCount = -1;
-		bSendCommand(MSGID_REQUEST_RESTART, 0, 0, 0, 0, 0, 0);
-		return;
-	}
-
-	// Update frame counters and process commands
-	int iUpdateRet = m_pMapData->iObjectFrameCounter(m_cPlayerName, m_sViewPointX, m_sViewPointY);
-	if (m_pEffectManager) m_pEffectManager->Update();
-	if (iUpdateRet == 2) {
-		m_bCommandAvailable = true;
-		m_dwCommandTime = 0;
-	}
-	CommandProcessor(s_sOnGameMsX, s_sOnGameMsY,
-		((s_sOnGameDivX + s_sOnGamePivotX) * 32 + s_sOnGameModX + s_sOnGameMsX - 17) / 32 + 1,
-		((s_sOnGameDivY + s_sOnGamePivotY) * 32 + s_sOnGameModY + s_sOnGameMsY - 17) / 32 + 1,
-		s_cOnGameLB, s_cOnGameRB);
-
-	// Restore viewport
-	m_sViewPointX = s_sOnGameVPXsave;
-	m_sViewPointY = s_sOnGameVPYsave;
-
-	if (iUpdateRet > 0) CalcViewPoint();
-
-	// Observer mode camera
-	if (m_bIsObserverMode) {
-		if ((s_dwOnGameTime - m_dwObserverCamTime) > 25) {
-			m_dwObserverCamTime = s_dwOnGameTime;
-			CalcViewPoint();
-		}
-	}
-
-	// Draw flag animation
-	if (m_bDrawFlagDir == false) {
-		m_iDrawFlag++;
-		if (m_iDrawFlag >= 25) { m_iDrawFlag = 25; m_bDrawFlagDir = true; }
-	}
-	else {
-		m_iDrawFlag--;
-		if (m_iDrawFlag < 0) { m_iDrawFlag = 0; m_bDrawFlagDir = false; }
-	}
-}
-
-// OnGame screen - Draw phase (rendering only)
-void CGame::DrawScreen_OnGame()
-{
-	char cItemColor;
-
-	// Update all dialog boxes first (before drawing)
-	m_dialogBoxManager.UpdateDialogBoxs();
-
-	// Update entity motion interpolation for all tiles
-	uint32_t dwTime = m_dwCurTime;
-	for (int y = 0; y < MAPDATASIZEY; y++) {
-		for (int x = 0; x < MAPDATASIZEX; x++) {
-			m_pMapData->m_pData[x][y].m_motion.Update(dwTime);
-		}
-	}
-
-	// Main scene rendering
-	FrameTiming::BeginProfile(ProfileStage::DrawBackground);
-	DrawBackground(s_sOnGameDivX, s_sOnGameModX, s_sOnGameDivY, s_sOnGameModY);
-	FrameTiming::EndProfile(ProfileStage::DrawBackground);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawEffectLights);
-	m_pEffectManager->DrawEffectLights();
-
-	// Player ambient light at night
-	if (G_cSpriteAlphaDegree == 2)
-	{
-		// Player is always at screen center
-		constexpr int PLAYER_SCREEN_X = LOGICAL_WIDTH / 2;   // 320
-		constexpr int PLAYER_SCREEN_Y = (LOGICAL_HEIGHT / 2) + 16;  // 240
-
-		// Player light parameters (smaller radius, softer glow)
-		constexpr int PLAYER_LIGHT_RADIUS = 2;        // Radius in tiles
-		constexpr float PLAYER_CENTER_INTENSITY = 0.35f;  // Intensity at center
-		constexpr float PLAYER_EDGE_INTENSITY = 0.05f;    // Intensity at edge
-		constexpr int TILE_SIZE = 32;
-
-		// Draw player ambient light in a circular pattern
-		for (int ty = -PLAYER_LIGHT_RADIUS; ty <= PLAYER_LIGHT_RADIUS; ty++) {
-			for (int tx = -PLAYER_LIGHT_RADIUS; tx <= PLAYER_LIGHT_RADIUS; tx++) {
-				float distance = sqrtf(static_cast<float>(tx * tx + ty * ty));
-				if (distance > PLAYER_LIGHT_RADIUS) continue;
-
-				float t = distance / PLAYER_LIGHT_RADIUS;
-				float intensity = PLAYER_CENTER_INTENSITY * (1.0f - t) + PLAYER_EDGE_INTENSITY * t;
-				if (intensity < 0.05f) continue;
-
-				int lightX = PLAYER_SCREEN_X + tx * TILE_SIZE;
-				int lightY = PLAYER_SCREEN_Y + ty * (TILE_SIZE / 2);
-
-				// Softer, cooler light for player (moonlight/ambient feel)
-				int r = 255;
-				int g = 255;
-				int b = static_cast<int>(200 + 40 * (1.0f - t));  // Slightly blue tint
-
-				m_pEffectSpr[0]->Draw(lightX, lightY, 1,
-					SpriteLib::DrawParams::AdditiveColored(r, g, b, intensity));
-			}
-		}
-	}
-	FrameTiming::EndProfile(ProfileStage::DrawEffectLights);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawObjects);
-	DrawObjects(s_sOnGamePivotX, s_sOnGamePivotY, s_sOnGameDivX, s_sOnGameDivY, s_sOnGameModX, s_sOnGameModY, s_sOnGameMsX, s_sOnGameMsY);
-	FrameTiming::EndProfile(ProfileStage::DrawObjects);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawEffects);
-	m_pEffectManager->DrawEffects();
-	FrameTiming::EndProfile(ProfileStage::DrawEffects);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawWeather);
-	DrawWhetherEffects();
-	FrameTiming::EndProfile(ProfileStage::DrawWeather);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawChat);
-	DrawChatMsgs(-100, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
-	FrameTiming::EndProfile(ProfileStage::DrawChat);
-
-	WhetherObjectFrameCounter();
-
-	// Apocalypse map effects
-	if (m_cMapIndex == 26) {
-		m_pEffectSpr[89]->Draw(1296 - m_sViewPointX, 1283 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[89]->Draw(1520 - m_sViewPointX, 1123 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[89]->Draw(1488 - m_sViewPointX, 3971 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[93]->Draw(2574 - m_sViewPointX, 3677 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[93]->Draw(3018 - m_sViewPointX, 3973 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-	}
-	else if (m_cMapIndex == 27) {
-		m_pEffectSpr[89]->Draw(1293 - m_sViewPointX, 3657 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[89]->Draw(944 - m_sViewPointX, 3881 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[89]->Draw(1325 - m_sViewPointX, 4137 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[89]->Draw(1648 - m_sViewPointX, 3913 - m_sViewPointY, _tmp_iEffectFrame % 12, SpriteLib::DrawParams::Alpha(0.5f));
-	}
-
-	// Apocalypse gate
-	if ((m_iGatePositX >= m_sViewPointX / 32) && (m_iGatePositX <= m_sViewPointX / 32 + VIEW_TILE_WIDTH)
-		&& (m_iGatePositY >= m_sViewPointY / 32) && (m_iGatePositY <= m_sViewPointY / 32 + VIEW_TILE_HEIGHT)) {
-		m_pEffectSpr[101]->Draw(m_iGatePositX * 32 - m_sViewPointX - 96, m_iGatePositY * 32 - m_sViewPointY - 69, _tmp_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.5f));
-	}
-
-	// UI rendering
-	FrameTiming::BeginProfile(ProfileStage::DrawDialogs);
-	m_dialogBoxManager.DrawDialogBoxs(s_sOnGameMsX, s_sOnGameMsY, s_sOnGameMsZ, s_cOnGameLB);
-	FrameTiming::EndProfile(ProfileStage::DrawDialogs);
-
-	FrameTiming::BeginProfile(ProfileStage::DrawMisc);
-	if (m_bInputStatus) {
-		if (((m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
-			((m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
-		}
-		else m_Renderer->DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
-		ShowReceivedString();
-	}
-
-	ShowEventList(m_dwCurTime);
-
-	// Item tooltip on cursor
-	if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
-		(m_pItemList[CursorTarget::GetSelectedID()] != 0)) {
-		cItemColor = m_pItemList[CursorTarget::GetSelectedID()]->m_cItemColor;
-		if (cItemColor != 0) {
-			if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-				(m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-				(m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
-			}
-			else {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
-			}
-		}
-		else m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(s_sOnGameMsX - CursorTarget::GetDragDistX(), s_sOnGameMsY - CursorTarget::GetDragDistY(), m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame);
-
-		char cStr1[64], cStr2[64], cStr3[64];
-		int iLoc;
-		GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
-		iLoc = 0;
-		if (strlen(cStr1) != 0) {
-			if (m_bIsSpecial) PutString(s_sOnGameMsX, s_sOnGameMsY + 25, cStr1, RGB(0, 255, 50), false, 1);
-			else PutString(s_sOnGameMsX, s_sOnGameMsY + 25, cStr1, RGB(255, 255, 255), false, 1);
-			iLoc += 15;
-		}
-		if (strlen(cStr2) != 0) { PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, cStr2, RGB(150, 150, 150), false, 1); iLoc += 15; }
-		if (strlen(cStr3) != 0) { PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, cStr3, RGB(150, 150, 150), false, 1); iLoc += 15; }
-		if ((m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit != 0) && ((m_pItemList[CursorTarget::GetSelectedID()]->m_dwAttribute & 0x00000001) == 0)) {
-			wsprintf(G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit);
-			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
-		}
-		if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) && (m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight >= 1100)) {
-			int _wWeight = 0;
-			if (m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight % 100) _wWeight = 1;
-			wsprintf(G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight / 100 + _wWeight);
-			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
-		}
-		if (m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) {
-			wsprintf(G_cTxt, UPDATE_SCREEN_ONGAME10, m_pItemList[CursorTarget::GetSelectedID()]->m_wCurLifeSpan, m_pItemList[CursorTarget::GetSelectedID()]->m_wMaxLifeSpan);
-			PutString(s_sOnGameMsX, s_sOnGameMsY + 25 + iLoc, G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
-		}
-		if (iLoc == 15) {
-			iLoc = 0;
-			for (int iTmp = 0; iTmp < DEF_MAXITEMS; iTmp++) {
-				if (m_pItemList[iTmp] != 0) {
-					// Compare by item ID instead of name
-					if (m_pItemList[iTmp]->m_sIDnum == m_pItemList[CursorTarget::GetSelectedID()]->m_sIDnum) iLoc++;
-				}
-			}
-			if (iLoc > 1) {
-				wsprintf(G_cTxt, DEF_MSG_TOTAL_NUMBER, iLoc);
-				PutString(s_sOnGameMsX, s_sOnGameMsY + 40, G_cTxt, RGB(150, 150, 150), false, 1);
-			}
-		}
-	}
-
-	// Druncncity bubbles
-	if (m_cMapIndex == 25)
-		m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_sViewPointX + rand() % LOGICAL_MAX_X, m_sViewPointY + rand() % LOGICAL_MAX_Y, 0, 0, -1 * (rand() % 80), 1);
-
-	// Heldenian tower count
-	if ((m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_cCurLocation, "BtField", 7) == 0)) {
-		wsprintf(G_cTxt, "Aresden Flags : %d", m_iHeldenianAresdenFlags);
-		PutString(10, 140, G_cTxt, RGB(255, 255, 255));
-		wsprintf(G_cTxt, "Aresden Flags : %d", m_iHeldenianElvineFlags);
-		PutString(10, 160, G_cTxt, RGB(255, 255, 255));
-		wsprintf(G_cTxt, "Aresden's rest building number : %d", m_iHeldenianAresdenLeftTower);
-		PutString(10, 180, G_cTxt, RGB(255, 255, 255));
-		wsprintf(G_cTxt, "Elvine's rest building number : %d", m_iHeldenianElvineLeftTower);
-		PutString(10, 200, G_cTxt, RGB(255, 255, 255));
-	}
-
-	DrawTopMsg();
-
-	// Fade-in overlay
-	if (m_cGameModeCount < 6) m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	if (m_cGameModeCount < 2) m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-
-	// Cursor
-	if (m_bIsObserverMode == true) {
-		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY, 255, 255, 255);
-		m_Renderer->PutPixel(s_sOnGameMsX + 1, s_sOnGameMsY, 255, 255, 255);
-		m_Renderer->PutPixel(s_sOnGameMsX - 1, s_sOnGameMsY, 255, 255, 255);
-		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY + 1, 255, 255, 255);
-		m_Renderer->PutPixel(s_sOnGameMsX, s_sOnGameMsY - 1, 255, 255, 255);
-	}
-	else m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(s_sOnGameMsX, s_sOnGameMsY, CursorTarget::GetCursorFrame());
-	FrameTiming::EndProfile(ProfileStage::DrawMisc);
-
-	// FPS and profiling display
-	int iDisplayY = 100;
-	if (ConfigManager::Get().IsShowFpsEnabled()) {
-		wsprintf(G_cTxt, "fps : %u", FrameTiming::GetFPS());
-		PutString(10, iDisplayY, G_cTxt, RGB(255, 255, 255));
-		iDisplayY += 14;
-	}
-
-	if (ConfigManager::Get().IsShowLatencyEnabled()) {
-		if (m_iLatencyMs >= 0)
-			wsprintf(G_cTxt, "latency : %d ms", m_iLatencyMs);
-		else
-			wsprintf(G_cTxt, "latency : -- ms");
-		PutString(10, iDisplayY, G_cTxt, RGB(255, 255, 255));
-		iDisplayY += 14;
-	}
-
-	// Profiling display
-	if (FrameTiming::IsProfilingEnabled()) {
-		iDisplayY += 4; // Add spacing
-		PutString(10, iDisplayY, "--- Profile (avg ms) ---", RGB(255, 255, 100));
-		iDisplayY += 14;
-
-		// Display each profile stage (wsprintf doesn't support %f, so use integer ms * 100 for .xx precision)
-		for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++) {
-			ProfileStage stage = static_cast<ProfileStage>(i);
-			double avgMs = FrameTiming::GetProfileAvgTimeMS(stage);
-			int wholePart = static_cast<int>(avgMs);
-			int fracPart = static_cast<int>((avgMs - wholePart) * 100);
-			wsprintf(G_cTxt, "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-			PutString(10, iDisplayY, G_cTxt, RGB(200, 200, 200));
-			iDisplayY += 12;
-		}
-	}
-}
 
 void CGame::StartBGM()
 {
@@ -22375,40 +21515,36 @@ void CGame::MotionResponseHandler(char* pData)
 
 	switch (wResponse) {
 	case DEF_OBJECTMOTION_CONFIRM:
-		m_cCommandCount--;
+		m_pPlayer->m_Controller.DecrementCommandCount();
 		break;
 
 	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
-		m_cCommandCount--;
+		m_pPlayer->m_Controller.DecrementCommandCount();
 		if ((m_wLastAttackTargetID >= 10000) && (m_wLastAttackTargetID < 30000)) {
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETNPCHP, 0, m_wLastAttackTargetID, 0, 0, 0);
 		}
 		break;
 
 	case DEF_OBJECTMOTION_REJECT:
-		if (m_iHP <= 0) return;
+		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionReject>(
 				pData, sizeof(hb::net::PacketResponseMotionReject));
 			if (!pkt) return;
-			m_sPlayerX = pkt->x;
-			m_sPlayerY = pkt->y;
+			m_pPlayer->m_sPlayerX = pkt->x;
+			m_pPlayer->m_sPlayerY = pkt->y;
 		}
 
-		m_cCommand = DEF_OBJECTSTOP;
-		m_sCommX = m_sPlayerX;
-		m_sCommY = m_sPlayerY;
+		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 
-		m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-			m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-			m_iPlayerStatus, m_cPlayerName,
+		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
-		m_cCommandCount = 0;
+		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
-		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
-		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
-
-		m_bIsRedrawPDBGS = true;
+		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
 		break;
 
 	case DEF_OBJECTMOVE_CONFIRM:
@@ -22419,18 +21555,18 @@ void CGame::MotionResponseHandler(char* pData)
 		sX = pkt->x;
 		sY = pkt->y;
 		cDir = static_cast<char>(pkt->dir);
-		m_iSP = m_iSP - pkt->stamina_cost;
-		if (m_iSP < 0) m_iSP = 0;
+		m_pPlayer->m_iSP = m_pPlayer->m_iSP - pkt->stamina_cost;
+		if (m_pPlayer->m_iSP < 0) m_pPlayer->m_iSP = 0;
 		// v1.3
 		//m_iOccupyStatus = (int)*cp;
-		iPreHP = m_iHP;
-		m_iHP = pkt->hp;
+		iPreHP = m_pPlayer->m_iHP;
+		m_pPlayer->m_iHP = pkt->hp;
 
-		if (m_iHP != iPreHP)
+		if (m_pPlayer->m_iHP != iPreHP)
 		{
-			if (m_iHP < iPreHP)
+			if (m_pPlayer->m_iHP < iPreHP)
 			{
-				wsprintf(G_cTxt, NOTIFYMSG_HP_DOWN, iPreHP - m_iHP);
+				wsprintf(G_cTxt, NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
 				AddEventList(G_cTxt, 10);
 				m_dwDamagedTime = GameClock::GetTimeMS();
 				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -22441,50 +21577,47 @@ void CGame::MotionResponseHandler(char* pData)
 			}
 			else
 			{
-				wsprintf(G_cTxt, NOTIFYMSG_HP_UP, m_iHP - iPreHP);
+				wsprintf(G_cTxt, NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
 				AddEventList(G_cTxt, 10);
 			}
 		}
 		m_pMapData->ShiftMapData(cDir);
 		const char* mapData = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseMotionMoveConfirm);
 		_ReadMapData(sX, sY, mapData);
-		m_bIsRedrawPDBGS = true;
-		m_cCommandCount--;
+		m_pPlayer->m_Controller.DecrementCommandCount();
 	}
 	break;
 
 	case DEF_OBJECTMOVE_REJECT:
-		if (m_iHP <= 0) return;
+		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveReject>(
 				pData, sizeof(hb::net::PacketResponseMotionMoveReject));
 			if (!pkt) return;
-			if (m_sPlayerObjectID != pkt->object_id) return;
-			m_sPlayerX = pkt->x;
-			m_sPlayerY = pkt->y;
-			m_sPlayerType = pkt->type;
-			m_cPlayerDir = static_cast<char>(pkt->dir);
-			m_sPlayerAppr1 = pkt->appr1;
-			m_sPlayerAppr2 = pkt->appr2;
-			m_sPlayerAppr3 = pkt->appr3;
-			m_sPlayerAppr4 = pkt->appr4;
-			m_iPlayerApprColor = pkt->appr_color;
-			m_iPlayerStatus = pkt->status;
+			if (m_pPlayer->m_sPlayerObjectID != pkt->object_id) return;
+			m_pPlayer->m_sPlayerX = pkt->x;
+			m_pPlayer->m_sPlayerY = pkt->y;
+			m_pPlayer->m_sPlayerType = pkt->type;
+			m_pPlayer->m_iPlayerDir = static_cast<char>(pkt->dir);
+			m_pPlayer->m_sPlayerAppr1 = pkt->appr1;
+			m_pPlayer->m_sPlayerAppr2 = pkt->appr2;
+			m_pPlayer->m_sPlayerAppr3 = pkt->appr3;
+			m_pPlayer->m_sPlayerAppr4 = pkt->appr4;
+			m_pPlayer->m_iPlayerApprColor = pkt->appr_color;
+			m_pPlayer->m_iPlayerStatus = pkt->status;
 		}
-		m_cCommand = DEF_OBJECTSTOP;
-		m_sCommX = m_sPlayerX;
-		m_sCommY = m_sPlayerY;
-		m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-			m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor, // v1.4
-			m_iPlayerStatus, m_cPlayerName,
+		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0,
 			0, 7);
-		m_cCommandCount = 0;
+		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
-		m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
-		m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
-		m_bIsPrevMoveBlocked = true;
-		switch (m_sPlayerType) {
+		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
+		m_pPlayer->m_Controller.SetPrevMoveBlocked(true);
+		switch (m_pPlayer->m_sPlayerType) {
 		case 1:
 		case 2:
 		case 3:
@@ -22496,7 +21629,7 @@ void CGame::MotionResponseHandler(char* pData)
 			PlaySound('C', 13, 0);
 			break;
 		}
-		//m_bCommandAvailable = true;
+		//m_pPlayer->m_Controller.SetCommandAvailable(true);
 		break;
 	}
 }
@@ -22520,21 +21653,21 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	// Fixed by Snoopy
 	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
 	{
-		if ((msX == 0) && (msY == 0) && (m_sViewDstX > 32 * VIEW_TILE_WIDTH) && (m_sViewDstY > 32 * VIEW_TILE_HEIGHT))
+		if ((msX == 0) && (msY == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 8, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (msY == 0) && (m_sViewDstX < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_sViewDstY > 32 * VIEW_TILE_HEIGHT))
+		else if ((msX == LOGICAL_MAX_X) && (msY == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 2, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (msY == LOGICAL_MAX_Y) && (m_sViewDstX < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_sViewDstY < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
+		else if ((msX == LOGICAL_MAX_X) && (msY == LOGICAL_MAX_Y) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 4, 0, 0, 0, 0);
 		else if ((msX == 0) && (msY == LOGICAL_MAX_Y))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 6, 0, 0, 0, 0);
-		else if ((msX == 0) && (m_sViewDstX > 32 * VIEW_TILE_WIDTH))
+		else if ((msX == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 7, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (m_sViewDstX < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH))
+		else if ((msX == LOGICAL_MAX_X) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 3, 0, 0, 0, 0);
-		else if ((msY == 0) && (m_sViewDstY > 32 * VIEW_TILE_HEIGHT))
+		else if ((msY == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 1, 0, 0, 0, 0);
-		else if ((msY == LOGICAL_MAX_Y) && (m_sViewDstY < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
+		else if ((msY == LOGICAL_MAX_Y) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 5, 0, 0, 0, 0);
 		else return;
 
@@ -22546,8 +21679,8 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	if (m_bIsObserverMode == true) return;
 
 	if (Input::IsAltDown()) // [ALT]
-		m_bSuperAttackMode = true;
-	else m_bSuperAttackMode = false;
+		m_pPlayer->m_bSuperAttackMode = true;
+	else m_pPlayer->m_bSuperAttackMode = false;
 
 	switch (static_cast<char>(CursorTarget::GetCursorStatus())) {
 	case DEF_CURSORSTATUS_NULL:
@@ -22565,9 +21698,9 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				// Snoopy: Added Golden LevelUp
 				if ((msX > LEVELUP_TEXT_X) && (msX < (LEVELUP_TEXT_X)+75) && (msY > LEVELUP_TEXT_Y) && (msY < (LEVELUP_TEXT_Y)+21))
 				{
-					if (m_iHP > 0)
+					if (m_pPlayer->m_iHP > 0)
 					{
-						if ((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) && (m_iLU_Point > 0))
+						if ((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) && (m_pPlayer->m_iLU_Point > 0))
 						{
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
 							PlaySound('E', 14, 5);
@@ -22642,7 +21775,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		}
 		else 			// v2.05 01-11-30
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
+			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
 
 			if ((CursorTarget::GetPrevX() != msX) || (CursorTarget::GetPrevY() != msY))
 			{
@@ -22668,14 +21801,14 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				}
 				return;
 			}
-			if ((m_cCommand == DEF_OBJECTMOVE) || (m_cCommand == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE) || (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
 			return;
 		}
 		break;
 	case DEF_CURSORSTATUS_DRAGGING:
 		if (cLB != 0)
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
+			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox)
 			{
 				// HudPanel is fixed and cannot be moved
@@ -22687,7 +21820,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			}
 			CursorTarget::SetPrevPosition(msX, msY);
 
-			if ((m_cCommand == DEF_OBJECTMOVE) || (m_cCommand == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE) || (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
 			return;
 		}
 		if (cLB == 0) {
@@ -22699,7 +21832,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				{
 					sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
-					StartInputString(sX + 75, sY + 140, 21, m_cGuildName);
+					StartInputString(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 1;
 				}
 
@@ -22756,28 +21889,26 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	}
 
 CP_SKIPMOUSEBUTTONSTATUS:;
-	if (m_bCommandAvailable == false) return;
-	if ((dwTime - m_dwCommandTime) < 300)
+	if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
+	if ((dwTime - m_pPlayer->m_Controller.GetCommandTime()) < 300)
 	{
-		delete m_pGSock;
-		m_pGSock = 0;
+		m_pGSock.reset();
+		m_pGSock.reset();
 		PlaySound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
-		if (strlen(G_cCmdLineTokenA) != 0)
-			ChangeGameMode(DEF_GAMEMODE_ONQUIT);
-		else ChangeGameMode(DEF_GAMEMODE_ONMAINMENU);
+		ChangeGameMode(GameMode::MainMenu);
 		return;
 	}
-	if (m_iHP <= 0) return;
+	if (m_pPlayer->m_iHP <= 0) return;
 
-	if (m_sDamageMove != 0)
+	if (m_pPlayer->m_sDamageMove != 0)
 	{
-		m_cCommand = DEF_OBJECTDAMAGEMOVE;
+		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTDAMAGEMOVE);
 		goto MOTION_COMMAND_PROCESS;
 	}
 
-	if ((m_pMapData->bIsTeleportLoc(m_sPlayerX, m_sPlayerY) == true) && (m_cCommandCount == 0))
+	if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0))
 		RequestTeleportAndWaitData();
 
 	// indexX, indexY
@@ -22789,27 +21920,26 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				PointCommandHandler(m_sMCX, m_sMCY);
 			else PointCommandHandler(indexX, indexY);
 
-			m_bCommandAvailable = false;
-			m_dwCommandTime = GameClock::GetTimeMS();
+			m_pPlayer->m_Controller.SetCommandAvailable(false);
+			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			m_bIsGetPointingMode = false;
 			return;
 		}
 
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
 		//m_pMapData->m_pData[dX][dY].m_sItemSprite
-		if (memcmp(m_cMCName, m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_sPlayerX - m_pMapData->m_sPivotX][m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_sPlayerX - m_pMapData->m_sPivotX][m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
-		{//if (memcmp(m_cMCName, m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
-		 //if (memcmp(m_cMCName, m_cPlayerName, 10) == 0 && sObjectType <= 6){
-			if ((m_sPlayerType >= 1) && (m_sPlayerType <= 6)/* && ((m_sPlayerAppr2 & 0xF000) == 0)*/)
+		if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
+		{//if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
+		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
+			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0)*/)
 			{
-				m_cCommand = DEF_OBJECTGETITEM;
-				m_sCommX = m_sPlayerX;
-				m_sCommY = m_sPlayerY;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 			}
 		}
 		else
 		{
-			if (memcmp(m_cMCName, m_cPlayerName, 10) == 0) m_sMCY -= 1;
+			if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
 				if (Input::IsCtrlDown() == true)
@@ -22817,30 +21947,27 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 					if ((iObjectStatus & 0x10) != 0) return;
 					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
-					absX = abs(m_sPlayerX - m_sMCX);
-					absY = abs(m_sPlayerY - m_sMCY);
+					absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+					absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 					if ((absX <= 1) && (absY <= 1))
 					{
 						wType = _iGetAttackType();
-						m_cCommand = DEF_OBJECTATTACK;
-						m_sCommX = m_sMCX;
-						m_sCommY = m_sMCY;
+						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 						&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 					{
 						wType = _iGetAttackType();
-						m_cCommand = DEF_OBJECTATTACK;
-						m_sCommX = m_sMCX;
-						m_sCommY = m_sMCY;
+						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else // Pas au corp � corp
 					{
 						switch (_iGetWeaponSkillType()) {
 						case 6: // Bow
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 							break;
 
@@ -22848,270 +21975,245 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 7: // SS
 							if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 							{
-								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 								{
-									if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
+									if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 									{
-										m_cCommand = DEF_OBJECTATTACKMOVE;
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										m_cCommand = DEF_OBJECTRUN;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else
 								{
-									m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							else
 							{
-								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
-									&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-									m_cCommand = DEF_OBJECTRUN;	// Staminar
-								else m_cCommand = DEF_OBJECTMOVE;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
-								GetPlayerTurn();
+								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+									&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);	// Staminar
+								else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+								m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 							}
 							break;
 
 						case 8: // LS
-							if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+							if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 								&& (_iGetAttackType() != 30)) // Crit without StormBlade
 							{
 								wType = _iGetAttackType();
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+							else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 								&& (_iGetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
 							{
 								wType = _iGetAttackType();
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 3) && (absY <= 3)
 								&& (_iGetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
 							{
 								wType = _iGetAttackType();
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Swing
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
 									&& (_iGetAttackType() != 5)) // no Dash possible with StormBlade
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
-										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
+										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
-											m_cCommand = DEF_OBJECTATTACKMOVE;
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 											wType = _iGetAttackType();
 										}
 										else
 										{
-											m_cCommand = DEF_OBJECTRUN;
-											GetPlayerTurn();
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else
 									{
-										m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
-										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
 
 						case 9: // Fencing
-							if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true))
+							if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
 							{
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
-										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_cCommand = DEF_OBJECTATTACKMOVE;
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_cCommand = DEF_OBJECTRUN;
-											GetPlayerTurn();
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
 
 						case 10: // Axe
-							if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true))
+							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
 							{
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
-										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100)
+										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
-											m_cCommand = DEF_OBJECTATTACKMOVE;
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 											wType = _iGetAttackType();
 										}
 										else
 										{
-											m_cCommand = DEF_OBJECTRUN;
-											GetPlayerTurn();
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else
 									{
-										m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
 						case 14: // Hammer
-							if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
-										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_cCommand = DEF_OBJECTATTACKMOVE;
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_cCommand = DEF_OBJECTRUN;
-											GetPlayerTurn();
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
 						case 21: // Wand
-							if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)) {
-										if (m_cSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_cCommand = DEF_OBJECTATTACKMOVE;
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_cCommand = DEF_OBJECTRUN;
-											GetPlayerTurn();
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-										(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
@@ -23235,7 +22337,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 21: // Guard
-							if ((_iGetFOE(iObjectStatus) >= 0) && (!m_bIsCombatMode))
+							if ((_iGetFOE(iObjectStatus) >= 0) && (!m_pPlayer->m_bIsCombatMode))
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								tX = msX - 117;
@@ -23252,7 +22354,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 67: // McGaffin
 						case 68: // Perry
 						case 69: // Devlin
-							if (!m_bIsCombatMode)
+							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								tX = msX - 117;
@@ -23268,7 +22370,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 32: // Unicorn
-							if (!m_bIsCombatMode)
+							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								tX = msX - 117;
@@ -23302,163 +22404,147 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 						default: // Other mobs
 							if (_iGetFOE(iObjectStatus) >= 0) break;
-							if ((sObjectType >= 1) && (sObjectType <= 6) && (m_bForceAttack == false)) break;
-							absX = abs(m_sPlayerX - m_sMCX);
-							absY = abs(m_sPlayerY - m_sMCY);
+							if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
+							absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+							absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 							if ((absX <= 1) && (absY <= 1))
 							{
 								wType = _iGetAttackType();
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 								&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 							{
 								wType = _iGetAttackType();
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Normal hit from a range.
 							{
 								switch (_iGetWeaponSkillType()) {
 								case 6: // Bow
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 									break;
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0)
-										&& (m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-										m_cCommand = DEF_OBJECTRUN;
-									else m_cCommand = DEF_OBJECTMOVE;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
-									GetPlayerTurn();
+									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									break;
 
 								case 8: // LS
-									if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+									if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
-									else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+									else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else if ((absX <= 3) && (absY <= 3)
 										&& (_iGetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
 									{
-										m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-											m_cCommand = DEF_OBJECTRUN;
-										else m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 
 								case 9: // Fencing
-									if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true))
+									if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-											m_cCommand = DEF_OBJECTRUN;
-										else m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 
 								case 10: //
-									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-											m_cCommand = DEF_OBJECTRUN;
-										else m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 								case 14: //
-									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-											m_cCommand = DEF_OBJECTRUN;
-										else m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 								case 21: //
-									if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0))
-											m_cCommand = DEF_OBJECTATTACKMOVE;
-										else m_cCommand = DEF_OBJECTATTACK;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
+									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-											(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-											m_cCommand = DEF_OBJECTRUN;
-										else m_cCommand = DEF_OBJECTMOVE;
-										m_sCommX = m_sMCX;
-										m_sCommY = m_sMCY;
-										GetPlayerTurn();
+										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 								}
@@ -23467,43 +22553,41 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 					}
 					else {
-						if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-							(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-							m_cCommand = DEF_OBJECTRUN;
-						else m_cCommand = DEF_OBJECTMOVE;
-						m_sCommX = m_sMCX;
-						m_sCommY = m_sMCY;
-						GetPlayerTurn();
+						if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+							(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+						else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
+						m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 					}
 				}
 			}
 			else
 			{
-				if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_iSP > 0) &&
-					(m_sPlayerType >= 1) && (m_sPlayerType <= 6))
-					m_cCommand = DEF_OBJECTRUN;
-				else m_cCommand = DEF_OBJECTMOVE;
-				m_sCommX = indexX;
-				m_sCommY = indexY;
-				GetPlayerTurn();
+				if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+					(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+				else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+				m_pPlayer->m_Controller.SetDestination(indexX, indexY);
+				m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 			}
 		}
 	}
 	else if (cRB != 0) // Mouse Right button
 	{
-		m_cCommand = DEF_OBJECTSTOP;
+		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 		if (m_bIsGetPointingMode == true)
 		{
 			m_bIsGetPointingMode = false;
 			AddEventList(COMMAND_PROCESSOR1, 10);
 		}
-		if (m_bCommandAvailable == false) return;
-		if (m_cCommandCount >= 6) return;
+		if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
+		if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
 
 		if ((m_sMCX != 0) && (m_sMCY != 0))
 		{
-			absX = abs(m_sPlayerX - m_sMCX);
-			absY = abs(m_sPlayerY - m_sMCY);
+			absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+			absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 			if (absX == 0 && absY == 0) return;
 
 			if (Input::IsCtrlDown() == true)
@@ -23515,25 +22599,22 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if ((absX <= 1) && (absY <= 1))
 				{
 					wType = _iGetAttackType();
-					m_cCommand = DEF_OBJECTATTACK;
-					m_sCommX = m_sMCX;
-					m_sCommY = m_sMCY;
+					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 					&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 				{
 					wType = _iGetAttackType();
-					m_cCommand = DEF_OBJECTATTACK;
-					m_sCommX = m_sMCX;
-					m_sCommY = m_sMCY;
+					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else
 				{
 					switch (_iGetWeaponSkillType()) {
 					case 6: // Bow
-						m_cCommand = DEF_OBJECTATTACK;
-						m_sCommX = m_sMCX;
-						m_sCommY = m_sMCY;
+						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						wType = _iGetAttackType();
 						break;
 
@@ -23542,63 +22623,56 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case 8: // LS
-						if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+						if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 							&& (_iGetAttackType() != 30)) // without StormBlade by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+						else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 							&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 3) && (absY <= 3)
 							&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						break;
 
 					case 9: // Fencing
-						if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+						if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 
 					case 10: //
-						if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 
 					case 14: //
-						if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 					case 21: //
-						if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
@@ -23607,8 +22681,8 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			}
 			else // CTRL not pressed
 			{
-				absX = abs(m_sPlayerX - m_sMCX);
-				absY = abs(m_sPlayerY - m_sMCY);
+				absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6))) {
 					switch (sObjectType) {
@@ -23622,29 +22696,26 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 					default: // All "normal mobs"
 						if (_iGetFOE(iObjectStatus) >= 0) break;
-						if ((sObjectType >= 1) && (sObjectType <= 6) && (m_bForceAttack == false)) break;
+						if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
 						if ((absX <= 1) && (absY <= 1))
 						{
 							wType = _iGetAttackType();
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 							&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 						{
 							wType = _iGetAttackType();
-							m_cCommand = DEF_OBJECTATTACK;
-							m_sCommX = m_sMCX;
-							m_sCommY = m_sMCY;
+							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else //
 						{
 							switch (_iGetWeaponSkillType()) {
 							case 6: // Bow
-								m_cCommand = DEF_OBJECTATTACK;
-								m_sCommX = m_sMCX;
-								m_sCommY = m_sMCY;
+								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 								break;
 
@@ -23653,62 +22724,55 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								break;
 
 							case 8: // LS
-								if ((absX <= 3) && (absY <= 3) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+								if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 									&& (_iGetAttackType() != 30)) // crit without StormBlade by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
-								else if ((absX <= 5) && (absY <= 5) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)
+								else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
 									&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else if ((absX <= 3) && (absY <= 3)
 									&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								break;
 
 							case 9: // fencing
-								if ((absX <= 4) && (absY <= 4) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+								if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 
 							case 10: //
-								if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 							case 14: // hammer
-								if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 							case 21: // wand
-								if ((absX <= 2) && (absY <= 2) && (m_iSuperAttackLeft > 0) && (m_bSuperAttackMode == true)) {
-									m_cCommand = DEF_OBJECTATTACK;
-									m_sCommX = m_sMCX;
-									m_sCommY = m_sMCY;
+								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
@@ -23721,78 +22785,77 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		}
 		else
 		{
-			cDir = CMisc::cGetNextMoveDir(m_sPlayerX, m_sPlayerY, indexX, indexY);
-			if (m_iHP <= 0) return;
+			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
+			if (m_pPlayer->m_iHP <= 0) return;
 			if (cDir == 0) return;
-			if (m_cPlayerDir == cDir) return;
+			if (m_pPlayer->m_iPlayerDir == cDir) return;
 			ClearSkillUsingStatus();
-			m_cPlayerDir = cDir;
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, m_cPlayerDir, 0, 0, 0, 0);
+			m_pPlayer->m_iPlayerDir = cDir;
+			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 
-			m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-				m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-				m_iPlayerStatus, m_cPlayerName,
-				m_cCommand, 0, 0, 0, 0,
+			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+				m_pPlayer->m_Controller.GetCommand(), 0, 0, 0, 0,
 				10);
-			m_bCommandAvailable = false;
-			m_dwCommandTime = GameClock::GetTimeMS();
+			m_pPlayer->m_Controller.SetCommandAvailable(false);
+			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			return;
 		}
 	}
 
 MOTION_COMMAND_PROCESS:;
 
-	if (m_cCommand != DEF_OBJECTSTOP)
+	if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTSTOP)
 	{
-		if (m_iHP <= 0) return;
-		if (m_cCommandCount == 5) AddEventList(COMMAND_PROCESSOR2, 10, false);
-		if (m_bCommandAvailable == false) return;
-		if (m_cCommandCount >= 6) return;
+		if (m_pPlayer->m_iHP <= 0) return;
+		if (m_pPlayer->m_Controller.GetCommandCount() == 5) AddEventList(COMMAND_PROCESSOR2, 10, false);
+		if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
+		if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
 
-		if ((m_sPlayerType >= 0) && (m_sPlayerType > 6))
+		if ((m_pPlayer->m_sPlayerType >= 0) && (m_pPlayer->m_sPlayerType > 6))
 		{
-			switch (m_cCommand) {
+			switch (m_pPlayer->m_Controller.GetCommand()) {
 			case DEF_OBJECTRUN:
 			case DEF_OBJECTMAGIC:
 			case DEF_OBJECTGETITEM:
-				m_cCommand = DEF_OBJECTSTOP;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 				break;
 			}
 		}
 
 		ClearSkillUsingStatus();
 
-		if ((m_sDamageMove != 0) || (m_sDamageMoveAmount != 0))
+		if ((m_pPlayer->m_sDamageMove != 0) || (m_pPlayer->m_sDamageMoveAmount != 0))
 		{
-			if (m_sDamageMove != 0)
+			if (m_pPlayer->m_sDamageMove != 0)
 			{
-				m_cCommand = DEF_OBJECTDAMAGEMOVE;
-				m_sCommX = m_sPlayerX;
-				m_sCommY = m_sPlayerY;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTDAMAGEMOVE);
+				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 
 				// mim crit fixed by kaozures tocado para ande bien by cloud :P
 				if (m_bIllusionMVT == true) {
-					switch (m_sDamageMove) {
-					case 1: m_sCommY++; break;
-					case 2: m_sCommX--; m_sCommY++; break;
-					case 3: m_sCommX--; break;
-					case 4: m_sCommX--; m_sCommY--; break;
-					case 5: m_sCommY--; break;
-					case 6: m_sCommX++; m_sCommY--; break;
-					case 7: m_sCommX++; break;
-					case 8: m_sCommX++; m_sCommY++; break;
+					switch (m_pPlayer->m_sDamageMove) {
+					case 1: m_pPlayer->m_Controller.MoveDestination(0, 1); break;
+					case 2: m_pPlayer->m_Controller.MoveDestination(-1, 1); break;
+					case 3: m_pPlayer->m_Controller.MoveDestination(-1, 0); break;
+					case 4: m_pPlayer->m_Controller.MoveDestination(-1, -1); break;
+					case 5: m_pPlayer->m_Controller.MoveDestination(0, -1); break;
+					case 6: m_pPlayer->m_Controller.MoveDestination(1, -1); break;
+					case 7: m_pPlayer->m_Controller.MoveDestination(1, 0); break;
+					case 8: m_pPlayer->m_Controller.MoveDestination(1, 1); break;
 					}
 				}
 				else {
-					switch (m_sDamageMove) {
-					case 1: m_sCommY--; break;
-					case 2: m_sCommX++; m_sCommY--; break;
-					case 3: m_sCommX++; break;
-					case 4: m_sCommX++; m_sCommY++; break;
-					case 5: m_sCommY++; break;
-					case 6: m_sCommX--; m_sCommY++; break;
-					case 7: m_sCommX--; break;
-					case 8: m_sCommX--; m_sCommY--; break;
+					switch (m_pPlayer->m_sDamageMove) {
+					case 1: m_pPlayer->m_Controller.MoveDestination(0, -1); break;
+					case 2: m_pPlayer->m_Controller.MoveDestination(1, -1); break;
+					case 3: m_pPlayer->m_Controller.MoveDestination(1, 0); break;
+					case 4: m_pPlayer->m_Controller.MoveDestination(1, 1); break;
+					case 5: m_pPlayer->m_Controller.MoveDestination(0, 1); break;
+					case 6: m_pPlayer->m_Controller.MoveDestination(-1, 1); break;
+					case 7: m_pPlayer->m_Controller.MoveDestination(-1, 0); break;
+					case 8: m_pPlayer->m_Controller.MoveDestination(-1, -1); break;
 					}
 				}
 			}
@@ -23801,98 +22864,96 @@ MOTION_COMMAND_PROCESS:;
 				if (m_pChatMsgList[i] == 0)
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
-					if (m_sDamageMoveAmount > 0)
-						wsprintf(cTxt, "-%dPts", m_sDamageMoveAmount); //pts
+					if (m_pPlayer->m_sDamageMoveAmount > 0)
+						wsprintf(cTxt, "-%dPts", m_pPlayer->m_sDamageMoveAmount); //pts
 					else strcpy(cTxt, "Critical!");
 
 					int iFontType;
-					if ((m_sDamageMoveAmount >= 0) && (m_sDamageMoveAmount < 12))		iFontType = 21;
-					else if ((m_sDamageMoveAmount >= 12) && (m_sDamageMoveAmount < 40)) iFontType = 22;
-					else if ((m_sDamageMoveAmount >= 40) || (m_sDamageMoveAmount < 0))	iFontType = 23;
+					if ((m_pPlayer->m_sDamageMoveAmount >= 0) && (m_pPlayer->m_sDamageMoveAmount < 12))		iFontType = 21;
+					else if ((m_pPlayer->m_sDamageMoveAmount >= 12) && (m_pPlayer->m_sDamageMoveAmount < 40)) iFontType = 22;
+					else if ((m_pPlayer->m_sDamageMoveAmount >= 40) || (m_pPlayer->m_sDamageMoveAmount < 0))	iFontType = 23;
 
-					m_pChatMsgList[i] = new class CMsg(iFontType, cTxt, m_dwCurTime);
-					m_pChatMsgList[i]->m_iObjectID = m_sPlayerObjectID;
+					m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
+					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
 
-					if (m_pMapData->bSetChatMsgOwner(m_sPlayerObjectID, -10, -10, i) == false) {
-						delete m_pChatMsgList[i];
-						m_pChatMsgList[i] = 0;
+					if (m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {
+						m_pChatMsgList[i].reset();
 					}
 					break;
 				}
-			m_sDamageMove = 0;
-			m_sDamageMoveAmount = 0;
+			m_pPlayer->m_sDamageMove = 0;
+			m_pPlayer->m_sDamageMoveAmount = 0;
 		}
 
-		switch (m_cCommand) {
+		switch (m_pPlayer->m_Controller.GetCommand()) {
 		case DEF_OBJECTRUN:
 		case DEF_OBJECTMOVE:
 		case DEF_OBJECTDAMAGEMOVE: // v1.43
 
-			if (m_bParalyze) return;
-			bGORet = m_pMapData->bGetOwner(m_sCommX, m_sCommY, pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID); // v1.4
+			if (m_pPlayer->m_bParalyze) return;
+			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID); // v1.4
 
-			if ((m_sPlayerX == m_sCommX) && (m_sPlayerY == m_sCommY))
-				m_cCommand = DEF_OBJECTSTOP;
-			else if ((abs(m_sPlayerX - m_sCommX) <= 1) && (abs(m_sPlayerY - m_sCommY) <= 1) &&
+			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
 				(bGORet == true) && (sDstOwnerType != 0))
-				m_cCommand = DEF_OBJECTSTOP;
-			else if ((abs(m_sPlayerX - m_sCommX) <= 2) && (abs(m_sPlayerY - m_sCommY) <= 2) &&
-				(m_pMapData->m_tile[m_sCommX][m_sCommY].m_bIsMoveAllowed == false))
-				m_cCommand = DEF_OBJECTSTOP;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 2) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 2) &&
+				(m_pMapData->m_tile[m_pPlayer->m_Controller.GetDestinationX()][m_pPlayer->m_Controller.GetDestinationY()].m_bIsMoveAllowed == false))
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			else
 			{
-				if (m_cCommand == DEF_OBJECTMOVE)
+				if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE)
 				{
-					if (ConfigManager::Get().IsRunningModeEnabled() || Input::IsShiftDown()) m_cCommand = DEF_OBJECTRUN;
+					if (ConfigManager::Get().IsRunningModeEnabled() || Input::IsShiftDown()) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
 				}
-				if (m_cCommand == DEF_OBJECTRUN)
+				if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)
 				{
-					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (Input::IsShiftDown() == false)) m_cCommand = DEF_OBJECTMOVE;
-					if (m_iSP < 1) m_cCommand = DEF_OBJECTMOVE;
+					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (Input::IsShiftDown() == false)) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
 				}
 
-				cDir = cGetNextMoveDir(m_sPlayerX, m_sPlayerY, m_sCommX, m_sCommY, true);
+				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
 				// Snoopy: Illusion Movement
-				if ((m_bIllusionMVT == true) && (m_cCommand != DEF_OBJECTDAMAGEMOVE))
+				if ((m_bIllusionMVT == true) && (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTDAMAGEMOVE))
 				{
-					cDir = cGetNextMoveDir(m_sPlayerX, m_sPlayerY, m_sCommX, m_sCommY, true, true);
+					cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
 				}
 				if (cDir != 0)
 				{
-					m_cPlayerDir = cDir;
-					bSendCommand(MSGID_COMMAND_MOTION, m_cCommand, cDir, 0, 0, 0, 0);
+					m_pPlayer->m_iPlayerDir = cDir;
+					bSendCommand(MSGID_COMMAND_MOTION, m_pPlayer->m_Controller.GetCommand(), cDir, 0, 0, 0, 0);
 					switch (cDir) {
-					case 1:	m_sPlayerY--; break;
-					case 2:	m_sPlayerY--; m_sPlayerX++;	break;
-					case 3:	m_sPlayerX++; break;
-					case 4:	m_sPlayerX++; m_sPlayerY++;	break;
-					case 5:	m_sPlayerY++; break;
-					case 6:	m_sPlayerX--; m_sPlayerY++;	break;
-					case 7:	m_sPlayerX--; break;
-					case 8:	m_sPlayerX--; m_sPlayerY--;	break;
+					case 1:	m_pPlayer->m_sPlayerY--; break;
+					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
+					case 3:	m_pPlayer->m_sPlayerX++; break;
+					case 4:	m_pPlayer->m_sPlayerX++; m_pPlayer->m_sPlayerY++;	break;
+					case 5:	m_pPlayer->m_sPlayerY++; break;
+					case 6:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY++;	break;
+					case 7:	m_pPlayer->m_sPlayerX--; break;
+					case 8:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY--;	break;
 					}
-					m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-						m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor, // v1.4
-						m_iPlayerStatus, m_cPlayerName,
-						m_cCommand, 0, 0, 0);
-					m_bCommandAvailable = false;
-					m_dwCommandTime = GameClock::GetTimeMS();
-					m_iPrevMoveX = m_sPlayerX;
-					m_iPrevMoveY = m_sPlayerY;
+					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+						m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+						m_pPlayer->m_Controller.GetCommand(), 0, 0, 0);
+					m_pPlayer->m_Controller.SetCommandAvailable(false);
+					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 				}
 			}
 
-			if (m_cCommand == DEF_OBJECTDAMAGEMOVE)
+			if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTDAMAGEMOVE)
 			{
 				m_bIsGetPointingMode = false;
 				m_iPointCommandType = -1;
 				ClearSkillUsingStatus();
-				m_cCommand = DEF_OBJECTSTOP;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			}
 			break;
 
 		case DEF_OBJECTATTACK:
-			cDir = CMisc::cGetNextMoveDir(m_sPlayerX, m_sPlayerY, m_sCommX, m_sCommY);
+			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY());
 			// Snoopy: Illusion movement
 			if (m_bIllusionMVT == true)
 			{
@@ -23908,97 +22969,96 @@ MOTION_COMMAND_PROCESS:;
 				}
 				if (wType >= 20)
 				{
-					m_iSuperAttackLeft--;
-					if (m_iSuperAttackLeft < 0) m_iSuperAttackLeft = 0;
+					m_pPlayer->m_iSuperAttackLeft--;
+					if (m_pPlayer->m_iSuperAttackLeft < 0) m_pPlayer->m_iSuperAttackLeft = 0;
 				}
-				m_cPlayerDir = cDir;
+				m_pPlayer->m_iPlayerDir = cDir;
 				m_wLastAttackTargetID = m_wCommObjectID;
-				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_sCommX, m_sCommY, wType, 0, m_wCommObjectID);
-				m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-					m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-					m_iPlayerStatus, m_cPlayerName,
+				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
+				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+					m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+					m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 					DEF_OBJECTATTACK,
-					m_sCommX - m_sPlayerX, m_sCommY - m_sPlayerY, wType);
-				m_bCommandAvailable = false;
-				m_dwCommandTime = GameClock::GetTimeMS();
+					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
+				m_pPlayer->m_Controller.SetCommandAvailable(false);
+				m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			}
-			m_cCommand = DEF_OBJECTSTOP;
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			break;
 
 		case DEF_OBJECTATTACKMOVE:
-			if (m_bParalyze) return;
-			bGORet = m_pMapData->bGetOwner(m_sCommX, m_sCommY, pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID);
-			if ((m_sPlayerX == m_sCommX) && (m_sPlayerY == m_sCommY))
-				m_cCommand = DEF_OBJECTSTOP;
-			else if ((abs(m_sPlayerX - m_sCommX) <= 1) && (abs(m_sPlayerY - m_sCommY) <= 1) &&
+			if (m_pPlayer->m_bParalyze) return;
+			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID);
+			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
 				(bGORet == true) && (sDstOwnerType != 0))
-				m_cCommand = DEF_OBJECTSTOP;
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			else
 			{
-				cDir = cGetNextMoveDir(m_sPlayerX, m_sPlayerY, m_sCommX, m_sCommY, true);
+				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
 				// Snoopy: Illusion mvt
 				if (m_bIllusionMVT == true)
 				{
-					cDir = cGetNextMoveDir(m_sPlayerX, m_sPlayerY, m_sCommX, m_sCommY, true, true);
+					cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
 				}
 				if (cDir != 0)
 				{
-					m_cPlayerDir = cDir;
+					m_pPlayer->m_iPlayerDir = cDir;
 					m_wLastAttackTargetID = m_wCommObjectID;
-					bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACKMOVE, cDir, m_sCommX, m_sCommY, wType, 0, m_wCommObjectID);
+					bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACKMOVE, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 					switch (cDir) {
-					case 1:	m_sPlayerY--; break;
-					case 2:	m_sPlayerY--; m_sPlayerX++;	break;
-					case 3:	m_sPlayerX++; break;
-					case 4:	m_sPlayerX++; m_sPlayerY++;	break;
-					case 5:	m_sPlayerY++; break;
-					case 6:	m_sPlayerX--; m_sPlayerY++;	break;
-					case 7:	m_sPlayerX--; break;
-					case 8:	m_sPlayerX--; m_sPlayerY--;	break;
+					case 1:	m_pPlayer->m_sPlayerY--; break;
+					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
+					case 3:	m_pPlayer->m_sPlayerX++; break;
+					case 4:	m_pPlayer->m_sPlayerX++; m_pPlayer->m_sPlayerY++;	break;
+					case 5:	m_pPlayer->m_sPlayerY++; break;
+					case 6:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY++;	break;
+					case 7:	m_pPlayer->m_sPlayerX--; break;
+					case 8:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY--;	break;
 					}
 
-					m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-						m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-						m_iPlayerStatus, m_cPlayerName,
-						m_cCommand, m_sCommX - m_sPlayerX, m_sCommY - m_sPlayerY, wType);
-					m_bCommandAvailable = false;
-					m_dwCommandTime = GameClock::GetTimeMS();
-					m_iPrevMoveX = m_sPlayerX;
-					m_iPrevMoveY = m_sPlayerY;
+					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+						m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
+					m_pPlayer->m_Controller.SetCommandAvailable(false);
+					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 				}
 			}
-			m_cCommand = DEF_OBJECTSTOP;
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			break;
 
 		case DEF_OBJECTGETITEM:
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTGETITEM, m_cPlayerDir, 0, 0, 0, 0);
-			m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-				m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-				m_iPlayerStatus, m_cPlayerName,
+			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTGETITEM, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
+			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTGETITEM, 0, 0, 0);
-			m_bCommandAvailable = false;
-			m_cCommand = DEF_OBJECTSTOP;
+			m_pPlayer->m_Controller.SetCommandAvailable(false);
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			break;
 
 		case DEF_OBJECTMAGIC:
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTMAGIC, m_cPlayerDir, m_iCastingMagicType, 0, 0, 0);
-			m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-				m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor,
-				m_iPlayerStatus, m_cPlayerName,
+			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTMAGIC, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
+			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTMAGIC, m_iCastingMagicType, 0, 0);
-			m_bCommandAvailable = false;
-			m_dwCommandTime = GameClock::GetTimeMS();
+			m_pPlayer->m_Controller.SetCommandAvailable(false);
+			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			m_bIsGetPointingMode = true;
-			m_cCommand = DEF_OBJECTSTOP;
-			_RemoveChatMsgListByObjectID(m_sPlayerObjectID);
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			_RemoveChatMsgListByObjectID(m_pPlayer->m_sPlayerObjectID);
 			for (i = 1; i < DEF_MAXCHATMSGS; i++)
 				if (m_pChatMsgList[i] == 0)
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
 					wsprintf(cTxt, "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
-					m_pChatMsgList[i] = new class CMsg(41, cTxt, GameClock::GetTimeMS());
-					m_pChatMsgList[i]->m_iObjectID = m_sPlayerObjectID;
-					m_pMapData->bSetChatMsgOwner(m_sPlayerObjectID, -10, -10, i);
+					m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, GameClock::GetTimeMS());
+					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
+					m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i);
 					return;
 				}
 			break;
@@ -24018,7 +23078,7 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 {
 	short sX, sY, dX, dY;
 	char  cTxt[120];
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	if (m_pItemList[CursorTarget::GetSelectedID()] == 0) return;
 	if ((m_bSkillUsingStatus == true) && (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true))
 	{
@@ -24064,7 +23124,7 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 	if (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true)
 	{
 		char cStr1[64], cStr2[64], cStr3[64];
-		GetItemName(m_pItemList[CursorTarget::GetSelectedID()], cStr1, cStr2, cStr3);
+		GetItemName(m_pItemList[CursorTarget::GetSelectedID()].get(), cStr1, cStr2, cStr3);
 		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 		AddEventList(cTxt, 10);
 
@@ -24078,19 +23138,19 @@ void CGame::bItemDrop_Inventory(short msX, short msY)
 			char cItemID = CursorTarget::GetSelectedID();
 			if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 			{
-				m_iAngelicStr = 0;
+				m_pPlayer->m_iAngelicStr = 0;
 			}
 			else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
 			{
-				m_iAngelicDex = 0;
+				m_pPlayer->m_iAngelicDex = 0;
 			}
 			else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
 			{
-				m_iAngelicInt = 0;
+				m_pPlayer->m_iAngelicInt = 0;
 			}
 			else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
 			{
-				m_iAngelicMag = 0;
+				m_pPlayer->m_iAngelicMag = 0;
 			}
 		}
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, CursorTarget::GetSelectedID(), 0, 0, 0);
@@ -24108,7 +23168,7 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	for (i = 0; i < DEF_MAXSELLLIST; i++)
 		if (m_stSellItemList[i].iIndex == cItemID)
 		{
@@ -24123,7 +23183,7 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 	{
 		std::memset(G_cTxt, 0, sizeof(G_cTxt));
 		char cStr1[64], cStr2[64], cStr3[64];
-		GetItemName(m_pItemList[cItemID], cStr1, cStr2, cStr3);
+		GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 		wsprintf(G_cTxt, NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
 		AddEventList(G_cTxt, 10);
 		return;
@@ -24135,8 +23195,8 @@ void CGame::bItemDrop_SellList(short msX, short msY)
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = msY - 70;
 		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0) m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_sPlayerX + 1;
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_sPlayerY + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_pPlayer->m_sPlayerX + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_pPlayer->m_sPlayerY + 1;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = 1001;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = cItemID;
 		std::memset(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr));
@@ -24162,7 +23222,7 @@ void CGame::bItemDrop_ItemUpgrade()
 	char cItemID;
 	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_bIsItemDisabled[cItemID] == true) return;
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	if (m_pItemList[cItemID]->m_cEquipPos == DEF_EQUIPPOS_NONE) return;
 
 	switch (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode) {
@@ -24185,7 +23245,7 @@ void CGame::bItemDrop_ItemUpgrade()
 void CGame::bItemDrop_Bank(short msX, short msY)
 {
 	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1 = CursorTarget::GetSelectedID();
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	if (m_pItemList[m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1] == 0) return;
 	if (m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1] == true) return;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true)
@@ -24214,8 +23274,8 @@ void CGame::bItemDrop_Bank(short msX, short msY)
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = msY - 70;
 		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY < 0) m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY = 0;
 
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_sPlayerX + 1;
-		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_sPlayerY + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1 = m_pPlayer->m_sPlayerX + 1;
+		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2 = m_pPlayer->m_sPlayerY + 1;
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3 = 1002;// NPC
 		m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4 = m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1;
 
@@ -24234,7 +23294,7 @@ void CGame::bItemDrop_SkillDialog()
 	int iConsumeNum;
 	char cItemID;
 
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
@@ -24487,7 +23547,7 @@ void CGame::bItemDrop_SkillDialog()
 void CGame::bItemDrop_Slates()
 {
 	char cItemID;
-	if (m_cCommand < 0) return;
+	if (m_pPlayer->m_Controller.GetCommand() < 0) return;
 	cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pItemList[cItemID] == 0) return;
 	if (m_bIsItemDisabled[cItemID] == true) return;
@@ -24615,8 +23675,6 @@ void CGame::ResponseChargedTeleport(char* pData)
 void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int iFrame)
 {
 	bool bFlag = true;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0 + SCREENX, 0 + SCREENY, 0, true);
 	DrawVersion();
 
@@ -24648,9 +23706,6 @@ void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int
 		if (m_cCurFocus == 3) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 80 + SCREENX, 282 + SCREENY, 3, true);
 	}
 	if (m_cCurFocus == 4) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256 + SCREENX, 282 + SCREENY, 4, true);
-	if ((m_bIsHideLocalCursor != true) && (msX != 0) && (msY != 0)) {
-		m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, 0);
-	}
 }
 
 void CGame::ShowEventList(uint32_t dwTime)
@@ -24723,27 +23778,27 @@ void CGame::ShowEventList(uint32_t dwTime)
 void CGame::RequestTeleportAndWaitData()
 {	// Snoopy: removed that, Noob Dungeon is now at farm...
 	/*if (strcmp(m_cMapName, "aresden") == 0)
-	{	if ( ((m_sPlayerX == 188) && (m_sPlayerY == 105))  ||
-			 ((m_sPlayerX == 187) && (m_sPlayerY == 105))  ||
-			 ((m_sPlayerX == 187) && (m_sPlayerY == 106))  ||
-			 ((m_sPlayerX == 186) && (m_sPlayerY == 106))  ||
-			 ((m_sPlayerX == 186) && (m_sPlayerY == 107))  )
-		{	if ( (m_iLevel < 30) || (m_iLevel>80) )
+	{	if ( ((m_pPlayer->m_sPlayerX == 188) && (m_pPlayer->m_sPlayerY == 105))  ||
+			 ((m_pPlayer->m_sPlayerX == 187) && (m_pPlayer->m_sPlayerY == 105))  ||
+			 ((m_pPlayer->m_sPlayerX == 187) && (m_pPlayer->m_sPlayerY == 106))  ||
+			 ((m_pPlayer->m_sPlayerX == 186) && (m_pPlayer->m_sPlayerY == 106))  ||
+			 ((m_pPlayer->m_sPlayerX == 186) && (m_pPlayer->m_sPlayerY == 107))  )
+		{	if ( (m_pPlayer->m_iLevel < 30) || (m_pPlayer->m_iLevel>80) )
 			{	AddEventList(REQUEST_TELEPORT_AND_WAIT_DATA1, 10);
 				return;
 	}	}	}
 	if (strcmp(m_cMapName, "elvine") == 0)
-	{	if ( ((m_sPlayerX == 218) && (m_sPlayerY == 109))  ||
-			 ((m_sPlayerX == 217) && (m_sPlayerY == 109))  ||
-			 ((m_sPlayerX == 217) && (m_sPlayerY == 110))  ||
-			 ((m_sPlayerX == 216) && (m_sPlayerY == 110))  ||
-			 ((m_sPlayerX == 216) && (m_sPlayerY == 111))  )
-		{	if ( (m_iLevel < 30) || (m_iLevel>80) )
+	{	if ( ((m_pPlayer->m_sPlayerX == 218) && (m_pPlayer->m_sPlayerY == 109))  ||
+			 ((m_pPlayer->m_sPlayerX == 217) && (m_pPlayer->m_sPlayerY == 109))  ||
+			 ((m_pPlayer->m_sPlayerX == 217) && (m_pPlayer->m_sPlayerY == 110))  ||
+			 ((m_pPlayer->m_sPlayerX == 216) && (m_pPlayer->m_sPlayerY == 110))  ||
+			 ((m_pPlayer->m_sPlayerX == 216) && (m_pPlayer->m_sPlayerY == 111))  )
+		{	if ( (m_pPlayer->m_iLevel < 30) || (m_pPlayer->m_iLevel>80) )
 			{	AddEventList(REQUEST_TELEPORT_AND_WAIT_DATA1, 10);
 				return;
 	}	}	}*/
 	bSendCommand(MSGID_REQUEST_TELEPORT, 0, 0, 0, 0, 0, 0);
-	ChangeGameMode(DEF_GAMEMODE_ONWAITINGINITDATA);
+	ChangeGameMode(GameMode::WaitingInitData);
 }
 
 void CGame::InitDataResponseHandler(char* pData)
@@ -24757,7 +23812,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	uint32_t dwFileSize;
 
 	std::memset(cPreCurLocation, 0, sizeof(cPreCurLocation));
-	m_bParalyze = false;
+	m_pPlayer->m_bParalyze = false;
 	m_pMapData->Init();
 
 	m_sMonsterID = 0;
@@ -24774,15 +23829,15 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildHallMenu); // Gail's diag
 
-	m_cCommand = DEF_OBJECTSTOP;
-	//m_bCommandAvailable = true;
-	m_cCommandCount = 0;
+	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+	//m_pPlayer->m_Controller.SetCommandAvailable(true);
+	m_pPlayer->m_Controller.ResetCommandCount();
 	m_bIsGetPointingMode = false;
 	m_iPointCommandType = -1;
 	m_iIlusionOwnerH = 0;
 	m_cIlusionOwnerType = 0;
 	m_bIsTeleportRequested = false;
-	m_bIsConfusion = false;
+	m_pPlayer->m_bIsConfusion = false;
 	m_bSkillUsingStatus = false;
 
 	m_bItemUsingStatus = false;
@@ -24809,26 +23864,25 @@ void CGame::InitDataResponseHandler(char* pData)
 	}
 
 	for (i = 0; i < DEF_MAXCHATMSGS; i++) {
-		if (m_pChatMsgList[i] != 0) delete m_pChatMsgList[i];
-		m_pChatMsgList[i] = 0;
+		if (m_pChatMsgList[i] != 0) m_pChatMsgList[i].reset();
 	}
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseInitDataHeader>(
 		pData, sizeof(hb::net::PacketResponseInitDataHeader));
 	if (!pkt) return;
-	m_sPlayerObjectID = pkt->player_object_id;
+	m_pPlayer->m_sPlayerObjectID = pkt->player_object_id;
 	sX = pkt->pivot_x;
 	sY = pkt->pivot_y;
-	m_sPlayerType = pkt->player_type;
-	m_sPlayerAppr1 = pkt->appr1;
-	m_sPlayerAppr2 = pkt->appr2;
-	m_sPlayerAppr3 = pkt->appr3;
-	m_sPlayerAppr4 = pkt->appr4;
-	m_iPlayerApprColor = pkt->appr_color;
-	m_iPlayerStatus = pkt->status;
+	m_pPlayer->m_sPlayerType = pkt->player_type;
+	m_pPlayer->m_sPlayerAppr1 = pkt->appr1;
+	m_pPlayer->m_sPlayerAppr2 = pkt->appr2;
+	m_pPlayer->m_sPlayerAppr3 = pkt->appr3;
+	m_pPlayer->m_sPlayerAppr4 = pkt->appr4;
+	m_pPlayer->m_iPlayerApprColor = pkt->appr_color;
+	m_pPlayer->m_iPlayerStatus = pkt->status;
 
 	//Snoopy MIM fix
-	if ((m_iPlayerStatus & 0x00200000) == 0x00200000)
+	if ((m_pPlayer->m_iPlayerStatus & 0x00200000) == 0x00200000)
 	{
 		m_bIllusionMVT = true;
 	}
@@ -24868,11 +23922,11 @@ void CGame::InitDataResponseHandler(char* pData)
 		G_cSpriteAlphaDegree = 2;
 		break;
 	}
-	m_iContribution = pkt->contribution;
+	m_pPlayer->m_iContribution = pkt->contribution;
 	//	m_iContributionPrice = 0;
 	bIsObserverMode = pkt->observer_mode != 0;
 	//	m_iRating = pkt->rating;
-	m_iHP = pkt->hp;
+	m_pPlayer->m_iHP = pkt->hp;
 	m_cDiscount = static_cast<char>(pkt->discount);
 
 	cp = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseInitDataHeader);
@@ -24899,25 +23953,23 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_pMapData->m_sPivotX = sX;
 	m_pMapData->m_sPivotY = sY;
 
-	m_sPlayerX = sX + 19;
-	m_sPlayerY = sY + 17;
+	m_pPlayer->m_sPlayerX = sX + 19;
+	m_pPlayer->m_sPlayerY = sY + 17;
 
-	m_cPlayerDir = 5;
+	m_pPlayer->m_iPlayerDir = 5;
 
 	if (bIsObserverMode == false)
 	{
-		m_pMapData->bSetOwner(m_sPlayerObjectID, m_sPlayerX, m_sPlayerY, m_sPlayerType, m_cPlayerDir,
-			m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4, m_iPlayerApprColor, // v1.4
-			m_iPlayerStatus, m_cPlayerName,
+		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
+			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 	}
 
 	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X) * 32 - 16;
 	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y + 1) * 32 - 16;
-	m_sViewDstX = m_sViewPointX = (m_sPlayerX - VIEW_CENTER_TILE_X) * 32;
-	m_sViewDstY = m_sViewPointY = (m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32;
+	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
 	_ReadMapData(sX + 7, sY + 8, cp);
-	m_bIsRedrawPDBGS = true;
 	// ------------------------------------------------------------------------+
 	wsprintf(cTxt, INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
 	AddEventList(cTxt, 10);
@@ -24941,7 +23993,7 @@ void CGame::InitDataResponseHandler(char* pData)
 		else bNowSafe = false;
 
 		if( memcmp( m_cCurLocation, "2nd", 3 ) == 0 ) bNowSafe = true;
-		if( m_iPKCount != 0 ) bNowSafe = false;
+		if( m_pPlayer->m_iPKCount != 0 ) bNowSafe = false;
 
 		if( bPrevSafe )
 		{	if( bNowSafe == false ) SetTopMsg(DEF_MSG_DANGERZONE, 5);
@@ -24951,12 +24003,12 @@ void CGame::InitDataResponseHandler(char* pData)
 
 		// ------------------------------------------------------------------------+
 
-	ChangeGameMode(DEF_GAMEMODE_ONMAINGAME);
+	GameModeManager::set_screen<Screen_OnGame>();
 
 	//v1.41
-	if ((m_sPlayerAppr2 & 0xF000) != 0)
-		m_bIsCombatMode = true;
-	else m_bIsCombatMode = false;
+	if ((m_pPlayer->m_sPlayerAppr2 & 0xF000) != 0)
+		m_pPlayer->m_bIsCombatMode = true;
+	else m_pPlayer->m_bIsCombatMode = false;
 
 	//v1.42
 	if (m_bIsFirstConn == true)
@@ -25101,22 +24153,22 @@ void CGame::MotionEventHandler(char* pData)
 		}
 	}
 
-	if ((wEventType == DEF_OBJECTNULLACTION) && (memcmp(cName, m_cPlayerName, 10) == 0))
+	if ((wEventType == DEF_OBJECTNULLACTION) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
 	{
-		m_sPlayerType = sType;
-		m_sPlayerAppr1 = sAppr1;
-		sPrevAppr2 = m_sPlayerAppr2;
-		m_sPlayerAppr2 = sAppr2;
-		m_sPlayerAppr3 = sAppr3;
-		m_sPlayerAppr4 = sAppr4;
-		m_iPlayerApprColor = iApprColor;
-		m_iPlayerStatus = iStatus;
+		m_pPlayer->m_sPlayerType = sType;
+		m_pPlayer->m_sPlayerAppr1 = sAppr1;
+		sPrevAppr2 = m_pPlayer->m_sPlayerAppr2;
+		m_pPlayer->m_sPlayerAppr2 = sAppr2;
+		m_pPlayer->m_sPlayerAppr3 = sAppr3;
+		m_pPlayer->m_sPlayerAppr4 = sAppr4;
+		m_pPlayer->m_iPlayerApprColor = iApprColor;
+		m_pPlayer->m_iPlayerStatus = iStatus;
 		if ((sPrevAppr2 & 0xF000) == 0)
 		{
 			if ((sAppr2 & 0xF000) != 0)
 			{
 				AddEventList(MOTION_EVENT_HANDLER1, 10);
-				m_bIsCombatMode = true;
+				m_pPlayer->m_bIsCombatMode = true;
 			}
 		}
 		else
@@ -25124,10 +24176,10 @@ void CGame::MotionEventHandler(char* pData)
 			if ((sAppr2 & 0xF000) == 0)
 			{
 				AddEventList(MOTION_EVENT_HANDLER2, 10);
-				m_bIsCombatMode = false;
+				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_cCommand != DEF_OBJECTRUN) m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
+		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN) m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
 	}
 	else m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
 
@@ -25140,12 +24192,11 @@ void CGame::MotionEventHandler(char* pData)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
 				wsprintf(cTxt, "%s!", m_pMagicCfgList[sV1]->m_cName);
-				m_pChatMsgList[i] = new class CMsg(41, cTxt, m_dwCurTime);
+				m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, m_dwCurTime);
 				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
 				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
 				{
-					delete m_pChatMsgList[i];
-					m_pChatMsgList[i] = 0;
+					m_pChatMsgList[i].reset();
 				}
 				return;
 			}
@@ -25164,12 +24215,11 @@ void CGame::MotionEventHandler(char* pData)
 				if ((sV1 >= 0) && (sV1 < 12))		iFontType = 21;
 				else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
 				else if ((sV1 >= 40) || (sV1 < 0))	iFontType = 23;
-				m_pChatMsgList[i] = new class CMsg(iFontType, cTxt, m_dwCurTime);
+				m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
 				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
 				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
 				{
-					delete m_pChatMsgList[i];
-					m_pChatMsgList[i] = 0;
+					m_pChatMsgList[i].reset();
 				}
 				return;
 			}
@@ -25177,7 +24227,7 @@ void CGame::MotionEventHandler(char* pData)
 
 	case DEF_OBJECTDAMAGE:
 	case DEF_OBJECTDAMAGEMOVE:
-		if (memcmp(cName, m_cPlayerName, 10) == 0)
+		if (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0)
 		{
 			m_bIsGetPointingMode = false;
 			m_iPointCommandType = -1;
@@ -25199,19 +24249,18 @@ void CGame::MotionEventHandler(char* pData)
 					else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
 					else if ((sV1 >= 40) || (sV1 < 0))	iFontType = 23;
 
-					m_pChatMsgList[i] = new class CMsg(iFontType, cTxt, m_dwCurTime);
+					m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
 				}
 				else
 				{
 					strcpy(cTxt, " * Failed! *");
-					m_pChatMsgList[i] = new class CMsg(22, cTxt, m_dwCurTime);
+					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
 					PlaySound('C', 17, 0);
 				}
 				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
 				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
 				{
-					delete m_pChatMsgList[i];
-					m_pChatMsgList[i] = 0;
+					m_pChatMsgList[i].reset();
 				}
 				return;
 			}
@@ -25219,7 +24268,7 @@ void CGame::MotionEventHandler(char* pData)
 
 	case DEF_OBJECTATTACK:
 	case DEF_OBJECTATTACKMOVE:
-		if (wObjectID == m_sPlayerObjectID + 30000)
+		if (wObjectID == m_pPlayer->m_sPlayerObjectID + 30000)
 		{
 			if (m_pMagicCfgList[sV3] != 0)
 			{
@@ -25240,8 +24289,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 	}
 
 	for (i = 0; i < 92; i++)
@@ -25249,52 +24297,52 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 
 	if (strcmp(pMapName, "aresden") == 0)
 	{
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[2]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[3]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[2]->m_pMsg, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[3]->m_pMsg, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		if (iV2 == 0) {
-			if ((m_bCitizen == true) && (m_bAresden == false))
+			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
 				PlaySound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
+				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else if ((m_bCitizen == true) && (m_bAresden == true))
+			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
 				PlaySound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
+				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else PlaySound('E', 25, 0, 0);
 		}
@@ -25302,55 +24350,55 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 		{
 			if (iV1 != 0)
 			{
-				if ((m_bCitizen == true) && (m_bAresden == false))
+				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlaySound('E', 23, 0, 0);
 					PlaySound('C', 21, 0, 0);
 					PlaySound('C', 22, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_bCitizen == true) && (m_bAresden == true))
+				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlaySound('E', 24, 0, 0);
 					PlaySound('C', 12, 0, 0);
 					PlaySound('C', 13, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlaySound('E', 25, 0, 0);
 			}
 			else
 			{
-				if ((m_bCitizen == true) && (m_bAresden == false))
+				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlaySound('E', 23, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_bCitizen == true) && (m_bAresden == true))
+				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlaySound('E', 24, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlaySound('E', 25, 0, 0);
 			}
@@ -25358,107 +24406,107 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 	}
 	else if (strcmp(pMapName, "elvine") == 0)
 	{
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[7]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[8]->m_pMsg, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[7]->m_pMsg, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[8]->m_pMsg, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
 		wsprintf(cTemp, "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, cTemp, 0);
-		m_pMsgTextList[iTxtIdx++] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
+		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		if (iV2 == 0) {
-			if ((m_bCitizen == true) && (m_bAresden == true))
+			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
 				PlaySound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[59]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[60]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[61]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[62]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[62]->m_pMsg, 0);
+				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else if ((m_bCitizen == true) && (m_bAresden == false))
+			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
 				PlaySound('E', 25, 0, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[69]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[70]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[71]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[72]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[73]->m_pMsg, 0);
-				m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[74]->m_pMsg, 0);
-				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[72]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[73]->m_pMsg, 0);
+				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
+				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
 			else PlaySound('E', 25, 0, 0);
 		}
 		else
 		{
 			if (iV1 != 0) {
-				if ((m_bCitizen == true) && (m_bAresden == true))
+				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlaySound('E', 23, 0, 0);
 					PlaySound('C', 21, 0, 0);
 					PlaySound('C', 22, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[63]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[64]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[65]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_bCitizen == true) && (m_bAresden == false))
+				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlaySound('E', 24, 0, 0);
 					PlaySound('C', 12, 0, 0);
 					PlaySound('C', 13, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[75]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[76]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[77]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[78]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[79]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[80]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[81]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[82]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[78]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[79]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[80]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[81]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlaySound('E', 25, 0, 0);
 			}
 			else
 			{
-				if ((m_bCitizen == true) && (m_bAresden == true))
+				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
 					PlaySound('E', 23, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[66]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[67]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[68]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else if ((m_bCitizen == true) && (m_bAresden == false))
+				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
 					PlaySound('E', 24, 0, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[83]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[84]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[85]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[86]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[87]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[88]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[89]->m_pMsg, 0);
-					m_pMsgTextList[iTxtIdx++] = new class CMsg(0, m_pGameMsgList[90]->m_pMsg, 0);
-					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[86]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[87]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[88]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[89]->m_pMsg, 0);
+					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
+					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
 				else PlaySound('E', 25, 0, 0);
 			}
@@ -25474,7 +24522,7 @@ void CGame::UseShortCut(int num)
 	int index;
 	if (num < 4) index = num;
 	else index = num + 7;
-	if (m_cGameMode != DEF_GAMEMODE_ONMAINGAME) return;
+	if (GameModeManager::GetMode() != GameMode::MainGame) return;
 	if (Input::IsCtrlDown() == true)
 	{
 		if (m_sRecentShortCut == -1)
@@ -25501,7 +24549,7 @@ void CGame::UseShortCut(int num)
 				std::memset(cStr2, 0, sizeof(cStr2));
 				std::memset(cStr3, 0, sizeof(cStr3));
 
-				GetItemName(m_pItemList[m_sShortCut[num]], cStr1, cStr2, cStr3);
+				GetItemName(m_pItemList[m_sShortCut[num]].get(), cStr1, cStr2, cStr3);
 				wsprintf(G_cTxt, MSG_SHORTCUT4, cStr1, cStr2, cStr3, index);// (%s %s %s) [F%d]
 				AddEventList(G_cTxt, 10);
 			}
@@ -25571,7 +24619,7 @@ int CGame::iGetManaCost(int iMagicNo)
 	// Mana save max = 80%
 	if (iManaSave > 80) iManaSave = 80;
 	iManaCost = m_pMagicCfgList[iMagicNo]->m_sValue1;
-	if (m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);
+	if (m_pPlayer->m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);
 	if (iManaSave > 0)
 	{
 		double dV1 = (double)iManaSave;
@@ -25588,12 +24636,12 @@ int CGame::iGetManaCost(int iMagicNo)
 void CGame::UseMagic(int iMagicNo)
 {
 	if (iMagicNo < 0 || iMagicNo >= 100) return;
-	if ((m_cMagicMastery[iMagicNo] == 0) || (m_pMagicCfgList[iMagicNo] == 0)) return;
+	if ((m_pPlayer->m_iMagicMastery[iMagicNo] == 0) || (m_pMagicCfgList[iMagicNo] == 0)) return;
 
 	// Casting
-	if (m_iHP <= 0) return;
+	if (m_pPlayer->m_iHP <= 0) return;
 	if (m_bIsGetPointingMode == true) return;
-	if (iGetManaCost(iMagicNo) > m_iMP) return;
+	if (iGetManaCost(iMagicNo) > m_pPlayer->m_iMP) return;
 	if (_bIsItemOnHand() == true)
 	{
 		AddEventList(DLGBOX_CLICK_MAGIC1, 10);
@@ -25604,8 +24652,8 @@ void CGame::UseMagic(int iMagicNo)
 		AddEventList(DLGBOX_CLICK_MAGIC2, 10);
 		return;
 	}
-	if ((m_sPlayerAppr2 & 0xF000) == 0) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-	m_cCommand = DEF_OBJECTMAGIC;
+	if ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
+	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMAGIC);
 	m_iCastingMagicType = iMagicNo;
 	m_sMagicShortCut = iMagicNo;
 	m_sRecentShortCut = iMagicNo + 100;
@@ -25625,23 +24673,23 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 		char cItemID = m_sItemEquipmentStatus[cEquipPos];
 		if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 		{
-			m_iAngelicStr = 0;
+			m_pPlayer->m_iAngelicStr = 0;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
 		{
-			m_iAngelicDex = 0;
+			m_pPlayer->m_iAngelicDex = 0;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
 		{
-			m_iAngelicInt = 0;
+			m_pPlayer->m_iAngelicInt = 0;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
 		{
-			m_iAngelicMag = 0;
+			m_pPlayer->m_iAngelicMag = 0;
 		}
 	}
 
-	GetItemName(m_pItemList[m_sItemEquipmentStatus[cEquipPos]], cStr1, cStr2, cStr3);
+	GetItemName(m_pItemList[m_sItemEquipmentStatus[cEquipPos]].get(), cStr1, cStr2, cStr3);
 	wsprintf(G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 	AddEventList(G_cTxt, 10);
 	m_bIsItemEquipped[m_sItemEquipmentStatus[cEquipPos]] = false;
@@ -25662,12 +24710,12 @@ void CGame::ItemEquipHandler(char cItemID)
 		AddEventList(BITEMDROP_CHARACTER1, 10); //"The item is exhausted. Fix it to use it."
 		return;
 	}
-	if (m_pItemList[cItemID]->m_wWeight / 100 > m_iStr + m_iAngelicStr)
+	if (m_pItemList[cItemID]->m_wWeight / 100 > m_pPlayer->m_iStr + m_pPlayer->m_iAngelicStr)
 	{
 		AddEventList(BITEMDROP_CHARACTER2, 10);
 		return;
 	}
-	if (((m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (m_pItemList[cItemID]->m_sLevelLimit > m_iLevel))
+	if (((m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (m_pItemList[cItemID]->m_sLevelLimit > m_pPlayer->m_iLevel))
 	{
 		AddEventList(BITEMDROP_CHARACTER4, 10);
 		return;
@@ -25679,7 +24727,7 @@ void CGame::ItemEquipHandler(char cItemID)
 	}
 	if (m_pItemList[cItemID]->m_cGenderLimit != 0)
 	{
-		switch (m_sPlayerType) {
+		switch (m_pPlayer->m_sPlayerType) {
 		case 1:
 		case 2:
 		case 3:
@@ -25742,27 +24790,27 @@ void CGame::ItemEquipHandler(char cItemID)
 		if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
 		{
 			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-			m_iAngelicStr = 1 + iAngelValue;
+			m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
 		{
 			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-			m_iAngelicDex = 1 + iAngelValue;
+			m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
 		{
 			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-			m_iAngelicInt = 1 + iAngelValue;
+			m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
 		}
 		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
 		{
 			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-			m_iAngelicMag = 1 + iAngelValue;
+			m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
 		}
 	}
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_pItemList[cItemID], cStr1, cStr2, cStr3);
+	GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 	wsprintf(G_cTxt, BITEMDROP_CHARACTER9, cStr1);
 	AddEventList(G_cTxt, 10);
 	PlaySound('E', 28, 0);
@@ -25776,67 +24824,67 @@ void CGame::ItemEquipHandler(char cItemID)
 void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Used at the beginning of character drawing
 	// DefenseShield
-	if ((_tmp_iStatus & 0x02000000) != 0)
-		//m_pEffectSpr[80]->Draw(sX+75, sY+107, _tmp_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, _tmp_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
+	if ((m_entityState.m_iStatus & 0x02000000) != 0)
+		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
-	if ((_tmp_iStatus & 0x04000000) != 0)
-		//m_pEffectSpr[79]->Draw(sX+101, sY+135, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x04000000) != 0)
+		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
-	if ((_tmp_iStatus & 0x08000000) != 0)
-		//m_pEffectSpr[72]->Draw(sX, sY+35, _tmp_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[72]->Draw(sX, sY + 35, _tmp_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x08000000) != 0)
+		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion
-	if ((_tmp_iStatus & 0x01000000) != 0)
-		//m_pEffectSpr[73]->Draw(sX+125, sY+95, _tmp_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x01000000) != 0)
+		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
-	if ((_tmp_iStatus & 0x00200000) != 0)
-		//m_pEffectSpr[151]->Draw(sX+90, sY+55, _tmp_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x00200000) != 0)
+		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
-	if ((_tmp_iStatus & 0x00400000) != 0)
-		//m_pEffectSpr[149]->Draw(sX+90, sY+120, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x00400000) != 0)
+		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Blue (Mana) Bleu au sol
-	if ((_tmp_iStatus & 0x00800000) != 0)
-		//m_pEffectSpr[150]->Draw(sX+1, sY+26, _tmp_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, _tmp_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x00800000) != 0)
+		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Green (XP) Mauve au sol
-	if ((_tmp_iStatus & 0x00010000) != 0)
-		//m_pEffectSpr[148]->Draw(sX, sY+32, _tmp_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[148]->Draw(sX, sY + 32, _tmp_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x00010000) != 0)
+		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Hero Flag (Heldenian)  Flameches d'entangle
-	if ((_tmp_iStatus & 0x00020000) != 0)
-		//m_pEffectSpr[87]->Draw(sX+53, sY+54, _tmp_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, _tmp_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x00020000) != 0)
+		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
 }
 
 /*********************************************************************************************************************
-**  void CheckActiveAura2(short sX, short sY, DWORD dwTime,  _tmp_sOwnerType) ( initially Cleroth fixed by Snoopy )	**
+**  void CheckActiveAura2(short sX, short sY, DWORD dwTime,  m_entityState.m_sOwnerType) ( initially Cleroth fixed by Snoopy )	**
 **  description			: Generates poison aura around players. This one should be use later...						**
 **						: v351 implements this in each drawn function,beter to regroup in single function.			**
 **********************************************************************************************************************/
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
-	if ((_tmp_iStatus & 0x80) != 0)
-		//m_pEffectSpr[81]->Draw(sX+115, sY+85, _tmp_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], _tmp_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
+	if ((m_entityState.m_iStatus & 0x80) != 0)
+		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
 	//	_iAttackerHeight[]
 }
 
 void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime)
 {
-	switch (_tmp_cDir)
+	switch (m_entityState.m_iDir)
 	{
 	case 1:
 	case 2:
@@ -25845,26 +24893,26 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 		sX -= 30;
 		break;
 	}
-	if ((_tmp_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & 0x10) != 0)
 	{
-		if ((_tmp_iStatus & 0x1000) != 0)
+		if ((m_entityState.m_iStatus & 0x1000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
-		else if ((_tmp_iStatus & 0x2000) != 0)
+		else if ((m_entityState.m_iStatus & 0x2000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
-		else if ((_tmp_iStatus & 0x4000) != 0)
+		else if ((m_entityState.m_iStatus & 0x4000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
-		else if ((_tmp_iStatus & 0x8000) != 0)
+		else if ((m_entityState.m_iStatus & 0x8000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
-		if ((_tmp_iStatus & 0x1000) != 0)
+		if ((m_entityState.m_iStatus & 0x1000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
-		else if ((_tmp_iStatus & 0x2000) != 0)
+		else if ((m_entityState.m_iStatus & 0x2000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
-		else if ((_tmp_iStatus & 0x4000) != 0)
+		else if ((m_entityState.m_iStatus & 0x4000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
-		else if ((_tmp_iStatus & 0x8000) != 0)
+		else if ((m_entityState.m_iStatus & 0x8000) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
 	}
 
@@ -25911,45 +24959,44 @@ void CGame::ShowHeldenianVictory(short sSide)
 	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
-			delete m_pMsgTextList[i];
-		m_pMsgTextList[i] = 0;
+			m_pMsgTextList[i].reset();
 	}
-	if (m_bCitizen == false) iPlayerSide = 0;
-	else if (m_bAresden == true) iPlayerSide = 1;
-	else if (m_bAresden == false) iPlayerSide = 2;
+	if (m_pPlayer->m_bCitizen == false) iPlayerSide = 0;
+	else if (m_pPlayer->m_bAresden == true) iPlayerSide = 1;
+	else if (m_pPlayer->m_bAresden == false) iPlayerSide = 2;
 	switch (sSide) {
 	case 0:
 		PlaySound('E', 25, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[2] = new class CMsg(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = new class CMsg(0, "in a tie.", 0);
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in a tie.", 0);
 		break;
 	case 1:
 		PlaySound('E', 25, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[2] = new class CMsg(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = new class CMsg(0, "in favor of Aresden.", 0);
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in favor of Aresden.", 0);
 		break;
 	case 2:
 		PlaySound('E', 25, 0, 0);
-		m_pMsgTextList[0] = new class CMsg(0, "Heldenian holy war has been closed!", 0);
-		m_pMsgTextList[1] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[2] = new class CMsg(0, "Heldenian Holy war ended", 0);
-		m_pMsgTextList[3] = new class CMsg(0, "in favor of Elvine.", 0);
+		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
+		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
+		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in favor of Elvine.", 0);
 		break;
 	}
-	m_pMsgTextList[4] = new class CMsg(0, " ", 0);
+	m_pMsgTextList[4] = std::make_unique<CMsg>(0, " ", 0);
 
 	if (((iPlayerSide != 1) && (iPlayerSide != 2))   // Player not a normal citizen
 		|| (sSide == 0))								// or no winner
 	{
 		PlaySound('E', 25, 0, 0);
-		m_pMsgTextList[5] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[6] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[7] = new class CMsg(0, " ", 0);
-		m_pMsgTextList[8] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[5] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[7] = std::make_unique<CMsg>(0, " ", 0);
+		m_pMsgTextList[8] = std::make_unique<CMsg>(0, " ", 0);
 	}
 	else
 	{
@@ -25958,24 +25005,24 @@ void CGame::ShowHeldenianVictory(short sSide)
 			PlaySound('E', 23, 0, 0);
 			PlaySound('C', 21, 0, 0);
 			PlaySound('C', 22, 0, 0);
-			m_pMsgTextList[5] = new class CMsg(0, "Congratulation.", 0);
-			m_pMsgTextList[6] = new class CMsg(0, "As cityzen of victory,", 0);
-			m_pMsgTextList[7] = new class CMsg(0, "You will recieve a reward.", 0);
-			m_pMsgTextList[8] = new class CMsg(0, "      ", 0);
+			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "Congratulation.", 0);
+			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of victory,", 0);
+			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You will recieve a reward.", 0);
+			m_pMsgTextList[8] = std::make_unique<CMsg>(0, "      ", 0);
 		}
 		else
 		{
 			PlaySound('E', 24, 0, 0);
 			PlaySound('C', 12, 0, 0);
 			PlaySound('C', 13, 0, 0);
-			m_pMsgTextList[5] = new class CMsg(0, "To our regret", 0);
-			m_pMsgTextList[6] = new class CMsg(0, "As cityzen of defeat,", 0);
-			m_pMsgTextList[7] = new class CMsg(0, "You cannot recieve any reward.", 0);
-			m_pMsgTextList[8] = new class CMsg(0, "     ", 0);
+			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "To our regret", 0);
+			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of defeat,", 0);
+			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You cannot recieve any reward.", 0);
+			m_pMsgTextList[8] = std::make_unique<CMsg>(0, "     ", 0);
 		}
 	}
 	for (i = 9; i < 18; i++)
-		m_pMsgTextList[i] = new class CMsg(0, " ", 0);
+		m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 0, 0, 0);
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeCommander);
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::CrusadeConstructor);
@@ -26066,10 +25113,12 @@ void CGame::Abaddon_corpse(int sX, int sY)
 	_DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir - 2, ir + 2, 2);
 
 	for (int x = sX - 50; x <= sX + 100; x += rand() % 35)
+	{
 		for (int y = sY - 30; y <= sY + 50; y += rand() % 45)
 		{
 			ir = (rand() % 20) - 10;
 			_DrawThunderEffect(x, 0, x, y, ir, ir, 2);
 		}
+	}
 }
 

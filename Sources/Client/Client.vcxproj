@@ -246,7 +246,6 @@
     <ClInclude Include="ActionID_Client.h" />
     <ClInclude Include="Benchmark.h" />
     <ClInclude Include="FrameTiming.h" />
-
     <ClInclude Include="Version.h" />
     <ClInclude Include="BuildItem.h" />
     <ClInclude Include="CharInfo.h" />
@@ -318,7 +317,6 @@
     <ClInclude Include="TileSpr.h" />
     <ClInclude Include="XSocket.h" />
     <ClInclude Include="ConfigManager.h" />
-    <ClInclude Include="Camera.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
     <ClInclude Include="CmdShowFrame.h" />
@@ -330,11 +328,23 @@
     <ClInclude Include="CmdProfile.h" />
     <ClInclude Include="WeatherManager.h" />
     <ClInclude Include="CursorTarget.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="PlayerController.h" />
+    <ClInclude Include="EntityRenderState.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="GameModeManager.h" />
+    <ClInclude Include="IGameScreen.h" />
+    <ClInclude Include="Screen_OnGame.h" />
+    <ClInclude Include="Overlay_Connecting.h" />
+    <ClInclude Include="Overlay_WaitingResponse.h" />
+    <ClInclude Include="Overlay_LogResMsg.h" />
+    <ClInclude Include="Overlay_QueryForceLogin.h" />
+    <ClInclude Include="Overlay_QueryDeleteCharacter.h" />
+    <ClInclude Include="Overlay_ChangePassword.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />
     <ClCompile Include="DialogBox_WarningMsg.cpp" />
@@ -381,10 +391,18 @@
     <ClCompile Include="DialogBox_Manufacture.cpp" />
     <ClCompile Include="FrameTiming.cpp" />
     <ClCompile Include="HotkeyManager.cpp" />
-
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameModeManager.cpp" />
+    <ClCompile Include="IGameScreen.cpp" />
+    <ClCompile Include="Screen_OnGame.cpp" />
+    <ClCompile Include="Overlay_Connecting.cpp" />
+    <ClCompile Include="Overlay_WaitingResponse.cpp" />
+    <ClCompile Include="Overlay_LogResMsg.cpp" />
+    <ClCompile Include="Overlay_QueryForceLogin.cpp" />
+    <ClCompile Include="Overlay_QueryDeleteCharacter.cpp" />
+    <ClCompile Include="Overlay_ChangePassword.cpp" />
     <ClCompile Include="EffectManager.cpp" />
     <ClCompile Include="EntityMotion.cpp" />
     <ClCompile Include="Effect_Add.cpp" />
@@ -431,6 +449,9 @@
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
     <ClCompile Include="CursorTarget.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="PlayerController.cpp" />
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc" />
