@@ -1,0 +1,2 @@
+[2026-01-21 18:22:36] Added [Magic Wand(MS0)] to Slime (Tier 1, weight 100)
+[2026-01-21 18:22:33] Removed [Magic Wand(MS0)] from Slime (Tier 1)
