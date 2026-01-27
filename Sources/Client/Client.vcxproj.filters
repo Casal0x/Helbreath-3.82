@@ -316,6 +316,9 @@
     <ClInclude Include="Screen_MainMenu.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="Screen_Login.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
     <ClInclude Include="Screen_OnGame.h">
       <Filter>Screens</Filter>
     </ClInclude>
@@ -639,6 +642,9 @@
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_MainMenu.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_Login.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_OnGame.cpp">

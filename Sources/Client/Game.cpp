@@ -35,6 +35,7 @@
 #include "IGameScreen.h"
 #include "Screen_OnGame.h"
 #include "Screen_MainMenu.h"
+#include "Screen_Login.h"
 #include "IInput.h"
 
 extern char G_cSpriteAlphaDegree;
@@ -563,9 +564,7 @@ void CGame::UpdateScreen()
 		UpdateScreen_Msg();
 		break;
 
-	case GameMode::Login:
-		UpdateScreen_Login();
-		break;
+
 
 	case GameMode::Quit:
 		UpdateScreen_Quit();
@@ -646,9 +645,6 @@ void CGame::DrawScreen()
 		DrawScreen_Msg();
 		break;
 
-	case GameMode::Login:
-		DrawScreen_Login();
-		break;
 
 	case GameMode::Quit:
 		DrawScreen_Quit();
@@ -11006,12 +11002,18 @@ void CGame::ChangeGameMode(GameMode mode)
 		}
 	}
 
-	if (mode == GameMode::MainMenu) {
+	// Route to new Screen system or legacy system
+	switch (mode) {
+	case GameMode::MainMenu:
 		GameModeManager::set_screen<Screen_MainMenu>();
-	}
-	else {
-		// GameModeManager is the single source of truth
+		break;
+	case GameMode::Login:
+		GameModeManager::set_screen<Screen_Login>();
+		break;
+	default:
+		// GameModeManager is the single source of truth for legacy types
 		GameModeManager::ChangeMode(mode, instant);
+		break;
 	}
 
 	// Immediately sync legacy variables after mode change
@@ -17537,157 +17539,7 @@ void CGame::DrawScreen_WaitInitData()
 	DrawVersion();
 }
 
-// File-scope static variables for Login screen input buffers
-// Shared between UpdateScreen_Login and DrawScreen_Login
-static char s_cLoginName[12];
-static char s_cLoginPassword[12];
 
-// Login screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_Login()
-{
-	static char cPrevFocus;
-
-	if (m_cGameModeCount == 0)
-	{
-		EndInputString();
-		cPrevFocus = 1;
-		m_cCurFocus = 1;
-		m_cMaxFocus = 4;
-		m_cArrowPressed = 0;
-		std::memset(s_cLoginName, 0, sizeof(s_cLoginName));
-		std::memset(s_cLoginPassword, 0, sizeof(s_cLoginPassword));
-		StartInputString(180 + SCREENX, 162 + SCREENY, 11, s_cLoginName);
-		ClearInputString();
-	}
-
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (m_cArrowPressed != 0)
-	{
-		switch (m_cArrowPressed) {
-		case 1:
-			m_cCurFocus--;
-			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
-			break;
-		case 2:
-			if (m_cCurFocus == 3) m_cCurFocus = 4;
-			else if (m_cCurFocus == 4) m_cCurFocus = 3;
-			break;
-		case 3:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		case 4:
-			if (m_cCurFocus == 3) m_cCurFocus = 4;
-			else if (m_cCurFocus == 4) m_cCurFocus = 3;
-			break;
-		}
-		m_cArrowPressed = 0;
-	}
-
-	if (Input::IsKeyPressed(VK_RETURN) == true)
-	{
-		PlaySound('E', 14, 5);
-
-		switch (m_cCurFocus) {
-		case 1:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		case 2:
-		case 3:
-			if ((strlen(s_cLoginName) == 0) || (strlen(s_cLoginPassword) == 0)) break;
-			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
-			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
-			strcpy(m_pPlayer->m_cAccountName, s_cLoginName);
-			strcpy(m_pPlayer->m_cAccountPassword, s_cLoginPassword);
-			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(GameMode::Connecting);
-			m_dwConnectMode = MSGID_REQUEST_LOGIN;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "11");
-			return;
-		case 4:
-			ChangeGameMode(GameMode::MainMenu);
-			return;
-		}
-	}
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		EndInputString();
-		ChangeGameMode(GameMode::MainMenu);
-		return;
-	}
-
-	if (cPrevFocus != m_cCurFocus)
-	{
-		EndInputString();
-		switch (m_cCurFocus) {
-		case 1:
-			StartInputString(180 + SCREENX, 162 + SCREENY, 11, s_cLoginName);
-			break;
-		case 2:
-			StartInputString(180 + SCREENX, 185 + SCREENY, 11, s_cLoginPassword, true);
-			break;
-		case 3:
-		case 4:
-			break;
-		}
-		cPrevFocus = m_cCurFocus;
-	}
-
-	// Poll mouse input
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-	{
-		PlaySound('E', 14, 5);
-		// Name field click
-		if (Input::IsMouseInRect(80 + SCREENX, 151 + SCREENY, 337 + SCREENX, 179 + SCREENY)) {
-			m_cCurFocus = 1;
-		}
-		// Password field click
-		else if (Input::IsMouseInRect(80 + SCREENX, 180 + SCREENY, 337 + SCREENX, 205 + SCREENY)) {
-			m_cCurFocus = 2;
-		}
-		// Login button click
-		else if (Input::IsMouseInRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY)) {
-			if ((strlen(s_cLoginName) != 0) && (strlen(s_cLoginPassword) != 0)) {
-				EndInputString();
-				std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
-				std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
-				strcpy(m_pPlayer->m_cAccountName, s_cLoginName);
-				strcpy(m_pPlayer->m_cAccountPassword, s_cLoginPassword);
-				m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-				m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-				m_pLSock->bInitBufferSize(30000);
-				ChangeGameMode(GameMode::Connecting);
-				m_dwConnectMode = MSGID_REQUEST_LOGIN;
-				std::memset(m_cMsg, 0, sizeof(m_cMsg));
-				strcpy(m_cMsg, "11");
-				return;
-			}
-		}
-		// Cancel button click
-		else if (Input::IsMouseInRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY)) {
-			ChangeGameMode(GameMode::MainMenu);
-			return;
-		}
-	}
-
-	if ((Input::GetMouseX() >= 80 + SCREENX) && (Input::GetMouseX() <= 163 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 3;
-	if ((Input::GetMouseX() >= 258 + SCREENX) && (Input::GetMouseX() <= 327 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 4;
-}
-
-// Login screen - Draw phase (rendering only)
-void CGame::DrawScreen_Login()
-{
-	// Use shared static buffers from UpdateScreen_Login
-	_Draw_OnLogin(s_cLoginName, s_cLoginPassword, Input::GetMouseX(), Input::GetMouseY(), m_cGameModeCount);
-}
 
 // Loading screen - Update phase (resource loading)
 void CGame::UpdateScreen_Loading()
@@ -23571,6 +23423,8 @@ void CGame::ResponseChargedTeleport(char* pData)
 		AddEventList(RESPONSE_CHARGED_TELEPORT7, 10);
 	}
 }
+
+
 
 void CGame::_Draw_OnLogin(char* pAccount, char* pPassword, int msX, int msY, int iFrame)
 {
