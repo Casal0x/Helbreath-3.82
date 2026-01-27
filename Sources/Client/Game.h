@@ -258,8 +258,7 @@ public:
 	void DrawScreen_QueryForceLogin();
 	void UpdateScreen_QueryDeleteCharacter();
 	void DrawScreen_QueryDeleteCharacter();
-	void UpdateScreen_MainMenu();
-	void DrawScreen_MainMenu();
+
 	void UpdateScreen_Login();
 	void DrawScreen_Login();
 	void UpdateScreen_WaitInitData();

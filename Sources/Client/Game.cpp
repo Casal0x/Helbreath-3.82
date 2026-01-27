@@ -34,6 +34,7 @@
 // Screen system
 #include "IGameScreen.h"
 #include "Screen_OnGame.h"
+#include "Screen_MainMenu.h"
 #include "IInput.h"
 
 extern char G_cSpriteAlphaDegree;
@@ -542,9 +543,7 @@ void CGame::UpdateScreen()
 		UpdateScreen_Connecting();
 		break;
 
-	case GameMode::MainMenu:
-		UpdateScreen_MainMenu();
-		break;
+
 
 	case GameMode::Loading:
 		UpdateScreen_Loading();
@@ -627,9 +626,7 @@ void CGame::DrawScreen()
 		DrawScreen_Connecting();
 		break;
 
-	case GameMode::MainMenu:
-		DrawScreen_MainMenu();
-		break;
+
 
 	case GameMode::Loading:
 		DrawScreen_Loading();
@@ -11009,8 +11006,13 @@ void CGame::ChangeGameMode(GameMode mode)
 		}
 	}
 
-	// GameModeManager is the single source of truth
-	GameModeManager::ChangeMode(mode, instant);
+	if (mode == GameMode::MainMenu) {
+		GameModeManager::set_screen<Screen_MainMenu>();
+	}
+	else {
+		// GameModeManager is the single source of truth
+		GameModeManager::ChangeMode(mode, instant);
+	}
 
 	// Immediately sync legacy variables after mode change
 	// This ensures that if the mode change happens mid-frame (during UpdateScreen),
@@ -17484,109 +17486,7 @@ void CGame::DrawScreen_QueryDeleteCharacter()
 	DrawVersion();
 }
 
-// MainMenu screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_MainMenu()
-{
-	m_iItemDropCnt = 0;
-	m_bItemDrop = false;
 
-	if (m_cGameModeCount == 0)
-	{
-		if (G_pCalcSocket != 0)
-		{
-			delete G_pCalcSocket;
-			G_pCalcSocket = 0;
-		}
-		m_pSprite.remove(DEF_SPRID_INTERFACE_ND_LOADING);
-		EndInputString();
-		// TODO: SetMousePosition removed
-
-		m_cCurFocus = 1;
-		m_cMaxFocus = 3;
-		m_cArrowPressed = 0;
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	// Poll mouse input
-	// Update focus based on mouse position
-	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 177 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 198 + SCREENY)) m_cCurFocus = 1;
-	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 215 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 236 + SCREENY)) m_cCurFocus = 2;
-	if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 254 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 275 + SCREENY)) m_cCurFocus = 3;
-
-	if (m_cArrowPressed != 0) {
-		switch (m_cArrowPressed) {
-		case 1:
-			m_cCurFocus--;
-			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
-			break;
-		case 3:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		}
-		m_cArrowPressed = 0;
-	}
-
-	if (Input::IsKeyPressed(VK_RETURN) == true) {
-		PlaySound('E', 14, 5);
-		switch (m_cCurFocus) {
-		case 1:
-			ChangeGameMode(GameMode::Login);
-			return;
-		case 2:
-			ClearContents_OnSelectCharacter();
-			ChangeGameMode(GameMode::CreateNewAccount);
-			return;
-		case 3:
-			ChangeGameMode(GameMode::Quit);
-			return;
-		}
-	}
-
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-		PlaySound('E', 14, 5);
-		// Game button
-		if (Input::IsMouseInRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY)) {
-			m_cCurFocus = 1;
-			ChangeGameMode(GameMode::Login);
-		}
-		// Account button
-		else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
-			m_cCurFocus = 2;
-			ClearContents_OnSelectCharacter();
-			ChangeGameMode(GameMode::CreateNewAccount);
-			return;
-		}
-		// Quit button
-		else if (Input::IsMouseInRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY)) {
-			m_cCurFocus = 3;
-			ChangeGameMode(GameMode::Quit);
-			return;
-		}
-	}
-}
-
-// MainMenu screen - Draw phase (rendering only)
-void CGame::DrawScreen_MainMenu()
-{
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_MAINMENU, 0 + SCREENX, 0 + SCREENY, 0, true);
-
-	switch (m_cCurFocus) {
-	case 1:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 177 + SCREENY, 1);
-		break;
-	case 2:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 215 + SCREENY, 2);
-		break;
-	case 3:
-		m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 254 + SCREENY, 3);
-		break;
-	}
-
-	DrawVersion();
-}
 
 // WaitInitData screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_WaitInitData()

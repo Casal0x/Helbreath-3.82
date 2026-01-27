@@ -313,6 +313,9 @@
     <ClInclude Include="IGameScreen.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="Screen_MainMenu.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
     <ClInclude Include="Screen_OnGame.h">
       <Filter>Screens</Filter>
     </ClInclude>
@@ -633,6 +636,9 @@
       <Filter>DialogBox</Filter>
     </ClCompile>
     <ClCompile Include="IGameScreen.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_MainMenu.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_OnGame.cpp">
