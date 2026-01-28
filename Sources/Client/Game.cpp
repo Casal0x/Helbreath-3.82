@@ -36,6 +36,7 @@
 #include "Screen_OnGame.h"
 #include "Screen_MainMenu.h"
 #include "Screen_Login.h"
+#include "Screen_SelectCharacter.h"
 #include "IInput.h"
 
 extern char G_cSpriteAlphaDegree;
@@ -574,10 +575,6 @@ void CGame::UpdateScreen()
 		UpdateScreen_QueryForceLogin();
 		break;
 
-	case GameMode::SelectCharacter:
-		UpdateScreen_SelectCharacter();
-		break;
-
 	case GameMode::CreateNewCharacter:
 		UpdateScreen_CreateNewCharacter();
 		break;
@@ -652,10 +649,6 @@ void CGame::DrawScreen()
 
 	case GameMode::QueryForceLogin:
 		DrawScreen_QueryForceLogin();
-		break;
-
-	case GameMode::SelectCharacter:
-		DrawScreen_SelectCharacter();
 		break;
 
 	case GameMode::CreateNewCharacter:
@@ -11010,6 +11003,9 @@ void CGame::ChangeGameMode(GameMode mode)
 	case GameMode::Login:
 		GameModeManager::set_screen<Screen_Login>();
 		break;
+	case GameMode::SelectCharacter:
+		GameModeManager::set_screen<Screen_SelectCharacter>();
+		break;
 	default:
 		// GameModeManager is the single source of truth for legacy types
 		GameModeManager::ChangeMode(mode, instant);
@@ -18248,241 +18244,6 @@ void CGame::DrawScreen_CreateNewAccount()
 #endif
 }
 
-// File-scope static variables for SelectCharacter screen
-// Shared between UpdateScreen_SelectCharacter and DrawScreen_SelectCharacter
-static DWORD s_dwSelCharCTime;
-static short s_sSelCharMsX;
-static short s_sSelCharMsY;
-
-// SelectCharacter screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_SelectCharacter()
-{
-	short msX, msY, msZ;
-	char cLB, cRB;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0)
-	{
-		G_cSpriteAlphaDegree = 1;
-		InitGameSettings();
-		m_cMaxFocus = 4;
-		if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-		if (m_cCurFocus < 1) m_cCurFocus = 1;
-
-		m_cArrowPressed = 0;
-		s_dwSelCharCTime = GameClock::GetTimeMS();
-	}
-
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (m_cArrowPressed != 0)
-	{
-		switch (m_cArrowPressed) {
-		case 2:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		case 4:
-			m_cCurFocus--;
-			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
-			break;
-		}
-		m_cArrowPressed = 0;
-	}
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		ChangeGameMode(GameMode::MainMenu);
-		return;
-	}
-
-	if (Input::IsKeyPressed(VK_RETURN) == true)
-	{
-		PlaySound('E', 14, 5);
-
-		if (m_pCharList[m_cCurFocus - 1] != 0)
-		{
-			if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-			{
-				std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
-				strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-				m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-				if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
-				{
-					m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-					m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-					m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-					m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-					m_pLSock->bInitBufferSize(30000);
-					ChangeGameMode(GameMode::Connecting);
-					m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
-					m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
-					std::memset(m_cMsg, 0, sizeof(m_cMsg));
-					strcpy(m_cMsg, "33");
-					std::memset(m_cMapName, 0, sizeof(m_cMapName));
-					memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-					return;
-				}
-			}
-		}
-		else
-		{
-			ChangeGameMode(GameMode::CreateNewCharacter);
-			return;
-		}
-	}
-
-	msX = static_cast<short>(Input::GetMouseX());
-
-	msY = static_cast<short>(Input::GetMouseY());
-
-	msZ = static_cast<short>(Input::GetMouseWheelDelta());
-
-	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
-
-	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
-	s_sSelCharMsX = msX;
-	s_sSelCharMsY = msY;
-
-	if ((dwTime - s_dwSelCharCTime) > 100)
-	{
-		m_cMenuFrame++;
-		s_dwSelCharCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8)
-	{
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8)
-		{
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-		PlaySound('E', 14, 5);
-
-		// Determine which button was clicked
-		int iMIbuttonNum = 0;
-		if (Input::IsMouseInRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 1;
-		else if (Input::IsMouseInRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 2;
-		else if (Input::IsMouseInRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 3;
-		else if (Input::IsMouseInRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 4;
-		else if (Input::IsMouseInRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY)) iMIbuttonNum = 5;
-		else if (Input::IsMouseInRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY)) iMIbuttonNum = 6;
-		else if (Input::IsMouseInRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY)) iMIbuttonNum = 7;
-		else if (Input::IsMouseInRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY)) iMIbuttonNum = 8;
-		else if (Input::IsMouseInRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY)) iMIbuttonNum = 9;
-
-		switch (iMIbuttonNum) {
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			if (m_cCurFocus != iMIbuttonNum)
-				m_cCurFocus = iMIbuttonNum;
-			else
-			{
-				if (m_pCharList[m_cCurFocus - 1] != 0)
-				{
-					if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-					{
-						std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
-						strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-						m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-						if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true)
-						{
-							m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-							m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-							m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-							m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-							m_pLSock->bInitBufferSize(30000);
-							ChangeGameMode(GameMode::Connecting);
-							m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
-							m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
-							std::memset(m_cMsg, 0, sizeof(m_cMsg));
-							strcpy(m_cMsg, "33");
-							std::memset(m_cMapName, 0, sizeof(m_cMapName));
-							memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-							return;
-						}
-					}
-				}
-				else
-				{
-					ChangeGameMode(GameMode::CreateNewCharacter);
-					return;
-				}
-			}
-			break;
-
-		case 5:
-			if (m_pCharList[m_cCurFocus - 1] != 0)
-			{
-				if (m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
-				{
-					std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
-					strcpy(m_pPlayer->m_cPlayerName, m_pCharList[m_cCurFocus - 1]->m_cName);
-					m_pPlayer->m_iLevel = (int)m_pCharList[m_cCurFocus - 1]->m_sLevel;
-
-					if (CMisc::bCheckValidString(m_pPlayer->m_cPlayerName) == true) {
-						m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-						m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-						m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-						m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-						m_pLSock->bInitBufferSize(30000);
-						ChangeGameMode(GameMode::Connecting);
-						m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
-						m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
-						std::memset(m_cMsg, 0, sizeof(m_cMsg));
-						strcpy(m_cMsg, "33");
-						std::memset(m_cMapName, 0, sizeof(m_cMapName));
-						memcpy(m_cMapName, m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
-						return;
-					}
-				}
-			}
-			break;
-
-		case 6:
-			if (m_iTotalChar < 4)
-			{
-				ChangeGameMode(GameMode::CreateNewCharacter);
-				return;
-			}
-			break;
-
-		case 7:
-			if (m_pCharList[m_cCurFocus - 1] != 0)
-			{
-				ChangeGameMode(GameMode::QueryDeleteCharacter);
-				m_wEnterGameType = m_cCurFocus;
-				return;
-			}
-			break;
-
-		case 8:
-			ChangeGameMode(GameMode::ChangePassword);
-			return;
-
-		case 9:
-			ChangeGameMode(GameMode::MainMenu);
-			return;
-		}
-	}
-}
-
-// SelectCharacter screen - Draw phase (rendering only)
-void CGame::DrawScreen_SelectCharacter()
-{
-	// Call the parametered draw version with stored mouse coordinates
-	UpdateScreen_OnSelectCharacter(0, 10, s_sSelCharMsX, s_sSelCharMsY);
-
-	DrawVersion();
-}
 
 // File-scope static variables for CreateNewCharacter screen
 // Shared between UpdateScreen_CreateNewCharacter and DrawScreen_CreateNewCharacter
@@ -18972,183 +18733,7 @@ void CGame::DrawScreen_CreateNewCharacter()
 
 void CGame::UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus)
 {
-	int i;
-	int iYear, iMonth, iDay, iHour, iMinute;
-	__int64 iTemp1, iTemp2;
-	char cTotalChar = 0;
-	uint32_t dwTime = GameClock::GetTimeMS();
-	sY = 10;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_SELECTCHAR, 0 + SCREENX, 0 + SCREENY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 50);
-
-	iTemp1 = 0;
-	iTemp2 = 0;
-	iYear = iMonth = iDay = iHour = iMinute = 0;
-	for (i = 0; i < 4; i++)
-	{
-		if ((m_cCurFocus - 1 == i) && (bIgnoreFocus == false))
-			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 62);
-		else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7 + SCREENX, 63 - 9 + SCREENY, 61);
-
-		if (m_pCharList[i] != 0)
-		{
-			cTotalChar++;
-			switch (m_pCharList[i]->m_sSex) {
-			case 1:	m_entityState.m_sOwnerType = 1; break;
-			case 2:	m_entityState.m_sOwnerType = 4; break;
-			}
-			m_entityState.m_sOwnerType += m_pCharList[i]->m_sSkinCol - 1;
-			m_entityState.m_iDir = m_cMenuDir;
-			m_entityState.m_sAppr1 = m_pCharList[i]->m_sAppr1;
-			m_entityState.m_sAppr2 = m_pCharList[i]->m_sAppr2;
-			m_entityState.m_sAppr3 = m_pCharList[i]->m_sAppr3;
-			m_entityState.m_sAppr4 = m_pCharList[i]->m_sAppr4;
-			m_entityState.m_iApprColor = m_pCharList[i]->m_iApprColor; // v1.4
-
-			std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
-			memcpy(m_entityState.m_cName.data(), m_pCharList[i]->m_cName, 10);
-			// CLEROTH - NO USE
-			m_entityState.m_iAction = DEF_OBJECTMOVE;
-			m_entityState.m_iFrame = m_cMenuFrame;
-
-			if (m_pCharList[i]->m_sSex != 0)
-			{
-				if (CMisc::bCheckValidString(m_pCharList[i]->m_cName) == true)
-				{
-					m_pEffectSpr[0]->Draw(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.5f));
-					DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime);
-					PutString(sX + 112 + i * 109 + SCREENX, sY + 179 - 9 + SCREENY, m_pCharList[i]->m_cName, RGB(51, 0, 51));//25,35,25);
-					int	_sLevel = m_pCharList[i]->m_sLevel;
-					wsprintf(G_cTxt, "%d", _sLevel);
-					PutString(sX + 138 + i * 109 + SCREENX, sY + 196 - 10 + SCREENY, G_cTxt, RGB(51, 0, 51)); //25,35,25);
-
-					DisplayCommaNumber_G_cTxt(m_pCharList[i]->m_iExp);
-					PutString(sX + 138 + i * 109 + SCREENX, sY + 211 - 10 + SCREENY, G_cTxt, RGB(51, 0, 51)); //25,35,25);
-				}
-				iTemp2 = m_pCharList[i]->m_iYear * 1000000 + m_pCharList[i]->m_iMonth * 60000 + m_pCharList[i]->m_iDay * 1700 + m_pCharList[i]->m_iHour * 70 + m_pCharList[i]->m_iMinute;
-				if (iTemp1 < iTemp2)
-				{
-					iYear = m_pCharList[i]->m_iYear;
-					iMonth = m_pCharList[i]->m_iMonth;
-					iDay = m_pCharList[i]->m_iDay;
-					iHour = m_pCharList[i]->m_iHour;
-					iMinute = m_pCharList[i]->m_iMinute;
-					iTemp1 = iTemp2;
-				}
-			}
-		}
-	}
-	i = 0;
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 51);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 52);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 53);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 54);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 55);
-
-	if ((msX > 360 + SCREENX) && (msY >= 283 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 315 + SCREENY)) {
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 56);
-		PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER1);//"
-		PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER2);//"
-		PutAlignedString(98 + SCREENX, 357 + SCREENX, 320 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER3);//"
-		PutAlignedString(98 + SCREENX, 357 + SCREENX, 335 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER4);//"
-	}
-	else
-		if ((msX > 360 + SCREENX) && (msY >= 316 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 345 + SCREENY)) {
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 57);
-			PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER5);//"
-
-		}
-		else
-			if ((msX > 360 + SCREENX) && (msY >= 346 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 375 + SCREENY)) {
-
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 58);
-				PutAlignedString(98 + SCREENX, 357 + SCREENX, 275 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER6);//"
-				PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER7);//"
-
-			}
-			else if ((msX > 360 + SCREENX) && (msY >= 376 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 405 + SCREENY))
-			{
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 59);
-				PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER12);//"
-			}
-			else if ((msX > 360 + SCREENX) && (msY >= 406 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 435 + SCREENY)) {
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 60);
-				PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER13);//"
-			}
-			else
-			{
-				if (cTotalChar == 0)
-				{
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 275 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER14);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER15);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER16);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 320 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER17);//"New Character
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 335 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER18);//"
-				}
-				else if (cTotalChar < 4)
-				{
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 275 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER19);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER20);//"Play�
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER21);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 320 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER22);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 335 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER23);//"Delete Character
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 350 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER24);//"
-				}
-				if (cTotalChar == 4)
-				{
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER25);//"
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER26);//"Play
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 320 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER27);//"Delete Character
-					PutAlignedString(98 + SCREENX, 357 + SCREENX, 335 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER28);//"
-				}
-			}
-	int iTempMon, iTempDay, iTempHour, iTempMin;
-	iTempMon = iTempDay = iTempHour = iTempMin = 0;
-
-	if (m_iAccntYear != 0)
-	{
-		iTempMin = (m_iTimeLeftSecAccount / 60);
-		wsprintf(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER37, m_iAccntYear, m_iAccntMonth, m_iAccntDay, iTempMin);
-	}
-	else
-	{
-		if (m_iTimeLeftSecAccount > 0)
-		{
-			iTempDay = (m_iTimeLeftSecAccount / (60 * 60 * 24));
-			iTempHour = (m_iTimeLeftSecAccount / (60 * 60)) % 24;
-			iTempMin = (m_iTimeLeftSecAccount / 60) % 60;
-			wsprintf(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
-		}
-		else strcpy(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER39);
-	}
-	PutAlignedString(98 + SCREENX, 357 + SCREENX, 385 + 10 + SCREENY, G_cTxt);
-
-	if (m_iIpYear != 0)
-	{
-		iTempHour = (m_iTimeLeftSecIP / (60 * 60));
-		iTempMin = (m_iTimeLeftSecIP / 60) % 60;
-		wsprintf(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER40, m_iIpYear, m_iIpMonth, m_iIpDay, iTempHour, iTempMin);
-	}
-	else
-	{
-		if (m_iTimeLeftSecIP > 0)
-		{
-			iTempDay = (m_iTimeLeftSecIP / (60 * 60 * 24));
-			iTempHour = (m_iTimeLeftSecIP / (60 * 60)) % 24;
-			iTempMin = (m_iTimeLeftSecIP / 60) % 60;
-			wsprintf(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
-		}
-		else strcpy(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER42);
-	}
-	PutAlignedString(98 + SCREENX, 357 + SCREENX, 400 + 10 + SCREENY, G_cTxt);
-	if (iYear != 0)
-	{
-		wsprintf(G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
-		PutAlignedString(98 + SCREENX, 357 + SCREENX, 415 + 10 + SCREENY, G_cTxt);
-	}
-
-	PutAlignedString(122, 315, 456, UPDATE_SCREEN_ON_SELECT_CHARACTER36);//"Test Server"
+	Screen_SelectCharacter::DrawBackground(this, sX, sY, msX, msY, bIgnoreFocus);
 }
 
 void CGame::ReserveFightzoneResponseHandler(char* pData)
