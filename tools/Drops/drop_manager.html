@@ -608,24 +608,28 @@
             <h3>⚙️ Edit Drop Rates</h3>
 
             <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
-                <div style="font-size: 0.8rem; color: var(--dim); margin-bottom: 5px;">🔒 Hardcoded Values
-                    (EntityManager.cpp)</div>
+                <div style="font-size: 0.8rem; color: var(--dim); margin-bottom: 5px;">📊 Global Base Rates</div>
                 <div style="display: flex; gap: 20px;">
-                    <div><strong>Gold:</strong> 60%</div>
-                    <div><strong>Items T1:</strong> 40%</div>
+                    <div><strong>Base Primary:</strong> 10%</div>
+                    <div><strong>Base Gold:</strong> 30%</div>
+                    <div><strong>Base Secondary:</strong> 5%</div>
                 </div>
-                <small style="color: var(--dim)">To change these, edit EntityManager.cpp line 2564</small>
             </div>
 
             <div class="modal-field">
-                <label>Primary Drop Rate (1-10000) - "Skip chance"</label>
-                <input type="number" id="primaryDropRate" min="1" max="10000" step="1">
-                <small style="color: var(--dim)">Lower = more drops. 1 = 0.01% skip chance (almost always drops)</small>
+                <label>Primary Drop Rate Multiplier</label>
+                <input type="number" id="primaryDropRate" min="0.1" max="100.0" step="0.1" value="1.0">
+                <small style="color: var(--dim)">Multiplier for 10% base chance. 1.0 = 10%, 2.0 = 20%.</small>
             </div>
             <div class="modal-field">
-                <label>Secondary/Rare Drop Rate (Tier 2) (1-10000)</label>
-                <input type="number" id="secondaryDropRate" min="1" max="10000" step="10">
-                <small style="color: var(--dim)">Chance for Tier 2 rare drops. 400 = 4%</small>
+                <label>Gold Drop Rate Multiplier</label>
+                <input type="number" id="goldDropRate" min="0.1" max="100.0" step="0.1" value="1.0">
+                <small style="color: var(--dim)">Multiplier for 30% base chance. 1.0 = 30%, 1.5 = 45%.</small>
+            </div>
+            <div class="modal-field">
+                <label>Secondary Drop Rate Multiplier</label>
+                <input type="number" id="secondaryDropRate" min="0.1" max="100.0" step="0.1" value="1.0">
+                <small style="color: var(--dim)">Multiplier for 5% base chance. 1.0 = 5%, 2.0 = 10%.</small>
             </div>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeSettingsModal()">Cancel</button>
@@ -723,34 +727,34 @@
                 const total = tierItems.reduce((sum, d) => sum + d.weight, 0);
                 const localProp = total > 0 ? (weight / total) : 0;
 
-                // Get global gate probability based on REAL server logic
-                let gateProb = 1.0;
+                // New Logic: Base Rates * Multipliers
+                const primaryMult = parseFloat(config.settings['primary-drop-rate'] || 1.0);
+                const goldMult = parseFloat(config.settings['gold-drop-rate'] || 1.0);
+                const secondaryMult = parseFloat(config.settings['secondary-drop-rate'] || 1.0);
 
-                // First: primary-drop-rate check (chance to drop NOTHING)
-                const primaryRate = parseInt(config.settings['primary-drop-rate'] || 1);
-                const passPrimaryGate = (10000 - primaryRate) / 10000; // Prop of passing primary check
+                let gateProb = 0;
 
                 if (tier === 1) {
-                    // HARDCODED in EntityManager.cpp line 2564: iDice(1, 10000) <= 6000
-                    // 60% gold, 40% items from Tier 1
-                    const goldChance = 0.60; // Hardcoded!
-                    gateProb = passPrimaryGate * (1 - goldChance); // 40% chance for Tier 1 items
+                    // Tier 1 Items: Base 10% * Multiplier
+                    const baseChance = 0.10;
+                    gateProb = baseChance * primaryMult;
                 } else if (tier === 2) {
-                    // secondary-drop-rate from settings, modified by player reputation
-                    const rate = parseInt(config.settings['secondary-drop-rate'] || 400);
-                    gateProb = passPrimaryGate * (rate / 10000);
+                    // Tier 2 (Rare): Base 5% * Multiplier
+                    const baseChance = 0.05;
+                    gateProb = baseChance * secondaryMult;
                 }
 
                 return (localProp * gateProb * 100).toFixed(4);
             };
 
-            // REAL SERVER VALUES
-            const primaryRate = parseInt(config.settings['primary-drop-rate'] || 1);
-            const secondaryRate = parseInt(config.settings['secondary-drop-rate'] || 400);
-            const passPrimaryPct = ((10000 - primaryRate) / 100).toFixed(2);
-            const goldPct = 60.0; // HARDCODED in EntityManager.cpp!
-            const tier1Pct = (100 - goldPct);
-            const tier2Pct = (secondaryRate / 100).toFixed(2);
+            // Values for display
+            const primaryMult = parseFloat(config.settings['primary-drop-rate'] || 1.0);
+            const goldMult = parseFloat(config.settings['gold-drop-rate'] || 1.0);
+            const secondaryMult = parseFloat(config.settings['secondary-drop-rate'] || 1.0);
+
+            const primaryPct = (10.0 * primaryMult).toFixed(2);
+            const goldPct = (30.0 * goldMult).toFixed(2);
+            const secondaryPct = (5.0 * secondaryMult).toFixed(2);
 
             main.innerHTML = `
                 <div class="main-header">
@@ -759,24 +763,24 @@
                 </div>
 
                 <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.8rem; color: var(--dim)">
-                    <strong>📌 Primary Gate:</strong> ${passPrimaryPct}% chance to attempt drops (${primaryRate}/10000 = skip chance)
+                    <strong>Config:</strong> Primary x${primaryMult} | Gold x${goldMult} | Secondary x${secondaryMult}
                 </div>
 
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px;">
-                    <div class="gate-card gold" title="Hardcoded in EntityManager.cpp (line 2564)">
-                        <div style="font-size: 0.8rem; color: var(--dim)">GATE 1 - GOLD 🔒</div>
-                        <div style="font-size: 1.5rem; font-weight: 800;">${goldPct.toFixed(1)}%</div>
-                        <div style="font-size: 0.7rem; color: var(--dim)">Hardcoded</div>
+                    <div class="gate-card gold" onclick="openSettingsModal()">
+                        <div style="font-size: 0.8rem; color: var(--dim)">GOLD RATE 💰</div>
+                        <div style="font-size: 1.5rem; font-weight: 800;">${goldPct}%</div>
+                        <div style="font-size: 0.7rem; color: var(--dim)">Base 30% * ${goldMult}</div>
                     </div>
-                    <div class="gate-card items" title="When gold doesn't drop, Tier 1 table is rolled">
-                        <div style="font-size: 0.8rem; color: var(--dim)">GATE 1 - ITEMS (T1) 🔒</div>
-                        <div style="font-size: 1.5rem; font-weight: 800;">${tier1Pct.toFixed(1)}%</div>
-                        <div style="font-size: 0.7rem; color: var(--dim)">Hardcoded</div>
+                    <div class="gate-card items" onclick="openSettingsModal()">
+                        <div style="font-size: 0.8rem; color: var(--dim)">ITEMS (T1) 🗡️</div>
+                        <div style="font-size: 1.5rem; font-weight: 800;">${primaryPct}%</div>
+                        <div style="font-size: 0.7rem; color: var(--dim)">Base 10% * ${primaryMult}</div>
                     </div>
-                    <div class="gate-card rare" onclick="openSettingsModal()" title="Click to edit - from settings table">
-                        <div style="font-size: 0.8rem; color: var(--dim)">GATE 2 - RARE (T2) ✏️</div>
-                        <div style="font-size: 1.5rem; font-weight: 800;">${tier2Pct}%</div>
-                        <div style="font-size: 0.7rem; color: var(--dim)">Editable</div>
+                    <div class="gate-card rare" onclick="openSettingsModal()">
+                        <div style="font-size: 0.8rem; color: var(--dim)">RARE (T2) ✨</div>
+                        <div style="font-size: 1.5rem; font-weight: 800;">${secondaryPct}%</div>
+                        <div style="font-size: 0.7rem; color: var(--dim)">Base 5% * ${secondaryMult}</div>
                     </div>
                 </div>
 

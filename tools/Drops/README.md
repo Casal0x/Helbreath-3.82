@@ -1,61 +1,68 @@
 # Drop Manager Tools
 
-Herramientas para gestionar el sistema de drops de NPCs en Helbreath 3.82.
+Tools to manage the NPC drop system in Helbreath 3.82.
 
-## 📁 Archivos
+## 📁 Files
 
-| Archivo | Descripción |
-|---------|-------------|
-| `drop_manager_server.py` | Servidor web con UI para editar drops |
-| `export_drops_snapshot.py` | Exporta el estado actual como script de restauración |
-| `restore_all_drops.py` | Script auto-generado para restaurar drops |
-| `changelog.txt` | Historial de cambios (auto-generado) |
+| File | Description |
+|------|-------------|
+| `drop_manager_server.py` | Web server with UI to edit drops |
+| `export_drops_snapshot.py` | Exports current state as a restore script |
+| `restore_all_drops.py` | Auto-generated script to restore drops |
+| `changelog.txt` | Change history (auto-generated) |
 
 ---
 
-## 🎮 Drop Manager (UI Web)
+## 🎮 Drop Manager (Web UI)
 
-Editor visual para gestionar drops de NPCs.
+Visual editor for managing NPC drops.
 
-### Uso
+### Usage
 
 ```bash
 cd tools/Drops
 python drop_manager_server.py
 ```
 
-Luego abre: **http://localhost:8888**
+Then open: **http://localhost:8888**
 
-### Funciones
+### Features
 
-- **Lista de NPCs** - Sidebar izquierdo con búsqueda
-- **Búsqueda de items** - Navbar: busca "chain mail" para ver qué NPCs lo dropean
-- **Editor de drops** - Agrega/quita items de cada tier
-- **Gate Rates** - Muestra probabilidades globales (Tier 2 editable)
-- **Changelog** - Registra automáticamente todos los cambios
+- **NPC List** - Left sidebar with search
+- **Item Search** - Navbar: search "chain mail" to see which NPCs drop it
+- **Drop Editor** - Add/remove items from each tier
+- **Gate Rates** - Global multipliers and stats
+- **Changelog** - Automatically logs all changes
 
-### Arquitectura de Gates (Servidor C++)
+### Multiplier Architecture (C++ Server)
+The server uses fixed base rates multiplied by configurable values (defaults 1.0).
 
 ```
-NPC Muere
+NPC Dies
     │
-    ├─ Primary Gate (99.99% pasa, configurable)
+    ├─ Primary Gate (Base Check)
+    │   ├─ Base: 10% * `primary-drop-rate` (default 1.0)
+    │   └─ If pass: Roll Tier 1 (Common Items)
     │
-    ├─ Gate 1: Gold vs Items T1
-    │   ├─ 60% → Drop Gold (hardcoded)
-    │   └─ 40% → Roll Tier 1 table
+    ├─ Gold Check (Independent)
+    │   ├─ Base: 30% * `gold-drop-rate` (default 1.0)
+    │   └─ If pass: Drop Gold
     │
-    └─ Gate 2: Tier 2 (independiente)
-        └─ 4% → Roll Tier 2 table (configurable)
+    └─ Secondary Gate (Independent)
+        ├─ Base: 5% * `secondary-drop-rate` (default 1.0)
+        └─ If pass: Roll Tier 2 (Rare Items)
 ```
+
+> **Note:** Multipliers are floats (e.g., 1.5 = +50% drops, 2.0 = double drops).
+> Base rates (10%, 30%, 5%) are hardcoded in `EntityManager.cpp`.
 
 ---
 
 ## 📤 Export Snapshot
 
-Genera un script Python con el estado ACTUAL de todos los drops.
+Generates a Python script with the CURRENT state of all drops.
 
-### Uso
+### Usage
 
 ```bash
 cd tools/Drops
@@ -63,49 +70,49 @@ python export_drops_snapshot.py
 ```
 
 ### Output
-- Crea/sobrescribe `restore_all_drops.py`
-- Incluye: drop_tables, drop_entries, npc_configs, settings
+- Creates/Overwrites `restore_all_drops.py`
+- Includes: drop_tables, drop_entries, npc_configs, settings
 
-### Cuándo usar
-- Antes de hacer cambios experimentales
-- Para crear "checkpoints" del estado de drops
-- Para compartir configuración entre servidores
+### When to use
+- Before making experimental changes
+- To create "checkpoints" of the drop state
+- To share configuration between servers
 
 ---
 
 ## 🔄 Restore All Drops
 
-Restaura el estado de drops guardado previamente.
+Restores the previously saved drop state.
 
-### Uso
+### Usage
 
 ```bash
-# Desde tools/Drops
+# From tools/Drops
 python restore_all_drops.py
 
-# O desde la raíz del proyecto
+# Or from project root
 python tools/Drops/restore_all_drops.py
 ```
 
-### ⚠️ Advertencia
-Este script **BORRA** todos los drops actuales antes de restaurar.
+### ⚠️ Warning
+This script **DELETES** all current drops before restoring.
 
 ---
 
-## 📊 Base de Datos
+## 📊 Database
 
-Los drops se guardan en `Binaries/Server/GameConfigs.db`:
+Drops are stored in `Binaries/Server/GameConfigs.db`:
 
-| Tabla | Contenido |
-|-------|-----------|
-| `drop_tables` | Definición de tablas de drop por NPC |
-| `drop_entries` | Items y pesos por tabla/tier |
+| Table | Content |
+|-------|---------|
+| `drop_tables` | Drop table definitions per NPC |
+| `drop_entries` | Items and weights per table/tier |
 | `npc_configs` | Link NPC → drop_table_id |
 | `settings` | `primary-drop-rate`, `secondary-drop-rate` |
 
 ### Backup
 ```bash
-# Crear backup manualmente
+# Manually create backup
 copy Binaries\Server\GameConfigs.db Binaries\Server\GameConfigs.db.bak
 ```
 
@@ -113,11 +120,11 @@ copy Binaries\Server\GameConfigs.db Binaries\Server\GameConfigs.db.bak
 
 ## 🔧 Troubleshooting
 
-### Puerto 8888 ocupado
-Edita `PORT = 8888` en `drop_manager_server.py`
+### Port 8888 occupied
+Edit `PORT = 8888` in `drop_manager_server.py`
 
 ### "No NPCs drop this item"
-El item no está en ninguna tabla de drops actualmente.
+The item is not currently in any drop table.
 
-### Changelog no se actualiza
-Recarga la página con Ctrl+F5 (limpiar cache).
+### Changelog not updating
+Reload page with Ctrl+F5 (clear cache).
