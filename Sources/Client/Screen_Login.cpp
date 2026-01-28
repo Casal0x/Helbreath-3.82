@@ -44,7 +44,12 @@ void Screen_Login::on_uninitialize()
 
 void Screen_Login::on_update()
 {
-    // Polling logic migrated from CGame::UpdateScreen_Login
+// Polling logic migrated from CGame::UpdateScreen_Login
+    uint32_t dwTime = GameClock::GetTimeMS();
+    m_pGame->m_dwCurTime = dwTime;
+
+    m_pGame->m_cGameModeCount++;
+    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
     
     // Explicit TAB handling since legacy OnKeyDown ignores it
     if (Input::IsKeyPressed(VK_TAB))

@@ -558,7 +558,7 @@ void CGame::DrawScreen()
 	}
 
 	// Draw cursor on top of everything
-	DrawCursor();
+	// DrawCursor(); // Moved to RenderFrame to ensure Z-order above overlays
 }
 
 
@@ -701,11 +701,9 @@ void CGame::RenderFrame()
 			pOverlay->on_render();
 		}
 
-		// Cursor always on top (for IGameScreen-based screens)
-		if (GameModeManager::GetActiveScreen())
-		{
-			DrawCursor();
-		}
+		// Cursor always on top (handles both legacy and IGameScreen-based screens)
+		// NOTE: DrawCursor must be called AFTER overlay rendering to ensure visibility
+		DrawCursor();
 
 		// Increment the frame counter for next frame (used by screen initialization/fade logic)
 		GameModeManager::IncrementFrameCount();
@@ -2414,9 +2412,9 @@ void CGame::InitPlayerResponseHandler(char* pData)
 		break;
 
 	case DEF_MSGTYPE_REJECT:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3J");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 	}
 }
@@ -10536,9 +10534,9 @@ void CGame::LogResponseHandler(char* pData)
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3A");
+		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
@@ -10595,76 +10593,76 @@ void CGame::LogResponseHandler(char* pData)
 		m_iBlockMonth = pkt->block_month;
 		m_iBlockDay = pkt->block_day;
 
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7H");
+		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NOTENOUGHPOINT:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7I");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ACCOUNTLOCKED:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7K");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_SERVICENOTAVAILABLE:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "7L");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6B");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6C");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDMISMATCH:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "11");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "12");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "54");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "05");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "06");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGCHARACTER:
-		ChangeGameMode(GameMode::Msg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "Not existing character!");
+		ChangeGameMode(GameMode::Msg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWCHARACTERCREATED:
@@ -10697,22 +10695,22 @@ void CGame::LogResponseHandler(char* pData)
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "47");
+		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "28");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGCHARACTER:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "29");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_ENTERGAMERESTYPE_PLAYING:
@@ -10742,7 +10740,6 @@ void CGame::LogResponseHandler(char* pData)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
 		case 1:	strcpy(m_cMsg, "3E"); break;
@@ -10753,26 +10750,26 @@ void CGame::LogResponseHandler(char* pData)
 		case 6: strcpy(m_cMsg, "3Z"); break;
 		case 7: strcpy(m_cMsg, "3J"); break;
 		}
+		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_ENTERGAMERESTYPE_FORCEDISCONN:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "3X");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGWORLDSERVER:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1Y");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_INPUTKEYCODE:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
 		case 1:	strcpy(m_cMsg, "8U"); break; //MainMenu, Keycode registration success
@@ -10781,25 +10778,26 @@ void CGame::LogResponseHandler(char* pData)
 		case 4: strcpy(m_cMsg, "8V"); break; //MainMenu, Invalid Keycode
 		case 5: strcpy(m_cMsg, "8W"); break; //MainMenu, Already Used Keycode
 		}
+		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_FORCECHANGEPASSWORD:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "6M");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_INVALIDKOREANSSN:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1a");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_LESSTHENFIFTEEN:
-		ChangeGameMode(GameMode::LogResMsg);
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		strcpy(m_cMsg, "1b");
+		ChangeGameMode(GameMode::LogResMsg);
 		break;
 	}
 	m_pLSock.reset();

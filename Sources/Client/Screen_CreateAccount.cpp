@@ -60,6 +60,11 @@ void Screen_CreateAccount::on_uninitialize()
 void Screen_CreateAccount::on_update()
 {
     uint32_t dwTime = GameClock::GetTimeMS();
+    m_pGame->m_dwCurTime = dwTime;
+
+    m_pGame->m_cGameModeCount++;
+    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
+
     m_sNewAcctMsX = static_cast<short>(Input::GetMouseX());
     m_sNewAcctMsY = static_cast<short>(Input::GetMouseY());
     char cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
