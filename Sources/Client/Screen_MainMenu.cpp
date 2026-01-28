@@ -50,6 +50,12 @@ void Screen_MainMenu::on_uninitialize()
 void Screen_MainMenu::on_update()
 {
     // Poll mouse input
+    uint32_t dwTime = GameClock::GetTimeMS();
+    m_pGame->m_dwCurTime = dwTime;
+
+    m_pGame->m_cGameModeCount++;
+    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
+
     // Update focus based on mouse position
     if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 177 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 198 + SCREENY)) m_cCurFocus = 1;
     if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 215 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 236 + SCREENY)) m_cCurFocus = 2;
