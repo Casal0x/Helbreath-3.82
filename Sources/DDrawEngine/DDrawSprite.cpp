@@ -148,9 +148,14 @@ void DDrawSprite::Restore()
             colorNums = static_cast<WORD>(pInfoHeader->biClrUsed);
         }
 
+        // BI_BITFIELDS (3) has 12 bytes of RGB masks after header
+        WORD maskSize = 0;
+        if (pInfoHeader->biCompression == BI_BITFIELDS)
+            maskSize = 12;
+
         HDC hDC;
         if (m_lpSurface->GetDC(&hDC) == DD_OK) {
-            LPSTR lpBits = reinterpret_cast<LPSTR>(m_imageData.data() + 14 + pInfoHeader->biSize + 4 * colorNums);
+            LPSTR lpBits = reinterpret_cast<LPSTR>(m_imageData.data() + 14 + pInfoHeader->biSize + maskSize + 4 * colorNums);
             SetDIBitsToDevice(hDC, 0, 0, m_wBitmapSizeX, m_wBitmapSizeY,
                               0, 0, 0, m_wBitmapSizeY, lpBits, pBmpInfo, DIB_RGB_COLORS);
             m_lpSurface->ReleaseDC(hDC);
@@ -214,6 +219,11 @@ bool DDrawSprite::CreateSurface()
         colorNums = static_cast<WORD>(pInfoHeader->biClrUsed);
     }
 
+    // BI_BITFIELDS (3) has 12 bytes of RGB masks after header
+    WORD maskSize = 0;
+    if (pInfoHeader->biCompression == BI_BITFIELDS)
+        maskSize = 12;
+
     // Create DDraw surface
     m_lpSurface = m_pDDraw->pCreateOffScreenSurface(m_wBitmapSizeX, m_wBitmapSizeY);
     if (m_lpSurface == nullptr) {
@@ -231,7 +241,7 @@ bool DDrawSprite::CreateSurface()
     }
 
     // Calculate pointer to actual bitmap bits
-    LPSTR lpBits = reinterpret_cast<LPSTR>(m_imageData.data() + 14 + pInfoHeader->biSize + 4 * colorNums);
+    LPSTR lpBits = reinterpret_cast<LPSTR>(m_imageData.data() + 14 + pInfoHeader->biSize + maskSize + 4 * colorNums);
     SetDIBitsToDevice(hDC, 0, 0, m_wBitmapSizeX, m_wBitmapSizeY,
                       0, 0, 0, m_wBitmapSizeY, lpBits, pBmpInfo, DIB_RGB_COLORS);
     m_lpSurface->ReleaseDC(hDC);

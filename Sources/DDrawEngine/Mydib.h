@@ -17,6 +17,7 @@ public:
 	WORD m_wWidthX;
 	WORD m_wWidthY;
 	WORD m_wColorNums;//bmp
+	WORD m_wMaskSize; // BI_BITFIELDS RGB mask size (12 bytes if present, 0 otherwise)
 	LPSTR m_lpDib;
 	LPBITMAPINFO m_bmpInfo; //bmp
 };

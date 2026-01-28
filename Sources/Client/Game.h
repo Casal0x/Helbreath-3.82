@@ -228,14 +228,9 @@ public:
 	void UseShortCut( int num );
 	void DrawCursor();
 	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
-	// UpdateScreen_OnGame/DrawScreen_OnGame removed - now handled by Screen_OnGame
-	void MakeSprite( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void MakeTileSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void MakeEffectSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
-	void UpdateScreen_OnLoading(bool bActive);
-	void DrawScreen_OnLoadingProgress();
 
 	// Legacy screen/overlay functions removed - migrated to Screen/Overlay classes:
+	// MakeSprite, MakeTileSpr, MakeEffectSpr, UpdateScreen_OnLoading, DrawScreen_OnLoadingProgress
 	// Screen_Quit, Screen_Loading, Screen_CreateNewAccount, Screen_SelectCharacter,
 	// Screen_CreateNewCharacter, Screen_MainMenu, Screen_Login, Screen_OnGame,
 	// Overlay_WaitingResponse, Overlay_Connecting, Overlay_QueryForceLogin,
@@ -245,9 +240,6 @@ public:
 	void NpcTalkHandler(char * pData);
 	int  _iGetWeaponSkillType();
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
-	bool bDlgBoxPress_SkillDlg(short msX, short msY);
-	bool bDlgBoxPress_Inventory(short msX, short msY);
-	bool bDlgBoxPress_Character(short msX, short msY);
 	void ClearSkillUsingStatus();
 	bool bCheckItemOperationEnabled(char cItemID);
 	void _DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType);
@@ -275,9 +267,6 @@ public:
 	void RequestFullObjectData(uint16_t wObjectID);
 	bool bInitSkillCfgList();
 	bool bCheckImportantFile();
-	void DlbBoxDoubleClick_Inventory(short msX, short msY);
-	void DlbBoxDoubleClick_Character(short msX, short msY);
-	void DlbBoxDoubleClick_GuideMap(short msX, short msY);
 	void EraseItem(char cItemID);
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
@@ -305,7 +294,6 @@ public:
 	void DisableDialogBox(int iBoxID);
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
 	void InitItemList(char * pData);
-	int _iCheckDlgBoxFocus(short msX, short msY, char cButtonSide);
 	SpriteLib::BoundRect __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
@@ -533,7 +521,6 @@ public:
 	uint32_t m_dwCurTime;
 	uint32_t m_dwCheckConnTime, m_dwCheckSprTime, m_dwCheckChatTime;
 	uint32_t m_dwCheckConnectionTime;
-	uint32_t m_dwDialogCloseTime;
 	int  m_dwLogOutCountTime;//was DWORD
 	uint32_t m_dwRestartCountTime;
 	uint32_t m_dwWOFtime; //v1.4

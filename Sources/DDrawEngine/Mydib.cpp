@@ -12,6 +12,7 @@ CMyDib::CMyDib(char *szFilename, unsigned long dwFilePointer)
 {
 	BITMAPFILEHEADER fh; //bmp
 	m_lpDib = 0;
+	m_wMaskSize = 0;
 	HANDLE hFileRead;
 	uint32_t nCount;
 	char PathName[28];
@@ -26,6 +27,11 @@ CMyDib::CMyDib(char *szFilename, unsigned long dwFilePointer)
 	m_bmpInfo = (LPBITMAPINFO)m_lpDib;
 	m_wWidthX = (WORD)(bmpInfoHeader->biWidth);
 	m_wWidthY = (WORD)(bmpInfoHeader->biHeight);
+
+	// BI_BITFIELDS (3) has 12 bytes of RGB masks after header
+	if (bmpInfoHeader->biCompression == BI_BITFIELDS)
+		m_wMaskSize = 12;
+
 	if (bmpInfoHeader->biClrUsed == 0)
 	{	if(bmpInfoHeader->biBitCount == 24) m_wColorNums = 0;
 		else if(bmpInfoHeader->biBitCount == 8) m_wColorNums = 256;
@@ -41,5 +47,5 @@ CMyDib::~CMyDib()
 
 void CMyDib::PaintImage(HDC hDC)
 {	if (m_lpDib == 0) return;
-	SetDIBitsToDevice(hDC, 0, 0, m_wWidthX, m_wWidthY, 0, 0, 0, m_wWidthY, m_lpDib + *(LPDWORD)m_lpDib + 4*m_wColorNums, m_bmpInfo, DIB_RGB_COLORS);
+	SetDIBitsToDevice(hDC, 0, 0, m_wWidthX, m_wWidthY, 0, 0, 0, m_wWidthY, m_lpDib + *(LPDWORD)m_lpDib + m_wMaskSize + 4*m_wColorNums, m_bmpInfo, DIB_RGB_COLORS);
 }

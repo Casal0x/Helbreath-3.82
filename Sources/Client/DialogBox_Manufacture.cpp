@@ -1,4 +1,5 @@
 #include "DialogBox_Manufacture.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
@@ -701,9 +702,114 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 	return false;
 }
 
-bool DialogBox_Manufacture::OnPress(short msX, short msY)
+// Helper: Check if clicking on item in a manufacture slot and handle selection
+bool DialogBox_Manufacture::CheckSlotItemClick(int slotIndex, int itemIdx, int drawX, int drawY, short msX, short msY)
 {
-	return m_pGame->bDlgBoxPress_SkillDlg(msX, msY);
+	if (itemIdx == -1 || m_pGame->m_pItemList[itemIdx] == nullptr)
+		return false;
+
+	int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[itemIdx]->m_sSprite;
+	m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, m_pGame->m_pItemList[itemIdx]->m_sSpriteFrame);
+	auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
+
+	if (msX > bounds.left && msX < bounds.right && msY > bounds.top && msY < bounds.bottom)
+	{
+		// Clear the slot
+		switch (slotIndex)
+		{
+		case 1: Info().sV1 = -1; break;
+		case 2: Info().sV2 = -1; break;
+		case 3: Info().sV3 = -1; break;
+		case 4: Info().sV4 = -1; break;
+		case 5: Info().sV5 = -1; break;
+		case 6: Info().sV6 = -1; break;
+		}
+		m_pGame->m_bIsItemDisabled[itemIdx] = false;
+		CursorTarget::SetSelection(SelectedObjectType::Item, itemIdx, msX - drawX, msY - drawY);
+		return true;
+	}
+	return false;
+}
+
+PressResult DialogBox_Manufacture::OnPress(short msX, short msY)
+{
+	short sX = Info().sX;
+	short sY = Info().sY;
+	const int iAdjX = 5;
+	const int iAdjY = 10;
+
+	short sArray[7] = { 0 };
+	sArray[1] = Info().sV1;
+	sArray[2] = Info().sV2;
+	sArray[3] = Info().sV3;
+	sArray[4] = Info().sV4;
+	sArray[5] = Info().sV5;
+	sArray[6] = Info().sV6;
+
+	switch (Info().cMode)
+	{
+	case 1: // Alchemy waiting
+		for (int i = 1; i <= 6; i++)
+		{
+			int itemDrawX, itemDrawY;
+			switch (i)
+			{
+			case 1: itemDrawX = sX + iAdjX + 55;          itemDrawY = sY + iAdjY + 55; break;
+			case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 55; break;
+			case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
+			case 4: itemDrawX = sX + iAdjX + 55;          itemDrawY = sY + iAdjY + 100; break;
+			case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 100; break;
+			case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
+			default: continue;
+			}
+			if (CheckSlotItemClick(i, sArray[i], itemDrawX, itemDrawY, msX, msY))
+				return PressResult::ItemSelected;
+		}
+		break;
+
+	case 4: // Manufacture waiting
+		for (int i = 1; i <= 6; i++)
+		{
+			int itemDrawX, itemDrawY;
+			switch (i)
+			{
+			case 1: itemDrawX = sX + iAdjX + 55 + 30 + 13;          itemDrawY = sY + iAdjY + 55 + 180; break;
+			case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
+			case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
+			case 4: itemDrawX = sX + iAdjX + 55 + 30 + 13;          itemDrawY = sY + iAdjY + 100 + 180; break;
+			case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
+			case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
+			default: continue;
+			}
+			if (CheckSlotItemClick(i, sArray[i], itemDrawX, itemDrawY, msX, msY))
+			{
+				Info().cStr[4] = (char)m_pGame->_bCheckCurrentBuildItemStatus();
+				return PressResult::ItemSelected;
+			}
+		}
+		break;
+
+	case 7: // Crafting waiting
+		for (int i = 1; i <= 6; i++)
+		{
+			int itemDrawX, itemDrawY;
+			switch (i)
+			{
+			case 1: itemDrawX = sX + iAdjX + 55;          itemDrawY = sY + iAdjY + 55; break;
+			case 2: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 40; break;
+			case 3: itemDrawX = sX + iAdjX + 65 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
+			case 4: itemDrawX = sX + iAdjX + 65;          itemDrawY = sY + iAdjY + 100; break;
+			case 5: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 115; break;
+			case 6: itemDrawX = sX + iAdjX + 75 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
+			default: continue;
+			}
+			if (CheckSlotItemClick(i, sArray[i], itemDrawX, itemDrawY, msX, msY))
+				return PressResult::ItemSelected;
+		}
+		break;
+	}
+
+	return PressResult::Normal;
 }
 
 bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)

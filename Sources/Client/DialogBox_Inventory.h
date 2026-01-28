@@ -12,7 +12,7 @@ public:
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
 	bool OnDoubleClick(short msX, short msY) override;
-	bool OnPress(short msX, short msY) override;
+	PressResult OnPress(short msX, short msY) override;
 	bool OnItemDrop(short msX, short msY) override;
 
 private:
@@ -32,4 +32,7 @@ private:
 
 	// Helper: Draw a single inventory item with proper coloring and state
 	void DrawInventoryItem(CItem* pItem, int itemIdx, int baseX, int baseY);
+
+	// Double-click helper: Find the clicked inventory item (returns item ID or -1)
+	char FindClickedItem(short msX, short msY, short sX, short sY);
 };

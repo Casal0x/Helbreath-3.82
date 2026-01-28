@@ -7,6 +7,14 @@
 class CGame;
 class DialogBoxManager;
 
+// Result of OnPress - determines how the click is handled
+enum class PressResult
+{
+	Normal = 0,        // Normal click, allow dialog dragging
+	ItemSelected = 1,  // Item/equipment selected, dialog handles CursorTarget
+	ScrollClaimed = -1 // Scroll/slider region claimed, prevent dragging
+};
+
 class IDialogBox
 {
 public:
@@ -20,7 +28,10 @@ public:
 	// Optional virtual methods - override as needed
 	virtual void OnUpdate() {}  // Called once per frame for enabled dialogs
 	virtual bool OnDoubleClick(short msX, short msY) { return false; }
-	virtual bool OnPress(short msX, short msY) { return false; }  // Item/equipment selection on mouse press
+
+	// Called on mouse button down within dialog bounds
+	virtual PressResult OnPress(short msX, short msY) { return PressResult::Normal; }
+
 	virtual bool OnItemDrop(short msX, short msY) { return false; }  // Item dropped on dialog
 	virtual void OnEnable(int cType, int sV1, int sV2, char* pString) {}
 	virtual void OnDisable() {}
@@ -46,6 +57,7 @@ protected:
 	void EnableDialogBox(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
 	void DisableDialogBox(DialogBoxId::Type id);
 	void DisableThisDialog();
+	void SetCanCloseOnRightClick(bool bCanClose);
 
 	// Inter-dialog communication
 	IDialogBox* GetDialogBox(DialogBoxId::Type id);

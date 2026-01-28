@@ -543,4 +543,20 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     return false;
 }
 
+PressResult DialogBox_Shop::OnPress(short msX, short msY)
+{
+    short sX = Info().sX;
+    short sY = Info().sY;
+
+    // Only claim scroll in item list mode (cMode == 0)
+    if (Info().cMode == 0)
+    {
+        if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 20) && (msY <= sY + 330))
+        {
+            return PressResult::ScrollClaimed;
+        }
+    }
+
+    return PressResult::Normal;
+}
 

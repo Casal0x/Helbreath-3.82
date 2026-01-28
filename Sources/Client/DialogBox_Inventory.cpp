@@ -1,11 +1,12 @@
 #include "DialogBox_Inventory.h"
-#include "Game.h"
 #include "CursorTarget.h"
+#include "Game.h"
 #include "lan_eng.h"
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
 {
+	SetCanCloseOnRightClick(true);
 	SetDefaultRect(380 + SCREENX, 210 + SCREENY, 225, 185);
 }
 
@@ -161,15 +162,307 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 	return false;
 }
 
+// Helper: Find the clicked inventory item
+char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
+{
+	for (int i = 0; i < DEF_MAXITEMS; i++)
+	{
+		if (m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i] == -1) continue;
+		char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
+
+		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite;
+		int drawX = sX + ITEM_OFFSET_X + m_pGame->m_pItemList[cItemID]->m_sX;
+		int drawY = sY + ITEM_OFFSET_Y + m_pGame->m_pItemList[cItemID]->m_sY;
+
+		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
+		auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
+
+		if (!m_pGame->m_bIsItemDisabled[cItemID] && !m_pGame->m_bIsItemEquipped[cItemID] &&
+			msX > bounds.left && msX < bounds.right && msY > bounds.top && msY < bounds.bottom)
+		{
+			return cItemID;
+		}
+	}
+	return -1;
+}
+
 bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 {
-	m_pGame->DlbBoxDoubleClick_Inventory(msX, msY);
+	if (m_pGame->m_bItemUsingStatus)
+	{
+		AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY1, 10);
+		return true;
+	}
+
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	char cItemID = FindClickedItem(msX, msY, sX, sY);
+	if (cItemID == -1) return false;
+
+	m_pGame->_SetItemOrder(0, cItemID);
+
+	char cStr1[64], cStr2[64], cStr3[64];
+	m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+
+	// Check if at repair shop
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) &&
+		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
+		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
+	{
+		if (m_pGame->m_pItemList[cItemID]->m_cEquipPos != DEF_EQUIPPOS_NONE)
+		{
+			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
+				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
+				m_pGame->m_pItemList[cItemID]->m_cName,
+				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+			return true;
+		}
+	}
+
+	// Bank dialog - drop item there
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank))
+	{
+		m_pGame->bItemDrop_Bank(msX, msY);
+		return true;
+	}
+	// Sell list dialog
+	else if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellList))
+	{
+		m_pGame->bItemDrop_SellList(msX, msY);
+		return true;
+	}
+	// Item upgrade dialog
+	else if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade))
+	{
+		m_pGame->bItemDrop_ItemUpgrade();
+		return true;
+	}
+
+	// Handle consumable/depletable items
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
+		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_PERM ||
+		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW ||
+		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT)
+	{
+		if (!m_pGame->bCheckItemOperationEnabled(cItemID)) return true;
+
+		// Check damage cooldown for scrolls
+		if ((m_pGame->m_dwCurTime - m_pGame->m_dwDamagedTime) < 10000)
+		{
+			if ((m_pGame->m_pItemList[cItemID]->m_sSprite == 6) &&
+				(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame == 9 ||
+				 m_pGame->m_pItemList[cItemID]->m_sSpriteFrame == 89))
+			{
+				wsprintf(m_pGame->G_cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);
+				AddEventList(m_pGame->G_cTxt, 10);
+				return true;
+			}
+		}
+
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, cItemID, 0, 0, 0);
+
+		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
+			m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT)
+		{
+			m_pGame->m_bIsItemDisabled[cItemID] = true;
+			m_pGame->m_bItemUsingStatus = true;
+		}
+	}
+
+	// Handle skill items (pointing mode)
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
+	{
+		if (m_pGame->_bIsItemOnHand())
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);
+			return true;
+		}
+		if (m_pGame->m_bSkillUsingStatus)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY5, 10);
+			return true;
+		}
+		if (m_pGame->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);
+		}
+		else
+		{
+			m_pGame->m_bIsGetPointingMode = true;
+			m_pGame->m_iPointCommandType = cItemID;
+			char cTxt[120];
+			wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY7, cStr1);
+			AddEventList(cTxt, 10);
+		}
+	}
+
+	// Handle deplete-dest items (use on other items)
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
+	{
+		if (m_pGame->_bIsItemOnHand())
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);
+			return true;
+		}
+		if (m_pGame->m_bSkillUsingStatus)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY13, 10);
+			return true;
+		}
+		if (m_pGame->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);
+		}
+		else
+		{
+			m_pGame->m_bIsGetPointingMode = true;
+			m_pGame->m_iPointCommandType = cItemID;
+			char cTxt[120];
+			wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY8, cStr1);
+			AddEventList(cTxt, 10);
+		}
+	}
+
+	// Handle skill items that enable dialog boxes (alchemy pot, anvil, crafting, slates)
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
+	{
+		if (m_pGame->_bIsItemOnHand())
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);
+			return true;
+		}
+		if (m_pGame->m_bSkillUsingStatus)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY5, 10);
+			return true;
+		}
+		if (m_pGame->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
+		{
+			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);
+		}
+		else
+		{
+			switch (m_pGame->m_pItemList[cItemID]->m_sSpriteFrame)
+			{
+			case 55: // Alchemy pot
+				if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0)
+					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY9, 10);
+				else
+				{
+					EnableDialogBox(DialogBoxId::Manufacture, 1, 0, 0);
+					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY10, 10);
+				}
+				break;
+
+			case 113: // Smith's Anvil
+				if (m_pGame->m_pPlayer->m_iSkillMastery[13] == 0)
+					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY11, 10);
+				else
+				{
+					EnableDialogBox(DialogBoxId::Manufacture, 3, 0, 0);
+					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY12, 10);
+				}
+				break;
+
+			case 0: // Crafting
+				EnableDialogBox(DialogBoxId::Manufacture, 7, 0, 0);
+				AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY17, 10);
+				break;
+
+			case 151:
+			case 152:
+			case 153:
+			case 154: // Slates
+				EnableDialogBox(DialogBoxId::Slates, 1, 0, 0);
+				break;
+			}
+		}
+	}
+
+	// If alchemy/manufacture/crafting dialog is open, drop item there
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture))
+	{
+		char mode = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode;
+		if (mode == 1 || mode == 4 || mode == 7)
+			m_pGame->bItemDrop_SkillDialog();
+	}
+
+	// Auto-equip equipment items
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)
+	{
+		CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
+		m_pGame->bItemDrop_Character();
+		CursorTarget::ClearSelection();
+	}
+
 	return true;
 }
 
-bool DialogBox_Inventory::OnPress(short msX, short msY)
+PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 {
-	return m_pGame->bDlgBoxPress_Inventory(msX, msY);
+	// Don't allow item selection if certain dialogs are open
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal)) return PressResult::Normal;
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm)) return PressResult::Normal;
+
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Check items in reverse order (topmost first)
+	for (int i = 0; i < DEF_MAXITEMS; i++)
+	{
+		char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+		if (cItemID == -1) continue;
+
+		CItem* pItem = m_pGame->m_pItemList[cItemID].get();
+		if (pItem == nullptr) continue;
+
+		// Skip disabled or equipped items
+		if (m_pGame->m_bIsItemDisabled[cItemID]) continue;
+		if (m_pGame->m_bIsItemEquipped[cItemID]) continue;
+
+		// Calculate item bounds
+		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pItem->m_sSprite;
+		int itemDrawX = sX + ITEM_OFFSET_X + pItem->m_sX;
+		int itemDrawY = sY + ITEM_OFFSET_Y + pItem->m_sY;
+
+		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(itemDrawX, itemDrawY, pItem->m_sSpriteFrame);
+		auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
+
+		// Check if click is within item bounds
+		if (msX > bounds.left && msX < bounds.right &&
+			msY > bounds.top && msY < bounds.bottom)
+		{
+			// Pixel-perfect collision check
+			if (m_pGame->m_pSprite[spriteIdx]->CheckCollision(itemDrawX, itemDrawY, pItem->m_sSpriteFrame, msX, msY))
+			{
+				// Bring item to top of order
+				m_pGame->_SetItemOrder(0, cItemID);
+
+				// Handle pointing mode (using items on other items)
+				if (m_pGame->m_bIsGetPointingMode &&
+					m_pGame->m_iPointCommandType >= 0 &&
+					m_pGame->m_iPointCommandType < 100 &&
+					m_pGame->m_pItemList[m_pGame->m_iPointCommandType] != nullptr &&
+					m_pGame->m_pItemList[m_pGame->m_iPointCommandType]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST &&
+					m_pGame->m_iPointCommandType != cItemID)
+				{
+					m_pGame->PointCommandHandler(0, 0, cItemID);
+					m_pGame->m_bIsGetPointingMode = false;
+				}
+				else
+				{
+					// Select the item for dragging
+					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID,
+						msX - itemDrawX, msY - itemDrawY);
+				}
+				return PressResult::ItemSelected;
+			}
+		}
+	}
+
+	return PressResult::Normal;
 }
 
 bool DialogBox_Inventory::OnItemDrop(short msX, short msY)

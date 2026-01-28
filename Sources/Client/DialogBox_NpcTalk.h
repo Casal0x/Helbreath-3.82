@@ -9,6 +9,7 @@ public:
 
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
+	PressResult OnPress(short msX, short msY) override;
 
 private:
 	int GetTotalLines() const;

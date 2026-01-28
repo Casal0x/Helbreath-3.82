@@ -41,6 +41,7 @@
 #include "Screen_CreateAccount.h"
 #include "Screen_Quit.h"
 #include "Screen_Loading.h"
+#include "Screen_Splash.h"
 #include "IInput.h"
 
 // Overlay system
@@ -168,7 +169,6 @@ CGame::CGame()
 	// Dialog boxes now self-initialize via SetDefaultRect() in their constructors
 	// Dialogs without classes (GiveItem) are initialized in DialogBoxManager::InitDefaults()
 
-	m_dwDialogCloseTime = 0;
 	m_iTimeLeftSecAccount = 0;
 	m_iTimeLeftSecIP = 0;
 	m_bWhisper = true;
@@ -213,8 +213,8 @@ bool CGame::bInit()
 	// Initialize GameModeManager
 	GameModeManager::Initialize(this);
 
-	// Set initial screen to Loading
-	GameModeManager::set_screen<Screen_Loading>();
+	// Set initial screen to Splash (transitions to Loading after 5 seconds)
+	GameModeManager::set_screen<Screen_Splash>();
 
 	m_bHideLocalCursor = false;
 
@@ -2247,743 +2247,6 @@ void CGame::InitPlayerResponseHandler(char* pData)
 	}
 }
 
-void CGame::MakeSprite(char* FileName, short sStart, short sCount, bool bAlphaEffect)
-{
-	try {
-		size_t loaded = 0;
-		size_t withFrames = 0;
-		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
-			size_t totalInPak = loader.get_sprite_count();
-			size_t toLoad = static_cast<size_t>(sCount);
-			if (toLoad > totalInPak) toLoad = totalInPak;
-
-			for (size_t i = 0; i < toLoad; i++) {
-				m_pSprite[i + sStart] = loader.get_sprite(i, bAlphaEffect);
-				if (m_pSprite[i + sStart]) {
-					loaded++;
-					if (m_pSprite[i + sStart]->GetFrameCount() > 0) {
-						withFrames++;
-					}
-				}
-			}
-		});
-	} catch (const std::exception& e) {
-		printf("[MakeSprite] FAILED %s: %s\n", FileName, e.what());
-	} catch (...) {
-		printf("[MakeSprite] FAILED %s: unknown exception\n", FileName);
-	}
-}
-
-void CGame::MakeTileSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
-{
-	try {
-		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
-			size_t totalInPak = loader.get_sprite_count();
-			size_t toLoad = static_cast<size_t>(sCount);
-			if (toLoad > totalInPak) toLoad = totalInPak;
-
-			for (size_t i = 0; i < toLoad; i++) {
-				m_pTileSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
-			}
-		});
-	} catch (const std::exception& e) {
-		printf("[MakeTileSpr] FAILED %s: %s\n", FileName, e.what());
-	}
-}
-
-void CGame::MakeEffectSpr(char* FileName, short sStart, short sCount, bool bAlphaEffect)
-{
-	try {
-		SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
-			size_t totalInPak = loader.get_sprite_count();
-			size_t toLoad = static_cast<size_t>(sCount);
-			if (toLoad > totalInPak) toLoad = totalInPak;
-
-			for (size_t i = 0; i < toLoad; i++) {
-				m_pEffectSpr[i + sStart] = loader.get_sprite(i, bAlphaEffect);
-			}
-		});
-	} catch (const std::exception& e) {
-		printf("[MakeEffectSpr] FAILED %s: %s\n", FileName, e.what());
-	}
-}
-
-void CGame::UpdateScreen_OnLoading(bool bActive)
-{
-	int i;
-	if (bActive) DrawScreen_OnLoadingProgress();
-
-	switch (m_cLoading) {
-	case 0:
-	{
-		// Load interface sprites (PAKLib handles file access internally)
-		SpriteLib::SpriteLoader::open_pak("interface", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_MOUSECURSOR] = loader.get_sprite(0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = loader.get_sprite(1, false);
-			});
-
-		SpriteLib::SpriteLoader::open_pak("newmaps", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = loader.get_sprite(0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = loader.get_sprite(1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = loader.get_sprite(2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4] = loader.get_sprite(3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = loader.get_sprite(4, false);
-			});
-
-		m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = SpriteLib::Sprites::Create("LoginDialog", 0, false);
-
-		SpriteLib::SpriteLoader::open_pak("New-Dialog", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = loader.get_sprite(1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = loader.get_sprite(2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = loader.get_sprite(2, false);
-			});
-
-		SpriteLib::SpriteLoader::open_pak("GameDialog", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = loader.get_sprite(0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = loader.get_sprite(1, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = loader.get_sprite(2, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4] = loader.get_sprite(3, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE] = loader.get_sprite(4, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL] = loader.get_sprite(6, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY] = loader.get_sprite(7, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_SELECTCHAR] = loader.get_sprite(8, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWCHAR] = loader.get_sprite(9, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = loader.get_sprite(10, false);
-			});
-
-		m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = SpriteLib::Sprites::Create("PartySprite", 0, false);
-
-		SpriteLib::SpriteLoader::open_pak("DialogText", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = loader.get_sprite(0, false);
-			m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = loader.get_sprite(1, false);
-			});
-
-		MakeSprite("Telescope", DEF_SPRID_INTERFACE_GUIDEMAP, 32, false);	  // Snoopy: 20->32
-		MakeSprite("Telescope2", DEF_SPRID_INTERFACE_GUIDEMAP + 35, 4, false); // Snoopy: Ajout.351 (heldenian maps)
-		MakeSprite("monster", DEF_SPRID_INTERFACE_MONSTER, 1, false);
-		m_cLoading = 4;
-	}
-	break;
-	case 4:
-	{
-		MakeTileSpr("maptiles1", 0, 32, true);
-		m_pTileSpr[1 + 50] = SpriteLib::Sprites::Create("structures1", 1, true);
-		m_pTileSpr[5 + 50] = SpriteLib::Sprites::Create("structures1", 5, true);
-		MakeTileSpr("Sinside1", 70, 27, false);
-		MakeTileSpr("Trees1", 100, 46, true);
-		MakeTileSpr("TreeShadows", 150, 46, true);
-		MakeTileSpr("objects1", 200, 10, true); // snoopy: 8->10
-		MakeTileSpr("objects2", 211, 5, true);
-		MakeTileSpr("objects3", 216, 4, true);
-		MakeTileSpr("objects4", 220, 2, true); //snoopy: 1->2
-		m_cLoading = 8;
-	}
-	break;
-	case 8:
-	{
-		MakeTileSpr("Tile223-225", 223, 3, true);
-		MakeTileSpr("Tile226-229", 226, 4, true);
-		MakeTileSpr("objects5", 230, 9, true);	// Snoopy
-		MakeTileSpr("objects6", 238, 4, true);	// Snoopy
-		MakeTileSpr("objects7", 242, 7, true);	// Snoopy
-		MakeTileSpr("maptiles2", 300, 15, true);//- Index 300
-		MakeTileSpr("maptiles4", 320, 10, true);
-		MakeTileSpr("maptiles5", 330, 19, true);
-		MakeTileSpr("maptiles6", 349, 4, true);
-		MakeTileSpr("maptiles353-361", 353, 9, true);
-		MakeTileSpr("Tile363-366", 363, 4, true);
-		MakeTileSpr("Tile367-367", 367, 1, true); // Add by Snoopy (fountains)
-		MakeTileSpr("Tile370-381", 370, 12, true);// Tile370~381
-		MakeTileSpr("Tile382-387", 382, 6, true);
-		MakeTileSpr("Tile388-402", 388, 15, true);
-		m_cLoading = 12;
-	}
-	break;
-	case 12:
-	{
-		MakeTileSpr("Tile403-405", 403, 3, true);
-		MakeTileSpr("Tile406-421", 406, 16, true);
-		MakeTileSpr("Tile422-429", 422, 8, true);
-		MakeTileSpr("Tile430-443", 430, 14, true);
-		MakeTileSpr("Tile444-444", 444, 1, true);
-		MakeTileSpr("Tile445-461", 445, 17, true);
-		MakeTileSpr("Tile462-473", 462, 12, true);	// Diuuude
-		MakeTileSpr("Tile474-478", 474, 5, true);	// Diuuude
-		MakeTileSpr("Tile479-488", 479, 10, true);	// Diuuude
-		MakeTileSpr("Tile489-522", 489, 34, true);	// Diuuude Drunken City
-		MakeTileSpr("Tile523-530", 523, 8, true);	// Diuuude Rampart
-		MakeTileSpr("Tile531-540", 531, 10, true);	// Diuuude GodH + Pont
-		MakeTileSpr("Tile541-545", 541, 5, true);	// Diuuude GodH
-
-		// DEF_SPRID_ITEMPACK_PIVOTPOINT - batch load from item-pack.pak
-		SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
-			// Load sprites 0-26 to positions 1-27
-			for (size_t i = 0; i < 27 && i < loader.get_sprite_count(); i++) {
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
-			}
-			// Override positions 20-22 with specific pak sprites (Angels)
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 20] = loader.get_sprite(17, false);
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 21] = loader.get_sprite(18, false);
-			m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 22] = loader.get_sprite(19, false);
-		});
-
-		// DEF_SPRID_ITEMGROUND_PIVOTPOINT - batch load from item-ground.pak
-		SpriteLib::SpriteLoader::open_pak("item-ground", [&](SpriteLib::SpriteLoader& loader) {
-			// Load sprites 0-18 to positions 1-19
-			for (size_t i = 0; i < 19 && i < loader.get_sprite_count(); i++) {
-				m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
-			}
-			// Override positions 20-22 with specific pak sprites (Angels)
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 20] = loader.get_sprite(17, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 21] = loader.get_sprite(18, false);
-			m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 22] = loader.get_sprite(19, false);
-		});
-		MakeSprite("item-dynamic", DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT, 3, false);// Snoopy 2-> 3 (flags)
-		m_cLoading = 16;
-	}
-	break;
-	case 16:
-	{
-		// Load item-equipM.pak batch
-		SpriteLib::SpriteLoader::open_pak("item-equipM", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = loader.get_sprite(0, false);   // body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = loader.get_sprite(1, false);   // 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = loader.get_sprite(2, false);   // 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 3] = loader.get_sprite(3, false);   // 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 4] = loader.get_sprite(4, false);   // 4-tunics
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 5] = loader.get_sprite(5, false);   // 5-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 7] = loader.get_sprite(6, false);   // 6-berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 8] = loader.get_sprite(7, false);   // 7-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 9] = loader.get_sprite(8, false);   // 8-bodyarmor
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 15] = loader.get_sprite(11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 17] = loader.get_sprite(12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18] = loader.get_sprite(9, false);  // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19] = loader.get_sprite(10, false); // undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 20] = loader.get_sprite(13, false); // capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 21] = loader.get_sprite(14, false); // helm
-		});
-
-		// Load item-equipW.pak batch
-		SpriteLib::SpriteLoader::open_pak("item-equipW", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = loader.get_sprite(0, false);  // body
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = loader.get_sprite(1, false);  // 1-swords
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = loader.get_sprite(2, false);  // 2-bows
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 43] = loader.get_sprite(3, false);  // 3-shields
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 45] = loader.get_sprite(4, false);  // 4-shoes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 50] = loader.get_sprite(5, false);  // 5-Soustif
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 51] = loader.get_sprite(6, false);  // 6 berk
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 52] = loader.get_sprite(7, false);  // 7 hose
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 53] = loader.get_sprite(8, false);  // 8-hoses
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 55] = loader.get_sprite(11, false); // Axe hammer
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 57] = loader.get_sprite(12, false); // Wands
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 58] = loader.get_sprite(9, false);  // hair
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 59] = loader.get_sprite(10, false); // undies
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 60] = loader.get_sprite(13, false); // capes
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 61] = loader.get_sprite(14, false); // helm
-		});
-
-		// Load item-pack.pak for necks and angels (used for both M and W)
-		SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = loader.get_sprite(15, false); // Necks (M)
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = loader.get_sprite(19, false); // Angels (M)
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = loader.get_sprite(15, false); // Necks (W)
-			m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 62] = loader.get_sprite(19, false); // Angels (W)
-		});
-		MakeSprite("Bm", 500 + 15 * 8 * 0, 96, true);// Black Man (Type: 1)
-		MakeSprite("Wm", 500 + 15 * 8 * 1, 96, true);// White Man (Type: 2)
-		MakeSprite("Ym", 500 + 15 * 8 * 2, 96, true);// Yellow Man (Type: 3)
-		m_cLoading = 20;
-	}
-	break;
-	case 20:
-	{
-		MakeSprite("TutelarAngel1", DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + 50 * 0, 48, false);//(STR)
-		MakeSprite("TutelarAngel2", DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + 50 * 1, 48, false);//(DEX)
-		MakeSprite("TutelarAngel3", DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + 50 * 2, 48, false);//(INT)
-		MakeSprite("TutelarAngel4", DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + 50 * 3, 48, false);//(MAG)
-		MakeSprite("Bw", 500 + 15 * 8 * 3, 96, true);// Black Woman (Type: 4)
-		MakeSprite("Ww", 500 + 15 * 8 * 4, 96, true);// White Woman (Type: 5)
-		MakeSprite("Yw", 500 + 15 * 8 * 5, 96, true);// Yellow Woman (Type: 6)
-		m_cLoading = 24;
-	}
-	break;
-	case 24:
-	{
-		MakeSprite("slm", DEF_SPRID_MOB + 7 * 8 * 0, 40, true);// Slime (Type: 10)
-		MakeSprite("ske", DEF_SPRID_MOB + 7 * 8 * 1, 40, true);// Skeleton (Type: 11)
-		MakeSprite("Gol", DEF_SPRID_MOB + 7 * 8 * 2, 40, true);// Stone-Golem (Type: 12)
-		MakeSprite("Cyc", DEF_SPRID_MOB + 7 * 8 * 3, 40, true);// Cyclops (Type: 13)
-		MakeSprite("Orc", DEF_SPRID_MOB + 7 * 8 * 4, 40, true);// Orc (Type: 14)
-		MakeSprite("Shopkpr", DEF_SPRID_MOB + 7 * 8 * 5, 8);		// ShopKeeper-Woman (Type: 15)
-		MakeSprite("Ant", DEF_SPRID_MOB + 7 * 8 * 6, 40, true);//  Giant-Ant (Type: 16)
-		MakeSprite("Scp", DEF_SPRID_MOB + 7 * 8 * 7, 40, true);//  Scorpion (Type: 17)
-		MakeSprite("Zom", DEF_SPRID_MOB + 7 * 8 * 8, 40, true);//  Zombie (Type: 18)
-		MakeSprite("Gandlf", DEF_SPRID_MOB + 7 * 8 * 9, 8, true);// Gandalf � (Type: 19)
-		MakeSprite("Howard", DEF_SPRID_MOB + 7 * 8 * 10, 8, true);// Howard ������ ���� (Type: 20)
-		MakeSprite("Guard", DEF_SPRID_MOB + 7 * 8 * 11, 40, true);// Guard (Type: 21)
-		MakeSprite("Amp", DEF_SPRID_MOB + 7 * 8 * 12, 40, true);// Amphis (Type: 22)
-		MakeSprite("Cla", DEF_SPRID_MOB + 7 * 8 * 13, 40, true);// Clay-Golem (Type: 23)
-		MakeSprite("tom", DEF_SPRID_MOB + 7 * 8 * 14, 8, true);// Tom (Type: 24)
-		MakeSprite("William", DEF_SPRID_MOB + 7 * 8 * 15, 8, true);// William (Type: 25)
-		m_cLoading = 28;
-	}
-	break;
-	case 28:
-	{
-		MakeSprite("Kennedy", DEF_SPRID_MOB + 7 * 8 * 16, 8, true);// Kennedy (Type: 26)
-		MakeSprite("Helb", DEF_SPRID_MOB + 7 * 8 * 17, 40, true);// Hellbound (Type: 27)
-		MakeSprite("Troll", DEF_SPRID_MOB + 7 * 8 * 18, 40, true);// Troll (Type: 28)
-		MakeSprite("Orge", DEF_SPRID_MOB + 7 * 8 * 19, 40, true);// Orge (Type: 29)
-		MakeSprite("Liche", DEF_SPRID_MOB + 7 * 8 * 20, 40, true);// Liche (Type: 30)
-		MakeSprite("Demon", DEF_SPRID_MOB + 7 * 8 * 21, 40, true);// Demon (Type: 31)
-		MakeSprite("Unicorn", DEF_SPRID_MOB + 7 * 8 * 22, 40, true);// Unicorn (Type: 32)
-		MakeSprite("WereWolf", DEF_SPRID_MOB + 7 * 8 * 23, 40, true);// WereWolf (Type: 33)
-		MakeSprite("Dummy", DEF_SPRID_MOB + 7 * 8 * 24, 40, true);// Dummy (Type: 34)
-		// Energy-Ball (Type: 35) - all 40 slots use the same sprite (index 0)
-		SpriteLib::SpriteLoader::open_pak("Effect5", [&](SpriteLib::SpriteLoader& loader) {
-			for (i = 0; i < 40; i++)
-				m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = loader.get_sprite(0, true);
-		});
-		m_cLoading = 32;
-	}
-	break;
-	case 32:
-	{
-		MakeSprite("GT-Arrow", DEF_SPRID_MOB + 7 * 8 * 26, 40, true);// Arrow-GuardTower (Type: 36)
-		MakeSprite("GT-Cannon", DEF_SPRID_MOB + 7 * 8 * 27, 40, true);// Cannon-GuardTower (Type: 37)
-		MakeSprite("ManaCollector", DEF_SPRID_MOB + 7 * 8 * 28, 40, true);// Mana Collector (Type: 38)
-		MakeSprite("Detector", DEF_SPRID_MOB + 7 * 8 * 29, 40, true);// Detector (Type: 39)
-		MakeSprite("ESG", DEF_SPRID_MOB + 7 * 8 * 30, 40, true);// ESG (Type: 40)
-		MakeSprite("GMG", DEF_SPRID_MOB + 7 * 8 * 31, 40, true);// GMG (Type: 41)
-		MakeSprite("ManaStone", DEF_SPRID_MOB + 7 * 8 * 32, 40, true);// ManaStone (Type: 42)
-		MakeSprite("LWB", DEF_SPRID_MOB + 7 * 8 * 33, 40, true);// Light War Beetle (Type: 43)
-		MakeSprite("GHK", DEF_SPRID_MOB + 7 * 8 * 34, 40, true);// God's Hand Knight (Type: 44)
-		MakeSprite("GHKABS", DEF_SPRID_MOB + 7 * 8 * 35, 40, true);// God's Hand Knight with Armored Battle Steed (Type: 45)
-		MakeSprite("TK", DEF_SPRID_MOB + 7 * 8 * 36, 40, true);// Temple Knight (Type: 46)
-		MakeSprite("BG", DEF_SPRID_MOB + 7 * 8 * 37, 40, true);// Battle Golem (Type: 47)
-		m_cLoading = 36;
-	}
-	break;
-	case 36:
-	{
-		MakeSprite("Stalker", DEF_SPRID_MOB + 7 * 8 * 38, 40, true);// Stalker (Type: 48)
-		MakeSprite("Hellclaw", DEF_SPRID_MOB + 7 * 8 * 39, 40, true);// Hellclaw (Type: 49)
-		MakeSprite("Tigerworm", DEF_SPRID_MOB + 7 * 8 * 40, 40, true);// Tigerworm (Type: 50)
-		MakeSprite("Catapult", DEF_SPRID_MOB + 7 * 8 * 41, 40, true);// Catapult (Type: 51)
-		MakeSprite("Gagoyle", DEF_SPRID_MOB + 7 * 8 * 42, 40, true);// Gargoyle (Type: 52)
-		MakeSprite("Beholder", DEF_SPRID_MOB + 7 * 8 * 43, 40, true);// Beholder (Type: 53)
-		MakeSprite("DarkElf", DEF_SPRID_MOB + 7 * 8 * 44, 40, true);// Dark-Elf (Type: 54)
-		MakeSprite("Bunny", DEF_SPRID_MOB + 7 * 8 * 45, 40, true);// Bunny (Type: 55)
-		MakeSprite("Cat", DEF_SPRID_MOB + 7 * 8 * 46, 40, true);// Cat (Type: 56)
-		MakeSprite("GiantFrog", DEF_SPRID_MOB + 7 * 8 * 47, 40, true);// GiantFrog (Type: 57)
-		MakeSprite("MTGiant", DEF_SPRID_MOB + 7 * 8 * 48, 40, true);// Mountain Giant (Type: 58)
-		m_cLoading = 40;
-	}
-	break;
-	case 40:
-	{
-		MakeSprite("Ettin", DEF_SPRID_MOB + 7 * 8 * 49, 40, true);// Ettin (Type: 59)
-		MakeSprite("CanPlant", DEF_SPRID_MOB + 7 * 8 * 50, 40, true);// Cannibal Plant (Type: 60)
-		MakeSprite("Rudolph", DEF_SPRID_MOB + 7 * 8 * 51, 40, true);// Rudolph (Type: 61)
-		MakeSprite("DireBoar", DEF_SPRID_MOB + 7 * 8 * 52, 40, true);// Boar (Type: 62)
-		MakeSprite("frost", DEF_SPRID_MOB + 7 * 8 * 53, 40, true);// Frost (Type: 63)
-		MakeSprite("Crop", DEF_SPRID_MOB + 7 * 8 * 54, 40, true);// Crop(Type: 64)
-		MakeSprite("IceGolem", DEF_SPRID_MOB + 7 * 8 * 55, 40, true);// IceGolem (Type: 65)
-		MakeSprite("Wyvern", DEF_SPRID_MOB + 7 * 8 * 56, 24, true);// Wyvern (Type: 66)
-		MakeSprite("McGaffin", DEF_SPRID_MOB + 7 * 8 * 57, 16, true);// McGaffin (Type: 67)
-		MakeSprite("Perry", DEF_SPRID_MOB + 7 * 8 * 58, 16, true);// Perry (Type: 68)
-		MakeSprite("Devlin", DEF_SPRID_MOB + 7 * 8 * 59, 16, true);// Devlin (Type: 69)
-		MakeSprite("Barlog", DEF_SPRID_MOB + 7 * 8 * 60, 40, true);// Barlog (Type: 70)
-		MakeSprite("Centaurus", DEF_SPRID_MOB + 7 * 8 * 61, 40, true);// Centaurus (Type: 71)
-		MakeSprite("ClawTurtle", DEF_SPRID_MOB + 7 * 8 * 62, 40, true);// Claw-Turtle (Type: 72)
-		MakeSprite("FireWyvern", DEF_SPRID_MOB + 7 * 8 * 63, 24, true);// Fire-Wyvern (Type: 73)
-		MakeSprite("GiantCrayfish", DEF_SPRID_MOB + 7 * 8 * 64, 40, true);// Giant-Crayfish (Type: 74)
-		MakeSprite("GiantLizard", DEF_SPRID_MOB + 7 * 8 * 65, 40, true);// Giant-Lizard (Type: 75)
-		m_cLoading = 44;
-	}
-	break;
-	case 44:
-	{	// New NPCs - Diuuude - fixed by Snoopy
-		MakeSprite("GiantPlant", DEF_SPRID_MOB + 7 * 8 * 66, 40, true);// Giant-Plant (Type: 76)
-		MakeSprite("MasterMageOrc", DEF_SPRID_MOB + 7 * 8 * 67, 40, true);// MasterMage-Orc (Type: 77)
-		MakeSprite("Minotaurs", DEF_SPRID_MOB + 7 * 8 * 68, 40, true);// Minotaurs (Type: 78)
-		MakeSprite("Nizie", DEF_SPRID_MOB + 7 * 8 * 69, 40, true);// Nizie (Type: 79)
-		MakeSprite("Tentocle", DEF_SPRID_MOB + 7 * 8 * 70, 40, true);// Tentocle (Type: 80)
-		MakeSprite("yspro", DEF_SPRID_MOB + 7 * 8 * 71, 32, true);// Abaddon (Type: 81)
-		MakeSprite("Sorceress", DEF_SPRID_MOB + 7 * 8 * 72, 40, true);// Sorceress (Type: 82)
-		MakeSprite("TPKnight", DEF_SPRID_MOB + 7 * 8 * 73, 40, true);// TPKnight (Type: 83)
-		MakeSprite("ElfMaster", DEF_SPRID_MOB + 7 * 8 * 74, 40, true);// ElfMaster (Type: 84)
-		MakeSprite("DarkKnight", DEF_SPRID_MOB + 7 * 8 * 75, 40, true);// DarkKnight (Type: 85)
-		MakeSprite("HBTank", DEF_SPRID_MOB + 7 * 8 * 76, 32, true);// HeavyBattleTank (Type: 86)
-		MakeSprite("CBTurret", DEF_SPRID_MOB + 7 * 8 * 77, 32, true);// CBTurret (Type: 87)
-		MakeSprite("Babarian", DEF_SPRID_MOB + 7 * 8 * 78, 40, true);// Babarian (Type: 88)
-		MakeSprite("ACannon", DEF_SPRID_MOB + 7 * 8 * 79, 32, true);// ACannon (Type: 89)
-		m_cLoading = 48;
-	}
-	break;
-	case 48:
-	{
-		MakeSprite("Gail", DEF_SPRID_MOB + 7 * 8 * 80, 8, true); // Gail (Type: 90)
-		MakeSprite("Gate", DEF_SPRID_MOB + 7 * 8 * 81, 24, true);// Heldenian Gate (Type: 91)/**/
-		// Load Mpt.pak batch (male undies)
-		SpriteLib::SpriteLoader::open_pak("Mpt", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 8; g++) {
-				for (i = 0; i < 12; i++) {
-					m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
-				}
-			}
-		});
-		m_cLoading = 52;
-	}
-	break;
-
-	case 52:
-	{
-		// Load Mhr.pak batch (male hair)
-		SpriteLib::SpriteLoader::open_pak("Mhr", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 8; g++) {
-				for (i = 0; i < 12; i++) {
-					m_pSprite[DEF_SPRID_HAIR_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
-				}
-			}
-		});
-		MakeSprite("MLArmor", DEF_SPRID_BODYARMOR_M + 15 * 1, 12, true);
-		MakeSprite("MCMail", DEF_SPRID_BODYARMOR_M + 15 * 2, 12, true);
-		MakeSprite("MSMail", DEF_SPRID_BODYARMOR_M + 15 * 3, 12, true);
-		MakeSprite("MPMail", DEF_SPRID_BODYARMOR_M + 15 * 4, 12, true);
-		MakeSprite("Mtunic", DEF_SPRID_BODYARMOR_M + 15 * 5, 12, true);
-		MakeSprite("MRobe1", DEF_SPRID_BODYARMOR_M + 15 * 6, 12, true);
-		MakeSprite("MSanta", DEF_SPRID_BODYARMOR_M + 15 * 7, 12, true);
-		MakeSprite("MHRobe1", DEF_SPRID_BODYARMOR_M + 15 * 10, 12, true); //hero
-		MakeSprite("MHRobe2", DEF_SPRID_BODYARMOR_M + 15 * 11, 12, true); //hero
-		MakeSprite("MHPMail1", DEF_SPRID_BODYARMOR_M + 15 * 8, 12, true); //hero
-		MakeSprite("MHPMail2", DEF_SPRID_BODYARMOR_M + 15 * 9, 12, true); //hero
-		MakeSprite("MShirt", DEF_SPRID_BERK_M + 15 * 1, 12, true);
-		MakeSprite("MHauberk", DEF_SPRID_BERK_M + 15 * 2, 12, true);
-		MakeSprite("MHHauberk1", DEF_SPRID_BERK_M + 15 * 3, 12, true);
-		MakeSprite("MHHauberk2", DEF_SPRID_BERK_M + 15 * 4, 12, true);
-		m_cLoading = 56;
-	}
-	break;
-	case 56:
-	{
-		MakeSprite("MTrouser", DEF_SPRID_LEGG_M + 15 * 1, 12, true);
-		MakeSprite("MHTrouser", DEF_SPRID_LEGG_M + 15 * 2, 12, true);
-		MakeSprite("MCHoses", DEF_SPRID_LEGG_M + 15 * 3, 12, true);
-		MakeSprite("MLeggings", DEF_SPRID_LEGG_M + 15 * 4, 12, true);
-		MakeSprite("MHLeggings1", DEF_SPRID_LEGG_M + 15 * 5, 12, true); // hero
-		MakeSprite("MHLeggings2", DEF_SPRID_LEGG_M + 15 * 6, 12, true); // hero
-		MakeSprite("MShoes", DEF_SPRID_BOOT_M + 15 * 1, 12, true);
-		MakeSprite("MLBoots", DEF_SPRID_BOOT_M + 15 * 2, 12, true);
-		// Load Msw.pak batch (male swords)
-		SpriteLib::SpriteLoader::open_pak("Msw", [&](SpriteLib::SpriteLoader& loader) {
-			// Groups 1-4 (pak index 0-3)
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
-			// Groups 6-12 (pak index 5-11)
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
-		});
-		m_cLoading = 60;
-	}
-	break;
-	case 60:
-	{
-		MakeSprite("Mswx", DEF_SPRID_WEAPON_M + 64 * 5, 56, true);
-		MakeSprite("Msw2", DEF_SPRID_WEAPON_M + 64 * 13, 56, true);
-		MakeSprite("Msw3", DEF_SPRID_WEAPON_M + 64 * 14, 56, true);
-		MakeSprite("MStormBringer", DEF_SPRID_WEAPON_M + 64 * 15, 56, true);
-		MakeSprite("MDarkExec", DEF_SPRID_WEAPON_M + 64 * 16, 56, true);
-		MakeSprite("MKlonessBlade", DEF_SPRID_WEAPON_M + 64 * 17, 56, true);
-		MakeSprite("MKlonessAstock", DEF_SPRID_WEAPON_M + 64 * 18, 56, true);
-		MakeSprite("MDebastator", DEF_SPRID_WEAPON_M + 64 * 19, 56, true);
-		MakeSprite("MAxe1", DEF_SPRID_WEAPON_M + 64 * 20, 56, true);// Axe
-		MakeSprite("MAxe2", DEF_SPRID_WEAPON_M + 64 * 21, 56, true);
-		MakeSprite("MAxe3", DEF_SPRID_WEAPON_M + 64 * 22, 56, true);
-		MakeSprite("MAxe4", DEF_SPRID_WEAPON_M + 64 * 23, 56, true);
-		MakeSprite("MAxe5", DEF_SPRID_WEAPON_M + 64 * 24, 56, true);
-		MakeSprite("MPickAxe1", DEF_SPRID_WEAPON_M + 64 * 25, 56, true);
-		MakeSprite("MAxe6", DEF_SPRID_WEAPON_M + 64 * 26, 56, true);
-		MakeSprite("Mhoe", DEF_SPRID_WEAPON_M + 64 * 27, 56, true);
-		MakeSprite("MKlonessAxe", DEF_SPRID_WEAPON_M + 64 * 28, 56, true);
-		MakeSprite("MLightBlade", DEF_SPRID_WEAPON_M + 64 * 29, 56, true);
-		m_cLoading = 64;
-	}
-	break;
-	case 64:
-	{
-		MakeSprite("MHammer", DEF_SPRID_WEAPON_M + 64 * 30, 56, true);
-		MakeSprite("MBHammer", DEF_SPRID_WEAPON_M + 64 * 31, 56, true);
-		MakeSprite("MBabHammer", DEF_SPRID_WEAPON_M + 64 * 32, 56, true);
-		MakeSprite("MBShadowSword", DEF_SPRID_WEAPON_M + 64 * 33, 56, true);
-		MakeSprite("MBerserkWand", DEF_SPRID_WEAPON_M + 64 * 34, 56, true);
-		MakeSprite("Mstaff1", DEF_SPRID_WEAPON_M + 64 * 35, 56, true);// Staff
-		MakeSprite("Mstaff2", DEF_SPRID_WEAPON_M + 64 * 36, 56, true);
-		MakeSprite("MStaff3", DEF_SPRID_WEAPON_M + 64 * 37, 56, true);
-		MakeSprite("MReMagicWand", DEF_SPRID_WEAPON_M + 64 * 38, 56, true);
-		MakeSprite("MKlonessWand", DEF_SPRID_WEAPON_M + 64 * 39, 56, true);
-		// Bows 40 41 below
-		MakeSprite("MDirectBow", DEF_SPRID_WEAPON_M + 64 * 42, 56, true);
-		MakeSprite("MFireBow", DEF_SPRID_WEAPON_M + 64 * 43, 56, true);
-		m_cLoading = 68;
-	}
-	break;
-	case 68:
-	{
-		// Load Mbo.pak batch (male bows)
-		SpriteLib::SpriteLoader::open_pak("Mbo", [&](SpriteLib::SpriteLoader& loader) {
-			// First group goes to slot 40
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
-			// Second group goes to slot 41
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
-		});
-		// Load Msh.pak batch (male shields)
-		SpriteLib::SpriteLoader::open_pak("Msh", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 9; g++) {
-				for (i = 0; i < 7; i++) {
-					m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
-				}
-			}
-		});
-		m_cLoading = 72;
-	}
-	break;
-	case 72:
-	{
-		MakeSprite("Mmantle01", DEF_SPRID_MANTLE_M + 15 * 1, 12, true);
-		MakeSprite("Mmantle02", DEF_SPRID_MANTLE_M + 15 * 2, 12, true);
-		MakeSprite("Mmantle03", DEF_SPRID_MANTLE_M + 15 * 3, 12, true);
-		MakeSprite("Mmantle04", DEF_SPRID_MANTLE_M + 15 * 4, 12, true);
-		MakeSprite("Mmantle05", DEF_SPRID_MANTLE_M + 15 * 5, 12, true);
-		MakeSprite("Mmantle06", DEF_SPRID_MANTLE_M + 15 * 6, 12, true);
-		MakeSprite("MHelm1", DEF_SPRID_HEAD_M + 15 * 1, 12, true);
-		MakeSprite("MHelm2", DEF_SPRID_HEAD_M + 15 * 2, 12, true);
-		MakeSprite("MHelm3", DEF_SPRID_HEAD_M + 15 * 3, 12, true);
-		MakeSprite("MHelm4", DEF_SPRID_HEAD_M + 15 * 4, 12, true);
-		MakeSprite("MHCap1", DEF_SPRID_HEAD_M + 15 * 11, 12, true);
-		MakeSprite("MHCap2", DEF_SPRID_HEAD_M + 15 * 12, 12, true);
-		MakeSprite("MHHelm1", DEF_SPRID_HEAD_M + 15 * 9, 12, true);
-		MakeSprite("MHHelm2", DEF_SPRID_HEAD_M + 15 * 10, 12, true);
-		MakeSprite("NMHelm1", DEF_SPRID_HEAD_M + 15 * 5, 12, true);
-		MakeSprite("NMHelm2", DEF_SPRID_HEAD_M + 15 * 6, 12, true);
-		MakeSprite("NMHelm3", DEF_SPRID_HEAD_M + 15 * 7, 12, true);
-		MakeSprite("NMHelm4", DEF_SPRID_HEAD_M + 15 * 8, 12, true);
-		m_cLoading = 76;
-	}
-	break;
-	case 76:
-	{
-		// Load Wpt.pak batch (female undies)
-		SpriteLib::SpriteLoader::open_pak("Wpt", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 8; g++) {
-				for (i = 0; i < 12; i++) {
-					m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
-				}
-			}
-		});
-
-		// Load Whr.pak batch (female hair)
-		SpriteLib::SpriteLoader::open_pak("Whr", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 8; g++) {
-				for (i = 0; i < 12; i++) {
-					m_pSprite[DEF_SPRID_HAIR_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
-				}
-			}
-		});
-		m_cLoading = 80;
-	}
-	break;
-	case 80:
-	{
-		MakeSprite("WBodice1", DEF_SPRID_BODYARMOR_W + 15 * 1, 12, true);
-		MakeSprite("WBodice2", DEF_SPRID_BODYARMOR_W + 15 * 2, 12, true);
-		MakeSprite("WLArmor", DEF_SPRID_BODYARMOR_W + 15 * 3, 12, true);
-		MakeSprite("WCMail", DEF_SPRID_BODYARMOR_W + 15 * 4, 12, true);
-		MakeSprite("WSMail", DEF_SPRID_BODYARMOR_W + 15 * 5, 12, true);
-		MakeSprite("WPMail", DEF_SPRID_BODYARMOR_W + 15 * 6, 12, true);
-		MakeSprite("WRobe1", DEF_SPRID_BODYARMOR_W + 15 * 7, 12, true);
-		MakeSprite("WSanta", DEF_SPRID_BODYARMOR_W + 15 * 8, 12, true);
-		MakeSprite("WHRobe1", DEF_SPRID_BODYARMOR_W + 15 * 11, 12, true); // hero
-		MakeSprite("WHRobe2", DEF_SPRID_BODYARMOR_W + 15 * 12, 12, true); // hero
-		MakeSprite("WHPMail1", DEF_SPRID_BODYARMOR_W + 15 * 9, 12, true); //hero
-		MakeSprite("WHPMail2", DEF_SPRID_BODYARMOR_W + 15 * 10, 12, true); //hero
-		MakeSprite("WChemiss", DEF_SPRID_BERK_W + 15 * 1, 12, true);
-		MakeSprite("WShirt", DEF_SPRID_BERK_W + 15 * 2, 12, true);
-		MakeSprite("WHauberk", DEF_SPRID_BERK_W + 15 * 3, 12, true);
-		MakeSprite("WHHauberk1", DEF_SPRID_BERK_W + 15 * 4, 12, true);
-		MakeSprite("WHHauberk2", DEF_SPRID_BERK_W + 15 * 5, 12, true);
-		MakeSprite("WSkirt", DEF_SPRID_LEGG_W + 15 * 1, 12, true);
-		MakeSprite("WTrouser", DEF_SPRID_LEGG_W + 15 * 2, 12, true);
-		MakeSprite("WHTrouser", DEF_SPRID_LEGG_W + 15 * 3, 12, true);
-		MakeSprite("WHLeggings1", DEF_SPRID_LEGG_W + 15 * 6, 12, true);
-		MakeSprite("WHLeggings2", DEF_SPRID_LEGG_W + 15 * 7, 12, true);
-		MakeSprite("WCHoses", DEF_SPRID_LEGG_W + 15 * 4, 12, true);
-		MakeSprite("WLeggings", DEF_SPRID_LEGG_W + 15 * 5, 12, true);
-		MakeSprite("WShoes", DEF_SPRID_BOOT_W + 15 * 1, 12, true);
-		MakeSprite("WLBoots", DEF_SPRID_BOOT_W + 15 * 2, 12, true);
-		m_cLoading = 84;
-	}
-	break;
-	case 84:
-	{
-		// Load Wsw.pak batch (female swords)
-		SpriteLib::SpriteLoader::open_pak("Wsw", [&](SpriteLib::SpriteLoader& loader) {
-			// Groups 1-4 (pak index 0-3)
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 4] = loader.get_sprite(i + 56 * 3, true);
-			// Groups 6-12 (pak index 5-11)
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 6] = loader.get_sprite(i + 56 * 5, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 7] = loader.get_sprite(i + 56 * 6, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 8] = loader.get_sprite(i + 56 * 7, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 9] = loader.get_sprite(i + 56 * 8, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 10] = loader.get_sprite(i + 56 * 9, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 11] = loader.get_sprite(i + 56 * 10, true);
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 12] = loader.get_sprite(i + 56 * 11, true);
-		});
-		MakeSprite("Wswx", DEF_SPRID_WEAPON_W + 64 * 5, 56, true);
-		MakeSprite("Wsw2", DEF_SPRID_WEAPON_W + 64 * 13, 56, true);
-		MakeSprite("Wsw3", DEF_SPRID_WEAPON_W + 64 * 14, 56, true); // TheVampire
-		MakeSprite("WStormBringer", DEF_SPRID_WEAPON_W + 64 * 15, 56, true);
-		MakeSprite("WDarkExec", DEF_SPRID_WEAPON_W + 64 * 16, 56, true);
-		MakeSprite("WKlonessBlade", DEF_SPRID_WEAPON_W + 64 * 17, 56, true);
-		MakeSprite("WKlonessAstock", DEF_SPRID_WEAPON_W + 64 * 18, 56, true);
-		MakeSprite("WDebastator", DEF_SPRID_WEAPON_W + 64 * 19, 56, true);
-		m_cLoading = 88;
-	}
-	break;
-	case 88:
-	{
-		MakeSprite("WAxe1", DEF_SPRID_WEAPON_W + 64 * 20, 56, true);// Axe
-		MakeSprite("WAxe2", DEF_SPRID_WEAPON_W + 64 * 21, 56, true);
-		MakeSprite("WAxe3", DEF_SPRID_WEAPON_W + 64 * 22, 56, true);
-		MakeSprite("WAxe4", DEF_SPRID_WEAPON_W + 64 * 23, 56, true);
-		MakeSprite("WAxe5", DEF_SPRID_WEAPON_W + 64 * 24, 56, true);
-		MakeSprite("WpickAxe1", DEF_SPRID_WEAPON_W + 64 * 25, 56, true);
-		MakeSprite("WAxe6", DEF_SPRID_WEAPON_W + 64 * 26, 56, true);
-		MakeSprite("Whoe", DEF_SPRID_WEAPON_W + 64 * 27, 56, true);
-		MakeSprite("WKlonessAxe", DEF_SPRID_WEAPON_W + 64 * 28, 56, true);
-		MakeSprite("WLightBlade", DEF_SPRID_WEAPON_W + 64 * 29, 56, true);
-		MakeSprite("WHammer", DEF_SPRID_WEAPON_W + 64 * 30, 56, true);
-		MakeSprite("WBHammer", DEF_SPRID_WEAPON_W + 64 * 31, 56, true);
-		MakeSprite("WBabHammer", DEF_SPRID_WEAPON_W + 64 * 32, 56, true);
-		MakeSprite("WBShadowSword", DEF_SPRID_WEAPON_W + 64 * 33, 56, true);
-		MakeSprite("WBerserkWand", DEF_SPRID_WEAPON_W + 64 * 34, 56, true);
-		MakeSprite("Wstaff1", DEF_SPRID_WEAPON_W + 64 * 35, 56, true);// Staff
-		MakeSprite("Wstaff2", DEF_SPRID_WEAPON_W + 64 * 36, 56, true);
-		MakeSprite("WStaff3", DEF_SPRID_WEAPON_W + 64 * 37, 56, true);
-		MakeSprite("WKlonessWand", DEF_SPRID_WEAPON_W + 64 * 39, 56, true);
-		MakeSprite("WReMagicWand", DEF_SPRID_WEAPON_W + 64 * 38, 56, true);
-		// bows 40 41 below
-		MakeSprite("WDirectBow", DEF_SPRID_WEAPON_W + 64 * 42, 56, true);
-		MakeSprite("WFireBow", DEF_SPRID_WEAPON_W + 64 * 43, 56, true);
-		m_cLoading = 92;
-	}
-	break;
-	case 92:
-	{
-		MakeSprite("Wmantle01", DEF_SPRID_MANTLE_W + 15 * 1, 12, true);
-		MakeSprite("Wmantle02", DEF_SPRID_MANTLE_W + 15 * 2, 12, true);
-		MakeSprite("Wmantle03", DEF_SPRID_MANTLE_W + 15 * 3, 12, true);
-		MakeSprite("Wmantle04", DEF_SPRID_MANTLE_W + 15 * 4, 12, true);
-		MakeSprite("Wmantle05", DEF_SPRID_MANTLE_W + 15 * 5, 12, true);
-		MakeSprite("Wmantle06", DEF_SPRID_MANTLE_W + 15 * 6, 12, true);
-		MakeSprite("WHelm1", DEF_SPRID_HEAD_W + 15 * 1, 12, true);
-		MakeSprite("WHelm4", DEF_SPRID_HEAD_W + 15 * 4, 12, true);
-		MakeSprite("WHHelm1", DEF_SPRID_HEAD_W + 15 * 9, 12, true);
-		MakeSprite("WHHelm2", DEF_SPRID_HEAD_W + 15 * 10, 12, true);
-		MakeSprite("WHCap1", DEF_SPRID_HEAD_W + 15 * 11, 12, true);
-		MakeSprite("WHCap2", DEF_SPRID_HEAD_W + 15 * 12, 12, true);
-		MakeSprite("NWHelm1", DEF_SPRID_HEAD_W + 15 * 5, 12, true);
-		MakeSprite("NWHelm2", DEF_SPRID_HEAD_W + 15 * 6, 12, true);
-		MakeSprite("NWHelm3", DEF_SPRID_HEAD_W + 15 * 7, 12, true);
-		MakeSprite("NWHelm4", DEF_SPRID_HEAD_W + 15 * 8, 12, true);
-		m_cLoading = 96;
-	}
-	break;
-	case 96:
-	{
-		// Load Wbo.pak batch (female bows)
-		SpriteLib::SpriteLoader::open_pak("Wbo", [&](SpriteLib::SpriteLoader& loader) {
-			// First group goes to slot 40
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
-			// Second group goes to slot 41
-			for (i = 0; i < 56; i++) m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
-		});
-		// Load Wsh.pak batch (female shields)
-		SpriteLib::SpriteLoader::open_pak("Wsh", [&](SpriteLib::SpriteLoader& loader) {
-			for (int g = 0; g < 9; g++) {
-				for (i = 0; i < 7; i++) {
-					m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
-				}
-			}
-		});
-		m_cLoading = 100;
-	}
-	break;
-	case 100:
-	{
-		MakeEffectSpr("effect", 0, 10, false);
-		MakeEffectSpr("effect2", 10, 3, false);
-		MakeEffectSpr("effect3", 13, 6, false);
-		MakeEffectSpr("effect4", 19, 5, false);
-		// Load effect5.pak batch (sprites 1-7 to positions 24-30, sprite 0 is EnergySphere)
-		SpriteLib::SpriteLoader::open_pak("effect5", [&](SpriteLib::SpriteLoader& loader) {
-			for (i = 0; i <= 6; i++) {
-				m_pEffectSpr[i + 24] = loader.get_sprite(i + 1, false);
-			}
-		});
-		MakeEffectSpr("CruEffect1", 31, 9, false);
-		MakeEffectSpr("effect6", 40, 5, false);
-		MakeEffectSpr("effect7", 45, 12, false);
-		MakeEffectSpr("effect8", 57, 9, false);
-		MakeEffectSpr("effect9", 66, 21, false);
-
-		MakeEffectSpr("effect10", 87, 2, false); // Effets Hero items
-		MakeEffectSpr("effect11", 89, 14, false); // Cancel, stormBlade, resu, GateHeldenian....etc
-		//NB: Charge 15 du client 3.51, mais il n'y a que 14 ds le PAK
-		MakeEffectSpr("effect11s", 104, 1, false); // effet sort mais je ne sais pas lequel
-		// Manque des effets ici .....
-		// MakeEffectSpr( "effect13", 108, 2, false); // not loaded by client 351 (Heldenian gates death)
-		//MakeEffectSpr( "yseffect2", 141, 8, false); // Wrong in 351 client...
-		MakeEffectSpr("yseffect2", 140, 8, false); // Abaddon's death
-		MakeEffectSpr("effect12", 148, 4, false); // Slates auras
-		MakeEffectSpr("yseffect3", 152, 16, false); // Fumerolles ou ame qui s'envole
-		//MakeEffectSpr( "yseffect4", 167, 7, false); // Wrong in 351 client
-		MakeEffectSpr("yseffect4", 133, 7, false); // Abaddon's map thunder.
-
-		// Initialize EffectManager with loaded sprites
-		m_pEffectManager->SetEffectSprites(m_pEffectSpr);
-
-		// Pre-load all sound effects into memory
-		AudioManager::Get().LoadSounds();
-
-		ChangeGameMode(GameMode::MainMenu);
-	}
-	break;
-	}
-}
-/*********************************************************************************************************************
-** 	void CGame::DrawScreen_OnLoadingProgress()																	**
-**  description			:: loading becomes progressbar																**
-**********************************************************************************************************************/
-void CGame::DrawScreen_OnLoadingProgress()
-{
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOADING, 0 + SCREENX, 0 + SCREENY, 0, true);
-	DrawVersion();
-	int iBarWidth;
-	iBarWidth = (int)m_cLoading;
-	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->DrawWidth(472 + SCREENX, 442 + SCREENY, 1, iBarWidth);
-}
-
 void CGame::OnTimer()
 {
 	if (GameModeManager::GetModeValue() < 0) return;
@@ -3052,56 +2315,6 @@ void CGame::OnTimer()
 			}
 		}
 	}
-}
-
-bool CGame::bDlgBoxPress_Inventory(short msX, short msY)
-{
-	int i;
-	char  cItemID;
-	short sX, sY, x1, x2, y1, y2;
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Inventory) == false) return false;
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) return false;
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == true) return false;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::Inventory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Inventory).sY;
-
-	for (i = 0; i < DEF_MAXITEMS; i++)
-		if (m_cItemOrder[DEF_MAXITEMS - 1 - i] != -1) {
-			cItemID = m_cItemOrder[DEF_MAXITEMS - 1 - i];
-
-			if (m_pItemList[cItemID] != 0)
-			{
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
-				if ((m_bIsItemDisabled[cItemID] == false) && (m_bIsItemEquipped[cItemID] == false) && (msX > x1) && (msX < x2) && (msY > y1) && (msY < y2)) {
-
-					if (m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CheckCollision(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame, msX, msY) == true)
-					{
-						_SetItemOrder(0, cItemID);
-						if ((m_bIsGetPointingMode == true) && (m_iPointCommandType < 100) && (m_iPointCommandType >= 0)
-							&& (m_pItemList[m_iPointCommandType] != 0)
-							&& (m_pItemList[m_iPointCommandType]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
-							&& (m_iPointCommandType != cItemID))
-						{
-							PointCommandHandler(0, 0, cItemID);
-							//m_pPlayer->m_Controller.SetCommandAvailable(false);
-							m_bIsGetPointingMode = false;
-						}
-						else
-						{
-							CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - (sX + 32 + m_pItemList[cItemID]->m_sX), msY - (sY + 44 + m_pItemList[cItemID]->m_sY));
-						}
-						return true;
-					}
-				}
-			}
-		}
-	return false;
 }
 
 void CGame::_SetItemOrder(char cWhere, char cItemID)
@@ -8926,415 +8139,189 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
+// Equipment sprite indices for character rendering
+struct MenuCharEquipment {
+	int body, undies, hair, bodyArmor, armArmor, pants, boots, weapon, shield, mantle, helm;
+	int weaponColor, shieldColor, armorColor, mantleColor, armColor, pantsColor, bootsColor, helmColor;
+	bool skirtDraw;
+};
+
+// Calculate equipment indices for human characters (male/female) in menu
+static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, MenuCharEquipment& eq)
+{
+	// Sprite base IDs differ by gender
+	int UNDIES  = isFemale ? DEF_SPRID_UNDIES_W    : DEF_SPRID_UNDIES_M;
+	int HAIR    = isFemale ? DEF_SPRID_HAIR_W      : DEF_SPRID_HAIR_M;
+	int ARMOR   = isFemale ? DEF_SPRID_BODYARMOR_W : DEF_SPRID_BODYARMOR_M;
+	int BERK    = isFemale ? DEF_SPRID_BERK_W      : DEF_SPRID_BERK_M;
+	int LEGG    = isFemale ? DEF_SPRID_LEGG_W      : DEF_SPRID_LEGG_M;
+	int BOOT    = isFemale ? DEF_SPRID_BOOT_W      : DEF_SPRID_BOOT_M;
+	int WEAPON  = isFemale ? DEF_SPRID_WEAPON_W    : DEF_SPRID_WEAPON_M;
+	int SHIELD  = isFemale ? DEF_SPRID_SHIELD_W    : DEF_SPRID_SHIELD_M;
+	int MANTLE  = isFemale ? DEF_SPRID_MANTLE_W    : DEF_SPRID_MANTLE_M;
+	int HEAD    = isFemale ? DEF_SPRID_HEAD_W      : DEF_SPRID_HEAD_M;
+
+	// Walking (sAppr2 & 0xF000) uses pose 3, standing uses pose 2
+	bool isWalking = (state.m_sAppr2 & 0xF000) != 0;
+	int pose = isWalking ? 3 : 2;
+
+	// Extract appearance values
+	int undiesType   = (state.m_sAppr1 & 0x000F);
+	int hairType     = (state.m_sAppr1 & 0x0F00) >> 8;
+	int armorType    = (state.m_sAppr3 & 0xF000) >> 12;
+	int armType      = (state.m_sAppr3 & 0x000F);
+	int pantsType    = (state.m_sAppr3 & 0x0F00) >> 8;
+	int helmType     = (state.m_sAppr3 & 0x00F0) >> 4;
+	int bootsType    = (state.m_sAppr4 & 0xF000) >> 12;
+	int weaponType   = (state.m_sAppr2 & 0x0FF0) >> 4;
+	int shieldType   = (state.m_sAppr2 & 0x000F);
+	int mantleType   = (state.m_sAppr4 & 0x0F00) >> 8;
+	bool hideArmor   = (state.m_sAppr4 & 0x80) != 0;
+
+	// Body index
+	eq.body = 500 + (state.m_sOwnerType - 1) * 8 * 15 + (pose * 8);
+
+	// Equipment indices (-1 = not equipped)
+	eq.undies    = UNDIES + undiesType * 15 + pose;
+	eq.hair      = HAIR + hairType * 15 + pose;
+	eq.bodyArmor = (!hideArmor && armorType != 0) ? ARMOR + armorType * 15 + pose : -1;
+	eq.armArmor  = (armType != 0)   ? BERK + armType * 15 + pose : -1;
+	eq.pants     = (pantsType != 0) ? LEGG + pantsType * 15 + pose : -1;
+	eq.boots     = (bootsType != 0) ? BOOT + bootsType * 15 + pose : -1;
+	eq.mantle    = (mantleType != 0) ? MANTLE + mantleType * 15 + pose : -1;
+	eq.helm      = (helmType != 0)  ? HEAD + helmType * 15 + pose : -1;
+
+	// Weapon/shield use direction in frame calculation
+	eq.weapon = (weaponType != 0) ? WEAPON + weaponType * 64 + 8 * pose + (state.m_iDir - 1) : -1;
+	eq.shield = (shieldType != 0) ? SHIELD + shieldType * 8 + pose : -1;
+
+	// Female skirt check (pants type 1)
+	eq.skirtDraw = isFemale && (pantsType == 1);
+}
+
 SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	short dx, dy;
-	int iBodyIndex, iHairIndex, iUndiesIndex, iArmArmorIndex, iBodyArmorIndex, iPantsIndex, iBootsIndex, iHelmIndex, iR, iG, iB;
-	int iWeaponIndex, iShieldIndex, iAdd, iMantleIndex;
-	bool bInv = false;
-	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
-	int iSkirtDraw = 0;
+	// Extract equipment colors from packed appearance color
+	MenuCharEquipment eq = {};
+	eq.weaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
+	eq.shieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
+	eq.armorColor  = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
+	eq.mantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
+	eq.armColor    = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
+	eq.pantsColor  = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
+	eq.bootsColor  = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
+	eq.helmColor   = (m_entityState.m_iApprColor & 0x0000000F);
 
-	iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-	iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-	iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-	iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-	iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-	iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-	iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-	iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
-
+	// Calculate equipment indices based on character type
+	bool isMob = false;
 	switch (m_entityState.m_sOwnerType) {
-	case 1:
-	case 2:
-	case 3:
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
-		{
-			iAdd = 3;
-			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
-			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
-					iBodyArmorIndex = -1;
-				else
-				{
-					iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
-				}
-			}
-			else iBodyArmorIndex = -1;
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
-				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
-				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
-				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
-				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
-				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
-				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
-				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
-		}
-		else
-		{
-			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
-			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
-					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
-			}
-			else iBodyArmorIndex = -1;
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
-				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
-				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
-				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
-				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
-				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
-				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
-				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
-		}
+	case 1: case 2: case 3:  // Male
+		CalcHumanEquipment(m_entityState, false, eq);
 		break;
-	case 4:
-	case 5:
-	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
-		{
-			iAdd = 3;
-			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
-			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
-					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
-			}
-			else  iBodyArmorIndex = -1;
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
-				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
-				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
-				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
-				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
-				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
-				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
-				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
-		}
-		else
-		{
-			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
-			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
-					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
-			}
-			else iBodyArmorIndex = -1;
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
-				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
-				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
-				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
-				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
-				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
-				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
-				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
-		}
+	case 4: case 5: case 6:  // Female
+		CalcHumanEquipment(m_entityState, true, eq);
 		break;
-	default:
-		iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		iUndiesIndex = -1;
-		iHairIndex = -1;
-		iBodyArmorIndex = -1;
-		iArmArmorIndex = -1;
-		iBootsIndex = -1;
-		iPantsIndex = -1;
-		iWeaponIndex = -1;
-		iShieldIndex = -1;
-		iHelmIndex = -1;
+	default:  // Mob/NPC
+		eq.body = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		eq.undies = eq.hair = eq.bodyArmor = eq.armArmor = -1;
+		eq.boots = eq.pants = eq.weapon = eq.shield = eq.helm = eq.mantle = -1;
+		isMob = true;
 		break;
 	}
-	dx = 0;
-	dy = 0;
+	// Helper lambdas for drawing with optional color tint
+	int dirFrame = (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame;
+	int hairColor = (m_entityState.m_sAppr1 & 0x00F0) >> 4;
+	int iR, iG, iB;
+
+	auto drawEquipment = [&](int idx, int color) {
+		if (idx == -1) return;
+		if (color == 0)
+			m_pSprite[idx]->Draw(sX, sY, dirFrame);
+		else
+			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(m_wR[color] - m_wR[0], m_wG[color] - m_wG[0], m_wB[color] - m_wB[0]));
+	};
+
+	auto drawWeapon = [&]() {
+		if (eq.weapon == -1) return;
+		if (eq.weaponColor == 0)
+			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame);
+		else
+			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[eq.weaponColor] - m_wR[0], m_wWG[eq.weaponColor] - m_wG[0], m_wWB[eq.weaponColor] - m_wB[0]));
+	};
+
+	auto drawMantle = [&](int order) {
+		if (eq.mantle != -1 && _cMantleDrawingOrder[m_entityState.m_iDir] == order)
+			drawEquipment(eq.mantle, eq.mantleColor);
+	};
+
+	// Check if mob type should skip shadow
+	auto shouldSkipShadow = [&]() {
+		switch (m_entityState.m_sOwnerType) {
+		case 10: case 35: case 50: case 51: case 60: case 65: case 81: case 91:
+			return true;
+		default:
+			return false;
+		}
+	};
+
+	// Draw body shadow
+	if (!shouldSkipShadow() && ConfigManager::Get().GetDetailLevel() != 0 && !isMob)
+		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+
+	// Draw weapon first if drawing order is 1
 	if (_cDrawingOrder[m_entityState.m_iDir] == 1)
-	{
-		if (iWeaponIndex != -1)
-		{
-			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
-			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
-		}
-		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-		case 10: // Slime
-		case 35: // Energy Sphere
-		case 50: // TW
-		case 51: // CP
-		case 60: // Plant
-		case 65: // IceGolem
-			//case 66: // Wyvern
-			//case 73: // Fire Wyvern
-		case 81: // Abaddon
-		case 91: // Gate
-			break;
-		default:
-			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
-			{
-				if (sX < 50)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
-			}
-			break;
-		}
-		if (bInv == true)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
+		drawWeapon();
 
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-		if (iUndiesIndex != -1)
-		{
-			if (bInv) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
-			else m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-		}
-
-		if ((iHairIndex != -1) && (iHelmIndex == -1))
-		{
-			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
-		}
-		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
-		{
-			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
-		}
-		if (iPantsIndex != -1)
-		{
-			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
-		}
-		if (iArmArmorIndex != -1)
-		{
-			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
-		}
-		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
-		{
-			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
-		}
-		if (iBodyArmorIndex != -1)
-		{
-			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
-		}
-		if (iHelmIndex != -1)
-		{
-			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
-		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-
-		if (iShieldIndex != -1)
-		{
-			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
-		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-	}
+	// Draw body
+	if (isMob)
+		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 	else
+		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
+
+	// Draw equipment layers (back-to-front order)
+	drawMantle(0);  // Mantle behind body
+	drawEquipment(eq.undies, 0);
+
+	// Hair (only if no helm)
+	if (eq.hair != -1 && eq.helm == -1)
 	{
-		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-		case 10: // Slime
-		case 35: // Energy Sphere
-		case 50: // TW
-		case 51: // CP
-		case 60: // Plant
-		case 65: // IceGolem
-			//case 66: // Wyvern
-			//case 73: // Fire Wyvern
-		case 81: // Abaddon
-		case 91: // Gate
-			break;
-		default:
-			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
-			{
-				if (sX < 50)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
-				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
-			}
-			break;
-		}
-
-		if (bInv == true)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
-
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-
-		if ((iHairIndex != -1) && (iHelmIndex == -1))
-		{
-			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-			m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
-		}
-		if ((iBootsIndex != -1) && (iSkirtDraw == 1))
-		{
-			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
-		}
-		if (iPantsIndex != -1)
-		{
-			if (iPantsColor == 0)
-				m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
-		}
-		if (iArmArmorIndex != -1)
-		{
-			if (iArmColor == 0)
-				m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
-		}
-		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
-		{
-			if (iBootsColor == 0)
-				m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
-		}
-		if (iBodyArmorIndex != -1)
-		{
-			if (iArmorColor == 0)
-				m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
-		}
-		if (iHelmIndex != -1)
-		{
-			if (iHelmColor == 0)
-				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
-		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-
-		if (iShieldIndex != -1)
-		{
-			if (iShieldColor == 0)
-				m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
-		}
-		if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1))
-		{
-			if (iMantleColor == 0)
-				m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
-		}
-		if (iWeaponIndex != -1)
-		{
-			if (iWeaponColor == 0)
-				m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
-			else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
-		}
+		_GetHairColorRGB(hairColor, &iR, &iG, &iB);
+		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
+	// Boots before pants if wearing skirt
+	if (eq.skirtDraw)
+		drawEquipment(eq.boots, eq.bootsColor);
+
+	drawEquipment(eq.pants, eq.pantsColor);
+	drawEquipment(eq.armArmor, eq.armColor);
+
+	// Boots after pants if not wearing skirt
+	if (!eq.skirtDraw)
+		drawEquipment(eq.boots, eq.bootsColor);
+
+	drawEquipment(eq.bodyArmor, eq.armorColor);
+	drawEquipment(eq.helm, eq.helmColor);
+	drawMantle(2);  // Mantle over armor
+	drawEquipment(eq.shield, eq.shieldColor);
+	drawMantle(1);  // Mantle in front
+
+	// Draw weapon last if drawing order is not 1
+	if (_cDrawingOrder[m_entityState.m_iDir] != 1)
+		drawWeapon();
+
+	// Chat message
 	if (m_entityState.m_iChatIndex != 0)
 	{
 		if (m_pChatMsgList[m_entityState.m_iChatIndex] != 0)
-		{
-			DrawChatMsgBox(sX + dx, sY + dy, m_entityState.m_iChatIndex, false);
-		}
+			DrawChatMsgBox(sX, sY, m_entityState.m_iChatIndex, false);
 		else
-		{
 			m_pMapData->ClearChatMsg(indexX, indexY);
-		}
 	}
-	m_entityState.m_iMoveOffsetX = dx;
-	m_entityState.m_iMoveOffsetY = dy;
-	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
+
+	m_entityState.m_iMoveOffsetX = 0;
+	m_entityState.m_iMoveOffsetY = 0;
+	return m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
 SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
@@ -11545,235 +10532,6 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
-int CGame::_iCheckDlgBoxFocus(short msX, short msY, char cButtonSide)
-{
-	int i;
-	char         cDlgID;
-	short        sX, sY;
-	uint32_t dwTime = m_dwCurTime;
-	if (cButtonSide == 1) {
-		// Snoopy: 41->61
-		for (i = 0; i < 61; i++)
-			// Snoopy: 40->60
-			if (m_dialogBoxManager.OrderAt(60 - i) != 0) 	// Snoopy: 40->60
-			{
-				cDlgID = m_dialogBoxManager.OrderAt(60 - i);
-				if ((m_dialogBoxManager.Info(cDlgID).sX <= msX) && ((m_dialogBoxManager.Info(cDlgID).sX + m_dialogBoxManager.Info(cDlgID).sSizeX) >= msX) &&
-					(m_dialogBoxManager.Info(cDlgID).sY <= msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) >= msY))
-				{
-					m_dialogBoxManager.EnableDialogBox(cDlgID, 0, 0, 0);
-
-					CursorTarget::SetPrevPosition(msX, msY);
-					CursorTarget::SetSelection(CursorTarget::GetSelectedType(), CursorTarget::GetSelectedID(), msX - m_dialogBoxManager.Info(cDlgID).sX, msY - m_dialogBoxManager.Info(cDlgID).sY);
-
-					switch (cDlgID) {
-					case 1:
-						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						break;
-
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-
-					case 12:
-					case 13:
-					case 16:
-					case 17:
-					case 20:
-					case 22:
-					case 23:
-					case 24:
-					case 25:
-					case 28:
-					case 29:
-					case 30:
-					case 31:
-					case 32:
-					case 33:
-					case 34:
-					case 35:
-					case 36:
-					case 37:
-					case 38:
-					case 40:
-					case 50: // resur
-						// NPC
-					case 67:
-					case 68:
-					case 69:
-					case 44:
-					case 49:
-					case 54:
-					case 58:
-						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						break;
-
-					case 2:	// (Sell Item)
-						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false)
-						{
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						break;
-
-					case 10:
-						sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
-						if ((msX >= sX + 340) && (msX <= sX + 360) && (msY >= sY + 22) && (msY <= sY + 138)) {
-							m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if (m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 11:
-						sX = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY;
-						if ((m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode == 0) && (msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 20) && (msY <= sY + 330)) {
-							m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if ((m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bIsScrollSelected == false)) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 14:
-						sX = m_dialogBoxManager.Info(DialogBoxId::Bank).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::Bank).sY;
-						if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-							m_dialogBoxManager.Info(DialogBoxId::Bank).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if (m_dialogBoxManager.Info(DialogBoxId::Bank).bIsScrollSelected == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 15:
-						sX = m_dialogBoxManager.Info(DialogBoxId::Skill).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::Skill).sY;
-						if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
-						{
-							m_dialogBoxManager.Info(DialogBoxId::Skill).bIsScrollSelected = true;
-							return -1;
-						}
-						if (m_dialogBoxManager.Info(DialogBoxId::Skill).bIsScrollSelected == false)
-						{
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 18:
-						sX = m_dialogBoxManager.Info(DialogBoxId::Text).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::Text).sY;
-						if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-							m_dialogBoxManager.Info(DialogBoxId::Text).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if (m_dialogBoxManager.Info(DialogBoxId::Text).bIsScrollSelected == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 19:
-						sX = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::SystemMenu).sY;
-						if ((msX >= sX + 126) && (msX <= sX + 238) && (msY >= sY + 122) && (msY <= sY + 138)) {
-							m_dialogBoxManager.Info(DialogBoxId::SystemMenu).bIsScrollSelected = true;
-							return -1;
-						}
-						if ((msX >= sX + 126) && (msX <= sX + 238) && (msY >= sY + 139) && (msY <= sY + 155)) {
-							m_dialogBoxManager.Info(DialogBoxId::SystemMenu).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if (m_dialogBoxManager.Info(DialogBoxId::SystemMenu).bIsScrollSelected == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 21:
-						sX = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
-						sY = m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
-						if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320)) {
-							m_dialogBoxManager.Info(DialogBoxId::NpcTalk).bIsScrollSelected = true;
-							return -1;
-						}
-
-						if (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).bIsScrollSelected == false) {
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						else return -1;
-						break;
-
-					case 26:
-						if (m_dialogBoxManager.HandlePress(cDlgID, msX, msY) == false)
-						{
-							CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						}
-						break;
-
-					case 27:
-						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						break;
-
-					case 41: //Snoopy: Drag exchange confirmation dialog
-						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						break;
-
-					case 42:  // Snoopy: Drag majestic stats
-						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						break;
-
-					case 51:  // Snoopy: Drag Gail menu
-						CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, CursorTarget::GetDragDistX(), CursorTarget::GetDragDistY());
-						break;
-					}
-					return 1;
-				}
-			}
-		return 0;
-	}
-	else if (cButtonSide == 2)
-	{
-		if ((dwTime - m_dwDialogCloseTime) < 300) return 0;
-		// Snoopy: 40->60
-		for (i = 0; i < 61; i++)
-			// Snoopy: 40->60
-			if (m_dialogBoxManager.OrderAt(60 - i) != 0) {
-				// Snoopy: 40->60
-				cDlgID = m_dialogBoxManager.OrderAt(60 - i);
-				if ((m_dialogBoxManager.Info(cDlgID).sX < msX) && ((m_dialogBoxManager.Info(cDlgID).sX + m_dialogBoxManager.Info(cDlgID).sSizeX) > msX) &&
-					(m_dialogBoxManager.Info(cDlgID).sY < msY) && ((m_dialogBoxManager.Info(cDlgID).sY + m_dialogBoxManager.Info(cDlgID).sSizeY) > msY))
-				{
-					if ((cDlgID != 5) && (cDlgID != 6) && (cDlgID != 8) && (cDlgID != 12) && ((cDlgID != 23) || (m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).cMode < 3)) && (cDlgID != 24) && (cDlgID != 27) && (cDlgID != 34) &&
-						(cDlgID != 33) && !((cDlgID == 32) && ((m_dialogBoxManager.Info(cDlgID).cMode == 1) || (m_dialogBoxManager.Info(cDlgID).cMode == 3))))
-						m_dialogBoxManager.DisableDialogBox(cDlgID);
-					m_dwDialogCloseTime = dwTime;
-					return 1;
-				}
-			}
-	}
-	return 0;
-}
 
 void CGame::InitItemList(char* pData)
 {
@@ -13691,290 +12449,6 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	}
 }
 
-bool CGame::bDlgBoxPress_Character(short msX, short msY)
-{
-	int i;
-	short sX, sY, sSprH, sFrame;
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) return false;
-
-	sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY;
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) cEquipPoiStatus[i] = -1;
-	for (i = 0; i < DEF_MAXITEMS; i++)
-	{
-		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))	cEquipPoiStatus[m_pItemList[i]->m_cEquipPos] = i;
-	}
-
-	if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 3))
-	{
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 72, sY + 135, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 90, sY + 170, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 41, sY + 137, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK], 0, 0);
-				return true;
-			}
-		}
-	}
-	else if ((m_pPlayer->m_sPlayerType >= 4) && (m_pPlayer->m_sPlayerType <= 6))
-	{
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 72, sY + 139, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_HEAD], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RFINGER], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LFINGER], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_NECK], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_TWOHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_RHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 84, sY + 175, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_LHAND], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BODY], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_FULLBODY], 0, 0);
-				return true;
-			}
-		}
-		if ((cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1))
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BOOTS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_ARMS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_PANTS], 0, 0);
-				return true;
-			}
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1)
-		{
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 45, sY + 143, sFrame, msX, msY))
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, m_sItemEquipmentStatus[DEF_EQUIPPOS_BACK], 0, 0);
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 void CGame::CivilRightAdmissionHandler(char* pData)
 {
 	uint16_t wResult;
@@ -14668,149 +13142,6 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 		m_pEffectSpr[6]->Draw(iX1, iY1, (rand() % 2), SpriteLib::DrawParams::Alpha(0.5f));
 		break;
 	}
-}
-
-bool CGame::bDlgBoxPress_SkillDlg(short msX, short msY)
-{
-	int i, iAdjX, iAdjY;
-	char  cItemID;
-	short sX, sY, x1, y1, x2, y2, sArray[10];
-	short itemDrawX, itemDrawY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY;
-	iAdjX = 5;
-	iAdjY = 10;
-	switch (m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode) {
-	case 1:
-		std::memset(sArray, 0, sizeof(sArray));
-		sArray[1] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
-		sArray[2] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;
-		sArray[3] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3;
-		sArray[4] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4;
-		sArray[5] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5;
-		sArray[6] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6;
-		for (i = 1; i <= 6; i++)
-			if ((sArray[i] != -1) && (m_pItemList[sArray[i]] != 0))
-			{
-				cItemID = (char)sArray[i];
-				switch (i) {
-				case 1: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 55; break;
-				case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 55; break;
-				case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
-				case 4: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 100; break;
-				case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1; itemDrawY = sY + iAdjY + 100; break;
-				case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
-				}
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
-				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
-				{
-					switch (i) {
-					case 1: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1; break;
-					case 2: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1; break;
-					case 3: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1; break;
-					case 4: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1; break;
-					case 5: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1; break;
-					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
-					}
-					m_bIsItemDisabled[cItemID] = false;
-					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
-					return true;
-				}
-			}
-		break;
-
-	case 4:
-		std::memset(sArray, 0, sizeof(sArray));
-		sArray[1] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
-		sArray[2] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;
-		sArray[3] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3;
-		sArray[4] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4;
-		sArray[5] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5;
-		sArray[6] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6;
-		for (i = 1; i <= 6; i++)
-			if ((sArray[i] != -1) && (m_pItemList[sArray[i]] != 0))
-			{
-				cItemID = (char)sArray[i];
-				switch (i) {
-				case 1: itemDrawX = sX + iAdjX + 55 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
-				case 2: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
-				case 3: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 55 + 180; break;
-				case 4: itemDrawX = sX + iAdjX + 55 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
-				case 5: itemDrawX = sX + iAdjX + 55 + 45 * 1 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
-				case 6: itemDrawX = sX + iAdjX + 55 + 45 * 2 + 30 + 13; itemDrawY = sY + iAdjY + 100 + 180; break;
-				}
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
-
-				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
-				{
-					switch (i) {
-					case 1: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1; break;
-					case 2: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1; break;
-					case 3: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1; break;
-					case 4: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1; break;
-					case 5: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1; break;
-					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
-					}
-					m_bIsItemDisabled[cItemID] = false;
-					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
-					m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-					return true;
-				}
-			}
-		break;
-		// Crafting
-	case 7:
-		std::memset(sArray, 0, sizeof(sArray));
-		sArray[1] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
-		sArray[2] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;
-		sArray[3] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3;
-		sArray[4] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4;
-		sArray[5] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5;
-		sArray[6] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6;
-		for (i = 1; i <= 6; i++)
-			if ((sArray[i] != -1) && (m_pItemList[sArray[i]] != 0))
-			{
-				cItemID = (char)sArray[i];
-				switch (i) {
-				case 1: itemDrawX = sX + iAdjX + 55; itemDrawY = sY + iAdjY + 55; break;
-				case 2: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 40; break;
-				case 3: itemDrawX = sX + iAdjX + 65 + 45 * 2; itemDrawY = sY + iAdjY + 55; break;
-				case 4: itemDrawX = sX + iAdjX + 65; itemDrawY = sY + iAdjY + 100; break;
-				case 5: itemDrawX = sX + iAdjX + 65 + 45 * 1; itemDrawY = sY + iAdjY + 115; break;
-				case 6: itemDrawX = sX + iAdjX + 75 + 45 * 2; itemDrawY = sY + iAdjY + 100; break;
-				}
-				m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(itemDrawX, itemDrawY, m_pItemList[cItemID]->m_sSpriteFrame);
-				x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
-				y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
-				x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
-				y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
-				if ((msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
-				{
-					switch (i) {
-					case 1: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1; break;
-					case 2: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1; break;
-					case 3: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1; break;
-					case 4: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1; break;
-					case 5: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1; break;
-					case 6: m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1; break;
-					}
-					m_bIsItemDisabled[cItemID] = false;
-					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID, msX - itemDrawX, msY - itemDrawY);
-					return true;
-				}
-			}
-		break;
-	}
-
-	return false;
 }
 // Snoopy: added StormBlade
 int CGame::_iGetAttackType()
@@ -16388,502 +14719,6 @@ void CGame::EraseItem(char cItemID)
 	m_bIsItemDisabled[cItemID] = false;
 }
 
-void CGame::DlbBoxDoubleClick_Character(short msX, short msY)
-{
-	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS], cItemID = -1;
-	short sX, sY, sSprH, sFrame;
-	int i;
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) return;
-	sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY;
-
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
-		cEquipPoiStatus[i] = -1;
-
-	for (i = 0; i < DEF_MAXITEMS; i++) {
-		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))	cEquipPoiStatus[m_pItemList[i]->m_cEquipPos] = i;
-	}
-	if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 3))
-	{
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 41, sY + 137, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BACK];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_PANTS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_ARMS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BODY];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 90, sY + 170, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 57, sY + 186, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_NECK];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RFINGER];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LFINGER];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH]->CheckCollision(sX + 72, sY + 135, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_HEAD];
-		}
-	}
-	else if ((m_pPlayer->m_sPlayerType >= 4) && (m_pPlayer->m_sPlayerType <= 6)) {
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BACK] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BACK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 45, sY + 143, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BACK];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_PANTS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_ARMS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_ARMS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_ARMS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BOOTS] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BOOTS]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BOOTS];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_BODY] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_BODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_BODY];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 171, sY + 290, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_FULLBODY];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 84, sY + 175, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 60, sY + 191, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_NECK] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_NECK]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 35, sY + 120, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_NECK];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_RFINGER] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_RFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 32, sY + 193, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_RFINGER];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_LFINGER] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_LFINGER]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 98, sY + 182, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_LFINGER];
-		}
-		if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] != -1) {
-			sSprH = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSprite;
-			sFrame = m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_HEAD]]->m_sSpriteFrame;
-			if (m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->CheckCollision(sX + 72, sY + 139, sFrame, msX, msY))
-				cItemID = cEquipPoiStatus[DEF_EQUIPPOS_HEAD];
-		}
-	}
-
-	if (cItemID == -1 || m_pItemList[cItemID] == 0) return;
-	if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT) || (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) || (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW) || (m_pItemList[cItemID]->m_dwCount > 1)) return;
-	if ((m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) == true) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24))
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0, m_pItemList[cItemID]->m_cName, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4); // v1.4
-	else {
-		if (m_bIsItemEquipped[CursorTarget::GetSelectedID()] == true)
-		{
-			char cStr1[64], cStr2[64], cStr3[64];
-			GetItemName(m_pItemList[CursorTarget::GetSelectedID()].get(), cStr1, cStr2, cStr3);
-			std::memset(G_cTxt, 0, sizeof(G_cTxt));
-			wsprintf(G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);//"
-			AddEventList(G_cTxt, 10);
-			if (memcmp(m_pItemList[CursorTarget::GetSelectedID()]->m_cName, "AngelicPendant", 14) == 0) PlaySound('E', 53, 0);
-			else PlaySound('E', 29, 0);
-
-			// Remove Angelic Stats
-			if ((m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos >= 11)
-				&& (m_pItemList[CursorTarget::GetSelectedID()]->m_cItemType == 1))
-			{
-				char cItemID = CursorTarget::GetSelectedID();
-				if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
-				{
-					m_pPlayer->m_iAngelicStr = 0;
-				}
-				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-				{
-					m_pPlayer->m_iAngelicDex = 0;
-				}
-				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
-				{
-					m_pPlayer->m_iAngelicInt = 0;
-				}
-				else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
-				{
-					m_pPlayer->m_iAngelicMag = 0;
-				}
-			}
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, CursorTarget::GetSelectedID(), 0, 0, 0);
-			m_bIsItemEquipped[CursorTarget::GetSelectedID()] = false;
-			m_sItemEquipmentStatus[m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos] = -1;
-			CursorTarget::ClearSelection();
-		}
-	}
-}
-
-void CGame::DlbBoxDoubleClick_GuideMap(short msX, short msY)
-{
-	if (CursorTarget::GetCursorFrame() != 0) return;
-	if (m_cMapIndex < 0) return;
-
-	short sX, sY, shX, shY, szX, szY;
-	sX = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sY;
-	szX = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
-	szY = m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY;
-	if (sX < 20) sX = 0;
-	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_MAX_X - 128 - 20) sX = LOGICAL_MAX_X - 128;
-	if (sY > 547 - 128 - 20) sY = 547 - 128;
-	if (ConfigManager::Get().IsZoomMapEnabled())
-	{
-		shX = m_pPlayer->m_sPlayerX - 64;
-		shY = m_pPlayer->m_sPlayerY - 64;
-		if (shX < 0) shX = 0;
-		if (shY < 0) shY = 0;
-		if (shX > m_pMapData->m_sMapSizeX - 128) shX = m_pMapData->m_sMapSizeX - 128;
-		if (shY > m_pMapData->m_sMapSizeY - 128) shY = m_pMapData->m_sMapSizeY - 128;
-		shX = shX + msX - sX;
-		shY = shY + msY - sY;
-	}
-	else
-	{
-		shX = (m_pMapData->m_sMapSizeX * (msX - sX)) / 128;
-		shY = (m_pMapData->m_sMapSizeX * (msY - sY)) / 128;
-	}
-	if (shX < 30 || shY < 30) return;
-	if (shX > m_pMapData->m_sMapSizeX - 30 || shY > m_pMapData->m_sMapSizeY - 30) return;
-	if ((ConfigManager::Get().IsRunningModeEnabled() == true) && (m_pPlayer->m_iSP > 0))
-		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-	else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
-	m_pPlayer->m_Controller.SetDestination(shX, shY);
-	m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
-}
-
-void CGame::DlbBoxDoubleClick_Inventory(short msX, short msY)
-{
-	int i;
-	char  cItemID, cTxt[120];
-	short sX, sY, x1, x2, y1, y2;
-	char cStr1[64], cStr2[64], cStr3[64];
-	//if (m_pPlayer->m_iHP <= 0) return;
-	if (m_bItemUsingStatus == true)
-	{
-		AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY1, 10);
-		return;
-	}
-	sX = m_dialogBoxManager.Info(DialogBoxId::Inventory).sX;
-	sY = m_dialogBoxManager.Info(DialogBoxId::Inventory).sY;
-	for (i = 0; i < DEF_MAXITEMS; i++)
-	{
-		if (m_cItemOrder[DEF_MAXITEMS - 1 - i] == -1) continue;
-		cItemID = m_cItemOrder[DEF_MAXITEMS - 1 - i];
-		if (m_pItemList[cItemID] == 0) continue;
-
-		m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->CalculateBounds(sX + 32 + m_pItemList[cItemID]->m_sX, sY + 44 + m_pItemList[cItemID]->m_sY, m_pItemList[cItemID]->m_sSpriteFrame);
-		// Order
-		x1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().left;
-		y1 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().top;
-		x2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().right;
-		y2 = (short)m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pItemList[cItemID]->m_sSprite]->GetBoundRect().bottom;
-
-		if ((m_bIsItemDisabled[cItemID] == false) && (m_bIsItemEquipped[cItemID] == false) && (msX > x1) && (msX < x2) && (msY > y1) && (msY < y2))
-		{	// Order
-			_SetItemOrder(0, cItemID);
-			GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) && (m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24))
-			{
-				if (m_pItemList[cItemID]->m_cEquipPos != DEF_EQUIPPOS_NONE)
-				{
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0, m_pItemList[cItemID]->m_cName, m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4); // v1.4
-					return;
-				}
-			}
-
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Bank))
-			{	// centu - wh
-				bItemDrop_Bank(msX, msY);
-				return;
-			}
-			else if (m_dialogBoxManager.IsEnabled(DialogBoxId::SellList))
-			{	// centu - sell
-				bItemDrop_SellList(msX, msY);
-				return;
-			}
-			else if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade))
-			{	// centu - upgrade
-				bItemDrop_ItemUpgrade();
-				return;
-			}
-
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE)
-				|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_PERM)
-				|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW)
-				|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT))
-			{
-				if (bCheckItemOperationEnabled(cItemID) == false) return;
-				if ((GameClock::GetTimeMS() - m_dwDamagedTime) < 10000)
-				{
-					if ((m_pItemList[cItemID]->m_sSprite == 6) && (m_pItemList[cItemID]->m_sSpriteFrame == 9))
-					{
-						wsprintf(G_cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);//"Item %s: Scrolls cannot be used until 10 seconds after taking damage."
-						AddEventList(G_cTxt, 10);
-						return;
-					}
-					if ((m_pItemList[cItemID]->m_sSprite == 6) && (m_pItemList[cItemID]->m_sSpriteFrame == 89))
-					{
-						wsprintf(G_cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);//"Item %s: Scrolls cannot be used until 10 seconds after taking damage."
-						AddEventList(G_cTxt, 10);
-						return;
-					}
-				}
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, cItemID, 0, 0, 0);
-
-				if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE)
-					|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT))
-				{
-					m_bIsItemDisabled[cItemID] = true;
-					m_bItemUsingStatus = true;
-				}
-			}
-
-			if (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
-			{
-				if (_bIsItemOnHand() == true)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);//"Your hands should be free to use this item."
-					return;
-				}
-				if (m_bSkillUsingStatus == true)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY5, 10);//"You are already using another skill."
-					return;
-				}
-				if (m_pItemList[cItemID]->m_wCurLifeSpan == 0)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);//"You can't use this item because it is exhausted."
-				}
-				else
-				{
-					m_bIsGetPointingMode = true;
-					m_iPointCommandType = cItemID;
-					wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY7, cStr1);//"Item %s: Select a position which you want to use."
-					AddEventList(cTxt, 10);
-				}
-			}
-
-			if (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
-			{
-				if (_bIsItemOnHand() == true)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);//"Your hands should be free to use this item."
-					return;
-				}
-				if (m_bSkillUsingStatus == true)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY13, 10);//"You are already using another skill."
-					return;
-				}
-				if (m_pItemList[cItemID]->m_wCurLifeSpan == 0)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);//"You can't use this item because it is exhausted."
-				}
-				else
-				{
-					m_bIsGetPointingMode = true;
-					m_iPointCommandType = cItemID;
-					wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY8, cStr1);//"Item %s: Select an item which you want to use."
-					AddEventList(cTxt, 10);
-				}
-			}
-
-			if (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
-			{
-				if (_bIsItemOnHand() == true)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY4, 10);//"Your hands should be free to use this item."
-					return;
-				}
-
-				if (m_bSkillUsingStatus == true) {
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY5, 10);//"You are already using another skill."
-					return;
-				}
-
-				if (m_pItemList[cItemID]->m_wCurLifeSpan == 0)
-				{
-					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY6, 10);//"You can't use this item because it is exhausted."
-				}
-				else
-				{
-					switch (m_pItemList[cItemID]->m_sSpriteFrame) {
-					case 55: // Alchemy pot
-						if (m_pPlayer->m_iSkillMastery[12] == 0)
-						{
-							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY9, 10);//"You should learn alchemy skill to use this item."
-						}
-						else
-						{
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 1, 0, 0, 0);
-							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY10, 10);//"Using alchemy skill..."
-						}
-						break;
-					case 113: // Smith's Anvil
-						if (m_pPlayer->m_iSkillMastery[13] == 0)
-						{
-							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY11, 10);//"You should learn manufacturing skill to use this item.."
-						}
-						else
-						{
-							m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 3, 0, 0, 0);
-							AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY12, 10);//"Using a manufacturing skill..."
-						}
-						break;
-
-						// Crafting
-					case 0:
-						//if (m_pItemList[i]->m_sSprite == 22)
-					{
-						m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 7, 0, 0, 0);
-						AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY17, 10);	//  "Initiating item Crafting..."
-					}
-					break;
-
-					case 151:
-					case 152:
-					case 153:
-					case 154:
-						m_dialogBoxManager.EnableDialogBox(DialogBoxId::Slates, 1, 0, 0, 0);
-						break;
-					}
-				}
-			}
-			// Dblclick Alchemy bowl
-			if ((m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true) && (m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode == 1))
-			{
-				bItemDrop_SkillDialog();
-				//bItemDrop_ExternalScreen(cItemID, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX+50, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY+50);
-			}
-			// Dblclick Manuf box
-			if ((m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true) && (m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode == 4))
-			{
-				bItemDrop_SkillDialog();
-				//bItemDrop_ExternalScreen(cItemID, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX+50, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY+50);
-			}
-			// Crafting
-			// Dblclick Crafting box
-			if ((m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true) && (m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode == 7))
-			{
-				bItemDrop_SkillDialog();
-				//bItemDrop_ExternalScreen(cItemID, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX+50, m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY+50);
-			}
-			if (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)
-			{
-				CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
-				bItemDrop_Character();
-				CursorTarget::ClearSelection();
-			}
-			return;
-		}
-	}
-}
-
 void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 {
 	char cTxt[32], cTxt2[64];
@@ -18214,7 +16049,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	case DEF_CURSORSTATUS_NULL:
 		if (cLB != 0)
 		{
-			iRet = _iCheckDlgBoxFocus(msX, msY, 1);
+			iRet = m_dialogBoxManager.HandleMouseDown(msX, msY);
 			if (iRet == 1)
 			{
 				CursorTarget::SetCursorStatus(CursorStatus::Selected);
@@ -18256,8 +16091,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		}
 		else if (cRB != 0)
 		{
-			iRet = _iCheckDlgBoxFocus(msX, msY, 2);
-			if (iRet == 1) return;
+			if (m_dialogBoxManager.HandleRightClick(msX, msY, dwTime)) return;
 		}
 		break;
 	case DEF_CURSORSTATUS_PRESSED:
@@ -18297,8 +16131,9 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				{
 					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
 				}
-				CursorTarget::ClearSelection();
 			}
+			// Always clear selection after click-release to prevent stale state
+			CursorTarget::ClearSelection();
 			return;
 		}
 		else 			// v2.05 01-11-30

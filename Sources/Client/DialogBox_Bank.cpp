@@ -219,3 +219,17 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 	m_pGame->bItemDrop_Bank(msX, msY);
 	return true;
 }
+
+PressResult DialogBox_Bank::OnPress(short msX, short msY)
+{
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Scroll bar region
+	if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
+	{
+		return PressResult::ScrollClaimed;
+	}
+
+	return PressResult::Normal;
+}

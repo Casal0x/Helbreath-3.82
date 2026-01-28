@@ -350,6 +350,7 @@
     <ClInclude Include="Screen_CreateAccount.h" />
     <ClInclude Include="Screen_Quit.h" />
     <ClInclude Include="Screen_Loading.h" />
+    <ClInclude Include="Screen_Splash.h" />
     <ClInclude Include="Overlay_Connecting.h" />
     <ClInclude Include="Overlay_WaitingResponse.h" />
     <ClInclude Include="Overlay_LogResMsg.h" />
@@ -423,6 +424,7 @@
     <ClCompile Include="Screen_CreateAccount.cpp" />
     <ClCompile Include="Screen_Quit.cpp" />
     <ClCompile Include="Screen_Loading.cpp" />
+    <ClCompile Include="Screen_Splash.cpp" />
     <ClCompile Include="Overlay_Connecting.cpp" />
     <ClCompile Include="Overlay_WaitingResponse.cpp" />
     <ClCompile Include="Overlay_LogResMsg.cpp" />

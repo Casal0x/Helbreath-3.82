@@ -10,7 +10,7 @@ public:
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
 	bool OnDoubleClick(short msX, short msY) override;
-	bool OnPress(short msX, short msY) override;
+	PressResult OnPress(short msX, short msY) override;
 	bool OnItemDrop(short msX, short msY) override;
 
 private:
@@ -24,4 +24,13 @@ private:
 		const char* cEquipPoiStatus, char& cCollison);
 	void DrawFemaleCharacter(short sX, short sY, short msX, short msY,
 		const char* cEquipPoiStatus, char& cCollison);
+
+	// Press/collision helpers
+	bool CheckEquipSlotCollision(int equipPos, int drawX, int drawY, short msX, short msY,
+		const char* cEquipPoiStatus, int spriteOffset = 0);
+
+	// Double-click helpers
+	char GetClickedEquipSlot(int equipPos, int drawX, int drawY, short msX, short msY,
+		const char* cEquipPoiStatus, int spriteOffset = 0);
+	char FindClickedEquipItem(short msX, short msY, short sX, short sY, const char* cEquipPoiStatus);
 };

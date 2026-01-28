@@ -9,7 +9,7 @@ public:
 
 	void OnDraw(short msX, short msY, short msZ, char cLB) override;
 	bool OnClick(short msX, short msY) override;
-	bool OnPress(short msX, short msY) override;
+	PressResult OnPress(short msX, short msY) override;
 	bool OnItemDrop(short msX, short msY) override;
 
 private:
@@ -22,4 +22,7 @@ private:
 	void DrawCraftingWaiting(short sX, short sY, short msX, short msY);
 	void DrawCraftingInProgress(short sX, short sY);
 	void ResetItemSlots();
+
+	// Press helpers
+	bool CheckSlotItemClick(int slotIndex, int itemIdx, int drawX, int drawY, short msX, short msY);
 };

@@ -43,6 +43,7 @@
 #include "DialogBox_SellOrRepair.h"
 #include "DialogBox_Manufacture.h"
 #include "Game.h"
+#include "CursorTarget.h"
 
 DialogBoxManager::DialogBoxManager(CGame* game)
 	: m_game(game)
@@ -387,6 +388,16 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::RepairAll].sY = 57 + SCREENY;
 	m_info[DialogBoxId::RepairAll].sSizeX = 258;
 	m_info[DialogBoxId::RepairAll].sSizeY = 339;
+
+	// Dialogs that cannot be closed with right-click
+	m_info[DialogBoxId::Inventory].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::Magic].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::GuildMenu].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::LevelUpSetting].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::ItemUpgrade].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::Party].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::Slates].bCanCloseOnRightClick = false;
+	m_info[DialogBoxId::CrusadeCommander].bCanCloseOnRightClick = false;
 }
 
 void DialogBoxManager::UpdateDialogBoxs()
@@ -498,15 +509,15 @@ bool DialogBoxManager::HandleDoubleClick(short msX, short msY)
 	return false;
 }
 
-bool DialogBoxManager::HandlePress(int iDlgID, short msX, short msY)
+PressResult DialogBoxManager::HandlePress(int iDlgID, short msX, short msY)
 {
-	if (iDlgID < 0 || iDlgID >= 61) return false;
+	if (iDlgID < 0 || iDlgID >= 61) return PressResult::Normal;
 
 	if (auto* pDlg = m_pDialogBoxes[iDlgID].get())
 	{
 		return pDlg->OnPress(msX, msY);
 	}
-	return false;
+	return PressResult::Normal;
 }
 
 bool DialogBoxManager::HandleItemDrop(int iDlgID, short msX, short msY)
@@ -612,5 +623,91 @@ char DialogBoxManager::OrderAt(int index) const
 void DialogBoxManager::SetOrderAt(int index, char value)
 {
 	m_order[index] = value;
+}
+
+int DialogBoxManager::HandleMouseDown(short msX, short msY)
+{
+	// Find topmost dialog under mouse (iterate in reverse z-order)
+	for (int i = 0; i < 61; i++)
+	{
+		char cDlgID = m_order[60 - i];
+		if (cDlgID == 0) continue;
+
+		auto& info = m_info[cDlgID];
+		if (msX >= info.sX && msX <= info.sX + info.sSizeX &&
+			msY >= info.sY && msY <= info.sY + info.sSizeY)
+		{
+			// Bring dialog to front
+			EnableDialogBox(cDlgID, 0, 0, 0);
+
+			// Set up drag tracking
+			CursorTarget::SetPrevPosition(msX, msY);
+			short dragDistX = msX - info.sX;
+			short dragDistY = msY - info.sY;
+
+			// Let the dialog handle the press
+			PressResult result = HandlePress(cDlgID, msX, msY);
+
+			if (result == PressResult::ScrollClaimed)
+			{
+				// Scroll/slider region claimed - prevent dragging
+				info.bIsScrollSelected = true;
+				return -1;
+			}
+			else if (result == PressResult::Normal)
+			{
+				// Normal click - set up for dialog dragging
+				CursorTarget::SetSelection(SelectedObjectType::DialogBox, cDlgID, dragDistX, dragDistY);
+			}
+			// ItemSelected means item was selected, OnPress already set up CursorTarget
+
+			return 1;
+		}
+	}
+	return 0;
+}
+
+bool DialogBoxManager::HandleRightClick(short msX, short msY, uint32_t dwTime)
+{
+	// Debounce - prevent closing too quickly
+	if ((dwTime - m_dwDialogCloseTime) < 300) return false;
+
+	// Find topmost dialog under mouse
+	for (int i = 0; i < 61; i++)
+	{
+		char cDlgID = m_order[60 - i];
+		if (cDlgID == 0) continue;
+
+		auto& info = m_info[cDlgID];
+		if (msX > info.sX && msX < info.sX + info.sSizeX &&
+			msY > info.sY && msY < info.sY + info.sSizeY)
+		{
+			// Check if this dialog can be closed on right-click
+			bool bCanClose = info.bCanCloseOnRightClick;
+
+			// Special mode-dependent cases
+			switch (cDlgID)
+			{
+			case DialogBoxId::SellOrRepair:     // 23
+				// Can only close if cMode < 3
+				bCanClose = (info.cMode < 3);
+				break;
+
+			case DialogBoxId::Exchange:         // 32
+				// Cannot close during exchange modes 1 or 3
+				if (info.cMode == 1 || info.cMode == 3) bCanClose = false;
+				break;
+			}
+
+			if (bCanClose)
+			{
+				DisableDialogBox(cDlgID);
+			}
+
+			m_dwDialogCloseTime = dwTime;
+			return true;
+		}
+	}
+	return false;
 }
 

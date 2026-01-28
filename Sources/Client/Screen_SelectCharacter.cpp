@@ -373,27 +373,27 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 54);
     pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 55);
 
-    if ((msX > 360 + SCREENX) && (msY >= 283 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 315 + SCREENY)) {
+    if ((msX > 360 + SCREENX) && (msY >= 283 + SCREENY) && (msX < 545 + SCREENX) && (msY <= 315 + SCREENY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 56);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER1);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER2);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 320 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER3);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 335 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER4);
     }
-    else if ((msX > 360 + SCREENX) && (msY >= 316 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 345 + SCREENY)) {
+    else if ((msX > 360 + SCREENX) && (msY >= 316 + SCREENY) && (msX < 545 + SCREENX) && (msY <= 345 + SCREENY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 57);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER5);
     }
-    else if ((msX > 360 + SCREENX) && (msY >= 346 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 375 + SCREENY)) {
+    else if ((msX > 360 + SCREENX) && (msY >= 346 + SCREENY) && (msX < 545 + SCREENX) && (msY <= 375 + SCREENY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 58);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 275 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER6);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 290 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER7);
     }
-    else if ((msX > 360 + SCREENX) && (msY >= 376 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 405 + SCREENY)) {
+    else if ((msX > 360 + SCREENX) && (msY >= 376 + SCREENY) && (msX < 545 + SCREENX) && (msY <= 405 + SCREENY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 59);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER12);
     }
-    else if ((msX > 360 + SCREENX) && (msY >= 406 + SCREENY) && (msX < 545 + SCREENX) & (msY <= 435 + SCREENY)) {
+    else if ((msX > 360 + SCREENX) && (msY >= 406 + SCREENY) && (msX < 545 + SCREENX) && (msY <= 435 + SCREENY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + SCREENX, 0 + SCREENY, 60);
         pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 305 + 15 + SCREENY, UPDATE_SCREEN_ON_SELECT_CHARACTER13);
     }
@@ -428,7 +428,7 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     if (pGame->m_iAccntYear != 0)
     {
         iTempMin = (pGame->m_iTimeLeftSecAccount / 60);
-        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay, iTempMin);
+        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay);
     }
     else
     {
@@ -447,7 +447,7 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     {
         iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60));
         iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER40, pGame->m_iIpYear, pGame->m_iIpMonth, pGame->m_iIpDay, iTempHour, iTempMin);
+        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER40, iTempHour, iTempMin);
     }
     else
     {

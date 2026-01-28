@@ -1,5 +1,6 @@
 #include "DialogBox_Character.h"
 #include "ConfigManager.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "lan_eng.h"
 #include "SharedCalculations.h"
@@ -411,15 +412,216 @@ bool DialogBox_Character::OnClick(short msX, short msY)
 	return false;
 }
 
+// Helper: Check if clicking on equipped item and return the item index
+char DialogBox_Character::GetClickedEquipSlot(int equipPos, int drawX, int drawY, short msX, short msY,
+	const char* cEquipPoiStatus, int spriteOffset)
+{
+	int itemIdx = cEquipPoiStatus[equipPos];
+	if (itemIdx == -1) return -1;
+
+	short sSprH = m_pGame->m_pItemList[itemIdx]->m_sSprite;
+	short sFrame = m_pGame->m_pItemList[itemIdx]->m_sSpriteFrame;
+
+	if (m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset]->CheckCollision(drawX, drawY, sFrame, msX, msY))
+		return (char)itemIdx;
+
+	return -1;
+}
+
+// Helper: Find the equipment item that was clicked (checks all slots)
+char DialogBox_Character::FindClickedEquipItem(short msX, short msY, short sX, short sY, const char* cEquipPoiStatus)
+{
+	char cItemID = -1;
+
+	// Male characters (types 1-3)
+	if (m_pGame->m_pPlayer->m_sPlayerType >= 1 && m_pGame->m_pPlayer->m_sPlayerType <= 3)
+	{
+		// Check in reverse priority order (last checked = highest priority)
+		if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BACK, sX + 41, sY + 137, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_PANTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_ARMS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BOOTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_FULLBODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_LHAND, sX + 90, sY + 170, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_RHAND, sX + 57, sY + 186, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_TWOHAND, sX + 57, sY + 186, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_NECK, sX + 35, sY + 120, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_RFINGER, sX + 32, sY + 193, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_LFINGER, sX + 98, sY + 182, msX, msY, cEquipPoiStatus)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_HEAD, sX + 72, sY + 135, msX, msY, cEquipPoiStatus)) != -1) {}
+	}
+	// Female characters (types 4-6)
+	else if (m_pGame->m_pPlayer->m_sPlayerType >= 4 && m_pGame->m_pPlayer->m_sPlayerType <= 6)
+	{
+		if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BACK, sX + 45, sY + 143, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BOOTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_PANTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_ARMS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_BODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_FULLBODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_LHAND, sX + 84, sY + 175, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_RHAND, sX + 60, sY + 191, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_TWOHAND, sX + 60, sY + 191, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_NECK, sX + 35, sY + 120, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_RFINGER, sX + 32, sY + 193, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_LFINGER, sX + 98, sY + 182, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+		else if ((cItemID = GetClickedEquipSlot(DEF_EQUIPPOS_HEAD, sX + 72, sY + 139, msX, msY, cEquipPoiStatus, 40)) != -1) {}
+	}
+
+	return cItemID;
+}
+
 bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 {
-	m_pGame->DlbBoxDoubleClick_Character(msX, msY);
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+		return false;
+
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Build equipment position status array
+	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
+	for (int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) cEquipPoiStatus[i] = -1;
+	for (int i = 0; i < DEF_MAXITEMS; i++)
+	{
+		if (m_pGame->m_pItemList[i] != nullptr && m_pGame->m_bIsItemEquipped[i])
+			cEquipPoiStatus[m_pGame->m_pItemList[i]->m_cEquipPos] = i;
+	}
+
+	// Find clicked item
+	char cItemID = FindClickedEquipItem(msX, msY, sX, sY, cEquipPoiStatus);
+	if (cItemID == -1 || m_pGame->m_pItemList[cItemID] == nullptr)
+		return false;
+
+	// Skip consumables, arrows, and stacked items
+	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT ||
+		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME ||
+		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW ||
+		m_pGame->m_pItemList[cItemID]->m_dwCount > 1)
+		return false;
+
+	// Check if at repair shop
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) &&
+		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
+		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
+	{
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
+			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
+			m_pGame->m_pItemList[cItemID]->m_cName,
+			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+	}
+	else
+	{
+		// Release (unequip) the item
+		if (m_pGame->m_bIsItemEquipped[cItemID])
+		{
+			char cStr1[64], cStr2[64], cStr3[64];
+			m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+			std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
+			wsprintf(m_pGame->G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+			AddEventList(m_pGame->G_cTxt, 10);
+
+			if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPendant", 14) == 0)
+				m_pGame->PlaySound('E', 53, 0);
+			else
+				m_pGame->PlaySound('E', 29, 0);
+
+			// Remove Angelic Stats
+			if (m_pGame->m_pItemList[cItemID]->m_cEquipPos >= 11 &&
+				m_pGame->m_pItemList[cItemID]->m_cItemType == 1)
+			{
+				if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
+					m_pGame->m_pPlayer->m_iAngelicStr = 0;
+				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
+					m_pGame->m_pPlayer->m_iAngelicDex = 0;
+				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
+					m_pGame->m_pPlayer->m_iAngelicInt = 0;
+				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
+					m_pGame->m_pPlayer->m_iAngelicMag = 0;
+			}
+
+			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, cItemID, 0, 0, 0);
+			m_pGame->m_bIsItemEquipped[cItemID] = false;
+			m_pGame->m_sItemEquipmentStatus[m_pGame->m_pItemList[cItemID]->m_cEquipPos] = -1;
+			CursorTarget::ClearSelection();
+		}
+	}
+
 	return true;
 }
 
-bool DialogBox_Character::OnPress(short msX, short msY)
+// Helper: Check collision with an equipped item slot and select it if clicked
+bool DialogBox_Character::CheckEquipSlotCollision(int equipPos, int drawX, int drawY, short msX, short msY,
+	const char* cEquipPoiStatus, int spriteOffset)
 {
-	return m_pGame->bDlgBoxPress_Character(msX, msY);
+	int itemIdx = cEquipPoiStatus[equipPos];
+	if (itemIdx == -1) return false;
+
+	short sSprH = m_pGame->m_pItemList[itemIdx]->m_sSprite;
+	short sFrame = m_pGame->m_pItemList[itemIdx]->m_sSpriteFrame;
+
+	if (m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset]->CheckCollision(drawX, drawY, sFrame, msX, msY))
+	{
+		CursorTarget::SetSelection(SelectedObjectType::Item, m_pGame->m_sItemEquipmentStatus[equipPos], 0, 0);
+		return true;
+	}
+	return false;
+}
+
+PressResult DialogBox_Character::OnPress(short msX, short msY)
+{
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+		return PressResult::Normal;
+
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Build equipment position status array
+	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];
+	for (int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) cEquipPoiStatus[i] = -1;
+	for (int i = 0; i < DEF_MAXITEMS; i++)
+	{
+		if ((m_pGame->m_pItemList[i] != nullptr) && (m_pGame->m_bIsItemEquipped[i] == true))
+			cEquipPoiStatus[m_pGame->m_pItemList[i]->m_cEquipPos] = i;
+	}
+
+	// Male characters (types 1-3)
+	if ((m_pGame->m_pPlayer->m_sPlayerType >= 1) && (m_pGame->m_pPlayer->m_sPlayerType <= 3))
+	{
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_HEAD, sX + 72, sY + 135, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_RFINGER, sX + 32, sY + 193, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_LFINGER, sX + 98, sY + 182, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_NECK, sX + 35, sY + 120, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_TWOHAND, sX + 57, sY + 186, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_RHAND, sX + 57, sY + 186, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_LHAND, sX + 90, sY + 170, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_FULLBODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BOOTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_ARMS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_PANTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BACK, sX + 41, sY + 137, msX, msY, cEquipPoiStatus)) return PressResult::ItemSelected;
+	}
+	// Female characters (types 4-6)
+	else if ((m_pGame->m_pPlayer->m_sPlayerType >= 4) && (m_pGame->m_pPlayer->m_sPlayerType <= 6))
+	{
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_HEAD, sX + 72, sY + 139, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_RFINGER, sX + 32, sY + 193, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_LFINGER, sX + 98, sY + 182, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_NECK, sX + 35, sY + 120, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_TWOHAND, sX + 60, sY + 191, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_RHAND, sX + 60, sY + 191, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_LHAND, sX + 84, sY + 175, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_FULLBODY, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BOOTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_ARMS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_PANTS, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+		if (CheckEquipSlotCollision(DEF_EQUIPPOS_BACK, sX + 45, sY + 143, msX, msY, cEquipPoiStatus, 40)) return PressResult::ItemSelected;
+	}
+
+	return PressResult::Normal;
 }
 
 bool DialogBox_Character::OnItemDrop(short msX, short msY)

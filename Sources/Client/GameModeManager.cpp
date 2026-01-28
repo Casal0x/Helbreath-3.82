@@ -219,6 +219,9 @@ void GameModeManager::ApplyScreenChange()
         }
     }
 
+    // Clear pending screen type now that transition is complete
+    m_pendingScreenType = nullptr;
+
     // Reset timing for new screen
     m_modeStartTime = GameClock::GetTimeMS();
 }

@@ -23,6 +23,7 @@ class IGameScreen;
 enum class GameMode : int8_t {
     Null = -2,
     Quit = -1,
+    Splash = -3,    // Splash screen before loading
     MainMenu = 0,
     Connecting = 1,
     Loading = 2,
@@ -189,8 +190,15 @@ private:
     void set_screen_impl(Args&&... args) {
         static_assert(std::is_base_of_v<IGameScreen, T>, "T must derive from IGameScreen");
 
+        // Ignore if already transitioning to the same screen type
+        if (m_pendingScreenType == T::screen_type_id)
+            return;
+
         // Clear any active overlay when transitioning to a new screen
         clear_overlay_impl();
+
+        // Track the pending screen type
+        m_pendingScreenType = T::screen_type_id;
 
         // Store a factory that will create the screen during the Switching phase
         // Use tuple to capture variadic args (C++17 compatible)
@@ -238,6 +246,7 @@ private:
 
     // Screen type tracking
     ScreenTypeId m_previousScreenType = nullptr;
+    ScreenTypeId m_pendingScreenType = nullptr;  // Type of screen being transitioned to
 
     // Current mode value (for code that checks what screen is active)
     GameMode m_currentMode = GameMode::Loading;

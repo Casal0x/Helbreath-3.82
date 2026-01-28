@@ -28,21 +28,17 @@ void DialogBox_ChatHistory::OnDraw(short msX, short msY, short msZ, char cLB)
 
 void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, short msY, short msZ, char cLB)
 {
+	auto& info = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory);
+
 	// Mouse wheel scrolling
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)
 	{
 		short sWheelDelta = Input::GetMouseWheelDelta();
 		if (sWheelDelta != 0)
 		{
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView += sWheelDelta / 30;
+			info.sView += sWheelDelta / 30;
 		}
 	}
-
-	// Clamp scroll view
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView < 0)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
-	if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView > DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES)
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
 
 	// Scroll bar dragging
 	if ((cLB != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory))
@@ -52,21 +48,27 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 		{
 			double d1 = (double)(msY - (sY + 28));
 			double d2 = ((DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES) * d1) / (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES - (int)d2;
+			info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES - (int)d2;
 		}
 
 		// Scroll to top button
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 18) && (msY < sY + 28))
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
+			info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
 
 		// Scroll to bottom button
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 140) && (msY < sY + 163))
-			m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView = 0;
+			info.sView = 0;
 	}
 	else
 	{
-		m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).bIsScrollSelected = false;
+		info.bIsScrollSelected = false;
 	}
+
+	// Clamp scroll view (must be after all scroll modifications)
+	if (info.sView < 0)
+		info.sView = 0;
+	if (info.sView > DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES)
+		info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
 }
 
 void DialogBox_ChatHistory::DrawScrollBar(short sX, short sY)
@@ -85,12 +87,14 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 
 	for (int i = 0; i < DEF_CHAT_VISIBLE_LINES; i++)
 	{
-		if (m_pGame->m_pChatScrollList[i + sView] != nullptr)
+		int iIndex = i + sView;
+		if (iIndex < 0 || iIndex >= DEF_MAXCHATSCROLLMSGS) continue;
+		if (m_pGame->m_pChatScrollList[iIndex] != nullptr)
 		{
 			int iYPos = sY + 127 - i * 13;
-			char* pMsg = m_pGame->m_pChatScrollList[i + sView]->m_pMsg;
+			char* pMsg = m_pGame->m_pChatScrollList[iIndex]->m_pMsg;
 
-			switch (m_pGame->m_pChatScrollList[i + sView]->m_dwTime)
+			switch (m_pGame->m_pChatScrollList[iIndex]->m_dwTime)
 			{
 			case 0:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 230, 230, 230); break; // Normal
 			case 1:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 130, 200, 130); break; // Green
@@ -108,5 +112,19 @@ bool DialogBox_ChatHistory::OnClick(short msX, short msY)
 {
 	// Chat history dialog has no click actions - scrolling is handled in OnDraw
 	return false;
+}
+
+PressResult DialogBox_ChatHistory::OnPress(short msX, short msY)
+{
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Check if click is in scroll bar region (track + buttons)
+	if ((msX >= sX + 336) && (msX <= sX + 361) && (msY >= sY + 18) && (msY <= sY + 163))
+	{
+		return PressResult::ScrollClaimed;
+	}
+
+	return PressResult::Normal;
 }
 

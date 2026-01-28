@@ -376,6 +376,9 @@
     <ClInclude Include="GameWindowHandler.h">
       <Filter>Input</Filter>
     </ClInclude>
+    <ClInclude Include="Screen_Splash.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -733,6 +736,9 @@
     </ClCompile>
     <ClCompile Include="Game.Hotkeys.cpp">
       <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_Splash.cpp">
+      <Filter>Screens</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

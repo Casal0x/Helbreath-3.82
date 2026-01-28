@@ -1,5 +1,6 @@
 #include "DialogBox_GuideMap.h"
 #include "ConfigManager.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
@@ -254,6 +255,48 @@ bool DialogBox_GuideMap::OnClick(short msX, short msY)
 
 bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
 {
-	m_pGame->DlbBoxDoubleClick_GuideMap(msX, msY);
+	if (CursorTarget::GetCursorFrame() != 0) return false;
+	if (m_pGame->m_cMapIndex < 0) return false;
+
+	short sX = Info().sX;
+	short sY = Info().sY;
+	short szX = Info().sSizeX;
+	short szY = Info().sSizeY;
+
+	// Clamp position (same as OnDraw)
+	if (sX < 20) sX = 0;
+	if (sY < 20) sY = 0;
+	if (sX > LOGICAL_MAX_X - 128 - 20) sX = LOGICAL_MAX_X - 128;
+	if (sY > 547 - 128 - 20) sY = 547 - 128;
+
+	short shX, shY;
+	if (ConfigManager::Get().IsZoomMapEnabled())
+	{
+		shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
+		shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
+		if (shX < 0) shX = 0;
+		if (shY < 0) shY = 0;
+		if (shX > m_pGame->m_pMapData->m_sMapSizeX - 128) shX = m_pGame->m_pMapData->m_sMapSizeX - 128;
+		if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
+		shX = shX + msX - sX;
+		shY = shY + msY - sY;
+	}
+	else
+	{
+		shX = (m_pGame->m_pMapData->m_sMapSizeX * (msX - sX)) / 128;
+		shY = (m_pGame->m_pMapData->m_sMapSizeX * (msY - sY)) / 128;
+	}
+
+	if (shX < 30 || shY < 30) return false;
+	if (shX > m_pGame->m_pMapData->m_sMapSizeX - 30 || shY > m_pGame->m_pMapData->m_sMapSizeY - 30) return false;
+
+	if (ConfigManager::Get().IsRunningModeEnabled() && m_pGame->m_pPlayer->m_iSP > 0)
+		m_pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+	else
+		m_pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+
+	m_pGame->m_pPlayer->m_Controller.SetDestination(shX, shY);
+	m_pGame->m_pPlayer->m_Controller.CalculatePlayerTurn(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY, m_pGame->m_pMapData.get());
+
 	return true;
 }

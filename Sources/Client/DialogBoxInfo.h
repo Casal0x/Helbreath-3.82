@@ -13,4 +13,5 @@ struct DialogBoxInfo
 	char cStr[32], cStr2[32], cStr3[32], cStr4[32];
 	char cMode;
 	bool bIsScrollSelected;
+	bool bCanCloseOnRightClick = true;  // Whether right-click can close this dialog
 };

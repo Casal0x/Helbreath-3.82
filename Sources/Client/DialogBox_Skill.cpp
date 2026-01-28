@@ -172,4 +172,17 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 	return false;
 }
 
+PressResult DialogBox_Skill::OnPress(short msX, short msY)
+{
+	short sX = Info().sX;
+	short sY = Info().sY;
+
+	// Scroll bar region
+	if ((msX >= sX + 240) && (msX <= sX + 260) && (msY >= sY + 40) && (msY <= sY + 320))
+	{
+		return PressResult::ScrollClaimed;
+	}
+
+	return PressResult::Normal;
+}
 

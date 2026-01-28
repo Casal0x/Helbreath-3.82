@@ -2,10 +2,10 @@
 
 #include "DialogBoxIDs.h"
 #include "DialogBoxInfo.h"
+#include "IDialogBox.h"
 #include <memory>
 
 class CGame;
-class IDialogBox;
 
 class DialogBoxManager
 {
@@ -31,9 +31,17 @@ public:
 	void DrawAll(short msX, short msY, short msZ, char cLB);
 	bool HandleClick(short msX, short msY);
 	bool HandleDoubleClick(short msX, short msY);
-	bool HandlePress(int iDlgID, short msX, short msY);
+	PressResult HandlePress(int iDlgID, short msX, short msY);
 	bool HandleItemDrop(int iDlgID, short msX, short msY);
 	bool HandleDraggingItemRelease(short msX, short msY);
+
+	// Mouse down handling - replaces _iCheckDlgBoxFocus from Game.cpp
+	// Returns: 1 = dialog hit, 0 = no dialog hit, -1 = scroll region claimed
+	int HandleMouseDown(short msX, short msY);
+
+	// Right-click to close dialogs
+	// Returns: true if a dialog was under the mouse (and potentially closed)
+	bool HandleRightClick(short msX, short msY, uint32_t dwTime);
 	void Enable(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString = nullptr);
 	void Disable(DialogBoxId::Type id);
 	void Toggle(DialogBoxId::Type id, int cType = 0, int sV1 = 0, int sV2 = 0, char* pString = nullptr);
@@ -55,4 +63,5 @@ private:
 	char m_order[61]{};
 	bool m_enabled[61]{};
 	std::unique_ptr<IDialogBox> m_pDialogBoxes[61];
+	uint32_t m_dwDialogCloseTime = 0;
 };

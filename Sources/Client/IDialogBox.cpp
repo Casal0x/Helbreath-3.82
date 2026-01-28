@@ -81,6 +81,11 @@ void IDialogBox::DisableThisDialog()
 	m_pGame->m_dialogBoxManager.DisableDialogBox(m_id);
 }
 
+void IDialogBox::SetCanCloseOnRightClick(bool bCanClose)
+{
+	Info().bCanCloseOnRightClick = bCanClose;
+}
+
 IDialogBox* IDialogBox::GetDialogBox(DialogBoxId::Type id)
 {
 	return m_pGame->m_dialogBoxManager.GetDialogBox(id);
