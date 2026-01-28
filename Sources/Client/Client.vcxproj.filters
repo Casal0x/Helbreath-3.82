@@ -322,6 +322,9 @@
     <ClInclude Include="Screen_SelectCharacter.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="Screen_CreateAccount.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
     <ClInclude Include="Screen_OnGame.h">
       <Filter>Screens</Filter>
     </ClInclude>
@@ -651,6 +654,9 @@
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_SelectCharacter.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_CreateAccount.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_OnGame.cpp">
