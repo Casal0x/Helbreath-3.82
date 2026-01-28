@@ -132,19 +132,54 @@ void Screen_SelectCharacter::on_update()
     if (m_pGame->m_cMenuDir > 8) m_pGame->m_cMenuDir = 1;
 
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        m_pGame->PlaySound('E', 14, 5);
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;
-        if (Input::IsMouseInRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 1;
-        else if (Input::IsMouseInRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 2;
-        else if (Input::IsMouseInRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 3;
-        else if (Input::IsMouseInRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY)) iMIbuttonNum = 4;
-        else if (Input::IsMouseInRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY)) iMIbuttonNum = 5;
-        else if (Input::IsMouseInRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY)) iMIbuttonNum = 6;
-        else if (Input::IsMouseInRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY)) iMIbuttonNum = 7;
-        else if (Input::IsMouseInRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY)) iMIbuttonNum = 8;
-        else if (Input::IsMouseInRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY)) iMIbuttonNum = 9;
+        if (Input::IsMouseInRect(100 + SCREENX, 50 + SCREENY, 210 + SCREENX, 250 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 1;
+        }
+        else if (Input::IsMouseInRect(211 + SCREENX, 50 + SCREENY, 321 + SCREENX, 250 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 2;
+        }
+        else if (Input::IsMouseInRect(322 + SCREENX, 50 + SCREENY, 431 + SCREENX, 250 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 3;
+        }
+        else if (Input::IsMouseInRect(432 + SCREENX, 50 + SCREENY, 542 + SCREENX, 250 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 4;
+        }
+        else if (Input::IsMouseInRect(360 + SCREENX, 283 + SCREENY, 545 + SCREENX, 315 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 5;
+        }
+        else if (Input::IsMouseInRect(360 + SCREENX, 316 + SCREENY, 545 + SCREENX, 345 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 6;
+        }
+        else if (Input::IsMouseInRect(360 + SCREENX, 346 + SCREENY, 545 + SCREENX, 375 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 7;
+        }
+        else if (Input::IsMouseInRect(360 + SCREENX, 376 + SCREENY, 545 + SCREENX, 405 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 8;
+        }
+        else if (Input::IsMouseInRect(360 + SCREENX, 406 + SCREENY, 545 + SCREENX, 435 + SCREENY))
+        {
+            m_pGame->PlaySound('E', 14, 5);
+            iMIbuttonNum = 9;
+        }
 
         switch (iMIbuttonNum) {
         case 1:

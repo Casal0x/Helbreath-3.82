@@ -27,6 +27,7 @@
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "GameWindowHandler.h"
+#include "Benchmark.h"
 
 // --------------------------------------------------------------
 // GPU Selection - Force discrete GPU on hybrid systems
@@ -77,6 +78,9 @@ void TimerThreadFunc()
 int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
     srand((unsigned)time(0));
+
+    // Allocate debug console
+    DebugConsole::Allocate();
 
     // Ensure consistent pixel coordinates under RDP and high-DPI setups
     if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
@@ -136,6 +140,9 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 
     Window::Destroy();
     Renderer::Destroy();
+
+    // Deallocate debug console
+    DebugConsole::Deallocate();
 
     return 0;
 }

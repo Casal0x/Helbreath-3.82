@@ -77,18 +77,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DDraw|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\Debug;$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <OutDir>$(SolutionDir)Debug-DDraw\</OutDir>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_DDRAW</TargetName>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-DDraw|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\DDrawEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\Release;$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <OutDir>$(SolutionDir)Release-DDraw\</OutDir>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Release\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_DDRAW</TargetName>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
@@ -96,18 +98,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-SFML|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\Debug;$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <OutDir>$(SolutionDir)Debug-SFML\</OutDir>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_SFML</TargetName>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)lib\Release;$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
-    <OutDir>$(SolutionDir)Release-SFML\</OutDir>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs;$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <OutDir>$(SolutionDir)Release\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
+    <TargetName>Game_SFML</TargetName>
     <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
@@ -135,6 +139,7 @@
       <AdditionalDependencies>DDrawEngine.lib;DDRAW.LIB;Ws2_32.lib;DXGUID.LIB;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -166,6 +171,7 @@
       <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ResourceCompile>
       <Culture>0x0409</Culture>
@@ -201,6 +207,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ResourceCompile>
       <Culture>0x0809</Culture>
@@ -236,6 +243,7 @@
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <ResourceCompile>
       <Culture>0x0809</Culture>

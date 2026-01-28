@@ -53,11 +53,13 @@ void Screen_Login::on_update()
     {
         if (Input::IsShiftDown())
         {
+            m_pGame->PlaySound('E', 14, 5);
              m_cCurFocus--;
              if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
         }
         else
         {
+            m_pGame->PlaySound('E', 14, 5);
              m_cCurFocus++;
              if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
         }
@@ -88,16 +90,16 @@ void Screen_Login::on_update()
 
     if (Input::IsKeyPressed(VK_RETURN) == true)
     {
-        m_pGame->PlaySound('E', 14, 5);
-
         switch (m_cCurFocus) {
         case 1:
+            m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus++;
             if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
             break;
         case 2:
         case 3:
             if ((strlen(m_cLoginName) == 0) || (strlen(m_cLoginPassword) == 0)) break;
+            m_pGame->PlaySound('E', 14, 5);
             
             // Set Player Account Credentials
             std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
@@ -123,6 +125,7 @@ void Screen_Login::on_update()
 
     if (Input::IsKeyPressed(VK_ESCAPE) == true)
     {
+        m_pGame->PlaySound('E', 14, 5);
         m_pGame->EndInputString();
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
@@ -148,17 +151,19 @@ void Screen_Login::on_update()
     // Mouse click detection
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        m_pGame->PlaySound('E', 14, 5);
         // Name field click
         if (Input::IsMouseInRect(80 + SCREENX, 151 + SCREENY, 337 + SCREENX, 179 + SCREENY)) {
+            m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 1;
         }
         // Password field click
         else if (Input::IsMouseInRect(80 + SCREENX, 180 + SCREENY, 337 + SCREENX, 205 + SCREENY)) {
+            m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 2;
         }
         // Login button click
         else if (Input::IsMouseInRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY)) {
+            m_pGame->PlaySound('E', 14, 5);
             if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
                 m_pGame->EndInputString();
                 std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
@@ -179,6 +184,7 @@ void Screen_Login::on_update()
         }
         // Cancel button click
         else if (Input::IsMouseInRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY)) {
+            m_pGame->PlaySound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }

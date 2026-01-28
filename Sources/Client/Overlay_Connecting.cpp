@@ -30,10 +30,10 @@ void Overlay_Connecting::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
-    // ESC key cancels connection (only after 1 second to prevent accidental exit)
+    // ESC key cancels connection (only after 7 seconds when hint is shown)
     if (Input::IsKeyPressed(VK_ESCAPE))
     {
-        if (dwElapsed > 1000)
+        if (dwElapsed > 7000)
         {
             // Close sockets
             if (m_pGame->m_pLSock != nullptr)

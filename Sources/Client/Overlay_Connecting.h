@@ -1,7 +1,7 @@
 // Overlay_Connecting.h: "Connecting to Server..." progress overlay
 //
 // Displays connection progress with countdown timer.
-// ESC key cancels and returns to main menu after 1 second delay.
+// ESC key cancels and returns to main menu after 7 seconds.
 //
 //////////////////////////////////////////////////////////////////////
 

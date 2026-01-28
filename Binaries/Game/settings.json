@@ -9,7 +9,7 @@
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
-        "runningMode": true,
+        "runningMode": false,
         "showFps": true,
         "showLatency": true,
         "zoomMap": true
@@ -30,7 +30,7 @@
         ]
     },
     "window": {
-        "height": 768,
-        "width": 1024
+        "height": 1080,
+        "width": 1440
     }
 }

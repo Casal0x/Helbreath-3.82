@@ -1,10 +1,112 @@
 #pragma once
 
-// Benchmark.h - Lightweight performance profiling macros
-// Outputs to MSVC Debug Output window (View -> Output -> Debug)
+// Benchmark.h - Lightweight performance profiling macros and debug console
+// Outputs to debug console window when allocated
 
 #include <windows.h>
 #include <stdio.h>
+#include <psapi.h>
+
+// ============================================================================
+// Debug Console
+// ============================================================================
+//
+// Call DebugConsole::Allocate() to create a console window for debug output.
+// Call DebugConsole::Deallocate() to close it.
+// All printf/BENCHMARK output will appear in the console when allocated.
+//
+// Example:
+//    DebugConsole::Allocate();
+//    printf("Debug message\n");
+//    DebugConsole::PrintMemory("Checkpoint");
+//    DebugConsole::Deallocate();
+//
+
+class DebugConsole {
+private:
+    static bool s_bAllocated;
+    static FILE* s_pOut;
+    static FILE* s_pErr;
+    static SIZE_T s_lastWorkingSet;
+
+public:
+    static void Allocate()
+    {
+        if (s_bAllocated) return;
+
+        if (AllocConsole())
+        {
+            freopen_s(&s_pOut, "CONOUT$", "w", stdout);
+            freopen_s(&s_pErr, "CONOUT$", "w", stderr);
+
+            SetConsoleTitleA("Helbreath Debug Console");
+
+            // Enable ANSI colors (Windows 10+)
+            HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            DWORD dwMode = 0;
+            GetConsoleMode(hOut, &dwMode);
+            SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+            s_bAllocated = true;
+            s_lastWorkingSet = 0;
+            printf("=== Helbreath Debug Console ===\n\n");
+        }
+    }
+
+    static void Deallocate()
+    {
+        if (!s_bAllocated) return;
+
+        if (s_pOut) fclose(s_pOut);
+        if (s_pErr) fclose(s_pErr);
+        s_pOut = nullptr;
+        s_pErr = nullptr;
+
+        FreeConsole();
+        s_bAllocated = false;
+    }
+
+    static bool IsAllocated() { return s_bAllocated; }
+
+    static void PrintMemory(const char* pLabel)
+    {
+        if (!s_bAllocated) return;
+
+        PROCESS_MEMORY_COUNTERS_EX pmc;
+        if (GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc)))
+        {
+            double dWorkingMB = pmc.WorkingSetSize / (1024.0 * 1024.0);
+            double dPrivateMB = pmc.PrivateUsage / (1024.0 * 1024.0);
+            double dPeakMB = pmc.PeakWorkingSetSize / (1024.0 * 1024.0);
+
+            if (s_lastWorkingSet > 0)
+            {
+                double dDeltaMB = (double)((LONGLONG)pmc.WorkingSetSize - (LONGLONG)s_lastWorkingSet) / (1024.0 * 1024.0);
+                const char* pSign = (dDeltaMB >= 0) ? "+" : "";
+                printf("[MEMORY] %-20s Working: %6.2f MB | Private: %6.2f MB | Peak: %6.2f MB (%s%.2f MB)\n",
+                    pLabel, dWorkingMB, dPrivateMB, dPeakMB, pSign, dDeltaMB);
+            }
+            else
+            {
+                printf("[MEMORY] %-20s Working: %6.2f MB | Private: %6.2f MB | Peak: %6.2f MB\n",
+                    pLabel, dWorkingMB, dPrivateMB, dPeakMB);
+            }
+
+            s_lastWorkingSet = pmc.WorkingSetSize;
+        }
+    }
+
+    static void ResetMemoryDelta()
+    {
+        s_lastWorkingSet = 0;
+    }
+};
+
+// Static member initialization
+__declspec(selectany) bool DebugConsole::s_bAllocated = false;
+__declspec(selectany) FILE* DebugConsole::s_pOut = nullptr;
+__declspec(selectany) FILE* DebugConsole::s_pErr = nullptr;
+__declspec(selectany) SIZE_T DebugConsole::s_lastWorkingSet = 0;
 
 // ============================================================================
 // Usage Examples:
