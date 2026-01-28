@@ -2008,7 +2008,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						iRet = -1;
 						S_dwUpdateTime = dwTime;
 					}
-					if (memcmp(m_pData[dX][dY].m_cOwnerName, cPlayerName, 10) == 0)
+					if (strncmp(m_pData[dX][dY].m_cOwnerName, cPlayerName, 10) == 0)
 					{
 						iRet = 1;
 						S_dwUpdateTime = dwTime;
@@ -2048,7 +2048,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pData[dX][dY].m_dwOwnerTime = dwTime;
 								m_pData[dX][dY].m_cOwnerFrame = 0;
 							}
-							if (memcmp(m_pData[dX][dY].m_cOwnerName, cPlayerName, 10) == 0)
+							if (strncmp(m_pData[dX][dY].m_cOwnerName, cPlayerName, 10) == 0)
 							{
 								iRet = 2;
 								S_dwUpdateTime = dwTime;
