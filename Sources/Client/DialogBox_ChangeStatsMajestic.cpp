@@ -8,6 +8,7 @@
 DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* pGame)
 	: IDialogBox(DialogBoxId::ChangeStatsMajestic, pGame)
 {
+	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 258, 339);
 }
 
 void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char cLB)

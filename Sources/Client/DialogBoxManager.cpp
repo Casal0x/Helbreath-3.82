@@ -48,15 +48,7 @@ DialogBoxManager::DialogBoxManager(CGame* game)
 	: m_game(game)
 {
 }
-
-DialogBoxManager::~DialogBoxManager()
-{
-	for (int i = 0; i < 61; i++)
-	{
-		delete m_pDialogBoxes[i];
-		m_pDialogBoxes[i] = nullptr;
-	}
-}
+// Destructor is defaulted in header - unique_ptr handles cleanup automatically
 
 void DialogBoxManager::Initialize(CGame* game)
 {
@@ -66,58 +58,58 @@ void DialogBoxManager::Initialize(CGame* game)
 void DialogBoxManager::InitializeDialogBoxes()
 {
 	// Dialog boxes are registered here as they are migrated
-	RegisterDialogBox(new DialogBox_WarningMsg(m_game));
-	RegisterDialogBox(new DialogBox_Resurrect(m_game));
-	RegisterDialogBox(new DialogBox_Noticement(m_game));
-	RegisterDialogBox(new DialogBox_RepairAll(m_game));
-	RegisterDialogBox(new DialogBox_ConfirmExchange(m_game));
-	RegisterDialogBox(new DialogBox_Help(m_game));
-	RegisterDialogBox(new DialogBox_ItemDrop(m_game));
-	RegisterDialogBox(new DialogBox_LevelUpSetting(m_game));
-	RegisterDialogBox(new DialogBox_Character(m_game));
-	RegisterDialogBox(new DialogBox_Inventory(m_game));
-	RegisterDialogBox(new DialogBox_Skill(m_game));
-	RegisterDialogBox(new DialogBox_Magic(m_game));
-	RegisterDialogBox(new DialogBox_HudPanel(m_game));
-	RegisterDialogBox(new DialogBox_GuideMap(m_game));
-	RegisterDialogBox(new DialogBox_Fishing(m_game));
-	RegisterDialogBox(new DialogBox_CrusadeJob(m_game));
-	RegisterDialogBox(new DialogBox_ItemDropAmount(m_game));
-	RegisterDialogBox(new DialogBox_Map(m_game));
-	RegisterDialogBox(new DialogBox_NpcActionQuery(m_game));
-	RegisterDialogBox(new DialogBox_SysMenu(m_game));
-	RegisterDialogBox(new DialogBox_Text(m_game));
-	RegisterDialogBox(new DialogBox_MagicShop(m_game));
-	RegisterDialogBox(new DialogBox_NpcTalk(m_game));
-	RegisterDialogBox(new DialogBox_ChatHistory(m_game));
-	RegisterDialogBox(new DialogBox_CityHallMenu(m_game));
-	RegisterDialogBox(new DialogBox_Shop(m_game));
-	RegisterDialogBox(new DialogBox_ItemUpgrade(m_game));
-	RegisterDialogBox(new DialogBox_SellList(m_game));
-	RegisterDialogBox(new DialogBox_GuildMenu(m_game));
-	RegisterDialogBox(new DialogBox_GuildOperation(m_game));
-	RegisterDialogBox(new DialogBox_Bank(m_game));
-	RegisterDialogBox(new DialogBox_Exchange(m_game));
-	RegisterDialogBox(new DialogBox_Party(m_game));
-	RegisterDialogBox(new DialogBox_Quest(m_game));
-	RegisterDialogBox(new DialogBox_Commander(m_game));
-	RegisterDialogBox(new DialogBox_Constructor(m_game));
-	RegisterDialogBox(new DialogBox_Soldier(m_game));
-	RegisterDialogBox(new DialogBox_Slates(m_game));
-	RegisterDialogBox(new DialogBox_ChangeStatsMajestic(m_game));
-	RegisterDialogBox(new DialogBox_GuildHallMenu(m_game));
-	RegisterDialogBox(new DialogBox_SellOrRepair(m_game));
-	RegisterDialogBox(new DialogBox_Manufacture(m_game));
+	// Using std::make_unique for exception-safe, leak-free memory management
+	RegisterDialogBox(std::make_unique<DialogBox_WarningMsg>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Resurrect>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Noticement>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_RepairAll>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ConfirmExchange>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Help>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ItemDrop>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_LevelUpSetting>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Character>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Inventory>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Skill>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Magic>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_HudPanel>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_GuideMap>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Fishing>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_CrusadeJob>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ItemDropAmount>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Map>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_NpcActionQuery>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_SysMenu>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Text>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_MagicShop>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_NpcTalk>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ChatHistory>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_CityHallMenu>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Shop>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ItemUpgrade>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_SellList>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_GuildMenu>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_GuildOperation>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Bank>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Exchange>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Party>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Quest>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Commander>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Constructor>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Soldier>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Slates>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_ChangeStatsMajestic>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_GuildHallMenu>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_SellOrRepair>(m_game));
+	RegisterDialogBox(std::make_unique<DialogBox_Manufacture>(m_game));
 }
 
-void DialogBoxManager::RegisterDialogBox(IDialogBox* pDialogBox)
+void DialogBoxManager::RegisterDialogBox(std::unique_ptr<IDialogBox> pDialogBox)
 {
 	if (!pDialogBox) return;
 	int id = static_cast<int>(pDialogBox->GetId());
 	if (id >= 0 && id < 61)
 	{
-		delete m_pDialogBoxes[id];
-		m_pDialogBoxes[id] = pDialogBox;
+		m_pDialogBoxes[id] = std::move(pDialogBox);  // Transfer ownership
 	}
 }
 
@@ -130,7 +122,7 @@ IDialogBox* DialogBoxManager::GetDialogBox(int iBoxID) const
 {
 	if (iBoxID >= 0 && iBoxID < 61)
 	{
-		return m_pDialogBoxes[iBoxID];
+		return m_pDialogBoxes[iBoxID].get();  // Return raw pointer (no ownership transfer)
 	}
 	return nullptr;
 }
@@ -404,7 +396,7 @@ void DialogBoxManager::UpdateDialogBoxs()
 	{
 		if (m_enabled[i] && m_pDialogBoxes[i])
 		{
-			m_pDialogBoxes[i]->OnUpdate();
+			m_pDialogBoxes[i]->OnUpdate();  // unique_ptr supports -> operator
 		}
 	}
 }
@@ -474,7 +466,7 @@ bool DialogBoxManager::HandleClick(short msX, short msY)
 		if (msX > info.sX && msX < info.sX + info.sSizeX &&
 			msY > info.sY && msY < info.sY + info.sSizeY)
 		{
-			if (auto* pDlg = m_pDialogBoxes[cDlgID])
+			if (auto* pDlg = m_pDialogBoxes[cDlgID].get())
 			{
 				pDlg->OnClick(msX, msY);
 			}
@@ -496,7 +488,7 @@ bool DialogBoxManager::HandleDoubleClick(short msX, short msY)
 		if (msX > info.sX && msX < info.sX + info.sSizeX &&
 			msY > info.sY && msY < info.sY + info.sSizeY)
 		{
-			if (auto* pDlg = m_pDialogBoxes[cDlgID])
+			if (auto* pDlg = m_pDialogBoxes[cDlgID].get())
 			{
 				pDlg->OnDoubleClick(msX, msY);
 			}
@@ -510,7 +502,7 @@ bool DialogBoxManager::HandlePress(int iDlgID, short msX, short msY)
 {
 	if (iDlgID < 0 || iDlgID >= 61) return false;
 
-	if (auto* pDlg = m_pDialogBoxes[iDlgID])
+	if (auto* pDlg = m_pDialogBoxes[iDlgID].get())
 	{
 		return pDlg->OnPress(msX, msY);
 	}
@@ -521,7 +513,7 @@ bool DialogBoxManager::HandleItemDrop(int iDlgID, short msX, short msY)
 {
 	if (iDlgID < 0 || iDlgID >= 61) return false;
 
-	if (auto* pDlg = m_pDialogBoxes[iDlgID])
+	if (auto* pDlg = m_pDialogBoxes[iDlgID].get())
 	{
 		return pDlg->OnItemDrop(msX, msY);
 	}

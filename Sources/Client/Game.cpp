@@ -160,98 +160,8 @@ CGame::CGame()
 	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
 	m_sPendingShopType = 0;
 
-	// CLEROTh - INIT DIALOG BOXES
-
-	//Guild Menu Dialog
-	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sSizeY = 339;
-
-	//Guild Operation Dialog
-	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sSizeX = 295;
-	m_dialogBoxManager.Info(DialogBoxId::GuildOperation).sSizeY = 346;
-
-	//Bank Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Bank).sX = 60 + SCREENX; //337
-	m_dialogBoxManager.Info(DialogBoxId::Bank).sY = 50 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Bank).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Bank).sSizeY = 339;
-	m_dialogBoxManager.Info(DialogBoxId::Bank).sV1 = 13;
-
-	//ItemSellorRepair Dialog
-	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sSizeY = 339;
-
-	//Manufacture Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX = 100 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY = 60 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeY = 339;
-
-	//Exchange Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Exchange).sX = 100 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Exchange).sY = 30 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Exchange).sSizeX = 520;
-	m_dialogBoxManager.Info(DialogBoxId::Exchange).sSizeY = 357;
-
-	//Quest Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Quest).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Quest).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Quest).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Quest).sSizeY = 339;
-
-	//Party Dialog
-	m_dialogBoxManager.Info(DialogBoxId::Party).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Party).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Party).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Party).sSizeY = 339;
-
-	//Crusade Commander Dialog
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sX = 20 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sY = 20 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sSizeX = 310;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sSizeY = 386;
-
-	//Crusade Constructor Dialog
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeConstructor).sX = 20 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeConstructor).sY = 20 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeConstructor).sSizeX = 310;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeConstructor).sSizeY = 386;
-
-	//Crusade Soldier Dialog
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeSoldier).sX = 20 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeSoldier).sY = 20 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeSoldier).sSizeX = 310;
-	m_dialogBoxManager.Info(DialogBoxId::CrusadeSoldier).sSizeY = 386;
-
-	// Give item ???
-	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sSizeX = 291;
-	m_dialogBoxManager.Info(DialogBoxId::GiveItem).sSizeY = 413;
-
-	// 3.51 Slates Dialog - Diuuude
-	m_dialogBoxManager.Info(DialogBoxId::Slates).sX = 100 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::Slates).sY = 60 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeY = 339;
-
-	// MJ Stats Change DialogBox - Diuuude
-	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sX = 0 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sY = 0 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sSizeY = 339;
-
-	//Guild Hall Menu Dialog
-	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sX = 337 + SCREENX;
-	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sY = 57 + SCREENY;
-	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeX = 258;
-	m_dialogBoxManager.Info(DialogBoxId::GuildHallMenu).sSizeY = 339;
+	// Dialog boxes now self-initialize via SetDefaultRect() in their constructors
+	// Dialogs without classes (GiveItem) are initialized in DialogBoxManager::InitDefaults()
 
 	m_dwDialogCloseTime = 0;
 	m_iTimeLeftSecAccount = 0;
@@ -23347,4 +23257,3 @@ void CGame::Abaddon_corpse(int sX, int sY)
 		}
 	}
 }
-

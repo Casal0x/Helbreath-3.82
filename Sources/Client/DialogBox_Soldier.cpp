@@ -9,6 +9,7 @@
 DialogBox_Soldier::DialogBox_Soldier(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeSoldier, pGame)
 {
+	SetDefaultRect(20 + SCREENX, 20 + SCREENY, 310, 386);
 }
 
 void DialogBox_Soldier::OnUpdate()

@@ -5,7 +5,7 @@
 DialogBox_GuildMenu::DialogBox_GuildMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildMenu, pGame)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 258, 339);
+	SetDefaultRect(337 + SCREENX, 57 + SCREENY, 258, 339);
 }
 
 void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)

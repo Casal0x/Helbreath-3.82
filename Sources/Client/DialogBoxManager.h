@@ -2,6 +2,7 @@
 
 #include "DialogBoxIDs.h"
 #include "DialogBoxInfo.h"
+#include <memory>
 
 class CGame;
 class IDialogBox;
@@ -10,12 +11,12 @@ class DialogBoxManager
 {
 public:
 	explicit DialogBoxManager(CGame* game = nullptr);
-	~DialogBoxManager();
+	~DialogBoxManager() = default;  // unique_ptr handles cleanup automatically
 
 	void Initialize(CGame* game);
 	void InitDefaults();
 	void InitializeDialogBoxes();
-	void RegisterDialogBox(IDialogBox* pDialogBox);
+	void RegisterDialogBox(std::unique_ptr<IDialogBox> pDialogBox);
 	IDialogBox* GetDialogBox(DialogBoxId::Type id) const;
 	IDialogBox* GetDialogBox(int iBoxID) const;
 	void UpdateDialogBoxs();
@@ -53,5 +54,5 @@ private:
 	DialogBoxInfo m_info[61]{};
 	char m_order[61]{};
 	bool m_enabled[61]{};
-	IDialogBox* m_pDialogBoxes[61]{};
+	std::unique_ptr<IDialogBox> m_pDialogBoxes[61];
 };

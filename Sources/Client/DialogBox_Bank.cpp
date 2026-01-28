@@ -7,6 +7,7 @@ DialogBox_Bank::DialogBox_Bank(CGame* pGame)
 	: IDialogBox(DialogBoxId::Bank, pGame)
 {
 	SetDefaultRect(60 + SCREENX, 50 + SCREENY, 258, 339);
+	Info().sV1 = 13; // Number of visible item lines in scrollable list
 }
 
 void DialogBox_Bank::OnDraw(short msX, short msY, short msZ, char cLB)
