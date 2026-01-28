@@ -1,6 +1,7 @@
 #include "DialogBox_Inventory.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "IInput.h"
 #include "lan_eng.h"
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
@@ -224,19 +225,19 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	// Bank dialog - drop item there
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank))
 	{
-		m_pGame->bItemDrop_Bank(msX, msY);
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Bank)->OnItemDrop(msX, msY);
 		return true;
 	}
 	// Sell list dialog
 	else if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellList))
 	{
-		m_pGame->bItemDrop_SellList(msX, msY);
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::SellList)->OnItemDrop(msX, msY);
 		return true;
 	}
 	// Item upgrade dialog
 	else if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade))
 	{
-		m_pGame->bItemDrop_ItemUpgrade();
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::ItemUpgrade)->OnItemDrop(msX, msY);
 		return true;
 	}
 
@@ -386,14 +387,14 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	{
 		char mode = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode;
 		if (mode == 1 || mode == 4 || mode == 7)
-			m_pGame->bItemDrop_SkillDialog();
+			m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Manufacture)->OnItemDrop(msX, msY);
 	}
 
 	// Auto-equip equipment items
 	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)
 	{
 		CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
-		m_pGame->bItemDrop_Character();
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
 		CursorTarget::ClearSelection();
 	}
 
@@ -467,6 +468,90 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 
 bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_Inventory(msX, msY);
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+
+	char cSelectedID = (char)CursorTarget::GetSelectedID();
+	if (m_pGame->m_pItemList[cSelectedID] == nullptr) return false;
+
+	// Can't move equipped items while using a skill
+	if (m_pGame->m_bSkillUsingStatus && m_pGame->m_bIsItemEquipped[cSelectedID])
+	{
+		AddEventList(BITEMDROP_INVENTORY1, 10);
+		return false;
+	}
+	if (m_pGame->m_bIsItemDisabled[cSelectedID]) return false;
+
+	// Calculate new position in inventory grid
+	short sX = Info().sX;
+	short sY = Info().sY;
+	short dX = msX - sX - ITEM_OFFSET_X - CursorTarget::GetDragDistX();
+	short dY = msY - sY - ITEM_OFFSET_Y - CursorTarget::GetDragDistY();
+
+	// Clamp to valid inventory area
+	if (dY < -10) dY = -10;
+	if (dX < 0) dX = 0;
+	if (dX > 170) dX = 170;
+	if (dY > 95) dY = 95;
+
+	m_pGame->m_pItemList[cSelectedID]->m_sX = dX;
+	m_pGame->m_pItemList[cSelectedID]->m_sY = dY;
+
+	// Shift+drop: move all items with the same name to this position
+	if (Input::IsShiftDown())
+	{
+		for (int i = 0; i < DEF_MAXITEMS; i++)
+		{
+			if (m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i] != -1)
+			{
+				char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+				if (m_pGame->m_pItemList[cItemID] != nullptr &&
+					memcmp(m_pGame->m_pItemList[cItemID]->m_cName,
+						   m_pGame->m_pItemList[cSelectedID]->m_cName, 20) == 0)
+				{
+					m_pGame->m_pItemList[cItemID]->m_sX = dX;
+					m_pGame->m_pItemList[cItemID]->m_sY = dY;
+					bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cItemID, dX, dY, 0, 0);
+				}
+			}
+		}
+	}
+	else
+	{
+		bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cSelectedID, dX, dY, 0, 0);
+	}
+
+	// If item was equipped, unequip it
+	if (m_pGame->m_bIsItemEquipped[cSelectedID])
+	{
+		char cStr1[64], cStr2[64], cStr3[64];
+		char cTxt[120];
+		m_pGame->GetItemName(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
+		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+		AddEventList(cTxt, 10);
+
+		if (memcmp(m_pGame->m_pItemList[cSelectedID]->m_cName, "AngelicPendant", 14) == 0)
+			m_pGame->PlaySound('E', 53, 0);
+		else
+			m_pGame->PlaySound('E', 29, 0);
+
+		// Remove Angelic Stats
+		if (m_pGame->m_pItemList[cSelectedID]->m_cEquipPos >= 11 &&
+			m_pGame->m_pItemList[cSelectedID]->m_cItemType == 1)
+		{
+			if (memcmp(m_pGame->m_pItemList[cSelectedID]->m_cName, "AngelicPandent(STR)", 19) == 0)
+				m_pGame->m_pPlayer->m_iAngelicStr = 0;
+			else if (memcmp(m_pGame->m_pItemList[cSelectedID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
+				m_pGame->m_pPlayer->m_iAngelicDex = 0;
+			else if (memcmp(m_pGame->m_pItemList[cSelectedID]->m_cName, "AngelicPandent(INT)", 19) == 0)
+				m_pGame->m_pPlayer->m_iAngelicInt = 0;
+			else if (memcmp(m_pGame->m_pItemList[cSelectedID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
+				m_pGame->m_pPlayer->m_iAngelicMag = 0;
+		}
+
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, cSelectedID, 0, 0, 0);
+		m_pGame->m_bIsItemEquipped[cSelectedID] = false;
+		m_pGame->m_sItemEquipmentStatus[m_pGame->m_pItemList[cSelectedID]->m_cEquipPos] = -1;
+	}
+
 	return true;
 }

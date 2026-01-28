@@ -1,4 +1,5 @@
 #include "DialogBox_Exchange.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "lan_eng.h"
 
@@ -218,6 +219,44 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 
 bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_ExchangeDialog(msX, msY);
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+	if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 != -1) return false; // Already 4 items
+
+	char cItemID = (char)CursorTarget::GetSelectedID();
+
+	// Find first empty exchange slot
+	int iSlot = -1;
+	if (m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) iSlot = 0;
+	else if (m_pGame->m_stDialogBoxExchangeInfo[1].sV1 == -1) iSlot = 1;
+	else if (m_pGame->m_stDialogBoxExchangeInfo[2].sV1 == -1) iSlot = 2;
+	else if (m_pGame->m_stDialogBoxExchangeInfo[3].sV1 == -1) iSlot = 3;
+	else return false; // Impossible case
+
+	// Stackable items - open quantity dialog
+	if (((m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+		(m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+		(m_pGame->m_pItemList[cItemID]->m_dwCount > 1))
+	{
+		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);
+		dropInfo.sX = msX - 140;
+		dropInfo.sY = msY - 70;
+		if (dropInfo.sY < 0) dropInfo.sY = 0;
+		dropInfo.sV1 = m_pGame->m_pPlayer->m_sPlayerX + 1;
+		dropInfo.sV2 = m_pGame->m_pPlayer->m_sPlayerY + 1;
+		dropInfo.sV3 = 1000;
+		dropInfo.sV4 = cItemID;
+		m_pGame->m_stDialogBoxExchangeInfo[iSlot].sItemID = cItemID;
+		std::memset(dropInfo.cStr, 0, sizeof(dropInfo.cStr));
+		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID,
+			m_pGame->m_pItemList[cItemID]->m_dwCount, 0);
+	}
+	else
+	{
+		// Single item - add directly
+		m_pGame->m_stDialogBoxExchangeInfo[iSlot].sItemID = cItemID;
+		m_pGame->m_bIsItemDisabled[cItemID] = true;
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETEXCHANGEITEM, 0, cItemID, 1, 0, 0);
+	}
+
 	return true;
 }

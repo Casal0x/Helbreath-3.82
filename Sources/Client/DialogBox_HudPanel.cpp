@@ -255,14 +255,14 @@ bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))
 	{
 		auto& invInfo = InfoOf(DialogBoxId::Inventory);
-		m_pGame->bItemDrop_Inventory(invInfo.sX + (rand() % 148), invInfo.sY + (rand() % 55));
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory)->OnItemDrop(invInfo.sX + (rand() % 148), invInfo.sY + (rand() % 55));
 		return true;
 	}
 
 	// Character icon area - equip item
 	if ((425 < msX) && (448 > msX) && (440 < msY) && (475 > msY))
 	{
-		m_pGame->bItemDrop_Character();
+		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
 		return true;
 	}
 

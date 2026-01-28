@@ -1,4 +1,5 @@
 #include "DialogBox_SellList.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
@@ -220,6 +221,72 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 
 bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_SellList(msX, msY);
+	char cItemID = (char)CursorTarget::GetSelectedID();
+
+	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
+	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+
+	// Check if item is already in sell list
+	for (int i = 0; i < DEF_MAXSELLLIST; i++)
+	{
+		if (m_pGame->m_stSellItemList[i].iIndex == cItemID)
+		{
+			AddEventList(BITEMDROP_SELLLIST1, 10);
+			return false;
+		}
+	}
+
+	// Can't sell gold
+	if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::Gold)
+	{
+		AddEventList(BITEMDROP_SELLLIST2, 10);
+		return false;
+	}
+
+	// Can't sell broken items
+	if (m_pGame->m_pItemList[cItemID]->m_wCurLifeSpan == 0)
+	{
+		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
+		char cStr1[64], cStr2[64], cStr3[64];
+		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+		wsprintf(m_pGame->G_cTxt, NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
+		AddEventList(m_pGame->G_cTxt, 10);
+		return false;
+	}
+
+	// Stackable items - open quantity dialog
+	if (((m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+		(m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+		(m_pGame->m_pItemList[cItemID]->m_dwCount > 1))
+	{
+		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);
+		dropInfo.sX = msX - 140;
+		dropInfo.sY = msY - 70;
+		if (dropInfo.sY < 0) dropInfo.sY = 0;
+		dropInfo.sV1 = m_pGame->m_pPlayer->m_sPlayerX + 1;
+		dropInfo.sV2 = m_pGame->m_pPlayer->m_sPlayerY + 1;
+		dropInfo.sV3 = 1001;
+		dropInfo.sV4 = cItemID;
+		std::memset(dropInfo.cStr, 0, sizeof(dropInfo.cStr));
+		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pGame->m_pItemList[cItemID]->m_dwCount, 0);
+		m_pGame->m_bIsItemDisabled[cItemID] = true;
+	}
+	else
+	{
+		// Add single item to sell list
+		for (int i = 0; i < DEF_MAXSELLLIST; i++)
+		{
+			if (m_pGame->m_stSellItemList[i].iIndex == -1)
+			{
+				m_pGame->m_stSellItemList[i].iIndex = cItemID;
+				m_pGame->m_stSellItemList[i].iAmount = 1;
+				m_pGame->m_bIsItemDisabled[cItemID] = true;
+				return true;
+			}
+		}
+		AddEventList(BITEMDROP_SELLLIST3, 10);
+	}
+
 	return true;
 }

@@ -626,6 +626,6 @@ PressResult DialogBox_Character::OnPress(short msX, short msY)
 
 bool DialogBox_Character::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_Character();
+	m_pGame->ItemEquipHandler((char)CursorTarget::GetSelectedID());
 	return true;
 }

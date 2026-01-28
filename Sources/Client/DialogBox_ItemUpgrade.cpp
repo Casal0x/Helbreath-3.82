@@ -1,4 +1,5 @@
 #include "DialogBox_ItemUpgrade.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "lan_eng.h"
 
@@ -499,6 +500,26 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
 
 bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 {
-    m_pGame->bItemDrop_ItemUpgrade();
-    return true;
+	char cItemID = (char)CursorTarget::GetSelectedID();
+	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+	if (m_pGame->m_pItemList[cItemID]->m_cEquipPos == DEF_EQUIPPOS_NONE) return false;
+
+	switch (Info().cMode) {
+	case 1:
+		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
+		Info().sV1 = cItemID;
+		m_pGame->m_bIsItemDisabled[cItemID] = true;
+		m_pGame->PlaySound('E', 29, 0);
+		break;
+
+	case 6:
+		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
+		Info().sV1 = cItemID;
+		m_pGame->m_bIsItemDisabled[cItemID] = true;
+		m_pGame->PlaySound('E', 29, 0);
+		break;
+	}
+
+	return true;
 }

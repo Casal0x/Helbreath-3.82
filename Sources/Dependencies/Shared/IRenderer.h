@@ -43,6 +43,10 @@ public:
     virtual void DrawShadowBox(int x1, int y1, int x2, int y2, int type = 0) = 0;
     virtual void DrawItemShadowBox(int x1, int y1, int x2, int y2, int type = 0) = 0;
 
+    // Draw a line with additive blending
+    // alpha: 1.0 = full intensity, 0.5 = half intensity
+    virtual void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha = 1.0f) = 0;
+
     // ============== Screen Effects ==============
     // Draw a full-screen black overlay with given alpha (0.0 = transparent, 1.0 = opaque)
     // Used for fade transitions between game modes

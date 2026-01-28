@@ -41,6 +41,7 @@ public:
     void PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) override;
     void DrawShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
     void DrawItemShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
+    void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha = 1.0f) override;
 
     // Screen Effects
     void DrawFadeOverlay(float alpha) override;

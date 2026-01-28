@@ -174,13 +174,6 @@ public:
 	int  iGetManaCost(int iMagicNo);
 	void UseMagic(int iMagicNo);
 	bool FindGuildName(char* pName, int* ipIndex);
-	void bItemDrop_SkillDialog();
-	void bItemDrop_Character();
-	void bItemDrop_Inventory(short msX, short msY);
-	void bItemDrop_ItemUpgrade();
-	void bItemDrop_SellList(short msX, short msY);
-	void bItemDrop_ExchangeDialog(short msX, short msY);
-	void bItemDrop_Bank(short msX, short msY);
 	void bItemDrop_ExternalScreen(char cItemID, short msX, short msY);
 	void CreateScreenShot();
 	void CrusadeWarResult(int iWinnerSide);
@@ -203,9 +196,6 @@ public:
 	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
-
-	// Slates - Alastor
-	void bItemDrop_Slates();
 
 	void ResponsePanningHandler(char * pData);
 	void _CalcSocketClosed();
@@ -243,8 +233,6 @@ public:
 	void ClearSkillUsingStatus();
 	bool bCheckItemOperationEnabled(char cItemID);
 	void _DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType);
-	void DrawLine2(int x0, int y0, int x1, int y1, int iR, int iG, int iB);
-	void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB);
 	void SetWhetherStatus(bool bStart, char cType);
 	void WhetherObjectFrameCounter();
 	void DrawWhetherEffects();

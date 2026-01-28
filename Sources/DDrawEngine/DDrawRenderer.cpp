@@ -84,6 +84,115 @@ void DDrawRenderer::DrawItemShadowBox(int x1, int y1, int x2, int y2, int type)
                                static_cast<short>(x2), static_cast<short>(y2), type);
 }
 
+void DDrawRenderer::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha)
+{
+    if ((x0 == x1) && (y0 == y1)) return;
+
+    int pitch = 0;
+    uint16_t* pBuffer = LockBackBuffer(&pitch);
+    if (!pBuffer) return;
+
+    // Select transparency tables based on alpha
+    const long (*transRB)[64];
+    const long (*transG)[64];
+    if (alpha >= 1.0f) {
+        transRB = GetTransTableRB100();
+        transG = GetTransTableG100();
+    } else if (alpha >= 0.7f) {
+        transRB = GetTransTableRB70();
+        transG = GetTransTableG70();
+    } else if (alpha >= 0.5f) {
+        transRB = GetTransTableRB50();
+        transG = GetTransTableG50();
+    } else {
+        transRB = GetTransTableRB25();
+        transG = GetTransTableG25();
+    }
+
+    int pixelFormat = GetPixelFormat();
+    int width = GetWidth();
+    int height = GetHeight();
+
+    // Bresenham's line algorithm
+    int dx = x1 - x0;
+    int dy = y1 - y0;
+    int x_inc = (dx >= 0) ? 1 : -1;
+    int y_inc = (dy >= 0) ? 1 : -1;
+    if (dx < 0) dx = -dx;
+    if (dy < 0) dy = -dy;
+
+    int iResultX = x0;
+    int iResultY = y0;
+    int error = 0;
+
+    if (dx > dy)
+    {
+        for (int index = 0; index <= dx; index++)
+        {
+            error += dy;
+            if (error > dx)
+            {
+                error -= dx;
+                iResultY += y_inc;
+            }
+            iResultX += x_inc;
+            if ((iResultX >= 0) && (iResultX < width) && (iResultY >= 0) && (iResultY < height))
+            {
+                uint16_t* pDst = pBuffer + iResultX + (iResultY * pitch);
+                int dstR, dstG, dstB;
+                if (pixelFormat == 1) // RGB565
+                {
+                    dstR = static_cast<int>(transRB[(pDst[0] & 0xF800) >> 11][iR]);
+                    dstG = static_cast<int>(transG[(pDst[0] & 0x7E0) >> 5][iG]);
+                    dstB = static_cast<int>(transRB[(pDst[0] & 0x1F)][iB]);
+                    *pDst = static_cast<uint16_t>((dstR << 11) | (dstG << 5) | dstB);
+                }
+                else // RGB555
+                {
+                    dstR = static_cast<int>(transRB[(pDst[0] & 0x7C00) >> 10][iR]);
+                    dstG = static_cast<int>(transG[(pDst[0] & 0x3E0) >> 5][iG]);
+                    dstB = static_cast<int>(transRB[(pDst[0] & 0x1F)][iB]);
+                    *pDst = static_cast<uint16_t>((dstR << 10) | (dstG << 5) | dstB);
+                }
+            }
+        }
+    }
+    else
+    {
+        for (int index = 0; index <= dy; index++)
+        {
+            error += dx;
+            if (error > dy)
+            {
+                error -= dy;
+                iResultX += x_inc;
+            }
+            iResultY += y_inc;
+            if ((iResultX >= 0) && (iResultX < width) && (iResultY >= 0) && (iResultY < height))
+            {
+                uint16_t* pDst = pBuffer + iResultX + (iResultY * pitch);
+                int dstR, dstG, dstB;
+                if (pixelFormat == 1) // RGB565
+                {
+                    dstR = static_cast<int>(transRB[(pDst[0] & 0xF800) >> 11][iR]);
+                    dstG = static_cast<int>(transG[(pDst[0] & 0x7E0) >> 5][iG]);
+                    dstB = static_cast<int>(transRB[(pDst[0] & 0x1F)][iB]);
+                    *pDst = static_cast<uint16_t>((dstR << 11) | (dstG << 5) | dstB);
+                }
+                else // RGB555
+                {
+                    dstR = static_cast<int>(transRB[(pDst[0] & 0x7C00) >> 10][iR]);
+                    dstG = static_cast<int>(transG[(pDst[0] & 0x3E0) >> 5][iG]);
+                    dstB = static_cast<int>(transRB[(pDst[0] & 0x1F)][iB]);
+                    *pDst = static_cast<uint16_t>((dstR << 10) | (dstG << 5) | dstB);
+                }
+            }
+        }
+    }
+
+    UnlockBackBuffer();
+}
+
 void DDrawRenderer::DrawFadeOverlay(float alpha)
 {
     if (alpha <= 0.0f) return;  // Fully transparent, nothing to draw

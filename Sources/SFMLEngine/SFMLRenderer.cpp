@@ -445,6 +445,30 @@ void SFMLRenderer::DrawItemShadowBox(int x1, int y1, int x2, int y2, int type)
     DrawShadowBox(x1, y1, x2, y2, type);
 }
 
+void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha)
+{
+    if ((x0 == x1) && (y0 == y1)) return;
+
+    // The original code uses 5-bit/6-bit color components for RGB565
+    // Convert to 8-bit color values (iR/iB are 0-31, iG is 0-63)
+    uint8_t r = static_cast<uint8_t>((iR * 255) / 31);
+    uint8_t g = static_cast<uint8_t>((iG * 255) / 63);
+    uint8_t b = static_cast<uint8_t>((iB * 255) / 31);
+    uint8_t a = static_cast<uint8_t>(alpha * 255.0f);
+
+    sf::Color lineColor(r, g, b, a);
+
+    // Use vertex array for GPU-accelerated line drawing
+    sf::VertexArray line(sf::PrimitiveType::Lines, 2);
+    line[0].position = sf::Vector2f(static_cast<float>(x0), static_cast<float>(y0));
+    line[0].color = lineColor;
+    line[1].position = sf::Vector2f(static_cast<float>(x1), static_cast<float>(y1));
+    line[1].color = lineColor;
+
+    // Use additive blending for the glow effect
+    m_backBuffer.draw(line, sf::BlendAdd);
+}
+
 void SFMLRenderer::DrawFadeOverlay(float alpha)
 {
     if (alpha <= 0.0f) return;  // Fully transparent, nothing to draw

@@ -1,4 +1,5 @@
 #include "DialogBox_Bank.h"
+#include "CursorTarget.h"
 #include "Game.h"
 #include "IInput.h"
 #include "lan_eng.h"
@@ -216,7 +217,64 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 
 bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_Bank(msX, msY);
+	auto& giveInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem);
+	giveInfo.sV1 = CursorTarget::GetSelectedID();
+
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+	if (m_pGame->m_pItemList[giveInfo.sV1] == nullptr) return false;
+	if (m_pGame->m_bIsItemDisabled[giveInfo.sV1]) return false;
+
+	// Check if other dialogs are blocking
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) &&
+		(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1 ||
+		 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+
+	// Stackable items - open quantity dialog
+	if (((m_pGame->m_pItemList[giveInfo.sV1]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+		(m_pGame->m_pItemList[giveInfo.sV1]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+		(m_pGame->m_pItemList[giveInfo.sV1]->m_dwCount > 1))
+	{
+		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);
+		dropInfo.sX = msX - 140;
+		dropInfo.sY = msY - 70;
+		if (dropInfo.sY < 0) dropInfo.sY = 0;
+		dropInfo.sV1 = m_pGame->m_pPlayer->m_sPlayerX + 1;
+		dropInfo.sV2 = m_pGame->m_pPlayer->m_sPlayerY + 1;
+		dropInfo.sV3 = 1002; // NPC
+		dropInfo.sV4 = giveInfo.sV1;
+		std::memset(dropInfo.cStr, 0, sizeof(dropInfo.cStr));
+		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, giveInfo.sV1,
+			m_pGame->m_pItemList[giveInfo.sV1]->m_dwCount, 0);
+	}
+	else
+	{
+		// Single item - deposit directly
+		if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1))
+			AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
+		else
+			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, giveInfo.sV1, 1,
+				giveInfo.sV5, giveInfo.sV6, m_pGame->m_pItemList[giveInfo.sV1]->m_cName, giveInfo.sV4);
+	}
+
 	return true;
 }
 

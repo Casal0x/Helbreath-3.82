@@ -812,9 +812,126 @@ PressResult DialogBox_Manufacture::OnPress(short msX, short msY)
 	return PressResult::Normal;
 }
 
+bool DialogBox_Manufacture::TryAddItemToSlot(char cItemID, bool updateBuildStatus)
+{
+	auto& info = Info();
+	int* slots[] = { &info.sV1, &info.sV2, &info.sV3, &info.sV4, &info.sV5, &info.sV6 };
+
+	for (int i = 0; i < 6; i++)
+	{
+		if (*slots[i] == -1)
+		{
+			*slots[i] = cItemID;
+			if (updateBuildStatus)
+				info.cStr[4] = (char)m_pGame->_bCheckCurrentBuildItemStatus();
+
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME ||
+				m_pGame->m_pItemList[cItemID]->m_dwCount <= 1)
+			{
+				m_pGame->m_bIsItemDisabled[cItemID] = true;
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_SkillDialog();
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+
+	char cItemID = (char)CursorTarget::GetSelectedID();
+	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
+	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+
+	// Check if other dialogs are blocking
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) &&
+		(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1 ||
+		 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+
+	auto& info = Info();
+
+	switch (info.cMode) {
+	case 1: // Alchemy
+	{
+		// Check consumable item count - can't add if all instances are already used
+		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		{
+			int iConsumeNum = 0;
+			if (info.sV1 == cItemID) iConsumeNum++;
+			if (info.sV2 == cItemID) iConsumeNum++;
+			if (info.sV3 == cItemID) iConsumeNum++;
+			if (info.sV4 == cItemID) iConsumeNum++;
+			if (info.sV5 == cItemID) iConsumeNum++;
+			if (info.sV6 == cItemID) iConsumeNum++;
+			if (iConsumeNum >= (int)(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
+		}
+
+		// Only allow EAT, CONSUME, or NONE item types for alchemy
+		if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_EAT &&
+			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME &&
+			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_NONE)
+		{
+			return false;
+		}
+
+		if (!TryAddItemToSlot(cItemID, false))
+			AddEventList(BITEMDROP_SKILLDIALOG4, 10);
+		break;
+	}
+
+	case 4: // Manufacture
+	{
+		// Check consumable item count
+		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		{
+			int iConsumeNum = 0;
+			if (info.sV1 == cItemID) iConsumeNum++;
+			if (info.sV2 == cItemID) iConsumeNum++;
+			if (info.sV3 == cItemID) iConsumeNum++;
+			if (info.sV4 == cItemID) iConsumeNum++;
+			if (info.sV5 == cItemID) iConsumeNum++;
+			if (info.sV6 == cItemID) iConsumeNum++;
+			if (iConsumeNum >= (int)(m_pGame->m_pItemList[cItemID]->m_dwCount)) return false;
+		}
+
+		if (!TryAddItemToSlot(cItemID, true))
+			AddEventList(BITEMDROP_SKILLDIALOG4, 10);
+		break;
+	}
+
+	case 7: // Crafting
+	{
+		// Only allow specific item types for crafting
+		if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_NONE &&      // Merien Stone
+			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_EQUIP &&     // Necklaces, Rings
+			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME &&   // Stones
+			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_MATERIAL)    // Craftwares
+		{
+			return false;
+		}
+
+		if (!TryAddItemToSlot(cItemID, false))
+			AddEventList(BITEMDROP_SKILLDIALOG4, 10);
+		break;
+	}
+	}
+
 	return true;
 }
 

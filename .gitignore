@@ -50,8 +50,6 @@ lib/
 # Linker files
 **/*.ilk
 **/*.exp
-**/*.lib
-**/*.dll
 **/*.exe
 
 # Program database (debug symbols)

@@ -1,5 +1,7 @@
 #include "DialogBox_Slates.h"
+#include "CursorTarget.h"
 #include "Game.h"
+#include "lan_eng.h"
 #include "SpriteID.h"
 #include "NetMessages.h"
 
@@ -100,6 +102,76 @@ bool DialogBox_Slates::OnClick(short msX, short msY)
 
 bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 {
-	m_pGame->bItemDrop_Slates();
+	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
+
+	char cItemID = (char)CursorTarget::GetSelectedID();
+	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
+	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+
+	// Check if other dialogs are blocking
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) &&
+		(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 1 ||
+		 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode == 2))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair))
+	{
+		AddEventList(BITEMDROP_SKILLDIALOG1, 10);
+		return false;
+	}
+
+	switch (Info().cMode) {
+	case 1:
+		// Only accept slate items (sprite frame 151-154)
+		if ((m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
+			(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame >= 151) &&
+			(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame <= 154))
+		{
+			char cItemIDText[20];
+			switch (m_pGame->m_pItemList[cItemID]->m_sSpriteFrame) {
+			case 151:
+				if (Info().sV1 == -1) {
+					m_pGame->m_bIsItemDisabled[cItemID] = true;
+					Info().sV1 = cItemID;
+					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					AddEventList(cItemIDText, 10);
+				}
+				break;
+			case 152:
+				if (Info().sV2 == -1) {
+					m_pGame->m_bIsItemDisabled[cItemID] = true;
+					Info().sV2 = cItemID;
+					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					AddEventList(cItemIDText, 10);
+				}
+				break;
+			case 153:
+				if (Info().sV3 == -1) {
+					m_pGame->m_bIsItemDisabled[cItemID] = true;
+					Info().sV3 = cItemID;
+					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					AddEventList(cItemIDText, 10);
+				}
+				break;
+			case 154:
+				if (Info().sV4 == -1) {
+					m_pGame->m_bIsItemDisabled[cItemID] = true;
+					Info().sV4 = cItemID;
+					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					AddEventList(cItemIDText, 10);
+				}
+				break;
+			}
+		}
+		break;
+	}
+
 	return true;
 }
