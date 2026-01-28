@@ -761,21 +761,20 @@ void CGame::RenderFrame()
 	// During this phase, skip update/render - the switch happens in Update() above
 	if (GameModeManager::GetTransitionState() != TransitionState::Switching)
 	{
-		// Get the active screen and overlay (if any)
-		IGameScreen* pScreen = GameModeManager::GetActiveScreen();
-		IGameScreen* pOverlay = GameModeManager::GetActiveOverlay();
-
 		// ============== Update Phase ==============
+		// NOTE: We call GetActiveScreen()/GetActiveOverlay() fresh at each usage point
+		// rather than caching, because screens can destroy themselves during on_update()
+		// (e.g., MainMenu -> Quit transition), which would leave a dangling pointer.
 		FrameTiming::BeginProfile(ProfileStage::Update);
 
 		// If overlay exists, suppress input for base screen (completely transparent to screen code)
-		if (pOverlay)
+		if (GameModeManager::GetActiveOverlay())
 		{
 			Input::SetSuppressed(true);
 		}
 
 		// Update base screen (input suppressed if overlay active)
-		if (pScreen)
+		if (auto* pScreen = GameModeManager::GetActiveScreen())
 		{
 			pScreen->on_update();
 		}
@@ -784,8 +783,8 @@ void CGame::RenderFrame()
 			UpdateScreen();  // Legacy dispatch
 		}
 
-		// Restore input for overlay
-		if (pOverlay)
+		// Restore input for overlay and update it
+		if (auto* pOverlay = GameModeManager::GetActiveOverlay())
 		{
 			Input::SetSuppressed(false);
 			pOverlay->on_update();
@@ -794,12 +793,13 @@ void CGame::RenderFrame()
 		FrameTiming::EndProfile(ProfileStage::Update);
 
 		// ============== Render Phase ==============
+		// Re-fetch screen state - it may have changed during update (e.g., mode change to Quit)
 		FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
 		m_Renderer->BeginFrame();
 		FrameTiming::EndProfile(ProfileStage::ClearBuffer);
 
 		// Render base screen
-		if (pScreen)
+		if (auto* pScreen = GameModeManager::GetActiveScreen())
 		{
 			pScreen->on_render();
 		}
@@ -809,7 +809,7 @@ void CGame::RenderFrame()
 		}
 
 		// Render overlay on top with shadow box
-		if (pOverlay)
+		if (auto* pOverlay = GameModeManager::GetActiveOverlay())
 		{
 			// Draw shadow box to dim the base screen
 			m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
@@ -817,7 +817,7 @@ void CGame::RenderFrame()
 		}
 
 		// Cursor always on top (for IGameScreen-based screens)
-		if (pScreen)
+		if (GameModeManager::GetActiveScreen())
 		{
 			DrawCursor();
 		}
