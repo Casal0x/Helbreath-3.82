@@ -25,8 +25,8 @@ Screen_SelectCharacter::Screen_SelectCharacter(CGame* pGame)
 
 void Screen_SelectCharacter::on_initialize()
 {
-    // Set legacy mode
-    GameModeManager::SetLegacyMode(GameMode::SelectCharacter);
+    // Set current mode for code that checks GameModeManager::GetMode()
+    GameModeManager::SetCurrentMode(GameMode::SelectCharacter);
 
     // Initialize logic (migrated from CGame::UpdateScreen_SelectCharacter m_cGameModeCount == 0 block)
     G_cSpriteAlphaDegree = 1;
@@ -50,10 +50,6 @@ void Screen_SelectCharacter::on_update()
     char cLB, cRB;
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
-
-    m_pGame->m_cGameModeCount++;
-    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
-
 
     // Handle legacy arrow input (if set by OnKeyDown) or direct input
     // NOTE: Preferring direct input for robustness

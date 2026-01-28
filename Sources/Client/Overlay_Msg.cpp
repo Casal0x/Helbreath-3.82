@@ -1,0 +1,39 @@
+// Overlay_Msg.cpp: Simple message display overlay
+//
+//////////////////////////////////////////////////////////////////////
+
+#include "Overlay_Msg.h"
+#include "Game.h"
+#include "GameModeManager.h"
+#include "CommonTypes.h"
+
+Overlay_Msg::Overlay_Msg(CGame* pGame)
+    : IGameScreen(pGame)
+{
+}
+
+void Overlay_Msg::on_initialize()
+{
+    m_dwStartTime = GameClock::GetTimeMS();
+}
+
+void Overlay_Msg::on_uninitialize()
+{
+    // Nothing to clean up
+}
+
+void Overlay_Msg::on_update()
+{
+    // Auto-transition to MainMenu after 1.5 seconds
+    uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
+    if (dwElapsed > 1500)
+    {
+        m_pGame->ChangeGameMode(GameMode::MainMenu);
+    }
+}
+
+void Overlay_Msg::on_render()
+{
+    m_pGame->PutString(10, 10, m_pGame->m_cMsg, RGB(255, 155, 155), false, 1);
+    DrawVersion();
+}

@@ -31,8 +31,8 @@ Screen_CreateAccount::~Screen_CreateAccount()
 
 void Screen_CreateAccount::on_initialize()
 {
-    // Set legacy mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetLegacyMode(GameMode::CreateNewAccount);
+    // Set current mode for code that checks GameModeManager::GetMode()
+    GameModeManager::SetCurrentMode(GameMode::CreateNewAccount);
 
     m_pGame->EndInputString();
 
@@ -61,9 +61,6 @@ void Screen_CreateAccount::on_update()
 {
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
-
-    m_pGame->m_cGameModeCount++;
-    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
 
     m_sNewAcctMsX = static_cast<short>(Input::GetMouseX());
     m_sNewAcctMsY = static_cast<short>(Input::GetMouseY());

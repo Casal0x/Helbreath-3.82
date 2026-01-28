@@ -322,10 +322,19 @@
     <ClInclude Include="Screen_SelectCharacter.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="Screen_CreateNewCharacter.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
     <ClInclude Include="Screen_CreateAccount.h">
       <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="Screen_OnGame.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen_Quit.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen_Loading.h">
       <Filter>Screens</Filter>
     </ClInclude>
     <ClInclude Include="Overlay_Connecting.h">
@@ -344,6 +353,18 @@
       <Filter>Screens\Overlays</Filter>
     </ClInclude>
     <ClInclude Include="Overlay_ChangePassword.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_VersionNotMatch.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_ConnectionLost.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_Msg.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_WaitInitData.h">
       <Filter>Screens\Overlays</Filter>
     </ClInclude>
     <ClInclude Include="MouseInterface.h">
@@ -656,10 +677,19 @@
     <ClCompile Include="Screen_SelectCharacter.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
+    <ClCompile Include="Screen_CreateNewCharacter.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
     <ClCompile Include="Screen_CreateAccount.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Screen_OnGame.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_Quit.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_Loading.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
     <ClCompile Include="Overlay_Connecting.cpp">
@@ -678,6 +708,18 @@
       <Filter>Screens\Overlays</Filter>
     </ClCompile>
     <ClCompile Include="Overlay_ChangePassword.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_VersionNotMatch.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_ConnectionLost.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_Msg.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_WaitInitData.cpp">
       <Filter>Screens\Overlays</Filter>
     </ClCompile>
     <ClCompile Include="MouseInterface.cpp">

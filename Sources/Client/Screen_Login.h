@@ -24,7 +24,7 @@ public:
 
 private:
     // Helper method for rendering (migrated from CGame::_Draw_OnLogin)
-    void DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY, int iFrame);
+    void DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY);
 
 private:
     // Screen-specific input buffers (migrated from file-scope statics)

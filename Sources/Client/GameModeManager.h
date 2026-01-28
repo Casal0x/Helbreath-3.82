@@ -1,12 +1,10 @@
 // GameModeManager.h: Manages game mode transitions with fade effects and screen objects
 //
 // Singleton manager for screen transitions with fade-out to black and fade-in effects
-// Supports both legacy mode-based screens and new IGameScreen objects
 //
 // Usage:
 //   GameModeManager::Initialize(pGame);  // Call once at startup
 //   GameModeManager::set_screen<Screen_Login>();  // Transition to new screen
-//   GameModeManager::ChangeMode(GameMode::MainMenu);  // Legacy mode change
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -110,18 +108,19 @@ public:
         return inst.m_pActiveOverlay->get_type_id() == T::screen_type_id;
     }
 
-    // ============== Legacy Mode Support (Static API) ==============
+    // ============== Mode Tracking (Static API) ==============
+    // Mode tracking is still needed for code that checks what screen is active
+    // Screens call SetCurrentMode() in on_initialize() to set their mode value
 
     static GameMode GetMode() { return Get().m_currentMode; }
     static int8_t GetModeValue() { return static_cast<int8_t>(Get().m_currentMode); }
-    static void ChangeMode(GameMode newMode, bool instant = false) { Get().ChangeModeImpl(newMode, instant); }
-
-    // Set legacy mode value without triggering a transition (for IGameScreen compatibility)
-    static void SetLegacyMode(GameMode mode) { Get().m_currentMode = mode; }
+    static void SetCurrentMode(GameMode mode) { Get().m_currentMode = mode; }
 
     // ============== Frame Update (Static API) ==============
 
     static void Update() { Get().UpdateImpl(); }
+    static void UpdateScreens() { Get().UpdateScreensImpl(); }
+    static void Render() { Get().RenderImpl(); }
 
     // ============== Transition State Queries (Static API) ==============
 
@@ -161,23 +160,6 @@ public:
     static void set_transition_config(const TransitionConfig& config) { Get().m_config = config; }
     static const TransitionConfig& get_transition_config() { return Get().m_config; }
 
-    // ============== Frame Counter - Legacy Compatibility (Static API) ==============
-
-    static int GetFrameCount() { return Get().m_frameCount; }
-    static void IncrementFrameCount() {
-        auto& inst = Get();
-        // Skip increment on the frame a mode change happened (so first frame sees count=0)
-        if (inst.m_bModeChangedThisFrame) {
-            inst.m_bModeChangedThisFrame = false;
-            return;
-        }
-        if (inst.m_frameCount < inst.m_frameCountCap)
-            inst.m_frameCount++;
-    }
-    static void ResetFrameCount() { Get().m_frameCount = 0; }
-    static void SetFrameCountCap(int cap) { Get().m_frameCountCap = cap; }
-    static int GetFrameCountCap() { return Get().m_frameCountCap; }
-
     // ============== Timing (Static API) ==============
 
     static uint32_t GetModeStartTime() { return Get().m_modeStartTime; }
@@ -197,8 +179,9 @@ private:
 
     void InitializeImpl(CGame* pGame);
     void ShutdownImpl();
-    void ChangeModeImpl(GameMode newMode, bool instant);
     void UpdateImpl();
+    void UpdateScreensImpl();
+    void RenderImpl();
     float GetFadeAlphaImpl() const;
     ScreenTypeId get_current_screen_type_impl() const;
 
@@ -237,7 +220,6 @@ private:
 
     void clear_overlay_impl();
 
-    void ApplyModeChange();
     void ApplyScreenChange();
 
     // ============== State ==============
@@ -257,25 +239,16 @@ private:
     // Screen type tracking
     ScreenTypeId m_previousScreenType = nullptr;
 
-    // Current and pending modes (for legacy support)
+    // Current mode value (for code that checks what screen is active)
     GameMode m_currentMode = GameMode::Loading;
-    GameMode m_pendingMode = GameMode::Loading;
 
     // Transition state machine (time-based)
     TransitionState m_transitionState = TransitionState::None;
     TransitionConfig m_config;
     float m_transitionTime = 0.0f;
 
-    // Legacy frame counter for DrawScreen_* compatibility
-    int m_frameCount = 0;
-    int m_frameCountCap = DEFAULT_FRAME_COUNT_CAP;
-    bool m_bModeChangedThisFrame = false;  // Skip IncrementFrameCount on frame mode changed
-
     // Timing
     uint32_t m_modeStartTime = 0;
-
-    // Configuration
-    static constexpr int DEFAULT_FRAME_COUNT_CAP = 120;
 };
 
 // ============== IGameScreen Template Implementations ==============

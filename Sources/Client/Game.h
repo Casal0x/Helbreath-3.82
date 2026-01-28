@@ -191,7 +191,6 @@ public:
 	void DrawObjectFOE(int ix, int iy, int iFrame);
 	void GrandMagicResult(char * pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4) ;
 	void MeteorStrikeComing(int iCode);
-	void _Draw_OnLogin(char * pAccount, char * pPassword, int msX, int msY, int iFrame = 60000);
 
 	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
 	void AddMapStatusInfo(char * pData, bool bIsLastData);
@@ -225,47 +224,23 @@ public:
 
 	int m_iAgreeView;
 	void _LoadAgreementTextContents(char cType);
-	void UpdateScreen_OnAgreement();
 
 	void UseShortCut( int num );
-	void UpdateScreen();
-	void DrawScreen();
-	void DrawCursor();        // Dispatches to Draw_* methods based on game mode
+	void DrawCursor();
 	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
 	// UpdateScreen_OnGame/DrawScreen_OnGame removed - now handled by Screen_OnGame
 	void MakeSprite( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeTileSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void MakeEffectSpr( char* FileName, short sStart, short sCount, bool bAlphaEffect = true);
 	void UpdateScreen_OnLoading(bool bActive);
-	void UpdateScreen_OnSelectCharacter();
-	void UpdateScreen_OnLogResMsg();
-	void UpdateScreen_OnSelectCharacter(short sX, short sY, short msX, short msY, bool bIgnoreFocus = false);
 	void DrawScreen_OnLoadingProgress();
 
-	// Separated Update/Draw methods (Phase 3 refactor)
-	void UpdateScreen_Quit();
-	void DrawScreen_Quit();
-	void UpdateScreen_VersionNotMatch();
-	void DrawScreen_VersionNotMatch();
-	void UpdateScreen_ConnectionLost();
-	void DrawScreen_ConnectionLost();
-	void UpdateScreen_Msg();
-	void DrawScreen_Msg();
-
-	// Legacy overlay functions removed - migrated to Overlay classes:
+	// Legacy screen/overlay functions removed - migrated to Screen/Overlay classes:
+	// Screen_Quit, Screen_Loading, Screen_CreateNewAccount, Screen_SelectCharacter,
+	// Screen_CreateNewCharacter, Screen_MainMenu, Screen_Login, Screen_OnGame,
 	// Overlay_WaitingResponse, Overlay_Connecting, Overlay_QueryForceLogin,
-	// Overlay_QueryDeleteCharacter, Overlay_LogResMsg, Overlay_ChangePassword
-
-	void UpdateScreen_WaitInitData();
-	void DrawScreen_WaitInitData();
-	void UpdateScreen_CreateNewAccount();
-	void DrawScreen_CreateNewAccount();
-	void UpdateScreen_SelectCharacter();
-	void DrawScreen_SelectCharacter();
-	void UpdateScreen_CreateNewCharacter();
-	void DrawScreen_CreateNewCharacter();
-	void UpdateScreen_Loading();
-	void DrawScreen_Loading();
+	// Overlay_QueryDeleteCharacter, Overlay_LogResMsg, Overlay_ChangePassword,
+	// Overlay_VersionNotMatch, Overlay_ConnectionLost, Overlay_Msg, Overlay_WaitInitData
 
 	void NpcTalkHandler(char * pData);
 	int  _iGetWeaponSkillType();
@@ -307,9 +282,6 @@ public:
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
-	void ClearContents_OnSelectCharacter();
-	void _Draw_UpdateScreen_OnCreateNewAccount();
-	bool _bDraw_OnCreateNewCharacter(char * pName, short msX, short msY, int iPoint);
 	bool _bGetIsStringIsNumber(char * pStr);
 	bool bInitMagicCfgList();
 	void _LoadShopMenuContents(char cType);
@@ -654,13 +626,11 @@ public:
 	unsigned char m_cInputMaxLen;
 	char m_cEdit[4];
 	char G_cTxt[128];
-	char m_cGameModeCount;
 	char m_cBGMmapName[12];
 	char m_cItemOrder[DEF_MAXITEMS];
 	char m_cAmountString[12];
 	char m_cLogOutCount;
 	char m_cRestartCount;
-	char m_cGameMode;
 
 	// Overlay system state
 	OverlayType m_activeOverlay = OverlayType::None;

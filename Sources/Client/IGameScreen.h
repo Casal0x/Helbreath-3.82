@@ -90,6 +90,9 @@ protected:
 
     void clear_overlay();
 
+    // Timing helper - returns milliseconds since this screen/overlay was initialized
+    uint32_t get_elapsed_ms() const;
+
     // Access to owning game instance
     CGame* m_pGame;
 };

@@ -23,8 +23,8 @@ Screen_OnGame::Screen_OnGame(CGame* pGame)
 
 void Screen_OnGame::on_initialize()
 {
-    // Set legacy mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetLegacyMode(GameMode::MainGame);
+    // Set current mode for code that checks GameModeManager::GetMode()
+    GameModeManager::SetCurrentMode(GameMode::MainGame);
 
     m_dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwFPStime = m_dwTime;

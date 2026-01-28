@@ -41,7 +41,6 @@ void HandleTimeChange(CGame* pGame, char* pData)
 		pGame->PlaySound('E', 31, 0);
 		G_cSpriteAlphaDegree = 2; break;
 	}
-	GameModeManager::ResetFrameCount();
 }
 
 void HandleNoticeMsg(CGame* pGame, char* pData)

@@ -18,8 +18,8 @@ Screen_MainMenu::Screen_MainMenu(CGame* pGame)
 
 void Screen_MainMenu::on_initialize()
 {
-    // Set legacy mode for code that checks GameModeManager::GetMode()
-    GameModeManager::SetLegacyMode(GameMode::MainMenu);
+    // Set current mode for code that checks GameModeManager::GetMode()
+    GameModeManager::SetCurrentMode(GameMode::MainMenu);
 
     // Initialization logic from CGame::UpdateScreen_MainMenu
     if (G_pCalcSocket != 0)
@@ -52,9 +52,6 @@ void Screen_MainMenu::on_update()
     // Poll mouse input
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
-
-    m_pGame->m_cGameModeCount++;
-    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
 
     // Update focus based on mouse position
     if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 177 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 198 + SCREENY)) m_cCurFocus = 1;
@@ -98,7 +95,6 @@ void Screen_MainMenu::on_update()
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         case 2:
-            m_pGame->ClearContents_OnSelectCharacter();
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         case 3:
@@ -118,7 +114,6 @@ void Screen_MainMenu::on_update()
         // Account button
         else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
             m_cCurFocus = 2;
-            m_pGame->ClearContents_OnSelectCharacter();
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         }

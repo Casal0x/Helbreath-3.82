@@ -99,8 +99,8 @@ void Overlay_LogResMsg::on_update()
     // Check for OK button click
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (Input::IsMouseInRect(370 + SCREENX, 240 + SCREENY,
-                                  370 + SCREENX + DEF_BTNSZX, 240 + SCREENY + DEF_BTNSZY))
+        if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY,
+                                  370 + SCREENX + DEF_BTNSZX, 244 + SCREENY + DEF_BTNSZY))
         {
             HandleDismiss();
             return;

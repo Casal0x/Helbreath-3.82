@@ -80,3 +80,10 @@ void IGameScreen::ShowReceivedString(bool bIsHide)
 {
     m_pGame->ShowReceivedString(bIsHide);
 }
+
+// ============== Timing Helper ==============
+
+uint32_t IGameScreen::get_elapsed_ms() const
+{
+    return GameClock::GetTimeMS() - GameModeManager::GetModeStartTime();
+}

@@ -2,10 +2,13 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+// Game.h must come first to ensure winsock2 is loaded before winsock
+#include "Game.h"         // For CGame, m_Renderer, LOGICAL_MAX_X/Y
 #include "GameModeManager.h"
 #include "IGameScreen.h"
 #include "CommonTypes.h"  // For GameClock
 #include "FrameTiming.h"  // For FrameTiming::GetDeltaTime()
+#include "IInput.h"       // For Input::SetSuppressed
 
 // ============== Singleton ==============
 
@@ -61,55 +64,6 @@ void GameModeManager::clear_overlay_impl()
     }
 }
 
-// ============== Legacy Mode Change ==============
-
-void GameModeManager::ChangeModeImpl(GameMode newMode, bool instant)
-{
-    // If we have an active screen object, clear it when switching to legacy mode
-    if (m_pCurrentScreen)
-    {
-        // Clear the pending screen factory since we're going to legacy mode
-        m_pendingScreenFactory = nullptr;
-    }
-
-    // Already in requested mode with no transition pending - ignore
-    if (m_currentMode == newMode && m_transitionState == TransitionState::None)
-        return;
-
-    // If already transitioning, update the pending mode
-    if (m_transitionState != TransitionState::None)
-    {
-        m_pendingMode = newMode;
-        return;
-    }
-
-    m_pendingMode = newMode;
-
-    if (instant)
-    {
-        // Instant transition: Apply mode change immediately
-        // For screen objects, uninitialize current screen
-        if (m_pCurrentScreen)
-        {
-            m_previousScreenType = m_pCurrentScreen->get_type_id();
-            m_pCurrentScreen->on_uninitialize();
-            m_pCurrentScreen.reset();
-        }
-
-        ApplyModeChange();
-
-        // Start fade-in from black
-        m_transitionState = TransitionState::FadeIn;
-        m_transitionTime = 0.0f;
-    }
-    else
-    {
-        // Normal transition: Start fade-out first
-        m_transitionState = TransitionState::FadeOut;
-        m_transitionTime = 0.0f;
-    }
-}
-
 // ============== Frame Update ==============
 
 void GameModeManager::UpdateImpl()
@@ -132,26 +86,8 @@ void GameModeManager::UpdateImpl()
         break;
 
     case TransitionState::Switching:
-        // Perform the actual screen/mode switch at full opacity
-
-        // If we have a pending screen factory, use screen-based transition
-        if (m_pendingScreenFactory)
-        {
-            ApplyScreenChange();
-        }
-        else
-        {
-            // Legacy mode-based transition
-            // Uninitialize current screen object if present
-            if (m_pCurrentScreen)
-            {
-                m_previousScreenType = m_pCurrentScreen->get_type_id();
-                m_pCurrentScreen->on_uninitialize();
-                m_pCurrentScreen.reset();
-            }
-
-            ApplyModeChange();
-        }
+        // Perform the actual screen switch at full opacity
+        ApplyScreenChange();
 
         // Begin fade-in
         m_transitionState = TransitionState::FadeIn;
@@ -171,6 +107,51 @@ void GameModeManager::UpdateImpl()
     case TransitionState::None:
         // Should not reach here, but handle it gracefully
         break;
+    }
+}
+
+// ============== Screen Update/Render ==============
+
+void GameModeManager::UpdateScreensImpl()
+{
+    // Skip during switching phase (screen is being replaced)
+    if (m_transitionState == TransitionState::Switching)
+        return;
+
+    // If overlay exists, suppress input for base screen
+    if (m_pActiveOverlay)
+    {
+        Input::SetSuppressed(true);
+    }
+
+    // Update base screen (input suppressed if overlay active)
+    if (m_pCurrentScreen)
+    {
+        m_pCurrentScreen->on_update();
+    }
+
+    // Restore input for overlay and update it
+    if (m_pActiveOverlay)
+    {
+        Input::SetSuppressed(false);
+        m_pActiveOverlay->on_update();
+    }
+}
+
+void GameModeManager::RenderImpl()
+{
+    // Render base screen
+    if (m_pCurrentScreen)
+    {
+        m_pCurrentScreen->on_render();
+    }
+
+    // Render overlay on top with shadow box
+    if (m_pActiveOverlay)
+    {
+        // Draw shadow box to dim the base screen
+        m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+        m_pActiveOverlay->on_render();
     }
 }
 
@@ -214,15 +195,7 @@ GameModeManager::ScreenTypeId GameModeManager::get_current_screen_type_impl() co
     return m_pCurrentScreen->get_type_id();
 }
 
-// ============== Mode/Screen Application ==============
-
-void GameModeManager::ApplyModeChange()
-{
-    m_currentMode = m_pendingMode;
-    m_frameCount = 0;
-    m_bModeChangedThisFrame = true;  // Skip IncrementFrameCount this frame
-    m_modeStartTime = GameClock::GetTimeMS();
-}
+// ============== Screen Application ==============
 
 void GameModeManager::ApplyScreenChange()
 {
@@ -246,8 +219,6 @@ void GameModeManager::ApplyScreenChange()
         }
     }
 
-    // Reset frame counter and timing
-    m_frameCount = 0;
-    m_bModeChangedThisFrame = true;  // Skip IncrementFrameCount this frame
+    // Reset timing for new screen
     m_modeStartTime = GameClock::GetTimeMS();
 }

@@ -453,11 +453,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 	// Log-Out / Continue button
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + 225) && (msY <= sY + 225 + DEF_BTNSZY)) {
 		if (m_pGame->m_cLogOutCount == -1) {
-#ifdef _DEBUG
-			m_pGame->m_cLogOutCount = 1;
-#else
 			m_pGame->m_cLogOutCount = 11;
-#endif
 		}
 		else {
 			m_pGame->m_cLogOutCount = -1;

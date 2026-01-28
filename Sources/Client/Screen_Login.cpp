@@ -21,8 +21,8 @@ Screen_Login::Screen_Login(CGame* pGame)
 
 void Screen_Login::on_initialize()
 {
-    // Set legacy mode
-    GameModeManager::SetLegacyMode(GameMode::Login);
+    // Set current mode for code that checks GameModeManager::GetMode()
+    GameModeManager::SetCurrentMode(GameMode::Login);
 
     m_pGame->EndInputString();
     m_cPrevFocus = 1;
@@ -48,9 +48,6 @@ void Screen_Login::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
 
-    m_pGame->m_cGameModeCount++;
-    if (m_pGame->m_cGameModeCount > 100) m_pGame->m_cGameModeCount = 100;
-    
     // Explicit TAB handling since legacy OnKeyDown ignores it
     if (Input::IsKeyPressed(VK_TAB))
     {
@@ -193,18 +190,26 @@ void Screen_Login::on_update()
 
 void Screen_Login::on_render()
 {
-    DrawLoginWindow(m_cLoginName, m_cLoginPassword, Input::GetMouseX(), Input::GetMouseY(), m_pGame->m_cGameModeCount);
+    DrawLoginWindow(m_cLoginName, m_cLoginPassword, Input::GetMouseX(), Input::GetMouseY());
 }
 
 // Logic migrated from CGame::_Draw_OnLogin
-void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY, int iFrame)
+void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY)
 {
     bool bFlag = true;
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0 + SCREENX, 0 + SCREENY, 0, true);
     m_pGame->DrawVersion();
 
-    if ((iFrame >= 15) && (iFrame <= 20)) m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(39 + SCREENX, 121 + SCREENY, 2, SpriteLib::DrawParams::Alpha(0.25f));
-    else if (iFrame > 20) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 39 + SCREENX, 121 + SCREENY, 2, true);
+    // Smooth alpha fade-in for login box: 0-500ms delay, then 500-700ms fade from 0 to 1
+    static constexpr uint32_t FADE_DELAY_MS = 500;
+    static constexpr uint32_t FADE_DURATION_MS = 200;
+
+    uint32_t elapsedMs = get_elapsed_ms();
+    if (elapsedMs > FADE_DELAY_MS) {
+        float fadeProgress = static_cast<float>(elapsedMs - FADE_DELAY_MS) / FADE_DURATION_MS;
+        float alpha = fadeProgress > 1.0f ? 1.0f : fadeProgress;
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(39 + SCREENX, 121 + SCREENY, 2, SpriteLib::DrawParams::Alpha(alpha));
+    }
 
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(pAccount) != false)
