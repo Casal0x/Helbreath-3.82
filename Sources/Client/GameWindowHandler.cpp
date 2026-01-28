@@ -22,13 +22,13 @@ GameWindowHandler::GameWindowHandler(CGame* pGame)
 {
 }
 
-void GameWindowHandler::OnClose()
+bool GameWindowHandler::OnClose()
 {
     if (!m_pGame)
     {
         // No game, just close via Window abstraction
         DestroyWindow(Window::GetHandle());
-        return;
+        return true;  // Proceed with close
     }
 
     if ((GameModeManager::GetMode() == GameMode::MainGame) && (m_pGame->m_bForceDisconn == false))
@@ -41,21 +41,25 @@ void GameWindowHandler::OnClose()
         if (m_pGame->m_cLogOutCount == -1 || m_pGame->m_cLogOutCount > 11)
             m_pGame->m_cLogOutCount = 11;
 #endif
+        return false;  // Cancel close - let logout countdown handle it
     }
     else if (GameModeManager::GetMode() == GameMode::MainMenu)
     {
         // On main menu, show quit screen
         m_pGame->ChangeGameMode(GameMode::Quit);
+        return false;  // Cancel close - let quit screen handle it
     }
     else if (GameModeManager::GetMode() == GameMode::Null)
     {
         // Game code requested close (e.g., from quit screen), proceed with destruction
         DestroyWindow(G_hWnd);
+        return true;  // Proceed with close
     }
     else
     {
         // Other modes (loading, etc.), proceed with closing
         DestroyWindow(G_hWnd);
+        return true;  // Proceed with close
     }
 }
 
