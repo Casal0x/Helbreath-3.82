@@ -226,6 +226,23 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	if (!IsValidName(cAcc) || !IsValidName(cPassword) || !IsValidName(cName))
 		return;
 
+	// Check if character name already exists globally (across all accounts)
+	if (CharacterNameExistsGlobally(cName)) {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' already exists globally", cName);
+		PutLogList(G_cTxt);
+		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		return;
+	}
+
+	// Check if character name conflicts with an existing account name
+	if (AccountNameExists(cName)) {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' conflicts with existing account name", cName);
+		PutLogList(G_cTxt);
+		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		return;
+	}
+
+	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
 		if (std::strncmp(entry.characterName, cName, 10) == 0) {
 			SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);

@@ -194,10 +194,10 @@ void DialogBox_SysMenu::DrawMiscSettings(short sX, short sY)
 	// Current time
 	SYSTEMTIME SysTime;
 	GetLocalTime(&SysTime);
-	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-	wsprintf(m_pGame->G_cTxt, "%d:%d:%d:%d:%d", SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
-	PutString(sX + 23, sY + 204, m_pGame->G_cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 204, m_pGame->G_cTxt, RGB(45, 25, 25));
+	char timeBuf[64];
+	snprintf(timeBuf, sizeof(timeBuf), "%d:%d:%d:%d:%d", SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
+	PutString(sX + 23, sY + 204, timeBuf, RGB(45, 25, 25));
+	PutString(sX + 24, sY + 204, timeBuf, RGB(45, 25, 25));
 }
 
 void DialogBox_SysMenu::DrawServerName(short sX, short sY)
@@ -474,8 +474,9 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 			m_pGame->m_cRestartCount = 5;
 			m_pGame->m_dwRestartCountTime = GameClock::GetTimeMS();
 			DisableThisDialog();
-			wsprintf(m_pGame->G_cTxt, DLGBOX_CLICK_SYSMENU1, m_pGame->m_cRestartCount);
-			AddEventList(m_pGame->G_cTxt, 10);
+			char restartBuf[64];
+			snprintf(restartBuf, sizeof(restartBuf), DLGBOX_CLICK_SYSMENU1, m_pGame->m_cRestartCount);
+			AddEventList(restartBuf, 10);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}

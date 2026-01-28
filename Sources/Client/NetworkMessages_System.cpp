@@ -142,12 +142,13 @@ void HandleServerChange(CGame* pGame, char* pData)
 void HandleTotalUsers(CGame* pGame, char* pData)
 {
 	int iTotal;
+	char cTxt[128];
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTotalUsers>(
 		pData, sizeof(hb::net::PacketNotifyTotalUsers));
 	if (!pkt) return;
 	iTotal = pkt->total;
-	wsprintf(pGame->G_cTxt, NOTIFYMSG_TOTAL_USER1, iTotal);
-	pGame->AddEventList(pGame->G_cTxt, 10);
+	snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_TOTAL_USER1, iTotal);
+	pGame->AddEventList(cTxt, 10);
 }
 
 void HandleChangePlayMode(CGame* pGame, char* pData)
@@ -193,15 +194,16 @@ void HandleChangePlayMode(CGame* pGame, char* pData)
 void HandleForceRecallTime(CGame* pGame, char* pData)
 {
 	short sV1;
+	char cTxt[128];
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyForceRecallTime>(
 		pData, sizeof(hb::net::PacketNotifyForceRecallTime));
 	if (!pkt) return;
 	sV1 = static_cast<short>(pkt->seconds_left);
 	if ((int)(sV1 / 20) > 0)
-		wsprintf(pGame->G_cTxt, NOTIFY_MSG_FORCERECALLTIME1, (int)(sV1 / 20));
+		snprintf(cTxt, sizeof(cTxt), NOTIFY_MSG_FORCERECALLTIME1, (int)(sV1 / 20));
 	else
-		wsprintf(pGame->G_cTxt, NOTIFY_MSG_FORCERECALLTIME2);
-	pGame->AddEventList(pGame->G_cTxt, 10);
+		snprintf(cTxt, sizeof(cTxt), "%s", NOTIFY_MSG_FORCERECALLTIME2);
+	pGame->AddEventList(cTxt, 10);
 }
 
 void HandleNoRecall(CGame* pGame, char* pData)

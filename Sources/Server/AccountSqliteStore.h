@@ -209,3 +209,7 @@ bool InsertCharacterRecord(sqlite3* db, const AccountDbCharacterData& data);
 bool SaveCharacterSnapshot(sqlite3* db, const CClient* client);
 bool DeleteCharacterData(sqlite3* db, const char* characterName);
 void CloseAccountDatabase(sqlite3* db);
+
+// Global name checks - scan all account databases
+bool CharacterNameExistsGlobally(const char* characterName);
+bool AccountNameExists(const char* accountName);

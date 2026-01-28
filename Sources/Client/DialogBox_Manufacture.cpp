@@ -483,13 +483,14 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 	if (Info().cStr[2] == 1) {
 		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200 - 45, DRAW_DIALOGBOX_SKILLDLG31, RGB(55, 25, 25));
 
+		char resultBuf[64];
 		if (Info().sV1 == DEF_ITEMTYPE_MATERIAL) {
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
-			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, m_pGame->G_cTxt, RGB(55, 25, 25));
+			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
+			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf, RGB(55, 25, 25));
 		}
 		else {
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
-			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, m_pGame->G_cTxt, RGB(55, 25, 25));
+			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
+			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf, RGB(55, 25, 25));
 		}
 	}
 	else {

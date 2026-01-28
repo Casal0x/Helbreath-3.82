@@ -52,10 +52,11 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	// Show item count for consumables and arrows
 	if ((pItem->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pItem->m_cItemType == DEF_ITEMTYPE_ARROW))
 	{
-		m_pGame->DisplayCommaNumber_G_cTxt((int)pItem->m_dwCount);
+		char countBuf[32];
+		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
 		PutString2(baseX + COUNT_OFFSET_X + pItem->m_sX,
 		           baseY + COUNT_OFFSET_Y + pItem->m_sY,
-		           m_pGame->G_cTxt, 200, 200, 200);
+		           countBuf, 200, 200, 200);
 	}
 }
 

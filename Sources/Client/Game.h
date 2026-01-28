@@ -203,7 +203,7 @@ public:
 	void ShowReceivedString(bool bIsHide = false);
 	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
-	void DisplayCommaNumber_G_cTxt(uint32_t iGold);// Name changed by Snoopy (easyer to understand...)
+	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
 
 	// Slates - Alastor
 	void bItemDrop_Slates();
@@ -354,10 +354,10 @@ public:
 	void ReleaseUnusedSprites();
 	void OnKeyUp(int key);
 	void ChangeGameMode(GameMode mode);
-	void PutString(int iX, int iY, char * pString, COLORREF color);
-	void PutString(int iX, int iY, char * pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
-	void PutString2(int iX, int iY, char * pString, short sR, short sG, short sB);
-	void PutAlignedString(int iX1, int iX2, int iY, char * pString, short sR = 0, short sG = 0, short sB = 0);
+	void PutString(int iX, int iY, const char* pString, COLORREF color);
+	void PutString(int iX, int iY, const char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
+	void PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB);
+	void PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR = 0, short sG = 0, short sB = 0);
 	void PutString_SprFont(int iX, int iY, char * pStr, short sR, short sG, short sB);
 	void PutString_SprFont2(int iX, int iY, char * pStr, short sR, short sG, short sB);
 	void PutString_SprFont3(int iX, int iY, char * pStr, short sR, short sG, short sB, bool bTrans = false, int iType = 0);

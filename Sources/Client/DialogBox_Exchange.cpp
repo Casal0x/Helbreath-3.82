@@ -65,8 +65,9 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		DrawItems(sX, sY, msX, msY, 0, 8);
 
-		wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
-		PutAlignedString(sX, sX + szX, sY + 215, m_pGame->G_cTxt, 55, 25, 25);
+		char exchangeBuf[128];
+		snprintf(exchangeBuf, sizeof(exchangeBuf), DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
+		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf, 55, 25, 25);
 		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, 55, 25, 25);
 		PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, 55, 25, 25);
 		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, 55, 25, 25);
@@ -144,11 +145,10 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 
 		if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 != 1) {
 			if (m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3 > 1) {
-				m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
-				strcpy(cTxt2, m_pGame->G_cTxt);
+				m_pGame->FormatCommaNumber(m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3, cTxt2, sizeof(cTxt2));
 			}
 			else {
-				wsprintf(cTxt2, DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
+				snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
 			}
 			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2, 35, 35, 35);
 			iLoc += 15;

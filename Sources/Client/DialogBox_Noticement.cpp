@@ -19,12 +19,15 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode)
 	{
 	case 1: // Server shutting down in X minutes
-		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-		if (Info().sV1 != 0)
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_NOTICEMSG1, Info().sV1);
-		else
-			strcpy(m_pGame->G_cTxt, DRAW_DIALOGBOX_NOTICEMSG2);
-		PutAlignedString(sX, sX + szX, sY + 31, m_pGame->G_cTxt, 100, 10, 10);
+		{
+			char msgBuf[128];
+			if (Info().sV1 != 0)
+				snprintf(msgBuf, sizeof(msgBuf), DRAW_DIALOGBOX_NOTICEMSG1, Info().sV1);
+			else
+				strncpy(msgBuf, DRAW_DIALOGBOX_NOTICEMSG2, sizeof(msgBuf) - 1);
+			msgBuf[sizeof(msgBuf) - 1] = '\0';
+			PutAlignedString(sX, sX + szX, sY + 31, msgBuf, 100, 10, 10);
+		}
 		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
 		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
 		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG5);

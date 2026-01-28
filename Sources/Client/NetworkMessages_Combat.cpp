@@ -53,6 +53,7 @@ namespace NetworkMessageHandlers {
 	{
 		DWORD iExp;
 		int     iPKcount, iStr, iVit, iDex, iInt, iMag, iChr;
+		char cTxt[128];
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPKpenalty>(
 			pData, sizeof(hb::net::PacketNotifyPKpenalty));
 		if (!pkt) return;
@@ -64,12 +65,12 @@ namespace NetworkMessageHandlers {
 		iMag = pkt->mag;
 		iChr = pkt->chr;
 		iPKcount = pkt->pk_count;
-		wsprintf(pGame->G_cTxt, NOTIFYMSG_PK_PENALTY1, iPKcount);
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_PENALTY1, iPKcount);
+		pGame->AddEventList(cTxt, 10);
 		if (pGame->m_pPlayer->m_iExp > iExp)
 		{
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
-			pGame->AddEventList(pGame->G_cTxt, 10);
+			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_PENALTY2, pGame->m_pPlayer->m_iExp - iExp);
+			pGame->AddEventList(cTxt, 10);
 		}
 		pGame->m_pPlayer->m_iExp = iExp;
 		pGame->m_pPlayer->m_iStr = iStr;
@@ -112,8 +113,9 @@ namespace NetworkMessageHandlers {
 
 		if (iWarContribution > pGame->m_pPlayer->m_iWarContribution)
 		{
-			wsprintf(pGame->G_cTxt, "%s +%d!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
-			pGame->SetTopMsg(pGame->G_cTxt, 5);
+			char warBuf[128];
+			snprintf(warBuf, sizeof(warBuf), "%s +%d!", pGame->m_pGameMsgList[21]->m_pMsg, iWarContribution - pGame->m_pPlayer->m_iWarContribution);
+			pGame->SetTopMsg(warBuf, 5);
 		}
 		else if (iWarContribution < pGame->m_pPlayer->m_iWarContribution)
 		{

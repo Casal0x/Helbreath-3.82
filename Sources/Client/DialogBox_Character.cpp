@@ -13,15 +13,16 @@ DialogBox_Character::DialogBox_Character(CGame* pGame)
 // Helper: Display stat with optional angelic bonus (blue if boosted)
 void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus)
 {
+	char buf[16];
 	if (angelicBonus == 0)
 	{
-		wsprintf(m_pGame->G_cTxt, "%d", baseStat);
-		PutAlignedString(x1, x2, y, m_pGame->G_cTxt, 45, 25, 25);
+		snprintf(buf, sizeof(buf), "%d", baseStat);
+		PutAlignedString(x1, x2, y, buf, 45, 25, 25);
 	}
 	else
 	{
-		wsprintf(m_pGame->G_cTxt, "%d", baseStat + angelicBonus);
-		PutAlignedString(x1, x2, y, m_pGame->G_cTxt, 0, 0, 192);
+		snprintf(buf, sizeof(buf), "%d", baseStat + angelicBonus);
+		PutAlignedString(x1, x2, y, buf, 0, 0, 192);
 	}
 }
 
@@ -86,49 +87,49 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 0, false, dialogTrans);
 
 	// Player name and PK/contribution
-	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-	strcpy(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_cPlayerName);
-	strcat(m_pGame->G_cTxt, " : ");
+	char infoBuf[128];
+	char cTxt2[64];
+	snprintf(infoBuf, sizeof(infoBuf), "%s : ", m_pGame->m_pPlayer->m_cPlayerName);
 
-	char cTxt2[120];
 	if (m_pGame->m_pPlayer->m_iPKCount > 0) {
-		wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
-		strcat(m_pGame->G_cTxt, cTxt2);
+		snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER1, m_pGame->m_pPlayer->m_iPKCount);
+		strncat(infoBuf, cTxt2, sizeof(infoBuf) - strlen(infoBuf) - 1);
 	}
-	wsprintf(cTxt2, DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
-	strcat(m_pGame->G_cTxt, cTxt2);
-	PutAlignedString(sX + 24, sX + 252, sY + 52, m_pGame->G_cTxt, 45, 20, 20);
+	snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
+	strncat(infoBuf, cTxt2, sizeof(infoBuf) - strlen(infoBuf) - 1);
+	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf, 45, 20, 20);
 
 	// Citizenship / Guild status
-	std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
+	char statusBuf[128] = {};
 	if (!m_pGame->m_pPlayer->m_bCitizen)
 	{
-		strcpy(m_pGame->G_cTxt, DRAW_DIALOGBOX_CHARACTER7);
+		strncpy(statusBuf, DRAW_DIALOGBOX_CHARACTER7, sizeof(statusBuf) - 1);
 	}
 	else
 	{
-		strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_bHunter
+		strncpy(statusBuf, m_pGame->m_pPlayer->m_bHunter
 			? (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARECIVIL : DEF_MSG_ELVCIVIL)
-			: (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER));
+			: (m_pGame->m_pPlayer->m_bAresden ? DEF_MSG_ARESOLDIER : DEF_MSG_ELVSOLDIER), sizeof(statusBuf) - 1);
 
 		if (m_pGame->m_pPlayer->m_iGuildRank >= 0)
 		{
-			strcat(m_pGame->G_cTxt, "(");
-			strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_cGuildName);
-			strcat(m_pGame->G_cTxt, m_pGame->m_pPlayer->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1);
+			strncat(statusBuf, "(", sizeof(statusBuf) - strlen(statusBuf) - 1);
+			strncat(statusBuf, m_pGame->m_pPlayer->m_cGuildName, sizeof(statusBuf) - strlen(statusBuf) - 1);
+			strncat(statusBuf, m_pGame->m_pPlayer->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1, sizeof(statusBuf) - strlen(statusBuf) - 1);
 		}
 	}
-	PutAlignedString(sX, sX + 275, sY + 69, m_pGame->G_cTxt, 45, 25, 25);
+	PutAlignedString(sX, sX + 275, sY + 69, statusBuf, 45, 25, 25);
 
 	// Level, Exp, Next Exp
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iLevel);
-	PutAlignedString(sX + 180, sX + 250, sY + 106, m_pGame->G_cTxt, 45, 25, 25);
+	char statBuf[32];
+	snprintf(statBuf, sizeof(statBuf), "%d", m_pGame->m_pPlayer->m_iLevel);
+	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf, 45, 25, 25);
 
-	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->m_pPlayer->m_iExp);
-	PutAlignedString(sX + 180, sX + 250, sY + 125, m_pGame->G_cTxt, 45, 25, 25);
+	m_pGame->FormatCommaNumber(m_pGame->m_pPlayer->m_iExp, statBuf, sizeof(statBuf));
+	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf, 45, 25, 25);
 
-	m_pGame->DisplayCommaNumber_G_cTxt(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1));
-	PutAlignedString(sX + 180, sX + 250, sY + 142, m_pGame->G_cTxt, 45, 25, 25);
+	m_pGame->FormatCommaNumber(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1), statBuf, sizeof(statBuf));
+	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf, 45, 25, 25);
 
 	// Calculate max stats
 	int iMaxHP = CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
@@ -137,23 +138,24 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	int iMaxLoad = CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
 
 	// HP, MP, SP
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iHP, iMaxHP);
-	PutAlignedString(sX + 180, sX + 250, sY + 173, m_pGame->G_cTxt, 45, 25, 25);
+	char valueBuf[32];
+	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iHP, iMaxHP);
+	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iMP, iMaxMP);
-	PutAlignedString(sX + 180, sX + 250, sY + 191, m_pGame->G_cTxt, 45, 25, 25);
+	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iMP, iMaxMP);
+	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf, 45, 25, 25);
 
-	wsprintf(m_pGame->G_cTxt, "%d/%d", m_pGame->m_pPlayer->m_iSP, iMaxSP);
-	PutAlignedString(sX + 180, sX + 250, sY + 208, m_pGame->G_cTxt, 45, 25, 25);
+	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iSP, iMaxSP);
+	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf, 45, 25, 25);
 
 	// Max Load
 	int iTotalWeight = m_pGame->_iCalcTotalWeight();
-	wsprintf(m_pGame->G_cTxt, "%d/%d", (iTotalWeight / 100), iMaxLoad);
-	PutAlignedString(sX + 180, sX + 250, sY + 240, m_pGame->G_cTxt, 45, 25, 25);
+	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", (iTotalWeight / 100), iMaxLoad);
+	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf, 45, 25, 25);
 
 	// Enemy Kills
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iEnemyKillCount);
-	PutAlignedString(sX + 180, sX + 250, sY + 257, m_pGame->G_cTxt, 45, 25, 25);
+	snprintf(valueBuf, sizeof(valueBuf), "%d", m_pGame->m_pPlayer->m_iEnemyKillCount);
+	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf, 45, 25, 25);
 
 	// Stats with angelic bonuses
 	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);   // Str
@@ -162,10 +164,11 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawStat(sX + 135, sX + 167, sY + 302, m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag); // Mag
 
 	// Vit and Chr (no angelic bonus)
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iVit);
-	PutAlignedString(sX + 218, sX + 251, sY + 285, m_pGame->G_cTxt, 45, 25, 25);
-	wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iCharisma);
-	PutAlignedString(sX + 218, sX + 251, sY + 302, m_pGame->G_cTxt, 45, 25, 25);
+	char vitChrBuf[16];
+	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iVit);
+	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf, 45, 25, 25);
+	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iCharisma);
+	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf, 45, 25, 25);
 
 	// Build equipment status array
 	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];

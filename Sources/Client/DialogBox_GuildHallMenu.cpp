@@ -42,15 +42,16 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 1: // TP diag
 		if (m_pGame->m_iTeleportMapCount > 0)
 		{
+			char teleportBuf[128];
 			PutString2(sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, 55, 25, 25);
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
 				m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, cTxt);
-				wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
+				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
 				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, m_pGame->G_cTxt, 255, 255, 255);
-				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, m_pGame->G_cTxt, 250, 250, 0);
+					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 255, 255, 255);
+				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 250, 250, 0);
 			}
 		}
 		else if (m_pGame->m_iTeleportMapCount == -1)
@@ -116,8 +117,9 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 65, 65, 65);
 
 		PutAlignedString(sX, sX + szX, sY + 220, "You should join a guild to hire soldiers.", 4, 0, 50);
-		wsprintf(m_pGame->G_cTxt, "Summon points : %d", m_pGame->m_pPlayer->m_iConstructionPoint);
-		PutAlignedString(sX, sX + szX, sY + 250, m_pGame->G_cTxt, 4, 0, 50);
+		char pointsBuf[64];
+		snprintf(pointsBuf, sizeof(pointsBuf), "Summon points : %d", m_pGame->m_pPlayer->m_iConstructionPoint);
+		PutAlignedString(sX, sX + szX, sY + 250, pointsBuf, 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 280, "Maximum summon points : 12000 points.", 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 300, "Maximum hiring number : 5 ", 4, 0, 50);
 		break;
@@ -135,8 +137,9 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutAlignedString(sX, sX + szX, sY + 45, "5 magesty points will be deducted", 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 80, "upon receiving the Pendant of Tutelary Angel.", 4, 0, 50);
 		PutAlignedString(sX, sX + szX, sY + 105, "Would you like to receive the Tutelary Angel?", 4, 0, 50);
-		wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->G_cTxt, 0, 0, 0);
+		char angelBuf[64];
+		snprintf(angelBuf, sizeof(angelBuf), DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
+		PutAlignedString(sX, sX + szX, sY + 140, angelBuf, 0, 0, 0);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 175) && (msY < sY + 200)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))

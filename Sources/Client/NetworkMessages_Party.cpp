@@ -81,8 +81,9 @@ void HandleParty(CGame* pGame, char* pData)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 8;
 			}
 			else {
-				wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER1, cTxt);
-				pGame->AddEventList(pGame->G_cTxt, 10);
+				char partyMsgBuf[128];
+				snprintf(partyMsgBuf, sizeof(partyMsgBuf), NOTIFY_MSG_HANDLER1, cTxt);
+				pGame->AddEventList(partyMsgBuf, 10);
 			}
 
 			pGame->m_iTotalPartyMember++;
@@ -139,8 +140,9 @@ void HandleParty(CGame* pGame, char* pData)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 6;
 			}
 			else {
-				wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER2, cTxt);
-				pGame->AddEventList(pGame->G_cTxt, 10);
+				char partyMsgBuf[128];
+				snprintf(partyMsgBuf, sizeof(partyMsgBuf), NOTIFY_MSG_HANDLER2, cTxt);
+				pGame->AddEventList(partyMsgBuf, 10);
 			}
 			for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
 				if (strcmp(pGame->m_stPartyMemberNameList[i].cName, cTxt) == 0) {

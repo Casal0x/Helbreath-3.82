@@ -40,10 +40,11 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 0: // Main dlg, Map
 		if (m_pGame->m_iTeleportLocX != -1)
 		{
+			char locationBuf[128];
 			std::memset(cMapName, 0, sizeof(cMapName));
 			m_pGame->GetOfficialMapName(m_pGame->m_cTeleportMapName, cMapName);
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SOLDIER1, cMapName, m_pGame->m_iTeleportLocX, m_pGame->m_iTeleportLocY);
-			PutAlignedString(sX, sX + szX, sY + 40, m_pGame->G_cTxt);
+			snprintf(locationBuf, sizeof(locationBuf), DRAW_DIALOGBOX_SOLDIER1, cMapName, m_pGame->m_iTeleportLocX, m_pGame->m_iTeleportLocY);
+			PutAlignedString(sX, sX + szX, sY + 40, locationBuf);
 		}
 		else PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_SOLDIER2);
 
@@ -198,8 +199,9 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY < 30) tY = 30;
 			if (tX > MapSzX - 30) tX = MapSzX - 30;
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
-			wsprintf(m_pGame->G_cTxt, "%d,%d", tX, tY);
-			m_pGame->PutString_SprFont3(msX + 10, msY - 10, m_pGame->G_cTxt, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+			char coordBuf[32];
+			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
+			m_pGame->PutString_SprFont3(msX + 10, msY - 10, coordBuf, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
 		}
 		break;
 	}

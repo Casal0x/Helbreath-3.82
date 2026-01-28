@@ -69,9 +69,10 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 
-	case 1:
-		wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_PARTY16, Info().cStr);
-		PutAlignedString(sX, sX + szX, sY + 95, m_pGame->G_cTxt);
+	case 1: {
+		char partyBuf[128];
+		snprintf(partyBuf, sizeof(partyBuf), DRAW_DIALOGBOX_PARTY16, Info().cStr);
+		PutAlignedString(sX, sX + szX, sY + 95, partyBuf);
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY17);
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY18);
 		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_PARTY19);
@@ -88,6 +89,7 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		else
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
 		break;
+	}
 
 	case 2:
 		PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_PARTY22);
@@ -101,9 +103,10 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
 		break;
 
-	case 3:
-		wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_PARTY26, Info().cStr);
-		PutAlignedString(sX, sX + szX, sY + 95, m_pGame->G_cTxt);
+	case 3: {
+		char partyBuf[128];
+		snprintf(partyBuf, sizeof(partyBuf), DRAW_DIALOGBOX_PARTY26, Info().cStr);
+		PutAlignedString(sX, sX + szX, sY + 95, partyBuf);
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY27);
 		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY28);
 		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_PARTY29);
@@ -114,6 +117,7 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		else
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
 		break;
+	}
 
 	case 4: {
 		PutAlignedString(sX, sX + szX, sY + 95, DRAW_DIALOGBOX_PARTY31);
@@ -122,8 +126,7 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		int iNth = 0;
 		for (int i = 0; i <= DEF_MAXPARTYMEMBERS; i++) {
 			if (strlen(m_pGame->m_stPartyMemberNameList[i].cName) != 0) {
-				wsprintf(m_pGame->G_cTxt, "%s", m_pGame->m_stPartyMemberNameList[i].cName);
-				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->G_cTxt);
+				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->m_stPartyMemberNameList[i].cName);
 				iNth++;
 			}
 		}

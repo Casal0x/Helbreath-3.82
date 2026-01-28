@@ -139,8 +139,9 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_COMMANDER14);
 
-		wsprintf(m_pGame->G_cTxt, "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_pPlayer->m_iConstructionPoint);
-		PutAlignedString(sX, sX + 323, sY + 190, m_pGame->G_cTxt);
+		char pointsBuf[64];
+		snprintf(pointsBuf, sizeof(pointsBuf), "%s %d", DRAW_DIALOGBOX_COMMANDER15, m_pGame->m_pPlayer->m_iConstructionPoint);
+		PutAlignedString(sX, sX + 323, sY + 190, pointsBuf);
 
 		if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == true))
 		{
@@ -410,8 +411,9 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				if (tY < 30) tY = 30;
 				if (tX > MapSzX - 30) tX = MapSzX - 30;
 				if (tY > MapSzY - 30) tY = MapSzY - 30;
-				wsprintf(m_pGame->G_cTxt, "%d,%d", tX, tY);
-				m_pGame->PutString_SprFont3(msX + 10, msY - 10, m_pGame->G_cTxt, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+				char coordBuf[32];
+				snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
+				m_pGame->PutString_SprFont3(msX + 10, msY - 10, coordBuf, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
 			}
 		}
 		break;

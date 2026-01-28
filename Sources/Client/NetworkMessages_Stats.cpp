@@ -69,6 +69,7 @@ namespace NetworkMessageHandlers {
 	void HandleSP(CGame* pGame, char* pData)
 	{
 		int iPrevSP;
+		char cTxt[120];
 		iPrevSP = pGame->m_pPlayer->m_iSP;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySP>(
 			pData, sizeof(hb::net::PacketNotifySP));
@@ -77,14 +78,14 @@ namespace NetworkMessageHandlers {
 		if (abs(pGame->m_pPlayer->m_iSP - iPrevSP) < 10) return;
 		if (pGame->m_pPlayer->m_iSP > iPrevSP)
 		{
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_SP_UP, pGame->m_pPlayer->m_iSP - iPrevSP);
-			pGame->AddEventList(pGame->G_cTxt, 10);
+			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SP_UP, pGame->m_pPlayer->m_iSP - iPrevSP);
+			pGame->AddEventList(cTxt, 10);
 			pGame->PlaySound('E', 21, 0);
 		}
 		else
 		{
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_SP_DOWN, iPrevSP - pGame->m_pPlayer->m_iSP);
-			pGame->AddEventList(pGame->G_cTxt, 10);
+			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SP_DOWN, iPrevSP - pGame->m_pPlayer->m_iSP);
+			pGame->AddEventList(cTxt, 10);
 		}
 	}
 

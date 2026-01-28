@@ -27,17 +27,17 @@ void IDialogBox::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool b
 	m_pGame->DrawNewDialogBox(cType, sX, sY, iFrame, bIsNoColorKey, bIsTrans);
 }
 
-void IDialogBox::PutString(int iX, int iY, char* pString, uint32_t color)
+void IDialogBox::PutString(int iX, int iY, const char* pString, uint32_t color)
 {
 	m_pGame->PutString(iX, iY, pString, color);
 }
 
-void IDialogBox::PutString2(int iX, int iY, char* pString, short sR, short sG, short sB)
+void IDialogBox::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
 {
 	m_pGame->PutString2(iX, iY, pString, sR, sG, sB);
 }
 
-void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, char* pString, short sR, short sG, short sB)
+void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR, short sG, short sB)
 {
 	m_pGame->PutAlignedString(iX1, iX2, iY, pString, sR, sG, sB);
 }

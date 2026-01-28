@@ -1874,3 +1874,123 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     }
     return true;
 }
+
+bool CharacterNameExistsGlobally(const char* characterName)
+{
+    if (characterName == nullptr || characterName[0] == '\0') {
+        return false;
+    }
+
+    WIN32_FIND_DATA findData;
+    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        // No account databases found
+        return false;
+    }
+
+    bool found = false;
+
+    do {
+        // Skip directories
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            continue;
+        }
+
+        // Build full path to database
+        char dbPath[MAX_PATH] = {};
+        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+
+        // Open the database
+        sqlite3* db = nullptr;
+        if (sqlite3_open(dbPath, &db) != SQLITE_OK) {
+            if (db) sqlite3_close(db);
+            continue;
+        }
+
+        // Check if character name exists in this database
+        const char* sql = "SELECT 1 FROM characters WHERE character_name = ? LIMIT 1";
+        sqlite3_stmt* stmt = nullptr;
+
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+            if (sqlite3_bind_text(stmt, 1, characterName, -1, SQLITE_TRANSIENT) == SQLITE_OK) {
+                if (sqlite3_step(stmt) == SQLITE_ROW) {
+                    // Character name found in this database
+                    found = true;
+                }
+            }
+            sqlite3_finalize(stmt);
+        }
+
+        sqlite3_close(db);
+
+        if (found) {
+            break;  // No need to check remaining databases
+        }
+
+    } while (FindNextFile(hFind, &findData) != 0);
+
+    FindClose(hFind);
+
+    return found;
+}
+
+bool AccountNameExists(const char* accountName)
+{
+    if (accountName == nullptr || accountName[0] == '\0') {
+        return false;
+    }
+
+    WIN32_FIND_DATA findData;
+    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE) {
+        // No account databases found
+        return false;
+    }
+
+    bool found = false;
+
+    do {
+        // Skip directories
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            continue;
+        }
+
+        // Build full path to database
+        char dbPath[MAX_PATH] = {};
+        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+
+        // Open the database
+        sqlite3* db = nullptr;
+        if (sqlite3_open(dbPath, &db) != SQLITE_OK) {
+            if (db) sqlite3_close(db);
+            continue;
+        }
+
+        // Check if account name exists in this database
+        const char* sql = "SELECT 1 FROM accounts WHERE account_name = ? LIMIT 1";
+        sqlite3_stmt* stmt = nullptr;
+
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
+            if (sqlite3_bind_text(stmt, 1, accountName, -1, SQLITE_TRANSIENT) == SQLITE_OK) {
+                if (sqlite3_step(stmt) == SQLITE_ROW) {
+                    // Account name found in this database
+                    found = true;
+                }
+            }
+            sqlite3_finalize(stmt);
+        }
+
+        sqlite3_close(db);
+
+        if (found) {
+            break;  // No need to check remaining databases
+        }
+
+    } while (FindNextFile(hFind, &findData) != 0);
+
+    FindClose(hFind);
+
+    return found;
+}

@@ -65,6 +65,7 @@ namespace NetworkMessageHandlers {
 	void HandlePlayerStatus(CGame* pGame, bool bOnGame, char* pData)
 	{
 		char cName[12], cMapName[12];
+		char cTxt[128];
 		uint16_t dx = 1, dy = 1;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerStatus>(
 			pData, sizeof(hb::net::PacketNotifyPlayerStatus));
@@ -75,19 +76,20 @@ namespace NetworkMessageHandlers {
 		memcpy(cMapName, pkt->map_name, 10);
 		dx = pkt->x;
 		dy = pkt->y;
-		std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
+		std::memset(cTxt, 0, sizeof(cTxt));
 		if (bOnGame == true) {
 			if (cMapName[0] == 0)
-				wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_STATUS1, cName);
-			else wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_STATUS2, cName, cMapName, dx, dy);
+				snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PLAYER_STATUS1, cName);
+			else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PLAYER_STATUS2, cName, cMapName, dx, dy);
 		}
-		else wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_STATUS3, cName);
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PLAYER_STATUS3, cName);
+		pGame->AddEventList(cTxt, 10);
 	}
 
 	void HandleWhisperMode(CGame* pGame, bool bActive, char* pData)
 	{
 		char cName[12];
+		char cTxt[128];
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyWhisperMode>(
 			pData, sizeof(hb::net::PacketNotifyWhisperMode));
 		if (!pkt) return;
@@ -95,7 +97,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, 10);
 		if (bActive == true)
 		{
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_WHISPERMODE1, cName);
+			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE1, cName);
 			if (pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1] != 0) {
 				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
 				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
@@ -107,14 +109,15 @@ namespace NetworkMessageHandlers {
 			pGame->m_pWhisperMsg[0] = std::make_unique<CMsg>(0, cName, 0);
 			pGame->m_cWhisperIndex = 0;
 		}
-		else wsprintf(pGame->G_cTxt, NOTIFYMSG_WHISPERMODE2, cName);
+		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE2, cName);
 
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		pGame->AddEventList(cTxt, 10);
 	}
 
 	void HandlePlayerShutUp(CGame* pGame, char* pData)
 	{
 		char cName[12];
+		char cTxt[128];
 		WORD wTime;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerShutUp>(
 			pData, sizeof(hb::net::PacketNotifyPlayerShutUp));
@@ -123,15 +126,16 @@ namespace NetworkMessageHandlers {
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
 		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
-			wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_SHUTUP1, wTime);
-		else wsprintf(pGame->G_cTxt, NOTIFYMSG_PLAYER_SHUTUP2, cName, wTime);
+			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PLAYER_SHUTUP1, wTime);
+		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PLAYER_SHUTUP2, cName, wTime);
 
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		pGame->AddEventList(cTxt, 10);
 	}
 
 	void HandleRatingPlayer(CGame* pGame, char* pData)
 	{
 		char cName[12];
+		char cTxt[128];
 		uint16_t cValue;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRatingPlayer>(
 			pData, sizeof(hb::net::PacketNotifyRatingPlayer));
@@ -139,22 +143,22 @@ namespace NetworkMessageHandlers {
 		cValue = pkt->result;
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
-		std::memset(pGame->G_cTxt, 0, sizeof(pGame->G_cTxt));
+		std::memset(cTxt, 0, sizeof(cTxt));
 		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) == 0)
 		{
 			if (cValue == 1)
 			{
-				strcpy(pGame->G_cTxt, NOTIFYMSG_RATING_PLAYER1);
+				strcpy(cTxt, NOTIFYMSG_RATING_PLAYER1);
 				pGame->PlaySound('E', 23, 0);
 			}
 		}
 		else
 		{
 			if (cValue == 1)
-				wsprintf(pGame->G_cTxt, NOTIFYMSG_RATING_PLAYER2, cName);
-			else wsprintf(pGame->G_cTxt, NOTIFYMSG_RATING_PLAYER3, cName);
+				snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_RATING_PLAYER2, cName);
+			else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_RATING_PLAYER3, cName);
 		}
-		pGame->AddEventList(pGame->G_cTxt, 10);
+		pGame->AddEventList(cTxt, 10);
 	}
 
 	void HandleCannotRating(CGame* pGame, char* pData)

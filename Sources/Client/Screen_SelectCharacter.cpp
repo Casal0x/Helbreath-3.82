@@ -309,12 +309,12 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
                     pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime);
                     pGame->PutString(sX + 112 + i * 109 + SCREENX, sY + 179 - 9 + SCREENY, pGame->m_pCharList[i]->m_cName, RGB(51, 0, 51));
                     int	_sLevel = pGame->m_pCharList[i]->m_sLevel;
-                    char G_cTxt[256];
-                    wsprintf(G_cTxt, "%d", _sLevel);
-                    pGame->PutString(sX + 138 + i * 109 + SCREENX, sY + 196 - 10 + SCREENY, G_cTxt, RGB(51, 0, 51)); 
+                    char charInfoBuf[32];
+                    snprintf(charInfoBuf, sizeof(charInfoBuf), "%d", _sLevel);
+                    pGame->PutString(sX + 138 + i * 109 + SCREENX, sY + 196 - 10 + SCREENY, charInfoBuf, RGB(51, 0, 51));
 
-                    pGame->DisplayCommaNumber_G_cTxt(pGame->m_pCharList[i]->m_iExp);
-                    pGame->PutString(sX + 138 + i * 109 + SCREENX, sY + 211 - 10 + SCREENY, pGame->G_cTxt, RGB(51, 0, 51)); 
+                    pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp, charInfoBuf, sizeof(charInfoBuf));
+                    pGame->PutString(sX + 138 + i * 109 + SCREENX, sY + 211 - 10 + SCREENY, charInfoBuf, RGB(51, 0, 51)); 
                 }
                 iTemp2 = (int64_t)pGame->m_pCharList[i]->m_iYear * 1000000 + (int64_t)pGame->m_pCharList[i]->m_iMonth * 60000 + (int64_t)pGame->m_pCharList[i]->m_iDay * 1700 + (int64_t)pGame->m_pCharList[i]->m_iHour * 70 + (int64_t)pGame->m_pCharList[i]->m_iMinute;
                 if (iTemp1 < iTemp2)
@@ -386,12 +386,13 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     }
     
     int iTempMon, iTempDay, iTempHour, iTempMin;
+    char infoBuf[128];
     iTempMon = iTempDay = iTempHour = iTempMin = 0;
-    
+
     if (pGame->m_iAccntYear != 0)
     {
         iTempMin = (pGame->m_iTimeLeftSecAccount / 60);
-        wsprintf(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay, iTempMin);
+        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER37, pGame->m_iAccntYear, pGame->m_iAccntMonth, pGame->m_iAccntDay, iTempMin);
     }
     else
     {
@@ -400,17 +401,17 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             iTempDay = (pGame->m_iTimeLeftSecAccount / (60 * 60 * 24));
             iTempHour = (pGame->m_iTimeLeftSecAccount / (60 * 60)) % 24;
             iTempMin = (pGame->m_iTimeLeftSecAccount / 60) % 60;
-            wsprintf(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
+            snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER38, iTempDay, iTempHour, iTempMin);
         }
-        else strcpy(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER39);
+        else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER39);
     }
-    pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 385 + 10 + SCREENY, pGame->G_cTxt);
+    pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 385 + 10 + SCREENY, infoBuf);
 
     if (pGame->m_iIpYear != 0)
     {
         iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60));
         iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-        wsprintf(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER40, pGame->m_iIpYear, pGame->m_iIpMonth, pGame->m_iIpDay, iTempHour, iTempMin);
+        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER40, pGame->m_iIpYear, pGame->m_iIpMonth, pGame->m_iIpDay, iTempHour, iTempMin);
     }
     else
     {
@@ -419,15 +420,15 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             iTempDay = (pGame->m_iTimeLeftSecIP / (60 * 60 * 24));
             iTempHour = (pGame->m_iTimeLeftSecIP / (60 * 60)) % 24;
             iTempMin = (pGame->m_iTimeLeftSecIP / 60) % 60;
-            wsprintf(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
+            snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER41, iTempDay, iTempHour, iTempMin);
         }
-        else strcpy(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER42);
+        else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER42);
     }
-    pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 400 + 10 + SCREENY, pGame->G_cTxt);
+    pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 400 + 10 + SCREENY, infoBuf);
     if (iYear != 0)
     {
-        wsprintf(pGame->G_cTxt, UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
-        pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 415 + 10 + SCREENY, pGame->G_cTxt);
+        snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
+        pGame->PutAlignedString(98 + SCREENX, 357 + SCREENX, 415 + 10 + SCREENY, infoBuf);
     }
 
     pGame->PutAlignedString(122, 315, 456, UPDATE_SCREEN_ON_SELECT_CHARACTER36);

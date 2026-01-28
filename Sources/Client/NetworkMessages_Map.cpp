@@ -31,8 +31,9 @@ namespace NetworkMessageHandlers {
 		memcpy(cTxt, pkt->map_name, sizeof(pkt->map_name));
 
 		pGame->GetOfficialMapName(cTxt, cTemp);
-		wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER3, sV1, cTemp);
-		pGame->SetTopMsg(pGame->G_cTxt, 10);
+		char msgBuf[128];
+		snprintf(msgBuf, sizeof(msgBuf), NOTIFY_MSG_HANDLER3, sV1, cTemp);
+		pGame->SetTopMsg(msgBuf, 10);
 		pGame->PlaySound('E', 25, 0, 0);
 	}
 

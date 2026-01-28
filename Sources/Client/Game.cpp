@@ -4232,7 +4232,7 @@ void CGame::PutString_SprNum(int iX, int iY, char* pStr, short sR, short sG, sho
 	m_pNumFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
 }
 
-void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC)
+void CGame::PutString(int iX, int iY, const char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC)
 {
 	char* pTmp;
 	int i;
@@ -4276,14 +4276,14 @@ void CGame::PutString(int iX, int iY, char* pString, COLORREF color, bool bHide,
 	if (bIsPreDC == false) m_Renderer->EndTextBatch();
 }
 
-void CGame::PutString(int iX, int iY, char* pString, COLORREF color)
+void CGame::PutString(int iX, int iY, const char* pString, COLORREF color)
 {
 	m_Renderer->BeginTextBatch();
 	m_Renderer->DrawText(iX, iY, pString, color);
 	m_Renderer->EndTextBatch();
 }
 
-void CGame::PutString2(int iX, int iY, char* pString, short sR, short sG, short sB)
+void CGame::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
 {
 	m_Renderer->BeginTextBatch();
 	m_Renderer->DrawText(iX + 1, iY, pString, RGB(0, 0, 0));
@@ -4293,7 +4293,7 @@ void CGame::PutString2(int iX, int iY, char* pString, short sR, short sG, short 
 	m_Renderer->EndTextBatch();
 }
 
-void CGame::PutAlignedString(int iX1, int iX2, int iY, char* pString, short sR, short sG, short sB)
+void CGame::PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR, short sG, short sB)
 {
 	RECT rt;
 	m_Renderer->BeginTextBatch();
@@ -13414,34 +13414,40 @@ void CGame::CannotConstruct(int iCode)
 	}
 }
 
-void CGame::DisplayCommaNumber_G_cTxt(uint32_t iGold)
+void CGame::FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize)
 {
-	char cGold[20];
-	int iStrLen;
-	std::memset(cGold, 0, sizeof(cGold));
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-	ltoa(iGold, cGold, 10);
+	if (buffer == nullptr || bufSize == 0) return;
+
+	char numStr[20];
+	_ultoa(value, numStr, 10);
+
 #ifdef DEF_COMMA_GOLD
-	iStrLen = strlen(cGold);
-	iStrLen--;
-	int cnt = 0;
-	for (int i = 0; i < iStrLen + 1; i++)
-	{
-		if ((cnt != 0) && ((cnt + 1) % 4 == 0))
-		{
-			G_cTxt[cnt] = ',';
-			i--;
+	int srcLen = static_cast<int>(strlen(numStr));
+	int destIdx = 0;
+	int digitCount = 0;
+
+	// Build result backwards with commas every 3 digits
+	for (int i = srcLen - 1; i >= 0 && destIdx < static_cast<int>(bufSize) - 1; i--) {
+		if (digitCount > 0 && digitCount % 3 == 0 && destIdx < static_cast<int>(bufSize) - 1) {
+			buffer[destIdx++] = ',';
 		}
-		else G_cTxt[cnt] = cGold[iStrLen - i];
-		cnt++;
+		buffer[destIdx++] = numStr[i];
+		digitCount++;
 	}
-	iStrLen = strlen(G_cTxt);
-	G_cTxt[iStrLen] = '\0';
-	strrev(G_cTxt);
+	buffer[destIdx] = '\0';
+
+	// Reverse the string
+	for (int i = 0, j = destIdx - 1; i < j; i++, j--) {
+		char tmp = buffer[i];
+		buffer[i] = buffer[j];
+		buffer[j] = tmp;
+	}
 #else
-	strcpy(G_cTxt, cGold);
+	strncpy(buffer, numStr, bufSize - 1);
+	buffer[bufSize - 1] = '\0';
 #endif
 }
+
 
 void CGame::CrusadeContributionResult(int iWarContribution)
 {

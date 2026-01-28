@@ -101,8 +101,9 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	if (m_pGame->m_pBankList[iItemIndex]->m_sLevelLimit != 0 &&
 		m_pGame->m_pBankList[iItemIndex]->m_dwAttribute & 0x00000001) {
 		iLoc += 15;
-		wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pGame->m_pBankList[iItemIndex]->m_sLevelLimit);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, m_pGame->G_cTxt, 150, 150, 150);
+		char buf[128];
+		snprintf(buf, sizeof(buf), "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pGame->m_pBankList[iItemIndex]->m_sLevelLimit);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, 150, 150, 150);
 	}
 
 	// Weight for equipment
@@ -111,8 +112,9 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		iLoc += 15;
 		int _wWeight = 0;
 		if (m_pGame->m_pBankList[iItemIndex]->m_wWeight % 100) _wWeight = 1;
-		wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pGame->m_pBankList[iItemIndex]->m_wWeight / 100 + _wWeight);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, m_pGame->G_cTxt, 150, 150, 150);
+		char buf[128];
+		snprintf(buf, sizeof(buf), DRAW_DIALOGBOX_SHOP15, m_pGame->m_pBankList[iItemIndex]->m_wWeight / 100 + _wWeight);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, 150, 150, 150);
 	}
 
 	// Draw item sprite

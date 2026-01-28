@@ -327,7 +327,8 @@ void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short 
 
 void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short szX, short msX, short msY)
 {
-	char cTxt[120];
+	char mapNameBuf[120];
+	char teleportBuf[128];
 
 	if (m_pGame->m_iTeleportMapCount > 0)
 	{
@@ -339,14 +340,14 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 
 		for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, cTxt);
-			wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
+			std::memset(mapNameBuf, 0, sizeof(mapNameBuf));
+			m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, mapNameBuf);
+			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, m_pGame->m_stTeleportList[i].iCost);
 
 			if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-				m_pGame->PutAlignedString(sX, sX + szX, sY + 130 + i * 15, m_pGame->G_cTxt, 255, 255, 255);
+				m_pGame->PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 255, 255, 255);
 			else
-				m_pGame->PutAlignedString(sX, sX + szX, sY + 130 + i * 15, m_pGame->G_cTxt, 250, 250, 0);
+				m_pGame->PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 250, 250, 0);
 		}
 	}
 	else if (m_pGame->m_iTeleportMapCount == -1)

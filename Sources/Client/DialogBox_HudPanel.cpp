@@ -51,18 +51,19 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth);
 
 	// HP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iHP);
+	char statBuf[16];
+	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iHP);
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
-		m_pGame->PutString_SprNum(85, HP_NUM_Y, m_pGame->G_cTxt,
+		m_pGame->PutString_SprNum(85, HP_NUM_Y, statBuf,
 			m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11);
 		m_pGame->PutString_SprFont3(35, HP_BAR_Y + 2, "Poisoned",
 			m_pGame->m_wR[5] * 8, m_pGame->m_wG[5] * 8, m_pGame->m_wB[5] * 8, true, 2);
 	}
 	else
 	{
-		m_pGame->PutString_SprNum(HP_NUM_X + 1, HP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-		m_pGame->PutString_SprNum(HP_NUM_X, HP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+		m_pGame->PutString_SprNum(HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, 0, 0, 0);
+		m_pGame->PutString_SprNum(HP_NUM_X, HP_NUM_Y, statBuf, 255, 255, 255);
 	}
 
 	// MP bar
@@ -75,9 +76,9 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth);
 
 	// MP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	m_pGame->PutString_SprNum(HP_NUM_X + 1, MP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
+	m_pGame->PutString_SprNum(HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, 0, 0, 0);
+	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, statBuf, 255, 255, 255);
 
 	// SP bar
 	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -88,9 +89,9 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	pSprite->DrawWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth);
 
 	// SP number
-	wsprintf(m_pGame->G_cTxt, "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	m_pGame->PutString_SprNum(SP_NUM_X + 1, SP_NUM_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	m_pGame->PutString_SprNum(SP_NUM_X, SP_NUM_Y, m_pGame->G_cTxt, 255, 255, 255);
+	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
+	m_pGame->PutString_SprNum(SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, 0, 0, 0);
+	m_pGame->PutString_SprNum(SP_NUM_X, SP_NUM_Y, statBuf, 255, 255, 255);
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -136,8 +137,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		const char* tooltip = m_pGame->m_pPlayer->m_bIsCombatMode
 			? (m_pGame->m_pPlayer->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
-		wsprintf(m_pGame->G_cTxt, "%s", tooltip);
-		PutString(msX - 10, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
+		PutString(msX - 10, msY - 20, tooltip, RGB(250, 250, 220));
 	}
 
 	// Crusade icon
@@ -151,6 +151,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
+	char infoBuf[128];
 	if (Input::IsCtrlDown())
 	{
 		uint32_t iCurExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -159,15 +160,19 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		{
 			uint32_t iExpRange = iNextExp - iCurExp;
 			uint32_t iExpProgress = (m_pGame->m_pPlayer->m_iExp > iCurExp) ? (m_pGame->m_pPlayer->m_iExp - iCurExp) : 0;
-			wsprintf(m_pGame->G_cTxt, "Rest Exp: %d", iExpRange - iExpProgress);
+			snprintf(infoBuf, sizeof(infoBuf), "Rest Exp: %d", iExpRange - iExpProgress);
+		}
+		else
+		{
+			infoBuf[0] = '\0';
 		}
 	}
 	else
 	{
-		wsprintf(m_pGame->G_cTxt, "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
+		snprintf(infoBuf, sizeof(infoBuf), "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
-	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, m_pGame->G_cTxt, 0, 0, 0);
-	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, m_pGame->G_cTxt, 200, 200, 120);
+	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, infoBuf, 0, 0, 0);
+	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, infoBuf, 200, 200, 120);
 }
 
 void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
@@ -183,9 +188,8 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 		if (msX > btn.x1 && msX < btn.x2)
 		{
 			pSprite->Draw(btn.spriteX, BTN_Y1, btn.spriteFrame);
-			wsprintf(m_pGame->G_cTxt, "%s", btn.tooltip);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
-			PutString(msX + tooltipOffset, msY - 20, m_pGame->G_cTxt, RGB(250, 250, 220));
+			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, RGB(250, 250, 220));
 			break;
 		}
 	}
