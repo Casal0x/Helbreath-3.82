@@ -69,6 +69,22 @@ void Screen_MainMenu::on_update()
         m_pGame->m_cArrowPressed = 0;
     }
 
+    // Handle Tab key
+    if (Input::IsKeyPressed(VK_TAB))
+    {
+        m_pGame->PlaySound('E', 14, 5);
+        if (Input::IsShiftDown())
+        {
+            m_cCurFocus--;
+            if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
+        }
+        else
+        {
+            m_cCurFocus++;
+            if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
+        }
+    }
+
     if (Input::IsKeyPressed(VK_RETURN) == true) {
         m_pGame->PlaySound('E', 14, 5);
         switch (m_cCurFocus) {
