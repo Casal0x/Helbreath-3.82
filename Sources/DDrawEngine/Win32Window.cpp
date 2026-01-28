@@ -5,6 +5,7 @@
 
 #include "Win32Window.h"
 #include "ConfigManager.h"
+#include "RenderConstants.h"
 #include <cstdio>
 #include <windowsx.h>  // For GET_X_LPARAM, GET_Y_LPARAM
 
@@ -16,6 +17,7 @@ Win32Window::Win32Window()
     , m_height(0)
     , m_fullscreen(false)
     , m_borderless(true)
+    , m_resizable(false)
     , m_active(false)
     , m_open(false)
 {
@@ -37,6 +39,7 @@ bool Win32Window::Create(const WindowParams& params)
     m_height = params.height;
     m_fullscreen = params.fullscreen;
     m_borderless = ConfigManager::Get().IsBorderlessEnabled();
+    m_resizable = params.resizable;
 
     // Generate unique class name
     sprintf_s(m_className, sizeof(m_className), "Win32Window-%p", this);
@@ -59,52 +62,67 @@ bool Win32Window::Create(const WindowParams& params)
     if (!RegisterClassEx(&wc))
         return false;
 
-    // Calculate window style based on borderless setting
+    // Calculate window style based on borderless and resizable settings
     DWORD style;
+    DWORD exStyle = 0;
+
     if (m_fullscreen || m_borderless)
     {
+        // Fullscreen or borderless: popup window
         style = WS_POPUP;
+    }
+    else if (m_resizable)
+    {
+        // Windowed resizable: standard overlapped window
+        style = WS_OVERLAPPEDWINDOW;
     }
     else
     {
+        // Non-resizable windowed mode
         style = WS_CAPTION | WS_MINIMIZEBOX;
     }
 
-    // Calculate window rect - for bordered mode, adjust so client area = requested size
-    int windowW = m_width;
-    int windowH = m_height;
-    if (!m_fullscreen && !m_borderless)
+    // For DPI-aware window size calculation
+    // First create a temporary window to get the correct DPI, then adjust
+    int windowWidth = m_width;
+    int windowHeight = m_height;
+    int posX = CW_USEDEFAULT;
+    int posY = CW_USEDEFAULT;
+    
+    if (!m_fullscreen)
     {
-        RECT rc = { 0, 0, m_width, m_height };
-        AdjustWindowRect(&rc, style, FALSE);
-        windowW = rc.right - rc.left;
-        windowH = rc.bottom - rc.top;
-    }
-
-    // Calculate window position
-    int posX, posY;
-    if (params.centered)
-    {
-        int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
-        int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
-        posX = (screenWidth - windowW) / 2;
-        posY = (screenHeight - windowH) / 2;
-        if (posY > 100) posY += 40;  // Adjust for taskbar
+        // Calculate the window size needed to have the desired CLIENT area size
+        RECT windowRect = { 0, 0, m_width, m_height };
+        AdjustWindowRectEx(&windowRect, style, FALSE, exStyle);
+        windowWidth = windowRect.right - windowRect.left;
+        windowHeight = windowRect.bottom - windowRect.top;
+        
+        // Calculate centered position
+        if (params.centered)
+        {
+            int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+            int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+            posX = (screenWidth - windowWidth) / 2;
+            posY = (screenHeight - windowHeight) / 2;
+        }
     }
     else
     {
-        posX = CW_USEDEFAULT;
-        posY = CW_USEDEFAULT;
+        // Fullscreen: use screen size
+        windowWidth = GetSystemMetrics(SM_CXSCREEN);
+        windowHeight = GetSystemMetrics(SM_CYSCREEN);
+        posX = 0;
+        posY = 0;
     }
 
     // Create the window
     m_hWnd = CreateWindowEx(
-        0,
+        exStyle,
         m_className,
         params.title ? params.title : "Window",
         style,
         posX, posY,
-        windowW, windowH,
+        windowWidth, windowHeight,
         nullptr,
         nullptr,
         m_hInstance,
@@ -116,6 +134,12 @@ bool Win32Window::Create(const WindowParams& params)
         UnregisterClass(m_className, m_hInstance);
         return false;
     }
+    
+    // Get the actual client area size (may differ due to DPI or other factors)
+    RECT clientRect;
+    GetClientRect(m_hWnd, &clientRect);
+    m_width = clientRect.right - clientRect.left;
+    m_height = clientRect.bottom - clientRect.top;
 
     m_open = true;
     m_active = true;
@@ -366,9 +390,19 @@ LRESULT Win32Window::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CLOSE:
+    {
+        bool shouldClose = true;
         if (m_pEventHandler)
-            m_pEventHandler->OnClose();
+            shouldClose = m_pEventHandler->OnClose();
+        
+        if (shouldClose)
+        {
+            // Proceed with default close behavior
+            return DefWindowProc(m_hWnd, message, wParam, lParam);
+        }
+        // Close was cancelled (e.g., logout countdown started)
         return 0;
+    }
 
     case WM_DESTROY:
         if (m_pEventHandler)
@@ -407,37 +441,65 @@ LRESULT Win32Window::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseMove(logicalX, logicalY);
+        }
         return 0;
 
     case WM_LBUTTONDOWN:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_LEFT, logicalX, logicalY);
+        }
         return 0;
 
     case WM_LBUTTONUP:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_LEFT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_LEFT, logicalX, logicalY);
+        }
         return 0;
 
     case WM_RBUTTONDOWN:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_RIGHT, logicalX, logicalY);
+        }
         return 0;
 
     case WM_RBUTTONUP:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_RIGHT, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_RIGHT, logicalX, logicalY);
+        }
         return 0;
 
     case WM_MBUTTONDOWN:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_MIDDLE, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonDown(MOUSE_BUTTON_MIDDLE, logicalX, logicalY);
+        }
         return 0;
 
     case WM_MBUTTONUP:
         if (m_pEventHandler)
-            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_MIDDLE, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        {
+            int logicalX, logicalY;
+            TransformMouseCoords(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), logicalX, logicalY);
+            m_pEventHandler->OnMouseButtonUp(MOUSE_BUTTON_MIDDLE, logicalX, logicalY);
+        }
         return 0;
 
     case WM_MOUSEWHEEL:
@@ -446,7 +508,9 @@ LRESULT Win32Window::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam)
             int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
             ScreenToClient(m_hWnd, &pt);
-            m_pEventHandler->OnMouseWheel(delta, pt.x, pt.y);
+            int logicalX, logicalY;
+            TransformMouseCoords(pt.x, pt.y, logicalX, logicalY);
+            m_pEventHandler->OnMouseWheel(delta, logicalX, logicalY);
         }
         return 0;
 
@@ -465,4 +529,50 @@ LRESULT Win32Window::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam)
         }
         return DefWindowProc(m_hWnd, message, wParam, lParam);
     }
+}
+
+// Transform window coordinates to logical game coordinates (640x480)
+// Must match the scaling logic in DXC_ddraw::iFlip()
+void Win32Window::TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const
+{
+    // Get actual window client size
+    RECT clientRect;
+    GetClientRect(m_hWnd, &clientRect);
+    int clientWidth = clientRect.right - clientRect.left;
+    int clientHeight = clientRect.bottom - clientRect.top;
+    
+    // If client area is 0 (minimized?), use stored values
+    if (clientWidth <= 0) clientWidth = m_width;
+    if (clientHeight <= 0) clientHeight = m_height;
+    
+    // If client area matches logical size exactly, no transformation needed
+    if (clientWidth == RENDER_LOGICAL_WIDTH && clientHeight == RENDER_LOGICAL_HEIGHT)
+    {
+        logicalX = windowX;
+        logicalY = windowY;
+    }
+    else
+    {
+        // DDraw uses letterboxing (uniform scale) - must match DXC_ddraw::iFlip()
+        double scaleX = static_cast<double>(clientWidth) / static_cast<double>(RENDER_LOGICAL_WIDTH);
+        double scaleY = static_cast<double>(clientHeight) / static_cast<double>(RENDER_LOGICAL_HEIGHT);
+        double scale = (scaleY < scaleX) ? scaleY : scaleX;
+        if (scale <= 0.0) scale = 1.0;
+        
+        // Calculate the destination rectangle (where the game is actually drawn)
+        int destWidth = static_cast<int>(RENDER_LOGICAL_WIDTH * scale);
+        int destHeight = static_cast<int>(RENDER_LOGICAL_HEIGHT * scale);
+        int offsetX = (clientWidth - destWidth) / 2;
+        int offsetY = (clientHeight - destHeight) / 2;
+        
+        // Transform from window coords to logical coords
+        logicalX = static_cast<int>((windowX - offsetX) / scale);
+        logicalY = static_cast<int>((windowY - offsetY) / scale);
+    }
+    
+    // Clamp to valid range
+    if (logicalX < 0) logicalX = 0;
+    if (logicalX > LOGICAL_MAX_X) logicalX = LOGICAL_MAX_X;
+    if (logicalY < 0) logicalY = 0;
+    if (logicalY > LOGICAL_MAX_Y) logicalY = LOGICAL_MAX_Y;
 }

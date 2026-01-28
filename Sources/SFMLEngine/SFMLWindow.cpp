@@ -13,6 +13,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <windowsx.h>  // For GET_X_LPARAM, GET_Y_LPARAM
 #endif
 
 SFMLWindow::SFMLWindow()
@@ -22,6 +23,7 @@ SFMLWindow::SFMLWindow()
     , m_height(0)
     , m_fullscreen(false)
     , m_borderless(true)
+    , m_resizable(false)
     , m_active(true)
     , m_open(false)
 {
@@ -41,17 +43,28 @@ bool SFMLWindow::Create(const WindowParams& params)
     m_height = params.height;
     m_fullscreen = params.fullscreen;
     m_borderless = ConfigManager::Get().IsBorderlessEnabled();
+    m_resizable = params.resizable;
 
     // Create SFML window
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
 
     sf::State state = params.fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
+    sf::Uint32 sfStyle;
 
-    // Pick style: fullscreen/borderless use None, bordered uses Titlebar
-    auto sfStyle = sf::Style::None;
-    if (!params.fullscreen && !m_borderless)
+    if (params.fullscreen || m_borderless)
     {
-        sfStyle = sf::Style::Titlebar;
+        // Fullscreen or borderless: no decorations
+        sfStyle = sf::Style::None;
+    }
+    else if (m_resizable)
+    {
+        // Windowed with standard decorations (title bar, min/max/close, resize)
+        sfStyle = sf::Style::Titlebar | sf::Style::Close | sf::Style::Resize;
+    }
+    else
+    {
+        // Non-resizable windowed mode
+        sfStyle = sf::Style::Titlebar | sf::Style::Close;
     }
 
     m_renderWindow.create(videoMode, params.title ? params.title : "Window", sfStyle, state);
@@ -109,10 +122,15 @@ bool SFMLWindow::IsOpen() const
 
 void SFMLWindow::Close()
 {
+    bool shouldClose = true;
     if (m_pEventHandler)
-        m_pEventHandler->OnClose();
-    m_open = false;
-    m_renderWindow.close();
+        shouldClose = m_pEventHandler->OnClose();
+    
+    if (shouldClose)
+    {
+        m_open = false;
+        m_renderWindow.close();
+    }
 }
 
 HWND SFMLWindow::GetHandle() const
@@ -345,10 +363,16 @@ bool SFMLWindow::ProcessMessages()
     {
         if (event->is<sf::Event::Closed>())
         {
+            bool shouldClose = true;
             if (m_pEventHandler)
-                m_pEventHandler->OnClose();
-            m_open = false;
-            return false;
+                shouldClose = m_pEventHandler->OnClose();
+            
+            if (shouldClose)
+            {
+                m_open = false;
+                return false;
+            }
+            continue;  // Close was cancelled, continue processing events
         }
 
         if (const auto* resized = event->getIf<sf::Event::Resized>())
@@ -464,10 +488,16 @@ void SFMLWindow::WaitForMessage()
         // Process the event we received (same logic as ProcessMessages)
         if (event->is<sf::Event::Closed>())
         {
+            bool shouldClose = true;
             if (m_pEventHandler)
-                m_pEventHandler->OnClose();
-            m_open = false;
-            return;
+                shouldClose = m_pEventHandler->OnClose();
+            
+            if (shouldClose)
+            {
+                m_open = false;
+                return;
+            }
+            // Close was cancelled, continue
         }
 
         if (const auto* focusGained = event->getIf<sf::Event::FocusGained>())

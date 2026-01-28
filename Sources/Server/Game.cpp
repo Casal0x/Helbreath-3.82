@@ -34671,7 +34671,6 @@ void CGame::_AdjustRareItemValue(CItem *pItem) {
   }
 }
 
-<<<<<<< HEAD
 int CGame::RollAttributeValue()
 {
 	// Weighted roll for values 1-13 (original distribution)

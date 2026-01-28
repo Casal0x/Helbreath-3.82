@@ -67,6 +67,7 @@ private:
     int m_height;
     bool m_fullscreen;
     bool m_borderless;
+    bool m_resizable;
     bool m_active;
     bool m_open;
 };
