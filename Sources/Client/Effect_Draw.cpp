@@ -315,12 +315,7 @@ void EffectManager::DrawEffectsImpl()
 				break;
 
 
-			case EffectType::PROTECTION_RING: // Protection Ring commente par siementec, a voir
-				/*			cTempFrame = m_pEffectList[i]->m_cFrame;
-					dX  = (m_pEffectList[i]->m_mX)  - m_pGame->m_Camera.GetX();
-					dY  = (m_pEffectList[i]->m_mY)  - m_pGame->m_Camera.GetY();
-					(*m_pEffectSpr)[24]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
-				*/
+			case EffectType::PROTECTION_RING: // Protection Ring - disabled (no visual effect)
 				break;
 
 

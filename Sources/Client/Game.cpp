@@ -5980,37 +5980,6 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		break;
 	}
 
-	/*
-	switch (m_entityState.m_iFrame) {
-	case 15:
-		m_entityState.m_iFrame = 14;
-		break;
-	case 16:
-		m_entityState.m_iFrame = 14;
-		break;
-	case 17:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 18:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 19:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 20:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 21:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 22:
-		m_entityState.m_iFrame = 15;
-		break;
-	case 23:
-		m_entityState.m_iFrame = 14;
-		break;
-	}
-	*/
 	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
 
 	if (m_entityState.m_iEffectType != 0)
@@ -21624,55 +21593,49 @@ void CGame::bItemDrop_SkillDialog()
 		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		AddEventList(BITEMDROP_SKILLDIALOG4, 10);
@@ -21695,127 +21658,113 @@ void CGame::bItemDrop_SkillDialog()
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = cItemID;
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = (char)_bCheckCurrentBuildItemStatus();
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		AddEventList(BITEMDROP_SKILLDIALOG4, 10); // "There is no more space for ingredients."
 		break;
 
-		// Crafting
+		// Crafting - only allow specific item types as ingredients
 	case 7:
-		if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_NONE)			// Merien Stone
-			|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)		// Necks XXXMagins
-			|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME)		// stones
-			|| (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_MATERIAL))	// XXXwares
-		{
-		}
-		else return;
+		if ((m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_NONE)       // Merien Stone
+			&& (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_EQUIP)   // Necklaces, Rings
+			&& (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME) // Stones
+			&& (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_MATERIAL)) // Craftwares
+			return;
 
 		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		else if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 == -1)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = cItemID;
-			if ((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) && (m_pItemList[cItemID]->m_dwCount > 1))
-			{
-			}
-			else m_bIsItemDisabled[cItemID] = true;
+			// Only disable non-stackable items (stackable consumables can be added multiple times)
+			if (m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME || m_pItemList[cItemID]->m_dwCount <= 1)
+				m_bIsItemDisabled[cItemID] = true;
 			return;
 		}
 		AddEventList(BITEMDROP_SKILLDIALOG4, 10); // "There is no more space for ingredients."
@@ -23358,14 +23307,6 @@ void CGame::DKGlare(int iWeaponColor, int iWeaponIndex, int* iWeaponGlare)
 		*iWeaponGlare = 2;
 	}
 }
-/*********************************************************************************************************************
-**  void DrawDruncncity()	( Snoopy )																				**
-**  description			: 	Placeholder for Druncncity effects (nota: bubbles already coded)						**
-**********************************************************************************************************************/
-void CGame::DrawDruncncity()
-{
-}
-
 /*********************************************************************************************************************
 **  void CGame::Abaddon_corpse(int sX, int sY);		( Snoopy )														**
 **  description			: Placeholder for abaddon's death lightnings												**

@@ -429,7 +429,6 @@ public:
 	void ShowHeldenianVictory(short sSide);
 	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
-	void DrawDruncncity();
 	void Abaddon_corpse(int sX, int sY);
 	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);
 
