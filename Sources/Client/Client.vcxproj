@@ -337,6 +337,7 @@
     <ClInclude Include="Screen_OnGame.h" />
     <ClInclude Include="Screen_MainMenu.h" />
     <ClInclude Include="Screen_Login.h" />
+    <ClInclude Include="Screen_SelectCharacter.h" />
     <ClInclude Include="Overlay_Connecting.h" />
     <ClInclude Include="Overlay_WaitingResponse.h" />
     <ClInclude Include="Overlay_LogResMsg.h" />
@@ -401,6 +402,7 @@
     <ClCompile Include="Screen_OnGame.cpp" />
     <ClCompile Include="Screen_MainMenu.cpp" />
     <ClCompile Include="Screen_Login.cpp" />
+    <ClCompile Include="Screen_SelectCharacter.cpp" />
     <ClCompile Include="Overlay_Connecting.cpp" />
     <ClCompile Include="Overlay_WaitingResponse.cpp" />
     <ClCompile Include="Overlay_LogResMsg.cpp" />
