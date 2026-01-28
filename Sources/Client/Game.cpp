@@ -40,6 +40,14 @@
 #include "Screen_CreateAccount.h"
 #include "IInput.h"
 
+// Overlay system
+#include "Overlay_Connecting.h"
+#include "Overlay_WaitingResponse.h"
+#include "Overlay_QueryForceLogin.h"
+#include "Overlay_QueryDeleteCharacter.h"
+#include "Overlay_LogResMsg.h"
+#include "Overlay_ChangePassword.h"
+
 extern char G_cSpriteAlphaDegree;
 
 extern class XSocket* G_pCalcSocket;
@@ -542,11 +550,7 @@ void CGame::UpdateScreen()
 		UpdateScreen_VersionNotMatch();
 		break;
 
-	case GameMode::Connecting:
-		UpdateScreen_Connecting();
-		break;
-
-
+	// GameMode::Connecting is now handled by Overlay_Connecting
 
 	case GameMode::Loading:
 		UpdateScreen_Loading();
@@ -572,29 +576,16 @@ void CGame::UpdateScreen()
 		UpdateScreen_Quit();
 		break;
 
-	case GameMode::QueryForceLogin:
-		UpdateScreen_QueryForceLogin();
-		break;
+	// GameMode::QueryForceLogin is now handled by Overlay_QueryForceLogin
 
 	case GameMode::CreateNewCharacter:
 		UpdateScreen_CreateNewCharacter();
 		break;
 
-	case GameMode::WaitingResponse:
-		UpdateScreen_WaitingResponse();
-		break;
-
-	case GameMode::QueryDeleteCharacter:
-		UpdateScreen_QueryDeleteCharacter();
-		break;
-
-	case GameMode::LogResMsg:
-		UpdateScreen_LogResMsg();
-		break;
-
-	case GameMode::ChangePassword:
-		UpdateScreen_ChangePassword();
-		break;
+	// GameMode::WaitingResponse is now handled by Overlay_WaitingResponse
+	// GameMode::QueryDeleteCharacter is now handled by Overlay_QueryDeleteCharacter
+	// GameMode::LogResMsg is now handled by Overlay_LogResMsg
+	// GameMode::ChangePassword is now handled by Overlay_ChangePassword
 	}
 }
 
@@ -619,11 +610,7 @@ void CGame::DrawScreen()
 		DrawScreen_VersionNotMatch();
 		break;
 
-	case GameMode::Connecting:
-		DrawScreen_Connecting();
-		break;
-
-
+	// GameMode::Connecting is now handled by Overlay_Connecting
 
 	case GameMode::Loading:
 		DrawScreen_Loading();
@@ -648,29 +635,16 @@ void CGame::DrawScreen()
 		DrawScreen_Quit();
 		break;
 
-	case GameMode::QueryForceLogin:
-		DrawScreen_QueryForceLogin();
-		break;
+	// GameMode::QueryForceLogin is now handled by Overlay_QueryForceLogin
 
 	case GameMode::CreateNewCharacter:
 		DrawScreen_CreateNewCharacter();
 		break;
 
-	case GameMode::WaitingResponse:
-		DrawScreen_WaitingResponse();
-		break;
-
-	case GameMode::QueryDeleteCharacter:
-		DrawScreen_QueryDeleteCharacter();
-		break;
-
-	case GameMode::LogResMsg:
-		DrawScreen_LogResMsg();
-		break;
-
-	case GameMode::ChangePassword:
-		DrawScreen_ChangePassword();
-		break;
+	// GameMode::WaitingResponse is now handled by Overlay_WaitingResponse
+	// GameMode::QueryDeleteCharacter is now handled by Overlay_QueryDeleteCharacter
+	// GameMode::LogResMsg is now handled by Overlay_LogResMsg
+	// GameMode::ChangePassword is now handled by Overlay_ChangePassword
 	}
 
 	// Draw cursor on top of everything
@@ -1616,7 +1590,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
 				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
-				std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
 				{
@@ -1715,7 +1689,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
 				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iApprColor = m_entityState.m_iChatIndex = 0;
-				std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
 
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
 					(indexY < mapMinY) || (indexY > mapMaxY))
@@ -2148,8 +2122,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			m_entityState.m_iStatus = focusStatus;
 			m_entityState.m_iDataX = focusDataX;
 			m_entityState.m_iDataY = focusDataY;
-			std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
-			std::strncpy(m_entityState.m_cName.data(), CursorTarget::GetFocusedName(), sizeof(m_entityState.m_cName.data()) - 1);
+			std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
+			std::strncpy(m_entityState.m_cName.data(), CursorTarget::GetFocusedName(), m_entityState.m_cName.size() - 1);
 
 			if ((focusAction != DEF_OBJECTDEAD) && (focusFrame < 0)) {
 				// Skip drawing invalid frame
@@ -10998,6 +10972,7 @@ void CGame::ChangeGameMode(GameMode mode)
 
 	// Route to new Screen system or legacy system
 	switch (mode) {
+	// Full screens
 	case GameMode::MainMenu:
 		GameModeManager::set_screen<Screen_MainMenu>();
 		break;
@@ -11010,6 +10985,27 @@ void CGame::ChangeGameMode(GameMode mode)
 	case GameMode::CreateNewAccount:
 		GameModeManager::set_screen<Screen_CreateAccount>();
 		break;
+
+	// Overlays - displayed on top of current base screen
+	case GameMode::Connecting:
+		GameModeManager::set_overlay<Overlay_Connecting>();
+		break;
+	case GameMode::WaitingResponse:
+		GameModeManager::set_overlay<Overlay_WaitingResponse>();
+		break;
+	case GameMode::QueryForceLogin:
+		GameModeManager::set_overlay<Overlay_QueryForceLogin>();
+		break;
+	case GameMode::QueryDeleteCharacter:
+		GameModeManager::set_overlay<Overlay_QueryDeleteCharacter>();
+		break;
+	case GameMode::LogResMsg:
+		GameModeManager::set_overlay<Overlay_LogResMsg>();
+		break;
+	case GameMode::ChangePassword:
+		GameModeManager::set_overlay<Overlay_ChangePassword>();
+		break;
+
 	default:
 		// GameModeManager is the single source of truth for legacy types
 		GameModeManager::ChangeMode(mode, instant);
@@ -16578,7 +16574,7 @@ bool CGame::_bDraw_OnCreateNewCharacter(char* pName, short msX, short msY, int i
 	m_entityState.m_sAppr2 = 0;
 	m_entityState.m_sAppr3 = 0;
 	m_entityState.m_sAppr4 = 0;
-	std::memset(m_entityState.m_cName.data(), 0, sizeof(m_entityState.m_cName.data()));
+	std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
 	memcpy(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName, 10);
 	m_entityState.m_iAction = DEF_OBJECTMOVE;
 	m_entityState.m_iFrame = m_cMenuFrame;
@@ -17114,381 +17110,13 @@ void CGame::DrawScreen_Msg()
 	DrawVersion();
 }
 
-// WaitingResponse screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_WaitingResponse()
-{
-	static DWORD dwCTime;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0)
-	{
-		dwCTime = GameClock::GetTimeMS();
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		if ((dwTime - m_dwTime) > 7000)
-		{
-			ChangeGameMode(GameMode::MainMenu);
-			if (m_pLSock != 0)
-			{
-				m_pLSock.reset();
-				m_pLSock.reset();
-			}
-			if (m_pGSock != 0)
-			{
-				m_pGSock.reset();
-				m_pGSock.reset();
-			}
-		}
-		return;
-	}
-
-	// Animation frame updates
-	if ((dwTime - dwCTime) > 100)
-	{
-		m_cMenuFrame++;
-		dwCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8)
-	{
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8)
-		{
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	// Poll mouse input and store for Draw phase
-}
-
-// WaitingResponse screen - Draw phase (rendering only)
-void CGame::DrawScreen_WaitingResponse()
-{
-	short sX, sY;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	m_bHideLocalCursor = true;
-	switch (m_cMsg[0]) {
-	case '0':
-		_Draw_UpdateScreen_OnCreateNewAccount();
-		break;
-	case '1':
-		sX = 146;
-		sY = 114;
-		_Draw_OnLogin(m_pPlayer->m_cAccountName, m_pPlayer->m_cAccountPassword, 0, 0);
-		break;
-	case '2':
-		_bDraw_OnCreateNewCharacter(m_pPlayer->m_cPlayerName, 0, 0, 0);
-		break;
-	case '3':
-		UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
-		break;
-	case '4':// Change Password
-		UpdateScreen_OnSelectCharacter(0, 0, 0, 0, true);
-		break;
-	case '5':
-		break;
-	}
-	m_bHideLocalCursor = false;
-
-	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-	PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 58, 0, 0);
-
-	if ((dwTime - m_dwTime) > 7000)
-	{
-		PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE1);
-		PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 45 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE2);
-	}
-	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE3);
-
-	DrawVersion();
-}
-
-// Connecting screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_Connecting()
-{
-	static DWORD dwMTime, dwCTime;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0) {
-		dwCTime = dwMTime = GameClock::GetTimeMS();
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
-		if ((dwTime - m_dwTime) > 1000)
-		{
-			ChangeGameMode(GameMode::MainMenu);
-			if (m_pLSock != 0)
-			{
-				m_pLSock.reset();
-				m_pLSock.reset();
-			}
-			if (m_pGSock != 0)
-			{
-				m_pGSock.reset();
-				m_pGSock.reset();
-			}
-		}
-		return;
-	}
-
-	if ((dwTime - dwMTime) > 150) dwMTime = dwTime;
-
-	// Animation frame updates
-	if ((dwTime - dwCTime) > 100) {
-		m_cMenuFrame++;
-		dwCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8) {
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8) {
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	// Poll mouse input and store for Draw phase
-}
-
-// Connecting screen - Draw phase (rendering only)
-void CGame::DrawScreen_Connecting()
-{
-	short sX, sY;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	m_bHideLocalCursor = true;
-	switch (m_cMsg[0]) {
-	case '0':
-		_Draw_UpdateScreen_OnCreateNewAccount();
-		break;
-	case '1':
-		sX = 146;
-		sY = 114;
-		_Draw_OnLogin(m_pPlayer->m_cAccountName, m_pPlayer->m_cAccountPassword, 0, 0);
-		break;
-	case '2':
-		_bDraw_OnCreateNewCharacter(m_pPlayer->m_cPlayerName, 0, 0, 0);
-		break;
-	case '3':
-		UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
-		break;
-	case '4':
-		// Change Password
-		UpdateScreen_OnSelectCharacter(0, 0, 0, 0, true);
-		break;
-	case '5':
-		break;
-	}
-	m_bHideLocalCursor = false;
-
-	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-	wsprintf(G_cTxt, "Connecting to Server... %3dSec", (dwTime - m_dwTime) / 1000);
-	PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, G_cTxt, 58, 0, 0);
-
-	if ((dwTime - m_dwTime) > 7000)
-	{
-		PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTING1);
-		PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 45 + SCREENY, UPDATE_SCREEN_ON_CONNECTING2);
-	}
-	else PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTING3);
-	DrawVersion();
-}
-
-// QueryForceLogin screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_QueryForceLogin()
-{
-	static DWORD dwCTime;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0) {
-		m_cArrowPressed = 0;
-		dwCTime = GameClock::GetTimeMS();
-		PlaySound('E', 25, 0);
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true) {
-		ChangeGameMode(GameMode::SelectCharacter);
-		return;
-	}
-
-	// Poll mouse input and store for Draw phase
-	// Animation frame updates
-	if ((dwTime - dwCTime) > 100) {
-		m_cMenuFrame++;
-		dwCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8) {
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8) {
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-	{
-		PlaySound('E', 14, 5);
-		// Yes button
-		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(GameMode::Connecting);
-			m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
-			m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NOENTER_FORCEDISCONN;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "33");
-			return;
-		}
-		// Cancel button
-		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			ChangeGameMode(GameMode::SelectCharacter);
-		}
-	}
-}
-
-// QueryForceLogin screen - Draw phase (rendering only)
-void CGame::DrawScreen_QueryForceLogin()
-{
-	UpdateScreen_OnSelectCharacter(0, 0, 0, 0);
-	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6)) {
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	}
-	else if (m_cGameModeCount >= 6) {
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	}
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
-
-	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", 58, 0, 0);
-	PutAlignedString(178 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);
-	PutAlignedString(178 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN2);
-
-	if ((Input::GetMouseX() >= 200 + SCREENX) && (Input::GetMouseX() <= 200 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 19);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 18);
-
-	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 3);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
-
-	DrawVersion();
-}
-
-// QueryDeleteCharacter screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_QueryDeleteCharacter()
-{
-	static DWORD dwCTime;
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0)
-	{
-		m_cArrowPressed = 0;
-		dwCTime = GameClock::GetTimeMS();
-		PlaySound('E', 25, 0);
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		ChangeGameMode(GameMode::SelectCharacter);
-		return;
-	}
-
-	// Poll mouse input and store for Draw phase
-	// Animation frame updates
-	if ((dwTime - dwCTime) > 100)
-	{
-		m_cMenuFrame++;
-		dwCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8)
-	{
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8)
-		{
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-	{
-		PlaySound('E', 14, 5);
-		// Yes button
-		if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY, 200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(GameMode::Connecting);
-			m_dwConnectMode = MSGID_REQUEST_DELETECHARACTER;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "33");
-			return;
-		}
-		// Cancel button
-		if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY)) {
-			ChangeGameMode(GameMode::SelectCharacter);
-		}
-	}
-}
-
-// QueryDeleteCharacter screen - Draw phase (rendering only)
-void CGame::DrawScreen_QueryDeleteCharacter()
-{
-	UpdateScreen_OnSelectCharacter(0, 0, 500, 70);
-	if ((m_cGameModeCount >= 0) && (m_cGameModeCount < 6))
-	{
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	}
-	else if (m_cGameModeCount >= 6)
-	{
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-		m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-	}
-
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-
-	PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", 58, 0, 0);
-	PutString(215 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, RGB(5, 5, 5));
-	PutString(335 + SCREENX, 199 + SCREENY, "__________", RGB(5, 5, 5));
-	PutString(335 + SCREENX, 195 + SCREENY, m_pCharList[m_wEnterGameType - 1]->m_cName, RGB(25, 35, 25));
-	PutAlignedString(178 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER2);
-
-	if ((Input::GetMouseX() >= 200 + SCREENX) && (Input::GetMouseX() <= 200 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 19);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, 18);
-
-	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 244 + SCREENY) && (Input::GetMouseY() <= 244 + DEF_BTNSZY + SCREENY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 3);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, 2);
-
-	DrawVersion();
-}
-
-
+// NOTE: Legacy overlay functions removed - migrated to Overlay classes:
+// - UpdateScreen_WaitingResponse/DrawScreen_WaitingResponse -> Overlay_WaitingResponse
+// - UpdateScreen_Connecting/DrawScreen_Connecting -> Overlay_Connecting
+// - UpdateScreen_QueryForceLogin/DrawScreen_QueryForceLogin -> Overlay_QueryForceLogin
+// - UpdateScreen_QueryDeleteCharacter/DrawScreen_QueryDeleteCharacter -> Overlay_QueryDeleteCharacter
+// - UpdateScreen_LogResMsg/DrawScreen_LogResMsg -> Overlay_LogResMsg
+// - UpdateScreen_ChangePassword/DrawScreen_ChangePassword -> Overlay_ChangePassword
 
 // WaitInitData screen - Update phase (logic/input handling)
 void CGame::UpdateScreen_WaitInitData()
@@ -17557,284 +17185,6 @@ void CGame::DrawScreen_Loading()
 	DrawScreen_OnLoadingProgress();
 
 	// Poll mouse for cursor
-}
-
-// LogResMsg screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_LogResMsg()
-{
-	// This screen is complex - handled in DrawScreen_LogResMsg via original method
-}
-
-// LogResMsg screen - Draw phase (rendering only)
-void CGame::DrawScreen_LogResMsg()
-{
-	// This screen is complex - delegate to original combined method
-	UpdateScreen_OnLogResMsg();
-}
-
-// File-scope static variables for ChangePassword screen input buffers
-// Shared between UpdateScreen_ChangePassword and DrawScreen_ChangePassword
-static char s_cChgPwdName[12];
-static char s_cChgPwdPassword[12];
-static char s_cChgPwdNewPassword[12];
-static char s_cChgPwdNewPassConfirm[12];
-static char s_cChgPwdPrevFocus;
-static DWORD s_dwChgPwdCTime;
-// ChangePassword screen - Update phase (logic/input handling)
-void CGame::UpdateScreen_ChangePassword()
-{
-	uint32_t dwTime = GameClock::GetTimeMS();
-
-	if (m_cGameModeCount == 0) {
-		EndInputString();
-		s_cChgPwdPrevFocus = 2;
-		m_cCurFocus = 2;
-		m_cMaxFocus = 6;
-		m_cArrowPressed = 0;
-
-		std::memset(s_cChgPwdName, 0, sizeof(s_cChgPwdName));
-		std::memset(s_cChgPwdPassword, 0, sizeof(s_cChgPwdPassword));
-		std::memset(s_cChgPwdNewPassword, 0, sizeof(s_cChgPwdNewPassword));
-		std::memset(s_cChgPwdNewPassConfirm, 0, sizeof(s_cChgPwdNewPassConfirm));
-
-		strcpy(s_cChgPwdName, m_pPlayer->m_cAccountName);
-		StartInputString(314 + SCREENX, 179 + SCREENY, 11, s_cChgPwdPassword);
-		ClearInputString();
-		s_dwChgPwdCTime = GameClock::GetTimeMS();
-	}
-	m_cGameModeCount++;
-	if (m_cGameModeCount > 100) m_cGameModeCount = 100;
-
-	if ((dwTime - s_dwChgPwdCTime) > 100) {
-		m_cMenuFrame++;
-		s_dwChgPwdCTime = dwTime;
-	}
-	if (m_cMenuFrame >= 8)
-	{
-		m_cMenuDirCnt++;
-		if (m_cMenuDirCnt > 8)
-		{
-			m_cMenuDir++;
-			m_cMenuDirCnt = 1;
-		}
-		m_cMenuFrame = 0;
-	}
-	if (m_cMenuDir > 8) m_cMenuDir = 1;
-
-	if (m_cArrowPressed != 0)
-	{
-		switch (m_cArrowPressed) {
-		case 1:
-			m_cCurFocus--;
-			if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
-			break;
-		case 2:
-			if (m_cCurFocus == 3) m_cCurFocus = 4;
-			else if (m_cCurFocus == 4) m_cCurFocus = 3;
-			break;
-		case 3:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-		case 4:
-			if (m_cCurFocus == 3) m_cCurFocus = 4;
-			else if (m_cCurFocus == 4) m_cCurFocus = 3;
-			break;
-		}
-		m_cArrowPressed = 0;
-	}
-
-	if (Input::IsKeyPressed(VK_RETURN) == true)
-	{
-		PlaySound('E', 14, 5);
-		switch (m_cCurFocus) {
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			m_cCurFocus++;
-			if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
-			break;
-
-		case 5:	// Connect
-			if ((CMisc::bCheckValidString(s_cChgPwdPassword) == false) || (strlen(s_cChgPwdPassword) == 0) ||
-				(CMisc::bCheckValidName(s_cChgPwdNewPassword) == false) || (CMisc::bCheckValidName(s_cChgPwdNewPassConfirm) == false) ||
-				(strlen(s_cChgPwdNewPassword) == 0) || (memcmp(s_cChgPwdNewPassword, s_cChgPwdNewPassConfirm, 10) != 0)) break;
-
-			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
-			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
-			std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
-			std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-			strcpy(m_pPlayer->m_cAccountName, s_cChgPwdName);
-			strcpy(m_pPlayer->m_cAccountPassword, s_cChgPwdPassword);
-			strcpy(m_cNewPassword, s_cChgPwdNewPassword);
-			strcpy(m_cNewPassConfirm, s_cChgPwdNewPassConfirm);
-			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(GameMode::Connecting);
-			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "41");
-			return;
-
-		case 6:	// Cancel
-			ChangeGameMode(GameMode::SelectCharacter);
-			return;
-		}
-	}
-
-	if (Input::IsKeyPressed(VK_ESCAPE) == true)
-	{
-		ChangeGameMode(GameMode::MainMenu);
-		return;
-	}
-
-	if (s_cChgPwdPrevFocus != m_cCurFocus)
-	{
-		EndInputString();
-		switch (m_cCurFocus) {
-		case 1:
-			StartInputString(314 + SCREENX, 155 + SCREENY, 11, s_cChgPwdName);
-			break;
-		case 2:
-			StartInputString(314 + SCREENX, 179 + SCREENY, 11, s_cChgPwdPassword);
-			break;
-		case 3:
-			StartInputString(314 + SCREENX, 203 + SCREENY, 11, s_cChgPwdNewPassword);
-			break;
-		case 4:
-			StartInputString(314 + SCREENX, 227 + SCREENY, 11, s_cChgPwdNewPassConfirm);
-			break;
-		}
-		s_cChgPwdPrevFocus = m_cCurFocus;
-	}
-
-	// Poll mouse input
-	// Mouse click detection
-	if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-	{
-		PlaySound('E', 14, 5);
-
-		// Determine which button was clicked
-		int iMIbuttonNum = 0;
-		if (Input::IsMouseInRect(300 + SCREENX, 148 + SCREENY, 425 + SCREENX, 170 + SCREENY)) iMIbuttonNum = 1;
-		else if (Input::IsMouseInRect(300 + SCREENX, 172 + SCREENY, 425 + SCREENX, 194 + SCREENY)) iMIbuttonNum = 2;
-		else if (Input::IsMouseInRect(300 + SCREENX, 196 + SCREENY, 425 + SCREENX, 218 + SCREENY)) iMIbuttonNum = 3;
-		else if (Input::IsMouseInRect(300 + SCREENX, 220 + SCREENY, 425 + SCREENX, 242 + SCREENY)) iMIbuttonNum = 4;
-		else if (Input::IsMouseInRect(197 + SCREENX, 320 + SCREENY, 197 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY)) iMIbuttonNum = 5;
-		else if (Input::IsMouseInRect(370 + SCREENX, 320 + SCREENY, 370 + DEF_BTNSZX + SCREENX, 320 + DEF_BTNSZY + SCREENY)) iMIbuttonNum = 6;
-
-		switch (iMIbuttonNum) {
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			m_cCurFocus = iMIbuttonNum;
-			break;
-
-		case 5:
-			if ((CMisc::bCheckValidString(s_cChgPwdPassword) == false) || (strlen(s_cChgPwdPassword) == 0) ||
-				(CMisc::bCheckValidName(s_cChgPwdNewPassword) == false) || (CMisc::bCheckValidName(s_cChgPwdNewPassConfirm) == false) ||
-				(strlen(s_cChgPwdNewPassword) == 0) || (memcmp(s_cChgPwdNewPassword, s_cChgPwdNewPassConfirm, 10) != 0)) break;
-
-			EndInputString();
-			std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
-			std::memset(m_pPlayer->m_cAccountPassword, 0, sizeof(m_pPlayer->m_cAccountPassword));
-			std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
-			std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-			strcpy(m_pPlayer->m_cAccountName, s_cChgPwdName);
-			strcpy(m_pPlayer->m_cAccountPassword, s_cChgPwdPassword);
-			strcpy(m_cNewPassword, s_cChgPwdNewPassword);
-			strcpy(m_cNewPassConfirm, s_cChgPwdNewPassConfirm);
-			m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
-			m_pLSock->bConnect(m_cLogServerAddr, m_iLogServerPort + (rand() % 1));
-			m_pLSock->bInitBufferSize(30000);
-			ChangeGameMode(GameMode::Connecting);
-			m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
-			std::memset(m_cMsg, 0, sizeof(m_cMsg));
-			strcpy(m_cMsg, "41");
-			return;
-
-		case 6:
-			ChangeGameMode(GameMode::SelectCharacter);
-			return;
-		}
-	}
-
-	if ((Input::GetMouseX() >= 197 + SCREENX) && (Input::GetMouseX() <= 197 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 320 + SCREENY) && (Input::GetMouseY() <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 5;
-	if ((Input::GetMouseX() >= 370 + SCREENX) && (Input::GetMouseX() <= 370 + DEF_BTNSZX + SCREENX) && (Input::GetMouseY() >= 320 + SCREENY) && (Input::GetMouseY() <= 320 + DEF_BTNSZY + SCREENY)) m_cCurFocus = 6;
-}
-
-// ChangePassword screen - Draw phase (rendering only)
-void CGame::DrawScreen_ChangePassword()
-{
-	bool bFlag = true;
-
-	// Draw background (SelectCharacter screen)
-	UpdateScreen_OnSelectCharacter(0, 0, 0, 0, true);
-	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
-
-	// Draw dialog boxes
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + SCREENX, 112 + SCREENY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, 153 + SCREENX, 112 + SCREENY, 13);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + 157 + SCREENX, 112 + 109 + SCREENY, 7);
-
-	// Draw labels
-	PutString(206 + SCREENX, 155 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, RGB(25, 35, 25));
-	PutString(206 + SCREENX, 179 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, RGB(25, 35, 25));
-	PutString(206 + SCREENX, 203 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, RGB(25, 35, 25));
-	PutString(206 + SCREENX, 227 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, RGB(25, 35, 25));
-
-	// Draw input field values
-	if (m_cCurFocus != 1) {
-		if (CMisc::bCheckValidString(s_cChgPwdName) != false)
-			PutString(314 + SCREENX, 155 + SCREENY, s_cChgPwdName, RGB(25, 35, 25));
-		else PutString(314 + SCREENX, 155 + SCREENY, s_cChgPwdName, RGB(55, 18, 13));
-	}
-	if ((CMisc::bCheckValidString(s_cChgPwdName) == false) || (strlen(s_cChgPwdName) == 0)) bFlag = false;
-
-	if (m_cCurFocus != 2) {
-		if ((CMisc::bCheckValidString(s_cChgPwdPassword) != false))
-			PutString(314 + SCREENX, 179 + SCREENY, s_cChgPwdPassword, RGB(25, 35, 25), true, 3);
-		else PutString(314 + SCREENX, 179 + SCREENY, s_cChgPwdPassword, RGB(55, 18, 13), true, 3);
-	}
-
-	if (m_cCurFocus != 3) {
-		if ((CMisc::bCheckValidName(s_cChgPwdNewPassword) != false))
-			PutString(314 + SCREENX, 203 + SCREENY, s_cChgPwdNewPassword, RGB(25, 35, 25), true, 3);
-		else PutString(314 + SCREENX, 203 + SCREENY, s_cChgPwdNewPassword, RGB(55, 18, 13), true, 3);
-	}
-
-	if (m_cCurFocus != 4) {
-		if ((CMisc::bCheckValidName(s_cChgPwdNewPassConfirm) != false))
-			PutString(314 + SCREENX, 227 + SCREENY, s_cChgPwdNewPassConfirm, RGB(25, 35, 25), true, 3);
-		else PutString(314 + SCREENX, 227 + SCREENY, s_cChgPwdNewPassConfirm, RGB(55, 18, 13), true, 3);
-	}
-
-	if ((CMisc::bCheckValidString(s_cChgPwdPassword) == false) || (strlen(s_cChgPwdPassword) == 0) ||
-		(strlen(s_cChgPwdNewPassword) < 8) || (memcmp(s_cChgPwdNewPassword, s_cChgPwdNewPassConfirm, 10) != 0) ||
-		(memcmp(s_cChgPwdPassword, s_cChgPwdNewPassword, 10) == 0)) bFlag = false;
-
-	// Show active input string
-	if (m_cCurFocus == 1) ShowReceivedString();
-	else if ((m_cCurFocus == 2) || (m_cCurFocus == 3) || (m_cCurFocus == 4)) ShowReceivedString(true);
-
-	// Help text
-	PutAlignedString(153 + SCREENX, 487 + SCREENX, 258 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD5);
-	PutAlignedString(153 + SCREENX, 487 + SCREENX, 273 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD6);
-	PutAlignedString(153 + SCREENX, 487 + SCREENX, 288 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD7);
-
-	// Buttons
-	if ((bFlag == true) && (m_cCurFocus == 5))
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(197 + SCREENX, 320 + SCREENY, 21);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(197 + SCREENX, 320 + SCREENY, 20);
-
-	if (m_cCurFocus == 6)
-		m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 17);
-	else m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX, 320 + SCREENY, 16);
-
-	DrawVersion();
 }
 
 

@@ -2542,6 +2542,20 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 	m_pNpcList[iNpcH] = 0;
 }
 
+// Helper to apply drop rate multiplier (capped at 10000 = 100%)
+static uint32_t ApplyDropMultiplier(uint32_t baseChance, float multiplier)
+{
+	double result = static_cast<double>(baseChance) * static_cast<double>(multiplier);
+	if (result > 10000.0) return 10000;
+	if (result < 0.0) return 0;
+	return static_cast<uint32_t>(result);
+}
+
+// Base drop chances (out of 10000 = 100%)
+static constexpr uint32_t BASE_PRIMARY_DROP_CHANCE = 1000;   // 10% base primary item drop chance
+static constexpr uint32_t BASE_GOLD_DROP_CHANCE = 3000;      // 30% base gold drop chance
+static constexpr uint32_t BASE_SECONDARY_DROP_CHANCE = 500;  // 5% base secondary/bonus drop chance
+
 void CEntityManager::NpcDeadItemGenerator(int iNpcH, short sAttackerH, char cAttackerType)
 {
 	if (m_pNpcList[iNpcH] == 0) return;
@@ -2556,12 +2570,14 @@ void CEntityManager::NpcDeadItemGenerator(int iNpcH, short sAttackerH, char cAtt
 	}
 
 	const DropTable* table = m_pGame->GetDropTable(m_pNpcList[iNpcH]->m_iDropTableId);
-	if (m_pGame->iDice(1, 10000) < static_cast<uint32_t>(m_pGame->m_iPrimaryDropRate)) {
-		return;
-	}
+
+	// Apply drop rate multipliers to base chances
+	// At 1.0: normal, at 1.5: 150% more likely, at 2.0: 200%, etc.
+	uint32_t primaryChance = ApplyDropMultiplier(BASE_PRIMARY_DROP_CHANCE, m_pGame->m_fPrimaryDropRate);
+	uint32_t goldChance = ApplyDropMultiplier(BASE_GOLD_DROP_CHANCE, m_pGame->m_fGoldDropRate);
 
 	bool droppedGold = false;
-	if (m_pGame->iDice(1, 10000) <= 6000) {
+	if (m_pGame->iDice(1, 10000) <= goldChance) {
 		int minGold = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMin);
 		int maxGold = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMax);
 		if (minGold < 0) minGold = 0;
@@ -2584,32 +2600,39 @@ void CEntityManager::NpcDeadItemGenerator(int iNpcH, short sAttackerH, char cAtt
 		}
 	}
 
+	// Primary item drop (from drop table tier 1) - uses same primary chance
 	if (!droppedGold && table != nullptr) {
-		int minCount = 1;
-		int maxCount = 1;
-		int itemId = RollDropTableItem(table, 1, minCount, maxCount);
-		if (itemId != 0) {
-			if (itemId == 90) {
-				minCount = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMin);
-				maxCount = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMax);
+		if (m_pGame->iDice(1, 10000) <= primaryChance) {
+			int minCount = 1;
+			int maxCount = 1;
+			int itemId = RollDropTableItem(table, 1, minCount, maxCount);
+			if (itemId != 0) {
+				if (itemId == 90) {
+					minCount = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMin);
+					maxCount = static_cast<int>(m_pNpcList[iNpcH]->m_iGoldDiceMax);
+				}
+				SpawnNpcDropItem(iNpcH, itemId, minCount, maxCount);
 			}
-			SpawnNpcDropItem(iNpcH, itemId, minCount, maxCount);
 		}
 	}
 
+	// Secondary/bonus drop (from drop table tier 2) - affected by secondary multiplier
 	if (table != nullptr) {
-		double dTmp1 = 0.0f;
-		double dTmp2 = 0.0f;
+		// Base secondary chance, modified by player rating
+		double ratingModifier = 0.0;
 		if (m_pGame->m_pClientList[sAttackerH] != nullptr) {
-			dTmp1 = m_pGame->m_pClientList[sAttackerH]->m_iRating * m_pGame->m_cRepDropModifier;
-			if (dTmp1 > 1000) dTmp1 = 1000;
-			if (dTmp1 < -1000) dTmp1 = -1000;
-			dTmp2 = (m_pGame->m_iSecondaryDropRate - (dTmp1));
-		} else {
-			dTmp2 = m_pGame->m_iSecondaryDropRate;
+			ratingModifier = m_pGame->m_pClientList[sAttackerH]->m_iRating * m_pGame->m_cRepDropModifier;
+			if (ratingModifier > 1000) ratingModifier = 1000;
+			if (ratingModifier < -1000) ratingModifier = -1000;
 		}
 
-		if (m_pGame->iDice(1, 10000) <= dTmp2) {
+		// Calculate effective secondary drop chance with rating modifier and multiplier
+		double baseSecondary = static_cast<double>(BASE_SECONDARY_DROP_CHANCE) - ratingModifier;
+		double effectiveSecondary = baseSecondary * static_cast<double>(m_pGame->m_fSecondaryDropRate);
+		if (effectiveSecondary > 10000.0) effectiveSecondary = 10000.0;
+		if (effectiveSecondary < 0.0) effectiveSecondary = 0.0;
+
+		if (m_pGame->iDice(1, 10000) <= static_cast<uint32_t>(effectiveSecondary)) {
 			int minCount = 1;
 			int maxCount = 1;
 			int itemId = RollDropTableItem(table, 2, minCount, maxCount);

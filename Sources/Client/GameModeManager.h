@@ -164,7 +164,16 @@ public:
     // ============== Frame Counter - Legacy Compatibility (Static API) ==============
 
     static int GetFrameCount() { return Get().m_frameCount; }
-    static void IncrementFrameCount() { auto& inst = Get(); if (inst.m_frameCount < inst.m_frameCountCap) inst.m_frameCount++; }
+    static void IncrementFrameCount() {
+        auto& inst = Get();
+        // Skip increment on the frame a mode change happened (so first frame sees count=0)
+        if (inst.m_bModeChangedThisFrame) {
+            inst.m_bModeChangedThisFrame = false;
+            return;
+        }
+        if (inst.m_frameCount < inst.m_frameCountCap)
+            inst.m_frameCount++;
+    }
     static void ResetFrameCount() { Get().m_frameCount = 0; }
     static void SetFrameCountCap(int cap) { Get().m_frameCountCap = cap; }
     static int GetFrameCountCap() { return Get().m_frameCountCap; }
@@ -260,6 +269,7 @@ private:
     // Legacy frame counter for DrawScreen_* compatibility
     int m_frameCount = 0;
     int m_frameCountCap = DEFAULT_FRAME_COUNT_CAP;
+    bool m_bModeChangedThisFrame = false;  // Skip IncrementFrameCount on frame mode changed
 
     // Timing
     uint32_t m_modeStartTime = 0;

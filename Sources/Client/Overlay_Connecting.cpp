@@ -45,9 +45,8 @@ void Overlay_Connecting::on_update()
                 m_pGame->m_pGSock.reset();
             }
 
-            // Clear overlay and go to main menu (using legacy mode change since MainMenu isn't migrated yet)
+            // Clear overlay - base screen (Login, SelectCharacter, etc.) will be revealed
             clear_overlay();
-            m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }

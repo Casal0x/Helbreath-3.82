@@ -220,6 +220,7 @@ void GameModeManager::ApplyModeChange()
 {
     m_currentMode = m_pendingMode;
     m_frameCount = 0;
+    m_bModeChangedThisFrame = true;  // Skip IncrementFrameCount this frame
     m_modeStartTime = GameClock::GetTimeMS();
 }
 
@@ -247,5 +248,6 @@ void GameModeManager::ApplyScreenChange()
 
     // Reset frame counter and timing
     m_frameCount = 0;
+    m_bModeChangedThisFrame = true;  // Skip IncrementFrameCount this frame
     m_modeStartTime = GameClock::GetTimeMS();
 }

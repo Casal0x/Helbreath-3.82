@@ -135,7 +135,7 @@ void Overlay_ChangePassword::HandleSubmit()
     std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
     strcpy(m_pGame->m_cMsg, "41");
 
-    clear_overlay();
+    // set_overlay will clear this overlay automatically
     m_pGame->ChangeGameMode(GameMode::Connecting);
 }
 
@@ -203,17 +203,15 @@ void Overlay_ChangePassword::on_update()
         case 5: // OK button
             HandleSubmit();
             return;
-        case 6: // Cancel button
+        case 6: // Cancel button - return to base screen
             clear_overlay();
-            m_pGame->ChangeGameMode(GameMode::SelectCharacter);
             return;
         }
     }
 
-    // ESC key - return to main menu
+    // ESC key - return to main menu (set_screen will clear overlay automatically)
     if (Input::IsKeyPressed(VK_ESCAPE))
     {
-        clear_overlay();
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
@@ -242,9 +240,8 @@ void Overlay_ChangePassword::on_update()
         case 5: // OK
             HandleSubmit();
             return;
-        case 6: // Cancel
+        case 6: // Cancel - return to base screen
             clear_overlay();
-            m_pGame->ChangeGameMode(GameMode::SelectCharacter);
             return;
         }
     }

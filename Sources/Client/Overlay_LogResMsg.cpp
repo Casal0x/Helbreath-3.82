@@ -10,10 +10,10 @@
 #include "IInput.h"
 #include "AudioManager.h"
 
-Overlay_LogResMsg::Overlay_LogResMsg(CGame* pGame, char returnDest, char msgCode)
+Overlay_LogResMsg::Overlay_LogResMsg(CGame* pGame)
     : IGameScreen(pGame)
-    , m_cReturnDest(returnDest)
-    , m_cMsgCode(msgCode)
+    , m_cReturnDest('1')
+    , m_cMsgCode('1')
 {
 }
 
@@ -21,6 +21,11 @@ void Overlay_LogResMsg::on_initialize()
 {
     m_dwStartTime = GameClock::GetTimeMS();
     m_dwAnimTime = m_dwStartTime;
+
+    // Read parameters from CGame (set before ChangeGameMode call)
+    // m_cMsg[0] = return destination, m_cMsg[1] = message code
+    m_cReturnDest = m_pGame->m_cMsg[0];
+    m_cMsgCode = m_pGame->m_cMsg[1];
 
     // Stop any playing sound
     AudioManager::Get().StopSound(SoundType::Effect, 38);
@@ -33,7 +38,9 @@ void Overlay_LogResMsg::on_uninitialize()
 
 void Overlay_LogResMsg::HandleDismiss()
 {
-    clear_overlay();
+    // Note: clear_overlay() is not needed here as ChangeGameMode will either:
+    // - Call set_screen<T>() which clears overlays automatically
+    // - Call set_overlay<T>() which clears existing overlays automatically
 
     // Transition based on return destination
     switch (m_cReturnDest)

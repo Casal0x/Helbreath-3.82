@@ -251,22 +251,13 @@ public:
 	void DrawScreen_ConnectionLost();
 	void UpdateScreen_Msg();
 	void DrawScreen_Msg();
-	void UpdateScreen_WaitingResponse();
-	void DrawScreen_WaitingResponse();
-	void UpdateScreen_Connecting();
-	void DrawScreen_Connecting();
-	void UpdateScreen_QueryForceLogin();
-	void DrawScreen_QueryForceLogin();
-	void UpdateScreen_QueryDeleteCharacter();
-	void DrawScreen_QueryDeleteCharacter();
 
+	// Legacy overlay functions removed - migrated to Overlay classes:
+	// Overlay_WaitingResponse, Overlay_Connecting, Overlay_QueryForceLogin,
+	// Overlay_QueryDeleteCharacter, Overlay_LogResMsg, Overlay_ChangePassword
 
 	void UpdateScreen_WaitInitData();
 	void DrawScreen_WaitInitData();
-	void UpdateScreen_LogResMsg();
-	void DrawScreen_LogResMsg();
-	void UpdateScreen_ChangePassword();
-	void DrawScreen_ChangePassword();
 	void UpdateScreen_CreateNewAccount();
 	void DrawScreen_CreateNewAccount();
 	void UpdateScreen_SelectCharacter();

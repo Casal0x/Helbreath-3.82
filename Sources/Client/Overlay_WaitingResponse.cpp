@@ -45,9 +45,8 @@ void Overlay_WaitingResponse::on_update()
                 m_pGame->m_pGSock.reset();
             }
 
-            // Clear overlay and go to main menu
+            // Clear overlay - base screen will be revealed
             clear_overlay();
-            m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }

@@ -33,11 +33,10 @@ void Overlay_QueryDeleteCharacter::on_update()
 {
     uint32_t dwTime = GameClock::GetTimeMS();
 
-    // ESC cancels and returns to select character
+    // ESC cancels - base screen (SelectCharacter) will be revealed
     if (Input::IsKeyPressed(VK_ESCAPE))
     {
         clear_overlay();
-        m_pGame->ChangeGameMode(GameMode::SelectCharacter);
         return;
     }
 
@@ -59,17 +58,16 @@ void Overlay_QueryDeleteCharacter::on_update()
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             strcpy(m_pGame->m_cMsg, "33");
 
-            clear_overlay();
+            // set_overlay will clear this overlay automatically
             m_pGame->ChangeGameMode(GameMode::Connecting);
             return;
         }
 
-        // No button - cancel
+        // No button - cancel, base screen (SelectCharacter) will be revealed
         if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY,
                                   370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY))
         {
             clear_overlay();
-            m_pGame->ChangeGameMode(GameMode::SelectCharacter);
             return;
         }
     }

@@ -121,6 +121,19 @@ namespace
         }
         return sqlite3_step(stmt) == SQLITE_DONE;
     }
+
+    bool InsertKeyValueFloat(sqlite3_stmt* stmt, const char* key, float value)
+    {
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        bool ok = true;
+        ok &= PrepareAndBindText(stmt, 1, key);
+        ok &= (sqlite3_bind_double(stmt, 2, static_cast<double>(value)) == SQLITE_OK);
+        if (!ok) {
+            return false;
+        }
+        return sqlite3_step(stmt) == SQLITE_DONE;
+    }
 }
 
 bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCreated)
@@ -799,8 +812,9 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     }
 
     bool ok = true;
-    ok &= InsertKeyValueInt(stmt, "primary-drop-rate", game->m_iPrimaryDropRate);
-    ok &= InsertKeyValueInt(stmt, "secondary-drop-rate", game->m_iSecondaryDropRate);
+    ok &= InsertKeyValueFloat(stmt, "primary-drop-rate", game->m_fPrimaryDropRate);
+    ok &= InsertKeyValueFloat(stmt, "gold-drop-rate", game->m_fGoldDropRate);
+    ok &= InsertKeyValueFloat(stmt, "secondary-drop-rate", game->m_fSecondaryDropRate);
     ok &= InsertKeyValue(stmt, "enemy-kill-mode", game->m_bEnemyKillMode ? "deathmatch" : "classic");
     ok &= InsertKeyValueInt(stmt, "enemy-kill-adjust", game->m_iEnemyKillAdjust);
     ok &= InsertKeyValueInt(stmt, "monday-raid-time", game->m_sRaidTimeMonday);
@@ -884,9 +898,11 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
         const char* value = reinterpret_cast<const char*>(valueText);
 
         if (std::strcmp(key, "primary-drop-rate") == 0) {
-            game->m_iPrimaryDropRate = std::atoi(value);
+            game->m_fPrimaryDropRate = static_cast<float>(std::atof(value));
+        } else if (std::strcmp(key, "gold-drop-rate") == 0) {
+            game->m_fGoldDropRate = static_cast<float>(std::atof(value));
         } else if (std::strcmp(key, "secondary-drop-rate") == 0) {
-            game->m_iSecondaryDropRate = std::atoi(value);
+            game->m_fSecondaryDropRate = static_cast<float>(std::atof(value));
         } else if (std::strcmp(key, "enemy-kill-mode") == 0) {
             if (_stricmp(value, "deathmatch") == 0) {
                 game->m_bEnemyKillMode = true;
