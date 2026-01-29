@@ -2,6 +2,8 @@
 #include "ConfigManager.h"
 #include "Game.h"
 #include "IInput.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 #define DEF_CHAT_VISIBLE_LINES 8
 #define DEF_CHAT_SCROLLBAR_HEIGHT 105
@@ -96,13 +98,13 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 
 			switch (m_pGame->m_pChatScrollList[iIndex]->m_dwTime)
 			{
-			case 0:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 230, 230, 230); break; // Normal
-			case 1:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 130, 200, 130); break; // Green
-			case 2:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 255, 130, 130); break; // Red
-			case 3:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 130, 130, 255); break; // Blue
-			case 4:  m_pGame->PutString2(sX + 25, iYPos, pMsg, 230, 230, 130); break; // Yellow
-			case 10: m_pGame->PutString2(sX + 25, iYPos, pMsg, 180, 255, 180); break; // Light green
-			case 20: m_pGame->PutString2(sX + 25, iYPos, pMsg, 150, 150, 170); break; // Gray
+			case 0:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(230, 230, 230)); break; // Normal
+			case 1:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(130, 200, 130)); break; // Green
+			case 2:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(255, 130, 130)); break; // Red
+			case 3:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(130, 130, 255)); break; // Blue
+			case 4:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(230, 230, 130)); break; // Yellow
+			case 10: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(180, 255, 180)); break; // Light green
+			case 20: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(150, 150, 170)); break; // Gray
 			}
 		}
 	}

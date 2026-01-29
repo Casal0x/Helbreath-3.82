@@ -4,6 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "DDrawRenderer.h"
+#include "ITextRenderer.h"
 
 // External global tables defined in DXC_ddraw.cpp
 extern long G_lTransG100[64][64], G_lTransRB100[64][64];
@@ -272,22 +273,45 @@ void DDrawRenderer::DrawFadeOverlay(float alpha)
 
 void DDrawRenderer::BeginTextBatch()
 {
-    m_ddraw._GetBackBufferDC();
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->BeginBatch();
 }
 
 void DDrawRenderer::EndTextBatch()
 {
-    m_ddraw._ReleaseBackBufferDC();
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->EndBatch();
 }
 
 void DDrawRenderer::DrawText(int x, int y, const char* text, uint32_t color)
 {
-    m_ddraw.TextOut(x, y, const_cast<char*>(text), static_cast<COLORREF>(color));
+    if (!text)
+        return;
+
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->DrawText(x, y, text, color);
 }
 
 void DDrawRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
 {
-    m_ddraw.DrawText(rect, text, static_cast<COLORREF>(color));
+    if (!rect || !text)
+        return;
+
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+    {
+        int width = rect->right - rect->left;
+        int height = rect->bottom - rect->top;
+        pTextRenderer->DrawTextAligned(rect->left, rect->top, width, height, text, color,
+                                        TextLib::Align::TopCenter);
+    }
 }
 
 ITexture* DDrawRenderer::CreateTexture(uint16_t width, uint16_t height)
@@ -525,33 +549,31 @@ void DDrawRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* ou
 
 int DDrawRenderer::GetTextLength(const char* text, int maxWidth)
 {
-    // Get text length that fits within maxWidth pixels
-    // This uses the DC which should be acquired via BeginTextBatch first
-    if (!m_ddraw.m_hDC || !text)
+    if (!text)
         return 0;
 
-    SIZE size;
-    int len = static_cast<int>(strlen(text));
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        return pTextRenderer->GetFittingCharCount(text, maxWidth);
 
-    for (int i = len; i > 0; i--)
-    {
-        GetTextExtentPoint32A(m_ddraw.m_hDC, text, i, &size);
-        if (size.cx <= maxWidth)
-            return i;
-    }
     return 0;
 }
 
 int DDrawRenderer::GetTextWidth(const char* text)
 {
-    // Get pixel width of text string
-    // This uses the DC which should be acquired via BeginTextBatch first
-    if (!m_ddraw.m_hDC || !text)
+    if (!text)
         return 0;
 
-    SIZE size;
-    GetTextExtentPoint32A(m_ddraw.m_hDC, text, static_cast<int>(strlen(text)), &size);
-    return size.cx;
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+    {
+        TextLib::TextMetrics metrics = pTextRenderer->MeasureText(text);
+        return metrics.width;
+    }
+
+    return 0;
 }
 
 void DDrawRenderer::BltBackBufferFromPDBGS(RECT* srcRect)

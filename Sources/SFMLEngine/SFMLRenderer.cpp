@@ -8,6 +8,7 @@
 #include "RendererFactory.h"
 #include "PixelConversion.h"
 #include "RenderConstants.h"
+#include "ITextRenderer.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/OpenGL.hpp>
@@ -28,7 +29,6 @@ SFMLRenderer::SFMLRenderer()
     : m_pRenderWindow(nullptr)
     , m_texturesCreated(false)
     , m_pdbgsWrapper(nullptr)
-    , m_fontLoaded(false)
     , m_backBufferLocked(false)
     , m_width(RENDER_LOGICAL_WIDTH)
     , m_height(RENDER_LOGICAL_HEIGHT)
@@ -72,33 +72,6 @@ void SFMLRenderer::InitDummyTables()
             s_dummyAddTransTable[i][j] = (i + j > 63) ? 63 : (i + j);
         }
     }
-}
-
-bool SFMLRenderer::LoadFont()
-{
-    if (m_fontLoaded)
-        return true;
-
-    // Fallback to Windows system fonts if client didn't load a font
-    const char* fontPaths[] = {
-        "C:\\Windows\\Fonts\\tahoma.ttf",
-        "C:\\Windows\\Fonts\\arial.ttf",
-        "C:\\Windows\\Fonts\\segoeui.ttf"
-    };
-
-    for (const char* path : fontPaths)
-    {
-        if (m_font.openFromFile(path))
-        {
-            // Disable texture smoothing for pixel-perfect rendering to match DDraw/GDI
-            m_font.setSmooth(false);
-            m_fontLoaded = true;
-            return true;
-        }
-    }
-
-    printf("[ERROR] SFMLRenderer::LoadFont - Failed to load any font\n");
-    return false;
 }
 
 #ifdef _WIN32
@@ -163,13 +136,6 @@ bool SFMLRenderer::Init(HWND hWnd)
 #ifdef _WIN32
     LogGPUInfo();
 #endif
-
-    // Note: RenderTextures will be created when SetRenderWindow is called,
-    // because they require an active OpenGL context from the window.
-    // For now, just return success - the textures will be created lazily.
-
-    // Load font for text rendering (this doesn't need OpenGL context)
-    LoadFont();
 
     return true;
 }
@@ -486,62 +452,45 @@ void SFMLRenderer::DrawFadeOverlay(float alpha)
 
 void SFMLRenderer::BeginTextBatch()
 {
-    // No-op for SFML - we don't need a DC
+    // Delegate to TextLib for consistency
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->BeginBatch();
 }
 
 void SFMLRenderer::EndTextBatch()
 {
-    // No-op for SFML
+    // Delegate to TextLib for consistency
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->EndBatch();
 }
 
 void SFMLRenderer::DrawText(int x, int y, const char* text, uint32_t color)
 {
-    if (!text || !m_fontLoaded || !m_texturesCreated)
+    if (!text || !m_texturesCreated)
         return;
 
-    // Extract RGB from COLORREF (Windows color format: 0x00BBGGRR)
-    uint8_t r = static_cast<uint8_t>(color & 0xFF);
-    uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFF);
-
-    sf::Text sfText(m_font, text, 12);  // Default font size
-    sfText.setPosition({static_cast<float>(x), static_cast<float>(y)});
-    sfText.setFillColor(sf::Color(r, g, b));
-
-    m_backBuffer.draw(sfText);
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        pTextRenderer->DrawText(x, y, text, color);
 }
 
 void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
 {
-    if (!rect || !text) {
+    if (!rect || !text || !m_texturesCreated)
         return;
+
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+    {
+        int width = rect->right - rect->left;
+        int height = rect->bottom - rect->top;
+        pTextRenderer->DrawTextAligned(rect->left, rect->top, width, height, text, color,
+                                        TextLib::Align::TopCenter);
     }
-    if (!m_fontLoaded) {
-        return;
-    }
-    if (!m_texturesCreated) {
-        return;
-    }
-
-    // Extract RGB from COLORREF (Windows color format: 0x00BBGGRR)
-    uint8_t r = static_cast<uint8_t>(color & 0xFF);
-    uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFF);
-
-    sf::Text sfText(m_font, text, 12);
-    sf::FloatRect bounds = sfText.getLocalBounds();
-
-    // Center horizontally within rect (matching DDraw's DT_CENTER behavior)
-    // Round to integer pixel for sharp text rendering
-    float rectWidth = static_cast<float>(rect->right - rect->left);
-    float centerX = rect->left + (rectWidth / 2.0f);
-    float drawX = centerX - (bounds.size.x / 2.0f) - bounds.position.x;
-    int pixelX = static_cast<int>(drawX + 0.5f);  // Round to nearest pixel
-
-    sfText.setPosition({static_cast<float>(pixelX), static_cast<float>(rect->top)});
-    sfText.setFillColor(sf::Color(r, g, b));
-
-    m_backBuffer.draw(sfText);
 }
 
 ITexture* SFMLRenderer::CreateTexture(uint16_t width, uint16_t height)
@@ -755,34 +704,31 @@ void SFMLRenderer::ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* out
 
 int SFMLRenderer::GetTextLength(const char* text, int maxWidth)
 {
-    if (!text || !m_fontLoaded)
+    if (!text)
         return 0;
 
-    // Measure text using SFML font
-    int len = static_cast<int>(strlen(text));
-    sf::Text sfText(m_font, "", 12);
-
-    for (int i = len; i > 0; i--)
-    {
-        std::string substr(text, i);
-        sfText.setString(substr);
-        sf::FloatRect bounds = sfText.getLocalBounds();
-
-        if (bounds.size.x <= static_cast<float>(maxWidth))
-            return i;
-    }
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+        return pTextRenderer->GetFittingCharCount(text, maxWidth);
 
     return 0;
 }
 
 int SFMLRenderer::GetTextWidth(const char* text)
 {
-    if (!text || !m_fontLoaded)
+    if (!text)
         return 0;
 
-    sf::Text sfText(m_font, text, 12);
-    sf::FloatRect bounds = sfText.getLocalBounds();
-    return static_cast<int>(bounds.size.x);
+    // Delegate to TextLib - single point of font handling
+    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    if (pTextRenderer)
+    {
+        TextLib::TextMetrics metrics = pTextRenderer->MeasureText(text);
+        return metrics.width;
+    }
+
+    return 0;
 }
 
 void SFMLRenderer::BltBackBufferFromPDBGS(RECT* srcRect)

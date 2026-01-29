@@ -6,6 +6,8 @@
 #include "Game.h"
 #include "GameModeManager.h"
 #include "CommonTypes.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 Overlay_Msg::Overlay_Msg(CGame* pGame)
     : IGameScreen(pGame)
@@ -34,6 +36,7 @@ void Overlay_Msg::on_update()
 
 void Overlay_Msg::on_render()
 {
-    m_pGame->PutString(10, 10, m_pGame->m_cMsg, RGB(255, 155, 155), false, 1);
+    TextLib::DrawText(GameFont::Default, 10, 10, m_pGame->m_cMsg,
+                      TextLib::TextStyle::WithShadow(255, 155, 155));
     DrawVersion();
 }

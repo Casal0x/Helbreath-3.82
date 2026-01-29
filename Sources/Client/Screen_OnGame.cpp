@@ -13,6 +13,8 @@
 #include "IInput.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 extern char G_cSpriteAlphaDegree;
 
@@ -449,25 +451,25 @@ void Screen_OnGame::on_render()
         m_pGame->GetItemName(m_pGame->m_pItemList[CursorTarget::GetSelectedID()].get(), cStr1, cStr2, cStr3);
         iLoc = 0;
         if (strlen(cStr1) != 0) {
-            if (m_pGame->m_bIsSpecial) m_pGame->PutString(m_sMsX, m_sMsY + 25, cStr1, RGB(0, 255, 50), false, 1);
-            else m_pGame->PutString(m_sMsX, m_sMsY + 25, cStr1, RGB(255, 255, 255), false, 1);
+            if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(0, 255, 50));
+            else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(255, 255, 255));
             iLoc += 15;
         }
-        if (strlen(cStr2) != 0) { m_pGame->PutString(m_sMsX, m_sMsY + 25 + iLoc, cStr2, RGB(150, 150, 150), false, 1); iLoc += 15; }
-        if (strlen(cStr3) != 0) { m_pGame->PutString(m_sMsX, m_sMsY + 25 + iLoc, cStr3, RGB(150, 150, 150), false, 1); iLoc += 15; }
+        if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15; }
+        if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15; }
         if ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit != 0) && ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_dwAttribute & 0x00000001) == 0)) {
             wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit);
-            m_pGame->PutString(m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
         }
         if ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) && (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight >= 1100)) {
             int _wWeight = 0;
             if (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight % 100) _wWeight = 1;
             wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight / 100 + _wWeight);
-            m_pGame->PutString(m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
         }
         if (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) {
             wsprintf(m_pGame->G_cTxt, UPDATE_SCREEN_ONGAME10, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wCurLifeSpan, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wMaxLifeSpan);
-            m_pGame->PutString(m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, RGB(150, 150, 150), false, 1); iLoc += 15;
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
         }
         if (iLoc == 15) {
             iLoc = 0;
@@ -478,7 +480,7 @@ void Screen_OnGame::on_render()
             }
             if (iLoc > 1) {
                 wsprintf(m_pGame->G_cTxt, DEF_MSG_TOTAL_NUMBER, iLoc);
-                m_pGame->PutString(m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, RGB(150, 150, 150), false, 1);
+                TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150));
             }
         }
     }
@@ -490,13 +492,13 @@ void Screen_OnGame::on_render()
     // Heldenian tower count
     if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_pGame->m_cCurLocation, "BtField", 7) == 0)) {
         wsprintf(m_pGame->G_cTxt, "Aresden Flags : %d", m_pGame->m_iHeldenianAresdenFlags);
-        m_pGame->PutString(10, 140, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
         wsprintf(m_pGame->G_cTxt, "Aresden Flags : %d", m_pGame->m_iHeldenianElvineFlags);
-        m_pGame->PutString(10, 160, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
         wsprintf(m_pGame->G_cTxt, "Aresden's rest building number : %d", m_pGame->m_iHeldenianAresdenLeftTower);
-        m_pGame->PutString(10, 180, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
         wsprintf(m_pGame->G_cTxt, "Elvine's rest building number : %d", m_pGame->m_iHeldenianElvineLeftTower);
-        m_pGame->PutString(10, 200, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
     }
 
     m_pGame->DrawTopMsg();
@@ -507,7 +509,7 @@ void Screen_OnGame::on_render()
     int iDisplayY = 100;
     if (ConfigManager::Get().IsShowFpsEnabled()) {
         wsprintf(m_pGame->G_cTxt, "fps : %u", FrameTiming::GetFPS());
-        m_pGame->PutString(10, iDisplayY, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
         iDisplayY += 14;
     }
 
@@ -516,14 +518,14 @@ void Screen_OnGame::on_render()
             wsprintf(m_pGame->G_cTxt, "latency : %d ms", m_pGame->m_iLatencyMs);
         else
             wsprintf(m_pGame->G_cTxt, "latency : -- ms");
-        m_pGame->PutString(10, iDisplayY, m_pGame->G_cTxt, RGB(255, 255, 255));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
         iDisplayY += 14;
     }
 
     // Profiling display
     if (FrameTiming::IsProfilingEnabled()) {
         iDisplayY += 4;
-        m_pGame->PutString(10, iDisplayY, "--- Profile (avg ms) ---", RGB(255, 255, 100));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::FromColorRef(RGB(255, 255, 100)));
         iDisplayY += 14;
 
         for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++) {
@@ -532,7 +534,7 @@ void Screen_OnGame::on_render()
             int wholePart = static_cast<int>(avgMs);
             int fracPart = static_cast<int>((avgMs - wholePart) * 100);
             wsprintf(m_pGame->G_cTxt, "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-            m_pGame->PutString(10, iDisplayY, m_pGame->G_cTxt, RGB(200, 200, 200));
+            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(200, 200, 200)));
             iDisplayY += 12;
         }
     }

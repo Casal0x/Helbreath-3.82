@@ -1,6 +1,8 @@
 #include "DialogBox_GuildMenu.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_GuildMenu::DialogBox_GuildMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildMenu, pGame)
@@ -192,8 +194,10 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 	PutAlignedString(sX + 24, sX + 239, sY + 125, DRAW_DIALOGBOX_GUILDMENU18, 55, 25, 25);
 	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
 
-	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu)
-		m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, RGB(255, 255, 255), true, false, true);
+	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu) {
+		std::string masked(strlen(m_pGame->m_pPlayer->m_cGuildName), '*');
+		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+	}
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
 		if ((strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) || (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0)) {
@@ -309,7 +313,7 @@ void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX
 {
 	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, 55, 25, 25);
 	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
-	m_pGame->PutString(sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, RGB(255, 255, 255), false, 2);
+	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 25);
 	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 24);

@@ -114,16 +114,16 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
             {
                 if (params.shadow)
                 {
-                    // Draw shadow first (offset by 1,1 with black color)
-                    // Shadow uses additive blend with black = no change
-                    // So we use alpha blend for shadow to darken
+                    // Original PutString_SprFont2 behavior:
+                    // Draw raw/uncolored sprite at (+1,0) and (+1,+1) before main colored text
+                    // In SFML, raw sprites appear white, so we draw with black to match DDraw
                     SpriteLib::DrawParams shadowParams;
                     shadowParams.tintR = 0;
                     shadowParams.tintG = 0;
                     shadowParams.tintB = 0;
                     shadowParams.isColorReplace = true;
-                    shadowParams.isAdditive = false;  // Use alpha blend for shadow
-                    shadowParams.alpha = 0.5f;  // Semi-transparent to darken
+                    shadowParams.isAdditive = true;  // Additive with black = black on any background
+                    m_pSprite->Draw(currentX + 1, y, frame, shadowParams);
                     m_pSprite->Draw(currentX + 1, y + 1, frame, shadowParams);
                 }
 

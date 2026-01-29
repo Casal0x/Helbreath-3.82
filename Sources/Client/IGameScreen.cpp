@@ -5,6 +5,8 @@
 #include "IGameScreen.h"
 #include "Game.h"
 #include "GameModeManager.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 IGameScreen::IGameScreen(CGame* pGame)
     : m_pGame(pGame)
@@ -21,23 +23,24 @@ void IGameScreen::DrawNewDialogBox(char cType, int sX, int sY, int iFrame,
 
 void IGameScreen::PutString(int iX, int iY, const char* pString, uint32_t color)
 {
-    m_pGame->PutString(iX, iY, const_cast<char*>(pString), color);
+    TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::FromColorRef(color));
 }
 
 void IGameScreen::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
 {
-    m_pGame->PutString2(iX, iY, const_cast<char*>(pString), sR, sG, sB);
+    TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::WithShadow(sR, sG, sB));
 }
 
 void IGameScreen::PutAlignedString(int iX1, int iX2, int iY, const char* pString,
                                     short sR, short sG, short sB)
 {
-    m_pGame->PutAlignedString(iX1, iX2, iY, const_cast<char*>(pString), sR, sG, sB);
+    TextLib::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
+                             TextLib::TextStyle::Color(sR, sG, sB), TextLib::Align::TopCenter);
 }
 
 void IGameScreen::PutString_SprFont(int iX, int iY, const char* pStr, short sR, short sG, short sB)
 {
-    m_pGame->PutString_SprFont(iX, iY, const_cast<char*>(pStr), sR, sG, sB);
+    TextLib::DrawText(GameFont::Bitmap1, iX, iY, pStr, TextLib::TextStyle::WithHighlight(sR, sG, sB));
 }
 
 void IGameScreen::DrawVersion()

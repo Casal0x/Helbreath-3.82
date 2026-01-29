@@ -302,14 +302,6 @@ public:
 	void ReleaseUnusedSprites();
 	void OnKeyUp(int key);
 	void ChangeGameMode(GameMode mode);
-	void PutString(int iX, int iY, const char* pString, COLORREF color);
-	void PutString(int iX, int iY, const char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC = false);
-	void PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB);
-	void PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR = 0, short sG = 0, short sB = 0);
-	void PutString_SprFont(int iX, int iY, char * pStr, short sR, short sG, short sB);
-	void PutString_SprFont2(int iX, int iY, char * pStr, short sR, short sG, short sB);
-	void PutString_SprFont3(int iX, int iY, char * pStr, short sR, short sG, short sB, bool bTrans = false, int iType = 0);
-	void PutString_SprNum(int iX, int iY, char * pStr, short sR, short sG, short sB);
 	void LogRecvMsgHandler(char * pData);
 	void LogResponseHandler(char * pData);
 	void OnLogSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
@@ -472,11 +464,6 @@ public:
 	SpriteLib::SpriteCollection m_pTileSpr;
 	SpriteLib::SpriteCollection m_pEffectSpr;
 
-	// Bitmap fonts (client-owned, created from sprites)
-	std::unique_ptr<TextLib::IBitmapFont> m_pBitmapFont1;  // Interface font 1 (DEF_SPRID_INTERFACE_FONT1)
-	std::unique_ptr<TextLib::IBitmapFont> m_pBitmapFont2;  // Interface font 2 (DEF_SPRID_INTERFACE_FONT2)
-	std::unique_ptr<TextLib::IBitmapFont> m_pNumFont;      // Number font (DEF_SPRID_INTERFACE_ADDINTERFACE, frames 6-15)
-	std::array<std::unique_ptr<TextLib::IBitmapFont>, 3> m_pSprFont3{};  // SPRFONTS2 with type offsets 0, 1, 2
 	std::unique_ptr<CPlayer> m_pPlayer;  // Main player data
 	std::unique_ptr<class CMapData> m_pMapData;
 	std::unique_ptr<class XSocket> m_pGSock;

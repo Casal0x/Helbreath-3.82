@@ -4,6 +4,8 @@
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "NetMessages.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_GuildHallMenu::DialogBox_GuildHallMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildHallMenu, pGame)
@@ -43,7 +45,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		if (m_pGame->m_iTeleportMapCount > 0)
 		{
 			char teleportBuf[128];
-			PutString2(sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, 55, 25, 25);
+			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(55, 25, 25));
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));

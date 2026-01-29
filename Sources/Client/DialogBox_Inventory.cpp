@@ -3,6 +3,8 @@
 #include "Game.h"
 #include "IInput.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
@@ -56,9 +58,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
-		PutString2(baseX + COUNT_OFFSET_X + pItem->m_sX,
-		           baseY + COUNT_OFFSET_Y + pItem->m_sY,
-		           countBuf, 200, 200, 200);
+		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(200, 200, 200));
 	}
 }
 

@@ -1,8 +1,10 @@
 #include "DialogBox_Manufacture.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
+#include "TextLibExt.h"
 #include "lan_eng.h"
 #include "NetMessages.h"
 #include "IInput.h"
@@ -135,8 +137,8 @@ void DialogBox_Manufacture::DrawAlchemyWaiting(short sX, short sY, short msX, sh
 		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", 16, 16, 30);
-	else m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", 6, 6, 20);
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(16, 16, 30));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
 }
 
 void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
@@ -171,7 +173,7 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
 		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
-	m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", 20, 6, 6);
+	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(20, 6, 6));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{
@@ -352,18 +354,18 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 260 + 75, DRAW_DIALOGBOX_SKILLDLG17, 55, 25, 25);
 
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			m_pGame->PutString_SprFont(sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", 6, 6, 20);
-		else m_pGame->PutString_SprFont(sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", 0, 0, 7);
+			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
+		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
 
 		if ((msX >= sX + iAdjX + 160) && (msX <= sX + iAdjX + 255) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372)) {
 			if (Info().cStr[4] == 1)
-				m_pGame->PutString_SprFont(sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", 6, 6, 20);
-			else m_pGame->PutString_SprFont(sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", 10, 10, 10);
+				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(6, 6, 20));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(10, 10, 10));
 		}
 		else {
 			if (Info().cStr[4] == 1)
-				m_pGame->PutString_SprFont(sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", 0, 0, 7);
-			else m_pGame->PutString_SprFont(sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", 10, 10, 10);
+				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(0, 0, 7));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(10, 10, 10));
 		}
 	}
 	else {
@@ -371,8 +373,8 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 215 + 75, DRAW_DIALOGBOX_SKILLDLG19, 55, 25, 25);
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG20, 55, 25, 25);
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			m_pGame->PutString_SprFont(sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", 6, 6, 20);
-		else m_pGame->PutString_SprFont(sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", 0, 0, 7);
+			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
+		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
 	}
 }
 
@@ -499,8 +501,8 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 	}
 
 	if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-		m_pGame->PutString_SprFont(sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", 6, 6, 20);
-	else m_pGame->PutString_SprFont(sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", 0, 0, 7);
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
 }
 
 void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, short msY)
@@ -525,8 +527,8 @@ void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, s
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", 16, 16, 30);
-	else m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", 6, 6, 20);
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(16, 16, 30));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
 }
 
 void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
@@ -574,7 +576,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 			m_pGame->m_iContributionPrice = 10;
 	}
 
-	m_pGame->PutString_SprFont(sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", 20, 6, 6);
+	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(20, 6, 6));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{

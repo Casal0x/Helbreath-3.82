@@ -14,10 +14,41 @@
 
 namespace TextLib {
 
+// ============== Basic Types ==============
+
 struct TextMetrics
 {
     int width;
     int height;
+};
+
+// Text alignment flags (combine horizontal and vertical with bitwise OR)
+enum Align : uint8_t
+{
+    // Horizontal (bits 0-1)
+    Left    = 0x00,
+    HCenter = 0x01,
+    Right   = 0x02,
+
+    // Vertical (bits 2-3)
+    Top     = 0x00,
+    VCenter = 0x04,
+    Bottom  = 0x08,
+
+    // Common combinations
+    TopLeft      = Top | Left,
+    TopCenter    = Top | HCenter,
+    TopRight     = Top | Right,
+    MiddleLeft   = VCenter | Left,
+    Center       = VCenter | HCenter,
+    MiddleRight  = VCenter | Right,
+    BottomLeft   = Bottom | Left,
+    BottomCenter = Bottom | HCenter,
+    BottomRight  = Bottom | Right,
+
+    // Masks for extracting components
+    HMask = 0x03,
+    VMask = 0x0C
 };
 
 class ITextRenderer
@@ -42,7 +73,8 @@ public:
 
     // Drawing
     virtual void DrawText(int x, int y, const char* text, uint32_t color) = 0;
-    virtual void DrawTextCentered(int x1, int x2, int y, const char* text, uint32_t color) = 0;
+    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+                                 Align alignment = Align::TopLeft) = 0;
 
     // Batching for performance (DDraw needs DC acquisition)
     virtual void BeginBatch() = 0;

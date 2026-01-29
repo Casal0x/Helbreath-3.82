@@ -1,9 +1,9 @@
 {
     "audio": {
         "musicEnabled": false,
-        "musicVolume": 66,
+        "musicVolume": 36,
         "soundEnabled": true,
-        "soundVolume": 2
+        "soundVolume": 20
     },
     "display": {
         "detailLevel": 2,
@@ -30,7 +30,7 @@
         ]
     },
     "window": {
-        "height": 1080,
-        "width": 1440
+        "height": 768,
+        "width": 1024
     }
 }

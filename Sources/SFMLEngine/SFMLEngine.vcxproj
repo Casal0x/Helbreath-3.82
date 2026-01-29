@@ -105,6 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Dependencies\Shared\ISpriteFactory.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\TextLib.cpp" />
     <ClCompile Include="SFMLRenderer.cpp" />
     <ClCompile Include="SFMLTexture.cpp" />
     <ClCompile Include="SFMLWindow.cpp" />

@@ -1,6 +1,8 @@
 #include "DialogBox_Fishing.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "GlobalDef.h"
+#include "TextLibExt.h"
 #include "lan_eng.h"
 
 DialogBox_Fishing::DialogBox_Fishing(CGame* pGame)
@@ -35,13 +37,13 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, RGB(0, 0, 0));
 
 		wsprintf(cTxt, "%d %%", Info().sV1);
-		m_pGame->PutString_SprFont(sX + 157, sY + 40, cTxt, 10, 0, 0);
+		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(10, 0, 0));
 
 		// "Try Now!" button
 		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			m_pGame->PutString_SprFont(sX + 160, sY + 70, "Try Now!", 6, 6, 20);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
 		else
-			m_pGame->PutString_SprFont(sX + 160, sY + 70, "Try Now!", 0, 0, 7);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(0, 0, 7));
 		break;
 	}
 }

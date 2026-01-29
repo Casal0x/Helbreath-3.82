@@ -341,6 +341,7 @@
     <ClInclude Include="EntityRenderState.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameModeManager.h" />
+    <ClInclude Include="GameFonts.h" />
     <ClInclude Include="IGameScreen.h" />
     <ClInclude Include="Screen_OnGame.h" />
     <ClInclude Include="Screen_MainMenu.h" />
@@ -351,6 +352,7 @@
     <ClInclude Include="Screen_Quit.h" />
     <ClInclude Include="Screen_Loading.h" />
     <ClInclude Include="Screen_Splash.h" />
+    <ClInclude Include="Screen_Test.h" />
     <ClInclude Include="Overlay_Connecting.h" />
     <ClInclude Include="Overlay_WaitingResponse.h" />
     <ClInclude Include="Overlay_LogResMsg.h" />
@@ -425,6 +427,7 @@
     <ClCompile Include="Screen_Quit.cpp" />
     <ClCompile Include="Screen_Loading.cpp" />
     <ClCompile Include="Screen_Splash.cpp" />
+    <ClCompile Include="Screen_Test.cpp" />
     <ClCompile Include="Overlay_Connecting.cpp" />
     <ClCompile Include="Overlay_WaitingResponse.cpp" />
     <ClCompile Include="Overlay_LogResMsg.cpp" />

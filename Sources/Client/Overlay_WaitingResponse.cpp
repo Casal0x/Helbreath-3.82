@@ -8,6 +8,8 @@
 #include "CommonTypes.h"
 #include "lan_eng.h"
 #include "IInput.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_WaitingResponse::Overlay_WaitingResponse(CGame* pGame)
     : IGameScreen(pGame)
@@ -79,7 +81,7 @@ void Overlay_WaitingResponse::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
     // Draw status text
-    PutString_SprFont(172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", 58, 0, 0);
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", TextLib::TextStyle::WithHighlight(58, 0, 0));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)

@@ -1,8 +1,10 @@
 #include "DialogBox_Slates.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "lan_eng.h"
 #include "SpriteID.h"
+#include "TextLibExt.h"
 #include "NetMessages.h"
 
 DialogBox_Slates::DialogBox_Slates(CGame* pGame)
@@ -44,8 +46,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
 			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165))
-				m_pGame->PutString_SprFont(sX + 120, sY + 150, "Casting", 6, 6, 20);
-			else m_pGame->PutString_SprFont(sX + 120, sY + 150, "Casting", 0, 0, 7);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(6, 6, 20));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(0, 0, 7));
 		}
 		break;
 

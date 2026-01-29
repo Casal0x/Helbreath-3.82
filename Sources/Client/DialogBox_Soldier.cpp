@@ -5,6 +5,8 @@
 #include "SpriteID.h"
 #include "ConfigManager.h"
 #include "NetMessages.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_Soldier::DialogBox_Soldier(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeSoldier, pGame)
@@ -65,12 +67,12 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER3, 255, 255, 255);
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER3, TextLib::TextStyle::WithShadow(255, 255, 255));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER4, 255, 255, 255);
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER4, TextLib::TextStyle::WithShadow(255, 255, 255));
 		}
 		break;
 
@@ -100,17 +102,17 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER6, 255, 255, 255);
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER6, TextLib::TextStyle::WithShadow(255, 255, 255));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER7, 255, 255, 255);
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER7, TextLib::TextStyle::WithShadow(255, 255, 255));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			PutString2(msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER8, 255, 255, 255);
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER8, TextLib::TextStyle::WithShadow(255, 255, 255));
 		}
 		break;
 	}
@@ -201,7 +203,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
 			char coordBuf[32];
 			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-			m_pGame->PutString_SprFont3(msX + 10, msY - 10, coordBuf, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+			TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4));
 		}
 		break;
 	}

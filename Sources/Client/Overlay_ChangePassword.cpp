@@ -10,6 +10,8 @@
 #include "IInput.h"
 #include "XSocket.h"
 #include "Misc.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 Overlay_ChangePassword::Overlay_ChangePassword(CGame* pGame)
     : IGameScreen(pGame)
@@ -281,19 +283,22 @@ void Overlay_ChangePassword::on_render()
     if (m_iCurFocus != 2)
     {
         uint32_t color = CMisc::bCheckValidString(m_cOldPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
-        m_pGame->PutString(314 + SCREENX, 179 + SCREENY, m_cOldPassword, color, true, 3);
+        std::string maskedOld(strlen(m_cOldPassword), '*');
+        TextLib::DrawText(GameFont::Default, 314 + SCREENX, 179 + SCREENY, maskedOld.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 3)
     {
         uint32_t color = CMisc::bCheckValidName(m_cNewPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
-        m_pGame->PutString(314 + SCREENX, 203 + SCREENY, m_cNewPassword, color, true, 3);
+        std::string maskedNew(strlen(m_cNewPassword), '*');
+        TextLib::DrawText(GameFont::Default, 314 + SCREENX, 203 + SCREENY, maskedNew.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 4)
     {
         uint32_t color = CMisc::bCheckValidName(m_cConfirmPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
-        m_pGame->PutString(314 + SCREENX, 227 + SCREENY, m_cConfirmPassword, color, true, 3);
+        std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
+        TextLib::DrawText(GameFont::Default, 314 + SCREENX, 227 + SCREENY, maskedConfirm.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     // Show active input string (with masking for password fields)

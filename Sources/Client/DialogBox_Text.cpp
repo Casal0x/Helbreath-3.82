@@ -2,6 +2,8 @@
 #include "ConfigManager.h"
 #include "Game.h"
 #include "IInput.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 #define DEF_TEXTDLGMAXLINES 300
 
 DialogBox_Text::DialogBox_Text(CGame* pGame)
@@ -70,19 +72,19 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 				switch (pMsg[0])
 				{
 				case '_':
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg + 1, 255, 255, 255);
+					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter);
 					break;
 				case ';':
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg + 1, 4, 0, 50);
+					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, TextLib::TextStyle::Color(4, 0, 50), TextLib::Align::TopCenter);
 					break;
 				default:
-					m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg, 45, 25, 25);
+					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, TextLib::TextStyle::Color(45, 25, 25), TextLib::Align::TopCenter);
 					break;
 				}
 			}
 			else
 			{
-				m_pGame->PutAlignedString(sX + 24, sX + 236, sY + 50 + i * 13, pMsg, 0, 0, 0);
+				TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 			}
 		}
 	}

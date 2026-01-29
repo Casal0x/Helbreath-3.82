@@ -24,10 +24,9 @@ void SetTextRenderer(ITextRenderer* renderer)
 
 DDrawTextRenderer::DDrawTextRenderer(DXC_ddraw* ddraw)
     : m_pDDraw(ddraw)
-    , m_hFont(nullptr)
     , m_hOldFont(nullptr)
-    , m_fontSize(12)
-    , m_batchActive(false)
+    , m_fontSize(16)  // Match original game font size
+    , m_batchDepth(0)
     , m_fontLoaded(false)
 {
     m_fontName[0] = '\0';
@@ -38,18 +37,22 @@ DDrawTextRenderer::DDrawTextRenderer(DXC_ddraw* ddraw)
 
 DDrawTextRenderer::~DDrawTextRenderer()
 {
-    DestroyGDIFont();
+    ClearFontCache();
 }
 
-void DDrawTextRenderer::CreateGDIFont()
+HFONT DDrawTextRenderer::GetOrCreateFont(int size)
 {
-    DestroyGDIFont();
-
     if (m_fontName[0] == '\0')
-        return;
+        return nullptr;
 
-    m_hFont = CreateFontA(
-        -m_fontSize,            // Height (negative for character height)
+    // Check cache first
+    auto it = m_fontCache.find(size);
+    if (it != m_fontCache.end())
+        return it->second;
+
+    // Create new font for this size (matching original game settings)
+    HFONT hFont = CreateFontA(
+        size,                   // Height (positive = cell height, like original)
         0,                      // Width (0 = default)
         0,                      // Escapement
         0,                      // Orientation
@@ -57,24 +60,31 @@ void DDrawTextRenderer::CreateGDIFont()
         FALSE,                  // Italic
         FALSE,                  // Underline
         FALSE,                  // StrikeOut
-        DEFAULT_CHARSET,        // CharSet
+        ANSI_CHARSET,           // CharSet (match original)
         OUT_DEFAULT_PRECIS,     // OutPrecision
         CLIP_DEFAULT_PRECIS,    // ClipPrecision
-        ANTIALIASED_QUALITY,    // Quality
-        DEFAULT_PITCH | FF_DONTCARE,  // PitchAndFamily
+        NONANTIALIASED_QUALITY, // Quality (match original)
+        VARIABLE_PITCH,         // PitchAndFamily (match original)
         m_fontName              // Face name
     );
 
-    m_fontLoaded = (m_hFont != nullptr);
+    if (hFont)
+    {
+        m_fontCache[size] = hFont;
+        m_fontLoaded = true;
+    }
+
+    return hFont;
 }
 
-void DDrawTextRenderer::DestroyGDIFont()
+void DDrawTextRenderer::ClearFontCache()
 {
-    if (m_hFont)
+    for (auto& pair : m_fontCache)
     {
-        DeleteObject(m_hFont);
-        m_hFont = nullptr;
+        if (pair.second)
+            DeleteObject(pair.second);
     }
+    m_fontCache.clear();
     m_fontLoaded = false;
 }
 
@@ -103,7 +113,9 @@ bool DDrawTextRenderer::LoadFontFromFile(const char* fontPath)
     if (dot)
         *dot = '\0';
 
-    CreateGDIFont();
+    // Clear cache since font changed, then create for current size
+    ClearFontCache();
+    GetOrCreateFont(m_fontSize);
     return m_fontLoaded;
 }
 
@@ -115,20 +127,16 @@ bool DDrawTextRenderer::LoadFontByName(const char* fontName)
     strncpy_s(m_fontName, fontName, sizeof(m_fontName) - 1);
     m_fontName[sizeof(m_fontName) - 1] = '\0';
 
-    CreateGDIFont();
+    // Clear cache since font changed, then create for current size
+    ClearFontCache();
+    GetOrCreateFont(m_fontSize);
     return m_fontLoaded;
 }
 
 void DDrawTextRenderer::SetFontSize(int size)
 {
-    if (m_fontSize != size)
-    {
-        m_fontSize = size;
-        if (m_fontName[0] != '\0')
-        {
-            CreateGDIFont();
-        }
-    }
+    // Just update the current size - fonts are lazy loaded/cached on draw
+    m_fontSize = size;
 }
 
 bool DDrawTextRenderer::IsFontLoaded() const
@@ -143,11 +151,21 @@ TextMetrics DDrawTextRenderer::MeasureText(const char* text) const
     if (!text || text[0] == '\0' || !m_pDDraw)
         return metrics;
 
-    // Acquire DC for measurement (same as BeginTextBatch)
-    m_pDDraw->_GetBackBufferDC();
+    // Auto-batch if not already in a batch
+    DDrawTextRenderer* pThis = const_cast<DDrawTextRenderer*>(this);
+    bool needEndBatch = (m_batchDepth == 0);
+    if (needEndBatch)
+        pThis->BeginBatch();
 
-    // The DC and font are now set up by _GetBackBufferDC
-    // m_hFontInUse is selected into m_hDC
+    // Get the font for current size (cast away const for cache access)
+    HFONT hFont = pThis->GetOrCreateFont(m_fontSize);
+
+    HFONT hOldFont = nullptr;
+    if (hFont)
+    {
+        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, hFont);
+    }
+
     SIZE size;
     if (GetTextExtentPoint32A(m_pDDraw->m_hDC, text, static_cast<int>(strlen(text)), &size))
     {
@@ -155,22 +173,36 @@ TextMetrics DDrawTextRenderer::MeasureText(const char* text) const
         metrics.height = size.cy;
     }
 
-    // Release DC (same as EndTextBatch)
-    m_pDDraw->_ReleaseBackBufferDC();
+    if (hOldFont)
+    {
+        SelectObject(m_pDDraw->m_hDC, hOldFont);
+    }
+
+    if (needEndBatch)
+        pThis->EndBatch();
 
     return metrics;
 }
 
 int DDrawTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
 {
-    if (!text || !m_pDDraw || !m_pDDraw->m_hDC)
+    if (!text || !m_pDDraw)
         return 0;
+
+    // Auto-batch if not already in a batch
+    DDrawTextRenderer* pThis = const_cast<DDrawTextRenderer*>(this);
+    bool needEndBatch = (m_batchDepth == 0);
+    if (needEndBatch)
+        pThis->BeginBatch();
+
+    // Get the font for current size (cast away const for cache access)
+    HFONT hFont = pThis->GetOrCreateFont(m_fontSize);
 
     // Select our font temporarily
     HFONT hOldFont = nullptr;
-    if (m_hFont)
+    if (hFont)
     {
-        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, m_hFont);
+        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, hFont);
     }
 
     int len = static_cast<int>(strlen(text));
@@ -195,19 +227,30 @@ int DDrawTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
         SelectObject(m_pDDraw->m_hDC, hOldFont);
     }
 
+    if (needEndBatch)
+        pThis->EndBatch();
+
     return result;
 }
 
 void DDrawTextRenderer::DrawText(int x, int y, const char* text, uint32_t color)
 {
-    if (!text || !m_pDDraw || !m_pDDraw->m_hDC)
+    if (!text || !m_pDDraw)
         return;
+
+    // Auto-batch if not already in a batch
+    bool needEndBatch = (m_batchDepth == 0);
+    if (needEndBatch)
+        BeginBatch();
+
+    // Get the font for current size (lazy load/cached)
+    HFONT hFont = GetOrCreateFont(m_fontSize);
 
     // Select our font
     HFONT hOldFont = nullptr;
-    if (m_hFont)
+    if (hFont)
     {
-        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, m_hFont);
+        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, hFont);
     }
 
     SetTextColor(m_pDDraw->m_hDC, static_cast<COLORREF>(color));
@@ -219,53 +262,96 @@ void DDrawTextRenderer::DrawText(int x, int y, const char* text, uint32_t color)
     {
         SelectObject(m_pDDraw->m_hDC, hOldFont);
     }
+
+    if (needEndBatch)
+        EndBatch();
 }
 
-void DDrawTextRenderer::DrawTextCentered(int x1, int x2, int y, const char* text, uint32_t color)
+void DDrawTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+                                         Align alignment)
 {
-    if (!text || !m_pDDraw || !m_pDDraw->m_hDC)
+    if (!text || !m_pDDraw)
         return;
+
+    // Auto-batch if not already in a batch
+    bool needEndBatch = (m_batchDepth == 0);
+    if (needEndBatch)
+        BeginBatch();
+
+    // Get the font for current size (lazy load/cached)
+    HFONT hFont = GetOrCreateFont(m_fontSize);
 
     // Select our font
     HFONT hOldFont = nullptr;
-    if (m_hFont)
+    if (hFont)
     {
-        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, m_hFont);
+        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, hFont);
     }
 
     RECT rect;
-    rect.left = x1;
+    rect.left = x;
     rect.top = y;
-    rect.right = x2;
-    rect.bottom = y + 20;  // Approximate height, DT_NOCLIP is used anyway
+    rect.right = x + width;
+    rect.bottom = y + height;
+
+    // Build DrawText flags based on alignment
+    UINT dtFlags = DT_NOCLIP | DT_WORDBREAK | DT_NOPREFIX;
+
+    // Horizontal alignment
+    uint8_t hAlign = alignment & Align::HMask;
+    if (hAlign == Align::HCenter)
+        dtFlags |= DT_CENTER;
+    else if (hAlign == Align::Right)
+        dtFlags |= DT_RIGHT;
+    else
+        dtFlags |= DT_LEFT;
+
+    // Vertical alignment
+    uint8_t vAlign = alignment & Align::VMask;
+    if (vAlign == Align::VCenter)
+        dtFlags |= DT_VCENTER | DT_SINGLELINE;
+    else if (vAlign == Align::Bottom)
+        dtFlags |= DT_BOTTOM | DT_SINGLELINE;
+    else
+        dtFlags |= DT_TOP;
 
     SetTextColor(m_pDDraw->m_hDC, static_cast<COLORREF>(color));
     SetBkMode(m_pDDraw->m_hDC, TRANSPARENT);
-    ::DrawTextA(m_pDDraw->m_hDC, text, static_cast<int>(strlen(text)), &rect,
-                DT_CENTER | DT_NOCLIP | DT_WORDBREAK | DT_NOPREFIX);
+    ::DrawTextA(m_pDDraw->m_hDC, text, static_cast<int>(strlen(text)), &rect, dtFlags);
 
     // Restore old font
     if (hOldFont)
     {
         SelectObject(m_pDDraw->m_hDC, hOldFont);
     }
+
+    if (needEndBatch)
+        EndBatch();
 }
 
 void DDrawTextRenderer::BeginBatch()
 {
-    if (!m_batchActive && m_pDDraw)
+    if (m_pDDraw)
     {
-        m_pDDraw->_GetBackBufferDC();
-        m_batchActive = true;
+        if (m_batchDepth == 0)
+        {
+            // First batch - acquire DC
+            m_pDDraw->_GetBackBufferDC();
+        }
+        m_batchDepth++;
     }
 }
 
 void DDrawTextRenderer::EndBatch()
 {
-    if (m_batchActive && m_pDDraw)
+    if (m_pDDraw && m_batchDepth > 0)
     {
-        m_pDDraw->_ReleaseBackBufferDC();
-        m_batchActive = false;
+        m_batchDepth--;
+        if (m_batchDepth == 0)
+        {
+            // Last batch ended - release DC
+            m_pDDraw->_ReleaseBackBufferDC();
+        }
     }
 }
 

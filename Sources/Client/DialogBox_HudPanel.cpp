@@ -3,6 +3,8 @@
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
 #include "CursorTarget.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 #include <cstdlib>
 
 // Static button data shared between draw and click handling
@@ -55,15 +57,15 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iHP);
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
-		m_pGame->PutString_SprNum(85, HP_NUM_Y, statBuf,
-			m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11);
-		m_pGame->PutString_SprFont3(35, HP_BAR_Y + 2, "Poisoned",
-			m_pGame->m_wR[5] * 8, m_pGame->m_wG[5] * 8, m_pGame->m_wB[5] * 8, true, 2);
+		TextLib::DrawText(GameFont::Numbers, 85, HP_NUM_Y, statBuf,
+			TextLib::TextStyle::Color(m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11));
+		TextLib::DrawText(GameFont::SprFont3_2, 35, HP_BAR_Y + 2, "Poisoned",
+			TextLib::TextStyle::Color(m_pGame->m_wR[5] * 8, m_pGame->m_wG[5] * 8, m_pGame->m_wB[5] * 8).WithAlpha(0.7f));
 	}
 	else
 	{
-		m_pGame->PutString_SprNum(HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, 0, 0, 0);
-		m_pGame->PutString_SprNum(HP_NUM_X, HP_NUM_Y, statBuf, 255, 255, 255);
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X, HP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
 	}
 
 	// MP bar
@@ -77,8 +79,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// MP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	m_pGame->PutString_SprNum(HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, 0, 0, 0);
-	m_pGame->PutString_SprNum(HP_NUM_X, MP_NUM_Y, statBuf, 255, 255, 255);
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X, MP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
 
 	// SP bar
 	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -90,8 +92,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// SP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	m_pGame->PutString_SprNum(SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, 0, 0, 0);
-	m_pGame->PutString_SprNum(SP_NUM_X, SP_NUM_Y, statBuf, 255, 255, 255);
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X, SP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -115,13 +117,13 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		if ((m_pGame->m_pPlayer->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
 		{
 			int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-			m_pGame->PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", flashColor, flashColor, 0);
+			TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
 		}
 	}
 	else if (m_pGame->m_cRestartCount == -1)
 	{
 		int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-		m_pGame->PutString_SprFont2(LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Restart", flashColor, flashColor, 0);
+		TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Restart", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
 	}
 
 	// Combat mode / Safe attack icon

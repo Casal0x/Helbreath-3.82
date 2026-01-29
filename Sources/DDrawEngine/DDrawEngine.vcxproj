@@ -105,6 +105,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Dependencies\Shared\ISpriteFactory.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\TextLib.cpp" />
     <ClCompile Include="DXC_ddraw.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="Mydib.cpp" />

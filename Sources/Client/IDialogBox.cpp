@@ -1,5 +1,7 @@
 #include "IDialogBox.h"
 #include "Game.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 IDialogBox::IDialogBox(DialogBoxId::Type id, CGame* pGame)
 	: m_pGame(pGame)
@@ -29,17 +31,18 @@ void IDialogBox::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool b
 
 void IDialogBox::PutString(int iX, int iY, const char* pString, uint32_t color)
 {
-	m_pGame->PutString(iX, iY, pString, color);
+	TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::FromColorRef(color));
 }
 
 void IDialogBox::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
 {
-	m_pGame->PutString2(iX, iY, pString, sR, sG, sB);
+	TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::WithShadow(sR, sG, sB));
 }
 
 void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR, short sG, short sB)
 {
-	m_pGame->PutAlignedString(iX1, iX2, iY, pString, sR, sG, sB);
+	TextLib::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
+	                         TextLib::TextStyle::Color(sR, sG, sB), TextLib::Align::TopCenter);
 }
 
 void IDialogBox::PlaySoundEffect(char cType, int iNum, int iDist, long lPan)

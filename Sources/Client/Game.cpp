@@ -5,6 +5,8 @@
 
 #include "Game.h"
 #include "CommonTypes.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 #include "Benchmark.h"
 #include "FrameTiming.h"
 #include "lan_eng.h"
@@ -42,6 +44,7 @@
 #include "Screen_Quit.h"
 #include "Screen_Loading.h"
 #include "Screen_Splash.h"
+#include "Screen_Test.h"
 #include "IInput.h"
 
 // Overlay system
@@ -213,7 +216,6 @@ bool CGame::bInit()
 	// Initialize GameModeManager
 	GameModeManager::Initialize(this);
 
-	// Set initial screen to Splash (transitions to Loading after 5 seconds)
 	GameModeManager::set_screen<Screen_Splash>();
 
 	m_bHideLocalCursor = false;
@@ -230,11 +232,21 @@ bool CGame::bInit()
 		MessageBox(G_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
+
 	m_Renderer = Renderer::Get();
 	if (m_Renderer->Init(G_hWnd) == false)
 	{
 		MessageBox(G_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
+	}
+
+	// Preload the default font for text rendering
+	if (TextLib::GetTextRenderer())
+	{
+		if (!TextLib::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
+		{
+			printf("[FONT] Failed to load default.ttf font file!\n");
+		}
 	}
 
 	// Initialize sprite factory and register it globally
@@ -267,76 +279,6 @@ bool CGame::bInit()
 	{
 		MessageBox(G_hWnd, "SKILLCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
-	}
-
-	// Load early interface sprites using batch loading
-	m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = SpriteLib::Sprites::Create("New-Dialog", 0, false);
-
-	// Load interface2 sprites in one batch
-	SpriteLib::SpriteLoader::open_pak("interface2", [&](SpriteLib::SpriteLoader& loader) {
-		m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = loader.get_sprite(0, false);
-		m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = loader.get_sprite(1, false);
-		m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = loader.get_sprite(2, false);
-		m_pSprite[DEF_SPRID_INTERFACE_CRAFTING] = loader.get_sprite(3, false);
-	});
-
-	// Load sprfonts sprites in one batch
-	SpriteLib::SpriteLoader::open_pak("sprfonts", [&](SpriteLib::SpriteLoader& loader) {
-		m_pSprite[DEF_SPRID_INTERFACE_FONT1] = loader.get_sprite(0, false);
-		m_pSprite[DEF_SPRID_INTERFACE_FONT2] = loader.get_sprite(1, false);
-	});
-
-	// Create bitmap fonts from the loaded sprites
-	// Font 1: Characters '!' (33) to 'z' (122), uses __cSpace for widths
-	if (m_pSprite[DEF_SPRID_INTERFACE_FONT1])
-	{
-		// __cSpace array defined near PutString_SprFont contains character widths
-		static const int font1Widths[] = {
-			8,8,8,8,8,8,8,8,8,8, 8,8,8,8,8, 8,6,8,7,8,8,9,10,9,7, 8,8,8,8,8, 8,8,
-			15,16,12,17,14,15,14,16,10,13, 19,10,17,17,15,14,15,16,13,17, 16,16,20,17,16,14,
-			8,8,8,8,8,8, 8,6,7,8,7,7,7,7,4,7,7, 4,11,7,8,8,7,8,6,5,8,9,14,8,9,8, 8,8,8,8,
-			8,8,8,8,8,8,8
-		};
-		TextLib::FontSpacing spacing;
-		spacing.charWidths.assign(font1Widths, font1Widths + sizeof(font1Widths) / sizeof(font1Widths[0]));
-		spacing.defaultWidth = 5;
-		m_pBitmapFont1 = TextLib::CreateBitmapFont(m_pSprite[DEF_SPRID_INTERFACE_FONT1].get(), '!', 'z', 0, spacing);
-	}
-
-	// Font 2: Characters ' ' (32) to '~' (126), uses dynamic spacing from sprite frames
-	if (m_pSprite[DEF_SPRID_INTERFACE_FONT2])
-	{
-		m_pBitmapFont2 = TextLib::CreateBitmapFontDynamic(m_pSprite[DEF_SPRID_INTERFACE_FONT2].get(), ' ', '~', 0);
-	}
-
-	// Number font: Digits '0' to '9', frame offset 6 in ADDINTERFACE sprite
-	if (m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE])
-	{
-		static const int numFontWidths[] = { 6, 4, 6, 6, 6, 6, 6, 6, 6, 6 };
-		TextLib::FontSpacing numSpacing;
-		numSpacing.charWidths.assign(numFontWidths, numFontWidths + 10);
-		numSpacing.defaultWidth = 6;
-		m_pNumFont = TextLib::CreateBitmapFont(m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE].get(), '0', '9', 6, numSpacing);
-	}
-
-	// SPRFONTS2: Characters ' ' (32) to '~' (126), with 3 different sizes (types 0, 1, 2)
-	// Each type has 95 frames offset
-	if (m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2])
-	{
-		for (auto& font : m_pSprFont3)
-		{
-			size_t idx = &font - &m_pSprFont3[0];
-			font = TextLib::CreateBitmapFontDynamic(
-				m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95 * idx);
-		}
-	}
-
-	if(TextLib::GetTextRenderer())
-	{
-		if (!TextLib::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
-		{
-			printf("[FONT] Failed to load default.ttf font file!\n");
-		}
 	}
 
 	// Mouse position tracking removed - use Input::GetMouseX/Y
@@ -1982,19 +1924,19 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		if (strlen(cStr1) != 0)
 		{
 			if (m_bIsSpecial)
-				PutString(msX, msY + 25, cStr1, RGB(0, 255, 50), false, 1);
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(0, 255, 50));
 			else
-				PutString(msX, msY + 25, cStr1, RGB(255, 255, 255), false, 1);
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(255, 255, 255));
 			iLoc += 15;
 		}
 		if (strlen(cStr2) != 0)
 		{
-			PutString(msX, msY + 25 + iLoc, cStr2, RGB(150, 150, 150), false, 1);
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(150, 150, 150));
 			iLoc += 15;
 		}
 		if (strlen(cStr3) != 0)
 		{
-			PutString(msX, msY + 25 + iLoc, cStr3, RGB(150, 150, 150), false, 1);
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(150, 150, 150));
 			iLoc += 15;
 		}
 	}
@@ -3206,139 +3148,6 @@ void CGame::ResponseShopContentsHandler(char* pData)
 		AddEventList("This shop has no items available.", 10);
 		m_sPendingShopType = 0;
 	}
-}
-
-void CGame::PutString_SprFont(int iX, int iY, char* pStr, short sR, short sG, short sB)
-{
-	if (!m_pBitmapFont1) return;
-
-	// Original behavior: draw highlight at +1,0 then main text at 0,0
-	// Uses 8-bit RGB values - the bitmap font handles renderer-specific conversion
-	// Highlight is slightly brighter than main text
-	short hR = (sR + 90 > 255) ? 255 : sR + 90;
-	short hG = (sG + 55 > 255) ? 255 : sG + 55;
-	short hB = (sB + 50 > 255) ? 255 : sB + 50;
-	m_pBitmapFont1->DrawText(iX + 1, iY, pStr, TextLib::BitmapTextParams::ColorReplace(hR, hG, hB));
-
-	// Main text
-	m_pBitmapFont1->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
-}
-
-void CGame::PutString_SprFont2(int iX, int iY, char* pStr, short sR, short sG, short sB)
-{
-	if (!m_pBitmapFont1) return;
-
-	// Draw shadows using WithShadow() which handles shadow internally
-	// Uses 8-bit RGB values - the bitmap font handles renderer-specific conversion
-	m_pBitmapFont1->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplaceWithShadow(sR, sG, sB));
-}
-
-void CGame::PutString_SprFont3(int iX, int iY, char* pStr, short sR, short sG, short sB, bool bTrans, int iType)
-{
-	TextLib::IBitmapFont* pFont = nullptr;
-
-	if (iType != -1) {
-		// Use SPRFONTS2 with type offset (0, 1, or 2)
-		if (iType >= 0 && iType < 3)
-			pFont = m_pSprFont3[iType].get();
-	}
-	else {
-		// Use FONT2
-		pFont = m_pBitmapFont2.get();
-	}
-
-	if (!pFont) return;
-
-	if (bTrans == false) {
-		// Draw shadows (black, offset by 1 pixel)
-		pFont->DrawText(iX, iY + 1, pStr, TextLib::BitmapTextParams::ColorReplace(0, 0, 0));
-		pFont->DrawText(iX + 1, iY + 1, pStr, TextLib::BitmapTextParams::ColorReplace(0, 0, 0));
-		// Draw main text
-		pFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
-	}
-	else {
-		// Transparent mode - no shadow, with alpha
-		pFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplaceWithAlpha(sR, sG, sB, 0.7f));
-	}
-}
-
-void CGame::PutString_SprNum(int iX, int iY, char* pStr, short sR, short sG, short sB)
-{
-	if (!m_pNumFont) return;
-
-	// Use the IBitmapFont interface with ColorReplace - direct RGB values
-	// Shadows are handled by caller making separate calls at offset positions
-	m_pNumFont->DrawText(iX, iY, pStr, TextLib::BitmapTextParams::ColorReplace(sR, sG, sB));
-}
-
-void CGame::PutString(int iX, int iY, const char* pString, COLORREF color, bool bHide, char cBGtype, bool bIsPreDC)
-{
-	char* pTmp;
-	int i;
-	if (strlen(pString) == 0) return;
-	if (bIsPreDC == false) m_Renderer->BeginTextBatch();
-	if (bHide == false)
-	{
-		switch (cBGtype) {
-		case 0:
-			m_Renderer->DrawText(iX + 1, iY, pString, color);
-			break;
-		case 1:
-			m_Renderer->DrawText(iX, iY + 1, pString, RGB(5, 5, 5));
-			m_Renderer->DrawText(iX + 1, iY + 1, pString, RGB(5, 5, 5));
-			m_Renderer->DrawText(iX + 1, iY, pString, RGB(5, 5, 5));
-			break;
-		}
-		m_Renderer->DrawText(iX, iY, pString, color);
-	}
-	else
-	{
-		pTmp = new char[strlen(pString) + 2];
-		std::memset(pTmp, 0, strlen(pString) + 2);
-		strcpy(pTmp, pString);
-		for (i = 0; i < (int)strlen(pString); i++)
-			if (pTmp[i] != 0) pTmp[i] = '*';
-
-		switch (cBGtype) {
-		case 0:
-			m_Renderer->DrawText(iX + 1, iY, pTmp, color);
-			break;
-		case 1:
-			m_Renderer->DrawText(iX, iY + 1, pTmp, RGB(5, 5, 5));
-			m_Renderer->DrawText(iX + 1, iY + 1, pTmp, RGB(5, 5, 5));
-			m_Renderer->DrawText(iX + 1, iY, pTmp, RGB(5, 5, 5));
-			break;
-		}
-		m_Renderer->DrawText(iX, iY, pTmp, color);
-		delete[] pTmp;
-	}
-	if (bIsPreDC == false) m_Renderer->EndTextBatch();
-}
-
-void CGame::PutString(int iX, int iY, const char* pString, COLORREF color)
-{
-	m_Renderer->BeginTextBatch();
-	m_Renderer->DrawText(iX, iY, pString, color);
-	m_Renderer->EndTextBatch();
-}
-
-void CGame::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
-{
-	m_Renderer->BeginTextBatch();
-	m_Renderer->DrawText(iX + 1, iY, pString, RGB(0, 0, 0));
-	m_Renderer->DrawText(iX, iY + 1, pString, RGB(0, 0, 0));
-	m_Renderer->DrawText(iX + 1, iY + 1, pString, RGB(0, 0, 0));
-	m_Renderer->DrawText(iX, iY, pString, RGB(sR, sG, sB));
-	m_Renderer->EndTextBatch();
-}
-
-void CGame::PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR, short sG, short sB)
-{
-	RECT rt;
-	m_Renderer->BeginTextBatch();
-	SetRect(&rt, iX1, iY, iX2, iY + 15);
-	m_Renderer->DrawTextRect(&rt, pString, RGB(sR, sG, sB));
-	m_Renderer->EndTextBatch();
 }
 
 bool CGame::bInitMagicCfgList()
@@ -10886,7 +10695,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 			if (Input::IsAltDown())
 				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX + 368 + resx + 7, iconY + 440 + resy, 3, SpriteLib::DrawParams::Alpha(0.5f));
 			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
-			PutString_SprFont2(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 255, 255, 255);
+			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255));
 		}
 	}
 	else
@@ -10894,7 +10703,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		if (m_pPlayer->m_iSuperAttackLeft > 0)
 		{
 			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
-			PutString_SprFont(iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, 10, 10, 10);
+			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithHighlight(10, 10, 10));
 		}
 	}
 }
@@ -11886,10 +11695,10 @@ void CGame::ShowReceivedString(bool bIsHide)
 
 	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
 
-	PutString(m_iInputX + 1, m_iInputY + 1, G_cTxt, RGB(0, 0, 0));
-	PutString(m_iInputX, m_iInputY + 1, G_cTxt, RGB(0, 0, 0));
-	PutString(m_iInputX + 1, m_iInputY, G_cTxt, RGB(0, 0, 0));
-	PutString(m_iInputX, m_iInputY, G_cTxt, RGB(255, 255, 255));
+	TextLib::DrawText(GameFont::Default, m_iInputX + 1, m_iInputY + 1, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
+	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY + 1, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
+	TextLib::DrawText(GameFont::Default, m_iInputX + 1, m_iInputY, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
+	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
 }
 
 void CGame::ClearInputString()
@@ -11991,7 +11800,7 @@ void CGame::DrawTopMsg()
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		PutAlignedString(0, LOGICAL_MAX_X, 10, m_cTopMsg, 255, 255, 0);
+		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X, 15, m_cTopMsg, TextLib::TextStyle::Color(255, 255, 0), TextLib::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
@@ -12364,10 +12173,10 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 				else iSize2 += 4;
 		if (CMisc::bCheckIMEString(cMsg) == false)
 		{
-			PutString(sX - iSize2, sY - 65 - iLoc, cMsg, RGB(180, 30, 30));
-			PutString(sX - iSize2 + 1, sY - 65 - iLoc, cMsg, RGB(180, 30, 30));
+			TextLib::DrawText(GameFont::Default, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::FromColorRef(RGB(180, 30, 30)));
+			TextLib::DrawText(GameFont::Default, sX - iSize2 + 1, sY - 65 - iLoc, cMsg, TextLib::TextStyle::FromColorRef(RGB(180, 30, 30)));
 		}
-		else PutString_SprFont3(sX - iSize2, sY - 65 - iLoc, cMsg, m_wR[14] * 4, m_wG[14] * 4, m_wB[14] * 4, false, 0);
+		else TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(m_wR[14] * 4, m_wG[14] * 4, m_wB[14] * 4));
 		break;
 
 	case 21:
@@ -12376,16 +12185,16 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
-			PutString_SprFont3(sX - iSize, sY - 65 - iLoc, cMsgA, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
 			break;
 		case 2:
-			PutString_SprFont3(sX - iSize, sY - 81 - iLoc, cMsgA, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
-			PutString_SprFont3(sX - iSize, sY - 65 - iLoc, cMsgB, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
 			break;
 		case 3:
-			PutString_SprFont3(sX - iSize, sY - 97 - iLoc, cMsgA, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
-			PutString_SprFont3(sX - iSize, sY - 81 - iLoc, cMsgB, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
-			PutString_SprFont3(sX - iSize, sY - 65 - iLoc, cMsgC, m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2, bIsTrans, iFontSize);
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
 			break;
 		}
 		break;
@@ -14031,7 +13840,7 @@ void CGame::CreateScreenShot()
 		, SysTime.wMonth, SysTime.wDay
 		, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
 		, LongMapName);
-	PutAlignedString(500 + SCREENX, 650 + SCREENY, 30, SStime, 255, 255, 255); //ScreenShot time
+	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX, 30, (650 + SCREENY) - (500 + SCREENX), 15, SStime, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter); //ScreenShot time
 
 	for (i = 0; i < 1000; i++)
 	{
@@ -14468,26 +14277,26 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	GetNpcName(sOwnerType, cTxt);
 	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
 	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
-	PutString2(sX, sY, cTxt, 255, 255, 255);
-	if (m_bIsObserverMode == true) PutString2(sX, sY + 14, cTxt, 50, 50, 255);
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(255, 255, 255));
+	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(50, 50, 255));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
 		strcpy(cTxt, DRAW_OBJECT_NAME87);//"(Unknown)"
-		PutString2(sX, sY + 14, cTxt, 150, 150, 150); // v2.171
+		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); // v2.171
 	}
 	else
 	{
 		switch (_iGetFOE(iStatus)) {
 		case -2:
 		case -1:
-			PutString2(sX, sY + 14, DRAW_OBJECT_NAME90, 255, 0, 0); // "(Enemy)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(255, 0, 0)); // "(Enemy)"
 			break;
 		case 0:
-			PutString2(sX, sY + 14, DRAW_OBJECT_NAME88, 50, 50, 255); // "(Neutral)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(50, 50, 255)); // "(Neutral)"
 			break;
 		case 1:
-			PutString2(sX, sY + 14, DRAW_OBJECT_NAME89, 30, 255, 30); // "(Friendly)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(30, 255, 30)); // "(Friendly)"
 			break;
 		}
 	}
@@ -14502,8 +14311,8 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	case 7: strcpy(cTxt2, DRAW_OBJECT_NAME58); break;//"Explosive"
 	case 8: strcpy(cTxt2, DRAW_OBJECT_NAME59); break;//"Critical Explosive"
 	}
-	if (CMisc::bCheckIMEString(cTxt2)) PutString_SprFont3(sX, sY + 22, cTxt2, m_wR[13] * 4, m_wG[13] * 4, m_wB[13] * 4, false, 2);
-	else PutString2(sX, sY + 28, cTxt2, 240, 240, 70);
+	if (CMisc::bCheckIMEString(cTxt2)) TextLib::DrawText(GameFont::SprFont3_2, sX, sY + 22, cTxt2, TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 4, m_wG[13] * 4, m_wB[13] * 4));
+	else TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(240, 240, 70));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
@@ -14606,7 +14415,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
 	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
 
-	PutString2(sX, sY, cTxt, 255, 255, 255);
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(255, 255, 255));
 	std::memset(cTxt, 0, sizeof(cTxt));
 
 	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0)
@@ -14614,13 +14423,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
 			wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
 			wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
@@ -14658,14 +14467,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
 							wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
 							wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							PutString2(sX, sY + 14, G_cTxt, 180, 180, 180);
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
@@ -14703,7 +14512,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 			else strcpy(cTxt, DEF_MSG_ELVPK);  // "Elvine Criminal"
 		}
 	}
-	PutString2(sX, sY + 14 + iAddY, cTxt, sR, sG, sB);
+	TextLib::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, TextLib::TextStyle::WithShadow(sR, sG, sB));
 }
 
 bool CGame::FindGuildName(char* pName, int* ipIndex)
@@ -14739,7 +14548,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	PutString2(12 + SCREENX, (LOGICAL_HEIGHT - 12 - 14) + SCREENY, G_cTxt, 200, 200, 200);
+	TextLib::DrawText(GameFont::Default, 12 + SCREENX, (LOGICAL_HEIGHT - 12 - 14) + SCREENY, G_cTxt, TextLib::TextStyle::WithShadow(200, 200, 200));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -17284,25 +17093,25 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory[i].cColor) {
 			case 0:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(225, 225, 225), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(225, 225, 225));
 				break;
 			case 1:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(130, 255, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(130, 255, 130));
 				break;
 			case 2:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(255, 130, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(255, 130, 130));
 				break;
 			case 3:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(130, 130, 255), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(130, 130, 255));
 				break;
 			case 4:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(230, 230, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(230, 230, 130));
 				break;
 			case 10:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(180, 255, 180), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(180, 255, 180));
 				break;
 			case 20:
-				PutString(10, 10 + i * 15, m_stEventHistory[i].cTxt, RGB(150, 150, 170), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(150, 150, 170));
 				break;
 			}
 		}
@@ -17312,31 +17121,31 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory2[i].cColor) {
 			case 0:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(225, 225, 225), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(225, 225, 225));
 				break;
 			case 1:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(130, 255, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(130, 255, 130));
 				break;
 			case 2:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(255, 130, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(255, 130, 130));
 				break;
 			case 3:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(130, 130, 255), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(130, 130, 255));
 				break;
 			case 4:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(230, 230, 130), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(230, 230, 130));
 				break;
 			case 10:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(180, 255, 180), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(180, 255, 180));
 				break;
 			case 20:
-				PutString(10, baseY + i * 15, m_stEventHistory2[i].cTxt, RGB(150, 150, 170), false, 1, true);
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(150, 150, 170));
 				break;
 			}
 		}
 	if (m_bSkillUsingStatus == true)
 	{
-		PutString(440 - 29, 440 - 52, SHOW_EVENT_LIST1, RGB(235, 235, 235), false, 1, true);
+		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(235, 235, 235));
 	}
 	m_Renderer->EndTextBatch();
 }

@@ -8,6 +8,8 @@
 #include "CommonTypes.h"
 #include "lan_eng.h"
 #include "IInput.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_Connecting::Overlay_Connecting(CGame* pGame)
     : IGameScreen(pGame)
@@ -81,7 +83,7 @@ void Overlay_Connecting::on_render()
     // Draw countdown text
     char cTxt[64];
     wsprintf(cTxt, "Connecting to Server... %3dSec", dwElapsed / 1000);
-    PutString_SprFont(172 + 35 + SCREENX, 190 + SCREENY, cTxt, 58, 0, 0);
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 35 + SCREENX, 190 + SCREENY, cTxt, TextLib::TextStyle::WithHighlight(58, 0, 0));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)

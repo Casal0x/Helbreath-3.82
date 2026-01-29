@@ -1129,9 +1129,9 @@ void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int1
     int iGreenPlus255 = g + 255;
     int iBluePlus255 = b + 255;
 
-    // Original algorithm from PutTransSpriteRGB:
-    // 1. First additive blend source with destination using G_lTransRB100
-    // 2. Then apply tint adjustment using G_iAddTransTable31
+    // Tinted transparent drawing with variable alpha
+    // 1. Apply tint to source
+    // 2. Blend result with destination based on alpha
 
     switch (m_pDDraw->m_cPixelFormat) {
     case 1: // RGB565
@@ -1141,21 +1141,22 @@ void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int1
                     int dstR = (pDst[ix] & 0xF800) >> 11;
                     int dstG = (pDst[ix] & 0x7E0) >> 5;
                     int dstB = (pDst[ix] & 0x1F);
-                    int srcR = (pSrc[ix] & 0xF800) >> 11;
-                    int srcG = (pSrc[ix] & 0x7E0) >> 5;
-                    int srcB = (pSrc[ix] & 0x1F);
 
-                    // Step 1: Additive blend (src + dst, clamped)
-                    int blendedR = G_lTransRB100[dstR][srcR];
-                    int blendedG = G_lTransG100[dstG][srcG];
-                    int blendedB = G_lTransRB100[dstB][srcB];
+                    // Apply tint using lookup tables
+                    int tintedR = G_iAddTable31[(pSrc[ix] & 0xF800) >> 11][iRedPlus255];
+                    int tintedG = G_iAddTable63[(pSrc[ix] & 0x7E0) >> 5][iGreenPlus255];
+                    int tintedB = G_iAddTable31[(pSrc[ix] & 0x1F)][iBluePlus255];
 
-                    // Step 2: Apply tint adjustment
-                    pDst[ix] = static_cast<uint16_t>(
-                        (G_iAddTransTable31[blendedR + iRedPlus255][dstR] << 11) |
-                        (G_iAddTransTable63[blendedG + iGreenPlus255][dstG] << 5) |
-                        G_iAddTransTable31[blendedB + iBluePlus255][dstB]
-                    );
+                    // Blend with destination based on alpha
+                    int outR = static_cast<int>(tintedR * alpha + dstR * (1.0f - alpha));
+                    int outG = static_cast<int>(tintedG * alpha + dstG * (1.0f - alpha));
+                    int outB = static_cast<int>(tintedB * alpha + dstB * (1.0f - alpha));
+
+                    if (outR > 31) outR = 31;
+                    if (outG > 63) outG = 63;
+                    if (outB > 31) outB = 31;
+
+                    pDst[ix] = static_cast<uint16_t>((outR << 11) | (outG << 5) | outB);
                 }
             }
             pSrc += m_sPitch;
@@ -1170,21 +1171,22 @@ void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int1
                     int dstR = (pDst[ix] & 0x7C00) >> 10;
                     int dstG = (pDst[ix] & 0x3E0) >> 5;
                     int dstB = (pDst[ix] & 0x1F);
-                    int srcR = (pSrc[ix] & 0x7C00) >> 10;
-                    int srcG = (pSrc[ix] & 0x3E0) >> 5;
-                    int srcB = (pSrc[ix] & 0x1F);
 
-                    // Step 1: Additive blend (src + dst, clamped)
-                    int blendedR = G_lTransRB100[dstR][srcR];
-                    int blendedG = G_lTransG100[dstG][srcG];
-                    int blendedB = G_lTransRB100[dstB][srcB];
+                    // Apply tint using lookup tables
+                    int tintedR = G_iAddTable31[(pSrc[ix] & 0x7C00) >> 10][iRedPlus255];
+                    int tintedG = G_iAddTable31[(pSrc[ix] & 0x3E0) >> 5][iGreenPlus255];
+                    int tintedB = G_iAddTable31[(pSrc[ix] & 0x1F)][iBluePlus255];
 
-                    // Step 2: Apply tint adjustment
-                    pDst[ix] = static_cast<uint16_t>(
-                        (G_iAddTransTable31[blendedR + iRedPlus255][dstR] << 10) |
-                        (G_iAddTransTable31[blendedG + iGreenPlus255][dstG] << 5) |
-                        G_iAddTransTable31[blendedB + iBluePlus255][dstB]
-                    );
+                    // Blend with destination based on alpha
+                    int outR = static_cast<int>(tintedR * alpha + dstR * (1.0f - alpha));
+                    int outG = static_cast<int>(tintedG * alpha + dstG * (1.0f - alpha));
+                    int outB = static_cast<int>(tintedB * alpha + dstB * (1.0f - alpha));
+
+                    if (outR > 31) outR = 31;
+                    if (outG > 31) outG = 31;
+                    if (outB > 31) outB = 31;
+
+                    pDst[ix] = static_cast<uint16_t>((outR << 10) | (outG << 5) | outB);
                 }
             }
             pSrc += m_sPitch;

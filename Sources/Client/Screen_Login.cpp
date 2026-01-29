@@ -9,6 +9,8 @@
 #include "GlobalDef.h"
 #include "XSocket.h" // For XSocket
 #include "Misc.h"    // For CMisc
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 extern class XSocket* G_pCalcSocket; // Sockets are often externs in this codebase
 
@@ -219,15 +221,20 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
 
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(pAccount) != false)
-            m_pGame->PutString2(180 + SCREENX, 162 + SCREENY, pAccount, 200, 200, 200);
-        else m_pGame->PutString2(180 + SCREENX, 162 + SCREENY, pAccount, 200, 100, 100);
+            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 162 + SCREENY, pAccount, TextLib::TextStyle::WithShadow(200, 200, 200));
+        else TextLib::DrawText(GameFont::Default, 180 + SCREENX, 162 + SCREENY, pAccount, TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if ((CMisc::bCheckValidName(pAccount) == false) || (strlen(pAccount) == 0)) bFlag = false;
 
     if (m_cCurFocus != 2) {
+        // Mask password with asterisks
+        std::string masked(strlen(pPassword), '*');
         if ((CMisc::bCheckValidString(pPassword) != false))
-            m_pGame->PutString(180 + SCREENX, 185 + SCREENY, pPassword, RGB(200, 200, 200), true, 1);
-        else m_pGame->PutString(180 + SCREENX, 185 + SCREENY, pPassword, RGB(200, 100, 100), true, 1);
+            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 185 + SCREENY, masked.c_str(),
+                              TextLib::TextStyle::WithShadow(200, 200, 200));
+        else
+            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 185 + SCREENY, masked.c_str(),
+                              TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
 

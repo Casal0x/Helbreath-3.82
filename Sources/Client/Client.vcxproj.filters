@@ -85,6 +85,9 @@
     <ClInclude Include="GameModeManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
+    <ClInclude Include="GameFonts.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="DialogBoxManager.h">
       <Filter>Managers</Filter>
     </ClInclude>
@@ -377,6 +380,9 @@
       <Filter>Input</Filter>
     </ClInclude>
     <ClInclude Include="Screen_Splash.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="Screen_Test.h">
       <Filter>Screens</Filter>
     </ClInclude>
   </ItemGroup>
@@ -738,6 +744,9 @@
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="Screen_Splash.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="Screen_Test.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
   </ItemGroup>

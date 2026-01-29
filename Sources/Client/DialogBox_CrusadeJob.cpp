@@ -1,6 +1,8 @@
 #include "DialogBox_CrusadeJob.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "GlobalDef.h"
+#include "TextLibExt.h"
 #include "lan_eng.h"
 
 DialogBox_CrusadeJob::DialogBox_CrusadeJob(CGame* pGame)
@@ -50,9 +52,9 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 
 	// Help button
 	if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-		m_pGame->PutString_SprFont(sX + 50 + 160, sY + 296, "Help", 6, 6, 20);
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(6, 6, 20));
 	else
-		m_pGame->PutString_SprFont(sX + 50 + 160, sY + 296, "Help", 0, 0, 7);
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(0, 0, 7));
 }
 
 void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short msY)

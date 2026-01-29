@@ -26,7 +26,7 @@ void SetTextRenderer(ITextRenderer* renderer)
 SFMLTextRenderer::SFMLTextRenderer(sf::RenderTexture* backBuffer)
     : m_pBackBuffer(backBuffer)
     , m_fontLoaded(false)
-    , m_fontSize(12)
+    , m_fontSize(12)  // Default size to match GDI rendering
 {
     // Try to load a default font as fallback
     LoadDefaultFont();
@@ -100,7 +100,9 @@ bool SFMLTextRenderer::LoadFontByName(const char* fontName)
 
 void SFMLTextRenderer::SetFontSize(int size)
 {
-    m_fontSize = static_cast<unsigned int>(size);
+    // SFML/FreeType renders ~2 points larger than GDI, so compensate
+    int adjustedSize = (size > 2) ? (size - 2) : size;
+    m_fontSize = static_cast<unsigned int>(adjustedSize);
 }
 
 bool SFMLTextRenderer::IsFontLoaded() const
@@ -162,7 +164,8 @@ void SFMLTextRenderer::DrawText(int x, int y, const char* text, uint32_t color)
     m_pBackBuffer->draw(sfText);
 }
 
-void SFMLTextRenderer::DrawTextCentered(int x1, int x2, int y, const char* text, uint32_t color)
+void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+                                        Align alignment)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
         return;
@@ -175,12 +178,29 @@ void SFMLTextRenderer::DrawTextCentered(int x1, int x2, int y, const char* text,
     sf::Text sfText(m_font, text, m_fontSize);
     sf::FloatRect bounds = sfText.getLocalBounds();
 
-    // Calculate centered position and round to integer for pixel-perfect rendering
-    float centerX = static_cast<float>(x1 + x2) / 2.0f;
-    float drawX = centerX - (bounds.size.x / 2.0f) - bounds.position.x;
-    int pixelX = static_cast<int>(drawX + 0.5f);  // Round to nearest pixel
+    // Extract alignment components
+    uint8_t hAlign = alignment & Align::HMask;
+    uint8_t vAlign = alignment & Align::VMask;
 
-    sfText.setPosition({static_cast<float>(pixelX), static_cast<float>(y)});
+    // Calculate X position based on horizontal alignment
+    float drawX = static_cast<float>(x) - bounds.position.x;
+    if (hAlign == Align::HCenter)
+        drawX = static_cast<float>(x) + (static_cast<float>(width) - bounds.size.x) / 2.0f - bounds.position.x;
+    else if (hAlign == Align::Right)
+        drawX = static_cast<float>(x + width) - bounds.size.x - bounds.position.x;
+
+    // Calculate Y position based on vertical alignment
+    float drawY = static_cast<float>(y) - bounds.position.y;
+    if (vAlign == Align::VCenter)
+        drawY = static_cast<float>(y) + (static_cast<float>(height) - bounds.size.y) / 2.0f - bounds.position.y;
+    else if (vAlign == Align::Bottom)
+        drawY = static_cast<float>(y + height) - bounds.size.y - bounds.position.y;
+
+    // Round to nearest pixel for pixel-perfect rendering
+    int pixelX = static_cast<int>(drawX + 0.5f);
+    int pixelY = static_cast<int>(drawY + 0.5f);
+
+    sfText.setPosition({static_cast<float>(pixelX), static_cast<float>(pixelY)});
     sfText.setFillColor(sf::Color(r, g, b));
 
     m_pBackBuffer->draw(sfText);

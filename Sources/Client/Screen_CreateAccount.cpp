@@ -6,6 +6,8 @@
 #include "XSocket.h"
 #include "Misc.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 #ifdef DEF_MAKE_ACCOUNT
 
@@ -243,12 +245,12 @@ void Screen_CreateAccount::on_render()
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0 + SCREENX, 0 + SCREENY, 0, true);
 
     // Draw labels
-    m_pGame->PutString(377 + SCREENX, 84 + SCREENY, "Account:", RGB(100, 100, 200));
-    m_pGame->PutString(372 + SCREENX, 106 + SCREENY, "Password:", RGB(100, 100, 200));
-    m_pGame->PutString(372 + SCREENX, 129 + SCREENY, "(confirm)", RGB(100, 100, 200));
-    m_pGame->PutString(271 + SCREENX, 215 + SCREENY, "eMail:", RGB(100, 100, 200));
-    m_pGame->PutString(276 + SCREENX, 253 + SCREENY, "Quiz:", RGB(100, 100, 200));
-    m_pGame->PutString(266 + SCREENX, 291 + SCREENY, "Answer:", RGB(100, 100, 200));
+    TextLib::DrawText(GameFont::Default, 377 + SCREENX, 84 + SCREENY, "Account:", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
+    TextLib::DrawText(GameFont::Default, 372 + SCREENX, 106 + SCREENY, "Password:", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
+    TextLib::DrawText(GameFont::Default, 372 + SCREENX, 129 + SCREENY, "(confirm)", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
+    TextLib::DrawText(GameFont::Default, 271 + SCREENX, 215 + SCREENY, "eMail:", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
+    TextLib::DrawText(GameFont::Default, 276 + SCREENX, 253 + SCREENY, "Quiz:", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
+    TextLib::DrawText(GameFont::Default, 266 + SCREENX, 291 + SCREENY, "Answer:", TextLib::TextStyle::FromColorRef(RGB(100, 100, 200)));
 
     // Show active input string
     if ((m_cCurFocus == 2) || (m_cCurFocus == 3))
@@ -259,108 +261,110 @@ void Screen_CreateAccount::on_render()
     // Draw input field values
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(m_cNewAcctName) != false)
-            m_pGame->PutString2(427 + SCREENX, 84 + SCREENY, m_cNewAcctName, 100, 200, 100);
-        else m_pGame->PutString2(427 + SCREENX, 84 + SCREENY, m_cNewAcctName, 200, 100, 100);
+            TextLib::DrawText(GameFont::Default, 427 + SCREENX, 84 + SCREENY, m_cNewAcctName, TextLib::TextStyle::WithShadow(100, 200, 100));
+        else TextLib::DrawText(GameFont::Default, 427 + SCREENX, 84 + SCREENY, m_cNewAcctName, TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if (m_cCurFocus != 2) {
+        std::string masked2(strlen(m_cNewAcctPassword), '*');
         if (CMisc::bCheckValidName(m_cNewAcctPassword) != false)
-            m_pGame->PutString(427 + SCREENX, 106 + SCREENY, m_cNewAcctPassword, RGB(100, 200, 100), true, 1);
-        else m_pGame->PutString(427 + SCREENX, 106 + SCREENY, m_cNewAcctPassword, RGB(200, 100, 100), true, 1);
+            TextLib::DrawText(GameFont::Default, 427 + SCREENX, 106 + SCREENY, masked2.c_str(), TextLib::TextStyle::WithShadow(100, 200, 100));
+        else TextLib::DrawText(GameFont::Default, 427 + SCREENX, 106 + SCREENY, masked2.c_str(), TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if (m_cCurFocus != 3) {
+        std::string masked3(strlen(m_cNewAcctConfirm), '*');
         if (memcmp(m_cNewAcctPassword, m_cNewAcctConfirm, 10) == 0)
-            m_pGame->PutString(427 + SCREENX, 129 + SCREENY, m_cNewAcctConfirm, RGB(100, 200, 100), true, 1);
-        else m_pGame->PutString(427 + SCREENX, 129 + SCREENY, m_cNewAcctConfirm, RGB(200, 100, 100), true, 1);
+            TextLib::DrawText(GameFont::Default, 427 + SCREENX, 129 + SCREENY, masked3.c_str(), TextLib::TextStyle::WithShadow(100, 200, 100));
+        else TextLib::DrawText(GameFont::Default, 427 + SCREENX, 129 + SCREENY, masked3.c_str(), TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if (m_cCurFocus != 4) {
         if (CMisc::bIsValidEmail(m_pGame->m_cEmailAddr))
-            m_pGame->PutString2(311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, m_pGame->m_cEmailAddr, 100, 200, 100);
-        else m_pGame->PutString2(311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, m_pGame->m_cEmailAddr, 200, 100, 100);
+            TextLib::DrawText(GameFont::Default, 311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, m_pGame->m_cEmailAddr, TextLib::TextStyle::WithShadow(100, 200, 100));
+        else TextLib::DrawText(GameFont::Default, 311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, m_pGame->m_cEmailAddr, TextLib::TextStyle::WithShadow(200, 100, 100));
     }
     if (m_cCurFocus != 5) {
         if (CMisc::bCheckValidName(m_cNewAcctTempQuiz) != false)
-            m_pGame->PutString2(311 + SCREENX, 48 + 226 - 25 + 4 + SCREENY, m_cNewAcctQuiz, 100, 200, 100);
+            TextLib::DrawText(GameFont::Default, 311 + SCREENX, 48 + 226 - 25 + 4 + SCREENY, m_cNewAcctQuiz, TextLib::TextStyle::WithShadow(100, 200, 100));
     }
     if (m_cCurFocus != 6) {
         if (CMisc::bCheckValidName(m_cNewAcctAnswer) != false)
-            m_pGame->PutString2(311 + SCREENX, 291 + SCREENY, m_cNewAcctAnswer, 100, 200, 100);
+            TextLib::DrawText(GameFont::Default, 311 + SCREENX, 291 + SCREENY, m_cNewAcctAnswer, TextLib::TextStyle::WithShadow(100, 200, 100));
     }
 
     // Draw help text based on focus
     switch (m_cCurFocus) {
     case 1:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1);
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 2:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 3:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 4:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21);
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22);
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 360 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 360 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 5:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT25);
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT26);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT25, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT26, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 6:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT29);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT29, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 7:
         switch (iFlag) {
         case 0:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 1:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 2:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 3:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 5:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 6:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 7:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 9:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 360 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 360 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 10:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT67);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT67, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 11:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT69);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT69, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 12:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT73);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT74);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT73, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT74, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         case 13:
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT77);
-            m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 345 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT78);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT77, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT78, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
             break;
         }
         break;
     case 8:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     case 9:
-        m_pGame->PutAlignedString(290 + SCREENX, 575 + SCREENX, 330 + SCREENY, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
         break;
     }
 

@@ -9,6 +9,8 @@
 #include "lan_eng.h"
 #include "IInput.h"
 #include "XSocket.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_QueryForceLogin::Overlay_QueryForceLogin(CGame* pGame)
     : IGameScreen(pGame)
@@ -108,7 +110,7 @@ void Overlay_QueryForceLogin::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
 
     // Title
-    PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", 58, 0, 0);
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", TextLib::TextStyle::WithHighlight(58, 0, 0));
 
     // Message text
     PutAlignedString(178 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);

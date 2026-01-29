@@ -1,8 +1,10 @@
 #include "DialogBox_Magic.h"
 #include "ConfigManager.h"
 #include "Game.h"
+#include "GameFonts.h"
 #include "IInput.h"
 #include "Misc.h"
+#include "TextLibExt.h"
 #include "lan_eng.h"
 
 DialogBox_Magic::DialogBox_Magic(CGame* pGame)
@@ -75,9 +77,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
 				}
 				else
-					m_pGame->PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 5, 5, 5);
+					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(5, 5, 5));
 				wsprintf(cMana, "%3d", iManaCost);
-				m_pGame->PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 5, 5, 5);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(5, 5, 5));
 			}
 			else if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
@@ -88,9 +90,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
 				}
 				else
-					m_pGame->PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 250, 250, 250);
+					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(250, 250, 250));
 				wsprintf(cMana, "%3d", iManaCost);
-				m_pGame->PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 250, 250, 250);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(250, 250, 250));
 			}
 			else
 			{
@@ -101,9 +103,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
 				}
 				else
-					m_pGame->PutString_SprFont(sX + 30, sY + 70 + iYloc, cTxt, 1, 1, 8);
+					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(1, 1, 8));
 				wsprintf(cMana, "%3d", iManaCost);
-				m_pGame->PutString_SprFont(sX + 206, sY + 70 + iYloc, cMana, 1, 1, 8);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(1, 1, 8));
 			}
 
 			iYloc += 18;

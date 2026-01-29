@@ -3,6 +3,8 @@
 #include "IInput.h"
 #include "Misc.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_MagicShop::DialogBox_MagicShop(CGame* pGame)
 	: IDialogBox(DialogBoxId::MagicShop, pGame)
@@ -39,15 +41,14 @@ void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
 
 	// Column headers
-	m_pGame->PutString(sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, RGB(45, 25, 25)); // "Spell Name"
-	m_pGame->PutString(sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, RGB(45, 25, 25)); // "Req.Int"
-	m_pGame->PutString(sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, RGB(45, 25, 25)); // "Cost"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, TextLib::TextStyle::FromColorRef(RGB(45, 25, 25))); // "Spell Name"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, TextLib::TextStyle::FromColorRef(RGB(45, 25, 25))); // "Req.Int"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, TextLib::TextStyle::FromColorRef(RGB(45, 25, 25))); // "Cost"
 
 	DrawSpellList(sX, sY, msX, msY);
 	DrawPageIndicator(sX, sY);
 
-	m_pGame->PutAlignedString(sX, sX + m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeX,
-		sY + 275, DRAW_DIALOGBOX_MAGICSHOP14, 45, 25, 25);
+	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 275, sX + m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sSizeX - sX, 15, DRAW_DIALOGBOX_MAGICSHOP14, TextLib::TextStyle::Color(45, 25, 25), TextLib::Align::TopCenter);
 }
 
 void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY)
@@ -69,17 +70,17 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 				// Already mastered - purple color
 				if (CMisc::bCheckIMEString(cTxt) == false)
 				{
-					m_pGame->PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-					m_pGame->PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
+					TextLib::DrawText(GameFont::Default, sX + 24, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(41, 16, 41)));
+					TextLib::DrawText(GameFont::Default, sX + 25, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(41, 16, 41)));
 				}
 				else
 				{
-					m_pGame->PutString_SprFont(sX + 24, sY + 70 + iYloc, cTxt, 5, 5, 5);
+					TextLib::DrawText(GameFont::Bitmap1, sX + 24, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(5, 5, 5));
 				}
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				m_pGame->PutString_SprFont(sX + 200, sY + 70 + iYloc, cMana, 5, 5, 5);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 200, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(5, 5, 5));
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				m_pGame->PutString_SprFont(sX + 241, sY + 70 + iYloc, cMana, 5, 5, 5);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 241, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(5, 5, 5));
 			}
 			else if ((msX >= sX + 24) && (msX <= sX + 24 + 135) &&
 				(msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
@@ -87,34 +88,34 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 				// Hovering - white color
 				if (CMisc::bCheckIMEString(cTxt) == false)
 				{
-					m_pGame->PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-					m_pGame->PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
+					TextLib::DrawText(GameFont::Default, sX + 24, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+					TextLib::DrawText(GameFont::Default, sX + 25, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
 				}
 				else
 				{
-					m_pGame->PutString_SprFont(sX - 20 + 44, sY + 70 + iYloc, cTxt, 250, 250, 250);
+					TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(250, 250, 250));
 				}
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				m_pGame->PutString_SprFont(sX - 20 + 220, sY + 70 + iYloc, cMana, 250, 250, 250);
+				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(250, 250, 250));
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				m_pGame->PutString_SprFont(sX - 20 + 261, sY + 70 + iYloc, cMana, 250, 250, 250);
+				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(250, 250, 250));
 			}
 			else
 			{
 				// Normal - blue color
 				if (CMisc::bCheckIMEString(cTxt) == false)
 				{
-					m_pGame->PutString(sX + 24, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-					m_pGame->PutString(sX + 25, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
+					TextLib::DrawText(GameFont::Default, sX + 24, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(8, 0, 66)));
+					TextLib::DrawText(GameFont::Default, sX + 25, sY + 73 + iYloc, cTxt, TextLib::TextStyle::FromColorRef(RGB(8, 0, 66)));
 				}
 				else
 				{
-					m_pGame->PutString_SprFont(sX - 20 + 44, sY + 70 + iYloc, cTxt, 1, 1, 8);
+					TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(1, 1, 8));
 				}
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
-				m_pGame->PutString_SprFont(sX - 20 + 220, sY + 70 + iYloc, cMana, 1, 1, 8);
+				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(1, 1, 8));
 				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
-				m_pGame->PutString_SprFont(sX - 20 + 261, sY + 70 + iYloc, cMana, 1, 1, 8);
+				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(1, 1, 8));
 			}
 			iYloc += 18;
 		}

@@ -2,6 +2,8 @@
 #include "CursorTarget.h"
 #include "Game.h"
 #include "lan_eng.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* pGame)
 	: IDialogBox(DialogBoxId::ItemUpgrade, pGame)
@@ -104,9 +106,9 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
     std::memset(cStr2, 0, sizeof(cStr2));
     std::memset(cStr3, 0, sizeof(cStr3));
     m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 }
 
 void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int msY)
@@ -116,13 +118,13 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
     char cTxt[256];
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE1);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE2);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE3);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
 
     wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, cTxt);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -131,9 +133,9 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
 
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
         if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
-            m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 115, cTxt, 195, 25, 25);
+            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
         else
-            m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 115, cTxt);
+            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
         DrawItemPreview(sX, sY, iItemIndex);
 
@@ -162,8 +164,8 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
     uint32_t dwTime = m_pGame->m_dwCurTime;
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE5);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE6);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE5, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE6, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -190,9 +192,9 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         std::memset(cStr2, 0, sizeof(cStr2));
         std::memset(cStr3, 0, sizeof(cStr3));
         m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 230 + 20, cStr1);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 245 + 20, cStr2);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 260 + 20, cStr3);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     }
 
     // Send upgrade command after 4 seconds
@@ -208,8 +210,8 @@ void DialogBox_ItemUpgrade::DrawMode3_Success(int sX, int sY, int msX, int msY)
 {
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE7);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 45 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE8);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE7, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE8, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -228,7 +230,7 @@ void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
 {
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 55 + 30 + 282 - 117 - 170, DRAW_DIALOGBOX_ITEMUPGRADE9);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE9, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // Check if item was destroyed
     if ((iItemIndex != -1) && (m_pGame->m_pItemList[iItemIndex] == 0))
@@ -253,37 +255,37 @@ void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
 
 void DialogBox_ItemUpgrade::DrawMode5_SelectUpgradeType(int sX, int sY, int msX, int msY)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE13);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE13, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // Normal item upgrade option
     if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 255, 255, 255);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE16);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE17);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE18);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE19);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 210, DRAW_DIALOGBOX_ITEMUPGRADE20);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE21);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 255, DRAW_DIALOGBOX_ITEMUPGRADE26);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 270, DRAW_DIALOGBOX_ITEMUPGRADE27);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE16, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE17, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE18, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE19, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 210, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE20, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE21, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 255, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE26, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 270, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE27, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     }
     else
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 100, DRAW_DIALOGBOX_ITEMUPGRADE14, 4, 0, 50);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(4, 0, 50), TextLib::Align::TopCenter);
 
     // Majestic item upgrade option
     if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 255, 255, 255);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 150, DRAW_DIALOGBOX_ITEMUPGRADE22);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 165, DRAW_DIALOGBOX_ITEMUPGRADE23);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 180, DRAW_DIALOGBOX_ITEMUPGRADE24);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 195, DRAW_DIALOGBOX_ITEMUPGRADE25);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 225, DRAW_DIALOGBOX_ITEMUPGRADE28);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 240, DRAW_DIALOGBOX_ITEMUPGRADE29);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE22, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE23, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE24, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE25, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE28, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 240, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE29, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     }
     else
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_ITEMUPGRADE15, 4, 0, 50);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(4, 0, 50), TextLib::Align::TopCenter);
 
     // Cancel button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -300,28 +302,28 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     char cTxt[256];
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 30, DRAW_DIALOGBOX_ITEMUPGRADE31);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 45, DRAW_DIALOGBOX_ITEMUPGRADE32);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 60, DRAW_DIALOGBOX_ITEMUPGRADE33);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE31, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE32, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE33, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     if (iSoX == 0)
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, DRAW_DIALOGBOX_ITEMUPGRADE41, 195, 25, 25);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE41, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
     }
     else
     {
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 80, cTxt);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     }
 
     if (iSoM == 0)
     {
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, DRAW_DIALOGBOX_ITEMUPGRADE42, 195, 25, 25);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE42, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
     }
     else
     {
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
-        m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 95, cTxt);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
     }
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
@@ -346,8 +348,8 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
 
 void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int msX, int msY)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE36);
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 145, DRAW_DIALOGBOX_ITEMUPGRADE37);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE36, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 145, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE37, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -358,7 +360,7 @@ void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int msX, int msY)
 
 void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int msX, int msY)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE38);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE38, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -369,7 +371,7 @@ void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int msX, int ms
 
 void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int msX, int msY)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE39);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE39, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -380,7 +382,7 @@ void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int msX, int
 
 void DialogBox_ItemUpgrade::DrawMode10_NoPoints(int sX, int sY, int msX, int msY)
 {
-    m_pGame->PutAlignedString(sX + 24, sX + 248, sY + 20 + 130, DRAW_DIALOGBOX_ITEMUPGRADE40);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE40, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))

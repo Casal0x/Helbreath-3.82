@@ -9,6 +9,8 @@
 #include "lan_eng.h"
 #include "IInput.h"
 #include "XSocket.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_QueryDeleteCharacter::Overlay_QueryDeleteCharacter(CGame* pGame)
     : IGameScreen(pGame)
@@ -107,7 +109,7 @@ void Overlay_QueryDeleteCharacter::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
     // Title
-    PutString_SprFont(172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", 58, 0, 0);
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", TextLib::TextStyle::WithHighlight(58, 0, 0));
 
     // Character name display
     PutString(215 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, RGB(5, 5, 5));

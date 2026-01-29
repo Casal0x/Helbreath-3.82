@@ -9,6 +9,8 @@
 #include "lan_eng.h"
 #include "IInput.h"
 #include "AudioManager.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_LogResMsg::Overlay_LogResMsg(CGame* pGame)
     : IGameScreen(pGame)
@@ -133,100 +135,100 @@ void Overlay_LogResMsg::RenderMessage()
     switch (m_cMsgCode)
     {
     case '1':
-        PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Password is not correct!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 70 + SCREENX, 165 + SCREENY, "Password is not correct!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG5);
         break;
 
     case '2':
-        PutString_SprFont(172 + 70 + SCREENX, 165 + SCREENY, "Not existing account!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 70 + SCREENX, 165 + SCREENY, "Not existing account!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG6);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG7);
         break;
 
     case '3':
-        PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG8);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG9);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 225 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG10);
         break;
 
     case '4':
-        PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New account created.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX, 165 + SCREENY, "New account created.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG11);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG12);
         break;
 
     case '5':
-        PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new account!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX, 165 + SCREENY, "Can not create new account!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG13);
         break;
 
     case '6':
-        PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new account!", 58, 0, 0);
-        PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing account name.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX, 165 + SCREENY, "Can not create new account!", TextLib::TextStyle::WithHighlight(58, 0, 0));
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 24 + SCREENX, 180 + SCREENY, "Already existing account name.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 205 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG14);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG15);
         break;
 
     case '7':
-        PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "New character created.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX, 165 + SCREENY, "New character created.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG16);
         break;
 
     case '8':
-        PutString_SprFont(172 + 58 + SCREENX, 165 + SCREENY, "Can not create new character!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX, 165 + SCREENY, "Can not create new character!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG17);
         break;
 
     case '9':
-        PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not create new character!", 58, 0, 0);
-        PutString_SprFont(172 + 24 + SCREENX, 180 + SCREENY, "Already existing character name.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX, 165 + SCREENY, "Can not create new character!", TextLib::TextStyle::WithHighlight(58, 0, 0));
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 24 + SCREENX, 180 + SCREENY, "Already existing character name.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 205 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG18);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 220 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG19);
         break;
 
     case 'A':
-        PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Character deleted.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + 45 + SCREENX, 165 + SCREENY, "Character deleted.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG20);
         break;
 
     case 'B':
-        PutString_SprFont(172 + 36 + 45 + SCREENX, 165 + SCREENY, "Password changed.", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + 45 + SCREENX, 165 + SCREENY, "Password changed.", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG21);
         break;
 
     case 'C':
-        PutString_SprFont(172 + 36 + SCREENX, 165 + SCREENY, "Can not change password!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX, 165 + SCREENY, "Can not change password!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG22);
         break;
 
     case 'D':
-        PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG23);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG24);
         break;
 
     case 'E':
-        PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG25);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG26);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 225 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG27);
         break;
 
     case 'F':
-        PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG28);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG29);
         break;
 
     case 'G':
-        PutString_SprFont(172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX, 165 + SCREENY, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG30);
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG31);
         break;
 
     case 'H':
-        PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Connection Rejected!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX, 165 + SCREENY, "Connection Rejected!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         if (m_pGame->m_iBlockYear == 0)
         {
             PutAlignedString(198 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_LOG_MSG32);
@@ -242,22 +244,22 @@ void Overlay_LogResMsg::RenderMessage()
         break;
 
     case 'I':
-        PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Not Enough Point!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX, 165 + SCREENY, "Not Enough Point!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Not enough points to play.");
         break;
 
     case 'J':
-        PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "World Server Full", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX, 165 + SCREENY, "World Server Full", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Please ! Try Other World Server");
         break;
 
     case 'M':
-        PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Your password expired", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX, 165 + SCREENY, "Your password expired", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Please! Change password");
         break;
 
     case 'U':
-        PutString_SprFont(172 + 68 + SCREENX, 165 + SCREENY, "Keycode input Success!", 58, 0, 0);
+        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX, 165 + SCREENY, "Keycode input Success!", TextLib::TextStyle::WithHighlight(58, 0, 0));
         PutAlignedString(198 + SCREENX, 453 + SCREENX, 210 + SCREENY, "Keycode Registration successed.");
         break;
 

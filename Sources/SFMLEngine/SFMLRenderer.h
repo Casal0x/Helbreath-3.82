@@ -10,8 +10,6 @@
 #include "SFMLTexture.h"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/Text.hpp>
 #include <vector>
 #include <string>
 
@@ -130,9 +128,6 @@ public:
     // Get the back buffer render texture for sprite drawing
     sf::RenderTexture* GetBackBuffer() { return &m_backBuffer; }
 
-    // Get the font for text rendering
-    sf::Font* GetFont() { return m_fontLoaded ? &m_font : nullptr; }
-
     // Set the window to render to (called from SFMLWindow)
     // This also creates the render textures since they need an OpenGL context
     void SetRenderWindow(sf::RenderWindow* window);
@@ -140,9 +135,6 @@ public:
 private:
     // Initialize transparency tables with dummy values
     void InitDummyTables();
-
-    // Load the font for text rendering
-    bool LoadFont();
 
     // Create render textures (called when OpenGL context is available)
     bool CreateRenderTextures();
@@ -152,9 +144,6 @@ private:
     sf::RenderTexture m_backBuffer;
     sf::RenderTexture m_pdbgs;  // Pre-Draw Background Surface
     SFMLTexture* m_pdbgsWrapper;
-
-    sf::Font m_font;
-    bool m_fontLoaded;
 
     // For LockBackBuffer emulation
     sf::Image m_lockedImage;

@@ -112,11 +112,12 @@ void DDrawBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextP
             {
                 if (params.shadow)
                 {
-                    // Draw shadow first using transparency blend (like original PutTransSprite)
-                    // This darkens the destination rather than replacing with black
-                    SpriteLib::DrawParams shadowParams;
-                    shadowParams.alpha = 0.5f;  // Semi-transparent for shadow effect
-                    m_pSprite->Draw(currentX + 1, y + 1, frame, shadowParams);
+                    // Original PutString_SprFont2 behavior:
+                    // Draw raw/uncolored sprite at (+1,0) and (+1,+1) before main colored text
+                    // This creates a shadow effect with the sprite's original colors
+                    SpriteLib::DrawParams rawParams;  // Default params = no color modification
+                    m_pSprite->Draw(currentX + 1, y, frame, rawParams);
+                    m_pSprite->Draw(currentX + 1, y + 1, frame, rawParams);
                 }
 
                 m_pSprite->Draw(currentX, y, frame, drawParams);

@@ -1,6 +1,8 @@
 #include "DialogBox_Exchange.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 #include "lan_eng.h"
 
 DialogBox_Exchange::DialogBox_Exchange(CGame* pGame)
@@ -29,7 +31,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, 55, 25, 25);
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, 55, 25, 25);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, 55, 25, 25);
-			m_pGame->PutString_SprFont(sX + 220, sY + 310, "Exchange", 15, 15, 15);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(15, 15, 15));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, 55, 25, 25);
@@ -38,7 +40,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, 55, 25, 25);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, 55, 25, 25);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, 55, 25, 25);
-			m_pGame->PutString_SprFont(sX + 220, sY + 310, "Exchange", 15, 15, 15);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(15, 15, 15));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, 55, 25, 25);
@@ -48,15 +50,15 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, 55, 25, 25);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, 55, 25, 25);
 			if ((msX >= sX + 200) && (msX <= sX + 200 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY))
-				m_pGame->PutString_SprFont(sX + 220, sY + 310, "Exchange", 6, 6, 20);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(6, 6, 20));
 			else
-				m_pGame->PutString_SprFont(sX + 220, sY + 310, "Exchange", 0, 0, 7);
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(0, 0, 7));
 		}
 		if ((msX >= sX + 450) && (msX <= sX + 450 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
-			m_pGame->PutString_SprFont(sX + 450, sY + 310, "Cancel", 6, 6, 20);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(6, 6, 20));
 		else
-			m_pGame->PutString_SprFont(sX + 450, sY + 310, "Cancel", 0, 0, 7);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(0, 0, 7));
 		break;
 
 	case 2: // You have confirmed the exchange

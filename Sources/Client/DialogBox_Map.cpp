@@ -2,6 +2,8 @@
 #include "ConfigManager.h"
 #include "Game.h"
 #include "GlobalDef.h"
+#include "GameFonts.h"
+#include "TextLibExt.h"
 
 DialogBox_Map::DialogBox_Map(CGame* pGame)
 	: IDialogBox(DialogBoxId::Map, pGame)
@@ -147,7 +149,7 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + tX, sY + tY, 43);
 		char coordBuf[32];
 		snprintf(coordBuf, sizeof(coordBuf), "%d,%d", m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
-		m_pGame->PutString_SprFont3(sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4, false, 2);
+		TextLib::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, TextLib::TextStyle::WithTwoPointShadow(m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4));
 		break;
 	}
 }

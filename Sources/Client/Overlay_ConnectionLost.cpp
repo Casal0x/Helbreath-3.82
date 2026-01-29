@@ -8,6 +8,8 @@
 #include "CommonTypes.h"
 #include "lan_eng.h"
 #include "AudioManager.h"
+#include "TextLibExt.h"
+#include "GameFonts.h"
 
 Overlay_ConnectionLost::Overlay_ConnectionLost(CGame* pGame)
     : IGameScreen(pGame)
@@ -45,7 +47,7 @@ void Overlay_ConnectionLost::on_update()
 void Overlay_ConnectionLost::on_render()
 {
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
-    PutString_SprFont(172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", 58, 0, 0);
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 54 + SCREENX, 180 + SCREENY, "Connection Lost!", TextLib::TextStyle::WithHighlight(58, 0, 0));
     PutString(172 + 50 + SCREENX, 180 + 30 + SCREENY, UPDATE_SCREEN_ON_CONNECTION_LOST, RGB(0, 0, 0));
     DrawVersion();
 }

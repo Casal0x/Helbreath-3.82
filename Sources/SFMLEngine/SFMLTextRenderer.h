@@ -31,7 +31,8 @@ public:
 
     // Drawing
     void DrawText(int x, int y, const char* text, uint32_t color) override;
-    void DrawTextCentered(int x1, int x2, int y, const char* text, uint32_t color) override;
+    void DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+                         Align alignment = Align::TopLeft) override;
 
     // Batching (no-op for SFML, no DC acquisition needed)
     void BeginBatch() override;
