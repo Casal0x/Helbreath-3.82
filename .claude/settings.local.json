@@ -13,7 +13,12 @@
       "Bash(sqlite3:*)",
       "Bash(git add:*)",
       "Bash(git rebase:*)",
-      "Bash(GIT_EDITOR=true git rebase:*)"
+      "Bash(GIT_EDITOR=true git rebase:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(vcpkg version:*)",
+      "Bash(git --version:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
