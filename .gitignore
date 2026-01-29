@@ -34,7 +34,10 @@
 **/[Ll]ogs/
 **/[Dd]ebugPS/
 **/[Rr]eleasePS/
-lib/
+
+# Ignore root lib folder but allow Dependencies lib folders
+/lib/
+!**/Dependencies/**/lib/
 
 ###########################
 # MSBuild/MSVC Artifacts  #

@@ -33,7 +33,7 @@ DDrawTextRenderer::DDrawTextRenderer(DXC_ddraw* ddraw)
     m_fontName[0] = '\0';
 
     // Load default font
-    LoadFontByName("Arial");
+    LoadFontByName("Tahoma");
 }
 
 DDrawTextRenderer::~DDrawTextRenderer()
@@ -140,16 +140,14 @@ TextMetrics DDrawTextRenderer::MeasureText(const char* text) const
 {
     TextMetrics metrics = {0, 0};
 
-    if (!text || !m_pDDraw || !m_pDDraw->m_hDC)
+    if (!text || text[0] == '\0' || !m_pDDraw)
         return metrics;
 
-    // Select our font temporarily
-    HFONT hOldFont = nullptr;
-    if (m_hFont)
-    {
-        hOldFont = (HFONT)SelectObject(m_pDDraw->m_hDC, m_hFont);
-    }
+    // Acquire DC for measurement (same as BeginTextBatch)
+    m_pDDraw->_GetBackBufferDC();
 
+    // The DC and font are now set up by _GetBackBufferDC
+    // m_hFontInUse is selected into m_hDC
     SIZE size;
     if (GetTextExtentPoint32A(m_pDDraw->m_hDC, text, static_cast<int>(strlen(text)), &size))
     {
@@ -157,11 +155,8 @@ TextMetrics DDrawTextRenderer::MeasureText(const char* text) const
         metrics.height = size.cy;
     }
 
-    // Restore old font
-    if (hOldFont)
-    {
-        SelectObject(m_pDDraw->m_hDC, hOldFont);
-    }
+    // Release DC (same as EndTextBatch)
+    m_pDDraw->_ReleaseBackBufferDC();
 
     return metrics;
 }

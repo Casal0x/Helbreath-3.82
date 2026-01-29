@@ -15827,6 +15827,8 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			}
 			else if (iRet == -1)
 			{
+				// Scroll/slider claimed - set status to prevent re-processing
+				CursorTarget::SetCursorStatus(CursorStatus::Selected);
 				return;
 			}
 		}
