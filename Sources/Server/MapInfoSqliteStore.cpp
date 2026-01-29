@@ -1,7 +1,7 @@
 #include "MapInfoSqliteStore.h"
 
 #define _WINSOCKAPI_
-#include <windows.h>
+#include "Platform.h"
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>

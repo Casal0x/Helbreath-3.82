@@ -1,8 +1,12 @@
 #include "AccountSqliteStore.h"
 
 #define _WINSOCKAPI_
-#include <windows.h>
+#include "Platform.h"
+#ifdef _WIN32
 #include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
 #include <cstdio>
 #include <cstring>
 #include <map>
