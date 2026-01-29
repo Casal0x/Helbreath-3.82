@@ -17743,7 +17743,7 @@ void CGame::MotionEventHandler(char* pData)
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN) m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
+		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
 	}
 	else m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
 
