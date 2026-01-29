@@ -2702,6 +2702,7 @@ bool CEntityManager::SpawnNpcDropItem(int iNpcH, int itemId, int minCount, int m
 		return false;
 	}
 	pItem->m_dwCount = count;
+	m_pGame->GenerateItemAttributes(pItem);
 	pItem->m_sTouchEffectType = DEF_ITET_ID;
 	pItem->m_sTouchEffectValue1 = static_cast<short>(m_pGame->iDice(1, 100000));
 	pItem->m_sTouchEffectValue2 = static_cast<short>(m_pGame->iDice(1, 100000));

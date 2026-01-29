@@ -486,6 +486,8 @@ public:
 	void SetIceFlag(short sOwnerH, char cOwnerType, bool bStatus);
 	void RequestNoticementHandler(int iClientH, char * pData);
 	void _AdjustRareItemValue(class CItem * pItem);
+	bool GenerateItemAttributes(class CItem * pItem);
+	int RollAttributeValue();
 	int  iGetPlayerABSStatus(int iWhatH, int iRecvH);
 	void CheckSpecialEvent(int iClientH);
 	char _cGetSpecialAbility(int iKindSA);

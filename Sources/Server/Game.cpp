@@ -15,6 +15,7 @@
 #include "sqlite3.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 #include "SharedCalculations.h"
+#include "Item/ItemAttributes.h"
 
 class CDebugWindow* DbgWnd;
 
@@ -28575,6 +28576,197 @@ void CGame::_AdjustRareItemValue(CItem* pItem)
 			break;
 		}
 	}
+}
+
+int CGame::RollAttributeValue()
+{
+	// Weighted roll for values 1-13 (original distribution)
+	static const int weights[] = { 10000, 7400, 5000, 3000, 2000, 1000, 500, 400, 300, 200, 100, 70, 30 };
+	static const int totalWeight = 30000;
+
+	int roll = rand() % totalWeight;
+	int cumulative = 0;
+	for (int i = 0; i < 13; i++) {
+		cumulative += weights[i];
+		if (roll < cumulative) return i + 1;
+	}
+	return 1;
+}
+
+bool CGame::GenerateItemAttributes(CItem* pItem)
+{
+	using namespace hb::item;
+
+	if (pItem == nullptr) return false;
+
+	AttributePrefixType primaryType = AttributePrefixType::None;
+	int primaryValue = 0;
+	SecondaryEffectType secondaryType = SecondaryEffectType::None;
+	int secondaryValue = 0;
+	int itemColor = 0;
+
+	if (pItem->m_sItemEffectType == 1) {
+		// Attack weapons - roll primary prefix
+		int roll = rand() % 10000;
+		int cumul = 0;
+
+		struct { int weight; AttributePrefixType type; int color; int minVal; } attackPrimary[] = {
+			{ 299,  AttributePrefixType::Light,      2, 4 },
+			{ 700,  AttributePrefixType::Strong,     3, 2 },
+			{ 1500, AttributePrefixType::Critical,   5, 5 },
+			{ 2000, AttributePrefixType::Agile,      1, 0 },
+			{ 2000, AttributePrefixType::Righteous,  7, 0 },
+			{ 1600, AttributePrefixType::Poisoning,  4, 4 },
+			{ 1600, AttributePrefixType::Sharp,      6, 0 },
+			{ 301,  AttributePrefixType::Ancient,    8, 0 },
+		};
+
+		for (auto& entry : attackPrimary) {
+			cumul += entry.weight;
+			if (roll < cumul) {
+				primaryType = entry.type;
+				itemColor = entry.color;
+				primaryValue = RollAttributeValue();
+				if (primaryValue < entry.minVal) primaryValue = entry.minVal;
+				break;
+			}
+		}
+
+		// Secondary effect - 40% chance (original rate)
+		if (rand() % 100 < 40) {
+		int secRoll = rand() % 10000;
+		int secCumul = 0;
+
+		struct { int weight; SecondaryEffectType type; int minVal; int maxVal; int fixedVal; } attackSecondary[] = {
+			{ 4999, SecondaryEffectType::HittingProb,       3, 0, 0 },
+			{ 3500, SecondaryEffectType::ConsecutiveAttack,  0, 7, 0 },
+			{ 1000, SecondaryEffectType::GoldBonus,          0, 0, 5 },
+			{ 501,  SecondaryEffectType::ExperienceBonus,    0, 0, 2 },
+		};
+
+		for (auto& entry : attackSecondary) {
+			secCumul += entry.weight;
+			if (secRoll < secCumul) {
+				secondaryType = entry.type;
+				if (entry.fixedVal > 0) {
+					secondaryValue = entry.fixedVal;
+				} else {
+					secondaryValue = RollAttributeValue();
+					if (secondaryValue < entry.minVal) secondaryValue = entry.minVal;
+					if (entry.maxVal > 0 && secondaryValue > entry.maxVal) secondaryValue = entry.maxVal;
+				}
+				break;
+			}
+		}
+		} // end 40% secondary chance
+	}
+	else if (pItem->m_sItemEffectType == 2) {
+		// Defense armor - roll primary prefix
+		int roll = rand() % 10000;
+		int cumul = 0;
+
+		struct { int weight; AttributePrefixType type; int minVal; bool halved; } defensePrimary[] = {
+			{ 5999, AttributePrefixType::Strong,         2, false },
+			{ 3000, AttributePrefixType::Light,          4, false },
+			{ 555,  AttributePrefixType::ManaConverting,  0, true },
+			{ 446,  AttributePrefixType::CritChance,      0, true },
+		};
+
+		for (auto& entry : defensePrimary) {
+			cumul += entry.weight;
+			if (roll < cumul) {
+				primaryType = entry.type;
+				itemColor = 0;
+				primaryValue = RollAttributeValue();
+				if (entry.halved) primaryValue = primaryValue / 2;
+				if (primaryValue < entry.minVal) primaryValue = entry.minVal;
+				break;
+			}
+		}
+
+		// Secondary effect - 40% chance (original rate)
+		if (rand() % 100 < 40) {
+		int secRoll = rand() % 10001;
+		int secCumul = 0;
+
+		struct { int weight; SecondaryEffectType type; int minVal; } defenseSecondary[] = {
+			{ 1000, SecondaryEffectType::DefenseRatio,      3 },
+			{ 3000, SecondaryEffectType::PoisonResistance,  3 },
+			{ 1500, SecondaryEffectType::SPRecovery,        0 },
+			{ 1000, SecondaryEffectType::HPRecovery,        0 },
+			{ 1000, SecondaryEffectType::MPRecovery,        0 },
+			{ 1900, SecondaryEffectType::MagicResistance,   3 },
+			{ 400,  SecondaryEffectType::PhysicalAbsorb,    3 },
+			{ 201,  SecondaryEffectType::MagicAbsorb,       3 },
+		};
+
+		for (auto& entry : defenseSecondary) {
+			secCumul += entry.weight;
+			if (secRoll < secCumul) {
+				secondaryType = entry.type;
+				secondaryValue = RollAttributeValue();
+				if (secondaryValue < entry.minVal) secondaryValue = entry.minVal;
+				break;
+			}
+		}
+		} // end 40% secondary chance
+	}
+	else if (pItem->m_sItemEffectType == 13) {
+		// AttackManaSave - always type Special
+		primaryType = AttributePrefixType::Special;
+		itemColor = 5;
+		primaryValue = RollAttributeValue();
+
+		// Secondary effect - 40% chance (original rate)
+		// Same secondary pool as attack weapons
+		if (rand() % 100 < 40) {
+		int secRoll = rand() % 10000;
+		int secCumul = 0;
+
+		struct { int weight; SecondaryEffectType type; int minVal; int maxVal; int fixedVal; } manaSaveSecondary[] = {
+			{ 4999, SecondaryEffectType::HittingProb,       3, 0, 0 },
+			{ 3500, SecondaryEffectType::ConsecutiveAttack,  0, 7, 0 },
+			{ 1000, SecondaryEffectType::GoldBonus,          0, 0, 5 },
+			{ 501,  SecondaryEffectType::ExperienceBonus,    0, 0, 2 },
+		};
+
+		for (auto& entry : manaSaveSecondary) {
+			secCumul += entry.weight;
+			if (secRoll < secCumul) {
+				secondaryType = entry.type;
+				if (entry.fixedVal > 0) {
+					secondaryValue = entry.fixedVal;
+				} else {
+					secondaryValue = RollAttributeValue();
+					if (secondaryValue < entry.minVal) secondaryValue = entry.minVal;
+					if (entry.maxVal > 0 && secondaryValue > entry.maxVal) secondaryValue = entry.maxVal;
+				}
+				break;
+			}
+		}
+		} // end 40% secondary chance
+	}
+	else {
+		// Item has no applicable effect type
+		return false;
+	}
+
+	// Clamp values to nibble range (0-15)
+	if (primaryValue > 15) primaryValue = 15;
+	if (secondaryValue > 15) secondaryValue = 15;
+
+	pItem->m_cItemColor = (char)itemColor;
+	pItem->m_dwAttribute = BuildAttribute(
+		false, // customMade = false for drops
+		primaryType,
+		(uint8_t)primaryValue,
+		secondaryType,
+		(uint8_t)secondaryValue,
+		0 // no enchant bonus
+	);
+
+	_AdjustRareItemValue(pItem);
+	return true;
 }
 
 void CGame::RequestNoticementHandler(int iClientH, char* pData)
