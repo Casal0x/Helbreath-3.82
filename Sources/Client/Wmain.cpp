@@ -165,9 +165,18 @@ void EventLoop()
         if (!pWindow->ProcessMessages())
             break;
 
+        // Always render to keep network and timers alive, even when window is inactive
         FrameTiming::BeginFrame();
         G_pGame->RenderFrame();
         FrameTiming::EndFrame();
+
+        // When inactive, throttle framerate to reduce CPU/GPU usage
+        // (30 fps when inactive vs ~60 fps when active)
+        if (!G_pGame->m_bIsProgramActive && GameModeManager::GetMode() != GameMode::Loading)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        }
+>>>>>>> d40c9c2 (fixing the stop of rendering when window is not focused causing connection lost)
     }
 }
 
