@@ -384,8 +384,8 @@ bool CGame::ReloadSettingsConfigs()
   CloseGameConfigDatabase(configDb);
 
   std::snprintf(G_cTxt, sizeof(G_cTxt),
-                "(!) Hot Reload: Settings reloaded - DropRate: %d/%d, MaxLevel: %d",
-                m_iPrimaryDropRate, m_iSecondaryDropRate, m_iMaxLevel);
+                "(!) Hot Reload: Settings reloaded - DropRate: %.2f/%.2f/%.2f, MaxLevel: %d",
+                m_fPrimaryDropRate, m_fGoldDropRate, m_fSecondaryDropRate, m_iMaxLevel);
   PutLogList(G_cTxt);
 
   return true;

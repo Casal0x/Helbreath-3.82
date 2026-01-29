@@ -1143,8 +1143,10 @@ public:
   // 17/05/2004
   short m_sForceRecallTime;
 
-  // 22/05/2004
-  int m_iPrimaryDropRate, m_iSecondaryDropRate;
+  // 22/05/2004 - Drop rate multipliers (1.0 = normal, 1.5 = 150%, 0.5 = 50%)
+  float m_fPrimaryDropRate;    // Primary item drops (base 10%)
+  float m_fGoldDropRate;       // Gold drops (base 30%)
+  float m_fSecondaryDropRate;  // Bonus/secondary drops (base 5%)
 
   // 25/05/2004
   int m_iFinalShutdownCount;

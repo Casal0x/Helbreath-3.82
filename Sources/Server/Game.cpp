@@ -276,6 +276,9 @@ CGame::CGame(HWND hWnd) {
   m_sCharPointLimit = 0;
   m_sSlateSuccessRate = 0;
   m_sForceRecallTime = 0;
+  m_fPrimaryDropRate = 1.0f;    // 1.0 = normal (10% base), 1.5 = 150%, etc.
+  m_fGoldDropRate = 1.0f;       // 1.0 = normal (30% base), 1.5 = 150%, etc.
+  m_fSecondaryDropRate = 1.0f;  // 1.0 = normal (5% base), 1.5 = 150%, etc.
 
   // Show Debug Window
   // DbgWnd = new CDebugWindow();
