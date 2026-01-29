@@ -54,9 +54,55 @@ powershell.exe -ExecutionPolicy Bypass -File "C:\Users\ShadowEvil\source\Repos3\
 
 **Client:** `CGame` core with `IRenderer`/`ISprite`/`ITexture` abstraction. Two backends: DDrawEngine, SFMLEngine. `XSocket` async networking.
 
-**Screen System:** `IGameScreen` base class with `on_initialize()`, `on_update()`, `on_render()`, `on_uninitialize()`. `Screen_*` for full screens, `Overlay_*` for modals. Screen-specific logic stays in screen class.
+**Screen System:** `IGameScreen` base class with `on_initialize()`, `on_update()`, `on_render()`, `on_uninitialize()`. `Screen_*` for full screens, `Overlay_*` for modals. `GameModeManager` handles transitions with fade effects.
+
+**Dialog System:** `IDialogBox` base with `OnDraw()`, `OnClick()`, `OnUpdate()`. `DialogBoxManager` tracks enabled dialogs and z-order.
 
 **Server:** `CGame` coordinator, `CClient` sessions, `CNpc` AI, `CMap` tiles. ODBC persistence.
+
+## Rendering Pipeline
+
+**Frame Loop** (`CGame::RenderFrame`):
+1. `BeginFrame()` - clears backbuffer
+2. `GameModeManager::Render()` - renders screens/overlays/dialogs
+3. `DrawFadeOverlay()` - transition fade if active
+4. `DrawCursor()` - always on top
+5. `EndFrame()` - flip to screen
+
+**Two Text Systems:**
+| System | Function | Method | DC Required |
+|--------|----------|--------|-------------|
+| GDI Text | `PutString()` | `DXC_ddraw::TextOut` | Yes |
+| Bitmap Fonts | `PutString_SprFont()` | Sprite-based | No |
+
+**DC Management (DDraw only):**
+- `_GetBackBufferDC()` - locks surface, acquires DC, selects `m_hFontInUse` (16pt Tahoma)
+- `_ReleaseBackBufferDC()` - releases DC, unlocks surface
+- **Critical:** DC locks surface - sprite drawing requires unlocked surface
+- Text calls must wrap in `BeginTextBatch()`/`EndTextBatch()` pairs
+- `MeasureText()` acquires/releases DC internally (same pattern)
+
+**Sprite Drawing:**
+- DDraw: CPU-based blending using pre-computed transparency tables (`m_lTransRB*`, `m_lTransG*`)
+- SFML: GPU-accelerated via `sf::BlendMode`
+- `DrawParams` struct controls alpha, tint, shadow, blend mode
+
+**Key Surfaces (DDraw):**
+| Surface | Size | Purpose |
+|---------|------|---------|
+| `m_lpFrontB4` | 640x480 | Screen (flip target) |
+| `m_lpBackB4` | 640x480 | Render target |
+| `m_lpPDBGS` | 672x512 | Pre-drawn tiles for scrolling |
+
+## Shared Interfaces
+
+| Interface | DDraw Implementation | SFML Implementation |
+|-----------|---------------------|---------------------|
+| `IRenderer` | `DDrawRenderer` → `DXC_ddraw` | `SFMLRenderer` |
+| `ISprite` | `DDrawSprite` (CPU blend) | `SFMLSprite` (GPU blend) |
+| `ITextRenderer` | `DDrawTextRenderer` (GDI) | `SFMLTextRenderer` |
+
+**Sprite Loading:** `SpriteLoader::open_pak()` batch loads from PAK files, creates renderer-specific sprites via factory.
 
 ## Workflow
 
