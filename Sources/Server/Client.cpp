@@ -5,7 +5,11 @@
 #include "CommonTypes.h"
 #include "Client.h"
 #ifdef _WIN32
+#ifdef _WIN32
 #include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
 #endif
 
 extern char G_cTxt[512];

@@ -7,7 +7,7 @@
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 #define _WINSOCKAPI_
 
-#include <windows.h>
+#include "Platform.h"
 #include "CommonTypes.h"
 #include "OccupyFlag.h"
 #include "Tile.h"
@@ -39,7 +39,7 @@
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 #define _WINSOCKAPI_
 
-#include <windows.h>
+#include "Platform.h"
 #include "CommonTypes.h"
 #include "Game.h"
 #include "TeleportLoc.h"

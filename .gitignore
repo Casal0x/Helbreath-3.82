@@ -342,3 +342,17 @@ PLANS/
 # Temporary files
 tmpclaude*cwd
 nul
+
+# CMake build artifacts
+**/build/
+**/cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Unix/Linux binaries
+**/Server-Linux
+**/HBServer

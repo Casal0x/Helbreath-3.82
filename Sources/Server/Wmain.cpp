@@ -18,12 +18,12 @@
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 #define _WINSOCKAPI_
 
-#include <windows.h>
+#include "Platform.h"
 #include "CommonTypes.h"
 #include <windowsx.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <winbase.h>
+#include "Platform.h"
 #include <mmsystem.h>
 #include <time.h>
 #include <cstring>
