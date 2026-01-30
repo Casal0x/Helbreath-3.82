@@ -355,7 +355,12 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
     _mkdir("Accounts");
 
     char dbPath[MAX_PATH] = {};
+#ifdef _WIN32
     std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", accountName);
+#else
+    std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", accountName);
+#endif
+
     outPath = dbPath;
 
     sqlite3* db = nullptr;
@@ -1903,7 +1908,11 @@ bool CharacterNameExistsGlobally(const char* characterName)
 
         // Build full path to database
         char dbPath[MAX_PATH] = {};
+#ifdef _WIN32
         std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+#else
+        std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s", findData.cFileName);
+#endif
 
         // Open the database
         sqlite3* db = nullptr;
@@ -1963,7 +1972,11 @@ bool AccountNameExists(const char* accountName)
 
         // Build full path to database
         char dbPath[MAX_PATH] = {};
+#ifdef _WIN32
         std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+#else
+        std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s", findData.cFileName);
+#endif
 
         // Open the database
         sqlite3* db = nullptr;

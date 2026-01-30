@@ -56,7 +56,12 @@ void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBuffe
 bool AccountDbExists(const char* accountName)
 {
 	char dbPath[MAX_PATH] = {};
+#ifdef _WIN32
 	std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", accountName);
+#else
+	std::snprintf(dbPath, sizeof(dbPath), "Accounts/%s.db", accountName);
+#endif
+
 	DWORD attrs = GetFileAttributes(dbPath);
 	return (attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) == 0);
 }
