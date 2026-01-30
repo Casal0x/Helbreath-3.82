@@ -628,6 +628,7 @@ bool XSocket::bAccept(class XSocket * pXSock)
 
 	// Accept�� ������ ���� �������� �ʱ�ȭ �ȴ�.
 	pXSock->m_cType = DEF_XSOCK_NORMALSOCK;
+	pXSock->m_bIsWriteEnabled = true; // Socket is writable immediately after accept
 
 	// ���� �ɼ��� �����Ѵ�.
 	dwOpt = DEF_MSGBUFFERSIZE * 2;

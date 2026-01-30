@@ -23,7 +23,7 @@
 #include <string>
 using namespace std;
 
-#define DEF_CLIENTSOCKETBLOCKLIMIT	150  // MODERNIZED: Increased from 15 to handle 50+ entities sending updates
+#define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
 
 #define DEF_MAXITEMS		50
 #define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)

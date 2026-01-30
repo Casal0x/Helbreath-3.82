@@ -50,7 +50,7 @@
 #define DEF_XSOCKEVENT_UNSENTDATASENDBLOCK		-135    // ť�� �ִ� �����͸� �����ٰ� �� ������ �ɷȴ�. 
 #define DEF_XSOCKEVENT_UNSENTDATASENDCOMPLETE	-136	// ť�� �ִ� ��� �����͸� ���´�.
 
-#define DEF_XSOCKBLOCKLIMIT						300		// �� Ŭ���� ������ ?���̻� ���ϵǸ� ���̻� �����͸� ������ �� ����. 	
+#define DEF_XSOCKBLOCKLIMIT						2000	//�� Ŭ���� ������ ?���̻� ���ϵǸ� ���̻� �����͸� ������ �� ����. 	
 
 class XSocket
 {
