@@ -187,7 +187,9 @@ bool Window::Create(const WindowParams& params)
     Input::Create();
     if (Input::Get())
     {
-        static_cast<SFMLInput*>(Input::Get())->Initialize(s_pWindow->GetHandle());
+        SFMLInput* pInput = static_cast<SFMLInput*>(Input::Get());
+        pInput->Initialize(s_pWindow->GetHandle());
+        pInput->SetRenderWindow(static_cast<SFMLWindow*>(s_pWindow)->GetRenderWindow());
     }
 
     // Link the SFML window's render window to the renderer
@@ -257,6 +259,14 @@ void Window::SetSize(int width, int height, bool center)
     if (s_pWindow)
     {
         s_pWindow->SetSize(width, height, center);
+    }
+}
+
+void Window::SetBorderless(bool borderless)
+{
+    if (s_pWindow)
+    {
+        s_pWindow->SetBorderless(borderless);
     }
 }
 

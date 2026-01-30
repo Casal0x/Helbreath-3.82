@@ -225,9 +225,6 @@ void Screen_OnGame::on_update()
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
                     if (strlen(m_pGame->G_cTxt) > 0) {
-                        if ((m_pGame->G_cTxt[0] == '!') || (m_pGame->G_cTxt[0] == '~')) {
-                            if (CMisc::bCheckIMEString(m_pGame->G_cTxt) == false) return;
-                        }
                         m_pGame->bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, m_pGame->G_cTxt);
                     }
                 }
@@ -519,7 +516,7 @@ void Screen_OnGame::RenderItemTooltip()
     m_pGame->GetItemName(item, cStr1, cStr2, cStr3);
     iLoc = 0;
     if (strlen(cStr1) != 0) {
-        if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b));
+        if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b));
         else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
         iLoc += 15;
     }

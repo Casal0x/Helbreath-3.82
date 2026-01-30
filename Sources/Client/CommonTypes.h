@@ -208,28 +208,12 @@ namespace GameColors
 	// UI Text Colors
 	// ====================================================================
 
-	// Chat history & in-game chat rendering
-	// TextLib::TextStyle::WithShadow (Game.cpp DrawChatMsgs, DialogBox_ChatHistory)
-	inline constexpr GameColor ChatBlue{ 130, 130, 255 };       // Blue chat (type 3)
-	inline constexpr GameColor ChatYellow{ 230, 230, 130 };     // Yellow chat (type 4)
-	inline constexpr GameColor ChatLightGreen{ 180, 255, 180 }; // Light green chat (type 10)
-	inline constexpr GameColor ChatGray{ 150, 150, 170 };       // Gray chat (type 20)
-	inline constexpr GameColor UINearWhiteAlt{ 225, 225, 225 };  // Normal chat alt (Game.cpp in-game)
-	inline constexpr GameColor UINearWhiteAlt2{ 235, 235, 235 }; // Normal chat alt2 (Game.cpp whisper)
-	inline constexpr GameColor ChatBrightYellow{ 240, 240, 70 };// Bright yellow (Game.cpp notify)
-
 	// ====================================================================
 	// HUD / Name Plate Colors
 	// ====================================================================
 
 	// TextLib::TextStyle::WithShadow (Game.cpp, Screen_OnGame.cpp)
-	inline constexpr GameColor NameSpecial{ 0, 255, 50 };       // Special item name (green glow)
-	inline constexpr GameColor NameNeutral{ 50, 50, 255 };      // Neutral name plate
-	inline constexpr GameColor NameEnemy{ 255, 0, 0 };          // Enemy name plate
-	inline constexpr GameColor NameFriendly{ 30, 255, 30 };     // Friendly name plate
-	inline constexpr GameColor InfoGray{ 150, 150, 150 };       // Item info text
 	inline constexpr GameColor InfoGrayLight{ 180, 180, 180 };  // Lighter info text
-	inline constexpr GameColor InfoWhite{ 255, 255, 255 };      // Item info highlight
 
 	// ====================================================================
 	// Form Validation Colors
@@ -237,9 +221,6 @@ namespace GameColors
 
 	// Screen_CreateAccount, Screen_Login
 	// TextLib::TextStyle::WithShadow
-	inline constexpr GameColor InputValid{ 100, 200, 100 };     // Valid input field
-	inline constexpr GameColor InputInvalid{ 200, 100, 100 };   // Invalid input field
-	inline constexpr GameColor InputNormal{ 200, 200, 200 };    // Normal input display
 
 	// ====================================================================
 	// Overlay Colors
@@ -287,11 +268,24 @@ namespace GameColors
 
 	// Completed
 	inline constexpr GameColor UIMagicBlue{ 4,0,50 };
-	inline constexpr GameColor UIMagicPurple{ 50, 20, 50 };
+	inline constexpr GameColor UIMagicPurple{ 60, 10, 60 };
 	inline constexpr GameColor UIGuildGreen{ 130, 200, 130 };
 	inline constexpr GameColor UIWorldChat{ 255, 130, 130 };
+	inline constexpr GameColor UIFactionChat{ 130, 130, 255 };
+	inline constexpr GameColor UIPartyChat{ 230, 230, 130 };
+	inline constexpr GameColor UINormalChat{ 150, 150, 170 };
+	inline constexpr GameColor UIGameMasterChat{ 180, 255, 180 };
 	inline constexpr GameColor UILabel{ 25, 25, 25 };
 	inline constexpr GameColor UIDisabled{ 65, 65, 65 };
+	inline constexpr GameColor MonsterStatusEffect{ 240, 240, 70 };
+	inline constexpr GameColor UIItemName_Special{ 0, 255, 50 };
+	inline constexpr GameColor NeutralNamePlate{ 50, 50, 255 };
+	inline constexpr GameColor EnemyNamePlate{ 255, 0, 0 };
+	inline constexpr GameColor FriendlyNamePlate{ 30, 255, 30 };
+
+	inline constexpr GameColor InputValid{ 100, 200, 100 };
+	inline constexpr GameColor InputInvalid{ 200, 100, 100 };
+	inline constexpr GameColor InputNormal{ 200, 200, 200 };
 
 	inline constexpr GameColor UIBlack{ 0, 0, 0 };
 	inline constexpr GameColor UIWhite{ 255, 255, 255 };

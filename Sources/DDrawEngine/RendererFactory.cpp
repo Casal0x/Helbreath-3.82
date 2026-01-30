@@ -217,3 +217,11 @@ void Window::SetSize(int width, int height, bool center)
         s_pWindow->SetSize(width, height, center);
     }
 }
+
+void Window::SetBorderless(bool borderless)
+{
+    if (s_pWindow)
+    {
+        s_pWindow->SetBorderless(borderless);
+    }
+}

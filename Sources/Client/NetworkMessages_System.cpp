@@ -61,19 +61,8 @@ void HandleForceDisconn(CGame* pGame, char* pData)
 	const auto wpCount = pkt->seconds;
 	pGame->m_bForceDisconn = true;
 	//m_cLogOutCount = (char)*wpCount;
-	if (pGame->m_bIsProgramActive)
-	{
-		if (pGame->m_cLogOutCount < 0 || pGame->m_cLogOutCount > 5) pGame->m_cLogOutCount = 5;
-		pGame->AddEventList(NOTIFYMSG_FORCE_DISCONN1, 10);
-	}
-	else
-	{
-		pGame->m_pGSock.reset();
-		pGame->m_pGSock.reset();
-		AudioManager::Get().StopSound(SoundType::Effect, 38);
-		AudioManager::Get().StopMusic();
-		pGame->ChangeGameMode(GameMode::MainMenu);
-	}
+	if (pGame->m_cLogOutCount < 0 || pGame->m_cLogOutCount > 5) pGame->m_cLogOutCount = 5;
+	pGame->AddEventList(NOTIFYMSG_FORCE_DISCONN1, 10);
 }
 
 void HandleSettingSuccess(CGame* pGame, char* pData)

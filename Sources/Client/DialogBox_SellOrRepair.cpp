@@ -53,8 +53,8 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if (m_pGame->m_bIsSpecial)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 		}
 		else
 		{
@@ -105,8 +105,8 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		wsprintf(cTxt, "%s", cTemp);
 		if (m_pGame->m_bIsSpecial)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 		}
 		else
 		{

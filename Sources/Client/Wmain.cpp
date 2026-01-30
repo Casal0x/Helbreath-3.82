@@ -164,16 +164,9 @@ void EventLoop()
         if (!pWindow->ProcessMessages())
             break;
 
-        if (G_pGame->m_bIsProgramActive || GameModeManager::GetMode() == GameMode::Loading)
-        {
-            FrameTiming::BeginFrame();
-            G_pGame->RenderFrame();
-            FrameTiming::EndFrame();
-        }
-        else
-        {
-            pWindow->WaitForMessage();
-        }
+        FrameTiming::BeginFrame();
+        G_pGame->RenderFrame();
+        FrameTiming::EndFrame();
     }
 }
 

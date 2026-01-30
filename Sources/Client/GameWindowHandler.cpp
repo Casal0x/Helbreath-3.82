@@ -63,7 +63,6 @@ void GameWindowHandler::OnDestroy()
 {
     if (m_pGame)
     {
-        m_pGame->m_bIsProgramActive = false;
         m_pGame->Quit();
     }
     WSACleanup();
@@ -76,13 +75,11 @@ void GameWindowHandler::OnActivate(bool active)
 
     if (!active)
     {
-        m_pGame->m_bIsProgramActive = false;
         if (Input::Get())
             Input::Get()->SetWindowActive(false);
     }
     else
     {
-        m_pGame->m_bIsProgramActive = true;
         if (Input::Get())
             Input::Get()->SetWindowActive(true);
 

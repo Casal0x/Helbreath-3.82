@@ -13,6 +13,8 @@
 #include <windows.h>
 #include "IInput.h"
 
+namespace sf { class RenderWindow; }
+
 class SFMLInput : public IInput
 {
 public:
@@ -20,6 +22,7 @@ public:
     virtual ~SFMLInput();
 
     void Initialize(HWND hWnd);
+    void SetRenderWindow(sf::RenderWindow* pWindow);
 
     // ============== IInput Implementation ==============
 
@@ -68,6 +71,7 @@ private:
     void ClearAllKeys();
 
     HWND m_hWnd;
+    sf::RenderWindow* m_pRenderWindow;
     bool m_active;
     bool m_suppressed;
 

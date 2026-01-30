@@ -377,6 +377,24 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
+	// Window Style - wide box showing Borderless/Bordered (disabled when fullscreen)
+	PutString(labelX, lineY, "Window Style:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Window Style:", GameColors::UILabel.ToColorRef());
+
+	const int styleBoxY = lineY - 2;
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, styleBoxY, 78);
+
+	bool styleHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight);
+	COLORREF styleColor = isFullscreen ? GameColors::UIDisabled.ToColorRef() : (styleHover ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
+
+	const char* styleText = ConfigManager::Get().IsBorderlessEnabled() ? "Borderless" : "Bordered";
+	TextLib::TextMetrics styleMetrics = TextLib::GetTextRenderer()->MeasureText(styleText);
+	int styleTextX = wideBoxX + (wideBoxWidth - styleMetrics.width) / 2;
+	int styleTextY = styleBoxY + (wideBoxHeight - styleMetrics.height) / 2;
+	PutString(styleTextX, styleTextY, styleText, styleColor);
+
+	lineY += 18;
+
 	// Resolution - wide box with centered text
 	PutString(labelX, lineY, "Resolution:", GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, "Resolution:", GameColors::UILabel.ToColorRef());
@@ -527,6 +545,13 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 	PutString(labelX, lineY, "Running Mode:", GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, "Running Mode:", GameColors::UILabel.ToColorRef());
 	DrawToggle(valueX, lineY, ConfigManager::Get().IsRunningModeEnabled(), msX, msY);
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	PutString(labelX, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
+	DrawToggle(valueX, lineY, ConfigManager::Get().IsMouseCaptureEnabled(), msX, msY);
 }
 
 // =============================================================================
@@ -748,6 +773,23 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
+	// Window Style toggle click (wide box, only in windowed mode)
+	const int styleBoxY = lineY - 2;
+	{
+		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
+		if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
+			bool borderless = ConfigManager::Get().IsBorderlessEnabled();
+			ConfigManager::Get().SetBorderlessEnabled(!borderless);
+			Window::SetBorderless(!borderless);
+			Input::Get()->SetWindowActive(true);
+			ConfigManager::Get().Save();
+			PlaySoundEffect('E', 14, 5);
+			return true;
+		}
+	}
+
+	lineY += 18;
+
 	// Resolution click (wide box, only in windowed mode)
 	const int resBoxY = lineY - 2;
 	bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
@@ -850,6 +892,17 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsRunningModeEnabled();
 		ConfigManager::Get().SetRunningModeEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	if (IsInToggleArea(valueX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
+		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
+		Input::Get()->SetWindowActive(true);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

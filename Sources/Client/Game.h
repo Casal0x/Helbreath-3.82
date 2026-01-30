@@ -513,8 +513,7 @@ public:
 
 	//v2.183 Hunter Mode - Moved to CPlayer
 
-	bool m_bIsProgramActive;
-	std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
+std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	std::array<bool, DEF_MAXITEMS> m_bIsItemDisabled{};
 	bool m_bIsGetPointingMode;
 	bool m_bSkillUsingStatus;

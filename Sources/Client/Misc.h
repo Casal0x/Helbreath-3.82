@@ -114,15 +114,6 @@ namespace CMisc
 		return true;
 	}
 
-	static inline bool bCheckIMEString(char * str)
-	{
-		int len = strlen(str);
-		for (int i = 0; i < len; i++)
-		{	if(str[i] < 0) return false;
-		}
-		return true;
-	}
-
 	static inline void ReplaceString(char * pStr, char cFrom, char cTo)
 	{
 		int len = strlen(pStr);

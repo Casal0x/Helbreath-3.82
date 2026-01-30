@@ -24,8 +24,8 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Item name (green if special, blue otherwise)
 	if (m_pGame->m_bIsSpecial)
 	{
-		PutString(sX + 35, sY + 20, cTxt, GameColors::NameSpecial.ToColorRef());
-		PutString(sX + 36, sY + 20, cTxt, GameColors::NameSpecial.ToColorRef());
+		PutString(sX + 35, sY + 20, cTxt, GameColors::UIItemName_Special.ToColorRef());
+		PutString(sX + 36, sY + 20, cTxt, GameColors::UIItemName_Special.ToColorRef());
 	}
 	else
 	{

@@ -5,6 +5,7 @@
 
 #include "Win32Input.h"
 #include "RenderConstants.h"
+#include "ConfigManager.h"
 #include <cstring>
 
 // Global input instance pointer (owned by RendererFactory)
@@ -337,6 +338,12 @@ void Win32Input::UpdateCursorClip(bool active)
 
     if (active)
     {
+        if (!ConfigManager::Get().IsMouseCaptureEnabled())
+        {
+            ClipCursor(nullptr);
+            return;
+        }
+
         RECT rcClient{};
         GetClientRect(m_hWnd, &rcClient);
         int winW = rcClient.right - rcClient.left;

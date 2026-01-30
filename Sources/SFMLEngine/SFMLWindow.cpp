@@ -4,6 +4,9 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "SFMLWindow.h"
+#include "SFMLInput.h"
+#include "SFMLRenderer.h"
+#include "RendererFactory.h"
 #include "ConfigManager.h"
 #include "RenderConstants.h"
 #include <SFML/Window/Event.hpp>
@@ -18,6 +21,7 @@ SFMLWindow::SFMLWindow()
     , m_width(0)
     , m_height(0)
     , m_fullscreen(false)
+    , m_borderless(true)
     , m_active(true)
     , m_open(false)
 {
@@ -36,13 +40,21 @@ bool SFMLWindow::Create(const WindowParams& params)
     m_width = params.width;
     m_height = params.height;
     m_fullscreen = params.fullscreen;
+    m_borderless = ConfigManager::Get().IsBorderlessEnabled();
 
     // Create SFML window
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
 
     sf::State state = params.fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
 
-    m_renderWindow.create(videoMode, params.title ? params.title : "Window", sf::Style::None, state);
+    // Pick style: fullscreen/borderless use None, bordered uses Titlebar
+    auto sfStyle = sf::Style::None;
+    if (!params.fullscreen && !m_borderless)
+    {
+        sfStyle = sf::Style::Titlebar;
+    }
+
+    m_renderWindow.create(videoMode, params.title ? params.title : "Window", sfStyle, state);
 
     if (!m_renderWindow.isOpen())
         return false;
@@ -50,15 +62,25 @@ bool SFMLWindow::Create(const WindowParams& params)
     // Get native handle for anything that needs it
 #ifdef _WIN32
     m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+
+    // For bordered mode, add minimize button (sf::Style::Titlebar doesn't include it)
+    if (!params.fullscreen && !m_borderless && m_hWnd)
+    {
+        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        style |= WS_MINIMIZEBOX;
+        SetWindowLong(m_hWnd, GWL_STYLE, style);
+        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    }
 #endif
 
     // Disable VSync by default (game has its own frame timing)
     m_renderWindow.setVerticalSyncEnabled(false);
 
     // Hide the system mouse cursor (game draws its own cursor)
-    // Also grab the cursor to ensure mouse events are tracked even when hidden
+    // Grab the cursor based on capture mouse setting
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(true);
+    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
 
     m_open = true;
     m_active = true;
@@ -146,7 +168,14 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
     sf::VideoMode videoMode({static_cast<unsigned int>(windowWidth), static_cast<unsigned int>(windowHeight)});
     sf::State state = fullscreen ? sf::State::Fullscreen : sf::State::Windowed;
 
-    m_renderWindow.create(videoMode, "Helbreath", sf::Style::None, state);
+    // Pick style based on borderless setting (fullscreen always None)
+    auto sfStyle = sf::Style::None;
+    if (!fullscreen && !m_borderless)
+    {
+        sfStyle = sf::Style::Titlebar;
+    }
+
+    m_renderWindow.create(videoMode, "Helbreath", sfStyle, state);
 
     // Update stored dimensions
     m_width = windowWidth;
@@ -154,15 +183,25 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
 
 #ifdef _WIN32
     m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+
+    // For bordered windowed mode, add minimize button
+    if (!fullscreen && !m_borderless && m_hWnd)
+    {
+        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        style |= WS_MINIMIZEBOX;
+        SetWindowLong(m_hWnd, GWL_STYLE, style);
+        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    }
 #endif
 
     // Disable VSync (game has its own frame timing)
     m_renderWindow.setVerticalSyncEnabled(false);
 
     // Hide the system mouse cursor (game draws its own cursor)
-    // Also grab the cursor to ensure mouse events are tracked even when hidden
+    // Grab the cursor based on capture mouse setting
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(true);
+    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
 
     // If switching to windowed mode, center the window
     if (!fullscreen)
@@ -173,6 +212,67 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
         int newY = (screenHeight - windowHeight) / 2;
         SetWindowPos(m_hWnd, HWND_TOP, newX, newY, windowWidth, windowHeight, SWP_SHOWWINDOW);
     }
+}
+
+void SFMLWindow::SetBorderless(bool borderless)
+{
+    if (m_borderless == borderless || m_fullscreen)
+        return;
+
+    m_borderless = borderless;
+
+    // Recreate window with new style (same pattern as SetFullscreen)
+    sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
+
+    auto sfStyle = borderless ? sf::Style::None : sf::Style::Titlebar;
+
+    m_renderWindow.create(videoMode, "Helbreath", sfStyle, sf::State::Windowed);
+
+#ifdef _WIN32
+    m_hWnd = static_cast<HWND>(m_renderWindow.getNativeHandle());
+
+    // For bordered mode, add minimize button
+    if (!borderless && m_hWnd)
+    {
+        LONG style = GetWindowLong(m_hWnd, GWL_STYLE);
+        style |= WS_MINIMIZEBOX;
+        SetWindowLong(m_hWnd, GWL_STYLE, style);
+        SetWindowPos(m_hWnd, nullptr, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+    }
+#endif
+
+    // Reapply settings
+    m_renderWindow.setVerticalSyncEnabled(false);
+    m_renderWindow.setMouseCursorVisible(false);
+    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
+
+    // Center the window
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    int posX = (screenWidth - m_width) / 2;
+    int posY = (screenHeight - m_height) / 2;
+    SetWindowPos(m_hWnd, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
+
+    // Update input system with new window handle
+    if (Input::Get())
+    {
+        SFMLInput* pInput = static_cast<SFMLInput*>(Input::Get());
+        pInput->Initialize(m_hWnd);
+        pInput->SetRenderWindow(&m_renderWindow);
+    }
+
+    // Update renderer with new render window
+    IRenderer* pRenderer = Renderer::Get();
+    if (pRenderer)
+    {
+        static_cast<SFMLRenderer*>(pRenderer)->SetRenderWindow(&m_renderWindow);
+    }
+}
+
+bool SFMLWindow::IsBorderless() const
+{
+    return m_borderless;
 }
 
 void SFMLWindow::SetSize(int width, int height, bool center)
@@ -207,7 +307,7 @@ void SFMLWindow::SetSize(int width, int height, bool center)
 
     // Re-apply mouse cursor grab to update grab boundaries to new window size
     m_renderWindow.setMouseCursorGrabbed(false);
-    m_renderWindow.setMouseCursorGrabbed(true);
+    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
 }
 
 void SFMLWindow::Show()

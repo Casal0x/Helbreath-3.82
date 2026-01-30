@@ -128,8 +128,8 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 	if ((msX >= sX + sXadd - 6) && (msX <= sX + sXadd + 42) && (msY >= sY + 61) && (msY <= sY + 200)) {
 		wsprintf(cTxt, "%s", cNameStr);
 		if (m_pGame->m_bIsSpecial) {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::NameSpecial.r, GameColors::NameSpecial.g, GameColors::NameSpecial.b);
+			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 		}
 		else {
 			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
