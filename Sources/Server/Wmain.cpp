@@ -601,6 +601,12 @@ int EventLoop()
 				// Poll all sockets for network events
 				PollAllSockets();
 
+				// Poll console for command input
+				char szCmd[256];
+				if (GetServerConsole().PollInput(szCmd, sizeof(szCmd))) {
+					ServerCommandManager::Get().ProcessCommand(szCmd);
+				}
+
 				// Debug: Show polling stats every 60 seconds (optional, can be removed)
 				if (dwNow - dwLastDebug > 60000) {
 					int activeClients = 0;
@@ -643,6 +649,7 @@ void Initialize()
 
 	ServerCommandManager::Get().Initialize(G_pGame);
 	ChatLog::Get().Initialize();
+	GetServerConsole().Init();
 
 	// ���� ����� Ÿ�̸�
 	G_mmTimer = _StartTimer(300);
@@ -819,17 +826,7 @@ namespace
 			st.wHour, st.wMinute, st.wSecond, GetLevelName(level), trimmed);
 
 		if (writeConsole) {
-			HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-			CONSOLE_SCREEN_BUFFER_INFO info = {};
-			WORD original = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-			if (hOut != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hOut, &info)) {
-				original = info.wAttributes;
-				SetConsoleTextAttribute(hOut, GetLevelColor(level));
-			}
-			printf("%s\n", line);
-			if (hOut != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hOut, &info)) {
-				SetConsoleTextAttribute(hOut, original);
-			}
+			GetServerConsole().WriteLine(line, GetLevelColor(level));
 		}
 
 		WriteServerLogLine(line);
