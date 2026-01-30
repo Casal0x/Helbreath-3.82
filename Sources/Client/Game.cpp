@@ -1918,36 +1918,25 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
-	printf("[ITEMCFG] Received packet: dwMsgSize=%u headerSize=%zu entrySize=%zu\n", dwMsgSize, headerSize, entrySize);
-
 	if (dwMsgSize < headerSize) {
-		printf("[ITEMCFG] ERROR: Packet too small for header (%u < %zu)\n", dwMsgSize, headerSize);
 		return false;
 	}
 
 	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
 	uint16_t itemCount = pktHeader->itemCount;
 	uint16_t totalItems = pktHeader->totalItems;
-	uint16_t packetIndex = pktHeader->packetIndex;
-
-	printf("[ITEMCFG] Header: itemCount=%u totalItems=%u packetIndex=%u\n", itemCount, totalItems, packetIndex);
-	printf("[ITEMCFG] Expected size: %zu, actual: %u\n", headerSize + (itemCount * entrySize), dwMsgSize);
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
-		printf("[ITEMCFG] ERROR: Packet too small for %u entries (%u < %zu)\n", itemCount, dwMsgSize, headerSize + (itemCount * entrySize));
 		return false;
 	}
 
 	const auto* entries = reinterpret_cast<const hb::net::PacketItemConfigEntry*>(pData + headerSize);
 
-	int added = 0, skipped = 0;
 	for (uint16_t i = 0; i < itemCount; i++) {
 		const auto& entry = entries[i];
 		int itemId = entry.itemId;
 
 		if (itemId <= 0 || itemId >= 5000) {
-			printf("[ITEMCFG] Skipping invalid itemId=%d (entry %u)\n", itemId, i);
-			skipped++;
 			continue;
 		}
 
@@ -1987,15 +1976,16 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		pItem->m_sRelatedSkill = entry.relatedSkill;
 		pItem->m_cCategory = entry.category;
 		pItem->m_cItemColor = entry.itemColor;
-		added++;
 	}
 
-	// Count total items now in config list
+	// Log total count on last packet
 	int totalLoaded = 0;
 	for (int j = 0; j < 5000; j++) {
 		if (m_pItemConfigList[j] != 0) totalLoaded++;
 	}
-	printf("[ITEMCFG] Result: added=%d skipped=%d totalInConfigList=%d\n", added, skipped, totalLoaded);
+	if (totalLoaded >= totalItems) {
+		printf("[ITEMCFG] Received all %d item configs\n", totalLoaded);
+	}
 
 	return true;
 }
@@ -2009,7 +1999,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
-		printf("[ITEMCFG] GameRecvMsgHandler received ITEMCONFIG msg_id=0x%08X size=%u\n", header->msg_id, dwMsgSize);
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
@@ -3046,20 +3035,10 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	const auto* resp = hb::net::PacketCast<hb::net::PacketShopResponseHeader>(
 		pData, sizeof(hb::net::PacketShopResponseHeader));
 	if (!resp) {
-		printf("[SHOP] Response: invalid packet\n");
 		return;
 	}
 
 	uint16_t itemCount = resp->itemCount;
-	printf("[SHOP] Response received: NPC type %d, shop %d, %d items\n",
-		resp->npcType, resp->shopId, itemCount);
-
-	// Debug: Count how many items are in the config list
-	int configCount = 0;
-	for (int i = 0; i < 5000; i++) {
-		if (m_pItemConfigList[i] != nullptr) configCount++;
-	}
-	printf("[SHOP] Client has %d items in m_pItemConfigList\n", configCount);
 
 	if (itemCount > DEF_MAXMENUITEMS) {
 		itemCount = DEF_MAXMENUITEMS;
@@ -3083,12 +3062,10 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	for (uint16_t i = 0; i < itemCount && shopIndex < DEF_MAXMENUITEMS; i++) {
 		int16_t itemId = itemIds[i];
 		if (itemId <= 0 || itemId >= 5000) {
-			if (skippedCount < 5) printf("[SHOP] Skipping invalid item ID: %d\n", itemId);
 			skippedCount++;
 			continue;
 		}
 		if (m_pItemConfigList[itemId] == nullptr) {
-			if (notFoundCount < 10) printf("[SHOP] Item ID %d not in m_pItemConfigList\n", itemId);
 			notFoundCount++;
 			skippedCount++;
 			continue;
