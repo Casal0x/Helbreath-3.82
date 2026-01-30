@@ -453,11 +453,15 @@ int XSocket::iSendMsg(char *cData, uint32_t dwSize, char cKey) {
   memcpy((char *)(m_pSndBuffer + 3), cData, dwSize);
 
   // Encryption
+  // IMPORTANT: Use signed char to match Windows behavior (x86 uses signed char by default)
+  // ARM (Mac M1/M2/M3) uses unsigned char by default, which breaks encryption compatibility
   if (cKey != 0) {
+    signed char* pSndBuf = reinterpret_cast<signed char*>(m_pSndBuffer);
+    signed char sKey = static_cast<signed char>(cKey);
     for (i = 0; i < dwSize; i++) {
-      m_pSndBuffer[3 + i] += static_cast<char>(i ^ cKey);
-      m_pSndBuffer[3 + i] = static_cast<char>(
-          m_pSndBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+      pSndBuf[3 + i] += static_cast<signed char>(i ^ sKey);
+      pSndBuf[3 + i] = static_cast<signed char>(
+          pSndBuf[3 + i] ^ (sKey ^ static_cast<signed char>(dwSize - i)));
     }
   }
 
@@ -597,11 +601,15 @@ char *XSocket::pGetRcvDataPointer(uint32_t *pMsgSize, char *pKey) {
     dwSize = DEF_MSGBUFFERSIZE;
 
   // Decryption
+  // IMPORTANT: Use signed char to match Windows behavior (x86 uses signed char by default)
+  // ARM (Mac M1/M2/M3) uses unsigned char by default, which breaks decryption compatibility
   if (cKey != 0) {
+    signed char* pRcvBuf = reinterpret_cast<signed char*>(m_pRcvBuffer);
+    signed char sKey = static_cast<signed char>(cKey);
     for (i = 0; i < dwSize; i++) {
-      m_pRcvBuffer[3 + i] = static_cast<char>(
-          m_pRcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
-      m_pRcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
+      pRcvBuf[3 + i] = static_cast<signed char>(
+          pRcvBuf[3 + i] ^ (sKey ^ static_cast<signed char>(dwSize - i)));
+      pRcvBuf[3 + i] -= static_cast<signed char>(i ^ sKey);
     }
   }
   return (m_pRcvBuffer + 3);

@@ -4,6 +4,7 @@
 
 #include "Map.h"
 #include "CommonTypes.h"
+#include "Item.h"
 
 extern void PutLogFileList(char *cStr);
 
@@ -402,6 +403,14 @@ bool CMap::bSetItem(short sX, short sY, class CItem *pItem) {
     return 0;
 
   pTile = (class CTile *)(m_pTile + sX + sY * m_sSizeX);
+
+  // Debug log
+  char debugMsg[256];
+  std::snprintf(debugMsg, sizeof(debugMsg),
+               "[DEBUG] bSetItem: Placing item ID=%d at (%d,%d) on map '%s', TotalItems=%d",
+               pItem->m_sIDnum, sX, sY, m_cName, pTile->m_cTotalItem);
+  printf("[LOG] %s\n", debugMsg);
+  fflush(stdout);
 
   // v1.4 ������ Ÿ�Ͽ� �������� �ִٸ� ������Ű�� �̵��Ѵ�.
   if (pTile->m_pItem[DEF_TILE_PER_ITEMS - 1] != 0)
