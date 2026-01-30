@@ -703,7 +703,6 @@ public:
 	void GameProcess();
 	void InitPlayerData(int iClientH, char * pData, uint32_t dwSize);
 	void ResponsePlayerDataHandler(char * pData, uint32_t dwSize);
-	bool bSendMsgToLS(uint32_t dwMsg, int iClientH, bool bFlag = true, char *pData = 0);
 	void OnMainLogRead();
 	void OnMainLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam);
 	void CheckClientResponseTime();
@@ -911,9 +910,6 @@ public:
 	int	   m_iCrusadeCount;	
 	bool   m_bIsCrusadeMode;		
 	bool   m_bIsApocalypseMode;
-	// Daryl - Chat logging option
-	int  m_bLogChatOption;
-
 	struct {
 		char cMapName[11];	
 		char cType;			
@@ -1093,7 +1089,6 @@ private:
 public:
 	void RemoveCrusadeNpcs(void);
 	void RemoveCrusadeRecallTime(void);
-	bool _bCrusadeLog(int iAction,int iClientH,int iData, char * cName);
 	int iGetPlayerABSStatus(int iClientH);
 	bool _bInitItemAttr(class CItem * pItem, int iItemID);
 	void ReqCreateSlateHandler(int iClientH, char* pData);

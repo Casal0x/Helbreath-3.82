@@ -17,6 +17,7 @@
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
 #include "ChatLog.h"
+#include "ItemLog.h"
 #include "GameChatCommand.h"
 
 class CDebugWindow* DbgWnd;
@@ -28,7 +29,6 @@ extern char	G_cData50000[50000];
 
 extern void PutLogFileList(char* cStr);
 extern void PutAdminLogFileList(char* cStr);
-extern void PutItemLogFileList(char* cStr);
 extern void PutLogEventFileList(char* cStr);
 extern void PutHackLogFileList(char* cStr);
 extern void PutPvPLogFileList(char* cStr);
@@ -3940,7 +3940,6 @@ void CGame::OnMainLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam)
 	   switch (iRet) {
 	   case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
 		   PutLogList("(!!!) Main-log-socket connected!");
-		   bSendMsgToLS(MSGID_REQUEST_REGISTERGAMESERVER, 0);
 		   break;
 
 	   case DEF_XSOCKEVENT_READCOMPLETE:
@@ -3983,549 +3982,6 @@ void CGame::OnMainLogRead()
 }
 
 
-bool CGame::bSendMsgToLS(uint32_t dwMsg, int iClientH, bool bFlag, char* pData)
-{
-	char    cCharName[11], cAccountName[11], cAccountPassword[11], cAddress[16], cGuildName[21];
-	char    cGuildLoc[11];
-
-
-	/*
-	m_iCurSubLogSockIndex++;
-	if (m_iCurSubLogSockIndex >= DEF_MAXSUBLOGSOCK) m_iCurSubLogSockIndex = 0;
-
-
-	iCnt = 0;
-	bLoopFlag = false;
-	while (bLoopFlag == false) {
-		if (m_pSubLogSock[m_iCurSubLogSockIndex] != 0)
-			 bLoopFlag = true;
-		else m_iCurSubLogSockIndex++;
-
-		iCnt++;
-		if (iCnt >= DEF_MAXSUBLOGSOCK) {
-			if (m_bOnExitProcess == false) {
-				m_cShutDownCode      = 3;
-				m_bOnExitProcess     = true;
-				m_dwExitProcessTime  = GameClock::GetTimeMS();
-				PutLogList("(!) GAME SERVER SHUTDOWN PROCESS STARTED(by Log-server connection Lost)!!!");
-			}
-			return false;
-		}
-	}
-	*/
-
-
-	// v1.41
-	std::memset(G_cData50000, 0, sizeof(G_cData50000));
-	std::memset(cCharName, 0, sizeof(cCharName));
-	std::memset(cAccountName, 0, sizeof(cAccountName));
-	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
-	std::memset(cAddress, 0, sizeof(cAddress));
-	std::memset(cGuildName, 0, sizeof(cGuildName));
-	std::memset(cGuildLoc, 0, sizeof(cGuildLoc));
-
-	char cFn[112] = {};
-	SYSTEMTIME SysTime;
-	FILE* pFile;
-
-	GetLocalTime(&SysTime);
-	std::memset(cFn, 0, sizeof(cFn));
-
-	switch (dwMsg) {
-		// New 07/05/2004
-		//case MSGID_GAMEMASTERLOG:
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	if (pData == 0) return false ;
-
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_GAMEMASTERLOG;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	iSize =  strlen(pData) ;
-		//	memcpy((char *)cp, pData, iSize);
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 6 + iSize);
-		//	iSendSize = 6 + iSize;
-		//	break;
-		//	// v2.15 
-
-		//case MSGID_GAMEITEMLOG:
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-
-		//	//		if (m_pClientList[iClientH] == 0) return false;
-		//	if (pData == 0) return false ;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_GAMEITEMLOG;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	iSize =  strlen(pData) ;
-		//	memcpy((char *)cp, pData, iSize);
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 6 + iSize);
-		//	iSendSize = 6 + iSize;
-		//	break;
-
-		//case MSGID_SENDSERVERSHUTDOWNMSG:
-		//	if (m_pMainLogSock == 0) return false;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_SENDSERVERSHUTDOWNMSG;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-		//	
-		//	iRet = m_pMainLogSock->iSendMsg(G_cData50000, 6);
-		//	break;
-		//
-		//case MSGID_GAMESERVERSHUTDOWNED:
-		//	if (m_pMainLogSock == 0) return false;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_GAMESERVERSHUTDOWNED;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-		//	
-		//	iRet = m_pMainLogSock->iSendMsg(G_cData50000, 6);
-		//	return true;
-
-		//case MSGID_REQUEST_SETACCOUNTWAITSTATUS:
-		//case MSGID_REQUEST_SETACCOUNTINITSTATUS:
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = dwMsg;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-		//	
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cp, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	cp += 10;
-
-		//	ip = (int *)cp;
-		//	*ip = m_pClientList[iClientH]->m_iLevel;
-		//	cp += 4;
-		//
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 20);
-		//	iSendSize = 16;
-		//	break;
-
-		//case MSGID_ENTERGAMECONFIRM:
-		//	
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_ENTERGAMECONFIRM;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-		//	
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cp, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy(cp, m_pClientList[iClientH]->m_cAccountPassword, 10);
-		//	cp += 10;
-
-		//	memcpy(cp, m_cServerName, 10);
-		//	cp += 10;
-
-		//	std::memset(cTxt, 0, sizeof(cTxt));
-		//	m_pClientList[iClientH]->m_pXSock->iGetPeerAddress(cTxt);
-		//	memcpy(cp, cTxt, 16);
-		//	cp += 16;
-
-		//	ip = (int *)cp;
-		//	*ip = m_pClientList[iClientH]->m_iLevel;
-		//	cp += 4;
-
-		//	//testcode
-		//	std::snprintf(G_cTxt, sizeof(G_cTxt), "Confirmed. Account: (%s) Name: (%s) Level: (%d)", m_pClientList[iClientH]->m_cAccountName, m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iLevel);
-		//	PutLogList(G_cTxt);
-
-
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 56);
-		//	iSendSize = 56;
-		//	if ((m_bIsCrusadeMode == false) && (m_pClientList[iClientH]->m_dwCrusadeGUID == m_dwCrusadeGUID)) {
-		//	break;
-		//	}
-		//	else
-		//	m_pClientList[iClientH]->m_dwCrusadeGUID = m_dwCrusadeGUID;
-
-
-		//	break;
-		//
-		//case MSGID_REQUEST_REGISTERGAMESERVER:
-		//	if (m_pMainLogSock == 0) return false;
-		//			
-		//	std::snprintf(cTxt, sizeof(cTxt), "(!) Try to register game server(%s)", m_cServerName);
-		//	PutLogList(cTxt);
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_REGISTERGAMESERVER;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-		//	
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cAccountName, m_cServerName, 10);
-		//	if (m_iGameServerMode == 1)
-		//	{
-		//		memcpy(cAddress, m_cGameServerAddrExternal, strlen(m_cGameServerAddrExternal));
-		//	}
-		//	if (m_iGameServerMode == 2)
-		//	{
-		//		memcpy(cAddress, m_cGameServerAddr, strlen(m_cGameServerAddr));
-		//	}
-		//	memcpy(cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy(cp, cAddress, 16);
-		//	cp += 16;
-
-		//	wp  = (uint16_t *)cp;
-		//	*wp = m_iGameServerPort;
-		//	cp += 2;
-
-		//	*cp = m_iTotalMaps;
-		//	cp++;
-
-		//	for (i = 0; i < m_iTotalMaps; i++) {
-		//		memcpy(cp, m_pMapList[i]->m_cName, 11);
-		//		cp += 11;
-		//	}
-
-		//	iRet = m_pMainLogSock->iSendMsg(G_cData50000, 35 + m_iTotalMaps*11); 
-
-		//	return true;
-
-		//case MSGID_REQUEST_PLAYERDATA:
-		//	
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-
-		//	if (m_pClientList[iClientH] == 0) return false;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_PLAYERDATA;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	//testcode
-		//	if (strlen(m_pClientList[iClientH]->m_cCharName) == 0) PutLogList("(X) CharName 0!");
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cAccountName, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	memcpy(cAccountPassword, m_pClientList[iClientH]->m_cAccountPassword, 10);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountPassword, 10);
-		//	cp += 10;
-
-		//	std::memset(cTemp, 0, sizeof(cTemp));
-		//	iRet = m_pClientList[iClientH]->m_pXSock->iGetPeerAddress(cTemp);
-		//	memcpy((char *)cp, cTemp, 15);
-		//	cp += 15;
-		//	
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 52);
-		//	iSendSize = 52;
-		//	break;
-
-		//case MSGID_REQUEST_SAVEPLAYERDATA_REPLY:
-		//case MSGID_REQUEST_SAVEPLAYERDATA:
-		//case MSGID_REQUEST_SAVEPLAYERDATALOGOUT:
-
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = dwMsg;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cAccountName, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	memcpy(cAccountPassword, m_pClientList[iClientH]->m_cAccountPassword, 10);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountPassword, 10);
-		//	cp += 10;
-
-		//	*cp = (char)bFlag;
-		//	cp++;
-		//	
-		//	
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 37 + iSize);
-		//	iSendSize = 37 + iSize;
-		//	break;
-
-		//case MSGID_REQUEST_NOSAVELOGOUT:
-
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_NOSAVELOGOUT;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cAccountName, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	memcpy(cAccountPassword, m_pClientList[iClientH]->m_cAccountPassword, 10);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountPassword, 10);
-		//	cp += 10;
-		//	
-		//	*cp = (char)bFlag;
-		//	cp++;
-		//	
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 37);
-		//	iSendSize = 37;
-		//	break;
-		//
-		//case MSGID_REQUEST_CREATENEWGUILD:
-
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_CREATENEWGUILD;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cAccountName, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	memcpy(cAccountPassword, m_pClientList[iClientH]->m_cAccountPassword, 10);
-		//	memcpy(cGuildName, m_pClientList[iClientH]->m_cGuildName, 20);
-		//	memcpy(cGuildLoc, m_pClientList[iClientH]->m_cLocation, 10);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountPassword, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cGuildName, 20);
-		//	cp += 20;
-		//	memcpy((char *)cp, cGuildLoc, 10);
-		//	cp += 10;
-
-		//	ip = (int *)cp;
-		//	*ip = m_pClientList[iClientH]->m_iGuildGUID;
-		//	cp += 4;
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 75);
-		//	iSendSize = 75;
-		//	break;
-
-		//case MSGID_REQUEST_DISBANDGUILD:
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_DISBANDGUILD;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cAccountName, m_pClientList[iClientH]->m_cAccountName, 10);
-		//	memcpy(cAccountPassword, m_pClientList[iClientH]->m_cAccountPassword, 10);
-		//	memcpy(cGuildName, m_pClientList[iClientH]->m_cGuildName, 20);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cAccountPassword, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cGuildName, 20);
-		//	cp += 20;
-		//	
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 56);
-		//	iSendSize = 56;
-		//	break;
-
-		//case MSGID_REQUEST_HELDENIAN_WINNER:
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_HELDENIAN_WINNER;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	if (m_cHeldenianVictoryType == 1)
-		//		memcpy(cp, "aresden", 7);
-		//	else if (m_cHeldenianVictoryType == 2)
-		//		memcpy(cp, "elvine", 6);
-		//	else 
-		//		memcpy(cp, "draw", 4);
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 21);
-		//	iSendSize = 21;
-		//	break;
-		//
-		//case MSGID_REQUEST_UPDATEGUILDINFO_NEWGUILDSMAN:
-
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-		//	
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_UPDATEGUILDINFO_NEWGUILDSMAN;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cGuildName, m_pClientList[iClientH]->m_cGuildName, 20);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cGuildName, 20);
-		//	cp += 20;
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 36);
-		//	iSendSize = 36;
-		//	break;
-
-		//case MSGID_REQUEST_UPDATEGUILDINFO_DELGUILDSMAN:
-
-		//	// Sub-log-socket
-		//	if (_bCheckSubLogSocketIndex() == false) return false;
-		//	
-		//	if (m_pClientList[iClientH] == 0) return false;
-
-		//	dwp  = (uint32_t *)(G_cData50000 + DEF_INDEX4_MSGID);
-		//	*dwp = MSGID_REQUEST_UPDATEGUILDINFO_DELGUILDSMAN;
-		//	wp   = (uint16_t *)(G_cData50000 + DEF_INDEX2_MSGTYPE);
-		//	*wp  = DEF_MSGTYPE_CONFIRM;
-
-		//	cp = (char *)(G_cData50000 + DEF_INDEX2_MSGTYPE + 2);
-
-		//	memcpy(cCharName, m_pClientList[iClientH]->m_cCharName, 10);
-		//	memcpy(cGuildName, m_pClientList[iClientH]->m_cGuildName, 20);
-
-		//	memcpy((char *)cp, cCharName, 10);
-		//	cp += 10;
-
-		//	memcpy((char *)cp, cGuildName, 20);
-		//	cp += 20;
-
-		//	iRet = m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, 36);
-		//	iSendSize = 36;
-		//	break;
-	case MSGID_GAMEMASTERLOG:
-		std::snprintf(cFn, sizeof(cFn), "GameLogs\\MasterLog-%d-%d-%d.txt", SysTime.wYear, SysTime.wMonth, SysTime.wDay);
-		pFile = fopen(cFn, "at");
-		if (pFile == 0) return false;
-		fwrite(pData, 1, strlen(pData), pFile);
-		fclose(pFile);
-		break;
-	case MSGID_GAMEITEMLOG:
-		std::snprintf(cFn, sizeof(cFn), "GameLogs\\ItemLog-%d-%d-%d.txt", SysTime.wYear, SysTime.wMonth, SysTime.wDay);
-		pFile = fopen(cFn, "at");
-		if (pFile == 0) return false;
-		fwrite(pData, 1, strlen(pData), pFile);
-		fclose(pFile);
-		break;
-	}
-
-	//switch (iRet) {
-	//case DEF_XSOCKEVENT_QUENEFULL:
-	//case DEF_XSOCKEVENT_SOCKETERROR:
-	//case DEF_XSOCKEVENT_CRITICALERROR:
-	//case DEF_XSOCKEVENT_SOCKETCLOSED:
-	//	// Sub-log-socket
-	//	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!!!) Sub-log-socket(%d) send error!", m_iCurSubLogSockIndex);
-	//	PutLogList(G_cTxt);
-	//	PutLogFileList(G_cTxt);
-
-	//	delete m_pSubLogSock[m_iCurSubLogSockIndex];
-	//	m_pSubLogSock[m_iCurSubLogSockIndex] = 0;
-	//	m_bIsSubLogSockAvailable[m_iCurSubLogSockIndex] = false;
-	//	m_iSubLogSockActiveCount--;
-	//			
-	//	m_pSubLogSock[m_iCurSubLogSockIndex] = new class XSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
-	//	m_pSubLogSock[m_iCurSubLogSockIndex]->bConnect(m_cLogServerAddr, m_iLogServerPort, (WM_ONLOGSOCKETEVENT + m_iCurSubLogSockIndex + 1));
-	//	m_pSubLogSock[m_iCurSubLogSockIndex]->bInitBufferSize(DEF_MSGBUFFERSIZE);
-
-	//	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Try to reconnect sub-log-socket(%d)... Addr:%s  Port:%d", m_iCurSubLogSockIndex, m_cLogServerAddr, m_iLogServerPort);
-	//	PutLogList(G_cTxt);
-	//	
-	//	// v1.41 sub-log-socket
-	//	m_iSubLogSockFailCount++;
-
-	//	// v1.41
-	//	if (_bCheckSubLogSocketIndex() == false) return false;
-	//	m_pSubLogSock[m_iCurSubLogSockIndex]->iSendMsg(G_cData50000, iSendSize);
-
-	//	return false;
-	//}
-
-	return true;
-}
 
 void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 {
@@ -5329,7 +4785,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 	int i, iRet;
 	uint16_t* wp;
 	char* cp;
-	char   cBuffer[256], cTemp[256], cSendMode = 0;
+	char   cBuffer[256], cSendMode = 0;
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -5363,55 +4819,6 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 		}
 	}
 	cp = message;
-
-	switch (m_bLogChatOption) {
-		// Chat Logs of only players
-	case 1:
-		if (m_pClientList[iClientH]->m_iAdminUserLevel == 0) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			pData[dwMsgSize - 1] = 0;
-			std::snprintf(cTemp, sizeof(cTemp), "Loc(%s) IP(%s) PC(%s):\"%s\"", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, cp);
-			bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-		}
-		break;
-		// Chat Logs of only GM
-	case 2:
-		if (m_pClientList[iClientH]->m_iAdminUserLevel > 0) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			pData[dwMsgSize - 1] = 0;
-			std::snprintf(cTemp, sizeof(cTemp), "Loc(%s) IP(%s) GM(%s):\"%s\"", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, cp);
-			bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-		}
-		break;
-		// Chat logs of all
-	case 3:
-		if (m_pClientList[iClientH]->m_iAdminUserLevel > 0) {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			pData[dwMsgSize - 1] = 0;
-			std::snprintf(cTemp, sizeof(cTemp), "Loc(%s) IP(%s) GM(%s):\"%s\"", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, cp);
-			bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-		}
-		else {
-			std::memset(cTemp, 0, sizeof(cTemp));
-			pData[dwMsgSize - 1] = 0;
-			std::snprintf(cTemp, sizeof(cTemp), "Loc(%s) IP(%s) PC(%s):\"%s\"", m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, cp);
-			bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-		}
-		break;
-		// Chat logs of none
-	case 4:
-
-		break;
-	}
-
-	/*	// New 08/05/2004
-	// Log GM Chats
-	if (m_pClientList[iClientH]->m_iAdminUserLevel > 0){
-		std::memset(cTemp, 0, sizeof(cTemp));
-		pData[dwMsgSize-1] = 0;
-		std::snprintf(cTemp, sizeof(cTemp),"GM Chat(%s):\"%s\"",m_pClientList[iClientH]->m_cCharName,cp);
-		bSendMsgToLS(MSGID_GAMEMASTERLOG,iClientH, false,cTemp);
-	}*/
 
 	switch (*cp) {
 	case '@':
@@ -5740,40 +5147,6 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 			if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex] != 0 &&
 				strcmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_cCharName) == 0) {
 				iRet = m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_pXSock->iSendMsg(pData, dwMsgSize);
-				switch (m_bLogChatOption) {
-
-				case 1:
-					if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_iAdminUserLevel == 0) {
-						std::memset(cTemp, 0, sizeof(cTemp));
-						std::snprintf(cTemp, sizeof(cTemp), "GM Whisper   (%s):\"%s\"\tto Player(%s)", m_pClientList[iClientH]->m_cCharName, message, m_pClientList[iClientH]->m_cWhisperPlayerName);
-						bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-					}
-					break;
-
-				case 2:
-					if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_iAdminUserLevel > 0) {
-						std::memset(cTemp, 0, sizeof(cTemp));
-						std::snprintf(cTemp, sizeof(cTemp), "GM Whisper   (%s):\"%s\"\tto GM(%s)", m_pClientList[iClientH]->m_cCharName, message, m_pClientList[iClientH]->m_cWhisperPlayerName);
-						bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-					}
-					break;
-
-				case 3:
-					if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_iAdminUserLevel > 0) {
-						std::memset(cTemp, 0, sizeof(cTemp));
-						std::snprintf(cTemp, sizeof(cTemp), "GM Whisper   (%s):\"%s\"\tto GM(%s)", m_pClientList[iClientH]->m_cCharName, message, m_pClientList[iClientH]->m_cWhisperPlayerName);
-						bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-					}
-					else {
-						std::memset(cTemp, 0, sizeof(cTemp));
-						std::snprintf(cTemp, sizeof(cTemp), "Player Whisper   (%s):\"%s\"\tto Player(%s)", m_pClientList[iClientH]->m_cCharName, message, m_pClientList[iClientH]->m_cWhisperPlayerName);
-						bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, cTemp);
-					}
-					break;
-
-				case 4:
-					break;
-				}
 			}
 		}
 
@@ -29820,7 +29193,6 @@ void CGame::LocalStartCrusadeMode(uint32_t dwCrusadeGUID)
 	CreateCrusadeStructures();
 
 	PutLogList("(!)Crusade Mode ON.");
-	_bCrusadeLog(DEF_CRUSADELOG_STARTCRUSADE, 0, 0, 0);
 }
 
 void CGame::LocalEndCrusadeMode(int iWinnerSide)
@@ -29854,16 +29226,6 @@ void CGame::LocalEndCrusadeMode(int iWinnerSide)
 			SendNotifyMsg(0, i, DEF_NOTIFY_CRUSADE, (uint32_t)m_bIsCrusadeMode, 0, 0, 0, m_iCrusadeWinnerSide);
 		}
 	RemoveCrusadeRecallTime();
-
-	if (iWinnerSide == 2) {
-		_bCrusadeLog(DEF_CRUSADELOG_ENDCRUSADE, false, false, "Elvine Win!");
-	}
-	else if (iWinnerSide == 1) {
-		_bCrusadeLog(DEF_CRUSADELOG_ENDCRUSADE, false, false, "Aresden Win!");
-	}
-	else {
-		_bCrusadeLog(DEF_CRUSADELOG_ENDCRUSADE, false, false, "Drawn!");
-	}
 
 	if (m_iMiddlelandMapIndex != -1) {
 		//bSendMsgToLS(0x3D00123C, 0, true, 0);
@@ -30391,12 +29753,6 @@ void CGame::SelectCrusadeDutyHandler(int iClientH, int iDuty)
 	m_pClientList[iClientH]->m_iCrusadeDuty = iDuty;
 
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_CRUSADE, (uint32_t)m_bIsCrusadeMode, m_pClientList[iClientH]->m_iCrusadeDuty, 0, 0);
-	if (iDuty == 1)
-		_bCrusadeLog(DEF_CRUSADELOG_SELECTDUTY, iClientH, 0, "Fighter");
-	else if (iDuty == 2)
-		_bCrusadeLog(DEF_CRUSADELOG_SELECTDUTY, iClientH, 0, "Constructor");
-	else
-		_bCrusadeLog(DEF_CRUSADELOG_SELECTDUTY, iClientH, 0, "Commander");
 }
 
 void CGame::MapStatusHandler(int iClientH, int iMode, const char* pMapName)
@@ -32059,108 +31415,78 @@ void CGame::RequestGuildNameHandler(int iClientH, int iObjectID, int iIndex)
 // Item Logging
 bool CGame::_bItemLog(int iAction, int iGiveH, int iRecvH, class CItem* pItem, bool bForceItemLog)
 {
-	char  cTxt[1024], cTemp1[120], cTemp2[120];
-	int iItemCount;
 	if (pItem == 0) return false;
-
-	if (m_pClientList[iGiveH]->m_cCharName == 0) return false;
-
-	std::memset(cTxt, 0, sizeof(cTxt));
-	std::memset(cTemp1, 0, sizeof(cTemp1));
-	std::memset(cTemp2, 0, sizeof(cTemp2));
+	if (m_pClientList[iGiveH] == 0) return false;
 
 	switch (iAction) {
 
 	case DEF_ITEMLOG_EXCHANGE:
-		if (m_pClientList[iRecvH]->m_cCharName == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tExchange\t%s(%d %d %d %d %x)\t%s(%d %d)\tPC(%s)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, m_pClientList[iRecvH]->m_cCharName);
-		PutItemLogFileList(cTxt);
+		if (m_pClientList[iRecvH] == 0) return false;
+		ItemLog::Get().LogExchange(m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iRecvH]->m_cCharName, m_pClientList[iGiveH]->m_cMapName,
+			m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_GIVE:
-		if (m_pClientList[iRecvH]->m_cCharName == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tGive\t%s(%d %d %d %d %x)\t%s(%d %d)\tPC(%s)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, m_pClientList[iRecvH]->m_cCharName);
-		PutItemLogFileList(cTxt);
+		if (m_pClientList[iRecvH] == 0) return false;
+		ItemLog::Get().LogTrade(m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iRecvH]->m_cCharName, m_pClientList[iGiveH]->m_cMapName,
+			m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_DROP:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tDrop\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogDrop(m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_GET:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tGet\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogPickup(m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_MAKE:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tMake\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogCraft(m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_DEPLETE:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tDeplete\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogMisc("Deplete", m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_BUY:
-		iItemCount = iRecvH;
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tBuy\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, iItemCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogShop("Buy", m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_SELL:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tSell\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogShop("Sell", m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_RETRIEVE:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tRetrieve\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogBank("Retrieve", m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_DEPOSIT:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tDeposit\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogBank("Deposit", m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_UPGRADEFAIL:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tUpgrade Fail\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName,
-			pItem->m_dwCount, pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogUpgrade(false, m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_UPGRADESUCCESS:
-		std::snprintf(cTxt, sizeof(cTxt), "(%s) PC(%s)\tUpgrade Success\t%s(%d %d %d %d %x)\t%s(%d %d)", m_pClientList[iGiveH]->m_cIPaddress, m_pClientList[iGiveH]->m_cCharName, pItem->m_cName,
-			pItem->m_dwCount, pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3, pItem->m_dwAttribute,
-			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogUpgrade(true, m_pClientList[iGiveH]->m_cCharName, m_pClientList[iGiveH]->m_cIPaddress,
+			m_pClientList[iGiveH]->m_cMapName, m_pClientList[iGiveH]->m_sX, m_pClientList[iGiveH]->m_sY, pItem);
 		break;
+
 	default:
 		return false;
 	}
-	bSendMsgToLS(MSGID_GAMEITEMLOG, iGiveH, 0, cTxt);
 	return true;
 }
 
@@ -32172,51 +31498,47 @@ bool CGame::_bItemLog(int iAction, int iClientH, char* cName, class CItem* pItem
 	{
 		if (m_pClientList[iClientH] == 0) return false;
 	}
-	char  cTxt[200], cTemp1[120];
-	//  ·Î±× ³²±ä´Ù. 
-	std::memset(cTxt, 0, sizeof(cTxt));
+	char cTemp1[120];
 	std::memset(cTemp1, 0, sizeof(cTemp1));
 	if (m_pClientList[iClientH] != 0) m_pClientList[iClientH]->m_pXSock->iGetPeerAddress(cTemp1);
 
 	switch (iAction) {
 
 	case DEF_ITEMLOG_NEWGENDROP:
-		if (pItem == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "NPC(%s)\tDrop\t%s(%d %d %d %d)", cName, pItem->m_cName, pItem->m_dwCount,
-			pItem->m_sTouchEffectValue1, pItem->m_sTouchEffectValue2, pItem->m_sTouchEffectValue3);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogMisc("NpcDrop", cName ? cName : "Unknown", "", "", 0, 0, pItem);
 		break;
+
 	case DEF_ITEMLOG_SKILLLEARN:
 	case DEF_ITEMLOG_MAGICLEARN:
 		if (cName == 0) return false;
 		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tLearn\t(%s)\t%s(%d %d)\t \tIP(%s)", m_pClientList[iClientH]->m_cCharName, cName,
-			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, cTemp1);
-		PutItemLogFileList(cTxt);
+		ItemLog::Get().LogMisc("Learn", m_pClientList[iClientH]->m_cCharName, cTemp1,
+			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem);
 		break;
+
 	case DEF_ITEMLOG_SUMMONMONSTER:
 		if (cName == 0) return false;
 		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tSummon\t(%s)\t%s(%d %d)\t \tIP(%s)", m_pClientList[iClientH]->m_cCharName, cName,
-			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, cTemp1);
+		ItemLog::Get().LogMisc("Summon", m_pClientList[iClientH]->m_cCharName, cTemp1,
+			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem);
 		break;
+
 	case DEF_ITEMLOG_POISONED:
 		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tBe Poisoned\t \t%s(%d %d)\t \tIP(%s)", m_pClientList[iClientH]->m_cCharName,
-			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, cTemp1);
+		ItemLog::Get().LogMisc("Poisoned", m_pClientList[iClientH]->m_cCharName, cTemp1,
+			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem);
 		break;
 
 	case DEF_ITEMLOG_REPAIR:
 		if (cName == 0) return false;
 		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tRepair\t(%s)\t%s(%d %d)\t \tIP(%s)", m_pClientList[iClientH]->m_cCharName, cName,
-			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, cTemp1);
+		ItemLog::Get().LogMisc("Repair", m_pClientList[iClientH]->m_cCharName, cTemp1,
+			m_pClientList[iClientH]->m_cMapName, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem);
 		break;
 
 	default:
 		return false;
 	}
-	bSendMsgToLS(MSGID_GAMEITEMLOG, iClientH, 0, cTxt);
 	return true;
 }
 
@@ -32620,43 +31942,6 @@ void CGame::RemoveCrusadeRecallTime(void)
 	}
 }
 
-// New 13/05/2004
-bool CGame::_bCrusadeLog(int iAction, int iClientH, int iData, char* cName)
-{
-	char  cTxt[200];
-
-	//  ·Î±× ³²±ä´Ù. 
-	std::memset(cTxt, 0, sizeof(cTxt));
-
-	switch (iAction) {
-
-	case DEF_CRUSADELOG_ENDCRUSADE:
-		if (cName == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "\tEnd Crusade\t%s", cName);
-		break;
-
-	case DEF_CRUSADELOG_SELECTDUTY:
-		if (cName == 0) return false;
-		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tSelect Duty\t(%s)\t \t(%s)", m_pClientList[iClientH]->m_cCharName, cName, m_pClientList[iClientH]->m_cGuildName);
-		break;
-
-	case DEF_CRUSADELOG_GETEXP:
-		if (m_pClientList[iClientH] == 0) return false;
-		std::snprintf(cTxt, sizeof(cTxt), "PC(%s)\tGet Exp\t(%d)\t \t(%s)", m_pClientList[iClientH]->m_cCharName, iData, m_pClientList[iClientH]->m_cGuildName);
-		break;
-
-	case DEF_CRUSADELOG_STARTCRUSADE:
-		std::snprintf(cTxt, sizeof(cTxt), "\tStart Crusade");
-		break;
-
-	default:
-		return false;
-	}
-
-	bSendMsgToLS(MSGID_GAMECRUSADELOG, iClientH, 0, cTxt);
-	return true;
-}
 
 // Testcode, found reference to it in 3.51, InitPlayerData and RequestTeleportHandler
 int CGame::iGetPlayerABSStatus(int iClientH)
@@ -34494,8 +33779,8 @@ void CGame::Command_YellowBall(int iClientH, char* pData, uint32_t dwMsgSize)
 					if ((m_pClientList[iClientH]->m_cLocation) != (m_pClientList[i]->m_cLocation)) return;
 					std::memset(cMapName, 0, sizeof(cMapName));
 					strcpy(cMapName, m_pClientList[i]->m_cMapName);
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "(%s) Player: (%s) - YellowBall MapName(%s)(%d %d)", m_pClientList[i]->m_cIPaddress, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
-					PutItemLogFileList(G_cTxt);
+					ItemLog::Get().LogMisc("YellowBall", m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress,
+						m_pClientList[i]->m_cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY, nullptr);
 					ItemDepleteHandler(iClientH, iSoxH, true);
 					RequestTeleportHandler(iClientH, "2   ", cMapName, m_pClientList[i]->m_sX, m_pClientList[i]->m_sY);
 					return;
@@ -34577,8 +33862,8 @@ void CGame::Command_RedBall(int iClientH, char* pData, uint32_t dwMsgSize)
 				m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
 			}
 			else {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "(%s) Player: (%s) - RedBall used %s [%s(%d, %d)] ", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName, cNpcName, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, tX, tY);
-				PutItemLogFileList(G_cTxt);
+				ItemLog::Get().LogMisc("RedBall", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_cIPaddress,
+					m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, tX, tY, nullptr);
 			}
 		}
 
@@ -38923,7 +38208,6 @@ void CGame::LocalEndHeldenianMode()
 bool CGame::bNotifyHeldenianWinner()
 {
 	if (var_88C == 0) {
-		bSendMsgToLS(MSGID_REQUEST_HELDENIAN_WINNER, 0, 1, 0);
 		return true;
 	}
 	else {
@@ -39403,7 +38687,6 @@ void CGame::ManualStartHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSi
 	GlobalStartHeldenianMode();
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "GM Order(%s): begin Heldenian", m_pClientList[iClientH]->m_cCharName);
 	PutLogFileList(G_cTxt);
-	bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, G_cTxt);
 }
 
 void CGame::ManualEndHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSize)
@@ -39416,7 +38699,7 @@ void CGame::ManualEndHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSize
 		GlobalEndHeldenianMode();
 		m_bHeldenianRunning = false;
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "GM Order(%s): end Heldenian", m_pClientList[iClientH]->m_cCharName);
-		bSendMsgToLS(MSGID_GAMEMASTERLOG, iClientH, false, G_cTxt);
+		PutLogFileList(G_cTxt);
 	}
 }
 
@@ -39478,7 +38761,6 @@ void CGame::CheckCrusadeResultCalculation(int iClientH)
 			if (m_iCrusadeWinnerSide == 0) {
 				m_pClientList[iClientH]->m_iExpStock += (m_pClientList[iClientH]->m_iWarContribution / 6);
 				SendNotifyMsg(0, iClientH, DEF_NOTIFY_CRUSADE, (uint32_t)m_bIsCrusadeMode, 0, m_pClientList[iClientH]->m_iWarContribution, 0);
-				_bCrusadeLog(DEF_CRUSADELOG_GETEXP, iClientH, (m_pClientList[iClientH]->m_iWarContribution / 6), 0);
 			}
 			else {
 				if (m_iCrusadeWinnerSide == m_pClientList[iClientH]->m_cSide) {
@@ -39491,7 +38773,6 @@ void CGame::CheckCrusadeResultCalculation(int iClientH)
 					else m_pClientList[iClientH]->m_iWarContribution += m_pClientList[iClientH]->m_iLevel;
 					m_pClientList[iClientH]->m_iExpStock += m_pClientList[iClientH]->m_iWarContribution;
 					SendNotifyMsg(0, iClientH, DEF_NOTIFY_CRUSADE, (uint32_t)m_bIsCrusadeMode, 0, m_pClientList[iClientH]->m_iWarContribution, 0);
-					_bCrusadeLog(DEF_CRUSADELOG_GETEXP, iClientH, m_pClientList[iClientH]->m_iWarContribution, 0);
 				}
 				else if (m_iCrusadeWinnerSide != m_pClientList[iClientH]->m_cSide) {
 					if (m_pClientList[iClientH]->m_iLevel <= 80) {
@@ -39503,7 +38784,6 @@ void CGame::CheckCrusadeResultCalculation(int iClientH)
 					else m_pClientList[iClientH]->m_iWarContribution += m_pClientList[iClientH]->m_iLevel;
 					m_pClientList[iClientH]->m_iExpStock += m_pClientList[iClientH]->m_iWarContribution / 10;
 					SendNotifyMsg(0, iClientH, DEF_NOTIFY_CRUSADE, (uint32_t)m_bIsCrusadeMode, 0, -1 * m_pClientList[iClientH]->m_iWarContribution, 0);
-					_bCrusadeLog(DEF_CRUSADELOG_GETEXP, iClientH, (m_pClientList[iClientH]->m_iWarContribution / 10), 0);
 				}
 			}
 		}

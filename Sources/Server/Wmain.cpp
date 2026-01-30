@@ -35,6 +35,7 @@
 #include "ServerConsole.h"
 #include "ServerCommand.h"
 #include "ChatLog.h"
+#include "ItemLog.h"
 #include "GameChatCommand.h"
 
 void PutAdminLogFileList(char* cStr);
@@ -650,6 +651,7 @@ void Initialize()
 
 	ServerCommandManager::Get().Initialize(G_pGame);
 	ChatLog::Get().Initialize();
+	ItemLog::Get().Initialize();
 	GameChatCommandManager::Get().Initialize(G_pGame);
 	GetServerConsole().Init();
 
@@ -1004,26 +1006,6 @@ void PutXSocketLogFileList(char* cStr)
 	SYSTEMTIME SysTime;
 
 	pFile = fopen("GameLogs\\XSocket.log", "at");
-	if (pFile == 0) return;
-
-	std::memset(cBuffer, 0, sizeof(cBuffer));
-
-	GetLocalTime(&SysTime);
-	std::snprintf(cBuffer, sizeof(cBuffer), "(%4d:%2d:%2d:%2d:%2d) - ", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
-	strcat(cBuffer, cStr);
-	strcat(cBuffer, "\n");
-
-	fwrite(cBuffer, 1, strlen(cBuffer), pFile);
-	fclose(pFile);
-}
-
-void PutItemLogFileList(char* cStr)
-{
-	FILE* pFile;
-	char cBuffer[512];
-	SYSTEMTIME SysTime;
-
-	pFile = fopen("GameLogs\\ItemEvents.log", "at");
 	if (pFile == 0) return;
 
 	std::memset(cBuffer, 0, sizeof(cBuffer));
