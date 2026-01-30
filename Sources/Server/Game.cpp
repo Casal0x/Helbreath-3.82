@@ -17,6 +17,7 @@
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
 #include "ChatLog.h"
+#include "GameChatCommand.h"
 
 class CDebugWindow* DbgWnd;
 
@@ -5593,8 +5594,10 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 		break;
 
 	case '/':
-		// Chat commands disabled - will be reimplemented later
-		return;
+		if (GameChatCommandManager::Get().ProcessCommand(iClientH, cp, dwMsgSize - 21))
+			return;
+		// Not a recognized command - fall through as normal chat
+		break;
 	}
 
 	pData[dwMsgSize - 1] = 0;

@@ -1,1 +1,0 @@
-(127.0.0.1) PC(ShadowEvil)	Get	Gold(29 18786 27138 -10017 0)	elvine(139 37)(127.0.0.1) PC(ShadowEvil)	Get	Gold(30 30698 20027 -19725 0)	elvine(137 33)(127.0.0.1) PC(ShadowEvil)	Get	Gold(48 6827 31149 -10444 0)	elvine(138 34)(127.0.0.1) PC(ShadowEvil)	Deplete	Big Health Potion(1 0 0 0 0)	elvine(144 35)

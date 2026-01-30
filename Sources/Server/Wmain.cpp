@@ -35,6 +35,7 @@
 #include "ServerConsole.h"
 #include "ServerCommand.h"
 #include "ChatLog.h"
+#include "GameChatCommand.h"
 
 void PutAdminLogFileList(char* cStr);
 void PutHackLogFileList(char* cStr);
@@ -649,6 +650,7 @@ void Initialize()
 
 	ServerCommandManager::Get().Initialize(G_pGame);
 	ChatLog::Get().Initialize();
+	GameChatCommandManager::Get().Initialize(G_pGame);
 	GetServerConsole().Init();
 
 	// ���� ����� Ÿ�̸�

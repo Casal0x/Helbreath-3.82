@@ -22,6 +22,12 @@
     <Filter Include="Common">
       <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555bbbb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game Chat">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555dddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game Chat\Commands">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555eeee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <!-- Root (no filter) -->
@@ -42,6 +48,13 @@
     </ClInclude>
     <ClInclude Include="ChatLog.h">
       <Filter>Console</Filter>
+    </ClInclude>
+    <!-- Game Chat -->
+    <ClInclude Include="GameChatCommand.h">
+      <Filter>Game Chat</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdWhisper.h">
+      <Filter>Game Chat\Commands</Filter>
     </ClInclude>
     <!-- Database -->
     <ClInclude Include="AccountSqliteStore.h">
@@ -170,6 +183,13 @@
     </ClCompile>
     <ClCompile Include="ChatLog.cpp">
       <Filter>Console</Filter>
+    </ClCompile>
+    <!-- Game Chat -->
+    <ClCompile Include="GameChatCommand.cpp">
+      <Filter>Game Chat</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdWhisper.cpp">
+      <Filter>Game Chat\Commands</Filter>
     </ClCompile>
     <!-- Database -->
     <ClCompile Include="AccountSqliteStore.cpp">
