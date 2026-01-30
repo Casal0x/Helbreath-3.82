@@ -2451,6 +2451,14 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char *pData) {
   if (m_pClientList[iClientH] == 0)
     return 0;
 
+  // Debug log for map range
+  char debugMsg[256];
+  std::snprintf(debugMsg, sizeof(debugMsg),
+               "[DEBUG] iComposeInitMapData: Client %d at (%d,%d), scanning tiles (%d,%d) to (%d,%d)",
+               iClientH, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY,
+               sX, sY, sX + 24, sY + 18);
+  PutLogList(debugMsg);
+
   pTotal = (short *)pData;
   cp = (char *)(pData + 2);
 
@@ -2746,6 +2754,14 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char *pData) {
         }
 
         if (pTile->m_pItem[0] != 0) {
+          // Debug log for item on map
+          char debugMsg[256];
+          std::snprintf(debugMsg, sizeof(debugMsg),
+                       "[DEBUG] InitMapData: Item at (%d,%d): ID=%d, Color=%d, Attr=0x%X",
+                       sX + ix, sY + iy, pTile->m_pItem[0]->m_sIDnum,
+                       pTile->m_pItem[0]->m_cItemColor, pTile->m_pItem[0]->m_dwAttribute);
+          PutLogList(debugMsg);
+
           // Centu - id num
           sp = (short *)cp;
           *sp = pTile->m_pItem[0]->m_sIDnum;
@@ -7960,6 +7976,19 @@ void CGame::DropItemHandler(int iClientH, short sItemIndex, int iAmount,
         _bItemLog(DEF_ITEMLOG_DROP, iClientH, (int)-1,
                   m_pClientList[iClientH]->m_pItemList[sItemIndex], true);
 
+      // Debug logging for item drop
+      char debugMsg[512];
+      std::snprintf(debugMsg, sizeof(debugMsg),
+                   "[DEBUG] Dropping item: ID=%d, Name='%s', Color=%d, Attr=0x%X, Type=%d, X=%d, Y=%d",
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemType,
+                   m_pClientList[iClientH]->m_sX,
+                   m_pClientList[iClientH]->m_sY);
+      PutLogList(debugMsg);
+
       SendEventToNearClient_TypeB(
           MSGID_EVENT_COMMON, DEF_COMMONTYPE_ITEMDROP,
           m_pClientList[iClientH]->m_cMapIndex, m_pClientList[iClientH]->m_sX,
@@ -8805,9 +8834,30 @@ void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType,
   pkt.v3 = sV3;
   pkt.v4 = dwV4;
 
+  // Debug logging for ITEMDROP events
+  if (wMsgType == DEF_COMMONTYPE_ITEMDROP) {
+    char debugMsg[512];
+    std::snprintf(debugMsg, sizeof(debugMsg),
+                 "[DEBUG] SendEventToNearClient_TypeB: MsgID=0x%X, Type=0x%X, v1=%d, v2=%d, v3=%d, v4=0x%X, X=%d, Y=%d",
+                 dwMsgID, wMsgType, sV1, sV2, sV3, dwV4, sX, sY);
+    PutLogList(debugMsg);
+
+    // Hex dump of packet
+    char hexDump[256];
+    const unsigned char* bytes = reinterpret_cast<const unsigned char*>(&pkt);
+    std::snprintf(hexDump, sizeof(hexDump),
+                 "[DEBUG] Packet bytes: %02X %02X %02X %02X %02X %02X | %02X %02X %02X %02X | %02X %02X %02X %02X %02X %02X | %02X %02X %02X %02X",
+                 bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5],
+                 bytes[6], bytes[7], bytes[8], bytes[9],
+                 bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15],
+                 bytes[16], bytes[17], bytes[18], bytes[19]);
+    PutLogList(hexDump);
+  }
+
   // for (i = 1; i < DEF_MAXCLIENTS; i++)
   bFlag = true;
   iShortCutIndex = 0;
+  int iClientsSent = 0;
   while (bFlag) {
     // DEF_MAXCLIENTS
     i = m_iClientShortCut[iShortCutIndex];
@@ -8824,8 +8874,23 @@ void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType,
 
         iRet = m_pClientList[i]->m_pXSock->iSendMsg(
             reinterpret_cast<char *>(&pkt), sizeof(pkt));
+
+        if (wMsgType == DEF_COMMONTYPE_ITEMDROP) {
+          iClientsSent++;
+          char debugMsg2[256];
+          std::snprintf(debugMsg2, sizeof(debugMsg2),
+                       "[DEBUG] Sent ITEMDROP to client %d (result=%d)", i, iRet);
+          PutLogList(debugMsg2);
+        }
       }
     }
+  }
+
+  if (wMsgType == DEF_COMMONTYPE_ITEMDROP && iClientsSent > 0) {
+    char debugMsg3[256];
+    std::snprintf(debugMsg3, sizeof(debugMsg3),
+                 "[DEBUG] Total clients sent ITEMDROP: %d", iClientsSent);
+    PutLogList(debugMsg3);
   }
 }
 
@@ -9667,6 +9732,19 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount,
                 m_pClientList[iClientH]->m_pItemList[sItemIndex]);
 
       // ´Ù¸¥ Å¬¶óÀÌ¾ðÆ®¿¡°Ô ¾ÆÀÌÅÛÀÌ ¶³¾îÁø °ÍÀ» ¾Ë¸°´Ù.
+      // Debug logging for item drop
+      char debugMsg[512];
+      std::snprintf(debugMsg, sizeof(debugMsg),
+                   "[DEBUG] Dropping item: ID=%d, Name='%s', Color=%d, Attr=0x%X, Type=%d, X=%d, Y=%d",
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute,
+                   m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemType,
+                   m_pClientList[iClientH]->m_sX,
+                   m_pClientList[iClientH]->m_sY);
+      PutLogList(debugMsg);
+
       SendEventToNearClient_TypeB(
           MSGID_EVENT_COMMON, DEF_COMMONTYPE_ITEMDROP,
           m_pClientList[iClientH]->m_cMapIndex, m_pClientList[iClientH]->m_sX,
