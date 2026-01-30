@@ -12137,7 +12137,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 					i++;
 				}
 				else iSize2 += 4;
-		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b));
+		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b).WithAdditive());
 		break;
 
 	case 21:
@@ -12146,16 +12146,16 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		case 2:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		case 3:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		}
 		break;

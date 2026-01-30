@@ -90,16 +90,21 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
     if (!text || !m_pSprite)
         return;
 
-    // For bitmap fonts on black sprites, we use additive blending
-    // This makes: black sprite + tint = tint (matches DDraw's behavior)
+    // Set up draw parameters for bitmap font rendering
     // Use ColorReplace mode to treat tint values as direct RGB output
     SpriteLib::DrawParams drawParams;
     drawParams.alpha = params.alpha;
-    drawParams.isAdditive = true;  // Use additive blending for black font sprites
     drawParams.isColorReplace = true;  // Tint values are direct RGB
     drawParams.tintR = params.tintR;
     drawParams.tintG = params.tintG;
     drawParams.tintB = params.tintB;
+
+    // Use additive blending when explicitly requested (for bright text like damage numbers)
+    // This matches DDraw's additive tinting behavior for bright colors
+    if (params.useAdditive)
+    {
+        drawParams.blendMode = SpriteLib::BlendMode::Additive;
+    }
 
     int currentX = x;
 
