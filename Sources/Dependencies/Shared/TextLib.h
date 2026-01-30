@@ -43,6 +43,7 @@ struct TextStyle
 	float alpha = 1.0f;
 	ShadowStyle shadow = ShadowStyle::None;
 	int fontSize = 0;  // 0 = use default size, ignored for bitmap fonts
+	bool useAdditive = false;  // Use additive blending for bright text on dark sprites
 
 	// Default constructor
 	constexpr TextStyle() = default;
@@ -66,6 +67,10 @@ struct TextStyle
 	// Full constructor with size
 	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a, ShadowStyle s, int size)
 		: r(r_), g(g_), b(b_), alpha(a), shadow(s), fontSize(size) {}
+
+	// Full constructor with additive
+	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a, ShadowStyle s, int size, bool additive)
+		: r(r_), g(g_), b(b_), alpha(a), shadow(s), fontSize(size), useAdditive(additive) {}
 
 	// ============== Factory Methods ==============
 
@@ -124,17 +129,23 @@ struct TextStyle
 
 	// Create a copy with different shadow style
 	constexpr TextStyle WithShadowStyle(ShadowStyle s) const {
-		return TextStyle(r, g, b, alpha, s, fontSize);
+		return TextStyle(r, g, b, alpha, s, fontSize, useAdditive);
 	}
 
 	// Create a copy with different alpha
 	constexpr TextStyle WithAlpha(float a) const {
-		return TextStyle(r, g, b, a, shadow, fontSize);
+		return TextStyle(r, g, b, a, shadow, fontSize, useAdditive);
 	}
 
 	// Create a copy with different font size (ignored for bitmap fonts)
 	constexpr TextStyle WithFontSize(int size) const {
-		return TextStyle(r, g, b, alpha, shadow, size);
+		return TextStyle(r, g, b, alpha, shadow, size, useAdditive);
+	}
+
+	// Create a copy with additive blending enabled
+	// Use this for bright text (damage numbers) that needs DDraw-like brightness
+	constexpr TextStyle WithAdditive() const {
+		return TextStyle(r, g, b, alpha, shadow, fontSize, true);
 	}
 };
 

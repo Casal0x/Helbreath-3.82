@@ -17,6 +17,7 @@ struct BitmapTextParams
     float alpha = 1.0f;
     bool shadow = false;
     bool isColorReplace = false;  // true = direct RGB color, false = offset-based tint
+    bool useAdditive = false;     // true = additive blending for bright text on dark sprites
 
     // Factory methods for common configurations
     static BitmapTextParams Default()

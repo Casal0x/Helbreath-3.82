@@ -65,18 +65,21 @@ static bool IsBitmapFont(int fontId)
 // Convert TextStyle to BitmapTextParams for bitmap font rendering
 static BitmapTextParams StyleToBitmapParams(const TextStyle& style)
 {
+	BitmapTextParams params;
 	if (style.alpha < 1.0f)
 	{
-		return BitmapTextParams::ColorReplaceWithAlpha(style.r, style.g, style.b, style.alpha);
+		params = BitmapTextParams::ColorReplaceWithAlpha(style.r, style.g, style.b, style.alpha);
 	}
 	else if (style.shadow == ShadowStyle::Integrated)
 	{
-		return BitmapTextParams::ColorReplaceWithShadow(style.r, style.g, style.b);
+		params = BitmapTextParams::ColorReplaceWithShadow(style.r, style.g, style.b);
 	}
 	else
 	{
-		return BitmapTextParams::ColorReplace(style.r, style.g, style.b);
+		params = BitmapTextParams::ColorReplace(style.r, style.g, style.b);
 	}
+	params.useAdditive = style.useAdditive;
+	return params;
 }
 
 // Calculate brightened highlight color
