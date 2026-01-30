@@ -1918,25 +1918,36 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
+	printf("[ITEMCFG] Received packet: dwMsgSize=%u headerSize=%zu entrySize=%zu\n", dwMsgSize, headerSize, entrySize);
+
 	if (dwMsgSize < headerSize) {
-		printf("[ERROR] Item config packet too small for header\n");
+		printf("[ITEMCFG] ERROR: Packet too small for header (%u < %zu)\n", dwMsgSize, headerSize);
 		return false;
 	}
 
 	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
 	uint16_t itemCount = pktHeader->itemCount;
+	uint16_t totalItems = pktHeader->totalItems;
+	uint16_t packetIndex = pktHeader->packetIndex;
+
+	printf("[ITEMCFG] Header: itemCount=%u totalItems=%u packetIndex=%u\n", itemCount, totalItems, packetIndex);
+	printf("[ITEMCFG] Expected size: %zu, actual: %u\n", headerSize + (itemCount * entrySize), dwMsgSize);
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
+		printf("[ITEMCFG] ERROR: Packet too small for %u entries (%u < %zu)\n", itemCount, dwMsgSize, headerSize + (itemCount * entrySize));
 		return false;
 	}
 
 	const auto* entries = reinterpret_cast<const hb::net::PacketItemConfigEntry*>(pData + headerSize);
 
+	int added = 0, skipped = 0;
 	for (uint16_t i = 0; i < itemCount; i++) {
 		const auto& entry = entries[i];
 		int itemId = entry.itemId;
 
 		if (itemId <= 0 || itemId >= 5000) {
+			printf("[ITEMCFG] Skipping invalid itemId=%d (entry %u)\n", itemId, i);
+			skipped++;
 			continue;
 		}
 
@@ -1976,7 +1987,15 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		pItem->m_sRelatedSkill = entry.relatedSkill;
 		pItem->m_cCategory = entry.category;
 		pItem->m_cItemColor = entry.itemColor;
+		added++;
 	}
+
+	// Count total items now in config list
+	int totalLoaded = 0;
+	for (int j = 0; j < 5000; j++) {
+		if (m_pItemConfigList[j] != 0) totalLoaded++;
+	}
+	printf("[ITEMCFG] Result: added=%d skipped=%d totalInConfigList=%d\n", added, skipped, totalLoaded);
 
 	return true;
 }
@@ -1990,7 +2009,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
-		// Pass full pData - PacketItemConfigHeader includes the PacketHeader
+		printf("[ITEMCFG] GameRecvMsgHandler received ITEMCONFIG msg_id=0x%08X size=%u\n", header->msg_id, dwMsgSize);
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
