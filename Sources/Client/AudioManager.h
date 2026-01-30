@@ -56,16 +56,28 @@ public:
 	const std::string& GetCurrentMusicTrack() const { return m_currentMusicTrack; }
 
 	// Volume control (0-100 scale)
+	void SetMasterVolume(int volume);
 	void SetSoundVolume(int volume);
 	void SetMusicVolume(int volume);
+	void SetAmbientVolume(int volume);
+	void SetUIVolume(int volume);
+	int GetMasterVolume() const { return m_masterVolume; }
 	int GetSoundVolume() const { return m_soundVolume; }
 	int GetMusicVolume() const { return m_musicVolume; }
+	int GetAmbientVolume() const { return m_ambientVolume; }
+	int GetUIVolume() const { return m_uiVolume; }
 
 	// Enable/disable
+	void SetMasterEnabled(bool enabled);
 	void SetSoundEnabled(bool enabled);
 	void SetMusicEnabled(bool enabled);
+	void SetAmbientEnabled(bool enabled);
+	void SetUIEnabled(bool enabled);
+	bool IsMasterEnabled() const { return m_bMasterEnabled; }
 	bool IsSoundEnabled() const { return m_bSoundEnabled; }
 	bool IsMusicEnabled() const { return m_bMusicEnabled; }
+	bool IsAmbientEnabled() const { return m_bAmbientEnabled; }
+	bool IsUIEnabled() const { return m_bUIEnabled; }
 
 	// Hardware availability
 	bool IsSoundAvailable() const { return m_bSoundAvailable; }
@@ -93,14 +105,26 @@ private:
 	// Get pre-loaded sound for a type/index
 	ma_sound* GetPreloadedSound(SoundType type, int index);
 
+	// Get the appropriate sound group for a given sound type/index
+	ma_sound_group* GetGroupForSound(SoundType type, int index);
+
+	// Check if the appropriate category is enabled for a given sound
+	bool IsCategoryEnabled(SoundType type, int index) const;
+
 	// miniaudio engine
 	ma_engine m_engine;
 	bool m_bSoundAvailable = false;
 	bool m_bInitialized = false;
 
-	// Sound effect group (for separate volume control)
+	// Sound effect groups (for separate volume control per category)
 	ma_sound_group m_sfxGroup;
 	bool m_bSfxGroupInitialized = false;
+
+	ma_sound_group m_ambientGroup;
+	bool m_bAmbientGroupInitialized = false;
+
+	ma_sound_group m_uiGroup;
+	bool m_bUIGroupInitialized = false;
 
 	// Pre-loaded sound templates (decoded into memory)
 	std::array<ma_sound, AUDIO_MAX_CHARACTER_SOUNDS> m_characterSounds;
@@ -127,12 +151,18 @@ private:
 	std::string m_currentMusicTrack;
 
 	// Volume (0-100)
+	int m_masterVolume = 100;
 	int m_soundVolume = 100;
 	int m_musicVolume = 100;
+	int m_ambientVolume = 100;
+	int m_uiVolume = 100;
 
 	// Enable flags
+	bool m_bMasterEnabled = true;
 	bool m_bSoundEnabled = true;
 	bool m_bMusicEnabled = true;
+	bool m_bAmbientEnabled = true;
+	bool m_bUIEnabled = true;
 
 	// Listener position (for positional audio)
 	int m_listenerX = 0;

@@ -61,10 +61,16 @@ void ConfigManager::SetDefaults()
 	}
 
 	// Audio defaults
+	m_masterVolume = 100;
 	m_soundVolume = 100;
 	m_musicVolume = 100;
+	m_ambientVolume = 100;
+	m_uiVolume = 100;
+	m_bMasterEnabled = true;
 	m_bSoundEnabled = true;
 	m_bMusicEnabled = true;
+	m_bAmbientEnabled = true;
+	m_bUIEnabled = true;
 
 	// Window defaults
 	m_windowWidth = 640;
@@ -153,6 +159,10 @@ bool ConfigManager::Load(const char* filename)
 		if (j.contains("audio"))
 		{
 			auto& audio = j["audio"];
+			if (audio.contains("masterVolume"))
+			{
+				m_masterVolume = Clamp(audio["masterVolume"].get<int>(), 0, 100);
+			}
 			if (audio.contains("soundVolume"))
 			{
 				m_soundVolume = Clamp(audio["soundVolume"].get<int>(), 0, 100);
@@ -161,6 +171,18 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_musicVolume = Clamp(audio["musicVolume"].get<int>(), 0, 100);
 			}
+			if (audio.contains("ambientVolume"))
+			{
+				m_ambientVolume = Clamp(audio["ambientVolume"].get<int>(), 0, 100);
+			}
+			if (audio.contains("uiVolume"))
+			{
+				m_uiVolume = Clamp(audio["uiVolume"].get<int>(), 0, 100);
+			}
+			if (audio.contains("masterEnabled"))
+			{
+				m_bMasterEnabled = audio["masterEnabled"].get<bool>();
+			}
 			if (audio.contains("soundEnabled"))
 			{
 				m_bSoundEnabled = audio["soundEnabled"].get<bool>();
@@ -168,6 +190,14 @@ bool ConfigManager::Load(const char* filename)
 			if (audio.contains("musicEnabled"))
 			{
 				m_bMusicEnabled = audio["musicEnabled"].get<bool>();
+			}
+			if (audio.contains("ambientEnabled"))
+			{
+				m_bAmbientEnabled = audio["ambientEnabled"].get<bool>();
+			}
+			if (audio.contains("uiEnabled"))
+			{
+				m_bUIEnabled = audio["uiEnabled"].get<bool>();
 			}
 		}
 
@@ -257,7 +287,9 @@ bool ConfigManager::Load(const char* filename)
 		return false;
 	}
 
-	m_bDirty = false;
+	// Save immediately to persist any defaults for new keys or corrected values
+	m_bDirty = true;
+	Save();
 	return true;
 }
 
@@ -279,10 +311,16 @@ bool ConfigManager::Save(const char* filename)
 	}
 
 	// Audio settings
+	j["audio"]["masterVolume"] = m_masterVolume;
 	j["audio"]["soundVolume"] = m_soundVolume;
 	j["audio"]["musicVolume"] = m_musicVolume;
+	j["audio"]["ambientVolume"] = m_ambientVolume;
+	j["audio"]["uiVolume"] = m_uiVolume;
+	j["audio"]["masterEnabled"] = m_bMasterEnabled;
 	j["audio"]["soundEnabled"] = m_bSoundEnabled;
 	j["audio"]["musicEnabled"] = m_bMusicEnabled;
+	j["audio"]["ambientEnabled"] = m_bAmbientEnabled;
+	j["audio"]["uiEnabled"] = m_bUIEnabled;
 
 	// Window settings
 	j["window"]["width"] = m_windowWidth;
@@ -346,6 +384,27 @@ void ConfigManager::SetShortcut(int index, short slot)
 	}
 }
 
+void ConfigManager::SetMasterVolume(int volume)
+{
+	volume = Clamp(volume, 0, 100);
+	if (m_masterVolume != volume)
+	{
+		m_masterVolume = volume;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetMasterEnabled(bool enabled)
+{
+	if (m_bMasterEnabled != enabled)
+	{
+		m_bMasterEnabled = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
 void ConfigManager::SetSoundVolume(int volume)
 {
 	volume = Clamp(volume, 0, 100);
@@ -353,6 +412,7 @@ void ConfigManager::SetSoundVolume(int volume)
 	{
 		m_soundVolume = volume;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -363,6 +423,7 @@ void ConfigManager::SetMusicVolume(int volume)
 	{
 		m_musicVolume = volume;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -372,6 +433,7 @@ void ConfigManager::SetSoundEnabled(bool enabled)
 	{
 		m_bSoundEnabled = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -381,6 +443,49 @@ void ConfigManager::SetMusicEnabled(bool enabled)
 	{
 		m_bMusicEnabled = enabled;
 		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetAmbientVolume(int volume)
+{
+	volume = Clamp(volume, 0, 100);
+	if (m_ambientVolume != volume)
+	{
+		m_ambientVolume = volume;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetUIVolume(int volume)
+{
+	volume = Clamp(volume, 0, 100);
+	if (m_uiVolume != volume)
+	{
+		m_uiVolume = volume;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetAmbientEnabled(bool enabled)
+{
+	if (m_bAmbientEnabled != enabled)
+	{
+		m_bAmbientEnabled = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetUIEnabled(bool enabled)
+{
+	if (m_bUIEnabled != enabled)
+	{
+		m_bUIEnabled = enabled;
+		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -414,6 +519,7 @@ void ConfigManager::SetWindowSize(int width, int height)
 		m_windowWidth = width;
 		m_windowHeight = height;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -423,6 +529,7 @@ void ConfigManager::SetShowFpsEnabled(bool enabled)
 	{
 		m_bShowFPS = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -432,6 +539,7 @@ void ConfigManager::SetShowLatencyEnabled(bool enabled)
 	{
 		m_bShowLatency = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -442,6 +550,7 @@ void ConfigManager::SetDetailLevel(int level)
 	{
 		m_cDetailLevel = level;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -451,6 +560,7 @@ void ConfigManager::SetZoomMapEnabled(bool enabled)
 	{
 		m_bZoomMap = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -460,6 +570,7 @@ void ConfigManager::SetDialogTransparencyEnabled(bool enabled)
 	{
 		m_bDialogTrans = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -469,6 +580,7 @@ void ConfigManager::SetRunningModeEnabled(bool enabled)
 	{
 		m_bRunningMode = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -478,6 +590,7 @@ void ConfigManager::SetFullscreenEnabled(bool enabled)
 	{
 		m_bFullscreen = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -487,6 +600,7 @@ void ConfigManager::SetMouseCaptureEnabled(bool enabled)
 	{
 		m_bCaptureMouse = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }
 
@@ -496,5 +610,6 @@ void ConfigManager::SetBorderlessEnabled(bool enabled)
 	{
 		m_bBorderless = enabled;
 		m_bDirty = true;
+		Save();
 	}
 }

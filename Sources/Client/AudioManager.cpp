@@ -30,9 +30,27 @@ bool AudioManager::Initialize(HWND hWnd)
 	if (result == MA_SUCCESS)
 	{
 		m_bSfxGroupInitialized = true;
-		// Apply any volume that was set before initialization
 		ma_sound_group_set_volume(&m_sfxGroup, VolumeToFloat(m_soundVolume));
 	}
+
+	// Initialize ambient sound group
+	result = ma_sound_group_init(&m_engine, 0, NULL, &m_ambientGroup);
+	if (result == MA_SUCCESS)
+	{
+		m_bAmbientGroupInitialized = true;
+		ma_sound_group_set_volume(&m_ambientGroup, VolumeToFloat(m_ambientVolume));
+	}
+
+	// Initialize UI sound group
+	result = ma_sound_group_init(&m_engine, 0, NULL, &m_uiGroup);
+	if (result == MA_SUCCESS)
+	{
+		m_bUIGroupInitialized = true;
+		ma_sound_group_set_volume(&m_uiGroup, VolumeToFloat(m_uiVolume));
+	}
+
+	// Apply master volume to the engine
+	ma_engine_set_volume(&m_engine, VolumeToFloat(m_masterVolume));
 
 	m_bSoundAvailable = true;
 	m_bInitialized = true;
@@ -63,11 +81,12 @@ void AudioManager::LoadSounds()
 		m_monsterSoundsLoaded[i] = (result == MA_SUCCESS);
 	}
 
-	// Load Effect sounds (E1-E53)
+	// Load Effect sounds (E1-E53) - route to appropriate group
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
 		std::sprintf(filename, "sounds\\E%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_effectSounds[i]);
+		ma_sound_group* pGroup = GetGroupForSound(SoundType::Effect, i);
+		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, pGroup, NULL, &m_effectSounds[i]);
 		m_effectSoundsLoaded[i] = (result == MA_SUCCESS);
 	}
 }
@@ -83,11 +102,21 @@ void AudioManager::Shutdown()
 	// Unload all sounds
 	UnloadSounds();
 
-	// Uninitialize sound group
+	// Uninitialize sound groups
 	if (m_bSfxGroupInitialized)
 	{
 		ma_sound_group_uninit(&m_sfxGroup);
 		m_bSfxGroupInitialized = false;
+	}
+	if (m_bAmbientGroupInitialized)
+	{
+		ma_sound_group_uninit(&m_ambientGroup);
+		m_bAmbientGroupInitialized = false;
+	}
+	if (m_bUIGroupInitialized)
+	{
+		ma_sound_group_uninit(&m_uiGroup);
+		m_bUIGroupInitialized = false;
 	}
 
 	// Uninitialize engine
@@ -206,9 +235,40 @@ ma_sound* AudioManager::GetPreloadedSound(SoundType type, int index)
 	return nullptr;
 }
 
+ma_sound_group* AudioManager::GetGroupForSound(SoundType type, int index)
+{
+	if (type == SoundType::Effect)
+	{
+		// Ambient: E38 (rain loop)
+		if (index == 38)
+			return &m_ambientGroup;
+
+		// UI: E14 (click), E23 (notification), E24 (transaction), E25 (war notification), E29 (item place), E53 (error)
+		if (index == 14 || index == 23 || index == 24 || index == 25 || index == 29 || index == 53)
+			return &m_uiGroup;
+	}
+
+	// Everything else (all C sounds, all M sounds, remaining E sounds) → effects group
+	return &m_sfxGroup;
+}
+
+bool AudioManager::IsCategoryEnabled(SoundType type, int index) const
+{
+	if (type == SoundType::Effect)
+	{
+		if (index == 38)
+			return m_bAmbientEnabled;
+
+		if (index == 14 || index == 23 || index == 24 || index == 25 || index == 29 || index == 53)
+			return m_bUIEnabled;
+	}
+
+	return m_bSoundEnabled;
+}
+
 void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 {
-	if (!m_bSoundAvailable || !m_bSoundEnabled)
+	if (!m_bSoundAvailable || !IsCategoryEnabled(type, index))
 		return;
 
 	// Clean up finished sounds first
@@ -264,7 +324,8 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 		return;
 
 	// Create a copy of the pre-loaded sound for playback
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, &m_sfxGroup, &pSlot->sound);
+	ma_sound_group* pGroup = GetGroupForSound(type, index);
+	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, pGroup, &pSlot->sound);
 	if (result != MA_SUCCESS)
 		return;
 
@@ -288,7 +349,7 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 
 void AudioManager::PlaySoundLoop(SoundType type, int index)
 {
-	if (!m_bSoundAvailable || !m_bSoundEnabled)
+	if (!m_bSoundAvailable || !IsCategoryEnabled(type, index))
 		return;
 
 	// Get the pre-loaded sound template
@@ -314,7 +375,8 @@ void AudioManager::PlaySoundLoop(SoundType type, int index)
 		return;
 
 	// Create a copy for looping playback
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, &m_sfxGroup, &pSlot->sound);
+	ma_sound_group* pGroup = GetGroupForSound(type, index);
+	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, pGroup, &pSlot->sound);
 	if (result != MA_SUCCESS)
 		return;
 
@@ -407,6 +469,29 @@ bool AudioManager::IsMusicPlaying() const
 	return ma_sound_is_playing(&m_bgmSound) == MA_TRUE;
 }
 
+void AudioManager::SetMasterVolume(int volume)
+{
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_masterVolume = volume;
+
+	// Engine volume scales all output (SFX groups + music)
+	if (m_bInitialized && m_bSoundAvailable)
+	{
+		ma_engine_set_volume(&m_engine, m_bMasterEnabled ? VolumeToFloat(volume) : 0.0f);
+	}
+}
+
+void AudioManager::SetMasterEnabled(bool enabled)
+{
+	m_bMasterEnabled = enabled;
+
+	if (m_bInitialized && m_bSoundAvailable)
+	{
+		ma_engine_set_volume(&m_engine, enabled ? VolumeToFloat(m_masterVolume) : 0.0f);
+	}
+}
+
 void AudioManager::SetSoundVolume(int volume)
 {
 	if (volume < 0) volume = 0;
@@ -453,6 +538,73 @@ void AudioManager::SetMusicEnabled(bool enabled)
 	if (wasEnabled && !enabled)
 	{
 		StopMusic();
+	}
+}
+
+void AudioManager::SetAmbientVolume(int volume)
+{
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_ambientVolume = volume;
+
+	if (m_bAmbientGroupInitialized)
+	{
+		ma_sound_group_set_volume(&m_ambientGroup, VolumeToFloat(volume));
+	}
+}
+
+void AudioManager::SetUIVolume(int volume)
+{
+	if (volume < 0) volume = 0;
+	if (volume > 100) volume = 100;
+	m_uiVolume = volume;
+
+	if (m_bUIGroupInitialized)
+	{
+		ma_sound_group_set_volume(&m_uiGroup, VolumeToFloat(volume));
+	}
+}
+
+void AudioManager::SetAmbientEnabled(bool enabled)
+{
+	m_bAmbientEnabled = enabled;
+
+	// Stop ambient sounds if disabling (stop all and let non-ambient ones replay naturally)
+	if (!enabled)
+	{
+		// Mute the ambient group by setting volume to 0
+		if (m_bAmbientGroupInitialized)
+		{
+			ma_sound_group_set_volume(&m_ambientGroup, 0.0f);
+		}
+	}
+	else
+	{
+		// Restore ambient group volume
+		if (m_bAmbientGroupInitialized)
+		{
+			ma_sound_group_set_volume(&m_ambientGroup, VolumeToFloat(m_ambientVolume));
+		}
+	}
+}
+
+void AudioManager::SetUIEnabled(bool enabled)
+{
+	m_bUIEnabled = enabled;
+
+	if (!enabled)
+	{
+		if (m_bUIGroupInitialized)
+		{
+			ma_sound_group_set_volume(&m_uiGroup, 0.0f);
+		}
+	}
+	else
+	{
+		if (m_bUIGroupInitialized)
+		{
+			ma_sound_group_set_volume(&m_uiGroup, VolumeToFloat(m_uiVolume));
+		}
 	}
 }
 

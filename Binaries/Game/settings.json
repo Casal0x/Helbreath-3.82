@@ -6,7 +6,7 @@
         "soundVolume": 20
     },
     "display": {
-        "borderless": true,
+        "borderless": false,
         "captureMouse": true,
         "detailLevel": 2,
         "dialogTransparency": false,
@@ -22,12 +22,12 @@
         "port": 2500
     },
     "shortcuts": {
-        "magic": -1,
+        "magic": 95,
         "slots": [
             -1,
             -1,
-            -1,
-            -1,
+            191,
+            195,
             -1
         ]
     },

@@ -16,7 +16,10 @@ static const int CONTENT_WIDTH = 297;
 static const int CONTENT_HEIGHT = 234;
 
 // Slider tracking
-static bool s_bDraggingSoundSlider = false;
+static bool s_bDraggingMasterSlider = false;
+static bool s_bDraggingEffectsSlider = false;
+static bool s_bDraggingAmbientSlider = false;
+static bool s_bDraggingUISlider = false;
 static bool s_bDraggingMusicSlider = false;
 
 // 4:3 resolutions from 640x480 to 1440x1080
@@ -136,10 +139,33 @@ void DialogBox_SysMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawTabs(sX, sY, msX, msY);
 	DrawTabContent(sX, sY, msX, msY, cLB);
 
-	// Reset slider dragging when mouse button is released
+	// Save slider values to ConfigManager when drag ends (mouse released)
 	if (cLB == 0)
 	{
-		s_bDraggingSoundSlider = false;
+		if (s_bDraggingMasterSlider)
+		{
+			ConfigManager::Get().SetMasterVolume(AudioManager::Get().GetMasterVolume());
+		}
+		if (s_bDraggingEffectsSlider)
+		{
+			ConfigManager::Get().SetSoundVolume(AudioManager::Get().GetSoundVolume());
+		}
+		if (s_bDraggingAmbientSlider)
+		{
+			ConfigManager::Get().SetAmbientVolume(AudioManager::Get().GetAmbientVolume());
+		}
+		if (s_bDraggingUISlider)
+		{
+			ConfigManager::Get().SetUIVolume(AudioManager::Get().GetUIVolume());
+		}
+		if (s_bDraggingMusicSlider)
+		{
+			ConfigManager::Get().SetMusicVolume(AudioManager::Get().GetMusicVolume());
+		}
+		s_bDraggingMasterSlider = false;
+		s_bDraggingEffectsSlider = false;
+		s_bDraggingAmbientSlider = false;
+		s_bDraggingUISlider = false;
 		s_bDraggingMusicSlider = false;
 		Info().bIsScrollSelected = false;
 	}
@@ -435,40 +461,50 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 	const int contentX = sX + CONTENT_X;
 	const int contentY = sY + CONTENT_Y;
 	const int labelX = contentX + 5;
-	const int toggleX = contentX + 120;
-	const int sliderX = contentX + 50;
-	const int sliderWidth = 100;
+	const int toggleX = contentX + 68;
+	const int sliderX = contentX + 110;
 
-	// Sound section
-	int lineY = contentY + 10;
+	bool bAvailable = AudioManager::Get().IsSoundAvailable();
 
-	// Sound toggle
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, GameColors::UILabel.ToColorRef());
+	// --- Master: [On/Off] ---slider--- ---
+	int lineY = contentY + 8;
 
-	if (AudioManager::Get().IsSoundAvailable()) {
-		DrawToggle(toggleX, lineY, AudioManager::Get().IsSoundEnabled(), msX, msY);
-	}
-	else {
+	PutString(labelX, lineY, "Master:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Master:", GameColors::UILabel.ToColorRef());
+
+	if (bAvailable)
+		DrawToggle(toggleX, lineY, AudioManager::Get().IsMasterEnabled(), msX, msY);
+	else
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
+
+	int masterVol = AudioManager::Get().GetMasterVolume();
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + masterVol, lineY, 8);
+
+	if (s_bDraggingMasterSlider && cLB != 0)
+	{
+		int volume = msX - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		AudioManager::Get().SetMasterVolume(volume);
 	}
 
-	lineY += 25;  // Extra spacing before volume section
+	// --- Effects: [On/Off] ---slider--- ---
+	lineY = contentY + 52;
 
-	// Sound Volume label
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, GameColors::UILabel.ToColorRef());
+	PutString(labelX, lineY, "Effects:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Effects:", GameColors::UILabel.ToColorRef());
 
-	lineY += 15;
+	if (bAvailable)
+		DrawToggle(toggleX, lineY, AudioManager::Get().IsSoundEnabled(), msX, msY);
+	else
+		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
 
-	// Sound Volume slider
-	int soundVol = AudioManager::Get().GetSoundVolume();
-	int soundSliderY = lineY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, soundSliderY + 5, 80);  // Slider track (dropped 5px)
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + soundVol, soundSliderY, 8);  // Slider knob
+	int effectsVol = AudioManager::Get().GetSoundVolume();
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + effectsVol, lineY, 8);
 
-	// Handle sound volume slider - once dragging, only track X position
-	if (s_bDraggingSoundSlider && cLB != 0)
+	if (s_bDraggingEffectsSlider && cLB != 0)
 	{
 		int volume = msX - sliderX;
 		if (volume > 100) volume = 100;
@@ -476,37 +512,67 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		AudioManager::Get().SetSoundVolume(volume);
 	}
 
-	lineY += 35;
+	// --- Ambient: [On/Off] ---slider--- ---
+	lineY = contentY + 92;
 
-	// Music section
-	int musicToggleY = lineY;
+	PutString(labelX, lineY, "Ambient:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Ambient:", GameColors::UILabel.ToColorRef());
 
-	// Music toggle
+	if (bAvailable)
+		DrawToggle(toggleX, lineY, AudioManager::Get().IsAmbientEnabled(), msX, msY);
+	else
+		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
+
+	int ambientVol = AudioManager::Get().GetAmbientVolume();
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + ambientVol, lineY, 8);
+
+	if (s_bDraggingAmbientSlider && cLB != 0)
+	{
+		int volume = msX - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		AudioManager::Get().SetAmbientVolume(volume);
+	}
+
+	// --- UI: [On/Off] ---slider--- ---
+	lineY = contentY + 132;
+
+	PutString(labelX, lineY, "UI:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "UI:", GameColors::UILabel.ToColorRef());
+
+	if (bAvailable)
+		DrawToggle(toggleX, lineY, AudioManager::Get().IsUIEnabled(), msX, msY);
+	else
+		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
+
+	int uiVol = AudioManager::Get().GetUIVolume();
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + uiVol, lineY, 8);
+
+	if (s_bDraggingUISlider && cLB != 0)
+	{
+		int volume = msX - sliderX;
+		if (volume > 100) volume = 100;
+		if (volume < 0) volume = 0;
+		AudioManager::Get().SetUIVolume(volume);
+	}
+
+	// --- Music: [On/Off] ---slider--- ---
+	lineY = contentY + 172;
+
 	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel.ToColorRef());
 
-	if (AudioManager::Get().IsSoundAvailable()) {
+	if (bAvailable)
 		DrawToggle(toggleX, lineY, AudioManager::Get().IsMusicEnabled(), msX, msY);
-	}
-	else {
+	else
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
-	}
 
-	lineY += 25;  // Extra spacing before volume section
-
-	// Music Volume label
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, GameColors::UILabel.ToColorRef());
-
-	lineY += 15;
-
-	// Music Volume slider
 	int musicVol = AudioManager::Get().GetMusicVolume();
-	int musicSliderY = lineY;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, musicSliderY + 5, 80);  // Slider track (dropped 5px)
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + musicVol, musicSliderY, 8);  // Slider knob
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + musicVol, lineY, 8);
 
-	// Handle music volume slider - once dragging, only track X position
 	if (s_bDraggingMusicSlider && cLB != 0)
 	{
 		int volume = msX - sliderX;
@@ -603,28 +669,40 @@ PressResult DialogBox_SysMenu::OnPress(short msX, short msY)
 	short sY = Info().sY;
 	const int contentX = sX + CONTENT_X;
 	const int contentY = sY + CONTENT_Y;
-	const int sliderX = contentX + 50;
+	const int sliderX = contentX + 110;
 	const int sliderWidth = 100;
 
-	// Sound slider Y: contentY + 10 + 25 + 15 = contentY + 50
-	int soundSliderY = contentY + 50;
-	if ((msX >= sliderX) && (msX <= sliderX + sliderWidth + 10) &&
-		(msY >= soundSliderY - 5) && (msY <= soundSliderY + 15))
-	{
-		s_bDraggingSoundSlider = true;
-		Info().bIsScrollSelected = true;
-		return PressResult::ScrollClaimed;
-	}
+	// Helper lambda for slider hit detection
+	auto checkSlider = [&](int sliderY, bool& dragFlag) -> bool {
+		if ((msX >= sliderX) && (msX <= sliderX + sliderWidth + 10) &&
+			(msY >= sliderY - 5) && (msY <= sliderY + 15))
+		{
+			dragFlag = true;
+			Info().bIsScrollSelected = true;
+			return true;
+		}
+		return false;
+	};
 
-	// Music slider Y: contentY + 50 + 35 + 25 + 15 = contentY + 125
-	int musicSliderY = contentY + 125;
-	if ((msX >= sliderX) && (msX <= sliderX + sliderWidth + 10) &&
-		(msY >= musicSliderY - 5) && (msY <= musicSliderY + 15))
-	{
-		s_bDraggingMusicSlider = true;
-		Info().bIsScrollSelected = true;
+	// Master slider at contentY + 8
+	if (checkSlider(contentY + 8, s_bDraggingMasterSlider))
 		return PressResult::ScrollClaimed;
-	}
+
+	// Effects slider at contentY + 52
+	if (checkSlider(contentY + 52, s_bDraggingEffectsSlider))
+		return PressResult::ScrollClaimed;
+
+	// Ambient slider at contentY + 92
+	if (checkSlider(contentY + 92, s_bDraggingAmbientSlider))
+		return PressResult::ScrollClaimed;
+
+	// UI slider at contentY + 132
+	if (checkSlider(contentY + 132, s_bDraggingUISlider))
+		return PressResult::ScrollClaimed;
+
+	// Music slider at contentY + 172
+	if (checkSlider(contentY + 172, s_bDraggingMusicSlider))
+		return PressResult::ScrollClaimed;
 
 	return PressResult::Normal;
 }
@@ -807,42 +885,70 @@ bool DialogBox_SysMenu::OnClickAudio(short sX, short sY, short msX, short msY)
 {
 	const int contentX = sX + CONTENT_X;
 	const int contentY = sY + CONTENT_Y;
-	const int toggleX = contentX + 120;
+	const int toggleX = contentX + 68;
 
-	// Sound toggle (lineY = contentY + 10)
-	int lineY = contentY + 10;
+	if (!AudioManager::Get().IsSoundAvailable())
+		return false;
+
+	// Master toggle (lineY = contentY + 8)
+	int lineY = contentY + 8;
 	if (IsInToggleArea(toggleX, lineY, msX, msY)) {
-		if (AudioManager::Get().IsSoundAvailable()) {
-			if (AudioManager::Get().IsSoundEnabled()) {
-				AudioManager::Get().StopSound(SoundType::Effect, 38);
-				AudioManager::Get().SetSoundEnabled(false);
-				AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
-			}
-			else {
-				AudioManager::Get().SetSoundEnabled(true);
-				AddEventList(NOTIFY_MSG_SOUND_ON, 10);
-			}
-			PlaySoundEffect('E', 14, 5);
-		}
+		bool enabled = AudioManager::Get().IsMasterEnabled();
+		AudioManager::Get().SetMasterEnabled(!enabled);
+		ConfigManager::Get().SetMasterEnabled(!enabled);
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
 
-	// Music toggle (lineY = contentY + 10 + 25 + 15 + 35 = contentY + 85)
-	lineY = contentY + 85;
+	// Effects toggle (lineY = contentY + 52)
+	lineY = contentY + 52;
 	if (IsInToggleArea(toggleX, lineY, msX, msY)) {
-		if (AudioManager::Get().IsSoundAvailable()) {
-			if (AudioManager::Get().IsMusicEnabled()) {
-				AudioManager::Get().SetMusicEnabled(false);
-				AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
-				AudioManager::Get().StopMusic();
-			}
-			else {
-				AudioManager::Get().SetMusicEnabled(true);
-				AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
-				m_pGame->StartBGM();
-			}
-			PlaySoundEffect('E', 14, 5);
+		bool enabled = AudioManager::Get().IsSoundEnabled();
+		AudioManager::Get().SetSoundEnabled(!enabled);
+		ConfigManager::Get().SetSoundEnabled(!enabled);
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	// Ambient toggle (lineY = contentY + 92)
+	lineY = contentY + 92;
+	if (IsInToggleArea(toggleX, lineY, msX, msY)) {
+		bool enabled = AudioManager::Get().IsAmbientEnabled();
+		AudioManager::Get().SetAmbientEnabled(!enabled);
+		ConfigManager::Get().SetAmbientEnabled(!enabled);
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	// UI toggle (lineY = contentY + 132)
+	lineY = contentY + 132;
+	if (IsInToggleArea(toggleX, lineY, msX, msY)) {
+		bool enabled = AudioManager::Get().IsUIEnabled();
+		AudioManager::Get().SetUIEnabled(!enabled);
+		ConfigManager::Get().SetUIEnabled(!enabled);
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	// Music toggle (lineY = contentY + 172)
+	lineY = contentY + 172;
+	if (IsInToggleArea(toggleX, lineY, msX, msY)) {
+		if (AudioManager::Get().IsMusicEnabled()) {
+			AudioManager::Get().SetMusicEnabled(false);
+			ConfigManager::Get().SetMusicEnabled(false);
+			AudioManager::Get().StopMusic();
 		}
+		else {
+			AudioManager::Get().SetMusicEnabled(true);
+			ConfigManager::Get().SetMusicEnabled(true);
+			m_pGame->StartBGM();
+		}
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
 

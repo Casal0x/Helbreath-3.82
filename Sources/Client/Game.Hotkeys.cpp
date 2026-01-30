@@ -138,6 +138,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 	if (AudioManager::Get().IsMusicEnabled())
 	{
 		AudioManager::Get().SetMusicEnabled(false);
+		ConfigManager::Get().SetMusicEnabled(false);
 		AudioManager::Get().StopMusic();
 		AddEventList(NOTIFY_MSG_MUSIC_OFF, 10);
 		return;
@@ -146,17 +147,20 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 	{
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().SetSoundEnabled(false);
+		ConfigManager::Get().SetSoundEnabled(false);
 		AddEventList(NOTIFY_MSG_SOUND_OFF, 10);
 		return;
 	}
 	if (AudioManager::Get().IsSoundAvailable())
 	{
 		AudioManager::Get().SetMusicEnabled(true);
+		ConfigManager::Get().SetMusicEnabled(true);
 		AddEventList(NOTIFY_MSG_MUSIC_ON, 10);
 	}
 	if (AudioManager::Get().IsSoundAvailable())
 	{
 		AudioManager::Get().SetSoundEnabled(true);
+		ConfigManager::Get().SetSoundEnabled(true);
 		AddEventList(NOTIFY_MSG_SOUND_ON, 10);
 	}
 	StartBGM();
@@ -530,10 +534,16 @@ void CGame::Hotkey_Simple_SpecialAbility()
 
 void CGame::Hotkey_Simple_ZoomIn()
 {
-	if (m_bInputStatus == false) ConfigManager::Get().SetZoomMapEnabled(true);
+	if (m_bInputStatus == false)
+	{
+		ConfigManager::Get().SetZoomMapEnabled(true);
+	}
 }
 
 void CGame::Hotkey_Simple_ZoomOut()
 {
-	if (m_bInputStatus == false) ConfigManager::Get().SetZoomMapEnabled(false);
+	if (m_bInputStatus == false)
+	{
+		ConfigManager::Get().SetZoomMapEnabled(false);
+	}
 }

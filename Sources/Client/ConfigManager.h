@@ -39,15 +39,27 @@ public:
 	void SetRecentShortcut(short slot) { m_recentShortcut = slot; }
 
 	// Audio settings - adds persistence to existing runtime values
+	int GetMasterVolume() const { return m_masterVolume; }
 	int GetSoundVolume() const { return m_soundVolume; }
 	int GetMusicVolume() const { return m_musicVolume; }
+	int GetAmbientVolume() const { return m_ambientVolume; }
+	int GetUIVolume() const { return m_uiVolume; }
+	bool IsMasterEnabled() const { return m_bMasterEnabled; }
 	bool IsSoundEnabled() const { return m_bSoundEnabled; }
 	bool IsMusicEnabled() const { return m_bMusicEnabled; }
+	bool IsAmbientEnabled() const { return m_bAmbientEnabled; }
+	bool IsUIEnabled() const { return m_bUIEnabled; }
 
+	void SetMasterVolume(int volume);
 	void SetSoundVolume(int volume);
 	void SetMusicVolume(int volume);
+	void SetAmbientVolume(int volume);
+	void SetUIVolume(int volume);
+	void SetMasterEnabled(bool enabled);
 	void SetSoundEnabled(bool enabled);
 	void SetMusicEnabled(bool enabled);
+	void SetAmbientEnabled(bool enabled);
+	void SetUIEnabled(bool enabled);
 
 	// Window/Resolution settings
 	int GetWindowWidth() const { return m_windowWidth; }
@@ -103,10 +115,16 @@ private:
 	short m_recentShortcut;
 
 	// Audio (matches m_cSoundVolume, m_cMusicVolume, m_bSoundStat, m_bMusicStat)
+	int m_masterVolume;
 	int m_soundVolume;
 	int m_musicVolume;
+	int m_ambientVolume;
+	int m_uiVolume;
+	bool m_bMasterEnabled;
 	bool m_bSoundEnabled;
 	bool m_bMusicEnabled;
+	bool m_bAmbientEnabled;
+	bool m_bUIEnabled;
 
 	// Window/Resolution
 	int m_windowWidth;
