@@ -178,6 +178,11 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="winmain.h" />
     <ClInclude Include="XSocket.h" />
+    <ClInclude Include="ServerConsole.h" />
+    <ClInclude Include="ServerCommand.h" />
+    <ClInclude Include="CmdHelp.h" />
+    <ClInclude Include="ChatLog.h" />
+    <ClInclude Include="CmdShowChat.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp" />
@@ -196,6 +201,11 @@
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="wmain.cpp" />
     <ClCompile Include="XSocket.cpp" />
+    <ClCompile Include="ServerConsole.cpp" />
+    <ClCompile Include="ServerCommand.cpp" />
+    <ClCompile Include="CmdHelp.cpp" />
+    <ClCompile Include="ChatLog.cpp" />
+    <ClCompile Include="CmdShowChat.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

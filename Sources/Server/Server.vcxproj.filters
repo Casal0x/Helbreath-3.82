@@ -93,6 +93,21 @@
     <ClInclude Include="NetworkMsg.h" />
     <ClInclude Include="ServerMessages.h" />
     <ClInclude Include="GameConfigSqliteStore.h" />
+    <ClInclude Include="ServerConsole.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerCommand.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdHelp.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatLog.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="CmdShowChat.h">
+      <Filter>source</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp">
@@ -128,6 +143,21 @@
     <ClCompile Include="EntityManager.cpp" />
     <ClCompile Include="NetworkMsg.cpp" />
     <ClCompile Include="GameConfigSqliteStore.cpp" />
+    <ClCompile Include="ServerConsole.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerCommand.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdHelp.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatLog.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdShowChat.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

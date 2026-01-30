@@ -32,6 +32,9 @@
 #include "UserMessages.h"
 // #include "resource.h" - REMOVED: No resources needed for console mode
 #include "LoginServer.h"
+#include "ServerConsole.h"
+#include "ServerCommand.h"
+#include "ChatLog.h"
 
 void PutAdminLogFileList(char* cStr);
 void PutHackLogFileList(char* cStr);
@@ -638,7 +641,10 @@ void Initialize()
 		return;
 	}
 
-	// ���� ����� Ÿ�̸� 
+	ServerCommandManager::Get().Initialize(G_pGame);
+	ChatLog::Get().Initialize();
+
+	// ���� ����� Ÿ�̸�
 	G_mmTimer = _StartTimer(300);
 
 	// MODERNIZED: Removed G_hWnd parameter, using WSAEventSelect

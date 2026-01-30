@@ -16,6 +16,7 @@
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
+#include "ChatLog.h"
 
 class CDebugWindow* DbgWnd;
 
@@ -5624,6 +5625,10 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 
 		if (m_pClientList[iClientH]->m_iTimeLeft_ShutUp > 0) cSendMode = 0;
 	}
+
+	ChatLog::Get().Write(cSendMode, m_pClientList[iClientH]->m_cCharName,
+		m_pClientList[iClientH]->m_cMapName, message,
+		(cSendMode == 20) ? m_pClientList[iClientH]->m_cWhisperPlayerName : nullptr);
 
 	header->msg_type = (uint16_t)iClientH;
 	cp = payload + 14;
