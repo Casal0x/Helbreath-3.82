@@ -1,9 +1,14 @@
-#define _WINSOCKAPI_
-#include <windows.h>
 #include "ChatLog.h"
-#include "winmain.h"
 #include <cstdio>
-#include <direct.h>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <ctime>
+
+extern void PutLogList(char* cMsg);
+
+static const char* const CHATLOG_DIR = "GameLogs";
+static const char* const CHATLOG_FILE = "GameLogs/Chat.log";
 
 ChatLog& ChatLog::Get()
 {
@@ -16,17 +21,17 @@ void ChatLog::Initialize()
 	if (m_bInitialized)
 		return;
 
-	_mkdir("GameLogs");
+	std::filesystem::create_directories(CHATLOG_DIR);
 
-	FILE* pFile = fopen("GameLogs\\Chat.log", "w");
-	if (pFile != nullptr)
+	std::ofstream ofs(CHATLOG_FILE, std::ios::trunc);
+	if (ofs.is_open())
 	{
-		fclose(pFile);
-		PutLogList((char*)"(!) Chat log initialized: GameLogs\\Chat.log");
+		ofs.close();
+		PutLogList((char*)"(!) Chat log initialized: GameLogs/Chat.log");
 	}
 	else
 	{
-		PutLogList((char*)"(!) WARNING: Could not create GameLogs\\Chat.log");
+		PutLogList((char*)"(!) WARNING: Could not create GameLogs/Chat.log");
 	}
 
 	m_bInitialized = true;
@@ -37,12 +42,18 @@ void ChatLog::Write(int chatType, const char* playerName, const char* mapName, c
 	if (!m_bInitialized)
 		return;
 
-	FILE* pFile = fopen("GameLogs\\Chat.log", "a");
-	if (pFile == nullptr)
+	std::ofstream ofs(CHATLOG_FILE, std::ios::app);
+	if (!ofs.is_open())
 		return;
 
-	SYSTEMTIME st;
-	GetLocalTime(&st);
+	auto now = std::chrono::system_clock::now();
+	std::time_t tt = std::chrono::system_clock::to_time_t(now);
+	struct tm tmLocal;
+#ifdef _WIN32
+	localtime_s(&tmLocal, &tt);
+#else
+	localtime_r(&tt, &tmLocal);
+#endif
 
 	const char* label;
 	switch (chatType)
@@ -57,26 +68,27 @@ void ChatLog::Write(int chatType, const char* playerName, const char* mapName, c
 	default: label = "Unknown"; break;
 	}
 
+	char line[512];
 	if (chatType == 20 && whisperTarget != nullptr)
 	{
-		fprintf(pFile, "[%02d:%02d:%02d] [%s] %s -> %s: %s\n",
-			st.wHour, st.wMinute, st.wSecond,
+		std::snprintf(line, sizeof(line), "[%02d:%02d:%02d] [%s] %s -> %s: %s",
+			tmLocal.tm_hour, tmLocal.tm_min, tmLocal.tm_sec,
 			label, playerName, whisperTarget, message);
 	}
 	else if (chatType == 0)
 	{
-		fprintf(pFile, "[%02d:%02d:%02d] [%s] %s (%s): %s\n",
-			st.wHour, st.wMinute, st.wSecond,
+		std::snprintf(line, sizeof(line), "[%02d:%02d:%02d] [%s] %s (%s): %s",
+			tmLocal.tm_hour, tmLocal.tm_min, tmLocal.tm_sec,
 			label, playerName, mapName, message);
 	}
 	else
 	{
-		fprintf(pFile, "[%02d:%02d:%02d] [%s] %s: %s\n",
-			st.wHour, st.wMinute, st.wSecond,
+		std::snprintf(line, sizeof(line), "[%02d:%02d:%02d] [%s] %s: %s",
+			tmLocal.tm_hour, tmLocal.tm_min, tmLocal.tm_sec,
 			label, playerName, message);
 	}
 
-	fclose(pFile);
+	ofs << line << '\n';
 }
 
 void ChatLog::Shutdown()

@@ -23,7 +23,7 @@ void CmdShowChat::Execute(CGame* pGame, const char* pArgs)
 
 	char szCmdLine[1024];
 	std::snprintf(szCmdLine, sizeof(szCmdLine),
-		"cmd.exe /c \"title HB Chat && powershell -Command \"\"Get-Content '%s' -Wait -Tail 0\"\"\"",
+		"cmd.exe /c \"title HB Chat && powershell -NoProfile -ExecutionPolicy Bypass -Command \"\"Get-Content '%s' -Wait -Tail 0\"\"\"",
 		szLogPath);
 
 	STARTUPINFOA si = {};
