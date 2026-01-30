@@ -4,11 +4,13 @@
 
 #ifdef _WIN32
 // Windows builds use native headers - no abstraction needed
+// CRITICAL: Header order matters! winsock2.h must come before windows.h
 #define _WINSOCKAPI_ // Prevent winsock.h from loading
+#include <winsock2.h>
+#include <windows.h>
 #include <mmsystem.h>
 #include <process.h>
-#include <windows.h>
-#include <winsock2.h>
+#include <cstdint>
 #else
 // Unix/Linux/macOS platform abstraction
 #include <arpa/inet.h>
