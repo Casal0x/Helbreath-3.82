@@ -4,6 +4,7 @@
 
 #include "XSocket.h"
 #include "CommonTypes.h"
+#include "NetConstants.h"
 #include <cstring>
 #include <cstdio>
 
@@ -274,7 +275,7 @@ bool XSocket::bBlockConnect(char* pAddr, int iPort)
 		}
 	}
 
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 
@@ -339,7 +340,7 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 		}
 	}
 
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 
@@ -684,7 +685,7 @@ bool XSocket::bAccept(class XSocket* pXSock)
 	WSAEventSelect(pXSock->m_Sock, pXSock->m_hEvent, FD_READ | FD_WRITE | FD_CLOSE);
 
 	pXSock->m_cType = DEF_XSOCK_NORMALSOCK;
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 

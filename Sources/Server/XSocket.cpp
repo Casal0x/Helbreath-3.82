@@ -230,7 +230,7 @@ bool XSocket::bConnect(char * pAddr, int iPort)
 	WSAEventSelect(m_Sock, m_hEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
 
 	// ���� �ɼ��� �����Ѵ�.
-	dwOpt = 8192*5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 
@@ -625,7 +625,7 @@ bool XSocket::bAccept(class XSocket * pXSock)
 	pXSock->m_cType = DEF_XSOCK_NORMALSOCK;
 
 	// ���� �ɼ��� �����Ѵ�.
-	dwOpt = 8192*5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 
