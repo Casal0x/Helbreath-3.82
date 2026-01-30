@@ -7187,39 +7187,6 @@ void CGame::MsgProcess() {
         CheckConnectionHandler(iClientH, pData);
         break;
 
-      case MSGID_REQUEST_INITDATA:
-        if (m_pClientList[iClientH] == nullptr)
-          break;
-        if (m_pClientList[iClientH]->m_bIsClientConnected) {
-          std::snprintf(
-              G_cTxt, sizeof(G_cTxt),
-              "(!!!) Client (%s) connection closed!. Sniffer suspect!.",
-              m_pClientList[iClientH]->m_cCharName);
-          PutLogList(G_cTxt);
-          /*std::memset(cData, 0, sizeof(cData));
-          cp = (char*)cData;
-          *cp = GSM_DISCONNECT;
-          cp++;
-          memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
-          cp += 10;
-          bStockMsgToGateServer(cData, 11);*/
-          m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(
-              2, iClientH, DEF_OWNERTYPE_PLAYER, m_pClientList[iClientH]->m_sX,
-              m_pClientList[iClientH]->m_sY);
-          bRemoveFromDelayEventList(iClientH, DEF_OWNERTYPE_PLAYER, 0);
-          g_login->LocalSavePlayerData(iClientH); // bSendMsgToLS(MSGID_REQUEST_SAVEPLAYERDATALOGOUT,
-                                                  // iClientH, false);
-          if ((dwTime - m_dwGameTime2) > 3000) { // 3 segs
-            m_pClientList[iClientH]->m_bIsClientConnected = false;
-            DeleteClient(iClientH, true, true, true, true);
-          }
-          break;
-        } else {
-          m_pClientList[iClientH]->m_bIsClientConnected = true;
-          RequestInitDataHandler(iClientH, pData, cKey);
-        }
-        break;
-
       case MSGID_COMMAND_CHATMSG:
         ChatMsgHandler(iClientH, pData, dwMsgSize);
         break;
