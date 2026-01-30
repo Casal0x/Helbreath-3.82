@@ -275,6 +275,7 @@ namespace GameColors
 	inline constexpr GameColor UIBlack{ 0, 0, 0 };
 	inline constexpr GameColor UIWhite{ 255, 255, 255 };
 	inline constexpr GameColor UINearWhite{ 232, 232, 232 };
+	inline constexpr GameColor UIDescription{ 150, 150, 150 };  // Item tooltips, stats, descriptions
 	inline constexpr GameColor UIGreen{ 0, 255, 0 };
 	inline constexpr GameColor UIDarkGreen{ 0, 55, 0 };
 	inline constexpr GameColor UIRed{ 255, 0, 0 };
