@@ -91,6 +91,9 @@ public:
     // Resize the window
     static void SetSize(int width, int height, bool center = true);
 
+    // Toggle borderless/bordered window mode
+    static void SetBorderless(bool borderless);
+
 private:
     static IWindow* s_pWindow;
 };

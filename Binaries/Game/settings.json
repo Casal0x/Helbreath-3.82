@@ -6,6 +6,8 @@
         "soundVolume": 20
     },
     "display": {
+        "borderless": true,
+        "captureMouse": true,
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
@@ -30,7 +32,7 @@
         ]
     },
     "window": {
-        "height": 768,
-        "width": 1024
+        "height": 480,
+        "width": 640
     }
 }

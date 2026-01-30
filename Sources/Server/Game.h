@@ -1188,7 +1188,6 @@ public:
   bool m_bReceivedItemList;
   bool m_bHeldenianInitiated;
   bool m_bHeldenianRunning;
-
 private:
   int __iSearchForQuest(int iClientH, int iWho, int *pQuestType, int *pMode,
                         int *pRewardType, int *pRewardAmount,

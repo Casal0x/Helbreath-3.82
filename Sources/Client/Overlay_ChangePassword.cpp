@@ -268,35 +268,35 @@ void Overlay_ChangePassword::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + 157 + SCREENX, 112 + 109 + SCREENY, 7);
 
     // Draw labels
-    PutString(206 + SCREENX, 155 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, RGB(25, 35, 25));
-    PutString(206 + SCREENX, 179 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, RGB(25, 35, 25));
-    PutString(206 + SCREENX, 203 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, RGB(25, 35, 25));
-    PutString(206 + SCREENX, 227 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, RGB(25, 35, 25));
+    PutString(206 + SCREENX, 155 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel.ToColorRef());
+    PutString(206 + SCREENX, 179 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, GameColors::UILabel.ToColorRef());
+    PutString(206 + SCREENX, 203 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, GameColors::UILabel.ToColorRef());
+    PutString(206 + SCREENX, 227 + SCREENY, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel.ToColorRef());
 
     // Draw input field values (when not focused)
     if (m_iCurFocus != 1)
     {
-        uint32_t color = CMisc::bCheckValidString(m_cAccountName) ? RGB(25, 35, 25) : RGB(55, 18, 13);
+        uint32_t color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         PutString(314 + SCREENX, 155 + SCREENY, m_cAccountName, color);
     }
 
     if (m_iCurFocus != 2)
     {
-        uint32_t color = CMisc::bCheckValidString(m_cOldPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
+        uint32_t color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedOld(strlen(m_cOldPassword), '*');
         TextLib::DrawText(GameFont::Default, 314 + SCREENX, 179 + SCREENY, maskedOld.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 3)
     {
-        uint32_t color = CMisc::bCheckValidName(m_cNewPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
+        uint32_t color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedNew(strlen(m_cNewPassword), '*');
         TextLib::DrawText(GameFont::Default, 314 + SCREENX, 203 + SCREENY, maskedNew.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 4)
     {
-        uint32_t color = CMisc::bCheckValidName(m_cConfirmPassword) ? RGB(25, 35, 25) : RGB(55, 18, 13);
+        uint32_t color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
         TextLib::DrawText(GameFont::Default, 314 + SCREENX, 227 + SCREENY, maskedConfirm.c_str(), TextLib::TextStyle::FromColorRef(color));
     }

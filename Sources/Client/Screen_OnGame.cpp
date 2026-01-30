@@ -15,6 +15,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include <string>
+#include <memory>
 
 extern char G_cSpriteAlphaDegree;
 
@@ -223,9 +225,6 @@ void Screen_OnGame::on_update()
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
                     if (strlen(m_pGame->G_cTxt) > 0) {
-                        if ((m_pGame->G_cTxt[0] == '!') || (m_pGame->G_cTxt[0] == '~')) {
-                            if (CMisc::bCheckIMEString(m_pGame->G_cTxt) == false) return;
-                        }
                         m_pGame->bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, m_pGame->G_cTxt);
                     }
                 }
@@ -432,57 +431,9 @@ void Screen_OnGame::on_render()
 
     // Item tooltip on cursor
     if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
-        (m_pGame->m_pItemList[CursorTarget::GetSelectedID()] != 0)) {
-        cItemColor = m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cItemColor;
-        if (cItemColor != 0) {
-            if ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-                (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-                (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-                m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
-            }
-            else {
-                m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
-            }
-        }
-        else m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSprite]->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sSpriteFrame);
-
-        char cStr1[64], cStr2[64], cStr3[64];
-        int iLoc;
-        m_pGame->GetItemName(m_pGame->m_pItemList[CursorTarget::GetSelectedID()].get(), cStr1, cStr2, cStr3);
-        iLoc = 0;
-        if (strlen(cStr1) != 0) {
-            if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(0, 255, 50));
-            else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(255, 255, 255));
-            iLoc += 15;
-        }
-        if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15; }
-        if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15; }
-        if ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit != 0) && ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_dwAttribute & 0x00000001) == 0)) {
-            wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sLevelLimit);
-            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
-        }
-        if ((m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) && (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight >= 1100)) {
-            int _wWeight = 0;
-            if (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight % 100) _wWeight = 1;
-            wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wWeight / 100 + _wWeight);
-            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
-        }
-        if (m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_cEquipPos != DEF_EQUIPPOS_NONE) {
-            wsprintf(m_pGame->G_cTxt, UPDATE_SCREEN_ONGAME10, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wCurLifeSpan, m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_wMaxLifeSpan);
-            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); iLoc += 15;
-        }
-        if (iLoc == 15) {
-            iLoc = 0;
-            for (int iTmp = 0; iTmp < DEF_MAXITEMS; iTmp++) {
-                if (m_pGame->m_pItemList[iTmp] != 0) {
-                    if (m_pGame->m_pItemList[iTmp]->m_sIDnum == m_pGame->m_pItemList[CursorTarget::GetSelectedID()]->m_sIDnum) iLoc++;
-                }
-            }
-            if (iLoc > 1) {
-                wsprintf(m_pGame->G_cTxt, DEF_MSG_TOTAL_NUMBER, iLoc);
-                TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(150, 150, 150));
-            }
-        }
+        (m_pGame->m_pItemList[CursorTarget::GetSelectedID()] != 0))
+    {
+        RenderItemTooltip();
     }
 
     // Druncncity bubbles
@@ -492,13 +443,13 @@ void Screen_OnGame::on_render()
     // Heldenian tower count
     if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_pGame->m_cCurLocation, "BtField", 7) == 0)) {
         wsprintf(m_pGame->G_cTxt, "Aresden Flags : %d", m_pGame->m_iHeldenianAresdenFlags);
-        TextLib::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
         wsprintf(m_pGame->G_cTxt, "Aresden Flags : %d", m_pGame->m_iHeldenianElvineFlags);
-        TextLib::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
         wsprintf(m_pGame->G_cTxt, "Aresden's rest building number : %d", m_pGame->m_iHeldenianAresdenLeftTower);
-        TextLib::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
         wsprintf(m_pGame->G_cTxt, "Elvine's rest building number : %d", m_pGame->m_iHeldenianElvineLeftTower);
-        TextLib::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
     }
 
     m_pGame->DrawTopMsg();
@@ -509,7 +460,7 @@ void Screen_OnGame::on_render()
     int iDisplayY = 100;
     if (ConfigManager::Get().IsShowFpsEnabled()) {
         wsprintf(m_pGame->G_cTxt, "fps : %u", FrameTiming::GetFPS());
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
         iDisplayY += 14;
     }
 
@@ -518,14 +469,14 @@ void Screen_OnGame::on_render()
             wsprintf(m_pGame->G_cTxt, "latency : %d ms", m_pGame->m_iLatencyMs);
         else
             wsprintf(m_pGame->G_cTxt, "latency : -- ms");
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
         iDisplayY += 14;
     }
 
     // Profiling display
     if (FrameTiming::IsProfilingEnabled()) {
         iDisplayY += 4;
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::FromColorRef(RGB(255, 255, 100)));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::FromColorRef(GameColors::UIProfileYellow.ToColorRef()));
         iDisplayY += 14;
 
         for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++) {
@@ -534,8 +485,71 @@ void Screen_OnGame::on_render()
             int wholePart = static_cast<int>(avgMs);
             int fracPart = static_cast<int>((avgMs - wholePart) * 100);
             wsprintf(m_pGame->G_cTxt, "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(RGB(200, 200, 200)));
+            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIDisabled.ToColorRef()));
             iDisplayY += 12;
+        }
+    }
+}
+
+void Screen_OnGame::RenderItemTooltip()
+{
+	short target_id = CursorTarget::GetSelectedID();
+    CItem* item = m_pGame->m_pItemList[target_id].get();
+    char cItemColor = item->m_cItemColor;
+    bool is_hand_item = item->m_cEquipPos == DEF_EQUIPPOS_LHAND || item->m_cEquipPos == DEF_EQUIPPOS_RHAND || item->m_cEquipPos == DEF_EQUIPPOS_TWOHAND;
+    size_t item_sprite_index = DEF_SPRID_ITEMPACK_PIVOTPOINT + item->m_sSprite;
+    SpriteLib::ISprite* sprite = m_pGame->m_pSprite[item_sprite_index].get();
+    bool is_equippable = item->IsArmor() || item->IsWeapon() || item->IsAccessory();
+
+    if (cItemColor != 0) {
+        if (is_hand_item) {
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+        }
+        else {
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+        }
+    }
+    else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame);
+
+    char cStr1[64], cStr2[64], cStr3[64];
+    int iLoc;
+    m_pGame->GetItemName(item, cStr1, cStr2, cStr3);
+    iLoc = 0;
+    if (strlen(cStr1) != 0) {
+        if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b));
+        else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        iLoc += 15;
+    }
+    if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); iLoc += 15; }
+    if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); iLoc += 15; }
+    if ((item->m_sLevelLimit != 0) && item->IsCustomMade()) {
+        wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, item->m_sLevelLimit);
+        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); iLoc += 15;
+    }
+    if (is_equippable) {
+        // Weight below 1100 is not displayed as a strength requirement
+        if (item->m_wWeight >= 1100)
+        {
+            // Display weight, whatever the weight calculation is, divide by 100, and round up
+            int _wWeight = static_cast<int>(std::ceil(item->m_wWeight / 100.0f));
+            wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SHOP15, _wWeight);
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); iLoc += 15;
+        }
+
+        // Display durability
+        wsprintf(m_pGame->G_cTxt, UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, item->m_wMaxLifeSpan);
+        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); iLoc += 15;
+    }
+
+    if (item->IsStackable()) {
+        auto count = std::count_if(m_pGame->m_pItemList.begin(), m_pGame->m_pItemList.end(),
+            [item](const std::unique_ptr<CItem>& otherItem) {
+                return otherItem != nullptr && otherItem->m_sIDnum == item->m_sIDnum;
+            });
+
+        if (count > 1) {
+            wsprintf(m_pGame->G_cTxt, DEF_MSG_TOTAL_NUMBER, count);
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
         }
     }
 }

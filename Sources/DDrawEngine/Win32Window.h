@@ -31,6 +31,8 @@ public:
 
     // Display
     virtual void SetFullscreen(bool fullscreen) override;
+    virtual void SetBorderless(bool borderless) override;
+    virtual bool IsBorderless() const override;
     virtual void SetSize(int width, int height, bool center = true) override;
     virtual void Show() override;
     virtual void Hide() override;
@@ -56,6 +58,7 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
+    bool m_borderless;
     bool m_active;
     bool m_open;
     char m_className[64];

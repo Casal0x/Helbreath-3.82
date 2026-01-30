@@ -30,15 +30,15 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, RGB(55, 25, 25));
+			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel.ToColorRef());
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, RGB(55, 25, 25));
+		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel.ToColorRef());
 
 		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
 
 		wsprintf(cTxt, "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, RGB(25, 35, 25));
+		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel.ToColorRef());
 		break;
 
 	case 20:
@@ -50,13 +50,13 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, RGB(55, 25, 25));
+			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel.ToColorRef());
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, RGB(55, 25, 25));
-		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel.ToColorRef());
+		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
 
 		wsprintf(cTxt, "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, RGB(25, 35, 25));
+		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel.ToColorRef());
 		break;
 	}
 }

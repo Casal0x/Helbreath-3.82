@@ -27,20 +27,20 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode1_CreateGuild(sX, sY, szX, msX, msY);
 		break;
 	case 2:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU19, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU19, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		break;
 	case 3:
-		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU20, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_pPlayer->m_cGuildName, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 144, "____________________", 25, 35, 25);
-		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU21, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU20, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 140, m_pGame->m_pPlayer->m_cGuildName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 144, "____________________", GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU21, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 4:
-		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU22, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU23, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU22, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU23, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
@@ -49,16 +49,16 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode5_DisbandConfirm(sX, sY, szX, msX, msY);
 		break;
 	case 6:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU29, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU29, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		break;
 	case 7:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU30, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU30, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 8:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU31, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU31, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
@@ -67,7 +67,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode9_AdmissionTicket(sX, sY, szX, msX, msY);
 		break;
 	case 10:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU37, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU37, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
@@ -76,7 +76,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode11_SecessionTicket(sX, sY, szX, msX, msY);
 		break;
 	case 12:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU43, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU43, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
@@ -85,35 +85,35 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode13_FightzoneSelect(sX, sY, szX, msX, msY);
 		break;
 	case 14:
-		PutAlignedString(sX, sX + szX, sY + 130, DRAW_DIALOGBOX_GUILDMENU66, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_GUILDMENU67, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU68, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 130, DRAW_DIALOGBOX_GUILDMENU66, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_GUILDMENU67, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU68, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 15:
-		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU69, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU70, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU69, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU70, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 16:
-		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU71, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU72, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 135, DRAW_DIALOGBOX_GUILDMENU71, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_GUILDMENU72, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 17:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU73, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU73, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 18:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU74, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU74, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		break;
 	case 19:
 		if (m_pGame->m_iFightzoneNumber > 0)
@@ -124,17 +124,17 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawMode20_ConfirmCancel(sX, sY, szX, msX, msY);
 		break;
 	case 21:
-		PutAlignedString(sX, sX + szX, sY + ADJY + 95, DRAW_DIALOGBOX_GUILDMENU76, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + ADJY + 110, DRAW_DIALOGBOX_GUILDMENU77, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + ADJY + 135, DRAW_DIALOGBOX_GUILDMENU78, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + ADJY + 150, DRAW_DIALOGBOX_GUILDMENU79, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + ADJY + 165, DRAW_DIALOGBOX_GUILDMENU80, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 95, DRAW_DIALOGBOX_GUILDMENU76, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 110, DRAW_DIALOGBOX_GUILDMENU77, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 135, DRAW_DIALOGBOX_GUILDMENU78, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 150, DRAW_DIALOGBOX_GUILDMENU79, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 165, DRAW_DIALOGBOX_GUILDMENU80, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
 		break;
 	case 22:
-		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU81, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 140, DRAW_DIALOGBOX_GUILDMENU81, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
 		else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
@@ -147,56 +147,56 @@ void DialogBox_GuildMenu::DrawMode0_MainMenu(short sX, short sY, short szX, shor
 	// Create new guild option
 	if ((m_pGame->m_pPlayer->m_iGuildRank == -1) && (m_pGame->m_pPlayer->m_iCharisma >= 20) && (m_pGame->m_pPlayer->m_iLevel >= 20)) {
 		if ((msX > sX + ADJX + 80) && (msX < sX + ADJX + 210) && (msY > sY + ADJY + 63) && (msY < sY + ADJY + 78))
-			PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 	}
-	else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, 65, 65, 65);
+	else PutAlignedString(sX, sX + szX, sY + ADJY + 65, DRAW_DIALOGBOX_GUILDMENU1, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 	// Disband guild option
 	if (m_pGame->m_pPlayer->m_iGuildRank == 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 82) && (msY < sY + ADJY + 99))
-			PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 	}
-	else PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, 65, 65, 65);
+	else PutAlignedString(sX, sX + szX, sY + ADJY + 85, DRAW_DIALOGBOX_GUILDMENU4, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 	// Admission ticket option
 	if ((msX > sX + ADJX + 61) && (msX < sX + ADJX + 226) && (msY > sY + ADJY + 103) && (msY < sY + ADJY + 120))
-		PutAlignedString(sX, sX + szX, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU7, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU7, 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU7, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+	else PutAlignedString(sX, sX + szX, sY + ADJY + 105, DRAW_DIALOGBOX_GUILDMENU7, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 	// Secession ticket option
 	if ((msX > sX + ADJX + 60) && (msX < sX + ADJX + 227) && (msY > sY + ADJY + 123) && (msY < sY + ADJY + 139))
-		PutAlignedString(sX, sX + szX, sY + ADJY + 125, DRAW_DIALOGBOX_GUILDMENU9, 255, 255, 255);
-	else PutAlignedString(sX, sX + szX, sY + ADJY + 125, DRAW_DIALOGBOX_GUILDMENU9, 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 125, DRAW_DIALOGBOX_GUILDMENU9, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+	else PutAlignedString(sX, sX + szX, sY + ADJY + 125, DRAW_DIALOGBOX_GUILDMENU9, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 	// Fightzone options
 	if (m_pGame->m_pPlayer->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber == 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 228) && (msY > sY + ADJY + 143) && (msY < sY + ADJY + 169))
-			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 	}
 	else if (m_pGame->m_pPlayer->m_iGuildRank == 0 && m_pGame->m_iFightzoneNumber > 0) {
 		if ((msX > sX + ADJX + 72) && (msX < sX + ADJX + 216) && (msY > sY + ADJY + 143) && (msY < sY + ADJY + 169))
-			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 	}
 	else if (m_pGame->m_iFightzoneNumber < 0) {
-		PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, 65, 65, 65);
+		PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU13, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 	}
-	else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, 65, 65, 65);
+	else PutAlignedString(sX, sX + szX, sY + ADJY + 145, DRAW_DIALOGBOX_GUILDMENU11, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 	PutAlignedString(sX, sX + szX, sY + ADJY + 205, DRAW_DIALOGBOX_GUILDMENU17);
 }
 
 void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, short msX, short msY)
 {
-	PutAlignedString(sX + 24, sX + 239, sY + 125, DRAW_DIALOGBOX_GUILDMENU18, 55, 25, 25);
-	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
+	PutAlignedString(sX + 24, sX + 239, sY + 125, DRAW_DIALOGBOX_GUILDMENU18, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel.ToColorRef());
 
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu) {
 		std::string masked(strlen(m_pGame->m_pPlayer->m_cGuildName), '*');
-		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
 	}
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
@@ -215,12 +215,12 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 void DialogBox_GuildMenu::DrawMode5_DisbandConfirm(short sX, short sY, short szX, short msX, short msY)
 {
 	PutAlignedString(sX, sX + szX, sY + 90, DRAW_DIALOGBOX_GUILDMENU24);
-	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_pPlayer->m_cGuildName, 35, 35, 35);
-	PutAlignedString(sX, sX + szX, sY + 109, "____________________", 0, 0, 0);
+	PutAlignedString(sX, sX + szX, sY + 105, m_pGame->m_pPlayer->m_cGuildName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + szX, sY + 109, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 	PutAlignedString(sX, sX + szX, sY + 130, DRAW_DIALOGBOX_GUILDMENU25);
 	PutAlignedString(sX, sX + szX, sY + 145, DRAW_DIALOGBOX_GUILDMENU26);
 	PutAlignedString(sX, sX + szX, sY + 160, DRAW_DIALOGBOX_GUILDMENU27);
-	PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_GUILDMENU28, 55, 25, 25);
+	PutAlignedString(sX, sX + szX, sY + 185, DRAW_DIALOGBOX_GUILDMENU28, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
@@ -273,36 +273,36 @@ void DialogBox_GuildMenu::DrawMode13_FightzoneSelect(short sX, short sY, short s
 
 	// Fightzone buttons
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 168) && (msY < sY + ADJY + 185))
-		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU51, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU51, RGB(4, 0, 50));
+		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU51, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU51, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 168) && (msY < sY + ADJY + 185))
-		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU53, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU53, RGB(4, 0, 50));
+		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU53, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 170, DRAW_DIALOGBOX_GUILDMENU53, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 188) && (msY < sY + ADJY + 205))
-		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU55, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU55, RGB(4, 0, 50));
+		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU55, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU55, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 188) && (msY < sY + ADJY + 205))
-		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU57, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU57, RGB(4, 0, 50));
+		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU57, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 190, DRAW_DIALOGBOX_GUILDMENU57, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 208) && (msY < sY + ADJY + 225))
-		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU59, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU59, RGB(4, 0, 50));
+		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU59, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU59, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 208) && (msY < sY + ADJY + 225))
-		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU61, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU61, RGB(4, 0, 50));
+		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU61, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 210, DRAW_DIALOGBOX_GUILDMENU61, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 228) && (msY < sY + ADJY + 245))
-		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU63, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU63, RGB(4, 0, 50));
+		PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU63, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 65 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU63, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 228) && (msY < sY + ADJY + 245))
-		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU65, RGB(255, 255, 255));
-	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU65, RGB(4, 0, 50));
+		PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU65, GameColors::UIWhite.ToColorRef());
+	else PutString(sX + ADJX + 150 + 25 - 23, sY + ADJY + 230, DRAW_DIALOGBOX_GUILDMENU65, GameColors::UIMagicBlue.ToColorRef());
 
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
@@ -311,9 +311,9 @@ void DialogBox_GuildMenu::DrawMode13_FightzoneSelect(short sX, short sY, short s
 
 void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX, short msX, short msY)
 {
-	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, 55, 25, 25);
-	PutString(sX + 75, sY + 144, "____________________", RGB(25, 35, 25));
-	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel.ToColorRef());
+	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 25);
 	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 24);

@@ -25,143 +25,143 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode) {
 	case 0: // initial diag
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
-			PutAlignedString(sX, sX + szX, sY + 70, "Teleport to Battle Field", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 70, "Teleport to Battle Field", 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + 70, "Teleport to Battle Field", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 70, "Teleport to Battle Field", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
-			PutAlignedString(sX, sX + szX, sY + 95, "Hire a soldier", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 95, "Hire a soldier", 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + 95, "Hire a soldier", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 95, "Hire a soldier", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
-			PutAlignedString(sX, sX + szX, sY + 120, "Taking Flags", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 120, "Taking Flags", 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + 120, "Taking Flags", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 120, "Taking Flags", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 170))
-			PutAlignedString(sX, sX + szX, sY + 145, "Receive a Tutelary Angel", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 145, "Receive a Tutelary Angel", 4, 0, 50);
+			PutAlignedString(sX, sX + szX, sY + 145, "Receive a Tutelary Angel", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 145, "Receive a Tutelary Angel", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		break;
 
 	case 1: // TP diag
 		if (m_pGame->m_iTeleportMapCount > 0)
 		{
 			char teleportBuf[128];
-			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(55, 25, 25));
+			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
 				m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, cTxt);
 				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
 				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 255, 255, 255);
-				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, 250, 250, 0);
+					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 			}
 		}
 		else if (m_pGame->m_iTeleportMapCount == -1)
 		{
-			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU73, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_CITYHALL_MENU74, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU75, 55, 25, 25);
+			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU73, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_CITYHALL_MENU74, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU75, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		}
 		else
 		{
-			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU76, 55, 25, 25);
+			PutAlignedString(sX, sX + szX, sY + 175, DRAW_DIALOGBOX_CITYHALL_MENU76, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		}
 		break;
 
 	case 2: // Soldier diag
-		PutAlignedString(sX, sX + szX, sY + 45, "You will hire a soldier by summon points", 255, 255, 255);
+		PutAlignedString(sX, sX + szX, sY + 45, "You will hire a soldier by summon points", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
-				PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 70, "Sorceress             2000 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
-				PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 95, "Ancient Temple Knight 3000 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
-				PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 120, "Elf Master            1500 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 171))
-				PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 145, "Dark Shadow Knight    3000 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-				PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 170, "Heavy Battle Tank     4000 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
 		if ((m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
-				PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 255, 255, 255);
-			else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
-		else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", 65, 65, 65);
+		else PutAlignedString(sX, sX + szX, sY + 195, "Barbarian             3000 Point", GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 
-		PutAlignedString(sX, sX + szX, sY + 220, "You should join a guild to hire soldiers.", 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + 220, "You should join a guild to hire soldiers.", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		char pointsBuf[64];
 		snprintf(pointsBuf, sizeof(pointsBuf), "Summon points : %d", m_pGame->m_pPlayer->m_iConstructionPoint);
-		PutAlignedString(sX, sX + szX, sY + 250, pointsBuf, 4, 0, 50);
-		PutAlignedString(sX, sX + szX, sY + 280, "Maximum summon points : 12000 points.", 4, 0, 50);
-		PutAlignedString(sX, sX + szX, sY + 300, "Maximum hiring number : 5 ", 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + 250, pointsBuf, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 280, "Maximum summon points : 12000 points.", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 300, "Maximum hiring number : 5 ", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		break;
 
 	case 3: // Hire a Flag Diag
-		PutAlignedString(sX, sX + szX, sY + 45, "You may acquire Flags with EK points.", 4, 0, 50);
-		PutAlignedString(sX, sX + szX, sY + 70, "Price is 10 EK per Flag.", 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + 45, "You may acquire Flags with EK points.", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 70, "Price is 10 EK per Flag.", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 140) && (msY <= sY + 165))
-			PutAlignedString(sX, sX + szX, sY + 140, "Take a Flag", 255, 255, 255);
+			PutAlignedString(sX, sX + szX, sY + 140, "Take a Flag", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 		else
-			PutAlignedString(sX, sX + szX, sY + 140, "Take a Flag", 250, 250, 0);
+			PutAlignedString(sX, sX + szX, sY + 140, "Take a Flag", GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 		break;
 
 	case 4: // Tutelar Angel Diag
-		PutAlignedString(sX, sX + szX, sY + 45, "5 magesty points will be deducted", 4, 0, 50);
-		PutAlignedString(sX, sX + szX, sY + 80, "upon receiving the Pendant of Tutelary Angel.", 4, 0, 50);
-		PutAlignedString(sX, sX + szX, sY + 105, "Would you like to receive the Tutelary Angel?", 4, 0, 50);
+		PutAlignedString(sX, sX + szX, sY + 45, "5 magesty points will be deducted", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 80, "upon receiving the Pendant of Tutelary Angel.", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 105, "Would you like to receive the Tutelary Angel?", GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		char angelBuf[64];
 		snprintf(angelBuf, sizeof(angelBuf), DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-		PutAlignedString(sX, sX + szX, sY + 140, angelBuf, 0, 0, 0);
+		PutAlignedString(sX, sX + szX, sY + 140, angelBuf, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 175) && (msY < sY + 200)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))
-			PutAlignedString(sX, sX + szX, sY + 175, "Tutelary Angel (STR) will be handed out.", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 175, "Tutelary Angel (STR) will be handed out.", 250, 250, 0);
+			PutAlignedString(sX, sX + szX, sY + 175, "Tutelary Angel (STR) will be handed out.", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 175, "Tutelary Angel (STR) will be handed out.", GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 200) && (msY < sY + 225)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))
-			PutAlignedString(sX, sX + szX, sY + 200, "Tutelary Angel (DEX) will be handed out.", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 200, "Tutelary Angel (DEX) will be handed out.", 250, 250, 0);
+			PutAlignedString(sX, sX + szX, sY + 200, "Tutelary Angel (DEX) will be handed out.", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 200, "Tutelary Angel (DEX) will be handed out.", GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 225) && (msY < sY + 250)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))
-			PutAlignedString(sX, sX + szX, sY + 225, "Tutelary Angel (INT) will be handed out.", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 225, "Tutelary Angel (INT) will be handed out.", 250, 250, 0);
+			PutAlignedString(sX, sX + szX, sY + 225, "Tutelary Angel (INT) will be handed out.", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 225, "Tutelary Angel (INT) will be handed out.", GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 250) && (msY < sY + 275)
 			&& (m_pGame->m_iGizonItemUpgradeLeft > 4))
-			PutAlignedString(sX, sX + szX, sY + 250, "Tutelary Angel (MAG) will be handed out.", 255, 255, 255);
-		else PutAlignedString(sX, sX + szX, sY + 250, "Tutelary Angel (MAG) will be handed out.", 250, 250, 0);
+			PutAlignedString(sX, sX + szX, sY + 250, "Tutelary Angel (MAG) will be handed out.", GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		else PutAlignedString(sX, sX + szX, sY + 250, "Tutelary Angel (MAG) will be handed out.", GameColors::UIMenuHighlight.r, GameColors::UIMenuHighlight.g, GameColors::UIMenuHighlight.b);
 		break;
 	}
 }

@@ -58,14 +58,14 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
 		TextLib::DrawText(GameFont::Numbers, 85, HP_NUM_Y, statBuf,
-			TextLib::TextStyle::Color(m_pGame->m_wR[5] * 11, m_pGame->m_wG[5] * 11, m_pGame->m_wB[5] * 11));
+			TextLib::TextStyle::Color(GameColors::PoisonText.r, GameColors::PoisonText.g, GameColors::PoisonText.b));
 		TextLib::DrawText(GameFont::SprFont3_2, 35, HP_BAR_Y + 2, "Poisoned",
-			TextLib::TextStyle::Color(m_pGame->m_wR[5] * 8, m_pGame->m_wG[5] * 8, m_pGame->m_wB[5] * 8).WithAlpha(0.7f));
+			TextLib::TextStyle::Color(GameColors::PoisonLabel.r, GameColors::PoisonLabel.g, GameColors::PoisonLabel.b).WithAlpha(0.7f));
 	}
 	else
 	{
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X, HP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X, HP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	}
 
 	// MP bar
@@ -79,8 +79,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// MP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X, MP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X, MP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
 	// SP bar
 	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -92,8 +92,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// SP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(0, 0, 0));
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X, SP_NUM_Y, statBuf, TextLib::TextStyle::Color(255, 255, 255));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X, SP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -139,7 +139,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		const char* tooltip = m_pGame->m_pPlayer->m_bIsCombatMode
 			? (m_pGame->m_pPlayer->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
-		PutString(msX - 10, msY - 20, tooltip, RGB(250, 250, 220));
+		PutString(msX - 10, msY - 20, tooltip, GameColors::UITooltip.ToColorRef());
 	}
 
 	// Crusade icon
@@ -173,8 +173,8 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	{
 		snprintf(infoBuf, sizeof(infoBuf), "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
-	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, infoBuf, 0, 0, 0);
-	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, infoBuf, 200, 200, 120);
+	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, infoBuf, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, infoBuf, GameColors::UIPaleYellow.r, GameColors::UIPaleYellow.g, GameColors::UIPaleYellow.b);
 }
 
 void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
@@ -191,7 +191,7 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 		{
 			pSprite->Draw(btn.spriteX, BTN_Y1, btn.spriteFrame);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
-			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, RGB(250, 250, 220));
+			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, GameColors::UITooltip.ToColorRef());
 			break;
 		}
 	}

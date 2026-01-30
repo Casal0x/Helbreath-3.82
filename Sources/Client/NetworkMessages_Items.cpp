@@ -16,7 +16,7 @@ namespace NetworkMessageHandlers {
 		char  cName[21], cItemType, cEquipPos, cGenderLimit;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit;
-		uint16_t wCost, wWeight, wCurLifeSpan;
+		uint16_t wCost, wWeight, wCurLifeSpan, wMaxLifeSpan;
 		char  cTxt[120], cItemColor;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPurchased>(
@@ -32,6 +32,7 @@ namespace NetworkMessageHandlers {
 		sLevelLimit = static_cast<short>(pkt->level_limit);
 		cGenderLimit = static_cast<char>(pkt->gender_limit);
 		wCurLifeSpan = pkt->cur_lifespan;
+		wMaxLifeSpan = pkt->max_lifespan;
 		wWeight = pkt->weight;
 		sSprite = static_cast<short>(pkt->sprite);
 		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
@@ -87,6 +88,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
 				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
+				pGame->m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
 				pGame->m_pItemList[i]->m_wWeight = wWeight;
 				pGame->m_pItemList[i]->m_sSprite = sSprite;
 				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
@@ -110,7 +112,7 @@ namespace NetworkMessageHandlers {
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
 		char  cTxt[120], cGenderLimit, cItemColor;
-		uint16_t wWeight, wCurLifeSpan;
+		uint16_t wWeight, wCurLifeSpan, wMaxLifeSpan;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemObtained>(
 			pData, sizeof(hb::net::PacketNotifyItemObtained));
@@ -125,6 +127,7 @@ namespace NetworkMessageHandlers {
 		sLevelLimit = static_cast<short>(pkt->level_limit);
 		cGenderLimit = static_cast<char>(pkt->gender_limit);
 		wCurLifeSpan = pkt->cur_lifespan;
+		wMaxLifeSpan = pkt->max_lifespan;
 		wWeight = pkt->weight;
 		sSprite = static_cast<short>(pkt->sprite);
 		sSpriteFrame = static_cast<short>(pkt->sprite_frame);
@@ -189,6 +192,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
 				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
+				pGame->m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
 				pGame->m_pItemList[i]->m_wWeight = wWeight;
 				pGame->m_pItemList[i]->m_sSprite = sSprite;
 				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;

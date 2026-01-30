@@ -53,11 +53,11 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				wsprintf(cTxt, DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, cStr1);
 
 				if (bHover)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 255, 255, 255);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 				else if (m_pGame->m_bIsSpecial)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 0, 255, 50);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 				else
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 45, 25, 25);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 			}
 			else
 			{
@@ -66,7 +66,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				{
 					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
 					{
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 255, 255, 255);
+						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 					}
 					else
 					{
@@ -77,7 +77,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								wsprintf(cTxt, "%s(%s, %s)", cStr1, cStr2, cStr3);
 							else
 								wsprintf(cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 255, 255, 255);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 						}
 						else
 						{
@@ -85,8 +85,8 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								wsprintf(cTxt, "(%s, %s)", cStr2, cStr3);
 							else
 								wsprintf(cTxt, "(%s%s)", cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 255, 255, 255);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt, 200, 200, 200);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 							i++;
 						}
 					}
@@ -96,9 +96,9 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
 					{
 						if (m_pGame->m_bIsSpecial)
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 0, 255, 50);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 						else
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 45, 25, 25);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 					}
 					else
 					{
@@ -111,16 +111,16 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 								wsprintf(cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
 
 							if (m_pGame->m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 0, 255, 50);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, 45, 25, 25);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 						}
 						else
 						{
 							if (m_pGame->m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 0, 255, 50);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, 45, 25, 25);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 						}
 					}
 				}

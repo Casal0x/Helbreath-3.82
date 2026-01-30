@@ -29,21 +29,21 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
 
 		wsprintf(cTxt, "%s", cStr1);
-		PutString(sX + 98, sY + 14, cTxt, RGB(255, 255, 255));
+		PutString(sX + 98, sY + 14, cTxt, GameColors::UIWhite.ToColorRef());
 
 		wsprintf(cTxt, DRAW_DIALOGBOX_FISHING1, Info().sV2);
-		PutString(sX + 98, sY + 28, cTxt, RGB(0, 0, 0));
+		PutString(sX + 98, sY + 28, cTxt, GameColors::UIBlack.ToColorRef());
 
-		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, RGB(0, 0, 0));
+		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack.ToColorRef());
 
 		wsprintf(cTxt, "%d %%", Info().sV1);
-		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(10, 0, 0));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnFishRed.r, GameColors::BmpBtnFishRed.g, GameColors::BmpBtnFishRed.b));
 
 		// "Try Now!" button
 		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(0, 0, 7));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 		break;
 	}
 }

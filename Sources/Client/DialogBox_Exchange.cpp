@@ -21,62 +21,62 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 1: // Not yet confirmed exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, 35, 55, 35);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen.r, GameColors::UIDarkGreen.g, GameColors::UIDarkGreen.b);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, 35, 55, 35);
+			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, GameColors::UIDarkGreen.r, GameColors::UIDarkGreen.g, GameColors::UIDarkGreen.b);
 
 		DrawItems(sX, sY, msX, msY, 0, 8);
 
 		if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 == -1)) {
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, 55, 25, 25);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(15, 15, 15));
+			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover.r, GameColors::BmpBtnHover.g, GameColors::BmpBtnHover.b));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
-			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE13, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE14, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, 55, 25, 25);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(15, 15, 15));
+			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE13, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE14, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover.r, GameColors::BmpBtnHover.g, GameColors::BmpBtnHover.b));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
-			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE19, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE20, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE21, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, 55, 25, 25);
-			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, 55, 25, 25);
+			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE19, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE20, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE21, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 			if ((msX >= sX + 200) && (msX <= sX + 200 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(6, 6, 20));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 			else
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(0, 0, 7));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 		}
 		if ((msX >= sX + 450) && (msX <= sX + 450 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(6, 6, 20));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(0, 0, 7));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 		break;
 
 	case 2: // You have confirmed the exchange
-		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, 35, 55, 35);
+		PutAlignedString(sX + 80, sX + 180, sY + 38, m_pGame->m_pPlayer->m_cPlayerName, GameColors::UIDarkGreen.r, GameColors::UIDarkGreen.g, GameColors::UIDarkGreen.b);
 		if (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)
-			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, 35, 55, 35);
+			PutAlignedString(sX + 250, sX + 540, sY + 38, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2, GameColors::UIDarkGreen.r, GameColors::UIDarkGreen.g, GameColors::UIDarkGreen.b);
 
 		DrawItems(sX, sY, msX, msY, 0, 8);
 
 		char exchangeBuf[128];
 		snprintf(exchangeBuf, sizeof(exchangeBuf), DRAW_DIALOGBOX_EXCHANGE33, m_pGame->m_stDialogBoxExchangeInfo[4].cStr2);
-		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE37, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE38, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + 305, DRAW_DIALOGBOX_EXCHANGE39, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + 215, exchangeBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 230, DRAW_DIALOGBOX_EXCHANGE34, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE35, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE36, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE37, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE38, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + 305, DRAW_DIALOGBOX_EXCHANGE39, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		break;
 	}
 }
@@ -103,10 +103,10 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
 					break;
 				default:
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
 					break;
 				}
 			}
@@ -128,21 +128,21 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 	if ((msX >= sX + sXadd - 6) && (msX <= sX + sXadd + 42) && (msY >= sY + 61) && (msY <= sY + 200)) {
 		wsprintf(cTxt, "%s", cNameStr);
 		if (m_pGame->m_bIsSpecial) {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, 0, 255, 50);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, 0, 255, 50);
+			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
 		}
 		else {
-			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, 35, 35, 35);
-			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, 35, 35, 35);
+			PutAlignedString(sX + 15, sX + 155, sY + 215, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX + 16, sX + 156, sY + 215, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		}
 
 		iLoc = 0;
 		if (strlen(cSubStr1) != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr1, 0, 0, 0);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr1, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 			iLoc += 15;
 		}
 		if (strlen(cSubStr2) != 0) {
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr2, 0, 0, 0);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cSubStr2, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 			iLoc += 15;
 		}
 
@@ -153,7 +153,7 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 			else {
 				snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_EXCHANGE2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV3);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2, 35, 35, 35);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt2, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 			iLoc += 15;
 		}
 
@@ -171,14 +171,14 @@ void DialogBox_Exchange::DrawItemInfo(short sX, short sY, short szX, short msX, 
 			else {
 				wsprintf(cTxt, GET_ITEM_NAME2, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV7);
 			}
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, 35, 35, 35);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 			iLoc += 15;
 		}
 
 		if (iLoc < 45) {
 			wsprintf(cTxt, DRAW_DIALOGBOX_EXCHANGE3, m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV5,
 				m_pGame->m_stDialogBoxExchangeInfo[iItemIndex].sV6);
-			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, 35, 35, 35);
+			PutAlignedString(sX + 16, sX + 155, sY + 235 + iLoc, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		}
 	}
 }

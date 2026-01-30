@@ -4,6 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "Win32Window.h"
+#include "ConfigManager.h"
 #include <cstdio>
 #include <windowsx.h>  // For GET_X_LPARAM, GET_Y_LPARAM
 
@@ -14,6 +15,7 @@ Win32Window::Win32Window()
     , m_width(0)
     , m_height(0)
     , m_fullscreen(false)
+    , m_borderless(true)
     , m_active(false)
     , m_open(false)
 {
@@ -34,6 +36,7 @@ bool Win32Window::Create(const WindowParams& params)
     m_width = params.width;
     m_height = params.height;
     m_fullscreen = params.fullscreen;
+    m_borderless = ConfigManager::Get().IsBorderlessEnabled();
 
     // Generate unique class name
     sprintf_s(m_className, sizeof(m_className), "Win32Window-%p", this);
@@ -56,16 +59,36 @@ bool Win32Window::Create(const WindowParams& params)
     if (!RegisterClassEx(&wc))
         return false;
 
+    // Calculate window style based on borderless setting
+    DWORD style;
+    if (m_fullscreen || m_borderless)
+    {
+        style = WS_POPUP;
+    }
+    else
+    {
+        style = WS_CAPTION | WS_MINIMIZEBOX;
+    }
+
+    // Calculate window rect - for bordered mode, adjust so client area = requested size
+    int windowW = m_width;
+    int windowH = m_height;
+    if (!m_fullscreen && !m_borderless)
+    {
+        RECT rc = { 0, 0, m_width, m_height };
+        AdjustWindowRect(&rc, style, FALSE);
+        windowW = rc.right - rc.left;
+        windowH = rc.bottom - rc.top;
+    }
+
     // Calculate window position
     int posX, posY;
-    DWORD style = WS_POPUP;
-
     if (params.centered)
     {
         int screenWidth = GetSystemMetrics(SM_CXFULLSCREEN);
         int screenHeight = GetSystemMetrics(SM_CYFULLSCREEN);
-        posX = (screenWidth - m_width) / 2;
-        posY = (screenHeight - m_height) / 2;
+        posX = (screenWidth - windowW) / 2;
+        posY = (screenHeight - windowH) / 2;
         if (posY > 100) posY += 40;  // Adjust for taskbar
     }
     else
@@ -81,7 +104,7 @@ bool Win32Window::Create(const WindowParams& params)
         params.title ? params.title : "Window",
         style,
         posX, posY,
-        m_width, m_height,
+        windowW, windowH,
         nullptr,
         nullptr,
         m_hInstance,
@@ -163,6 +186,54 @@ void Win32Window::SetFullscreen(bool fullscreen)
     m_fullscreen = fullscreen;
 }
 
+void Win32Window::SetBorderless(bool borderless)
+{
+    if (m_borderless == borderless || m_fullscreen)
+        return;
+
+    m_borderless = borderless;
+
+    if (!m_hWnd)
+        return;
+
+    DWORD style;
+    if (borderless)
+    {
+        style = WS_POPUP;
+    }
+    else
+    {
+        style = WS_CAPTION | WS_MINIMIZEBOX;
+    }
+
+    SetWindowLong(m_hWnd, GWL_STYLE, style);
+
+    // Recalculate window size so client area stays the same
+    int windowW = m_width;
+    int windowH = m_height;
+    if (!borderless)
+    {
+        RECT rc = { 0, 0, m_width, m_height };
+        AdjustWindowRect(&rc, style, FALSE);
+        windowW = rc.right - rc.left;
+        windowH = rc.bottom - rc.top;
+    }
+
+    // Center on screen
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    int posX = (screenWidth - windowW) / 2;
+    int posY = (screenHeight - windowH) / 2;
+
+    SetWindowPos(m_hWnd, HWND_TOP, posX, posY, windowW, windowH,
+        SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+}
+
+bool Win32Window::IsBorderless() const
+{
+    return m_borderless;
+}
+
 void Win32Window::SetSize(int width, int height, bool center)
 {
     if (width <= 0 || height <= 0)
@@ -173,17 +244,29 @@ void Win32Window::SetSize(int width, int height, bool center)
 
     if (m_hWnd)
     {
+        // Calculate actual window size accounting for borders
+        int windowW = width;
+        int windowH = height;
+        if (!m_fullscreen && !m_borderless)
+        {
+            DWORD style = static_cast<DWORD>(GetWindowLong(m_hWnd, GWL_STYLE));
+            RECT rc = { 0, 0, width, height };
+            AdjustWindowRect(&rc, style, FALSE);
+            windowW = rc.right - rc.left;
+            windowH = rc.bottom - rc.top;
+        }
+
         if (center)
         {
             int screenWidth = GetSystemMetrics(SM_CXSCREEN);
             int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-            int posX = (screenWidth - width) / 2;
-            int posY = (screenHeight - height) / 2;
-            SetWindowPos(m_hWnd, HWND_TOP, posX, posY, width, height, SWP_SHOWWINDOW);
+            int posX = (screenWidth - windowW) / 2;
+            int posY = (screenHeight - windowH) / 2;
+            SetWindowPos(m_hWnd, HWND_TOP, posX, posY, windowW, windowH, SWP_SHOWWINDOW);
         }
         else
         {
-            SetWindowPos(m_hWnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE | SWP_SHOWWINDOW);
+            SetWindowPos(m_hWnd, HWND_TOP, 0, 0, windowW, windowH, SWP_NOMOVE | SWP_SHOWWINDOW);
         }
     }
 }

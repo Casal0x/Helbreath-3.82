@@ -71,6 +71,14 @@ public:
 	void SetRunningModeEnabled(bool enabled);
 	void SetFullscreenEnabled(bool enabled);
 
+	// Mouse capture
+	bool IsMouseCaptureEnabled() const { return m_bCaptureMouse; }
+	void SetMouseCaptureEnabled(bool enabled);
+
+	// Borderless window
+	bool IsBorderlessEnabled() const { return m_bBorderless; }
+	void SetBorderlessEnabled(bool enabled);
+
 	// Dirty flag - indicates unsaved changes
 	bool IsDirty() const { return m_bDirty; }
 	void MarkClean() { m_bDirty = false; }
@@ -112,6 +120,8 @@ private:
 	bool m_bDialogTrans;
 	bool m_bRunningMode;
 	bool m_bFullscreen;
+	bool m_bCaptureMouse;
+	bool m_bBorderless;
 
 	// State
 	bool m_bDirty;

@@ -33,6 +33,8 @@ public:
 
     // Display
     void SetFullscreen(bool fullscreen) override;
+    void SetBorderless(bool borderless) override;
+    bool IsBorderless() const override;
     void SetSize(int width, int height, bool center = true) override;
     void Show() override;
     void Hide() override;
@@ -64,6 +66,7 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
+    bool m_borderless;
     bool m_active;
     bool m_open;
 };

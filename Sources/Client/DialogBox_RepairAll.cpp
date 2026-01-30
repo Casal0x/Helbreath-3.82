@@ -29,7 +29,7 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 				m_pGame->m_pItemList[m_pGame->m_stRepairAll[i + Info().sView].index]->m_cName,
 				m_pGame->m_stRepairAll[i + Info().sView].price);
 
-			PutString(sX + 30, sY + 45 + i * 15, cTxt, RGB(5, 5, 5));
+			PutString(sX + 30, sY + 45 + i * 15, cTxt, GameColors::UIBlack.ToColorRef());
 			m_pGame->m_bIsItemDisabled[m_pGame->m_stRepairAll[i + Info().sView].index] = true;
 		}
 	}
@@ -86,12 +86,12 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 		// Total cost
 		std::memset(cTxt, 0, sizeof(cTxt));
 		wsprintf(cTxt, "Total cost : %d", m_pGame->totalPrice);
-		PutString(sX + 30, sY + 270, cTxt, RGB(5, 5, 5));
+		PutString(sX + 30, sY + 270, cTxt, GameColors::UIBlack.ToColorRef());
 	}
 	else
 	{
 		// No items to repair
-		PutAlignedString(sX, sX + szX, sY + 140, "There are no items to repair.", 5, 5, 5);
+		PutAlignedString(sX, sX + szX, sY + 140, "There are no items to repair.", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 
 		// Cancel button only
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))

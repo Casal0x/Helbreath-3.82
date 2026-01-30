@@ -46,8 +46,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
 			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(6, 6, 20));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(0, 0, 7));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 		}
 		break;
 
@@ -65,8 +65,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX, sY, 4);
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX + 22, sY + 14, 3);
-		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", 220, 140, 160);
-		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", 90, 220, 200);
+		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink.r, GameColors::UISlatesPink.g, GameColors::UISlatesPink.b);
+		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan.r, GameColors::UISlatesCyan.g, GameColors::UISlatesCyan.b);
 
 		if ((dwTime - Info().dwT1) > 1000)
 		{

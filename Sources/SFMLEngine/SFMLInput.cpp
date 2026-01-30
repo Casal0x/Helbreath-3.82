@@ -6,6 +6,8 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "SFMLInput.h"
+#include "ConfigManager.h"
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <cstring>
 
 // Global input instance pointer (owned by RendererFactory)
@@ -37,6 +39,7 @@ namespace Input {
 
 SFMLInput::SFMLInput()
     : m_hWnd(nullptr)
+    , m_pRenderWindow(nullptr)
     , m_active(false)
     , m_suppressed(false)
     , m_mouseX(0)
@@ -57,6 +60,11 @@ void SFMLInput::Initialize(HWND hWnd)
 {
     m_hWnd = hWnd;
     m_active = true;
+}
+
+void SFMLInput::SetRenderWindow(sf::RenderWindow* pWindow)
+{
+    m_pRenderWindow = pWindow;
 }
 
 void SFMLInput::BeginFrame()
@@ -245,7 +253,15 @@ void SFMLInput::SetWindowActive(bool active)
 {
     m_active = active;
 
-    if (!active)
+    if (active)
+    {
+        if (m_pRenderWindow)
+        {
+            bool grab = ConfigManager::Get().IsMouseCaptureEnabled();
+            m_pRenderWindow->setMouseCursorGrabbed(grab);
+        }
+    }
+    else
     {
         ClearAllKeys();
     }

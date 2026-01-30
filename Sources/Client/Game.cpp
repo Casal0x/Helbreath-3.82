@@ -130,8 +130,7 @@ CGame::CGame()
 	iMaxBankItems = 200; // Default soft cap, server overrides
 	m_cLoading = 0;
 	m_bIsFirstConn = true;
-	m_bIsProgramActive = true;  // Start active, OnActivate(false) will set to false if window loses focus
-	m_iItemDropCnt = 0;
+m_iItemDropCnt = 0;
 	m_bItemDrop = false;
 	m_bIsSpecial = false;
 	m_cWhisperIndex = DEF_MAXWHISPERMSG;
@@ -296,35 +295,6 @@ bool CGame::bInit()
 	m_cMenuDir = 4;
 	m_cMenuDirCnt = 0;
 	m_cMenuFrame = 0;
-
-	// Weapon colors (m_wW* arrays) - 8-bit RGBA format (0-255 range)
-	m_wWR[1] = 64;   m_wWG[1] = 64;   m_wWB[1] = 80;    // Light-blue
-	m_wWR[2] = 64;   m_wWG[2] = 64;   m_wWB[2] = 80;    // Light-blue
-	m_wWR[3] = 64;   m_wWG[3] = 64;   m_wWB[3] = 80;    // Light-blue
-	m_wWR[4] = 64;   m_wWG[4] = 96;   m_wWB[4] = 64;    // Green
-	m_wWR[5] = 128;  m_wWG[5] = 88;   m_wWB[5] = 8;     // Critical
-	m_wWR[6] = 40;   m_wWG[6] = 48;   m_wWB[6] = 104;   // Heavy-blue
-	m_wWR[7] = 144;  m_wWG[7] = 144;  m_wWB[7] = 144;   // White
-	m_wWR[8] = 120;  m_wWG[8] = 96;   m_wWB[8] = 120;   // Violet
-	m_wWR[9] = 72;   m_wWG[9] = 8;    m_wWB[9] = 8;     // Heavy-Red
-
-	// Equipment/item colors (m_w* arrays) - 8-bit RGBA format (0-255 range)
-	m_wR[0] = 96;    m_wG[0] = 96;    m_wB[0] = 96;     // Base gray
-	m_wR[1] = 40;    m_wG[1] = 40;    m_wB[1] = 96;     // Indigo Blue
-	m_wR[2] = 72;    m_wG[2] = 72;    m_wB[2] = 56;     // Custom-Weapon Color
-	m_wR[3] = 128;   m_wG[3] = 104;   m_wB[3] = 24;     // Gold
-	m_wR[4] = 120;   m_wG[4] = 16;    m_wB[4] = 0;      // Crimson
-	m_wR[5] = 8;     m_wG[5] = 56;    m_wB[5] = 8;      // Green
-	m_wR[6] = 40;    m_wG[6] = 40;    m_wB[6] = 40;     // Gray
-	m_wR[7] = 40;    m_wG[7] = 72;    m_wB[7] = 80;     // Aqua
-	m_wR[8] = 120;   m_wG[8] = 48;    m_wB[8] = 88;     // Pink
-	m_wR[9] = 88;    m_wG[9] = 56;    m_wB[9] = 88;     // Violet
-	m_wR[10] = 0;    m_wG[10] = 32;   m_wB[10] = 56;    // Blue
-	m_wR[11] = 104;  m_wG[11] = 88;   m_wB[11] = 64;    // Tan
-	m_wR[12] = 88;   m_wG[12] = 88;   m_wB[12] = 48;    // Khaki
-	m_wR[13] = 80;   m_wG[13] = 80;   m_wB[13] = 8;     // Yellow
-	m_wR[14] = 72;   m_wG[14] = 8;    m_wB[14] = 8;     // Red
-	m_wR[15] = 48;   m_wG[15] = 48;   m_wB[15] = 48;    // Black
 
 	_LoadGameMsgTextContents();
 	std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
@@ -1317,10 +1287,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 2: // Bows
 						case 3: // Shields
 						case 15: // Axes hammers
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wWR[cItemColor] - m_wR[0], m_wWG[cItemColor] - m_wG[0], m_wWB[cItemColor] - m_wB[0]));
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
 							break;
 						default:
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_wR[cItemColor] - m_wR[0], m_wG[cItemColor] - m_wG[0], m_wB[cItemColor] - m_wB[0]));
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
 							break;
 						}
 					}
@@ -1924,19 +1894,19 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		if (strlen(cStr1) != 0)
 		{
 			if (m_bIsSpecial)
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(0, 255, 50));
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b));
 			else
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			iLoc += 15;
 		}
 		if (strlen(cStr2) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(150, 150, 150));
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 			iLoc += 15;
 		}
 		if (strlen(cStr3) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(150, 150, 150));
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 			iLoc += 15;
 		}
 	}
@@ -2198,7 +2168,7 @@ void CGame::OnTimer()
 		if ((dwTime - m_dwCheckSprTime) > 8000)
 		{
 			m_dwCheckSprTime = dwTime;
-			if (m_bIsProgramActive) ReleaseUnusedSprites();
+			ReleaseUnusedSprites();
 		}
 		if ((dwTime - m_dwCheckConnectionTime) > 1000)
 		{
@@ -3698,7 +3668,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				}
 				else
 				{
-					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -3707,7 +3677,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
 				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
@@ -3742,7 +3712,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -3752,7 +3722,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
@@ -3767,49 +3737,49 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (((m_entityState.m_sAppr2 & 0x000F) == 8) && (iShieldGlare == 1))
@@ -3821,7 +3791,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 					switch (iShieldGlare) {
 					case 0: break;
 						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -3835,7 +3805,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
 		else
@@ -3873,7 +3843,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
@@ -3884,7 +3854,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
@@ -3898,56 +3868,56 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
 					m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				switch (iShieldGlare) {
 				case 0: break;
 					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -3961,14 +3931,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
 					m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
@@ -3976,7 +3946,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				case 2: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
 				case 3: m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 		}
 
@@ -4342,7 +4312,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			{
 				if (iWeaponColor == 0)
 					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
@@ -4350,7 +4320,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
 				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
 			case 10: // Slime
@@ -4378,7 +4348,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -4387,7 +4357,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
@@ -4400,43 +4370,43 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iShieldIndex != -1)
@@ -4444,7 +4414,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				if (iShieldColor == 0)
 					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
-				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				switch (iShieldGlare) {
 				case 0: break;
 					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -4457,7 +4427,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
 		else
@@ -4488,7 +4458,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -4497,7 +4467,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
@@ -4510,52 +4480,52 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1) {
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1) {
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1) {
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
 					m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				switch (iShieldGlare) {
 				case 0: break;
 					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -4568,14 +4538,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 1)) {
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
 					m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
-				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				else m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
@@ -4583,7 +4553,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				case 2: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, m_iDrawFlag, 0, 0.7f)); break; // Green Glare
 				case 3: m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, 0, m_iDrawFlag, 0.7f)); break; // Blue Glare
 				}
-				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 		}
 
@@ -4594,9 +4564,9 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
 
 		if (bDashDraw == true) {
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
-			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
-			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->Draw(sX + dsx, sY + dsy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+			if (iWeaponIndex != -1) m_pSprite[iWeaponIndex]->Draw(sX + dsx, sY + dsy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+			if (iShieldIndex != -1) m_pSprite[iShieldIndex]->Draw(sX + dsx, sY + dsy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 		}
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
@@ -4776,7 +4746,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else {
 			if ((m_entityState.m_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
 		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -4794,49 +4764,49 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		{
 			if (iBootsColor == 0)
 				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
 				m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
 				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
 				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
 				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
 				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
 				m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
@@ -5013,7 +4983,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else {
 			if ((m_entityState.m_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
 		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -5038,7 +5008,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5049,7 +5019,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5060,7 +5030,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5071,7 +5041,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5082,7 +5052,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5093,7 +5063,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5104,7 +5074,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
 
@@ -5405,7 +5375,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
@@ -5446,7 +5416,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else
 				{
 					if ((m_entityState.m_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -5456,7 +5426,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
@@ -5471,56 +5441,56 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 					switch (iShieldGlare) {
 					case 0: break;
 						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -5534,7 +5504,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 			else
@@ -5571,7 +5541,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else
 				{
 					if ((m_entityState.m_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -5581,7 +5551,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
@@ -5596,56 +5566,56 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 					switch (iShieldGlare) {
 					case 0: break;
 						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -5659,14 +5629,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
@@ -5691,7 +5661,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
@@ -5732,7 +5702,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
 					if ((m_entityState.m_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -5742,7 +5712,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
@@ -5756,55 +5726,55 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 1)) {
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 					switch (iShieldGlare) {
 					case 0: break;
 						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -5818,7 +5788,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 			else
@@ -5854,7 +5824,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
 					if ((m_entityState.m_iStatus & 0x40) != 0)
-						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 
@@ -5865,7 +5835,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
@@ -5880,56 +5850,56 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iPantsIndex != -1)
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 
 				if (iArmArmorIndex != -1)
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 
 				if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 
 				if (iBodyArmorIndex != -1)
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 
 				if (iHelmIndex != -1)
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iShieldIndex != -1)
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 					switch (iShieldGlare) {
 					case 0: break;
 						//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -5943,14 +5913,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 
 				if (iWeaponIndex != -1)
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 					DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 					switch (iWeaponGlare) {
 					case 0: break;
@@ -6328,7 +6298,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		else
 		{
 			if ((m_entityState.m_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 		}
 
@@ -6347,49 +6317,49 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		{
 			if (iBootsColor == 0)
 				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 		}
 
 		if (iPantsIndex != -1)
 		{
 			if (iPantsColor == 0)
 				m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+			else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 		}
 
 		if (iArmArmorIndex != -1)
 		{
 			if (iArmColor == 0)
 				m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+			else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 		}
 
 		if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 		{
 			if (iBootsColor == 0)
 				m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+			else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 		}
 
 		if (iBodyArmorIndex != -1)
 		{
 			if (iArmorColor == 0)
 				m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+			else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 		}
 
 		if (iHelmIndex != -1)
 		{
 			if (iHelmColor == 0)
 				m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+			else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 		}
 
 		if (iMantleIndex != -1)
 		{
 			if (iMantleColor == 0)
 				m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
-			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
@@ -6624,7 +6594,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		{
 			m_entityState.m_iFrame = 7;
 			if ((m_entityState.m_iStatus & 0x40) != 0)
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame);
 
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -6642,49 +6612,49 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if (iMantleIndex != -1)
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
 		else if ((m_entityState.m_iStatus & 0x20) != 0)
@@ -7032,7 +7002,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -7075,7 +7045,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
@@ -7089,7 +7059,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7112,7 +7082,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7123,7 +7093,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7134,7 +7104,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7145,7 +7115,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7156,7 +7126,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7167,7 +7137,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7178,7 +7148,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7189,7 +7159,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -7207,7 +7177,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 		}
@@ -7246,7 +7216,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
@@ -7260,7 +7230,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7283,7 +7253,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7294,7 +7264,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7305,7 +7275,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7316,7 +7286,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7327,7 +7297,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7338,7 +7308,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7349,7 +7319,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7360,7 +7330,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -7378,7 +7348,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -7389,7 +7359,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -7649,7 +7619,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iWeaponColor == 0)
 					m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame);
-				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
@@ -7687,7 +7657,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -7697,7 +7667,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1)
@@ -7716,55 +7686,55 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0))
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1) {
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + cFrame);
-				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
 					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				switch (iShieldGlare) {
 				case 0: break;
 					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -7778,7 +7748,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
 		else
@@ -7811,7 +7781,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -7821,7 +7791,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iUndiesIndex != -1)
@@ -7840,55 +7810,55 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iPantsIndex != -1)
 			{
 				if (iPantsColor == 0)
 					m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+				else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 			}
 
 			if (iArmArmorIndex != -1)
 			{
 				if (iArmColor == 0)
 					m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+				else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 			}
 
 			if ((iBootsIndex != -1) && (iSkirtDraw == 0)) {
 				if (iBootsColor == 0)
 					m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+				else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 			}
 
 			if (iBodyArmorIndex != -1)
 			{
 				if (iArmorColor == 0)
 					m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+				else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 			}
 
 			if (iHelmIndex != -1)
 			{
 				if (iHelmColor == 0)
 					m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+				else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 			}
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 2))
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iShieldIndex != -1)
 			{
 				if (iShieldColor == 0)
 					m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+				else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				switch (iShieldGlare) {
 				case 0: break;
 					//case 1: m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir-1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_iDrawFlag, 0, 0, 0.7f)); break; // Red Glare
@@ -7902,14 +7872,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			{
 				if (iMantleColor == 0)
 					m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame);
-				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+				else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
 			if (iWeaponIndex != -1)
 			{
 				if (iWeaponColor == 0)
 					m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame);
-				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+				else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
 				case 0: break;
@@ -8047,7 +8017,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 		if (color == 0)
 			m_pSprite[idx]->Draw(sX, sY, dirFrame);
 		else
-			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(m_wR[color] - m_wR[0], m_wG[color] - m_wG[0], m_wB[color] - m_wB[0]));
+			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(GameColors::Items[color].r - GameColors::Base.r, GameColors::Items[color].g - GameColors::Base.g, GameColors::Items[color].b - GameColors::Base.b));
 	};
 
 	auto drawWeapon = [&]() {
@@ -8055,7 +8025,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 		if (eq.weaponColor == 0)
 			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame);
 		else
-			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[eq.weaponColor] - m_wR[0], m_wWG[eq.weaponColor] - m_wG[0], m_wWB[eq.weaponColor] - m_wB[0]));
+			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r - GameColors::Base.r, GameColors::Weapons[eq.weaponColor].g - GameColors::Base.g, GameColors::Weapons[eq.weaponColor].b - GameColors::Base.b));
 	};
 
 	auto drawMantle = [&](int order) {
@@ -8391,7 +8361,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -8436,7 +8406,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
@@ -8449,7 +8419,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8472,7 +8442,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8483,7 +8453,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8494,7 +8464,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8505,7 +8475,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8516,7 +8486,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8527,7 +8497,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8538,7 +8508,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8549,7 +8519,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -8567,7 +8537,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 		}
@@ -8607,7 +8577,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -8620,7 +8590,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8643,7 +8613,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8654,7 +8624,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8665,7 +8635,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8676,7 +8646,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8687,7 +8657,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8698,7 +8668,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8709,7 +8679,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8720,7 +8690,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -8738,7 +8708,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -8749,7 +8719,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -9619,7 +9589,6 @@ void CGame::ChatMsgHandler(char* pData)
 
 	if ((cMsgType == 0) || (cMsgType == 2) || (cMsgType == 3))
 	{
-		if (CMisc::bCheckIMEString(cTemp) == false) return;
 	}
 	if (!m_bWhisper)
 	{
@@ -9937,7 +9906,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -9976,7 +9945,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
@@ -9989,7 +9958,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10012,7 +9981,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10023,7 +9992,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10034,7 +10003,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10045,7 +10014,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10056,7 +10025,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10067,7 +10036,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10078,7 +10047,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10089,7 +10058,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -10107,7 +10076,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 		}
@@ -10140,7 +10109,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			else
 			{
 				if ((m_entityState.m_iStatus & 0x40) != 0)
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[10] - m_wR[0] / 2, m_wG[10] - m_wG[0] / 2, m_wB[10] - m_wB[0] / 2));
+					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
@@ -10154,7 +10123,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10177,7 +10146,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10188,7 +10157,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iPantsColor == 0)
 						m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iPantsColor] - m_wR[0], m_wG[iPantsColor] - m_wG[0], m_wB[iPantsColor] - m_wB[0]));
+					else m_pSprite[iPantsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iPantsColor].r - GameColors::Base.r, GameColors::Items[iPantsColor].g - GameColors::Base.g, GameColors::Items[iPantsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10199,7 +10168,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iArmColor == 0)
 						m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmColor] - m_wR[0], m_wG[iArmColor] - m_wG[0], m_wB[iArmColor] - m_wB[0]));
+					else m_pSprite[iArmArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmColor].r - GameColors::Base.r, GameColors::Items[iArmColor].g - GameColors::Base.g, GameColors::Items[iArmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10210,7 +10179,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iBootsColor == 0)
 						m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iBootsColor] - m_wR[0], m_wG[iBootsColor] - m_wG[0], m_wB[iBootsColor] - m_wB[0]));
+					else m_pSprite[iBootsIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iBootsColor].r - GameColors::Base.r, GameColors::Items[iBootsColor].g - GameColors::Base.g, GameColors::Items[iBootsColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10221,7 +10190,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iArmorColor == 0)
 						m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iArmorColor] - m_wR[0], m_wG[iArmorColor] - m_wG[0], m_wB[iArmorColor] - m_wB[0]));
+					else m_pSprite[iBodyArmorIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iArmorColor].r - GameColors::Base.r, GameColors::Items[iArmorColor].g - GameColors::Base.g, GameColors::Items[iArmorColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10232,7 +10201,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iHelmColor == 0)
 						m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iHelmColor] - m_wR[0], m_wG[iHelmColor] - m_wG[0], m_wB[iHelmColor] - m_wB[0]));
+					else m_pSprite[iHelmIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iHelmColor].r - GameColors::Base.r, GameColors::Items[iHelmColor].g - GameColors::Base.g, GameColors::Items[iHelmColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10243,7 +10212,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10254,7 +10223,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iShieldColor == 0)
 						m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iShieldColor] - m_wR[0], m_wG[iShieldColor] - m_wG[0], m_wB[iShieldColor] - m_wB[0]));
+					else m_pSprite[iShieldIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iShieldColor].r - GameColors::Base.r, GameColors::Items[iShieldColor].g - GameColors::Base.g, GameColors::Items[iShieldColor].b - GameColors::Base.b));
 				}
 				switch (iShieldGlare) {
 				case 0: break;
@@ -10272,7 +10241,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iMantleColor == 0)
 						m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
-					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wR[iMantleColor] - m_wR[0], m_wG[iMantleColor] - m_wG[0], m_wB[iMantleColor] - m_wB[0]));
+					else m_pSprite[iMantleIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 				}
 			}
 
@@ -10283,7 +10252,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				{
 					if (iWeaponColor == 0)
 						m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
-					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(m_wWR[iWeaponColor] - m_wR[0], m_wWG[iWeaponColor] - m_wG[0], m_wWB[iWeaponColor] - m_wB[0]));
+					else m_pSprite[iWeaponIndex]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[iWeaponColor].r - GameColors::Base.r, GameColors::Weapons[iWeaponColor].g - GameColors::Base.g, GameColors::Weapons[iWeaponColor].b - GameColors::Base.b));
 				}
 				DKGlare(iWeaponColor, iWeaponIndex, &iWeaponGlare);
 				switch (iWeaponGlare) {
@@ -10305,14 +10274,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			for (int i = 1; i <= 5; i++)
 			{
 				switch (m_entityState.m_iDir) {
-				case 1: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 2: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 3: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 4: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 5: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 6: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 7: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
-				case 8: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(m_wR[10] - (m_wR[0] / 3), m_wG[10] - (m_wG[0] / 3), m_wB[10] - (m_wB[0] / 3), 0.7f)); break;
+				case 1: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 2: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 3: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 4: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x - (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 5: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 6: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y - (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 7: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
+				case 8: m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x + (i * 5), fix_y + (i * 5), m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f)); break;
 				}
 			}
 		}
@@ -10703,7 +10672,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		if (m_pPlayer->m_iSuperAttackLeft > 0)
 		{
 			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
-			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithHighlight(10, 10, 10));
+			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b));
 		}
 	}
 }
@@ -11695,10 +11664,7 @@ void CGame::ShowReceivedString(bool bIsHide)
 
 	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
 
-	TextLib::DrawText(GameFont::Default, m_iInputX + 1, m_iInputY + 1, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
-	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY + 1, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
-	TextLib::DrawText(GameFont::Default, m_iInputX + 1, m_iInputY, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(0, 0, 0)));
-	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::FromColorRef(RGB(255, 255, 255)));
+	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InputNormal.r, GameColors::InputNormal.g, GameColors::InputNormal.b));
 }
 
 void CGame::ClearInputString()
@@ -11800,7 +11766,7 @@ void CGame::DrawTopMsg()
 	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X, 15, m_cTopMsg, TextLib::TextStyle::Color(255, 255, 0), TextLib::Align::TopCenter);
+		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X, 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b), TextLib::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
@@ -12073,23 +12039,23 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	cp = (char*)cMsg;
 	iLines = 0;
 
-	rgb = RGB(255, 255, 255);
+	rgb = GameColors::UIWhite.ToColorRef();
 	switch (m_pChatMsgList[iChatIndex]->m_cType) {
 	case 1:
-		rgb = RGB(255, 255, 255);
+		rgb = GameColors::UIWhite.ToColorRef();
 		break;
 	case 20:
-		rgb = RGB(255, 255, 20);
+		rgb = GameColors::UIDmgYellow.ToColorRef();
 		// �޽��� ǥ�ÿ� �����̰� �ɸ���.
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
 		break;
 	case 41:
-		rgb = RGB(255, 80, 80);
+		rgb = GameColors::UIDmgRed.ToColorRef();
 		break;
 
 	case 42:
-		rgb = RGB(255, 80, 80);
+		rgb = GameColors::UIDmgRed.ToColorRef();
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
 		break;
@@ -12171,12 +12137,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 					i++;
 				}
 				else iSize2 += 4;
-		if (CMisc::bCheckIMEString(cMsg) == false)
-		{
-			TextLib::DrawText(GameFont::Default, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::FromColorRef(RGB(180, 30, 30)));
-			TextLib::DrawText(GameFont::Default, sX - iSize2 + 1, sY - 65 - iLoc, cMsg, TextLib::TextStyle::FromColorRef(RGB(180, 30, 30)));
-		}
-		else TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(m_wR[14] * 4, m_wG[14] * 4, m_wB[14] * 4));
+		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b));
 		break;
 
 	case 21:
@@ -12185,16 +12146,16 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
 			break;
 		case 2:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
 			break;
 		case 3:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 2, m_wG[13] * 2, m_wB[13] * 2));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
 			break;
 		}
 		break;
@@ -12209,10 +12170,10 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		switch (iTextWidth / 160) {
 		case 0:
 			SetRect(&rcRect, sX - 80 + 1, sY - 65 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 65 - iLoc, sX + 80, sY - iLoc);
 			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
@@ -12220,10 +12181,10 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 		case 1:
 			SetRect(&rcRect, sX - 80 + 1, sY - 83 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 83 - iLoc, sX + 80, sY - iLoc);
 			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
@@ -12231,10 +12192,10 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 		case 2:
 			SetRect(&rcRect, sX - 80 + 1, sY - 101 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 101 - iLoc, sX + 80, sY - iLoc);
 			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
@@ -12242,10 +12203,10 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 		case 3:
 			SetRect(&rcRect, sX - 80 + 1, sY - 119 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, RGB(0, 0, 0));
+			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
 
 			SetRect(&rcRect, sX - 80, sY - 119 - iLoc, sX + 80, sY - iLoc);
 			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
@@ -12682,10 +12643,10 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	dwTime = m_dwCurTime;
 	sX = pX1 = iX1 = tX = sX;
 	sY = pY1 = iY1 = tY = sY;
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(50, 50, 100), &wR1, &wG1, &wB1);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(30, 30, 100), &wR2, &wG2, &wB2);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(0, 0, 30), &wR3, &wG3, &wB3);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), RGB(50, 50, 200), &wR4, &wG4, &wB4);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueMid.ToColorRef(), &wR1, &wG1, &wB1);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueDark.ToColorRef(), &wR2, &wG2, &wB2);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueDeep.ToColorRef(), &wR3, &wG3, &wB3);
+	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueBright.ToColorRef(), &wR4, &wG4, &wB4);
 
 	for (j = 0; j < 100; j++)
 	{
@@ -13436,6 +13397,14 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	// Use the display name from the item (populated from ItemDisplayNames.h)
 	const char* cName = pItem->GetDisplayName();
 
+	//auto it = std::find_if(m_pItemConfigList.begin(), m_pItemConfigList.end(), [&](const auto& configItem) {
+	//		return configItem != nullptr && configItem->m_sIDnum == pItem->m_sIDnum;
+	//	});
+	//if (it == m_pItemConfigList.end())
+	//{
+	//	throw std::runtime_error("Item not found for ID: " + std::to_string(pItem->m_sIDnum));
+	//}
+
 	if (0 == memcmp(pItem->m_cName, "AcientTablet", 12)) m_bIsSpecial = true;
 	else if (0 == memcmp(pItem->m_cName, "NecklaceOf", 10)) m_bIsSpecial = true;
 	else if (0 == memcmp(pItem->m_cName, "DarkElfBow", 10)) m_bIsSpecial = true;
@@ -13840,7 +13809,7 @@ void CGame::CreateScreenShot()
 		, SysTime.wMonth, SysTime.wDay
 		, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
 		, LongMapName);
-	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX, 30, (650 + SCREENY) - (500 + SCREENX), 15, SStime, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter); //ScreenShot time
+	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX, 30, (650 + SCREENY) - (500 + SCREENX), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
 
 	for (i = 0; i < 1000; i++)
 	{
@@ -14277,26 +14246,26 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	GetNpcName(sOwnerType, cTxt);
 	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
 	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(255, 255, 255));
-	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(50, 50, 255));
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
 		strcpy(cTxt, DRAW_OBJECT_NAME87);//"(Unknown)"
-		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(150, 150, 150)); // v2.171
+		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); // v2.171
 	}
 	else
 	{
 		switch (_iGetFOE(iStatus)) {
 		case -2:
 		case -1:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(255, 0, 0)); // "(Enemy)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed.r, GameColors::UIRed.g, GameColors::UIRed.b)); // "(Enemy)"
 			break;
 		case 0:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(50, 50, 255)); // "(Neutral)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b)); // "(Neutral)"
 			break;
 		case 1:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(30, 255, 30)); // "(Friendly)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(GameColors::FriendlyNamePlate.r, GameColors::FriendlyNamePlate.g, GameColors::FriendlyNamePlate.b)); // "(Friendly)"
 			break;
 		}
 	}
@@ -14311,8 +14280,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	case 7: strcpy(cTxt2, DRAW_OBJECT_NAME58); break;//"Explosive"
 	case 8: strcpy(cTxt2, DRAW_OBJECT_NAME59); break;//"Critical Explosive"
 	}
-	if (CMisc::bCheckIMEString(cTxt2)) TextLib::DrawText(GameFont::SprFont3_2, sX, sY + 22, cTxt2, TextLib::TextStyle::WithTwoPointShadow(m_wR[13] * 4, m_wG[13] * 4, m_wB[13] * 4));
-	else TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(240, 240, 70));
+	TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(GameColors::MonsterStatusEffect.r, GameColors::MonsterStatusEffect.g, GameColors::MonsterStatusEffect.b));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
@@ -14415,7 +14383,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
 	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
 
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(255, 255, 255));
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	std::memset(cTxt, 0, sizeof(cTxt));
 
 	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0)
@@ -14423,13 +14391,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
 			wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
 			wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
@@ -14467,14 +14435,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
 							wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
 							wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(180, 180, 180));
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
@@ -14548,7 +14516,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	TextLib::DrawText(GameFont::Default, 12 + SCREENX, (LOGICAL_HEIGHT - 12 - 14) + SCREENY, G_cTxt, TextLib::TextStyle::WithShadow(200, 200, 200));
+	TextLib::DrawText(GameFont::Default, 12 + SCREENX, (LOGICAL_HEIGHT - 12 - 14) + SCREENY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -17093,25 +17061,25 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(225, 225, 225));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(130, 255, 130));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen.r, GameColors::ChatEventGreen.g, GameColors::ChatEventGreen.b));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(255, 130, 130));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat.r, GameColors::UIWorldChat.g, GameColors::UIWorldChat.b));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(130, 130, 255));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat.r, GameColors::UIFactionChat.g, GameColors::UIFactionChat.b));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(230, 230, 130));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
 				break;
 			case 10:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(180, 255, 180));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
 				break;
 			case 20:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(150, 150, 170));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
 				break;
 			}
 		}
@@ -17121,31 +17089,31 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory2[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(225, 225, 225));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(130, 255, 130));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen.r, GameColors::ChatEventGreen.g, GameColors::ChatEventGreen.b));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(255, 130, 130));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat.r, GameColors::UIWorldChat.g, GameColors::UIWorldChat.b));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(130, 130, 255));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat.r, GameColors::UIFactionChat.g, GameColors::UIFactionChat.b));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(230, 230, 130));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
 				break;
 			case 10:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(180, 255, 180));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
 				break;
 			case 20:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(150, 150, 170));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
 				break;
 			}
 		}
 	if (m_bSkillUsingStatus == true)
 	{
-		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(235, 235, 235));
+		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 	}
 	m_Renderer->EndTextBatch();
 }

@@ -109,17 +109,17 @@ void Overlay_QueryDeleteCharacter::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
 
     // Title
-    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", TextLib::TextStyle::WithHighlight(58, 0, 0));
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX, 160 + SCREENY, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Character name display
-    PutString(215 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, RGB(5, 5, 5));
-    PutString(335 + SCREENX, 199 + SCREENY, "__________", RGB(5, 5, 5));
+    PutString(215 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack.ToColorRef());
+    PutString(335 + SCREENX, 199 + SCREENY, "__________", GameColors::UIBlack.ToColorRef());
 
     // Get character name from the selected character slot
     if (m_pGame->m_wEnterGameType > 0 && m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1] != nullptr)
     {
         PutString(335 + SCREENX, 195 + SCREENY,
-                  m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, RGB(25, 35, 25));
+                  m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, GameColors::UILabel.ToColorRef());
     }
 
     // Confirmation text

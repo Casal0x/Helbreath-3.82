@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include "ConfigManager.h"
 #include <cstring>
 
 InputManager& InputManager::Get()
@@ -349,6 +350,11 @@ void InputManager::UpdateCursorClip(bool active)
 	}
 
 	if (active) {
+		if (!ConfigManager::Get().IsMouseCaptureEnabled()) {
+			ClipCursor(nullptr);
+			return;
+		}
+
 		RECT rcClient{};
 		GetClientRect(m_hWnd, &rcClient);
 		int winW = rcClient.right - rcClient.left;

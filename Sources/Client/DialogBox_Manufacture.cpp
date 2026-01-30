@@ -137,8 +137,8 @@ void DialogBox_Manufacture::DrawAlchemyWaiting(short sX, short sY, short msX, sh
 		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(16, 16, 30));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue.r, GameColors::BmpBtnBlue.g, GameColors::BmpBtnBlue.b));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 }
 
 void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
@@ -173,7 +173,7 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
 		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
-	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(20, 6, 6));
+	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed.r, GameColors::BmpBtnRed.g, GameColors::BmpBtnRed.b));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{
@@ -201,8 +201,8 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 0);
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 8);
-	PutString(sX + iAdjX + 44, sY + iAdjY + 38, "Name", RGB(0, 0, 0));
-	PutString(sX + iAdjX + 171, sY + iAdjY + 38, "Max.Skill", RGB(0, 0, 0));
+	PutString(sX + iAdjX + 44, sY + iAdjY + 38, "Name", GameColors::UIBlack.ToColorRef());
+	PutString(sX + iAdjX + 171, sY + iAdjY + 38, "Max.Skill", GameColors::UIBlack.ToColorRef());
 
 	iLoc = 0;
 	for (int i = 0; i < 13; i++)
@@ -216,20 +216,20 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 
 			if ((msX >= sX + 30) && (msX <= sX + 180) && (msY >= sY + iAdjY + 55 + iLoc * 15) && (msY <= sY + iAdjY + 69 + iLoc * 15))
 			{
-				PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, RGB(255, 255, 255));
-				PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, RGB(255, 255, 255));
+				PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UIWhite.ToColorRef());
+				PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UIWhite.ToColorRef());
 			}
 			else
 			{
 				if (m_pGame->m_pDispBuildItemList[i + Info().sView]->m_bBuildEnabled == true)
 				{
-					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, RGB(34, 30, 120));
-					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, RGB(34, 30, 120));
+					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UIMagicBlue.ToColorRef());
+					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UIMagicBlue.ToColorRef());
 				}
 				else
 				{
-					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, RGB(45, 25, 25));
-					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, RGB(45, 25, 25));
+					PutString(sX + 30, sY + iAdjY + 55 + iLoc * 15, cTemp, GameColors::UILabel.ToColorRef());
+					PutString(sX + 190, sY + iAdjY + 55 + iLoc * 15, cTemp2, GameColors::UILabel.ToColorRef());
 				}
 			}
 			iLoc++;
@@ -237,11 +237,11 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 
 	if ((Info().sView >= 1) && (m_pGame->m_pDispBuildItemList[Info().sView - 1] != 0))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23);
-	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23, SpriteLib::DrawParams::TintedAlpha(5, 5, 5, 0.7f));
+	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23, SpriteLib::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
 
 	if (m_pGame->m_pDispBuildItemList[Info().sView + 13] != 0)
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24);
-	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24, SpriteLib::DrawParams::TintedAlpha(5, 5, 5, 0.7f));
+	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24, SpriteLib::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
 
 	if ((cLB != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Manufacture)) {
 		if ((msX >= sX + iAdjX + 225) && (msX <= sX + iAdjX + 245) && (msY >= sY + iAdjY + 210) && (msY <= sY + iAdjY + 230)) {
@@ -268,11 +268,11 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 	}
 	if (Info().sView < 0) Info().sView = 0;
 
-	PutAlignedString(sX, sX + Info().sSizeX, sY + 265, DRAW_DIALOGBOX_SKILLDLG2, 55, 25, 25);
-	PutAlignedString(sX, sX + Info().sSizeX, sY + 280, DRAW_DIALOGBOX_SKILLDLG3, 55, 25, 25);
-	PutAlignedString(sX, sX + Info().sSizeX, sY + 295, DRAW_DIALOGBOX_SKILLDLG4, 55, 25, 25);
-	PutAlignedString(sX, sX + Info().sSizeX, sY + 310, DRAW_DIALOGBOX_SKILLDLG5, 55, 25, 25);
-	PutAlignedString(sX, sX + Info().sSizeX, sY + 340, DRAW_DIALOGBOX_SKILLDLG6, 55, 25, 25);
+	PutAlignedString(sX, sX + Info().sSizeX, sY + 265, DRAW_DIALOGBOX_SKILLDLG2, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + Info().sSizeX, sY + 280, DRAW_DIALOGBOX_SKILLDLG3, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + Info().sSizeX, sY + 295, DRAW_DIALOGBOX_SKILLDLG4, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + Info().sSizeX, sY + 310, DRAW_DIALOGBOX_SKILLDLG5, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + Info().sSizeX, sY + 340, DRAW_DIALOGBOX_SKILLDLG6, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 }
 
 void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX, short msY)
@@ -292,13 +292,13 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 	std::memset(cTemp, 0, sizeof(cTemp));
 	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 	wsprintf(cTemp, "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite.ToColorRef());
 
 	wsprintf(cTemp, DRAW_DIALOGBOX_SKILLDLG7
 		, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iSkillLimit
 		, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iMaxSkill);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, RGB(45, 25, 25));
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, RGB(45, 25, 25));
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, GameColors::UILabel.ToColorRef());
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, GameColors::UILabel.ToColorRef());
 
 	iLoc = 4;
 	for (int elem = 1; elem <= 6; elem++)
@@ -318,9 +318,9 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 			m_pGame->GetItemName(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
 			wsprintf(cTemp, "%s", cStr1);
 			if (elemFlag)
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(45, 25, 25));
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UILabel.ToColorRef());
 			else
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(150, 150, 150));
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UIDisabled.ToColorRef());
 			iLoc++;
 		}
 	}
@@ -349,32 +349,32 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		if (Info().sV6 != -1)
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
 
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG15, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG16, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 260 + 75, DRAW_DIALOGBOX_SKILLDLG17, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG15, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG16, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 260 + 75, DRAW_DIALOGBOX_SKILLDLG17, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
-		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
+			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 
 		if ((msX >= sX + iAdjX + 160) && (msX <= sX + iAdjX + 255) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372)) {
 			if (Info().cStr[4] == 1)
-				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(6, 6, 20));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(10, 10, 10));
+				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b));
 		}
 		else {
 			if (Info().cStr[4] == 1)
-				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(0, 0, 7));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(10, 10, 10));
+				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b));
 		}
 	}
 	else {
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 200 + 75, DRAW_DIALOGBOX_SKILLDLG18, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 215 + 75, DRAW_DIALOGBOX_SKILLDLG19, 55, 25, 25);
-		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG20, 55, 25, 25);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 200 + 75, DRAW_DIALOGBOX_SKILLDLG18, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 215 + 75, DRAW_DIALOGBOX_SKILLDLG19, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG20, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
-		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
+			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 	}
 }
 
@@ -395,11 +395,11 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 	std::memset(cTemp, 0, sizeof(cTemp));
 	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 	wsprintf(cTemp, "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite.ToColorRef());
 
 	wsprintf(cTemp, DRAW_DIALOGBOX_SKILLDLG7, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iSkillLimit, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_iMaxSkill);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, RGB(45, 25, 25));
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, RGB(45, 25, 25));
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 2 * 15, cTemp, GameColors::UILabel.ToColorRef());
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55 + 3 * 15 + 5, DRAW_DIALOGBOX_SKILLDLG8, GameColors::UILabel.ToColorRef());
 
 	iLoc = 4;
 	for (int elem = 1; elem <= 6; elem++)
@@ -419,9 +419,9 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 			m_pGame->GetItemName(m_pGame->FindItemIdByName(elemName), 0, cStr1, cStr2, cStr3);
 			wsprintf(cTemp, "%s", cStr1);
 			if (elemFlag)
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(45, 25, 25));
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UILabel.ToColorRef());
 			else
-				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, RGB(120, 120, 120));
+				PutString(sX + iAdjX + 44 + 20 + 60, sY + iAdjY + 55 + iLoc * 15 + 5, cTemp, GameColors::UIDisabledMed.ToColorRef());
 			iLoc++;
 		}
 	}
@@ -448,8 +448,8 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 	if (Info().sV6 != -1)
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
 
-	PutString(sX + iAdjX + 33, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG29, RGB(55, 25, 25));
-	PutString(sX + iAdjX + 33, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG30, RGB(55, 25, 25));
+	PutString(sX + iAdjX + 33, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG29, GameColors::UILabel.ToColorRef());
+	PutString(sX + iAdjX + 33, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG30, GameColors::UILabel.ToColorRef());
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{
@@ -481,28 +481,28 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 	m_pGame->GetItemName(m_pGame->FindItemIdByName(m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName), 0, cStr1, cStr2, cStr3);
 
 	wsprintf(cTemp, "%s", cStr1);
-	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, RGB(255, 255, 255));
+	PutString(sX + iAdjX + 44 + 10 + 60, sY + iAdjY + 55, cTemp, GameColors::UIWhite.ToColorRef());
 
 	if (Info().cStr[2] == 1) {
-		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200 - 45, DRAW_DIALOGBOX_SKILLDLG31, RGB(55, 25, 25));
+		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200 - 45, DRAW_DIALOGBOX_SKILLDLG31, GameColors::UILabel.ToColorRef());
 
 		char resultBuf[64];
 		if (Info().sV1 == DEF_ITEMTYPE_MATERIAL) {
 			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
-			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf, RGB(55, 25, 25));
+			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf, GameColors::UILabel.ToColorRef());
 		}
 		else {
 			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG33, (int)Info().cStr[3] + 100);
-			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf, RGB(55, 25, 25));
+			PutString(sX + iAdjX + 33, sY + iAdjY + 215 - 45, resultBuf, GameColors::UILabel.ToColorRef());
 		}
 	}
 	else {
-		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200, DRAW_DIALOGBOX_SKILLDLG34, RGB(55, 25, 25));
+		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200, DRAW_DIALOGBOX_SKILLDLG34, GameColors::UILabel.ToColorRef());
 	}
 
 	if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(6, 6, 20));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(0, 0, 7));
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 }
 
 void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, short msY)
@@ -527,8 +527,8 @@ void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, s
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(16, 16, 30));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(6, 6, 20));
+		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue.r, GameColors::BmpBtnBlue.g, GameColors::BmpBtnBlue.b));
+	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 }
 
 void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
@@ -576,7 +576,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 			m_pGame->m_iContributionPrice = 10;
 	}
 
-	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(20, 6, 6));
+	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed.r, GameColors::BmpBtnRed.g, GameColors::BmpBtnRed.b));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{

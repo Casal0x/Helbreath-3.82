@@ -198,7 +198,7 @@ void DialogBox_SysMenu::DrawToggle(int x, int y, bool bEnabled, short msX, short
 	const int boxHeight = m_bFrameSizesInitialized ? m_iSmallBoxHeight : 16;
 
 	bool bHover = (msX >= x && msX <= x + boxWidth && msY >= boxY && msY <= boxY + boxHeight);
-	COLORREF color = (bEnabled || bHover) ? RGB(255, 255, 255) : RGB(150, 150, 150);
+	COLORREF color = (bEnabled || bHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef();
 
 	// Center text horizontally and vertically in the box
 	const char* text = bEnabled ? DRAW_DIALOGBOX_SYSMENU_ON : DRAW_DIALOGBOX_SYSMENU_OFF;
@@ -226,8 +226,8 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 	const int centerX = contentX + (CONTENT_WIDTH / 2);
 
 	// Server name at top left
-	PutString(contentX + 5, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25));
-	PutString(contentX + 6, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, RGB(45, 25, 25));
+	PutString(contentX + 5, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, GameColors::UILabel.ToColorRef());
+	PutString(contentX + 6, contentY + 5, UPDATE_SCREEN_ON_SELECT_CHARACTER36, GameColors::UILabel.ToColorRef());
 
 	// Current time centered below server name (MM/DD/YYYY HH:MM AM/PM)
 	SYSTEMTIME SysTime;
@@ -242,8 +242,8 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 
 	int textWidth = TextLib::GetTextRenderer()->MeasureText(timeBuf).width;
 	int timeX = centerX - (textWidth / 2);
-	PutString(timeX, contentY + 25, timeBuf, RGB(45, 25, 25));
-	PutString(timeX + 1, contentY + 25, timeBuf, RGB(45, 25, 25));
+	PutString(timeX, contentY + 25, timeBuf, GameColors::UILabel.ToColorRef());
+	PutString(timeX + 1, contentY + 25, timeBuf, GameColors::UILabel.ToColorRef());
 
 	// Buttons at bottom of content area
 	int buttonY = contentBottom - 30;
@@ -293,8 +293,8 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	const int smallBoxX = wideBoxX;  // Left-align with wide box
 
 	// Detail Level - single wide box with Low/Normal/High inside
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel.ToColorRef());
 
 	const int detailLevel = ConfigManager::Get().GetDetailLevel();
 	const int boxY = lineY - 2;
@@ -321,43 +321,43 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	bool normHover = (msX >= wideBoxX + regionWidth && msX < wideBoxX + (regionWidth * 2) && msY >= boxY && msY <= boxY + wideBoxHeight);
 	bool highHover = (msX >= wideBoxX + (regionWidth * 2) && msX <= wideBoxX + wideBoxWidth && msY >= boxY && msY <= boxY + wideBoxHeight);
 
-	PutString(lowX, textY, DRAW_DIALOGBOX_SYSMENU_LOW, (detailLevel == 0 || lowHover) ? RGB(255, 255, 255) : RGB(150, 150, 150));
-	PutString(normX, textY, DRAW_DIALOGBOX_SYSMENU_NORMAL, (detailLevel == 1 || normHover) ? RGB(255, 255, 255) : RGB(150, 150, 150));
-	PutString(highX, textY, DRAW_DIALOGBOX_SYSMENU_HIGH, (detailLevel == 2 || highHover) ? RGB(255, 255, 255) : RGB(150, 150, 150));
+	PutString(lowX, textY, DRAW_DIALOGBOX_SYSMENU_LOW, (detailLevel == 0 || lowHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
+	PutString(normX, textY, DRAW_DIALOGBOX_SYSMENU_NORMAL, (detailLevel == 1 || normHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
+	PutString(highX, textY, DRAW_DIALOGBOX_SYSMENU_HIGH, (detailLevel == 2 || highHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
 
 	lineY += 18;
 
 	// Dialog Transparency
-	PutString(labelX, lineY, "Transparency:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Transparency:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Transparency:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Transparency:", GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsDialogTransparencyEnabled(), msX, msY);
 
 	lineY += 18;
 
 	// Guide Map
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap), msX, msY);
 
 	lineY += 18;
 
 	// Show FPS
-	PutString(labelX, lineY, "Show FPS:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Show FPS:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Show FPS:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Show FPS:", GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsShowFpsEnabled(), msX, msY);
 
 	lineY += 18;
 
 	// Show Latency
-	PutString(labelX, lineY, "Show Latency:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Show Latency:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Show Latency:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Show Latency:", GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsShowLatencyEnabled(), msX, msY);
 
 	lineY += 18;
 
 	// Display Mode - wide box showing current mode (clicking toggles)
-	PutString(labelX, lineY, "Display Mode:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Display Mode:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Display Mode:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Display Mode:", GameColors::UILabel.ToColorRef());
 
 	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 	const int modeBoxY = lineY - 2;
@@ -366,7 +366,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, modeBoxY, 78);
 
 	bool modeHover = (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight);
-	COLORREF modeColor = modeHover ? RGB(255, 255, 255) : RGB(200, 200, 200);
+	COLORREF modeColor = modeHover ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef();
 
 	// Show current mode text, centered horizontally and vertically
 	const char* modeText = isFullscreen ? "Fullscreen" : "Windowed";
@@ -377,9 +377,27 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
+	// Window Style - wide box showing Borderless/Bordered (disabled when fullscreen)
+	PutString(labelX, lineY, "Window Style:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Window Style:", GameColors::UILabel.ToColorRef());
+
+	const int styleBoxY = lineY - 2;
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, styleBoxY, 78);
+
+	bool styleHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight);
+	COLORREF styleColor = isFullscreen ? GameColors::UIDisabled.ToColorRef() : (styleHover ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
+
+	const char* styleText = ConfigManager::Get().IsBorderlessEnabled() ? "Borderless" : "Bordered";
+	TextLib::TextMetrics styleMetrics = TextLib::GetTextRenderer()->MeasureText(styleText);
+	int styleTextX = wideBoxX + (wideBoxWidth - styleMetrics.width) / 2;
+	int styleTextY = styleBoxY + (wideBoxHeight - styleMetrics.height) / 2;
+	PutString(styleTextX, styleTextY, styleText, styleColor);
+
+	lineY += 18;
+
 	// Resolution - wide box with centered text
-	PutString(labelX, lineY, "Resolution:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Resolution:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Resolution:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Resolution:", GameColors::UILabel.ToColorRef());
 
 	int resWidth, resHeight;
 	if (isFullscreen) {
@@ -400,7 +418,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, resBoxY, 78);
 
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
-	COLORREF resColor = isFullscreen ? RGB(100, 100, 100) : (resHover ? RGB(255, 255, 255) : RGB(200, 200, 200));
+	COLORREF resColor = isFullscreen ? GameColors::UIDisabled.ToColorRef() : (resHover ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef());
 
 	// Center the resolution text horizontally and vertically in the box
 	TextLib::TextMetrics resMetrics = TextLib::GetTextRenderer()->MeasureText(resBuf);
@@ -425,21 +443,21 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 	int lineY = contentY + 10;
 
 	// Sound toggle
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUND, GameColors::UILabel.ToColorRef());
 
 	if (AudioManager::Get().IsSoundAvailable()) {
 		DrawToggle(toggleX, lineY, AudioManager::Get().IsSoundEnabled(), msX, msY);
 	}
 	else {
-		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
+		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
 	}
 
 	lineY += 25;  // Extra spacing before volume section
 
 	// Sound Volume label
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SOUNDVOLUME, GameColors::UILabel.ToColorRef());
 
 	lineY += 15;
 
@@ -464,21 +482,21 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 	int musicToggleY = lineY;
 
 	// Music toggle
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSIC, GameColors::UILabel.ToColorRef());
 
 	if (AudioManager::Get().IsSoundAvailable()) {
 		DrawToggle(toggleX, lineY, AudioManager::Get().IsMusicEnabled(), msX, msY);
 	}
 	else {
-		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, RGB(100, 100, 100));
+		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled.ToColorRef());
 	}
 
 	lineY += 25;  // Extra spacing before volume section
 
 	// Music Volume label
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_MUSICVOLUME, GameColors::UILabel.ToColorRef());
 
 	lineY += 15;
 
@@ -510,23 +528,30 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 	const int valueX = contentX + 140;
 
 	// Whisper toggle
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel.ToColorRef());
 	DrawToggle(valueX, lineY, m_pGame->m_bWhisper, msX, msY);
 
 	lineY += 20;
 
 	// Shout toggle
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, RGB(45, 25, 25));
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel.ToColorRef());
 	DrawToggle(valueX, lineY, m_pGame->m_bShout, msX, msY);
 
 	lineY += 20;
 
 	// Running Mode toggle
-	PutString(labelX, lineY, "Running Mode:", RGB(45, 25, 25));
-	PutString(labelX + 1, lineY, "Running Mode:", RGB(45, 25, 25));
+	PutString(labelX, lineY, "Running Mode:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Running Mode:", GameColors::UILabel.ToColorRef());
 	DrawToggle(valueX, lineY, ConfigManager::Get().IsRunningModeEnabled(), msX, msY);
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	PutString(labelX, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
+	DrawToggle(valueX, lineY, ConfigManager::Get().IsMouseCaptureEnabled(), msX, msY);
 }
 
 // =============================================================================
@@ -748,6 +773,23 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
+	// Window Style toggle click (wide box, only in windowed mode)
+	const int styleBoxY = lineY - 2;
+	{
+		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
+		if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
+			bool borderless = ConfigManager::Get().IsBorderlessEnabled();
+			ConfigManager::Get().SetBorderlessEnabled(!borderless);
+			Window::SetBorderless(!borderless);
+			Input::Get()->SetWindowActive(true);
+			ConfigManager::Get().Save();
+			PlaySoundEffect('E', 14, 5);
+			return true;
+		}
+	}
+
+	lineY += 18;
+
 	// Resolution click (wide box, only in windowed mode)
 	const int resBoxY = lineY - 2;
 	bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
@@ -850,6 +892,17 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsRunningModeEnabled();
 		ConfigManager::Get().SetRunningModeEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Capture Mouse toggle
+	if (IsInToggleArea(valueX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
+		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
+		Input::Get()->SetWindowActive(true);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

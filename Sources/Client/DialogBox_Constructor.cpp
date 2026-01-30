@@ -75,17 +75,17 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR3, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR3, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50)
 			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR4, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR4, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR5, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR5, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		break;
 
@@ -136,27 +136,27 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR13, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR13, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR14, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR14, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR15, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR15, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR16, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR16, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR17, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR17, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR18, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR18, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		break;
 
@@ -188,17 +188,17 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR20, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR20, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR21, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR21, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR22, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR22, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		break;
 	}
@@ -301,7 +301,7 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
 			char coordBuf[32];
 			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-			TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4));
+			TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x.r, GameColors::Yellow4x.g, GameColors::Yellow4x.b));
 		}
 		break;
 	}

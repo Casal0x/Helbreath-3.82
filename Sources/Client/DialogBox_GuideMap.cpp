@@ -186,7 +186,7 @@ void DialogBox_GuideMap::DrawLocationTooltip(short msX, short msY, short sX, sho
 		else if (shX > 45 && shX < 65 && shY > 123 && shY < 143) strcpy(m_pGame->G_cTxt, DEF_MSG_MAPNAME_BARRACK);
 	}
 
-	PutString(msX - 10, msY - 13, m_pGame->G_cTxt, RGB(200, 200, 120));
+	PutString(msX - 10, msY - 13, m_pGame->G_cTxt, GameColors::UIPaleYellow.ToColorRef());
 }
 
 void DialogBox_GuideMap::OnDraw(short msX, short msY, short msZ, char cLB)
@@ -221,9 +221,9 @@ void DialogBox_GuideMap::OnDraw(short msX, short msY, short msZ, char cLB)
 		else shY = sY + szY + 4;
 
 		if (ConfigManager::Get().IsZoomMapEnabled())
-			PutString(sX, shY, DEF_MSG_GUIDEMAP_MIN, RGB(200, 200, 120));
+			PutString(sX, shY, DEF_MSG_GUIDEMAP_MIN, GameColors::UIPaleYellow.ToColorRef());
 		else
-			PutString(sX, shY, DEF_MSG_GUIDEMAP_MAX, RGB(200, 200, 120));
+			PutString(sX, shY, DEF_MSG_GUIDEMAP_MAX, GameColors::UIPaleYellow.ToColorRef());
 
 		DrawLocationTooltip(msX, msY, sX, sY);
 	}

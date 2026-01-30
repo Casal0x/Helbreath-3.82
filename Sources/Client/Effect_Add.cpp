@@ -30,7 +30,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 			return;
 		}
 	}
-	if (m_pGame->m_bIsProgramActive == false) return;
+
 	int x = LOGICAL_WIDTH / 2;
 	int y = LOGICAL_HEIGHT / 2;
 	int fixx = VIEW_CENTER_TILE_X;

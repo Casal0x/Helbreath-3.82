@@ -45,6 +45,8 @@ public:
 
     // ============== Display ==============
     virtual void SetFullscreen(bool fullscreen) = 0;
+    virtual void SetBorderless(bool borderless) = 0;
+    virtual bool IsBorderless() const = 0;
     virtual void SetSize(int width, int height, bool center = true) = 0;  // Resize window
     virtual void Show() = 0;
     virtual void Hide() = 0;

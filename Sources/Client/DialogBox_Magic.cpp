@@ -70,42 +70,21 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 
 			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
-				// Insufficient mana - grayed out
-				if (CMisc::bCheckIMEString(cTxt) == false)
-				{
-					PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(41, 16, 41));
-				}
-				else
-					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(5, 5, 5));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
 				wsprintf(cMana, "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(5, 5, 5));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
 			}
 			else if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
-				// Mouse hover - highlighted
-				if (CMisc::bCheckIMEString(cTxt) == false)
-				{
-					PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(255, 255, 255));
-				}
-				else
-					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(250, 250, 250));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 				wsprintf(cMana, "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(250, 250, 250));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 			}
 			else
 			{
-				// Normal - default color
-				if (CMisc::bCheckIMEString(cTxt) == false)
-				{
-					PutString(sX + 30, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-					PutString(sX + 31, sY + 73 + iYloc, cTxt, RGB(8, 0, 66));
-				}
-				else
-					TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(1, 1, 8));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 				wsprintf(cMana, "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(1, 1, 8));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 			}
 
 			iYloc += 18;

@@ -82,6 +82,8 @@ void ConfigManager::SetDefaults()
 #else
 	m_bFullscreen = true;
 #endif
+	m_bCaptureMouse = true;
+	m_bBorderless = true;
 
 	m_bDirty = false;
 }
@@ -215,6 +217,14 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bFullscreen = display["fullscreen"].get<bool>();
 			}
+			if (display.contains("captureMouse"))
+			{
+				m_bCaptureMouse = display["captureMouse"].get<bool>();
+			}
+			if (display.contains("borderless"))
+			{
+				m_bBorderless = display["borderless"].get<bool>();
+			}
 		}
 
 		// Validate resolution to nearest 4:3 option
@@ -286,6 +296,8 @@ bool ConfigManager::Save(const char* filename)
 	j["display"]["dialogTransparency"] = m_bDialogTrans;
 	j["display"]["runningMode"] = m_bRunningMode;
 	j["display"]["fullscreen"] = m_bFullscreen;
+	j["display"]["captureMouse"] = m_bCaptureMouse;
+	j["display"]["borderless"] = m_bBorderless;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -465,6 +477,24 @@ void ConfigManager::SetFullscreenEnabled(bool enabled)
 	if (m_bFullscreen != enabled)
 	{
 		m_bFullscreen = enabled;
+		m_bDirty = true;
+	}
+}
+
+void ConfigManager::SetMouseCaptureEnabled(bool enabled)
+{
+	if (m_bCaptureMouse != enabled)
+	{
+		m_bCaptureMouse = enabled;
+		m_bDirty = true;
+	}
+}
+
+void ConfigManager::SetBorderlessEnabled(bool enabled)
+{
+	if (m_bBorderless != enabled)
+	{
+		m_bBorderless = enabled;
 		m_bDirty = true;
 	}
 }

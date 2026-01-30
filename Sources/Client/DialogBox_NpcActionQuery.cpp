@@ -12,12 +12,12 @@ DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
 void DialogBox_NpcActionQuery::DrawHighlightedText(short sX, short sY, const char* text, short msX, short msY, short hitX1, short hitX2, short hitY1, short hitY2)
 {
 	if ((msX > hitX1) && (msX < hitX2) && (msY > hitY1) && (msY < hitY2)) {
-		PutString(sX, sY, (char*)text, RGB(255, 255, 255));
-		PutString(sX + 1, sY, (char*)text, RGB(255, 255, 255));
+		PutString(sX, sY, (char*)text, GameColors::UIWhite.ToColorRef());
+		PutString(sX + 1, sY, (char*)text, GameColors::UIWhite.ToColorRef());
 	}
 	else {
-		PutString(sX, sY, (char*)text, RGB(4, 0, 50));
-		PutString(sX + 1, sY, (char*)text, RGB(4, 0, 50));
+		PutString(sX, sY, (char*)text, GameColors::UIMagicBlue.ToColorRef());
+		PutString(sX + 1, sY, (char*)text, GameColors::UIMagicBlue.ToColorRef());
 	}
 }
 
@@ -27,32 +27,32 @@ void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short msX, 
 
 	switch (Info().sV3) {
 	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 19:
-		PutString(sX + 33, sY + 23, NPC_NAME_MAGICIAN, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_MAGICIAN, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_MAGICIAN, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_MAGICIAN, GameColors::UIWhite.ToColorRef());
 		break;
 	case 20:
-		PutString(sX + 33, sY + 23, NPC_NAME_WAREHOUSE_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_WAREHOUSE_KEEPER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_WAREHOUSE_KEEPER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_WAREHOUSE_KEEPER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 25:
-		PutString(sX + 33, sY + 23, NPC_NAME_CITYHALL_OFFICER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_CITYHALL_OFFICER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_CITYHALL_OFFICER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_CITYHALL_OFFICER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 26:
-		PutString(sX + 33, sY + 23, NPC_NAME_GUILDHALL_OFFICER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_GUILDHALL_OFFICER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_GUILDHALL_OFFICER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_GUILDHALL_OFFICER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 90:
-		PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite.ToColorRef());
 		break;
 	}
 
@@ -90,8 +90,8 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutString(sX + 24, sY + 25, cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 40, cTxt2, RGB(45, 25, 25));
+	PutString(sX + 24, sY + 25, cTxt, GameColors::UILabel.ToColorRef());
+	PutString(sX + 24, sY + 40, cTxt2, GameColors::UILabel.ToColorRef());
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY30, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 	DrawHighlightedText(sX + 155, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY34, msX, msY, sX + 155, sX + 210, sY + 55, sY + 70);
@@ -110,8 +110,8 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutString(sX + 24, sY + 20, cTxt, RGB(45, 25, 25));
-	PutString(sX + 24, sY + 35, cTxt2, RGB(45, 25, 25));
+	PutString(sX + 24, sY + 20, cTxt, GameColors::UILabel.ToColorRef());
+	PutString(sX + 24, sY + 35, cTxt2, GameColors::UILabel.ToColorRef());
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 
@@ -135,8 +135,8 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 	wsprintf(cTxt, DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	wsprintf(cTxt2, DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
-	PutAlignedString(sX, sX + 240, sY + 20, cTxt, 45, 25, 25);
-	PutAlignedString(sX, sX + 240, sY + 35, cTxt2, 45, 25, 25);
+	PutAlignedString(sX, sX + 240, sY + 20, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX, sX + 240, sY + 35, cTxt2, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY48, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 }
@@ -147,24 +147,24 @@ void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, 
 
 	switch (Info().sV3) {
 	case 21:
-		PutString(sX + 35, sY + 25, NPC_NAME_GUARD, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_GUARD, RGB(255, 255, 255));
+		PutString(sX + 35, sY + 25, NPC_NAME_GUARD, GameColors::UILabel.ToColorRef());
+		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_GUARD, GameColors::UIWhite.ToColorRef());
 		break;
 	case 32:
-		PutString(sX + 35, sY + 25, NPC_NAME_UNICORN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_UNICORN, RGB(255, 255, 255));
+		PutString(sX + 35, sY + 25, NPC_NAME_UNICORN, GameColors::UILabel.ToColorRef());
+		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_UNICORN, GameColors::UIWhite.ToColorRef());
 		break;
 	case 67:
-		PutString(sX + 35, sY + 25, NPC_NAME_MCGAFFIN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_MCGAFFIN, RGB(255, 255, 255));
+		PutString(sX + 35, sY + 25, NPC_NAME_MCGAFFIN, GameColors::UILabel.ToColorRef());
+		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_MCGAFFIN, GameColors::UIWhite.ToColorRef());
 		break;
 	case 68:
-		PutString(sX + 35, sY + 25, NPC_NAME_PERRY, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_PERRY, RGB(255, 255, 255));
+		PutString(sX + 35, sY + 25, NPC_NAME_PERRY, GameColors::UILabel.ToColorRef());
+		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_PERRY, GameColors::UIWhite.ToColorRef());
 		break;
 	case 69:
-		PutString(sX + 35, sY + 25, NPC_NAME_DEVLIN, RGB(45, 25, 25));
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_DEVLIN, RGB(255, 255, 255));
+		PutString(sX + 35, sY + 25, NPC_NAME_DEVLIN, GameColors::UILabel.ToColorRef());
+		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_DEVLIN, GameColors::UIWhite.ToColorRef());
 		break;
 	}
 
@@ -179,12 +179,12 @@ void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short 
 
 	switch (Info().sV3) {
 	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, GameColors::UIWhite.ToColorRef());
 		break;
 	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, RGB(45, 25, 25));
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, RGB(255, 255, 255));
+		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UILabel.ToColorRef());
+		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UIWhite.ToColorRef());
 		// Repair All button
 		DrawHighlightedText(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, msX, msY, sX + 155, sX + 210, sY + 22, sY + 37);
 		break;
@@ -207,8 +207,8 @@ void DialogBox_NpcActionQuery::DrawMode6_Gail(short sX, short sY, short msX, sho
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 
-	PutString(sX + 33, sY + 23, "Heldenian staff officer", RGB(45, 25, 25));
-	PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", RGB(255, 255, 255));
+	PutString(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel.ToColorRef());
+	PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite.ToColorRef());
 }
 
 void DialogBox_NpcActionQuery::OnDraw(short msX, short msY, short msZ, char cLB)

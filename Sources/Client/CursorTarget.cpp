@@ -68,21 +68,9 @@ void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailabl
     auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
 
-    // Ground item takes priority for cursor animation
-    if (s_overGroundItem) {
-        // Animate every 200ms
-        if (now - s_itemAnimTime > 200) {
-            s_itemAnimTime = now;
-            s_itemAnimFrame = (s_itemAnimFrame == 1) ? 2 : 1;
-        }
-        s_cursorType = (s_itemAnimFrame == 1) ?
-            CursorType::ItemGround1 : CursorType::ItemGround2;
-        return;
-    }
-
-    // Check pointing mode for spell/item targeting
+    // Check pointing mode FIRST - spell/item targeting takes priority over ground items
     if (isGetPointingMode) {
-        // Spell targeting mode (100-199)
+        // Spell targeting mode (100-199) - takes priority over everything
         if (commandType >= 100 && commandType < 200) {
             if (commandAvailable) {
                 if (s_focusedObject.valid && foeResult < 0)
@@ -100,6 +88,18 @@ void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailabl
             s_cursorType = CursorType::ItemUse;
             return;
         }
+    }
+
+    // Ground item cursor - only when NOT in spell targeting mode
+    if (s_overGroundItem) {
+        // Animate every 200ms
+        if (now - s_itemAnimTime > 200) {
+            s_itemAnimTime = now;
+            s_itemAnimFrame = (s_itemAnimFrame == 1) ? 2 : 1;
+        }
+        s_cursorType = (s_itemAnimFrame == 1) ?
+            CursorType::ItemGround1 : CursorType::ItemGround2;
+        return;
     }
 
     // Normal mode - show target cursor based on focus
