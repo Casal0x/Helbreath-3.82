@@ -21,32 +21,32 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 0:
 		if (m_pGame->m_iPartyStatus == 0) {
 			if ((msX > sX + 80) && (msX < sX + 195) && (msY > sY + 80) && (msY < sY + 100))
-				PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, 255, 255, 255);
+				PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			else
-				PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
 		else {
-			PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, 65, 65, 65);
+			PutAlignedString(sX, sX + szX, sY + 85, DRAW_DIALOGBOX_PARTY1, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 		}
 
 		if (m_pGame->m_iPartyStatus != 0) {
 			if ((msX > sX + 80) && (msX < sX + 195) && (msY > sY + 100) && (msY < sY + 120))
-				PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, 255, 255, 255);
+				PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			else
-				PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
 		else {
-			PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, 65, 65, 65);
+			PutAlignedString(sX, sX + szX, sY + 105, DRAW_DIALOGBOX_PARTY4, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 		}
 
 		if (m_pGame->m_iPartyStatus != 0) {
 			if ((msX > sX + 80) && (msX < sX + 195) && (msY > sY + 120) && (msY < sY + 140))
-				PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, 255, 255, 255);
+				PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			else
-				PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, 4, 0, 50);
+				PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
 		else {
-			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, 65, 65, 65);
+			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_PARTY7, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 		}
 
 		switch (m_pGame->m_iPartyStatus) {

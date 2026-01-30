@@ -24,18 +24,18 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Item name (green if special, blue otherwise)
 	if (m_pGame->m_bIsSpecial)
 	{
-		PutString(sX + 35, sY + 20, cTxt, RGB(0, 255, 50));
-		PutString(sX + 36, sY + 20, cTxt, RGB(0, 255, 50));
+		PutString(sX + 35, sY + 20, cTxt, GameColors::NameSpecial.ToColorRef());
+		PutString(sX + 36, sY + 20, cTxt, GameColors::NameSpecial.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 35, sY + 20, cTxt, RGB(4, 0, 50));
-		PutString(sX + 36, sY + 20, cTxt, RGB(4, 0, 50));
+		PutString(sX + 35, sY + 20, cTxt, GameColors::UIMagicBlue.ToColorRef());
+		PutString(sX + 36, sY + 20, cTxt, GameColors::UIMagicBlue.ToColorRef());
 	}
 
 	// "Do you want to drop?" text
-	PutString(sX + 35, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, RGB(4, 0, 50));
-	PutString(sX + 36, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, RGB(4, 0, 50));
+	PutString(sX + 35, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue.ToColorRef());
+	PutString(sX + 36, sY + 36, DRAW_DIALOGBOX_ITEM_DROP1, GameColors::UIMagicBlue.ToColorRef());
 
 	// Toggle option text
 	if (m_pGame->m_bItemDrop)
@@ -43,13 +43,13 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 		// "Don't show this message again"
 		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(255, 255, 255));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(255, 255, 255));
+			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite.ToColorRef());
+			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIWhite.ToColorRef());
 		}
 		else
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(4, 0, 50));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, RGB(4, 0, 50));
+			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue.ToColorRef());
+			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP2, GameColors::UIMagicBlue.ToColorRef());
 		}
 	}
 	else
@@ -57,13 +57,13 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 		// "Show this message again"
 		if ((msX >= sX + 35) && (msX <= sX + 240) && (msY >= sY + 80) && (msY <= sY + 90))
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(255, 255, 255));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(255, 255, 255));
+			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite.ToColorRef());
+			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIWhite.ToColorRef());
 		}
 		else
 		{
-			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(4, 0, 50));
-			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, RGB(4, 0, 50));
+			PutString(sX + 35, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue.ToColorRef());
+			PutString(sX + 36, sY + 80, DRAW_DIALOGBOX_ITEM_DROP3, GameColors::UIMagicBlue.ToColorRef());
 		}
 	}
 

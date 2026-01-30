@@ -37,6 +37,6 @@ void Overlay_Msg::on_update()
 void Overlay_Msg::on_render()
 {
     TextLib::DrawText(GameFont::Default, 10, 10, m_pGame->m_cMsg,
-                      TextLib::TextStyle::WithShadow(255, 155, 155));
+                      TextLib::TextStyle::WithShadow(GameColors::ErrorPink.r, GameColors::ErrorPink.g, GameColors::ErrorPink.b));
     DrawVersion();
 }

@@ -26,7 +26,7 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 			else
 				strncpy(msgBuf, DRAW_DIALOGBOX_NOTICEMSG2, sizeof(msgBuf) - 1);
 			msgBuf[sizeof(msgBuf) - 1] = '\0';
-			PutAlignedString(sX, sX + szX, sY + 31, msgBuf, 100, 10, 10);
+			PutAlignedString(sX, sX + szX, sY + 31, msgBuf, GameColors::UINoticeRed.r, GameColors::UINoticeRed.g, GameColors::UINoticeRed.b);
 		}
 		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG3);
 		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG4);
@@ -35,7 +35,7 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 2: // Shutdown has started
-		PutAlignedString(sX, sX + szX, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, 100, 10, 10);
+		PutAlignedString(sX, sX + szX, sY + 31, DRAW_DIALOGBOX_NOTICEMSG7, GameColors::UINoticeRed.r, GameColors::UINoticeRed.g, GameColors::UINoticeRed.b);
 		PutAlignedString(sX, sX + szX, sY + 48, DRAW_DIALOGBOX_NOTICEMSG8);
 		PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_NOTICEMSG9);
 		PutAlignedString(sX, sX + szX, sY + 82, DRAW_DIALOGBOX_NOTICEMSG10);

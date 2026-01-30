@@ -49,27 +49,27 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 17);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER2, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER2, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 15);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER3, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER3, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 46 + 100) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 340, 16);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER4, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER4, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 46 + 150) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 340, 24);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER5, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER5, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER6, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER6, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
 		break;
@@ -82,12 +82,12 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER8, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER8, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER9, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER9, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
 
@@ -106,17 +106,17 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 340, 15);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER11, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER11, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER12, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER12, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER13, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER13, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
 		break;
@@ -153,8 +153,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 11);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER16, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER17, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER16, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER17, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -162,8 +162,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 10);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER18, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER19, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER18, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER19, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -171,8 +171,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER20, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER21, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER20, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER21, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -180,26 +180,26 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER22, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER23, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER22, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER23, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 140) && (msY < sY + 160))
 			{
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER24, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER24, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 160) && (msY < sY + 175))
 			{
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER25, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER25, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 			{
 				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER26, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER26, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 			{
 				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER27, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER27, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 		}
 		else if ((m_pGame->m_pPlayer->m_bCitizen == true) && (m_pGame->m_pPlayer->m_bAresden == false))
@@ -210,8 +210,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 220, 14);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER28, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER29, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER28, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER29, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -219,8 +219,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 50, sY + 220, 13);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER30, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER31, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER30, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER31, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -228,8 +228,8 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100, sY + 220, 12);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER32, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER33, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER32, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER33, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 			{
@@ -237,26 +237,26 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				{
 					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150, sY + 220, 29);
 				}
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER34, TextLib::TextStyle::WithShadow(255, 255, 255));
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER35, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER34, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 50, DRAW_DIALOGBOX_COMMANDER35, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 140) && (msY < sY + 160))
 			{
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER36, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER36, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20) && (msX <= sX + 380) && (msY > sY + 160) && (msY < sY + 175))
 			{
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER37, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER37, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 			{
 				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER38, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER38, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 			else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 			{
 				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER39, TextLib::TextStyle::WithShadow(255, 255, 255));
+				TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER39, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 			}
 		}
 		PutAlignedString(sX, sX + 323, sY + 80, DRAW_DIALOGBOX_COMMANDER40);
@@ -265,12 +265,12 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		switch (Info().sV1) {
 		case 0:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, 255, 255, 255);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, 4, 0, 50);
+			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 			break;
 		case 1:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, 4, 0, 50);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, 255, 255, 255);
+			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			break;
 		}
 		break;
@@ -283,12 +283,12 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 100 + 74, sY + 340, 19);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER48, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER48, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
 			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER49, TextLib::TextStyle::WithShadow(255, 255, 255));
+			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_COMMANDER49, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 		}
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21);
 		if ((msX >= sX + 15) && (msX <= sX + 15 + 278) && (msY >= sY + 60) && (msY <= sY + 60 + 272))
@@ -415,7 +415,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 				if (tY > MapSzY - 30) tY = MapSzY - 30;
 				char coordBuf[32];
 				snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-				TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(m_pGame->m_wR[13] * 4, m_pGame->m_wG[13] * 4, m_pGame->m_wB[13] * 4));
+				TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x.r, GameColors::Yellow4x.g, GameColors::Yellow4x.b));
 			}
 		}
 		break;

@@ -95,20 +95,20 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
         || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
         || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
     }
     else
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
     }
 
     std::memset(cStr1, 0, sizeof(cStr1));
     std::memset(cStr2, 0, sizeof(cStr2));
     std::memset(cStr3, 0, sizeof(cStr3));
     m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 }
 
 void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int msY)
@@ -118,13 +118,13 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
     char cTxt[256];
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
 
     wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -133,9 +133,9 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
 
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
         if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
-            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         else
-            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
         DrawItemPreview(sX, sY, iItemIndex);
 
@@ -164,8 +164,8 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
     uint32_t dwTime = m_pGame->m_dwCurTime;
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE5, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE6, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE5, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE6, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -176,11 +176,11 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
             || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
             || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wWR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wWG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wWB[cItemColor] - m_pGame->m_wB[0]));
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
         }
         else
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(m_pGame->m_wR[cItemColor] - m_pGame->m_wR[0], m_pGame->m_wG[cItemColor] - m_pGame->m_wG[0], m_pGame->m_wB[cItemColor] - m_pGame->m_wB[0]));
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
         }
 
         // Flickering effect
@@ -192,9 +192,9 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         std::memset(cStr2, 0, sizeof(cStr2));
         std::memset(cStr3, 0, sizeof(cStr3));
         m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 
     // Send upgrade command after 4 seconds
@@ -210,8 +210,8 @@ void DialogBox_ItemUpgrade::DrawMode3_Success(int sX, int sY, int msX, int msY)
 {
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE7, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE8, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE7, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 45 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE8, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
     {
@@ -230,7 +230,7 @@ void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
 {
     int iItemIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1;
 
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE9, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 55 + 30 + 282 - 117 - 170, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE9, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // Check if item was destroyed
     if ((iItemIndex != -1) && (m_pGame->m_pItemList[iItemIndex] == 0))
@@ -255,37 +255,37 @@ void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
 
 void DialogBox_ItemUpgrade::DrawMode5_SelectUpgradeType(int sX, int sY, int msX, int msY)
 {
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE13, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE13, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // Normal item upgrade option
     if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
     {
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE16, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE17, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE18, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE19, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 210, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE20, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE21, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 255, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE26, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 270, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE27, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE16, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE17, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE18, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE19, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 210, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE20, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE21, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 255, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE26, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 270, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE27, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
     else
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(4, 0, 50), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE14, TextLib::TextStyle::Color(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b), TextLib::Align::TopCenter);
 
     // Majestic item upgrade option
     if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
     {
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(255, 255, 255), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE22, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE23, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE24, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE25, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE28, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 240, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE29, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 150, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE22, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 165, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE23, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 180, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE24, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 195, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE25, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 225, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE28, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 240, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE29, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
     else
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(4, 0, 50), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 120, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE15, TextLib::TextStyle::Color(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b), TextLib::Align::TopCenter);
 
     // Cancel button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -302,28 +302,28 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     char cTxt[256];
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE31, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE32, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE33, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 30, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE31, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 45, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE32, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE33, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     if (iSoX == 0)
     {
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE41, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE41, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
     }
     else
     {
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 
     if (iSoM == 0)
     {
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE42, TextLib::TextStyle::Color(195, 25, 25), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE42, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
     }
     else
     {
         wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
-        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
@@ -348,8 +348,8 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
 
 void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int msX, int msY)
 {
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE36, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 145, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE37, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE36, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 145, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE37, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -360,7 +360,7 @@ void DialogBox_ItemUpgrade::DrawMode7_ItemLost(int sX, int sY, int msX, int msY)
 
 void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int msX, int msY)
 {
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE38, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE38, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -371,7 +371,7 @@ void DialogBox_ItemUpgrade::DrawMode8_MaxUpgrade(int sX, int sY, int msX, int ms
 
 void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int msX, int msY)
 {
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE39, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE39, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
@@ -382,7 +382,7 @@ void DialogBox_ItemUpgrade::DrawMode9_CannotUpgrade(int sX, int sY, int msX, int
 
 void DialogBox_ItemUpgrade::DrawMode10_NoPoints(int sX, int sY, int msX, int msY)
 {
-    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE40, TextLib::TextStyle::Color(0, 0, 0), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 130, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE40, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     // OK button
     if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))

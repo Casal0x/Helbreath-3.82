@@ -38,13 +38,13 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 					if ((m_pGame->m_pSkillCfgList[i + Info().sView]->m_bIsUseable == true)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(255, 255, 255));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(255, 255, 255));
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIWhite.ToColorRef());
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIWhite.ToColorRef());
 					}
 					else
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(5, 5, 5));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(5, 5, 5));
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack.ToColorRef());
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack.ToColorRef());
 					}
 				}
 				else
@@ -52,19 +52,19 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 					if ((m_pGame->m_pSkillCfgList[i + Info().sView]->m_bIsUseable == true)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(34, 30, 120));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(34, 30, 120));
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIMagicBlue.ToColorRef());
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIMagicBlue.ToColorRef());
 					}
 					else
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, RGB(5, 5, 5));
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, RGB(5, 5, 5));
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack.ToColorRef());
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack.ToColorRef());
 					}
 				}
 
 				if (m_pGame->m_iDownSkillIndex == (i + Info().sView))
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::ColorReplace(255, 255, 255));
-				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, SpriteLib::DrawParams::ColorReplace(0, 0, 0));
+					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::ColorReplace(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, SpriteLib::DrawParams::ColorReplace(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
 			}
 
 		iTotalLines = 0;

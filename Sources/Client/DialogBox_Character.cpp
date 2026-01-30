@@ -18,12 +18,12 @@ void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int ange
 	if (angelicBonus == 0)
 	{
 		snprintf(buf, sizeof(buf), "%d", baseStat);
-		PutAlignedString(x1, x2, y, buf, 45, 25, 25);
+		PutAlignedString(x1, x2, y, buf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 	}
 	else
 	{
 		snprintf(buf, sizeof(buf), "%d", baseStat + angelicBonus);
-		PutAlignedString(x1, x2, y, buf, 0, 0, 192);
+		PutAlignedString(x1, x2, y, buf, GameColors::UICharBlue.r, GameColors::UICharBlue.g, GameColors::UICharBlue.b);
 	}
 }
 
@@ -40,9 +40,9 @@ char DialogBox_Character::DrawEquippedItem(int equipPos, int drawX, int drawY, s
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
-	const int16_t* wR = useWeaponColors ? m_pGame->m_wWR.data() : m_pGame->m_wR.data();
-	const int16_t* wG = useWeaponColors ? m_pGame->m_wWG.data() : m_pGame->m_wG.data();
-	const int16_t* wB = useWeaponColors ? m_pGame->m_wWB.data() : m_pGame->m_wB.data();
+	const GameColor* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
+	// (wG/wB merged into GameColor array above)
+	
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 
@@ -51,14 +51,14 @@ char DialogBox_Character::DrawEquippedItem(int equipPos, int drawX, int drawY, s
 		if (cItemColor == 0)
 			pSprite->Draw(drawX, drawY, sFrame);
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(wR[cItemColor] - m_pGame->m_wR[0], wG[cItemColor] - m_pGame->m_wG[0], wB[cItemColor] - m_pGame->m_wB[0]));
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(colors[cItemColor].r - GameColors::Base.r, colors[cItemColor].g - GameColors::Base.g, colors[cItemColor].b - GameColors::Base.b));
 	}
 	else
 	{
 		if (cItemColor == 0)
 			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(wR[cItemColor] - m_pGame->m_wR[0], wG[cItemColor] - m_pGame->m_wG[0], wB[cItemColor] - m_pGame->m_wB[0], 0.7f));
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(colors[cItemColor].r - GameColors::Base.r, colors[cItemColor].g - GameColors::Base.g, colors[cItemColor].b - GameColors::Base.b, 0.7f));
 	}
 
 	if (pSprite->CheckCollision(drawX, drawY, sFrame, msX, msY))
@@ -98,7 +98,7 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 	snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
 	strncat(infoBuf, cTxt2, sizeof(infoBuf) - strlen(infoBuf) - 1);
-	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf, 45, 20, 20);
+	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf, GameColors::UICharStatRed.r, GameColors::UICharStatRed.g, GameColors::UICharStatRed.b);
 
 	// Citizenship / Guild status
 	char statusBuf[128] = {};
@@ -119,18 +119,18 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 			strncat(statusBuf, m_pGame->m_pPlayer->m_iGuildRank == 0 ? DEF_MSG_GUILDMASTER1 : DEF_MSG_GUILDSMAN1, sizeof(statusBuf) - strlen(statusBuf) - 1);
 		}
 	}
-	PutAlignedString(sX, sX + 275, sY + 69, statusBuf, 45, 25, 25);
+	PutAlignedString(sX, sX + 275, sY + 69, statusBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Level, Exp, Next Exp
 	char statBuf[32];
 	snprintf(statBuf, sizeof(statBuf), "%d", m_pGame->m_pPlayer->m_iLevel);
-	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 106, statBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	m_pGame->FormatCommaNumber(m_pGame->m_pPlayer->m_iExp, statBuf, sizeof(statBuf));
-	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 125, statBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	m_pGame->FormatCommaNumber(m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1), statBuf, sizeof(statBuf));
-	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Calculate max stats
 	int iMaxHP = CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
@@ -141,22 +141,22 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	// HP, MP, SP
 	char valueBuf[32];
 	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iHP, iMaxHP);
-	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 173, valueBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iMP, iMaxMP);
-	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 191, valueBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", m_pGame->m_pPlayer->m_iSP, iMaxSP);
-	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Max Load
 	int iTotalWeight = m_pGame->_iCalcTotalWeight();
 	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", (iTotalWeight / 100), iMaxLoad);
-	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Enemy Kills
 	snprintf(valueBuf, sizeof(valueBuf), "%d", m_pGame->m_pPlayer->m_iEnemyKillCount);
-	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf, 45, 25, 25);
+	PutAlignedString(sX + 180, sX + 250, sY + 257, valueBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Stats with angelic bonuses
 	DrawStat(sX + 48, sX + 82, sY + 285, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);   // Str
@@ -167,9 +167,9 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Vit and Chr (no angelic bonus)
 	char vitChrBuf[16];
 	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iVit);
-	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf, 45, 25, 25);
+	PutAlignedString(sX + 218, sX + 251, sY + 285, vitChrBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 	snprintf(vitChrBuf, sizeof(vitChrBuf), "%d", m_pGame->m_pPlayer->m_iCharisma);
-	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf, 45, 25, 25);
+	PutAlignedString(sX + 218, sX + 251, sY + 302, vitChrBuf, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 
 	// Build equipment status array
 	char cEquipPoiStatus[DEF_MAXITEMEQUIPPOS];

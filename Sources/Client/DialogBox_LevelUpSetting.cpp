@@ -16,19 +16,19 @@ void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, con
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Stat label
-	PutString(sX + 24, sY + iYOffset, (char*)pLabel, RGB(5, 5, 5));
+	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack.ToColorRef());
 
 	// Current value
 	wsprintf(cTxt, "%d", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
 
 	// New value (with pending changes)
 	int iNewStat = iCurrentStat + iPendingChange;
 	wsprintf(cTxt, "%d", iNewStat);
 	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed.ToColorRef());
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
 
 	// + arrow highlight
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanIncrease)
@@ -56,12 +56,12 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING2);
 
 	// Points Left
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, RGB(0, 0, 0));
+	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iLU_Point);
 	if (m_pGame->m_pPlayer->m_iLU_Point > 0)
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 255, 0));
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen.ToColorRef());
 	else
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 0, 0));
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack.ToColorRef());
 
 	// Draw stat rows
 	DrawStatRow(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_wLU_Str,

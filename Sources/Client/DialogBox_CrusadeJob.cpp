@@ -24,25 +24,25 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 		{
 			// Guild master can be Commander
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 255, 255, 255);
+				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			else
-				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, 4, 0, 50);
+				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB5, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 		}
 		else
 		{
 			// Non-guild masters can be Soldier
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
-				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 255, 255, 255);
+				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 			else
-				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, 4, 0, 50);
+				PutAlignedString(sX + 24, sX + 246, sY + 150, DRAWDIALOGBOX_CRUSADEJOB7, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 			// Guild members can also be Constructor
 			if (m_pGame->m_pPlayer->m_iGuildRank != -1)
 			{
 				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
-					PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 255, 255, 255);
+					PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 				else
-					PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, 4, 0, 50);
+					PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB9, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 			}
 		}
 	}
@@ -52,9 +52,9 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 
 	// Help button
 	if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(6, 6, 20));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 	else
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(0, 0, 7));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
 }
 
 void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short msY)
@@ -72,9 +72,9 @@ void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short 
 
 	// "View details" link
 	if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 160) && (msY < sY + 175))
-		PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, 255, 255, 255);
+		PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
 	else
-		PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, 4, 0, 50);
+		PutAlignedString(sX + 24, sX + 246, sY + 160, DRAWDIALOGBOX_CRUSADEJOB23, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
 
 	PutAlignedString(sX + 24, sX + 246, sY + 175, DRAWDIALOGBOX_CRUSADEJOB25);
 	PutAlignedString(sX + 24, sX + 246, sY + 190, DRAWDIALOGBOX_CRUSADEJOB26);

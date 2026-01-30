@@ -98,13 +98,13 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 
 			switch (m_pGame->m_pChatScrollList[iIndex]->m_dwTime)
 			{
-			case 0:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(230, 230, 230)); break; // Normal
-			case 1:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(130, 200, 130)); break; // Green
-			case 2:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(255, 130, 130)); break; // Red
-			case 3:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(130, 130, 255)); break; // Blue
-			case 4:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(230, 230, 130)); break; // Yellow
-			case 10: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(180, 255, 180)); break; // Light green
-			case 20: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(150, 150, 170)); break; // Gray
+			case 0:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b)); break; // Normal
+			case 1:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIGuildGreen.r, GameColors::UIGuildGreen.g, GameColors::UIGuildGreen.b)); break; // Green
+			case 2:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat.r, GameColors::UIWorldChat.g, GameColors::UIWorldChat.b)); break; // Red
+			case 3:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::ChatBlue.r, GameColors::ChatBlue.g, GameColors::ChatBlue.b)); break; // Blue
+			case 4:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::ChatYellow.r, GameColors::ChatYellow.g, GameColors::ChatYellow.b)); break; // Yellow
+			case 10: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::ChatLightGreen.r, GameColors::ChatLightGreen.g, GameColors::ChatLightGreen.b)); break; // Light green
+			case 20: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::ChatGray.r, GameColors::ChatGray.g, GameColors::ChatGray.b)); break; // Gray
 			}
 		}
 	}

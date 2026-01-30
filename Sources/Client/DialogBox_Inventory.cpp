@@ -28,9 +28,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
-	int16_t* wR = bIsWeapon ? m_pGame->m_wWR.data() : m_pGame->m_wR.data();
-	int16_t* wG = bIsWeapon ? m_pGame->m_wWG.data() : m_pGame->m_wG.data();
-	int16_t* wB = bIsWeapon ? m_pGame->m_wWB.data() : m_pGame->m_wB.data();
+	const GameColor* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
+	// (wG/wB merged into GameColor array above)
+	
 
 	if (cItemColor == 0)
 	{
@@ -43,9 +43,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	else
 	{
 		// Apply color tint
-		int r = wR[cItemColor] - m_pGame->m_wR[0];
-		int g = wG[cItemColor] - m_pGame->m_wG[0];
-		int b = wB[cItemColor] - m_pGame->m_wB[0];
+		int r = colors[cItemColor].r - GameColors::Base.r;
+		int g = colors[cItemColor].g - GameColors::Base.g;
+		int b = colors[cItemColor].b - GameColors::Base.b;
 
 		if (bDisabled)
 			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));
@@ -58,7 +58,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
-		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(200, 200, 200));
+		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 	}
 }
 

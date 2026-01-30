@@ -29,115 +29,115 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
 
 	// Majestic Points Left
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, RGB(0, 0, 0));
+	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_iGizonItemUpgradeLeft);
 	if (m_pGame->m_iGizonItemUpgradeLeft > 0)
 	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 255, 0));
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 73, sY + 102, cTxt, RGB(0, 0, 0));
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack.ToColorRef());
 	}
 
 	// Strength
-	PutString(sX + 24, sY + 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iStr);
-	PutString(sX + 109, sY + 125, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 125, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iStr + m_pGame->m_pPlayer->m_wLU_Str;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iStr)
 	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 125, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 125, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 125, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 127) && (msY <= sY + 133))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 127, 6);
 
 	// Vitality
-	PutString(sX + 24, sY + 144, DRAW_DIALOGBOX_LEVELUP_SETTING5, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 144, DRAW_DIALOGBOX_LEVELUP_SETTING5, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iVit);
-	PutString(sX + 109, sY + 144, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 144, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iVit + m_pGame->m_pPlayer->m_wLU_Vit;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iVit)
 	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 144, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 144, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 144, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 146) && (msY <= sY + 152))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 146, 6);
 
 	// Dexterity
-	PutString(sX + 24, sY + 163, DRAW_DIALOGBOX_LEVELUP_SETTING6, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 163, DRAW_DIALOGBOX_LEVELUP_SETTING6, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iDex);
-	PutString(sX + 109, sY + 163, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 163, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iDex + m_pGame->m_pPlayer->m_wLU_Dex;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iDex)
 	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 163, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 163, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 163, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 165) && (msY <= sY + 171))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 165, 6);
 
 	// Intelligence
-	PutString(sX + 24, sY + 182, DRAW_DIALOGBOX_LEVELUP_SETTING7, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 182, DRAW_DIALOGBOX_LEVELUP_SETTING7, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iInt);
-	PutString(sX + 109, sY + 182, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 182, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iInt + m_pGame->m_pPlayer->m_wLU_Int;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iInt)
 	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 182, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 182, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 182, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 184) && (msY <= sY + 190))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 184, 6);
 
 	// Magic
-	PutString(sX + 24, sY + 201, DRAW_DIALOGBOX_LEVELUP_SETTING8, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 201, DRAW_DIALOGBOX_LEVELUP_SETTING8, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iMag);
-	PutString(sX + 109, sY + 201, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 201, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iMag + m_pGame->m_pPlayer->m_wLU_Mag;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iMag)
 	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 201, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 201, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 201, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 203) && (msY <= sY + 209))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 203, 6);
 
 	// Charisma
-	PutString(sX + 24, sY + 220, DRAW_DIALOGBOX_LEVELUP_SETTING9, RGB(5, 5, 5));
+	PutString(sX + 24, sY + 220, DRAW_DIALOGBOX_LEVELUP_SETTING9, GameColors::UIBlack.ToColorRef());
 	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iCharisma);
-	PutString(sX + 109, sY + 220, cTxt, RGB(25, 35, 25));
+	PutString(sX + 109, sY + 220, cTxt, GameColors::UILabel.ToColorRef());
 	iStats = m_pGame->m_pPlayer->m_iCharisma + m_pGame->m_pPlayer->m_wLU_Char;
 	wsprintf(cTxt, "%d", iStats);
 	if (iStats < m_pGame->m_pPlayer->m_iCharisma)
 	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(255, 0, 0));
+		PutString(sX + 162, sY + 220, cTxt, GameColors::UIRed.ToColorRef());
 	}
 	else
 	{
-		PutString(sX + 162, sY + 220, cTxt, RGB(25, 35, 25));
+		PutString(sX + 162, sY + 220, cTxt, GameColors::UILabel.ToColorRef());
 	}
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + 222) && (msY <= sY + 228))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + 222, 6);

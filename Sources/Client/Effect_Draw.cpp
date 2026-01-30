@@ -279,7 +279,7 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
-				//PutString(dX, dY, "*", RGB(255,255,255);
+				//PutString(dX, dY, "*", GameColors::UIWhite.ToColorRef();
 				if (cTempFrame < 7) {
 					iDvalue = -8 * (6 - cTempFrame);
 					(*m_pEffectSpr)[static_cast<size_t>(m_pEffectList[i]->m_sType) - 1]->Draw(dX, dY, cTempFrame + 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));

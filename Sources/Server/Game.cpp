@@ -6435,9 +6435,8 @@ void CGame::MsgProcess()
 				break;
 
 			case MSGID_REQUEST_INITDATA:
-				// Anti Bump 
+				if (m_pClientList[iClientH] == nullptr) break;
 				if (m_pClientList[iClientH]->m_bIsClientConnected) {
-					if (m_pClientList[iClientH] == 0) break;
 					std::snprintf(G_cTxt, sizeof(G_cTxt), "(!!!) Client (%s) connection closed!. Sniffer suspect!.", m_pClientList[iClientH]->m_cCharName);
 					PutLogList(G_cTxt);
 					/*std::memset(cData, 0, sizeof(cData));

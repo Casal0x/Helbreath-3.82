@@ -23,6 +23,9 @@ public:
     void on_render() override;
 
 private:
+    void RenderItemTooltip();
+
+private:
     // Screen-specific state (previously file-scope static variables)
     short m_sMsX = 0;
     short m_sMsY = 0;

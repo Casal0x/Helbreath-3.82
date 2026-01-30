@@ -581,10 +581,6 @@ public:
 	uint16_t m_wCommObjectID;
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
-	// Color arrays for sprite tinting (RGB888 format, 0-255 range)
-	std::array<int16_t, 16> m_wR{}, m_wG{}, m_wB{};
-	std::array<int16_t, 16> m_wWR{}, m_wWG{}, m_wWB{};
-
 	unsigned char m_cInputMaxLen;
 	char m_cEdit[4];
 	char G_cTxt[128];

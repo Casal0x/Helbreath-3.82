@@ -14,8 +14,8 @@ void DialogBox_Resurrect::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
 
-	PutString(sX + 50, sY + 20, "Someone intend to resurrect you.", RGB(4, 0, 50));
-	PutString(sX + 80, sY + 35, "Will you revive here?", RGB(4, 0, 50));
+	PutString(sX + 50, sY + 20, "Someone intend to resurrect you.", GameColors::UIMagicBlue.ToColorRef());
+	PutString(sX + 80, sY + 35, "Will you revive here?", GameColors::UIMagicBlue.ToColorRef());
 
 	// Yes button
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
