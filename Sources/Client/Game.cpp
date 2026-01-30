@@ -9664,7 +9664,20 @@ void CGame::ChatMsgHandler(char* pData)
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
 				wsprintf(cHeadMsg, "%s:%s", cName, cp);
-				AddEventList(cHeadMsg, cMsgType);
+				if (cMsgType == 10) {
+					// GM broadcast: route to top-left event area instead of bottom status area
+					for (int j = 1; j < 6; j++) {
+						strcpy(m_stEventHistory[j - 1].cTxt, m_stEventHistory[j].cTxt);
+						m_stEventHistory[j - 1].cColor = m_stEventHistory[j].cColor;
+						m_stEventHistory[j - 1].dwTime = m_stEventHistory[j].dwTime;
+					}
+					std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
+					strcpy(m_stEventHistory[5].cTxt, cHeadMsg);
+					m_stEventHistory[5].cColor = cMsgType;
+					m_stEventHistory[5].dwTime = m_dwCurTime;
+				} else {
+					AddEventList(cHeadMsg, cMsgType);
+				}
 			}
 			return;
 		}
