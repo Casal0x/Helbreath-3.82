@@ -2095,8 +2095,8 @@ bool CGame::bSendClientItemConfigs(int iClientH)
 		return false;
 	}
 
-	// Calculate how many items per packet (leave room for header)
-	constexpr size_t maxPacketSize = 30000;
+	// Calculate how many items per packet - keep packets small (~7KB) for reliable delivery
+	constexpr size_t maxPacketSize = 7000;
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 	constexpr size_t maxEntriesPerPacket = (maxPacketSize - headerSize) / entrySize;
@@ -2178,15 +2178,28 @@ bool CGame::bSendClientItemConfigs(int iClientH)
 		pktHeader->itemCount = entriesInPacket;
 		size_t packetSize = headerSize + (entriesInPacket * entrySize);
 
+		std::snprintf(G_cTxt, sizeof(G_cTxt),
+			"[ITEMCFG] Sending packet %d: %zu bytes, %u items, writeEnabled=%d",
+			packetIndex, packetSize, entriesInPacket,
+			(int)m_pClientList[iClientH]->m_pXSock->m_bIsWriteEnabled);
+		PutLogList(G_cTxt);
+
 		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
+
+		std::snprintf(G_cTxt, sizeof(G_cTxt),
+			"[ITEMCFG] Packet %d result: iRet=%d, writeEnabled=%d",
+			packetIndex, iRet,
+			(int)m_pClientList[iClientH]->m_pXSock->m_bIsWriteEnabled);
+		PutLogList(G_cTxt);
+
 		switch (iRet) {
 		case DEF_XSOCKEVENT_QUENEFULL:
 		case DEF_XSOCKEVENT_SOCKETERROR:
 		case DEF_XSOCKEVENT_CRITICALERROR:
 		case DEF_XSOCKEVENT_SOCKETCLOSED:
 			std::snprintf(G_cTxt, sizeof(G_cTxt),
-				"Failed to send item configs: Client(%d) Packet(%d)",
-				iClientH, packetIndex);
+				"[ITEMCFG] FAILED to send: Client(%d) Packet(%d) iRet=%d",
+				iClientH, packetIndex, iRet);
 			PutLogList(G_cTxt);
 			DeleteClient(iClientH, true, true);
 			delete m_pClientList[iClientH];
