@@ -356,3 +356,5 @@ Makefile
 # Unix/Linux binaries
 **/Server-Linux
 **/HBServer
+.DS_Store
+*.DS_Store
