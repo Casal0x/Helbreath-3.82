@@ -369,7 +369,9 @@ int XSocket::_iSend(char * cData, int iSize, bool bSaveFlag)
 				return DEF_XSOCKEVENT_SOCKETERROR;
 			}
 			else {
-				// ���������̸� ���̻� ���� �� �����Ƿ� �����ִ� �����͸� ����Ʈ�� ����ϰ� ���� 
+				// Socket blocked - mark write disabled until next FD_WRITE
+				m_bIsWriteEnabled = false;
+				// ���������̸� ���̻� ���� �� �����Ƿ� �����ִ� �����͸� ����Ʈ�� ����ϰ� ����
 				if (bSaveFlag ) {
 					iRet = _iRegisterUnsentData((cData + iOutLen), (iSize - iOutLen));
 					switch (iRet) {
@@ -495,7 +497,10 @@ int XSocket::_iSendUnsentData()
 
 			delete m_pUnsentDataList[m_sHead];
 			m_pUnsentDataList[m_sHead] = pTemp;
+			m_iUnsentDataSize[m_sHead] = m_iUnsentDataSize[m_sHead] - iRet;
 
+			// Socket blocked during drain - wait for next FD_WRITE
+			m_bIsWriteEnabled = false;
 			return DEF_XSOCKEVENT_UNSENTDATASENDBLOCK;
 		}
 	}
