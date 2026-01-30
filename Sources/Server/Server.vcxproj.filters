@@ -1,162 +1,221 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="source">
-      <UniqueIdentifier>{c7ae280e-8533-4af2-bbc7-d6330c3e897a}</UniqueIdentifier>
+    <Filter Include="Console">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-444455556666}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Console\Commands">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555cccc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Database">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-444455557777}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Networking">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-444455558888}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="World">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-444455559999}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data Types">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555aaaa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{a1b2c3d4-1111-2222-3333-44445555bbbb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AccountSqliteStore.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="BuildItem.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Client.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="DelayEvent.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="DynamicObject.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Fish.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Game.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="GuildsMan.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Item.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Magic.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Map.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="MessageIndex.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Mineral.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Misc.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Npc.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="OccupyFlag.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Portion.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Quest.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Skill.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="StrategicPoint.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="TeleportLoc.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="Tile.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="UserMessages.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="XSocket.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="version.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="winmain.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="GlobalDef.h" />
-    <ClInclude Include="LoginServer.h" />
-    <ClInclude Include="PartyManager.h" />
-    <ClInclude Include="ActionID_Server.h" />
-    <ClInclude Include="CommonTypes.h" />
-    <ClInclude Include="EntityManager.h" />
-    <ClInclude Include="NetworkMsg.h" />
-    <ClInclude Include="ServerMessages.h" />
-    <ClInclude Include="GameConfigSqliteStore.h" />
+    <!-- Root (no filter) -->
+    <ClInclude Include="winmain.h" />
+    <ClInclude Include="Game.h" />
+    <!-- Console -->
     <ClInclude Include="ServerConsole.h">
-      <Filter>source</Filter>
+      <Filter>Console</Filter>
     </ClInclude>
     <ClInclude Include="ServerCommand.h">
-      <Filter>source</Filter>
+      <Filter>Console</Filter>
     </ClInclude>
     <ClInclude Include="CmdHelp.h">
-      <Filter>source</Filter>
-    </ClInclude>
-    <ClInclude Include="ChatLog.h">
-      <Filter>source</Filter>
+      <Filter>Console\Commands</Filter>
     </ClInclude>
     <ClInclude Include="CmdShowChat.h">
-      <Filter>source</Filter>
+      <Filter>Console\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatLog.h">
+      <Filter>Console</Filter>
+    </ClInclude>
+    <!-- Database -->
+    <ClInclude Include="AccountSqliteStore.h">
+      <Filter>Database</Filter>
+    </ClInclude>
+    <ClInclude Include="GameConfigSqliteStore.h">
+      <Filter>Database</Filter>
+    </ClInclude>
+    <ClInclude Include="MapInfoSqliteStore.h">
+      <Filter>Database</Filter>
+    </ClInclude>
+    <!-- Networking -->
+    <ClInclude Include="XSocket.h">
+      <Filter>Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkMsg.h">
+      <Filter>Networking</Filter>
+    </ClInclude>
+    <ClInclude Include="LoginServer.h">
+      <Filter>Networking</Filter>
+    </ClInclude>
+    <!-- World -->
+    <ClInclude Include="Map.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="Tile.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="Npc.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="Quest.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="PartyManager.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityManager.h">
+      <Filter>World</Filter>
+    </ClInclude>
+    <!-- Data Types -->
+    <ClInclude Include="Item.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Magic.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Skill.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="BuildItem.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Fish.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Mineral.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Portion.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="DynamicObject.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="DelayEvent.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="OccupyFlag.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="StrategicPoint.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="TeleportLoc.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <ClInclude Include="GuildsMan.h">
+      <Filter>Data Types</Filter>
+    </ClInclude>
+    <!-- Common -->
+    <ClInclude Include="CommonTypes.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalDef.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="version.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ActionID_Server.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageIndex.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerMessages.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="UserMessages.h">
+      <Filter>Common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AccountSqliteStore.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Client.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Game.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Map.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Npc.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Quest.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Tile.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="XSocket.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="wmain.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="LoginServer.cpp" />
-    <ClCompile Include="PartyManager.cpp" />
-    <ClCompile Include="CommonTypes.cpp" />
-    <ClCompile Include="EntityManager.cpp" />
-    <ClCompile Include="NetworkMsg.cpp" />
-    <ClCompile Include="GameConfigSqliteStore.cpp" />
+    <!-- Root (no filter) -->
+    <ClCompile Include="wmain.cpp" />
+    <ClCompile Include="Game.cpp" />
+    <!-- Console -->
     <ClCompile Include="ServerConsole.cpp">
-      <Filter>source</Filter>
+      <Filter>Console</Filter>
     </ClCompile>
     <ClCompile Include="ServerCommand.cpp">
-      <Filter>source</Filter>
+      <Filter>Console</Filter>
     </ClCompile>
     <ClCompile Include="CmdHelp.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="ChatLog.cpp">
-      <Filter>source</Filter>
+      <Filter>Console\Commands</Filter>
     </ClCompile>
     <ClCompile Include="CmdShowChat.cpp">
-      <Filter>source</Filter>
+      <Filter>Console\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatLog.cpp">
+      <Filter>Console</Filter>
+    </ClCompile>
+    <!-- Database -->
+    <ClCompile Include="AccountSqliteStore.cpp">
+      <Filter>Database</Filter>
+    </ClCompile>
+    <ClCompile Include="GameConfigSqliteStore.cpp">
+      <Filter>Database</Filter>
+    </ClCompile>
+    <ClCompile Include="MapInfoSqliteStore.cpp">
+      <Filter>Database</Filter>
+    </ClCompile>
+    <!-- Networking -->
+    <ClCompile Include="XSocket.cpp">
+      <Filter>Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkMsg.cpp">
+      <Filter>Networking</Filter>
+    </ClCompile>
+    <ClCompile Include="LoginServer.cpp">
+      <Filter>Networking</Filter>
+    </ClCompile>
+    <!-- World -->
+    <ClCompile Include="Map.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="Tile.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="Npc.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="Quest.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="PartyManager.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <ClCompile Include="EntityManager.cpp">
+      <Filter>World</Filter>
+    </ClCompile>
+    <!-- Common -->
+    <ClCompile Include="CommonTypes.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
