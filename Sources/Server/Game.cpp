@@ -4868,8 +4868,13 @@ bool CGame::bSendMsgToLS(uint32_t dwMsg, int iClientH, bool bFlag,
     //	iSendSize = 36;
     //	break;
   case MSGID_GAMEMASTERLOG:
+#ifdef _WIN32
     std::snprintf(cFn, sizeof(cFn), "GameLogs\\MasterLog-%d-%d-%d.txt",
                   SysTime.wYear, SysTime.wMonth, SysTime.wDay);
+#else
+    std::snprintf(cFn, sizeof(cFn), "GameLogs/MasterLog-%d-%d-%d.txt",
+                  SysTime.wYear, SysTime.wMonth, SysTime.wDay);
+#endif
     pFile = fopen(cFn, "at");
     if (pFile == 0)
       return false;
@@ -4877,8 +4882,13 @@ bool CGame::bSendMsgToLS(uint32_t dwMsg, int iClientH, bool bFlag,
     fclose(pFile);
     break;
   case MSGID_GAMEITEMLOG:
+#ifdef _WIN32
     std::snprintf(cFn, sizeof(cFn), "GameLogs\\ItemLog-%d-%d-%d.txt",
                   SysTime.wYear, SysTime.wMonth, SysTime.wDay);
+#else
+    std::snprintf(cFn, sizeof(cFn), "GameLogs/ItemLog-%d-%d-%d.txt",
+                  SysTime.wYear, SysTime.wMonth, SysTime.wDay);
+#endif
     pFile = fopen(cFn, "at");
     if (pFile == 0)
       return false;

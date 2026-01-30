@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <libgen.h>
@@ -75,6 +76,10 @@ typedef struct tagSYSTEMTIME {
 typedef struct _WIN32_FIND_DATA {
   DWORD dwFileAttributes;
   char cFileName[260];
+  // Unix-specific: internal state for directory traversal
+  DIR* _dir;
+  char _pattern[260];
+  char _dirPath[260];
 } WIN32_FIND_DATA;
 
 // Socket constants
@@ -314,21 +319,133 @@ inline DWORD GetFileAttributes(const char *path) {
   return S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : 0;
 }
 
-// FindFirstFile/FindNextFile stubs
+// Helper function to match wildcard patterns (simple * matching)
+inline bool MatchPattern(const char* filename, const char* pattern) {
+  // Find the * in pattern
+  const char* star = strchr(pattern, '*');
+  if (!star) {
+    // No wildcard, exact match
+    return strcmp(filename, pattern) == 0;
+  }
+
+  // Match prefix before *
+  size_t prefixLen = star - pattern;
+  if (strncmp(filename, pattern, prefixLen) != 0) {
+    return false;
+  }
+
+  // Match suffix after *
+  const char* suffix = star + 1;
+  size_t suffixLen = strlen(suffix);
+  size_t filenameLen = strlen(filename);
+
+  if (suffixLen > 0 && filenameLen >= suffixLen) {
+    return strcmp(filename + filenameLen - suffixLen, suffix) == 0;
+  }
+
+  return suffixLen == 0;
+}
+
+// Forward declaration
+inline BOOL FindNextFile(HANDLE hFind, WIN32_FIND_DATA *findData);
+
+// FindFirstFile/FindNextFile implementations for Unix
 inline HANDLE FindFirstFile(const char *path, WIN32_FIND_DATA *findData) {
-  (void)path;
-  (void)findData;
-  return INVALID_HANDLE_VALUE; // Stub - not fully implemented
+  if (!path || !findData) {
+    return INVALID_HANDLE_VALUE;
+  }
+
+  // Initialize internal state
+  findData->_dir = nullptr;
+
+  // Parse path into directory and pattern
+  // Example: "Accounts\\*.db" -> dir="Accounts", pattern="*.db"
+  char tempPath[MAX_PATH];
+  strncpy(tempPath, path, sizeof(tempPath) - 1);
+  tempPath[sizeof(tempPath) - 1] = '\0';
+
+  // Replace backslashes with forward slashes
+  for (char* p = tempPath; *p; ++p) {
+    if (*p == '\\') *p = '/';
+  }
+
+  // Find last slash to separate directory from pattern
+  char* lastSlash = strrchr(tempPath, '/');
+  if (lastSlash) {
+    *lastSlash = '\0';
+    strncpy(findData->_dirPath, tempPath, sizeof(findData->_dirPath) - 1);
+    strncpy(findData->_pattern, lastSlash + 1, sizeof(findData->_pattern) - 1);
+  } else {
+    // No directory, use current directory
+    strcpy(findData->_dirPath, ".");
+    strncpy(findData->_pattern, tempPath, sizeof(findData->_pattern) - 1);
+  }
+
+  findData->_dirPath[sizeof(findData->_dirPath) - 1] = '\0';
+  findData->_pattern[sizeof(findData->_pattern) - 1] = '\0';
+
+  // Open directory
+  findData->_dir = opendir(findData->_dirPath);
+  if (!findData->_dir) {
+    return INVALID_HANDLE_VALUE;
+  }
+
+  // Find first matching file
+  if (FindNextFile((HANDLE)findData, findData)) {
+    return (HANDLE)findData;
+  }
+
+  closedir(findData->_dir);
+  findData->_dir = nullptr;
+  return INVALID_HANDLE_VALUE;
 }
 
 inline BOOL FindNextFile(HANDLE hFind, WIN32_FIND_DATA *findData) {
-  (void)hFind;
-  (void)findData;
+  if (hFind == INVALID_HANDLE_VALUE || !findData || !findData->_dir) {
+    return FALSE;
+  }
+
+  struct dirent* entry;
+  while ((entry = readdir(findData->_dir)) != nullptr) {
+    // Skip . and ..
+    if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+      continue;
+    }
+
+    // Check if filename matches pattern
+    if (MatchPattern(entry->d_name, findData->_pattern)) {
+      strncpy(findData->cFileName, entry->d_name, sizeof(findData->cFileName) - 1);
+      findData->cFileName[sizeof(findData->cFileName) - 1] = '\0';
+
+      // Get file attributes
+      char fullPath[MAX_PATH];
+      snprintf(fullPath, sizeof(fullPath), "%s/%s", findData->_dirPath, entry->d_name);
+
+      struct stat st;
+      if (stat(fullPath, &st) == 0) {
+        findData->dwFileAttributes = S_ISDIR(st.st_mode) ? FILE_ATTRIBUTE_DIRECTORY : 0;
+      } else {
+        findData->dwFileAttributes = 0;
+      }
+
+      return TRUE;
+    }
+  }
+
   return FALSE;
 }
 
 inline BOOL FindClose(HANDLE hFind) {
-  (void)hFind;
+  if (hFind == INVALID_HANDLE_VALUE) {
+    return TRUE;
+  }
+
+  WIN32_FIND_DATA* findData = (WIN32_FIND_DATA*)hFind;
+  if (findData->_dir) {
+    closedir(findData->_dir);
+    findData->_dir = nullptr;
+  }
+
   return TRUE;
 }
 

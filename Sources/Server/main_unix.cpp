@@ -228,6 +228,7 @@ void timer_callback(void *userData) {
 // Main event loop (Unix version)
 int EventLoop() {
   static uint32_t dwLastGameProcess = 0;
+  static uint32_t dwLastTimerEvent = 0;
 
   printf("[INFO] Entering event loop...\n");
 
@@ -239,6 +240,12 @@ int EventLoop() {
       if (dwNow - dwLastGameProcess >= 300) {
         G_pGame->GameProcess();
         dwLastGameProcess = dwNow;
+      }
+
+      // Run timer events every 300ms (replaces Windows timer callback)
+      if (dwNow - dwLastTimerEvent >= 300) {
+        G_pGame->OnTimer(0);
+        dwLastTimerEvent = dwNow;
       }
 
       // Poll all sockets for network events
