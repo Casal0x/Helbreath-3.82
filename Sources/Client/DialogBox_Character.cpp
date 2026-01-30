@@ -23,7 +23,7 @@ void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int ange
 	else
 	{
 		snprintf(buf, sizeof(buf), "%d", baseStat + angelicBonus);
-		PutAlignedString(x1, x2, y, buf, GameColors::UICharBlue.r, GameColors::UICharBlue.g, GameColors::UICharBlue.b);
+		PutAlignedString(x1, x2, y, buf, GameColors::UIModifiedStat.r, GameColors::UIModifiedStat.g, GameColors::UIModifiedStat.b);
 	}
 }
 
@@ -98,7 +98,7 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 	snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_CHARACTER2, m_pGame->m_pPlayer->m_iContribution);
 	strncat(infoBuf, cTxt2, sizeof(infoBuf) - strlen(infoBuf) - 1);
-	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf, GameColors::UICharStatRed.r, GameColors::UICharStatRed.g, GameColors::UICharStatRed.b);
+	PutAlignedString(sX + 24, sX + 252, sY + 52, infoBuf, GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b);
 
 	// Citizenship / Guild status
 	char statusBuf[128] = {};

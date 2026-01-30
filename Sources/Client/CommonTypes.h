@@ -226,15 +226,10 @@ namespace GameColors
 	// Overlay Colors
 	// ====================================================================
 
-	// Overlay_Msg
-	inline constexpr GameColor ErrorPink{ 255, 155, 155 };      // Error overlay message
-
 	// ====================================================================
 	// Additional UI Colors
 	// ====================================================================
 
-	inline constexpr GameColor UICharBlue{ 0, 0, 192 };         // Character dialog header (DialogBox_Character)
-	inline constexpr GameColor UICharStatRed{ 45, 20, 20 };     // Character stat text (DialogBox_Character)
 	inline constexpr GameColor UIMenuHighlight{ 250, 250, 0 };  // Teleport menu highlight (DialogBox_CityHallMenu, DialogBox_GuildHallMenu)
 	inline constexpr GameColor UINoticeRed{ 100, 10, 10 };      // Notice message text (DialogBox_Noticement)
 	inline constexpr GameColor UITooltip{ 250, 250, 220 };      // Tooltip text (DialogBox_HudPanel)
@@ -282,6 +277,7 @@ namespace GameColors
 	inline constexpr GameColor NeutralNamePlate{ 50, 50, 255 };
 	inline constexpr GameColor EnemyNamePlate{ 255, 0, 0 };
 	inline constexpr GameColor FriendlyNamePlate{ 30, 255, 30 };
+	inline constexpr GameColor UIModifiedStat{ 0, 0, 192 };
 
 	inline constexpr GameColor InputValid{ 100, 200, 100 };
 	inline constexpr GameColor InputInvalid{ 200, 100, 100 };

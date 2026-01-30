@@ -6,7 +6,7 @@
         "soundVolume": 20
     },
     "display": {
-        "borderless": false,
+        "borderless": true,
         "captureMouse": true,
         "detailLevel": 2,
         "dialogTransparency": false,
