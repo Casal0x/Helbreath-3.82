@@ -3,6 +3,7 @@
 #include "ServerCommand.h"
 #include "CmdHelp.h"
 #include "CmdShowChat.h"
+#include "CmdBroadcast.h"
 #include "Game.h"
 #include "winmain.h"
 #include <cstring>
@@ -74,4 +75,5 @@ void ServerCommandManager::RegisterBuiltInCommands()
 {
 	RegisterCommand(std::make_unique<CmdHelp>(m_commands));
 	RegisterCommand(std::make_unique<CmdShowChat>());
+	RegisterCommand(std::make_unique<CmdBroadcast>());
 }

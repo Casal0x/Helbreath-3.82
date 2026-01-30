@@ -665,6 +665,7 @@ public:
 	void JoinGuildRejectHandler(int iClientH, const char * pName);
 	void JoinGuildApproveHandler(int iClientH, const char * pName);
 	void SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1, uint32_t sV2, uint32_t sV3, char * pString, uint32_t sV4 = 0, uint32_t sV5 = 0, uint32_t sV6 = 0, uint32_t sV7 = 0, uint32_t sV8 = 0, uint32_t sV9 = 0, char * pString2 = 0);
+	void BroadcastServerMessage(const char* pMessage);
 	void GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short dX, short dY, uint16_t wObjectID, const char * pItemName);
 	void RequestPurchaseItemHandler(int iClientH, const char * pItemName, int iNum, int iItemId = 0);
 	void ResponseDisbandGuildHandler(char * pData, int iType);

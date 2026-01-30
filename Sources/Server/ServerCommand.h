@@ -12,6 +12,7 @@ public:
 	virtual ~ServerCommand() = default;
 	virtual const char* GetName() const = 0;
 	virtual const char* GetDescription() const = 0;
+	virtual const char* GetHelp() const { return GetDescription(); }
 	virtual void Execute(CGame* pGame, const char* pArgs) = 0;
 };
 

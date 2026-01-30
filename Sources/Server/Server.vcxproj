@@ -185,6 +185,7 @@
     <ClInclude Include="CmdHelp.h" />
     <ClInclude Include="ChatLog.h" />
     <ClInclude Include="ItemLog.h" />
+    <ClInclude Include="CmdBroadcast.h" />
     <ClInclude Include="CmdShowChat.h" />
     <ClInclude Include="GameChatCommand.h" />
     <ClInclude Include="GameCmdWhisper.h" />
@@ -211,6 +212,7 @@
     <ClCompile Include="CmdHelp.cpp" />
     <ClCompile Include="ChatLog.cpp" />
     <ClCompile Include="ItemLog.cpp" />
+    <ClCompile Include="CmdBroadcast.cpp" />
     <ClCompile Include="CmdShowChat.cpp" />
     <ClCompile Include="GameChatCommand.cpp" />
     <ClCompile Include="GameCmdWhisper.cpp" />

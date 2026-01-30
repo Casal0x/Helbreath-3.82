@@ -52,6 +52,9 @@
     <ClInclude Include="ItemLog.h">
       <Filter>Console</Filter>
     </ClInclude>
+    <ClInclude Include="CmdBroadcast.h">
+      <Filter>Console\Commands</Filter>
+    </ClInclude>
     <!-- Game Chat -->
     <ClInclude Include="GameChatCommand.h">
       <Filter>Game Chat</Filter>
@@ -189,6 +192,9 @@
     </ClCompile>
     <ClCompile Include="ItemLog.cpp">
       <Filter>Console</Filter>
+    </ClCompile>
+    <ClCompile Include="CmdBroadcast.cpp">
+      <Filter>Console\Commands</Filter>
     </ClCompile>
     <!-- Game Chat -->
     <ClCompile Include="GameChatCommand.cpp">

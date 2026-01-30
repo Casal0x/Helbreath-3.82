@@ -4779,6 +4779,46 @@ void CGame::NpcProcess()
 }
 
 
+void CGame::BroadcastServerMessage(const char* pMessage)
+{
+	if (pMessage == nullptr || pMessage[0] == '\0')
+		return;
+
+	// Build a chat packet: header(6) + x(2) + y(2) + name(10) + chat_type(1) + message + null
+	char pkt[256];
+	std::memset(pkt, 0, sizeof(pkt));
+
+	size_t msgLen = std::strlen(pMessage);
+	if (msgLen > sizeof(pkt) - 22) msgLen = sizeof(pkt) - 22;
+
+	uint32_t* dwp = (uint32_t*)(pkt);
+	*dwp = MSGID_COMMAND_CHATMSG;
+
+	uint16_t* wp = (uint16_t*)(pkt + 4);
+	*wp = 0; // msg_type = 0 (no sender client handle)
+
+	// x, y at offset 6 and 8 — leave as 0
+	// name at offset 10 — use "Server"
+	std::memcpy(pkt + 10, "Server", 6);
+
+	// chat_type at offset 20 — GM chat = 10
+	pkt[20] = 10;
+
+	// message at offset 21
+	std::memcpy(pkt + 21, pMessage, msgLen);
+	pkt[21 + msgLen] = '\0';
+
+	uint32_t dwSize = (uint32_t)(21 + msgLen + 1);
+
+	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	{
+		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
+			m_pClientList[i]->m_pXSock->iSendMsg(pkt, dwSize);
+	}
+
+	ChatLog::Get().Write(10, "Server", "", pMessage);
+}
+
 // 05/29/2004 - Hypnotoad - GM chat tweak
 void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 {
