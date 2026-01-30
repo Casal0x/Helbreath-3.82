@@ -17,6 +17,7 @@
 #include "GuildsMan.h"
 #include "Magic.h"
 #include "GlobalDef.h"
+#include "NetConstants.h"
 #include <fstream>
 #include <vector>
 #include <string>
@@ -24,7 +25,6 @@ using namespace std;
 
 #define DEF_CLIENTSOCKETBLOCKLIMIT	150  // MODERNIZED: Increased from 15 to handle 50+ entities sending updates
 
-#define DEF_MSGBUFFERSIZE	60000  // MODERNIZED: Increased from 30000 to handle more entity data
 #define DEF_MAXITEMS		50
 #define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
 #define DEF_MAXGUILDSMAN	128 // �ִ� ���� �� 

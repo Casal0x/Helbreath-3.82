@@ -9325,7 +9325,7 @@ void CGame::LogResponseHandler(char* pData)
 
 		m_pGSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
-		m_pGSock->bInitBufferSize(30000);
+		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	}
 	break;
 

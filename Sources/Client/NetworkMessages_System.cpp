@@ -115,7 +115,7 @@ void HandleServerChange(CGame* pGame, char* pData)
 	}
 	pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr, iWorldServerPort);
-	pGame->m_pLSock->bInitBufferSize(30000);
+	pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
 	pGame->m_pPlayer->m_bIsPoisoned = false;
 

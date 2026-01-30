@@ -88,7 +88,7 @@ void Screen_SelectCharacter::on_update()
                     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                     m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                    m_pGame->m_pLSock->bInitBufferSize(30000);
+                    m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                     m_pGame->ChangeGameMode(GameMode::Connecting);
                     m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                     m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
@@ -205,7 +205,7 @@ void Screen_SelectCharacter::on_update()
                             m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                            m_pGame->m_pLSock->bInitBufferSize(30000);
+                            m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                             m_pGame->ChangeGameMode(GameMode::Connecting);
                             m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                             m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
@@ -239,7 +239,7 @@ void Screen_SelectCharacter::on_update()
                         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                         m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                        m_pGame->m_pLSock->bInitBufferSize(30000);
+                        m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                         m_pGame->ChangeGameMode(GameMode::Connecting);
                         m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                         m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
