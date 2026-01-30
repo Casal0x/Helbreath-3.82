@@ -324,11 +324,27 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
             }
             else
             {
-                // Offset system: color = base_gray (96) + tint_offset
+                // Offset system: DDraw ADDS offset to sprite pixels
+                // SFML MULTIPLIES, so we need to compensate
+                //
+                // DDraw: result = sprite_pixel + offset
+                // SFML:  result = sprite_pixel × (color/255)
+                //
+                // For mid-gray sprites (~128), to get same result:
+                // sprite × (color/255) = sprite + offset
+                // color = (sprite + offset) × 255 / sprite
+                // color ≈ (96 + offset) × 2  (for ~128 gray sprites)
+                //
+                // This doubles the target color to compensate for multiplicative darkening
                 const int BASE_GRAY = 96;
-                r = BASE_GRAY + params.tintR;
-                g = BASE_GRAY + params.tintG;
-                b = BASE_GRAY + params.tintB;
+                int targetR = BASE_GRAY + params.tintR;
+                int targetG = BASE_GRAY + params.tintG;
+                int targetB = BASE_GRAY + params.tintB;
+
+                // Boost to compensate for multiplicative blending on mid-gray sprites
+                r = targetR * 2;
+                g = targetG * 2;
+                b = targetB * 2;
             }
 
             // Clamp to valid range
