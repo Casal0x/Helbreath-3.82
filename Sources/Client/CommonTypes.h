@@ -190,9 +190,15 @@ namespace GameColors
 	// original: m_wR[5]*8, m_wG[5]*8, m_wB[5]*8
 	inline constexpr GameColor PoisonLabel{ 64, 255, 64 };
 	// original: m_wR[10]-m_wR[0]/2, m_wG[10]-m_wG[0]/2, m_wB[10]-m_wB[0]/2
-	inline constexpr GameColor BlueTintHalf{ 0, 0, 128 };
+	// 16bpp values: (-6, -4, +1) -> 8bpp equivalent: (-49, -16, +8)
+	inline constexpr GameColor BlueTintHalf{ -49, -16, 8 };
 	// original: m_wR[10]-(m_wR[0]/3), m_wG[10]-(m_wG[0]/3), m_wB[10]-(m_wB[0]/3)
-	inline constexpr GameColor BlueTintThird{ 0, 0, 64 };
+	// 16bpp values: (-4, 0, +3) -> 8bpp equivalent: (-33, 0, +25)
+	inline constexpr GameColor BlueTintThird{ -33, 0, 25 };
+
+	// Status effect additive colors (for AdditiveColored blend)
+	// Berserk: creates a bright reddish/golden glow when added to destination
+	inline constexpr GameColor BerserkGlow{ 255, 240, 240 };
 
 	// Tint helper: returns color[index] - Base
 	inline constexpr GameColor ItemTint(int index) {
