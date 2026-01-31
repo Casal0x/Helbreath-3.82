@@ -620,6 +620,8 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 		return;
 
 	if (AccountDbExists(cName)) {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Account creation failed: '%s' already exists", cName);
+		PutLogList(G_cTxt);
 		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
 		return;
 	}
