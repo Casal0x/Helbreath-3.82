@@ -1458,13 +1458,19 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
         return;
     }
 
+    // Tint offset mode: apply RGB offset to source channels before additive blend
+    // This matches the original PutTransSpriteRGB behavior
+    bool useTintOffset = !isColorReplace && (r != 0 || g != 0 || b != 0);
+    int rOff255 = r + 255;
+    int gOff255 = g + 255;
+    int bOff255 = b + 255;
+
     // Color multipliers for isColorReplace mode (normalized to 0-31/63 range)
-    // r,g,b are in 0-255 range, we need to scale them
     float rMult = isColorReplace ? (r / 255.0f) : 1.0f;
     float gMult = isColorReplace ? (g / 255.0f) : 1.0f;
     float bMult = isColorReplace ? (b / 255.0f) : 1.0f;
 
-    // Apply alpha to the multipliers
+    // Apply alpha to the multipliers (not used when tint offset mode is active)
     rMult *= alpha;
     gMult *= alpha;
     bMult *= alpha;
@@ -1479,10 +1485,17 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
                     int srcG = (pSrc[ix] & 0x7E0) >> 5;
                     int srcB = (pSrc[ix] & 0x1F);
 
-                    // Apply color multiplier
-                    srcR = static_cast<int>(srcR * rMult);
-                    srcG = static_cast<int>(srcG * gMult);
-                    srcB = static_cast<int>(srcB * bMult);
+                    if (useTintOffset) {
+                        // Apply tint offset via lookup tables, then scale by alpha
+                        srcR = static_cast<int>(G_iAddTable31[srcR][rOff255] * alpha);
+                        srcG = static_cast<int>(G_iAddTable63[srcG][gOff255] * alpha);
+                        srcB = static_cast<int>(G_iAddTable31[srcB][bOff255] * alpha);
+                    } else {
+                        // Apply color multiplier (multiply mode or pure additive)
+                        srcR = static_cast<int>(srcR * rMult);
+                        srcG = static_cast<int>(srcG * gMult);
+                        srcB = static_cast<int>(srcB * bMult);
+                    }
 
                     // Extract destination RGB
                     int dstR = (pDst[ix] & 0xF800) >> 11;
@@ -1511,10 +1524,15 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
                     int srcG = (pSrc[ix] & 0x3E0) >> 5;
                     int srcB = (pSrc[ix] & 0x1F);
 
-                    // Apply color multiplier
-                    srcR = static_cast<int>(srcR * rMult);
-                    srcG = static_cast<int>(srcG * gMult);
-                    srcB = static_cast<int>(srcB * bMult);
+                    if (useTintOffset) {
+                        srcR = static_cast<int>(G_iAddTable31[srcR][rOff255] * alpha);
+                        srcG = static_cast<int>(G_iAddTable31[srcG][gOff255] * alpha);
+                        srcB = static_cast<int>(G_iAddTable31[srcB][bOff255] * alpha);
+                    } else {
+                        srcR = static_cast<int>(srcR * rMult);
+                        srcG = static_cast<int>(srcG * gMult);
+                        srcB = static_cast<int>(srcB * bMult);
+                    }
 
                     // Extract destination RGB
                     int dstR = (pDst[ix] & 0x7C00) >> 10;
