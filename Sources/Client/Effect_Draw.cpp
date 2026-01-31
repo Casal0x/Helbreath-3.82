@@ -15,7 +15,7 @@ void EffectManager::DrawEffectsImpl()
 	char  cTempFrame;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	short sObjectType;
-	char  cName[21];
+	char  cName[DEF_ITEMNAME];
 	int iStatus;
 
 	for (i = 0; i < DEF_MAXEFFECTS; i++)

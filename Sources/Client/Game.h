@@ -148,14 +148,14 @@ public:
 	char cStateChange3;
 
 	struct {
-		char cName[21], cDesc[11];
+		char cName[DEF_ITEMNAME], cDesc[11];
 		int iCount;
 		uint32_t dwType;
 		uint32_t dwValue;
 	} m_stShards[13][17];
 
 	struct {
-		char cName[21], cDesc[11];
+		char cName[DEF_ITEMNAME], cDesc[11];
 		int iCount;
 		uint32_t dwType;
 		uint32_t dwValue;
@@ -390,7 +390,7 @@ public:
 	struct {
 		int   sV1, sV2, sV3, sV4, sV5, sV6, sV7, sItemID;
 		uint32_t dwV1;
-		char  cStr1[32], cStr2[32];
+		char  cStr1[DEF_ITEMNAME], cStr2[32];
 	} m_stDialogBoxExchangeInfo[8];
 //Snoopy end<<<<<<<<<<<<<<<<<<
 	struct {

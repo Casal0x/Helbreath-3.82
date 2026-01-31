@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -138,7 +139,7 @@ namespace net {
 		uint8_t item_color;
 		uint8_t spec_value2;
 		uint32_t attribute;
-		char item_name[20];
+		char item_name[DEF_ITEMNAME - 1];
 	};
 
 	struct HB_PACKED PacketNotifyTCLoc {
@@ -341,7 +342,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyItemObtained {
 		PacketHeader header;
 		uint8_t is_new;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -362,7 +363,7 @@ namespace net {
 	struct HB_PACKED PacketNotifyItemPurchased {
 		PacketHeader header;
 		uint8_t is_new;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -383,7 +384,7 @@ namespace net {
 		PacketHeader header;
 		uint8_t bank_index;
 		uint8_t is_new;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -493,7 +494,7 @@ namespace net {
 		uint32_t v2;
 		uint32_t v3;
 		uint32_t v4;
-		char item_name[20];
+		char item_name[DEF_ITEMNAME - 1];
 		uint8_t padding[2];
 	};
 
@@ -503,7 +504,7 @@ namespace net {
 		uint32_t v2;
 		uint32_t v3;
 		uint32_t v4;
-		char item_name[20];
+		char item_name[DEF_ITEMNAME - 1];
 		uint8_t padding[2];
 	};
 
@@ -657,7 +658,7 @@ namespace net {
 		int16_t who;
 		int16_t flag;
 		int32_t amount;
-		char reward_name[20];
+		char reward_name[DEF_ITEMNAME - 1];
 		int32_t contribution;
 	};
 
@@ -671,7 +672,7 @@ namespace net {
 		int16_t cur_life;
 		int16_t max_life;
 		int16_t performance;
-		char item_name[20];
+		char item_name[DEF_ITEMNAME - 1];
 		char char_name[10];
 		uint32_t attribute;
 	};
@@ -752,7 +753,7 @@ namespace net {
 		int16_t x;
 		int16_t y;
 		int16_t range;
-		char reward_name[20];
+		char reward_name[DEF_ITEMNAME - 1];
 		char target_name[20];
 	};
 
@@ -786,7 +787,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 	};
 
 	struct HB_PACKED PacketNotifyGlobalAttackMode {
@@ -821,14 +822,14 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		uint16_t reason;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 	};
 
 	struct HB_PACKED PacketNotifyCannotSellItem {
 		PacketHeader header;
 		uint16_t item_index;
 		uint16_t reason;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 	};
 
 	struct HB_PACKED PacketNotifyDownSkillIndexSet {
@@ -927,7 +928,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint8_t padding[2];
 	};
 
@@ -935,7 +936,7 @@ namespace net {
 		PacketHeader header;
 		uint16_t item_index;
 		int32_t amount;
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint8_t padding[2];
 	};
 	HB_PACK_END

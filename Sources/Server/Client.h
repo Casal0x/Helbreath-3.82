@@ -251,7 +251,7 @@ public:
 	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
 	int   m_iExchangeH;					// Client ID to Exchanging with 
 	char  m_cExchangeName[11];			// Name of Client to Exchanging with 
-	char  m_cExchangeItemName[4][21];	// Name of Item to exchange 
+	char  m_cExchangeItemName[4][DEF_ITEMNAME];	// Name of Item to exchange 
 
 	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
 	int   m_iExchangeItemAmount[4];		// Ammount to exchange with

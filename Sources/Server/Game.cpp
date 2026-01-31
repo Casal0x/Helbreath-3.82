@@ -6480,7 +6480,7 @@ void CGame::DropItemHandler(int iClientH, short sItemIndex, int iAmount, const c
 		iAmount = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwCount;
 
 
-	if (memcmp(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, pItemName, 20) != 0) return;
+	if (memcmp(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, pItemName, DEF_ITEMNAME - 1) != 0) return;
 
 	if (((m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
 		(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
@@ -6677,7 +6677,7 @@ bool CGame::_bAddClientItemList(int iClientH, class CItem* pItem, int* pDelReq)
 	if ((pItem->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pItem->m_cItemType == DEF_ITEMTYPE_ARROW)) {
 		for (i = 0; i < DEF_MAXITEMS; i++)
 			if ((m_pClientList[iClientH]->m_pItemList[i] != 0) &&
-				(memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, pItem->m_cName, 20) == 0)) {
+				(memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, pItem->m_cName, DEF_ITEMNAME - 1) == 0)) {
 				m_pClientList[iClientH]->m_pItemList[i]->m_dwCount += pItem->m_dwCount;
 				//delete pItem;
 				*pDelReq = 1;
@@ -7507,7 +7507,7 @@ void CGame::ResponseDisbandGuildHandler(char* pData, int iType)
 void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int iNum, int iItemId)
 {
 	class CItem* pItem;
-	char cItemName[21];
+	char cItemName[DEF_ITEMNAME];
 	uint32_t dwGoldCount, dwItemCount;
 	uint16_t wTempPrice;
 	int   i, iRet, iEraseReq, iGoldWeight;
@@ -7571,7 +7571,7 @@ void CGame::RequestPurchaseItemHandler(int iClientH, const char* pItemName, int 
 	}
 	else {
 		// Fall back to name-based lookup
-		memcpy(cItemName, pItemName, 20);
+		memcpy(cItemName, pItemName, DEF_ITEMNAME - 1);
 	}
 
 	for (i = 1; i <= iNum; i++) {
@@ -7699,7 +7699,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 	if (iAmount <= 0) return;
 
 	// ¾ÆÀÌÅÛ ÀÌ¸§ÀÌ ÀÏÄ¡ÇÏÁö ¾Ê¾Æµµ ¹«½ÃµÈ´Ù.
-	if (memcmp(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, pItemName, 20) != 0) {
+	if (memcmp(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, pItemName, DEF_ITEMNAME - 1) != 0) {
 		PutLogList("GiveItemHandler - Not matching Item name");
 		return;
 	}
@@ -9908,7 +9908,7 @@ uint32_t CGame::dwGetItemCount(int iClientH, char* pName)
 	strcpy(cTmpName, pName);
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pClientList[iClientH]->m_pItemList[i] != 0) && (memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, cTmpName, 20) == 0)) {
+		if ((m_pClientList[iClientH]->m_pItemList[i] != 0) && (memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, cTmpName, DEF_ITEMNAME - 1) == 0)) {
 
 			return m_pClientList[iClientH]->m_pItemList[i]->m_dwCount;
 		}
@@ -9928,7 +9928,7 @@ int CGame::SetItemCount(int iClientH, char* pItemName, uint32_t dwCount)
 	strcpy(cTmpName, pItemName);
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pClientList[iClientH]->m_pItemList[i] != 0) && (memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, cTmpName, 20) == 0)) {
+		if ((m_pClientList[iClientH]->m_pItemList[i] != 0) && (memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, cTmpName, DEF_ITEMNAME - 1) == 0)) {
 
 			wWeight = iGetItemWeight(m_pClientList[iClientH]->m_pItemList[i], 1);// m_pClientList[iClientH]->m_pItemList[i]->m_wWeight;
 
@@ -11165,7 +11165,7 @@ int  _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,  10, 14, 28, 32, 36, 40 };
 void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect, int iV1)
 {
 	short sX, sY, sOwnerH, sMagicCircle, rx, ry, sLevelMagic, sTemp;
-	char cDir, cOwnerType, cName[11], cItemName[21], cNpcWaypoint[11], cName_Master[11], cNpcName[21], cRemainItemColor, cScanMessage[256];
+	char cDir, cOwnerType, cName[11], cItemName[DEF_ITEMNAME], cNpcWaypoint[11], cName_Master[11], cNpcName[21], cRemainItemColor, cScanMessage[256];
 	double dV1, dV2, dV3, dV4;
 	int    i, iErr, iRet, ix, iy, iResult, iDiceRes, iNamingValue, iFollowersNum, iEraseReq, iWhetherBonus;
 	int    tX, tY, iManaCost, iMagicAttr;
@@ -16943,7 +16943,7 @@ void CGame::RequestRetrieveItemHandler(int iClientH, char* pData)
 			for (i = 0; i < DEF_MAXITEMS; i++)
 				if ((m_pClientList[iClientH]->m_pItemList[i] != 0) &&
 					(m_pClientList[iClientH]->m_pItemList[i]->m_cItemType == m_pClientList[iClientH]->m_pItemInBankList[cBankItemIndex]->m_cItemType) &&
-					(memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, m_pClientList[iClientH]->m_pItemInBankList[cBankItemIndex]->m_cName, 20) == 0)) {
+					(memcmp(m_pClientList[iClientH]->m_pItemList[i]->m_cName, m_pClientList[iClientH]->m_pItemInBankList[cBankItemIndex]->m_cName, DEF_ITEMNAME - 1) == 0)) {
 					// °°Àº Çü½ÄÀÇ ¾ÆÀÌÅÛÀ» Ã£¾Ò´Ù. ¼ö·®À» Áõ°¡½ÃÅ²´Ù.
 					// v1.41 !!! 
 					SetItemCount(iClientH, i, m_pClientList[iClientH]->m_pItemList[i]->m_dwCount + m_pClientList[iClientH]->m_pItemInBankList[cBankItemIndex]->m_dwCount);
@@ -20910,7 +20910,7 @@ void CGame::ClearSkillUsingStatus(int iClientH)
 int CGame::iCalculateUseSkillItemEffect(int iOwnerH, char cOwnerType, char cOwnerSkill, int iSkillNum, char cMapIndex, int dX, int dY)
 {
 	class CItem* pItem;
-	char  cItemName[21];
+	char  cItemName[DEF_ITEMNAME];
 	short lX, lY;
 	int   iResult, iFish;
 
@@ -23944,7 +23944,7 @@ void CGame::ReqGetFishThisTimeHandler(int iClientH)
 void CGame::FishGenerator()
 {
 	int i, iP, tX, tY, iRet;
-	char  cItemName[21];
+	char  cItemName[DEF_ITEMNAME];
 	int sDifficulty;
 	uint32_t dwLastTime;
 	class CItem* pItem;
@@ -24428,7 +24428,7 @@ void CGame::_CheckAttackType(int iClientH, short* spType)
 
 void CGame::ReqCreatePortionHandler(int iClientH, char* pData)
 {
-	char cI[6], cPortionName[21];
+	char cI[6], cPortionName[DEF_ITEMNAME];
 	int    iRet, i, j, iEraseReq, iSkillLimit, iSkillLevel, iResult, iDifficulty;
 	short sItemIndex[6], sTemp;
 	short  sItemNumber[6], sItemArray[12];
@@ -24529,7 +24529,7 @@ void CGame::ReqCreatePortionHandler(int iClientH, char* pData)
 
 			if (bFlag == false) {
 				std::memset(cPortionName, 0, sizeof(cPortionName));
-				memcpy(cPortionName, m_pPortionConfigList[i]->m_cName, 20);
+				memcpy(cPortionName, m_pPortionConfigList[i]->m_cName, DEF_ITEMNAME - 1);
 				iSkillLimit = m_pPortionConfigList[i]->m_iSkillLimit;
 				iDifficulty = m_pPortionConfigList[i]->m_iDifficulty;
 			}
@@ -24738,7 +24738,7 @@ void CGame::ReqCreatePortionHandler(int iClientH, char* pData)
 //////////////////////////////////////////////////////////////////////////////////////////
 void CGame::ReqCreateCraftingHandler(int iClientH, char* pData)
 {
-	char cI[6], cCraftingName[21];
+	char cI[6], cCraftingName[DEF_ITEMNAME];
 	int    iRet, i, j, iEraseReq, iRiskLevel, iDifficulty, iNeededContrib = 0;
 	short sTemp;
 	short  sItemIndex[6], sItemPurity[6], sItemNumber[6], sItemArray[12];
@@ -24873,7 +24873,7 @@ void CGame::ReqCreateCraftingHandler(int iClientH, char* pData)
 			if (bFlag == false) // good Crafting receipe
 			{
 				std::memset(cCraftingName, 0, sizeof(cCraftingName));
-				memcpy(cCraftingName, m_pCraftingConfigList[i]->m_cName, 20);
+				memcpy(cCraftingName, m_pCraftingConfigList[i]->m_cName, DEF_ITEMNAME - 1);
 				iRiskLevel = m_pCraftingConfigList[i]->m_iSkillLimit;			// % to loose item if crafting fails
 				iDifficulty = m_pCraftingConfigList[i]->m_iDifficulty;
 			}
@@ -25475,7 +25475,7 @@ bool CGame::bDeleteMineral(int iIndex)
 
 void CGame::NpcTalkHandler(int iClientH, int iWho)
 {
-	char cRewardName[21], cTargetName[21];
+	char cRewardName[DEF_ITEMNAME], cTargetName[21];
 	int iResMode, iQuestNum, iQuestType, iRewardType, iRewardAmount, iContribution, iX, iY, iRange, iTargetType, iTargetCount;
 
 	iQuestNum = 0;
@@ -25937,7 +25937,7 @@ void CGame::SetSummonMobAction(int iClientH, int iMode, uint32_t dwMsgSize, char
 void CGame::GetOccupyFlagHandler(int iClientH)
 {
 	int   i, iNum, iRet, iEraseReq, iEKNum;
-	char cItemName[21];
+	char cItemName[DEF_ITEMNAME];
 	class CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -26032,7 +26032,7 @@ void CGame::GetOccupyFlagHandler(int iClientH)
 void CGame::GetFightzoneTicketHandler(int iClientH)
 {
 	int   iRet, iEraseReq, iMonth, iDay, iHour;
-	char cItemName[21];
+	char cItemName[DEF_ITEMNAME];
 	class CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -26155,7 +26155,7 @@ int CGame::_iComposeFlagStatusContents(char* pData)
 void CGame::GetHeroMantleHandler(int iClientH, int iItemID, const char* pString)
 {
 	int   i, iNum, iRet, iEraseReq;
-	char cItemName[21];
+	char cItemName[DEF_ITEMNAME];
 	class CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -26249,7 +26249,7 @@ void CGame::GetHeroMantleHandler(int iClientH, int iItemID, const char* pString)
 	}
 
 	std::memset(cItemName, 0, sizeof(cItemName));
-	memcpy(cItemName, m_pItemConfigList[iItemID]->m_cName, 20);
+	memcpy(cItemName, m_pItemConfigList[iItemID]->m_cName, DEF_ITEMNAME - 1);
 	// ReqPurchaseItemHandler
 	iNum = 1;
 	for (i = 1; i <= iNum; i++)
@@ -26471,7 +26471,7 @@ void CGame::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmount, sho
 				m_pClientList[iClientH]->m_iExchangeItemAmount[m_pClientList[iClientH]->iExchangeCount] = iAmount;
 
 				//std::memset(m_pClientList[iClientH]->m_cExchangeItemName, 0, sizeof(m_pClientList[iClientH]->m_cExchangeItemName));
-				memcpy(m_pClientList[iClientH]->m_cExchangeItemName[m_pClientList[iClientH]->iExchangeCount], m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, 20);
+				memcpy(m_pClientList[iClientH]->m_cExchangeItemName[m_pClientList[iClientH]->iExchangeCount], m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, DEF_ITEMNAME - 1);
 
 				m_pClientList[sOwnerH]->m_bIsExchangeMode = true;
 				m_pClientList[sOwnerH]->m_iExchangeH = iClientH;
@@ -26537,7 +26537,7 @@ void CGame::SetExchangeItem(int iClientH, int iItemIndex, int iAmount)
 			m_pClientList[iClientH]->m_iExchangeItemAmount[m_pClientList[iClientH]->iExchangeCount] = iAmount;
 
 			//std::memset(m_pClientList[iClientH]->m_cExchangeItemName, 0, sizeof(m_pClientList[iClientH]->m_cExchangeItemName));
-			memcpy(m_pClientList[iClientH]->m_cExchangeItemName[m_pClientList[iClientH]->iExchangeCount], m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName, 20);
+			memcpy(m_pClientList[iClientH]->m_cExchangeItemName[m_pClientList[iClientH]->iExchangeCount], m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName, DEF_ITEMNAME - 1);
 
 			//m_pClientList[iClientH]->m_cExchangeItemIndex  = iItemIndex;
 			//m_pClientList[iClientH]->m_iExchangeItemAmount = iAmount;
@@ -26597,7 +26597,7 @@ void CGame::ConfirmExchangeItem(int iClientH)
 					//Check all items
 					for (i = 0; i < m_pClientList[iClientH]->iExchangeCount; i++) {
 						if ((m_pClientList[iClientH]->m_pItemList[m_pClientList[iClientH]->m_cExchangeItemIndex[i]] == 0) ||
-							(memcmp(m_pClientList[iClientH]->m_pItemList[m_pClientList[iClientH]->m_cExchangeItemIndex[i]]->m_cName, m_pClientList[iClientH]->m_cExchangeItemName[i], 20) != 0)) {
+							(memcmp(m_pClientList[iClientH]->m_pItemList[m_pClientList[iClientH]->m_cExchangeItemIndex[i]]->m_cName, m_pClientList[iClientH]->m_cExchangeItemName[i], DEF_ITEMNAME - 1) != 0)) {
 							_ClearExchangeStatus(iClientH);
 							_ClearExchangeStatus(iExH);
 							return;
@@ -26605,7 +26605,7 @@ void CGame::ConfirmExchangeItem(int iClientH)
 					}
 					for (i = 0; i < m_pClientList[iExH]->iExchangeCount; i++) {
 						if ((m_pClientList[iExH]->m_pItemList[m_pClientList[iExH]->m_cExchangeItemIndex[i]] == 0) ||
-							(memcmp(m_pClientList[iExH]->m_pItemList[m_pClientList[iExH]->m_cExchangeItemIndex[i]]->m_cName, m_pClientList[iExH]->m_cExchangeItemName[i], 20) != 0)) {
+							(memcmp(m_pClientList[iExH]->m_pItemList[m_pClientList[iExH]->m_cExchangeItemIndex[i]]->m_cName, m_pClientList[iExH]->m_cExchangeItemName[i], DEF_ITEMNAME - 1) != 0)) {
 							_ClearExchangeStatus(iClientH);
 							_ClearExchangeStatus(iExH);
 							return;
@@ -27561,7 +27561,7 @@ bool CGame::_bCheckSubLogSocketIndex()
 
 void CGame::BuildItemHandler(int iClientH, char* pData)
 {
-	char cName[21], cElementItemID[6];
+	char cName[DEF_ITEMNAME], cElementItemID[6];
 	int    i, x, z, iMatch, iCount, iPlayerSkillLevel, iResult, iTotalValue, iResultValue, iTemp, iItemCount[DEF_MAXITEMS];
 	class  CItem* pItem;
 	bool   bFlag, bItemFlag[6];
@@ -27577,7 +27577,7 @@ void CGame::BuildItemHandler(int iClientH, char* pData)
 		pData, sizeof(hb::net::PacketCommandCommonBuild));
 	if (!pkt) return;
 	std::memset(cName, 0, sizeof(cName));
-	memcpy(cName, pkt->name, 20);
+	memcpy(cName, pkt->name, sizeof(pkt->name));
 
 	//testcode
 	//PutLogList(cName);
@@ -27627,7 +27627,7 @@ void CGame::BuildItemHandler(int iClientH, char* pData)
 	// �ش� �̸��� ���� �������� ���� ������ ����Ʈ���� ã�´�.
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
 		if (m_pBuildItemList[i] != 0) {
-			if (memcmp(m_pBuildItemList[i]->m_cName, cName, 20) == 0) {
+			if (memcmp(m_pBuildItemList[i]->m_cName, cName, DEF_ITEMNAME - 1) == 0) {
 				// �������� ã�Ҵ�. ���� ���ǰ� �������� ��ġ�ϴ��� �˻�.
 
 				// ��ų�� ���Ƽ� ���� �Ұ���. ���� Ŭ���̾�Ʈ���� �ɷ� ����. 
@@ -27913,7 +27913,7 @@ char CGame::_cGetSpecialAbility(int iKindSA)
 void CGame::CheckSpecialEvent(int iClientH)
 {
 	class CItem* pItem;
-	char  cItemName[21];
+	char  cItemName[DEF_ITEMNAME];
 	int   iEraseReq;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -39353,7 +39353,7 @@ void CGame::SetSkillAll(int iClientH, char* pData, uint32_t dwMsgSize)
 /*void CGame::GetAngelMantleHandler(int iClientH,int iItemID,char * pString)
 {
  int   i, iNum, iRet, iEraseReq;
- char  * cp, cData[256], cItemName[21];
+ char  * cp, cData[256], cItemName[DEF_ITEMNAME];
  class CItem * pItem;
  uint32_t * dwp;
  short * sp;
@@ -39387,7 +39387,7 @@ void CGame::SetSkillAll(int iClientH, char* pData, uint32_t dwMsgSize)
   }
 
   std::memset(cItemName, 0, sizeof(cItemName));
-  memcpy(cItemName,m_pItemConfigList[iItemID]->m_cName,20);
+  memcpy(cItemName,m_pItemConfigList[iItemID]->m_cName, DEF_ITEMNAME - 1);
 
   iNum = 1;
   for (i = 1; i <= iNum; i++)
@@ -39529,7 +39529,7 @@ void CGame::GetAngelHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 	int   iAngel;
 	class CItem* pItem;
 	int   iRet, iEraseReq;
-	char  cItemName[21];
+	char  cItemName[DEF_ITEMNAME];
 	if (m_pClientList[iClientH] == 0)					 return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if (_iGetItemSpaceLeft(iClientH) == 0)
@@ -39540,7 +39540,7 @@ void CGame::GetAngelHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestAngel>(pData, sizeof(hb::net::PacketRequestAngel));
 	if (!req) return;
 	std::memset(cTmpName, 0, sizeof(cTmpName));
-	std::memcpy(cTmpName, req->name, 20);
+	std::memcpy(cTmpName, req->name, DEF_ITEMNAME - 1);
 	iAngel = req->angel_id; // 0x00 l a i
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "PC(%s) obtained an Angel (%d).   %s(%d %d)"
 		, m_pClientList[iClientH]->m_cCharName

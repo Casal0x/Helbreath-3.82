@@ -11,6 +11,7 @@
 #pragma once
 
 #include "ItemEnums.h"
+#include "NetConstants.h"
 #include <cstring>
 #include <cstdint>
 
@@ -81,7 +82,7 @@ public:
     // Core Item Data
     //------------------------------------------------------------------------
 
-    char  m_cName[21];              // Internal item name (from database)
+    char  m_cName[DEF_ITEMNAME];    // Internal item name (from database)
     char  m_cDisplayName[34];       // Localized display name (from ItemName.cfg mapping)
 
     short m_sIDnum;                 // Item ID number (unique identifier)

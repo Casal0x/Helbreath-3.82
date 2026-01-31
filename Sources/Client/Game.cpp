@@ -2264,7 +2264,7 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
-	char  cName[21];
+	char  cName[DEF_ITEMNAME];
 	short sType, tX, tY;
 	int iStatus;
 
@@ -10358,7 +10358,7 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = itemEntries[i];
 		m_pItemList[i] = std::make_unique<CItem>();
-		memcpy(m_pItemList[i]->m_cName, entry.name, 20);
+		memcpy(m_pItemList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
 		m_pItemList[i]->m_dwCount = entry.count;
 		m_pItemList[i]->m_sX = 40;
 		m_pItemList[i]->m_sY = 30;
@@ -10431,7 +10431,7 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = bankEntries[i];
 		m_pBankList[i] = std::make_unique<CItem>();
-		memcpy(m_pBankList[i]->m_cName, entry.name, 20);
+		memcpy(m_pBankList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
 		m_pBankList[i]->m_dwCount = entry.count;
 
 		m_pBankList[i]->m_sX = 40;
@@ -12872,7 +12872,7 @@ bool CGame::_bDecodeBuildItemContents()
 bool CGame::_bCheckBuildItemStatus()
 {
 	int iIndex, i, j, iMatch, iCount;
-	char cTempName[21];
+	char cTempName[DEF_ITEMNAME];
 	int  iItemCount[DEF_MAXITEMS];
 
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
@@ -12888,14 +12888,14 @@ bool CGame::_bCheckBuildItemStatus()
 			{
 				iMatch = 0;
 				m_pDispBuildItemList[iIndex] = std::make_unique<CBuildItem>();
-				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, 20);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, DEF_ITEMNAME - 1);
 
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, 20);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
 
 				m_pDispBuildItemList[iIndex]->m_iElementCount[1] = m_pBuildItemList[i]->m_iElementCount[1];
 				m_pDispBuildItemList[iIndex]->m_iElementCount[2] = m_pBuildItemList[i]->m_iElementCount[2];
@@ -12917,14 +12917,14 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element1
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[1];
 				if (iCount == 0) iMatch++;
 				else
 				{
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0) {
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12938,7 +12938,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP2:;
 				// Element2
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[2];
 				if (iCount == 0) iMatch++;
 				else
@@ -12946,7 +12946,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12960,7 +12960,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP3:;
 				// Element3
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[3];
 				if (iCount == 0) iMatch++;
 				else
@@ -12968,7 +12968,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12982,7 +12982,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP4:;
 				// Element4 �˻�
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[4];
 				if (iCount == 0) iMatch++;
 				else
@@ -12990,7 +12990,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13005,7 +13005,7 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element5
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[5];
 				if (iCount == 0) iMatch++;
 				else
@@ -13013,7 +13013,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13028,7 +13028,7 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element6
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[6];
 				if (iCount == 0) iMatch++;
 				else
@@ -13036,7 +13036,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13224,7 +13224,7 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 	int i, iCount2, iMatch, iIndex, iItemIndex[7];
 	int iCount;
 	int iItemCount[7];
-	char cTempName[21];
+	char cTempName[DEF_ITEMNAME];
 	bool bItemFlag[7];
 
 	iIndex = m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
@@ -13247,14 +13247,14 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 
 	// Element1
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[1];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13270,14 +13270,14 @@ CCBIS_STEP2:;
 
 	// Element2
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[2];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13293,14 +13293,14 @@ CCBIS_STEP3:;
 
 	// Element3
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[3];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13316,14 +13316,14 @@ CCBIS_STEP4:;
 
 	// Element4
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[4];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13339,14 +13339,14 @@ CCBIS_STEP5:;
 
 	// Element5
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[5];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13362,14 +13362,14 @@ CCBIS_STEP6:;
 
 	// Element6
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[6];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13700,7 +13700,7 @@ short CGame::FindItemIdByName(const char* cItemName)
 	if (cItemName == nullptr) return 0;
 	for (int i = 1; i < 5000; i++) {
 		if (m_pItemConfigList[i] != nullptr &&
-			memcmp(m_pItemConfigList[i]->m_cName, cItemName, 20) == 0) {
+			memcmp(m_pItemConfigList[i]->m_cName, cItemName, DEF_ITEMNAME - 1) == 0) {
 			return static_cast<short>(i);
 		}
 	}
@@ -14176,7 +14176,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				nY = 30;
 				for (j = 0; j < DEF_MAXITEMS; j++)
 				{
-					if ((m_pItemList[j] != 0) && (memcmp(m_pItemList[j]->m_cName, cStr1, 20) == 0))
+					if ((m_pItemList[j] != 0) && (memcmp(m_pItemList[j]->m_cName, cStr1, DEF_ITEMNAME - 1) == 0))
 					{
 						nX = m_pItemList[j]->m_sX + 1;
 						nY = m_pItemList[j]->m_sY + 1;
@@ -14986,7 +14986,7 @@ void CGame::ClearSkillUsingStatus()
 
 void CGame::NpcTalkHandler(char* pData)
 {
-	char cRewardName[21], cTargetName[21], cTemp[21], cTxt[250];
+	char cRewardName[DEF_ITEMNAME], cTargetName[21], cTemp[21], cTxt[250];
 	short sType, sResponse;
 	int iAmount, iIndex, iContribution, iX, iY, iRange;
 	int iTargetType, iTargetCount, iQuestionType;
@@ -15006,7 +15006,7 @@ void CGame::NpcTalkHandler(char* pData)
 	iRange = pkt->range;
 
 	std::memset(cRewardName, 0, sizeof(cRewardName));
-	memcpy(cRewardName, pkt->reward_name, 20);
+	memcpy(cRewardName, pkt->reward_name, DEF_ITEMNAME - 1);
 	std::memset(cTargetName, 0, sizeof(cTargetName));
 	memcpy(cTargetName, pkt->target_name, 20);
 

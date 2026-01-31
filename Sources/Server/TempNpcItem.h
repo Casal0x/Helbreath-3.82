@@ -8,6 +8,7 @@
 #define _WINSOCKAPI_
 #include <windows.h>
 #include "CommonTypes.h"
+#include "NetConstants.h"
 
 class CNpcItem
 {
@@ -27,7 +28,7 @@ public:
 	{
 	}
 
-	char m_cName[21];
+	char m_cName[DEF_ITEMNAME];
 	short m_sItemID;
 	short m_sFirstProbability;
 	short m_sSecondProbability;
