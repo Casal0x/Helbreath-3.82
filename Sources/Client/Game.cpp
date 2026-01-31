@@ -3947,7 +3947,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel((m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -4555,7 +4555,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(8 + (m_entityState.m_iDir - 1), sX + dx + 20, sY + dy - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
 
@@ -4806,7 +4806,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(32 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 16, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5075,7 +5075,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5644,7 +5644,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			}
 
 			if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5928,7 +5928,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			}
 
 			if ((m_entityState.m_iStatus & 0x20) != 0)	// Berserk
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		}
@@ -6359,7 +6359,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(24 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -7369,7 +7369,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
@@ -7887,7 +7887,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(16 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
@@ -8742,7 +8742,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -10261,7 +10261,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
