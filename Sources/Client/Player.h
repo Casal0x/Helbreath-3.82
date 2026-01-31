@@ -47,7 +47,7 @@ public:
     int m_iLevel;
     uint32_t m_iExp;
     int m_iLU_Point;
-    uint16_t m_wLU_Str, m_wLU_Vit, m_wLU_Dex, m_wLU_Int, m_wLU_Mag, m_wLU_Char;
+    int16_t m_wLU_Str, m_wLU_Vit, m_wLU_Dex, m_wLU_Int, m_wLU_Mag, m_wLU_Char;
     int8_t m_iStatModStr, m_iStatModVit, m_iStatModDex, m_iStatModInt, m_iStatModMag, m_iStatModChr;
 
     // COMBAT

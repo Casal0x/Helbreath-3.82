@@ -16620,7 +16620,7 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize
 {
 	int iTotalSetting = 0;
 
-	uint16_t cStr, cVit, cDex, cInt, cMag, cChar;
+	int16_t cStr, cVit, cDex, cInt, cMag, cChar;
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;

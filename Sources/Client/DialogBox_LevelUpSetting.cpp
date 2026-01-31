@@ -108,7 +108,7 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 }
 
 bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, short sY,
-                                                int iYOffset, int& iCurrentStat, uint16_t& cPendingChange)
+                                                int iYOffset, int& iCurrentStat, int16_t& cPendingChange)
 {
 	bool bMajesticOpen = m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic);
 
