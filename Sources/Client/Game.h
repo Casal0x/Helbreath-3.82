@@ -492,6 +492,7 @@ public:
 	char * m_pInputBuffer;
 
 	uint32_t m_dwConnectMode;
+	std::vector<char> m_pendingLoginPacket;
 	uint32_t m_dwTime;
 	uint32_t m_dwCurTime;
 	uint32_t m_dwCheckConnTime, m_dwCheckSprTime, m_dwCheckChatTime;
@@ -596,12 +597,6 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	uint32_t m_dwOverlayStartTime;  // When overlay was shown
 
 	char m_cWhisperIndex;
-			char m_cAccountAge[12];
-	char m_cNewPassword[12];
-	char m_cNewPassConfirm[12];
-	char m_cEmailAddr[52];
-	char m_cAccountQuiz[46];// Quiz
-	char m_cAccountAnswer[22];
 			char m_cMsg[200];
 	char m_cLocation[12];
 	char m_cCurLocation[12];

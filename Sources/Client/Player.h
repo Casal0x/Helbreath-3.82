@@ -4,11 +4,10 @@
 #include <cstring>
 #include <array>
 #include "PlayerController.h"
+#include "NetConstants.h"
 
 #define DEF_PLAYERNAME_LENGTH      12
 #define DEF_GUILDNAME_LENGTH       22
-#define DEF_ACCOUNTNAME_LENGTH     12
-#define DEF_ACCOUNTPASS_LENGTH     12
 #define DEF_PLAYER_MAXMAGICTYPE    100
 #define DEF_PLAYER_MAXSKILLTYPE    60
 
@@ -26,8 +25,8 @@ public:
     char m_cPlayerName[DEF_PLAYERNAME_LENGTH];
     short m_sPlayerObjectID;
     short m_sPlayerType;
-    char m_cAccountName[DEF_ACCOUNTNAME_LENGTH];
-    char m_cAccountPassword[DEF_ACCOUNTPASS_LENGTH];
+    char m_cAccountName[DEF_ACCOUNT_NAME];
+    char m_cAccountPassword[DEF_ACCOUNT_PASS];
     char m_cGuildName[DEF_GUILDNAME_LENGTH];
     int m_iGuildRank;
     int m_iTotalGuildsMan;

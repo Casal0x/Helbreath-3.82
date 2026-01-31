@@ -12,6 +12,7 @@
 #include "Misc.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include "Packet/SharedPackets.h"
 
 Overlay_ChangePassword::Overlay_ChangePassword(CGame* pGame)
     : IGameScreen(pGame)
@@ -100,11 +101,11 @@ bool Overlay_ChangePassword::ValidateInputs()
     if (!CMisc::bCheckValidName(m_cConfirmPassword))
         return false;
 
-    if (memcmp(m_cNewPassword, m_cConfirmPassword, 10) != 0)
+    if (memcmp(m_cNewPassword, m_cConfirmPassword, DEF_ACCOUNT_PASS - 1) != 0)
         return false;
 
     // New password must be different from old
-    if (memcmp(m_cOldPassword, m_cNewPassword, 10) == 0)
+    if (memcmp(m_cOldPassword, m_cNewPassword, DEF_ACCOUNT_PASS - 1) == 0)
         return false;
 
     return true;
@@ -117,16 +118,24 @@ void Overlay_ChangePassword::HandleSubmit()
 
     EndInputString();
 
-    // Copy to game state
+    // Copy account name/password to player session
     std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
     std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-    std::memset(m_pGame->m_cNewPassword, 0, sizeof(m_pGame->m_cNewPassword));
-    std::memset(m_pGame->m_cNewPassConfirm, 0, sizeof(m_pGame->m_cNewPassConfirm));
-
     strcpy(m_pGame->m_pPlayer->m_cAccountName, m_cAccountName);
     strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cOldPassword);
-    strcpy(m_pGame->m_cNewPassword, m_cNewPassword);
-    strcpy(m_pGame->m_cNewPassConfirm, m_cConfirmPassword);
+
+    // Build ChangePasswordRequest packet
+    hb::net::ChangePasswordRequest req{};
+    req.header.msg_id = MSGID_REQUEST_CHANGEPASSWORD;
+    req.header.msg_type = 0;
+    std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
+    std::memcpy(req.password, m_cOldPassword, sizeof(req.password));
+    std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
+    std::memcpy(req.new_password_confirm, m_cConfirmPassword, sizeof(req.new_password_confirm));
+
+    // Store packet for sending after connection completes
+    auto* p = reinterpret_cast<char*>(&req);
+    m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
     // Create connection
     m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);

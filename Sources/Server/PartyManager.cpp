@@ -39,7 +39,7 @@ int PartyManager::iCreateNewParty(char* pMasterName)
 
 	// ??? PartyMaster? ????? ?? 
 	for (i = 1; i < DEF_MAXPARTY; i++)
-		if ((m_stMemberNameList[i].m_iPartyID != 0) && (strcmp(m_stMemberNameList[i].m_cName, pMasterName) == 0)) return 0;
+		if ((m_stMemberNameList[i].m_iPartyID != 0) && (_stricmp(m_stMemberNameList[i].m_cName, pMasterName) == 0)) return 0;
 
 	iPartyID = 0;
 	for (i = 1; i < DEF_MAXPARTY; i++)
@@ -118,7 +118,7 @@ bool PartyManager::bAddMember(int iPartyID, char* pMemberName)
 
 	// ?? ??? ?? ???? ??
 	for (i = 1; i < DEF_MAXPARTY; i++)
-		if ((m_stMemberNameList[i].m_iPartyID != 0) && (strcmp(m_stMemberNameList[i].m_cName, pMemberName) == 0))
+		if ((m_stMemberNameList[i].m_iPartyID != 0) && (_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0))
 		{
 			m_stMemberNameList[i].m_iPartyID = 0;
 			m_stMemberNameList[i].m_iIndex = 0;
@@ -154,7 +154,7 @@ bool PartyManager::bRemoveMember(int iPartyID, char* pMemberName)
 	int i;
 
 	for (i = 1; i < DEF_MAXPARTY; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (strcmp(m_stMemberNameList[i].m_cName, pMemberName) == 0)) {
+		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0)) {
 
 			m_stMemberNameList[i].m_iPartyID = 0;
 			m_stMemberNameList[i].m_iIndex = 0;
@@ -181,8 +181,8 @@ bool PartyManager::bCheckPartyMember(int iGSCH, int iPartyID, char* pName)
 	uint16_t* wp;
 
 	for (i = 1; i < DEF_MAXPARTY; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (strcmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
-			// ?? ?? ?? ??? 
+		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
+			// ?? ?? ?? ???
 			m_stMemberNameList[i].m_dwServerChangeTime = 0;
 			return true;
 		}
@@ -262,7 +262,7 @@ void PartyManager::SetServerChangeStatus(char* pName, int iPartyID)
 	int i;
 
 	for (i = 1; i < DEF_MAXPARTY; i++)
-		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (strcmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
+		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
 			m_stMemberNameList[i].m_dwServerChangeTime = GameClock::GetTimeMS();
 			return;
 		}

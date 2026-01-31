@@ -5185,7 +5185,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 		}
 		else {
 			if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex] != 0 &&
-				strcmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_cCharName) == 0) {
+				_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_cCharName) == 0) {
 				iRet = m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_pXSock->iSendMsg(pData, dwMsgSize);
 			}
 		}
@@ -28287,7 +28287,7 @@ void CGame::RequestCheckAccountPasswordHandler(char* pData, uint32_t dwMsgSize)
 	cp += 4;
 
 	for (i = 0; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (strcmp(m_pClientList[i]->m_cAccountName, cAccountName) == 0)) {
+		if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cAccountName, cAccountName) == 0)) {
 			// °°Àº °èÁ¤À» Ã£¾Ò´Ù. ¸¸¾à ÆÐ½º¿öµå³ª ·¹º§ÀÌ ´Ù¸£¸é µ¥ÀÌÅÍ ÀúÀåÀ» ÇÏÁö ¾Ê°í Á¢¼ÓÀ» ²÷´Â´Ù. 
 			if ((strcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword) != 0) || (m_pClientList[i]->m_iLevel != iLevel)) {
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "(TestLog) Error! Account(%s)-Level(%d) password(or level) mismatch! Disconnect.", cAccountName, iLevel);
@@ -28650,7 +28650,7 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 		}
 
 		for (i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pClientList[i] != 0) && (strcmp(m_pClientList[i]->m_cCharName, pMemberName) == 0)) {
+			if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, pMemberName) == 0)) {
 				// °°Àº ÀÌ¸§À» °¡Áø ÇÃ·¹ÀÌ¾î¸¦ Ã£¾Ò´Ù.
 				sAppr2 = (short)((m_pClientList[i]->m_sAppr2 & 0xF000) >> 12);
 				if (sAppr2 != 0) {
@@ -34451,7 +34451,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 
 		if ((iClientH < 0) && (iClientH > DEF_MAXCLIENTS)) return;
 		if (m_pClientList[iClientH] == 0) return;
-		if (strcmp(m_pClientList[iClientH]->m_cCharName, cName) != 0) return;
+		if (_stricmp(m_pClientList[iClientH]->m_cCharName, cName) != 0) return;
 
 		for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
 			if (m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i] == iClientH) {
@@ -34552,12 +34552,12 @@ void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, 
 	int i;
 
 	if (m_pClientList[iClientH] == 0) return;
-	if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+	if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 	switch (iResult) {
-	case 0: // ÆÄÆ¼ »ý¼º ½ÇÆÐ 
+	case 0: // ÆÄÆ¼ »ý¼º ½ÇÆÐ
 		if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_PROCESSING) return;
-		if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = 0;
 		m_pClientList[iClientH]->m_iPartyStatus = DEF_PARTYSTATUS_NULL;
@@ -34565,9 +34565,9 @@ void CGame::PartyOperationResult_Create(int iClientH, char* pName, int iResult, 
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_PARTY, 1, 0, 0, 0);
 		break;
 
-	case 1: // ÆÄÆ¼ »ý¼º ¼º°ø 
+	case 1: // ÆÄÆ¼ »ý¼º ¼º°ø
 		if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_PROCESSING) return;
-		if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = iPartyID;
 		m_pClientList[iClientH]->m_iPartyStatus = DEF_PARTYSTATUS_CONFIRM;
@@ -34622,7 +34622,7 @@ void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, in
 	switch (iResult) {
 	case 0:
 		if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_PROCESSING) return;
-		if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = 0;
 		m_pClientList[iClientH]->m_iPartyStatus = DEF_PARTYSTATUS_NULL;
@@ -34634,7 +34634,7 @@ void CGame::PartyOperationResult_Join(int iClientH, char* pName, int iResult, in
 
 	case 1:
 		if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_PROCESSING) return;
-		if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+		if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 
 		m_pClientList[iClientH]->m_iPartyID = iPartyID;
 		m_pClientList[iClientH]->m_iPartyStatus = DEF_PARTYSTATUS_CONFIRM;
@@ -34675,7 +34675,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 		if (iClientH == 0) {
 			// iClientH °¡ NULLÀÌ¸é ¼­¹ö ÀÌµ¿Áß Á¢¼Ó Á¾·áµÇ¾î °­Á¦ Á¦°Å ¿äÃ»µÈ °ÍÀÓ.
 			for (i = 1; i < DEF_MAXCLIENTS; i++)
-				if ((m_pClientList[i] != 0) && (strcmp(m_pClientList[i]->m_cCharName, pName) == 0)) {
+				if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, pName) == 0)) {
 					iClientH = i;
 					goto PORD_LOOPBREAK;
 				}
@@ -34714,7 +34714,7 @@ void CGame::PartyOperationResult_Dismiss(int iClientH, char* pName, int iResult,
 		}
 
 		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_PROCESSING)) return;
-		if ((m_pClientList[iClientH] != 0) && (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0)) return;
+		if ((m_pClientList[iClientH] != 0) && (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0)) return;
 
 		// ¸ðµç ÆÄÆ¼¿øµé¿¡°Ô ¾Ë·ÁÁØ´Ù.
 		for (i = 1; i < DEF_MAXCLIENTS; i++)
@@ -34799,7 +34799,7 @@ void CGame::RequestJoinPartyHandler(int iClientH, char* pData, uint32_t dwMsgSiz
 	else return;
 
 	for (i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (strcmp(m_pClientList[i]->m_cCharName, cName) == 0)) {
+		if ((m_pClientList[i] != 0) && (_stricmp(m_pClientList[i]->m_cCharName, cName) == 0)) {
 			// °ÔÀÌÆ® ¼­¹ö·Î ÆÄÆ¼ ¸â¹ö °¡ÀÔÀ» ½ÅÃ»ÇÑ´Ù.
 			if ((m_pClientList[i]->m_iPartyID == 0) || (m_pClientList[i]->m_iPartyStatus != DEF_PARTYSTATUS_CONFIRM)) {
 				// ÆÄÆ¼¿¡ °¡ÀÔÇÏ°íÀÚ ÇÑ Ä³¸¯ÅÍ°¡ ÆÄÆ¼ ¸¶½ºÅÍ°¡ ¾Æ´Ï´Ù.
@@ -34892,7 +34892,7 @@ void CGame::GetPartyInfoHandler(int iClientH)
 void CGame::PartyOperationResult_Info(int iClientH, char* pName, int iTotal, char* pNameList)
 {
 	if (m_pClientList[iClientH] == 0) return;
-	if (strcmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
+	if (_stricmp(m_pClientList[iClientH]->m_cCharName, pName) != 0) return;
 	if (m_pClientList[iClientH]->m_iPartyStatus != DEF_PARTYSTATUS_CONFIRM) return;
 
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_PARTY, 5, 1, iTotal, pNameList);
@@ -34942,7 +34942,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 			// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 			return;
 		}
-		if (strcmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+		if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 			// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 			return;
 		}
@@ -34950,7 +34950,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 			// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾îÀÇ »óÅÂ°¡ º¯°æµÇ¾ú´Ù.
 			return;
 		}
-		if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (strcmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+		if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 			// °¡ÀÔÀ» ½ÅÃ»Çß´ø ±×¶§ ±× ÇÃ·¹ÀÌ¾î°¡ ¾Æ´Ï´Ù.
 			return;
 		}
@@ -34976,7 +34976,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 				return;
 			}
-			if (strcmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 				return;
 			}
@@ -34984,7 +34984,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾îÀÇ »óÅÂ°¡ º¯°æµÇ¾ú´Ù.
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (strcmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ±×¶§ ±× ÇÃ·¹ÀÌ¾î°¡ ¾Æ´Ï´Ù.
 				return;
 			}
@@ -35014,7 +35014,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 				return;
 			}
-			if (strcmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
+			if (_stricmp(m_pClientList[iH]->m_cCharName, m_pClientList[iClientH]->m_cReqJoinPartyName) != 0) {
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾î°¡ ¼­¹ö»ó¿¡ ¾ø´Ù.
 				return;
 			}
@@ -35022,7 +35022,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ÇÃ·¹ÀÌ¾îÀÇ »óÅÂ°¡ º¯°æµÇ¾ú´Ù.
 				return;
 			}
-			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (strcmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
+			if ((m_pClientList[iH]->m_iReqJoinPartyClientH != iClientH) || (_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) != 0)) {
 				// °¡ÀÔÀ» ½ÅÃ»Çß´ø ±×¶§ ±× ÇÃ·¹ÀÌ¾î°¡ ¾Æ´Ï´Ù.
 				return;
 			}
@@ -35049,7 +35049,7 @@ void CGame::RequestAcceptJoinPartyHandler(int iClientH, int iResult)
 
 			// ½ÅÃ»Çß´ø Ä³¸¯ÅÍ°¡ Á¢¼ÓÀ» ²÷Àº »óÅÂ¶ó¸é NULLÀÏ ¼ö ÀÖ´Ù.
 			if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_iReqJoinPartyClientH == iClientH) &&
-				(strcmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) == 0)) {
+				(_stricmp(m_pClientList[iH]->m_cReqJoinPartyName, m_pClientList[iClientH]->m_cCharName) == 0)) {
 				// ½ÅÃ»Çß´ø Ä³¸¯ÅÍÀÇ ÆÄÆ¼ ¾ÆÀÌµð¿Í »óÅÂ´Â °Çµå¸®Áö ¾Ê´Â´Ù.
 				m_pClientList[iH]->m_iReqJoinPartyClientH = 0;
 				std::memset(m_pClientList[iH]->m_cReqJoinPartyName, 0, sizeof(m_pClientList[iH]->m_cReqJoinPartyName));

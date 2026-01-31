@@ -185,12 +185,6 @@ m_iItemDropCnt = 0;
 	std::memset(m_cCurLocation, 0, sizeof(m_cCurLocation));
 	std::memset(m_cMapMessage, 0, sizeof(m_cMapMessage));
 	std::memset(m_cGameServerName, 0, sizeof(m_cGameServerName));
-	std::memset(m_cAccountAge, 0, sizeof(m_cAccountAge));
-	std::memset(m_cNewPassword, 0, sizeof(m_cNewPassword));
-	std::memset(m_cNewPassConfirm, 0, sizeof(m_cNewPassConfirm));
-	std::memset(m_cEmailAddr, 0, sizeof(m_cEmailAddr));
-	std::memset(m_cAccountQuiz, 0, sizeof(m_cAccountQuiz));
-	std::memset(m_cAccountAnswer, 0, sizeof(m_cAccountAnswer));
 	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
 	std::memset(m_cTakeHeroItemName, 0, sizeof(m_cTakeHeroItemName));
 }
@@ -682,42 +676,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_CHANGEPASSWORD:
-	{
-		hb::net::ChangePasswordRequest req{};
-		req.header.msg_id = dwMsgID;
-		req.header.msg_type = 0;
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.new_password, 0, sizeof(req.new_password));
-		std::memcpy(req.new_password, m_cNewPassword, sizeof(req.new_password));
-		std::memset(req.new_password_confirm, 0, sizeof(req.new_password_confirm));
-		std::memcpy(req.new_password_confirm, m_cNewPassConfirm, sizeof(req.new_password_confirm));
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-	}
-	break;
-
-	case MSGID_REQUEST_CREATENEWACCOUNT:
-		// to Log Server
-	{
-		hb::net::CreateAccountRequest req{};
-		req.header.msg_id = dwMsgID;
-		req.header.msg_type = 0;
-		std::memset(req.account_name, 0, sizeof(req.account_name));
-		std::memcpy(req.account_name, m_pPlayer->m_cAccountName, sizeof(req.account_name));
-		std::memset(req.password, 0, sizeof(req.password));
-		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
-		std::memset(req.email, 0, sizeof(req.email));
-		std::memcpy(req.email, m_cEmailAddr, sizeof(req.email));
-		std::memset(req.quiz, 0, sizeof(req.quiz));
-		std::memcpy(req.quiz, m_cAccountQuiz, sizeof(req.quiz));
-		std::memset(req.answer, 0, sizeof(req.answer));
-		std::memcpy(req.answer, m_cAccountAnswer, sizeof(req.answer));
-		iRet = m_pLSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
-	}
-	break;
 
 	case MSGID_GETMINIMUMLOADGATEWAY:
 	case MSGID_REQUEST_LOGIN:
@@ -2125,9 +2083,6 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 			}
 			bSendCommand(MSGID_REQUEST_LOGIN, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_CREATENEWACCOUNT:
-			bSendCommand(MSGID_REQUEST_CREATENEWACCOUNT, 0, 0, 0, 0, 0, 0);
-			break;
 		case MSGID_REQUEST_CREATENEWCHARACTER:
 			bSendCommand(MSGID_REQUEST_CREATENEWCHARACTER, 0, 0, 0, 0, 0, 0);
 			break;
@@ -2137,12 +2092,16 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 		case MSGID_REQUEST_DELETECHARACTER:
 			bSendCommand(MSGID_REQUEST_DELETECHARACTER, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_CHANGEPASSWORD:
-			bSendCommand(MSGID_REQUEST_CHANGEPASSWORD, 0, 0, 0, 0, 0, 0);
-			break;
 		case MSGID_REQUEST_INPUTKEYCODE:
 			bSendCommand(MSGID_REQUEST_INPUTKEYCODE, 0, 0, 0, 0, 0, 0);
 			break;
+		}
+
+		// Send any pending packet built directly by a screen/overlay
+		if (!m_pendingLoginPacket.empty()) {
+			char cKey = (char)(rand() % 255) + 1;
+			m_pLSock->iSendMsg(m_pendingLoginPacket.data(), static_cast<uint32_t>(m_pendingLoginPacket.size()), cKey);
+			m_pendingLoginPacket.clear();
 		}
 		break;
 	}
@@ -9092,6 +9051,14 @@ void CGame::LogResponseHandler(char* pData)
 		return;
 	}
 	wResponse = header->msg_type;
+
+	// Route to the active screen first — if it handles the response, we're done.
+	IGameScreen* pScreen = GameModeManager::GetActiveScreen();
+	if (pScreen && pScreen->on_net_response(wResponse, pData)) {
+		printf("[LogResponseHandler] Response 0x%04X handled by screen on_net_response\n", wResponse);
+		return;
+	}
+	printf("[LogResponseHandler] Response 0x%04X using legacy handler\n", wResponse);
 
 	switch (wResponse) {
 	case DEF_LOGRESMSGTYPE_CHARACTERDELETED:

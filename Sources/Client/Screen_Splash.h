@@ -9,6 +9,8 @@
 
 #include "IGameScreen.h"
 #include <cstdint>
+#include <string>
+#include <array>
 
 class Screen_Splash : public IGameScreen
 {
@@ -29,7 +31,13 @@ private:
     static constexpr uint32_t TIME_PER_CONTRIBUTOR_MS = 2000;  // 2 seconds each
     static constexpr uint32_t FADE_DURATION_MS = 400;  // 0.4 second fade in/out
 
-    // Calculate fade alpha (0.0 to 1.0) for current contributor
-    // Last contributor doesn't fade out - stays visible for remaining time
+    struct Credit
+    {
+        std::string displayLine;
+        std::string url;
+    };
+
+    std::array<Credit, NUM_CONTRIBUTORS> m_credits;
+
     float GetContributorAlpha(uint32_t elapsedMs, int contributorIndex) const;
 };

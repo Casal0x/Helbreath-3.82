@@ -2,6 +2,7 @@
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -11,8 +12,8 @@ namespace net {
 	struct HB_PACKED LoginRequest
 	{
 		PacketHeader header;
-		char account_name[10];
-		char password[10];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
 		char world_name[30];
 	};
 	HB_PACK_END
@@ -21,9 +22,9 @@ namespace net {
 	struct HB_PACKED CreateCharacterRequest
 	{
 		PacketHeader header;
-		char character_name[10];
-		char account_name[10];
-		char password[10];
+		char character_name[DEF_ACCOUNT_NAME - 1];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
 		char world_name[30];
 		std::uint8_t gender;
 		std::uint8_t skin;
@@ -43,9 +44,9 @@ namespace net {
 	struct HB_PACKED DeleteCharacterRequest
 	{
 		PacketHeader header;
-		char character_name[10];
-		char account_name[10];
-		char password[10];
+		char character_name[DEF_ACCOUNT_NAME - 1];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
 		char world_name[30];
 	};
 	HB_PACK_END
@@ -54,10 +55,10 @@ namespace net {
 	struct HB_PACKED ChangePasswordRequest
 	{
 		PacketHeader header;
-		char account_name[10];
-		char password[10];
-		char new_password[10];
-		char new_password_confirm[10];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
+		char new_password[DEF_ACCOUNT_PASS - 1];
+		char new_password_confirm[DEF_ACCOUNT_PASS - 1];
 	};
 	HB_PACK_END
 
@@ -65,11 +66,11 @@ namespace net {
 	struct HB_PACKED CreateAccountRequest
 	{
 		PacketHeader header;
-		char account_name[10];
-		char password[10];
-		char email[50];
-		char quiz[45];
-		char answer[25];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
+		char email[DEF_ACCOUNT_EMAIL - 1];
+		char quiz[DEF_ACCOUNT_QUIZ - 1];
+		char answer[DEF_ACCOUNT_ANSWER - 1];
 	};
 	HB_PACK_END
 
@@ -77,9 +78,9 @@ namespace net {
 	struct HB_PACKED CreateAccountRequestFull
 	{
 		PacketHeader header;
-		char account_name[10];
-		char password[10];
-		char email[50];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
+		char email[DEF_ACCOUNT_EMAIL - 1];
 		char gender[10];
 		char age[10];
 		char padding1[4];
@@ -97,12 +98,12 @@ namespace net {
 	struct HB_PACKED EnterGameRequest
 	{
 		PacketHeader header;
-		char character_name[10];
-		char map_name[10];
-		char account_name[10];
-		char password[10];
+		char character_name[DEF_ACCOUNT_NAME - 1];
+		char map_name[DEF_ACCOUNT_NAME - 1];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
 		std::int32_t level;
-		char world_name[10];
+		char world_name[DEF_ACCOUNT_NAME - 1];
 	};
 	HB_PACK_END
 
@@ -110,10 +111,10 @@ namespace net {
 	struct HB_PACKED EnterGameRequestFull
 	{
 		PacketHeader header;
-		char character_name[10];
-		char map_name[10];
-		char account_name[10];
-		char password[10];
+		char character_name[DEF_ACCOUNT_NAME - 1];
+		char map_name[DEF_ACCOUNT_NAME - 1];
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char password[DEF_ACCOUNT_PASS - 1];
 		std::int32_t level;
 		char world_name[30];
 	};

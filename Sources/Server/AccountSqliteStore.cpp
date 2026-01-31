@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <direct.h>
 #include <cstdio>
+#include <cctype>
 #include <cstring>
 #include <map>
 #include <string>
@@ -15,6 +16,12 @@ extern void PutLogList(char* cMsg);
 
 namespace
 {
+    static void LowercaseInPlace(char* buf, size_t len)
+    {
+        for (size_t i = 0; i < len && buf[i] != '\0'; i++)
+            buf[i] = static_cast<char>(::tolower(static_cast<unsigned char>(buf[i])));
+    }
+
     void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBufferSize)
     {
         std::snprintf(outBuffer, outBufferSize, "%04d-%02d-%02d %02d:%02d:%02d",
@@ -350,8 +357,11 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
 
     _mkdir("Accounts");
 
+    char lowerName[64] = {};
+    std::strncpy(lowerName, accountName, sizeof(lowerName) - 1);
+    LowercaseInPlace(lowerName, sizeof(lowerName));
     char dbPath[MAX_PATH] = {};
-    std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", accountName);
+    std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", lowerName);
     outPath = dbPath;
 
     sqlite3* db = nullptr;
@@ -568,7 +578,7 @@ bool LoadAccountRecord(sqlite3* db, const char* accountName, AccountDbAccountDat
 
     const char* sql =
         "SELECT account_name, password, email, quiz, answer, created_at, password_changed_at, last_ip "
-        "FROM accounts WHERE account_name = ?;";
+        "FROM accounts WHERE account_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -606,7 +616,7 @@ bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* new
     FormatTimestamp(sysTime, timestamp, sizeof(timestamp));
 
     const char* sql =
-        "UPDATE accounts SET password = ?, password_changed_at = ? WHERE account_name = ?;";
+        "UPDATE accounts SET password = ?, password_changed_at = ? WHERE account_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -634,7 +644,7 @@ bool ListCharacterSummaries(sqlite3* db, const char* accountName, std::vector<Ac
 
     const char* sql =
         "SELECT character_name, appr1, appr2, appr3, appr4, appr_color, gender, skin, level, exp, map_name "
-        "FROM characters WHERE account_name = ? ORDER BY character_name;";
+        "FROM characters WHERE account_name = ? COLLATE NOCASE ORDER BY character_name;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -681,7 +691,7 @@ bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharact
         "special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid, "
         "construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left, "
         "appr1, appr2, appr3, appr4, appr_color "
-        "FROM characters WHERE character_name = ?;";
+        "FROM characters WHERE character_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -782,7 +792,7 @@ bool LoadCharacterItems(sqlite3* db, const char* characterName, std::vector<Acco
         "SELECT slot, item_id, count, touch_effect_type, touch_effect_value1, touch_effect_value2, "
         "touch_effect_value3, item_color, spec_effect_value1, spec_effect_value2, spec_effect_value3, "
         "cur_lifespan, attribute, pos_x, pos_y, is_equipped "
-        "FROM character_items WHERE character_name = ? ORDER BY slot;";
+        "FROM character_items WHERE character_name = ? COLLATE NOCASE ORDER BY slot;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -827,7 +837,7 @@ bool LoadCharacterBankItems(sqlite3* db, const char* characterName, std::vector<
         "SELECT slot, item_id, count, touch_effect_type, touch_effect_value1, touch_effect_value2, "
         "touch_effect_value3, item_color, spec_effect_value1, spec_effect_value2, spec_effect_value3, "
         "cur_lifespan, attribute "
-        "FROM character_bank_items WHERE character_name = ? ORDER BY slot;";
+        "FROM character_bank_items WHERE character_name = ? COLLATE NOCASE ORDER BY slot;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -866,7 +876,7 @@ bool LoadCharacterItemPositions(sqlite3* db, const char* characterName, std::vec
     }
 
     const char* sql =
-        "SELECT slot, pos_x, pos_y FROM character_item_positions WHERE character_name = ? ORDER BY slot;";
+        "SELECT slot, pos_x, pos_y FROM character_item_positions WHERE character_name = ? COLLATE NOCASE ORDER BY slot;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -898,7 +908,7 @@ bool LoadCharacterItemEquips(sqlite3* db, const char* characterName, std::vector
     }
 
     const char* sql =
-        "SELECT slot, is_equipped FROM character_item_equips WHERE character_name = ? ORDER BY slot;";
+        "SELECT slot, is_equipped FROM character_item_equips WHERE character_name = ? COLLATE NOCASE ORDER BY slot;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -925,7 +935,7 @@ bool LoadCharacterMagicMastery(sqlite3* db, const char* characterName, std::vect
     }
 
     const char* sql =
-        "SELECT magic_index, mastery_value FROM character_magic_mastery WHERE character_name = ? ORDER BY magic_index;";
+        "SELECT magic_index, mastery_value FROM character_magic_mastery WHERE character_name = ? COLLATE NOCASE ORDER BY magic_index;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -952,7 +962,7 @@ bool LoadCharacterSkillMastery(sqlite3* db, const char* characterName, std::vect
     }
 
     const char* sql =
-        "SELECT skill_index, mastery_value FROM character_skill_mastery WHERE character_name = ? ORDER BY skill_index;";
+        "SELECT skill_index, mastery_value FROM character_skill_mastery WHERE character_name = ? COLLATE NOCASE ORDER BY skill_index;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -979,7 +989,7 @@ bool LoadCharacterSkillSSN(sqlite3* db, const char* characterName, std::vector<A
     }
 
     const char* sql =
-        "SELECT skill_index, ssn_value FROM character_skill_ssn WHERE character_name = ? ORDER BY skill_index;";
+        "SELECT skill_index, ssn_value FROM character_skill_ssn WHERE character_name = ? COLLATE NOCASE ORDER BY skill_index;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1481,7 +1491,7 @@ bool DeleteCharacterData(sqlite3* db, const char* characterName)
         return false;
     }
 
-    const char* sql = "DELETE FROM characters WHERE character_name = ?;";
+    const char* sql = "DELETE FROM characters WHERE character_name = ? COLLATE NOCASE;";
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
         return false;
@@ -1621,13 +1631,13 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         return false;
     }
 
-    const char* deleteItemsSql = "DELETE FROM character_items WHERE character_name = ?;";
-    const char* deleteBankSql = "DELETE FROM character_bank_items WHERE character_name = ?;";
-    const char* deletePosSql = "DELETE FROM character_item_positions WHERE character_name = ?;";
-    const char* deleteEquipSql = "DELETE FROM character_item_equips WHERE character_name = ?;";
-    const char* deleteMagicSql = "DELETE FROM character_magic_mastery WHERE character_name = ?;";
-    const char* deleteSkillSql = "DELETE FROM character_skill_mastery WHERE character_name = ?;";
-    const char* deleteSsnSql = "DELETE FROM character_skill_ssn WHERE character_name = ?;";
+    const char* deleteItemsSql = "DELETE FROM character_items WHERE character_name = ? COLLATE NOCASE;";
+    const char* deleteBankSql = "DELETE FROM character_bank_items WHERE character_name = ? COLLATE NOCASE;";
+    const char* deletePosSql = "DELETE FROM character_item_positions WHERE character_name = ? COLLATE NOCASE;";
+    const char* deleteEquipSql = "DELETE FROM character_item_equips WHERE character_name = ? COLLATE NOCASE;";
+    const char* deleteMagicSql = "DELETE FROM character_magic_mastery WHERE character_name = ? COLLATE NOCASE;";
+    const char* deleteSkillSql = "DELETE FROM character_skill_mastery WHERE character_name = ? COLLATE NOCASE;";
+    const char* deleteSsnSql = "DELETE FROM character_skill_ssn WHERE character_name = ? COLLATE NOCASE;";
 
     const char* deleteStatements[] = {
         deleteItemsSql, deleteBankSql, deletePosSql, deleteEquipSql, deleteMagicSql, deleteSkillSql, deleteSsnSql
@@ -1909,7 +1919,7 @@ bool CharacterNameExistsGlobally(const char* characterName)
         }
 
         // Check if character name exists in this database
-        const char* sql = "SELECT 1 FROM characters WHERE character_name = ? LIMIT 1";
+        const char* sql = "SELECT 1 FROM characters WHERE character_name = ? COLLATE NOCASE LIMIT 1";
         sqlite3_stmt* stmt = nullptr;
 
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {
@@ -1969,7 +1979,7 @@ bool AccountNameExists(const char* accountName)
         }
 
         // Check if account name exists in this database
-        const char* sql = "SELECT 1 FROM accounts WHERE account_name = ? LIMIT 1";
+        const char* sql = "SELECT 1 FROM accounts WHERE account_name = ? COLLATE NOCASE LIMIT 1";
         sqlite3_stmt* stmt = nullptr;
 
         if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK) {

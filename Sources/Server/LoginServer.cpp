@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <cctype>
 using namespace std;
 
 #include "AccountSqliteStore.h"
@@ -15,6 +16,12 @@ extern char	G_cData50000[50000];
 //extern void PutLogList(char* cMsg);
 extern char G_cTxt[512];
 extern class CGame* G_pGame;
+
+static void LowercaseInPlace(char* buf, size_t len)
+{
+    for (size_t i = 0; i < len && buf[i] != '\0'; i++)
+        buf[i] = static_cast<char>(::tolower(static_cast<unsigned char>(buf[i])));
+}
 
 #define WORLDNAMELS   "WS1"
 #define WORLDNAMELS2   "WS2"
@@ -55,8 +62,11 @@ void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBuffe
 
 bool AccountDbExists(const char* accountName)
 {
+	char lower[DEF_ACCOUNT_NAME] = {};
+	std::strncpy(lower, accountName, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(lower, sizeof(lower));
 	char dbPath[MAX_PATH] = {};
-	std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", accountName);
+	std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", lower);
 	DWORD attrs = GetFileAttributes(dbPath);
 	return (attrs != INVALID_FILE_ATTRIBUTES) && ((attrs & FILE_ATTRIBUTE_DIRECTORY) == 0);
 }
@@ -80,15 +90,16 @@ void LoginServer::RequestLogin(int h, char* pData)
 	if (G_pGame->_lclients[h] == 0)
 		return;
 
-	char cName[11] = {};
-	char cPassword[11] = {};
+	char cName[DEF_ACCOUNT_NAME] = {};
+	char cPassword[DEF_ACCOUNT_PASS] = {};
 	char world_name[32] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::LoginRequest>(pData, sizeof(hb::net::LoginRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->account_name, 10);
-	std::memcpy(cPassword, req->password, 10);
+	std::memcpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(cName, sizeof(cName));
+	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
 	std::memcpy(world_name, req->world_name, 30);
 
 	if (string(world_name) != WORLDNAMELS)
@@ -183,9 +194,9 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 
 void LoginServer::ResponseCharacter(int h, char* pData)
 {
-	char cName[11] = {};
-	char cAcc[11] = {};
-	char cPassword[11] = {};
+	char cName[DEF_ACCOUNT_NAME] = {};
+	char cAcc[DEF_ACCOUNT_NAME] = {};
+	char cPassword[DEF_ACCOUNT_PASS] = {};
 	char world_name[32] = {};
 
 	char gender, skin, hairstyle, haircolor, under, str, vit, dex, intl, mag, chr;
@@ -193,9 +204,10 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateCharacterRequest>(pData, sizeof(hb::net::CreateCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, 10);
-	std::memcpy(cAcc, req->account_name, 10);
-	std::memcpy(cPassword, req->password, 10);
+	std::memcpy(cName, req->character_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(cAcc, sizeof(cAcc));
+	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
 	std::memcpy(world_name, req->world_name, 30);
 	gender = static_cast<char>(req->gender);
 	skin = static_cast<char>(req->skin);
@@ -244,7 +256,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
-		if (std::strncmp(entry.characterName, cName, 10) == 0) {
+		if (_strnicmp(entry.characterName, cName, 10) == 0) {
 			SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
 			return;
 		}
@@ -479,17 +491,18 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 void LoginServer::DeleteCharacter(int h, char* pData)
 {
-	char cName[11] = {};
-	char cAcc[11] = {};
-	char cPassword[11] = {};
+	char cName[DEF_ACCOUNT_NAME] = {};
+	char cAcc[DEF_ACCOUNT_NAME] = {};
+	char cPassword[DEF_ACCOUNT_PASS] = {};
 	char world_name[32] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::DeleteCharacterRequest>(pData, sizeof(hb::net::DeleteCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, 10);
-	std::memcpy(cAcc, req->account_name, 10);
-	std::memcpy(cPassword, req->password, 10);
+	std::memcpy(cName, req->character_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(cAcc, sizeof(cAcc));
+	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
 	std::memcpy(world_name, req->world_name, 30);
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request delete Character: %s", cName);
@@ -516,7 +529,7 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	CloseAccountDatabase(db);
 
 	for (auto it = chars.begin(); it != chars.end();) {
-		if (std::strncmp(it->characterName, cName, 10) == 0) {
+		if (_strnicmp(it->characterName, cName, 10) == 0) {
 			it = chars.erase(it);
 			continue;
 		}
@@ -532,18 +545,19 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 
 void LoginServer::ChangePassword(int h, char* pData)
 {
-	char cAcc[11] = {};
-	char cPassword[11] = {};
-	char cNewPw[11] = {};
-	char cNewPwConf[11] = {};
+	char cAcc[DEF_ACCOUNT_NAME] = {};
+	char cPassword[DEF_ACCOUNT_PASS] = {};
+	char cNewPw[DEF_ACCOUNT_PASS] = {};
+	char cNewPwConf[DEF_ACCOUNT_PASS] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::ChangePasswordRequest>(pData, sizeof(hb::net::ChangePasswordRequest));
 	if (!req) return;
 
-	std::memcpy(cAcc, req->account_name, 10);
-	std::memcpy(cPassword, req->password, 10);
-	std::memcpy(cNewPw, req->new_password, 10);
-	std::memcpy(cNewPwConf, req->new_password_confirm, 10);
+	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(cAcc, sizeof(cAcc));
+	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cNewPw, req->new_password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cNewPwConf, req->new_password_confirm, DEF_ACCOUNT_PASS - 1);
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request change password: %s", cAcc);
 	PutLogList(G_cTxt);
@@ -576,11 +590,11 @@ void LoginServer::ChangePassword(int h, char* pData)
 
 void LoginServer::CreateNewAccount(int h, char* pData)
 {
-	char cName[12] = {};
-	char cPassword[12] = {};
-	char cEmailAddr[52] = {};
-	char cQuiz[47] = {};
-	char cAnswer[27] = {};
+	char cName[DEF_ACCOUNT_NAME] = {};
+	char cPassword[DEF_ACCOUNT_PASS] = {};
+	char cEmailAddr[DEF_ACCOUNT_EMAIL] = {};
+	char cQuiz[DEF_ACCOUNT_QUIZ] = {};
+	char cAnswer[DEF_ACCOUNT_ANSWER] = {};
 
 	if (G_pGame->_lclients[h] == 0)
 		return;
@@ -588,15 +602,15 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateAccountRequest>(pData, sizeof(hb::net::CreateAccountRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->account_name, 10);
-	std::memcpy(cPassword, req->password, 10);
-	std::memcpy(cEmailAddr, req->email, 50);
-	std::memcpy(cQuiz, req->quiz, 45);
-	std::memcpy(cAnswer, req->answer, 25);
+	std::memcpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
+	LowercaseInPlace(cName, sizeof(cName));
+	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cEmailAddr, req->email, DEF_ACCOUNT_EMAIL - 1);
+	std::memcpy(cQuiz, req->quiz, DEF_ACCOUNT_QUIZ - 1);
+	std::memcpy(cAnswer, req->answer, DEF_ACCOUNT_ANSWER - 1);
 
 	if ((strlen(cName) == 0) || (strlen(cPassword) == 0) ||
-		(strlen(cEmailAddr) == 0) || (strlen(cQuiz) == 0) ||
-		(strlen(cAnswer) == 0))
+		(strlen(cEmailAddr) == 0))
 		return;
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request create new Account: %s", cName);
@@ -697,6 +711,7 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	std::memcpy(cName, req->character_name, 10);
 	std::memcpy(cMapName, req->map_name, 10);
 	std::memcpy(cAcc, req->account_name, 10);
+	LowercaseInPlace(cAcc, sizeof(cAcc));
 	std::memcpy(cPass, req->password, 10);
 	lvl = req->level;
 	std::memcpy(ws_name, req->world_name, 10);

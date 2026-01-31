@@ -8,6 +8,7 @@
 #pragma once
 
 #include "IGameScreen.h"
+#include "NetConstants.h"
 
 class Overlay_ChangePassword : public IGameScreen
 {
@@ -28,10 +29,10 @@ private:
     bool ValidateInputs();
 
     // Input buffers
-    char m_cAccountName[12];
-    char m_cOldPassword[12];
-    char m_cNewPassword[12];
-    char m_cConfirmPassword[12];
+    char m_cAccountName[DEF_ACCOUNT_NAME];
+    char m_cOldPassword[DEF_ACCOUNT_PASS];
+    char m_cNewPassword[DEF_ACCOUNT_PASS];
+    char m_cConfirmPassword[DEF_ACCOUNT_PASS];
 
     // UI state
     int m_iCurFocus;      // 1=name, 2=old pass, 3=new pass, 4=confirm, 5=OK, 6=Cancel

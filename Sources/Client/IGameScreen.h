@@ -52,6 +52,11 @@ public:
     // Returns the screen type identifier for runtime type checking
     virtual ScreenTypeId get_type_id() const = 0;
 
+    // Called when a server response arrives in LogResponseHandler.
+    // Return true if this screen handled the response (stops further processing),
+    // false to fall through to default handling. Optional — not all screens need this.
+    virtual bool on_net_response(uint16_t wResponseType, char* pData) { return false; }
+
 protected:
     // ============== Helper Methods (delegate to CGame) ==============
     // These provide convenient access to common CGame functionality

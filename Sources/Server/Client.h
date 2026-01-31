@@ -70,9 +70,9 @@ public:
 	CClient(HWND hWnd);
 	virtual ~CClient();
 
-	char m_cCharName[11];
-	char m_cAccountName[11];
-	char m_cAccountPassword[11];
+	char m_cCharName[DEF_ACCOUNT_NAME];
+	char m_cAccountName[DEF_ACCOUNT_NAME];
+	char m_cAccountPassword[DEF_ACCOUNT_PASS];
 
 	bool  m_bIsInitComplete;
 	bool  m_bIsMsgSendAvailable;
