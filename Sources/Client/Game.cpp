@@ -1919,12 +1919,12 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
 	if (dwMsgSize < headerSize) {
-		printf("[ERROR] Item config packet too small for header\n");
 		return false;
 	}
 
 	const auto* pktHeader = reinterpret_cast<const hb::net::PacketItemConfigHeader*>(pData);
 	uint16_t itemCount = pktHeader->itemCount;
+	uint16_t totalItems = pktHeader->totalItems;
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
 		return false;
@@ -1978,6 +1978,15 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 		pItem->m_cItemColor = entry.itemColor;
 	}
 
+	// Log total count on last packet
+	int totalLoaded = 0;
+	for (int j = 0; j < 5000; j++) {
+		if (m_pItemConfigList[j] != 0) totalLoaded++;
+	}
+	if (totalLoaded >= totalItems) {
+		printf("[ITEMCFG] Received all %d item configs\n", totalLoaded);
+	}
+
 	return true;
 }
 
@@ -1990,7 +1999,6 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
-		// Pass full pData - PacketItemConfigHeader includes the PacketHeader
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
@@ -2256,7 +2264,7 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
-	char  cName[21];
+	char  cName[DEF_ITEMNAME];
 	short sType, tX, tY;
 	int iStatus;
 
@@ -3027,20 +3035,10 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	const auto* resp = hb::net::PacketCast<hb::net::PacketShopResponseHeader>(
 		pData, sizeof(hb::net::PacketShopResponseHeader));
 	if (!resp) {
-		printf("[SHOP] Response: invalid packet\n");
 		return;
 	}
 
 	uint16_t itemCount = resp->itemCount;
-	printf("[SHOP] Response received: NPC type %d, shop %d, %d items\n",
-		resp->npcType, resp->shopId, itemCount);
-
-	// Debug: Count how many items are in the config list
-	int configCount = 0;
-	for (int i = 0; i < 5000; i++) {
-		if (m_pItemConfigList[i] != nullptr) configCount++;
-	}
-	printf("[SHOP] Client has %d items in m_pItemConfigList\n", configCount);
 
 	if (itemCount > DEF_MAXMENUITEMS) {
 		itemCount = DEF_MAXMENUITEMS;
@@ -3064,12 +3062,10 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	for (uint16_t i = 0; i < itemCount && shopIndex < DEF_MAXMENUITEMS; i++) {
 		int16_t itemId = itemIds[i];
 		if (itemId <= 0 || itemId >= 5000) {
-			if (skippedCount < 5) printf("[SHOP] Skipping invalid item ID: %d\n", itemId);
 			skippedCount++;
 			continue;
 		}
 		if (m_pItemConfigList[itemId] == nullptr) {
-			if (notFoundCount < 10) printf("[SHOP] Item ID %d not in m_pItemConfigList\n", itemId);
 			notFoundCount++;
 			skippedCount++;
 			continue;
@@ -3951,7 +3947,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel((m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -4559,7 +4555,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(8 + (m_entityState.m_iDir - 1), sX + dx + 20, sY + dy - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
 
@@ -4810,7 +4806,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(32 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 16, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5079,7 +5075,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5648,7 +5644,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			}
 
 			if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -5932,7 +5928,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			}
 
 			if ((m_entityState.m_iStatus & 0x20) != 0)	// Berserk
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		}
@@ -6363,7 +6359,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(24 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -7373,7 +7369,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
@@ -7891,7 +7887,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(16 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
@@ -8746,7 +8742,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 		// Berserk
 		if ((m_entityState.m_iStatus & 0x20) != 0)
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
 
@@ -9325,7 +9321,7 @@ void CGame::LogResponseHandler(char* pData)
 
 		m_pGSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
-		m_pGSock->bInitBufferSize(30000);
+		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	}
 	break;
 
@@ -9668,7 +9664,20 @@ void CGame::ChatMsgHandler(char* pData)
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
 				wsprintf(cHeadMsg, "%s:%s", cName, cp);
-				AddEventList(cHeadMsg, cMsgType);
+				if (cMsgType == 10) {
+					// GM broadcast: route to top-left event area instead of bottom status area
+					for (int j = 1; j < 6; j++) {
+						strcpy(m_stEventHistory[j - 1].cTxt, m_stEventHistory[j].cTxt);
+						m_stEventHistory[j - 1].cColor = m_stEventHistory[j].cColor;
+						m_stEventHistory[j - 1].dwTime = m_stEventHistory[j].dwTime;
+					}
+					std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
+					strcpy(m_stEventHistory[5].cTxt, cHeadMsg);
+					m_stEventHistory[5].cColor = cMsgType;
+					m_stEventHistory[5].dwTime = m_dwCurTime;
+				} else {
+					AddEventList(cHeadMsg, cMsgType);
+				}
 			}
 			return;
 		}
@@ -10265,7 +10274,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		}
 
 		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::TintedAlpha(0, -5, -5, 0.7f));
+			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
@@ -10349,7 +10358,7 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = itemEntries[i];
 		m_pItemList[i] = std::make_unique<CItem>();
-		memcpy(m_pItemList[i]->m_cName, entry.name, 20);
+		memcpy(m_pItemList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
 		m_pItemList[i]->m_dwCount = entry.count;
 		m_pItemList[i]->m_sX = 40;
 		m_pItemList[i]->m_sY = 30;
@@ -10422,7 +10431,7 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = bankEntries[i];
 		m_pBankList[i] = std::make_unique<CItem>();
-		memcpy(m_pBankList[i]->m_cName, entry.name, 20);
+		memcpy(m_pBankList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
 		m_pBankList[i]->m_dwCount = entry.count;
 
 		m_pBankList[i]->m_sX = 40;
@@ -12137,7 +12146,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 					i++;
 				}
 				else iSize2 += 4;
-		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b));
+		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b).WithAdditive());
 		break;
 
 	case 21:
@@ -12146,16 +12155,16 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		case 2:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		case 3:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f) : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b));
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
 			break;
 		}
 		break;
@@ -12863,7 +12872,7 @@ bool CGame::_bDecodeBuildItemContents()
 bool CGame::_bCheckBuildItemStatus()
 {
 	int iIndex, i, j, iMatch, iCount;
-	char cTempName[21];
+	char cTempName[DEF_ITEMNAME];
 	int  iItemCount[DEF_MAXITEMS];
 
 	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
@@ -12879,14 +12888,14 @@ bool CGame::_bCheckBuildItemStatus()
 			{
 				iMatch = 0;
 				m_pDispBuildItemList[iIndex] = std::make_unique<CBuildItem>();
-				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, 20);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, DEF_ITEMNAME - 1);
 
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, 20);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, 20);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
 
 				m_pDispBuildItemList[iIndex]->m_iElementCount[1] = m_pBuildItemList[i]->m_iElementCount[1];
 				m_pDispBuildItemList[iIndex]->m_iElementCount[2] = m_pBuildItemList[i]->m_iElementCount[2];
@@ -12908,14 +12917,14 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element1
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[1];
 				if (iCount == 0) iMatch++;
 				else
 				{
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0) {
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12929,7 +12938,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP2:;
 				// Element2
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[2];
 				if (iCount == 0) iMatch++;
 				else
@@ -12937,7 +12946,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12951,7 +12960,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP3:;
 				// Element3
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[3];
 				if (iCount == 0) iMatch++;
 				else
@@ -12959,7 +12968,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12973,7 +12982,7 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP4:;
 				// Element4 �˻�
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[4];
 				if (iCount == 0) iMatch++;
 				else
@@ -12981,7 +12990,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12996,7 +13005,7 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element5
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[5];
 				if (iCount == 0) iMatch++;
 				else
@@ -13004,7 +13013,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13019,7 +13028,7 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element6
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, 20);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[6];
 				if (iCount == 0) iMatch++;
 				else
@@ -13027,7 +13036,7 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, 20) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13215,7 +13224,7 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 	int i, iCount2, iMatch, iIndex, iItemIndex[7];
 	int iCount;
 	int iItemCount[7];
-	char cTempName[21];
+	char cTempName[DEF_ITEMNAME];
 	bool bItemFlag[7];
 
 	iIndex = m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
@@ -13238,14 +13247,14 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 
 	// Element1
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[1];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13261,14 +13270,14 @@ CCBIS_STEP2:;
 
 	// Element2
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[2];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13284,14 +13293,14 @@ CCBIS_STEP3:;
 
 	// Element3
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[3];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13307,14 +13316,14 @@ CCBIS_STEP4:;
 
 	// Element4
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[4];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13330,14 +13339,14 @@ CCBIS_STEP5:;
 
 	// Element5
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[5];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13353,14 +13362,14 @@ CCBIS_STEP6:;
 
 	// Element6
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, 20);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, DEF_ITEMNAME - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[6];
 	if (iCount == 0) iMatch++;
 	else
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, 20) == 0) &&
+			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13691,7 +13700,7 @@ short CGame::FindItemIdByName(const char* cItemName)
 	if (cItemName == nullptr) return 0;
 	for (int i = 1; i < 5000; i++) {
 		if (m_pItemConfigList[i] != nullptr &&
-			memcmp(m_pItemConfigList[i]->m_cName, cItemName, 20) == 0) {
+			memcmp(m_pItemConfigList[i]->m_cName, cItemName, DEF_ITEMNAME - 1) == 0) {
 			return static_cast<short>(i);
 		}
 	}
@@ -14167,7 +14176,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				nY = 30;
 				for (j = 0; j < DEF_MAXITEMS; j++)
 				{
-					if ((m_pItemList[j] != 0) && (memcmp(m_pItemList[j]->m_cName, cStr1, 20) == 0))
+					if ((m_pItemList[j] != 0) && (memcmp(m_pItemList[j]->m_cName, cStr1, DEF_ITEMNAME - 1) == 0))
 					{
 						nX = m_pItemList[j]->m_sX + 1;
 						nY = m_pItemList[j]->m_sY + 1;
@@ -14977,7 +14986,7 @@ void CGame::ClearSkillUsingStatus()
 
 void CGame::NpcTalkHandler(char* pData)
 {
-	char cRewardName[21], cTargetName[21], cTemp[21], cTxt[250];
+	char cRewardName[DEF_ITEMNAME], cTargetName[21], cTemp[21], cTxt[250];
 	short sType, sResponse;
 	int iAmount, iIndex, iContribution, iX, iY, iRange;
 	int iTargetType, iTargetCount, iQuestionType;
@@ -14997,7 +15006,7 @@ void CGame::NpcTalkHandler(char* pData)
 	iRange = pkt->range;
 
 	std::memset(cRewardName, 0, sizeof(cRewardName));
-	memcpy(cRewardName, pkt->reward_name, 20);
+	memcpy(cRewardName, pkt->reward_name, DEF_ITEMNAME - 1);
 	std::memset(cTargetName, 0, sizeof(cTargetName));
 	memcpy(cTargetName, pkt->target_name, 20);
 

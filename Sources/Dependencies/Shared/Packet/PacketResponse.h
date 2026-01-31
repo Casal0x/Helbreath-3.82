@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 
 #include <cstdint>
 
@@ -71,7 +72,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseItemListEntry {
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -90,7 +91,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseBankItemEntry {
-		char name[20];
+		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;

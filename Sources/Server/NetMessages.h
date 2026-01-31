@@ -1,7 +1,8 @@
-// missing messages 
+// missing messages
 //0x0BE5, 0x0BE6, 0x0BE7, 0x0BE8, 0x0BEA
 
 #include "CommonTypes.h"
+#include "NetConstants.h"
 #define DEF_NOTIFY_SPAWNEVENT				0x0BAA
 #define DEF_NOTIFY_QUESTCOUNTER				0x0BE2	
 #define DEF_NOTIFY_HELDENIANSTART			0x0BEA

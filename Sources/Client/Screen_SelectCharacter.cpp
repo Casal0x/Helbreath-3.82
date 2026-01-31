@@ -88,7 +88,7 @@ void Screen_SelectCharacter::on_update()
                     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                     m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                    m_pGame->m_pLSock->bInitBufferSize(30000);
+                    m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                     m_pGame->ChangeGameMode(GameMode::Connecting);
                     m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                     m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
@@ -205,7 +205,7 @@ void Screen_SelectCharacter::on_update()
                             m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                            m_pGame->m_pLSock->bInitBufferSize(30000);
+                            m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                             m_pGame->ChangeGameMode(GameMode::Connecting);
                             m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                             m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
@@ -239,7 +239,7 @@ void Screen_SelectCharacter::on_update()
                         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
                         m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
                         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                        m_pGame->m_pLSock->bInitBufferSize(30000);
+                        m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                         m_pGame->ChangeGameMode(GameMode::Connecting);
                         m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                         m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
@@ -343,7 +343,7 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             {
                 if (CMisc::bCheckValidString(pGame->m_pCharList[i]->m_cName) == true)
                 {
-                    pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.5f));
+                    pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, 1, SpriteLib::DrawParams::AdditiveNoColorKey(0.25f));
                     pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109 + SCREENX, sY + 138 + SCREENY, false, dwTime);
                     TextLib::DrawText(GameFont::Default, sX + 112 + i * 109 + SCREENX, sY + 179 - 9 + SCREENY, pGame->m_pCharList[i]->m_cName, TextLib::TextStyle::FromColorRef(GameColors::UISelectPurple.ToColorRef()));
                     int	_sLevel = pGame->m_pCharList[i]->m_sLevel;

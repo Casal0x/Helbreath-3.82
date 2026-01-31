@@ -90,10 +90,10 @@ private:
     void DrawShiftedTransparent(int x, int y, int shiftX, int shiftY, int frame, float alpha, bool useColorKey);
 
     // CPU-based tinted drawing
-    void DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int16_t b, bool useColorKey);
+    void DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int16_t b, bool useColorKey, bool isColorReplace = false);
 
     // CPU-based transparent + tinted drawing
-    void DrawTintedTransparent(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool useColorKey);
+    void DrawTintedTransparent(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool useColorKey, bool isColorReplace = false);
 
     // CPU-based shadow drawing
     void DrawShadowInternal(int x, int y, int frame, bool clipped);

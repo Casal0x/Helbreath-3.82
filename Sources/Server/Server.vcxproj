@@ -76,6 +76,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AssemblerOutput>NoListing</AssemblerOutput>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
@@ -117,6 +118,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalOptions>/MACHINE:I386 %(AdditionalOptions)</AdditionalOptions>
@@ -178,6 +180,15 @@
     <ClInclude Include="version.h" />
     <ClInclude Include="winmain.h" />
     <ClInclude Include="XSocket.h" />
+    <ClInclude Include="ServerConsole.h" />
+    <ClInclude Include="ServerCommand.h" />
+    <ClInclude Include="CmdHelp.h" />
+    <ClInclude Include="ChatLog.h" />
+    <ClInclude Include="ItemLog.h" />
+    <ClInclude Include="CmdBroadcast.h" />
+    <ClInclude Include="CmdShowChat.h" />
+    <ClInclude Include="GameChatCommand.h" />
+    <ClInclude Include="GameCmdWhisper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp" />
@@ -197,6 +208,15 @@
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="wmain.cpp" />
     <ClCompile Include="XSocket.cpp" />
+    <ClCompile Include="ServerConsole.cpp" />
+    <ClCompile Include="ServerCommand.cpp" />
+    <ClCompile Include="CmdHelp.cpp" />
+    <ClCompile Include="ChatLog.cpp" />
+    <ClCompile Include="ItemLog.cpp" />
+    <ClCompile Include="CmdBroadcast.cpp" />
+    <ClCompile Include="CmdShowChat.cpp" />
+    <ClCompile Include="GameChatCommand.cpp" />
+    <ClCompile Include="GameCmdWhisper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

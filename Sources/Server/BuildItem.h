@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include "CommonTypes.h"
+#include "NetConstants.h"
 
 class CBuildItem  
 {
@@ -40,7 +41,7 @@ public:
 
 	}
 
-	char  m_cName[21];
+	char  m_cName[DEF_ITEMNAME];
 	short m_sItemID;
 
 	int  m_iSkillLimit;

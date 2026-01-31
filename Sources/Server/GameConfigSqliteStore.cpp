@@ -824,13 +824,6 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game)
     ok &= InsertKeyValueInt(stmt, "friday-raid-time", game->m_sRaidTimeFriday);
     ok &= InsertKeyValueInt(stmt, "saturday-raid-time", game->m_sRaidTimeSaturday);
     ok &= InsertKeyValueInt(stmt, "sunday-raid-time", game->m_sRaidTimeSunday);
-    switch (game->m_bLogChatOption) {
-    case 1: ok &= InsertKeyValue(stmt, "log-chat-settings", "player"); break;
-    case 2: ok &= InsertKeyValue(stmt, "log-chat-settings", "gm"); break;
-    case 3: ok &= InsertKeyValue(stmt, "log-chat-settings", "all"); break;
-    case 4: ok &= InsertKeyValue(stmt, "log-chat-settings", "none"); break;
-    default: ok &= InsertKeyValue(stmt, "log-chat-settings", "player"); break;
-    }
     ok &= InsertKeyValueInt(stmt, "slate-success-rate", game->m_sSlateSuccessRate);
     ok &= InsertKeyValueInt(stmt, "rep-drop-modifier", game->m_cRepDropModifier);
 
@@ -927,16 +920,6 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
             game->m_sRaidTimeSaturday = (short)std::atoi(value);
         } else if (std::strcmp(key, "sunday-raid-time") == 0) {
             game->m_sRaidTimeSunday = (short)std::atoi(value);
-        } else if (std::strcmp(key, "log-chat-settings") == 0) {
-            if (_stricmp(value, "player") == 0) {
-                game->m_bLogChatOption = 1;
-            } else if (_stricmp(value, "gm") == 0) {
-                game->m_bLogChatOption = 2;
-            } else if (_stricmp(value, "all") == 0) {
-                game->m_bLogChatOption = 3;
-            } else if (_stricmp(value, "none") == 0) {
-                game->m_bLogChatOption = 4;
-            }
         } else if (std::strcmp(key, "slate-success-rate") == 0) {
             game->m_sSlateSuccessRate = (short)std::atoi(value);
         } else if (std::strcmp(key, "rep-drop-modifier") == 0) {

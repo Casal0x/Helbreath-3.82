@@ -1,1 +1,0 @@
-Loc(elvine) IP(127.0.0.1) PC(ShadowEvil):"Hello"Loc(elvine) IP(127.0.0.1) PC(ShadowEvil):"!Hello"Loc(elvine) IP(127.0.0.1) PC(ShadowEvil):"!Test one two three"

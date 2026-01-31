@@ -8,6 +8,7 @@
 #define _WINSOCKAPI_
 #include <windows.h>
 #include "CommonTypes.h"
+#include "NetConstants.h"
 
 class CPortion
 {
@@ -29,7 +30,7 @@ public:
 
 	}
 
-	char  m_cName[21];
+	char  m_cName[DEF_ITEMNAME];
 	short m_sArray[12];
 
 	int   m_iSkillLimit, m_iDifficulty;

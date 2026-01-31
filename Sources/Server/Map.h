@@ -9,6 +9,7 @@
 
 #include <windows.h>
 #include "CommonTypes.h"
+#include "NetConstants.h"
 #include "OccupyFlag.h"
 #include "Tile.h"
 #include "StrategicPoint.h"
@@ -208,7 +209,7 @@ public:
 	short sMobEventAmount;
 	int m_iTotalItemEvents;
 	struct {
-		char cItemName[21];
+		char cItemName[DEF_ITEMNAME];
 		int iAmount;
 		int iTotal;
 		int iMonth;

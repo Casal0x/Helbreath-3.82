@@ -303,7 +303,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_item_events ("
 		" map_name TEXT NOT NULL,"
 		" event_index INTEGER NOT NULL CHECK(event_index >= 0 AND event_index < 200),"
-		" item_name TEXT NOT NULL CHECK(length(item_name) <= 20),"
+		" item_name TEXT NOT NULL CHECK(length(item_name) <= 41),"
 		" amount INTEGER NOT NULL,"
 		" total_num INTEGER NOT NULL,"
 		" event_month INTEGER NOT NULL,"

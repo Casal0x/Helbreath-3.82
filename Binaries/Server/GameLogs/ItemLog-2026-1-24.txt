@@ -1,1 +1,0 @@
-(127.0.0.1) PC(ShadowEvil)	Deplete	Manufacturing Manual(1 0 0 0 0)	bsmith_2(43 32)(127.0.0.1) PC(ShadowEvil)	Deplete	Alchemy Manual(1 0 0 0 0)	gshop_2(54 42)

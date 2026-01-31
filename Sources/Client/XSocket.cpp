@@ -4,6 +4,7 @@
 
 #include "XSocket.h"
 #include "CommonTypes.h"
+#include "NetConstants.h"
 #include <cstring>
 #include <cstdio>
 
@@ -128,12 +129,10 @@ int XSocket::Poll()
 			m_WSAErr = networkEvents.iErrorCode[FD_READ_BIT];
 			return DEF_XSOCKEVENT_SOCKETERROR;
 		}
-		else {
-			int readResult = _iOnRead();
-			if (readResult != DEF_XSOCKEVENT_ONREAD) {
-				iResult = readResult;
-			}
-		}
+		// Data available - DrainToQueue() handles actual reading via recv().
+		// Do NOT call _iOnRead() here: it would consume data from the TCP
+		// stream into m_pRcvBuffer without queuing it, then DrainToQueue()
+		// would overwrite that buffer, silently losing a packet.
 	}
 
 	if (networkEvents.lNetworkEvents & FD_WRITE) {
@@ -274,7 +273,7 @@ bool XSocket::bBlockConnect(char* pAddr, int iPort)
 		}
 	}
 
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 
@@ -339,7 +338,7 @@ bool XSocket::bConnect(char* pAddr, int iPort)
 		}
 	}
 
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 
@@ -684,7 +683,7 @@ bool XSocket::bAccept(class XSocket* pXSock)
 	WSAEventSelect(pXSock->m_Sock, pXSock->m_hEvent, FD_READ | FD_WRITE | FD_CLOSE);
 
 	pXSock->m_cType = DEF_XSOCK_NORMALSOCK;
-	dwOpt = 8192 * 5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR*) & dwOpt, sizeof(dwOpt));
 

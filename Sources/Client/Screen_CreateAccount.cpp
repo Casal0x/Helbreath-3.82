@@ -212,7 +212,7 @@ void Screen_CreateAccount::_submit_create_account()
         // Connection logic
         m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort);
-        m_pGame->m_pLSock->bInitBufferSize(30000);
+        m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
         m_pGame->ChangeGameMode(GameMode::Connecting);
         m_pGame->m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;

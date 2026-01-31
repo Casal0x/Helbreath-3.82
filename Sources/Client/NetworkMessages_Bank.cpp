@@ -12,7 +12,7 @@ namespace NetworkMessageHandlers {
 	{
 		char cIndex;
 		DWORD dwCount, dwAttribute;
-		char  cName[21], cItemType, cEquipPos, cGenderLimit, cItemColor;
+		char  cName[DEF_ITEMNAME], cItemType, cEquipPos, cGenderLimit, cItemColor;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
 		WORD wWeight, wCurLifeSpan;
@@ -23,7 +23,7 @@ namespace NetworkMessageHandlers {
 
 		cIndex = static_cast<char>(pkt->bank_index);
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, 20);
+		memcpy(cName, pkt->name, DEF_ITEMNAME - 1);
 		dwCount = pkt->count;
 		cItemType = static_cast<char>(pkt->item_type);
 		cEquipPos = static_cast<char>(pkt->equip_pos);
@@ -47,7 +47,7 @@ namespace NetworkMessageHandlers {
 		if (pGame->m_pBankList[cIndex] == 0) {
 			pGame->m_pBankList[cIndex] = std::make_unique<CItem>();
 
-			memcpy(pGame->m_pBankList[cIndex]->m_cName, cName, 20);
+			memcpy(pGame->m_pBankList[cIndex]->m_cName, cName, DEF_ITEMNAME - 1);
 			pGame->m_pBankList[cIndex]->m_dwCount = dwCount;
 
 			pGame->m_pBankList[cIndex]->m_cItemType = cItemType;

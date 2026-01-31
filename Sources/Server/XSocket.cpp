@@ -230,7 +230,7 @@ bool XSocket::bConnect(char * pAddr, int iPort)
 	WSAEventSelect(m_Sock, m_hEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
 
 	// ���� �ɼ��� �����Ѵ�.
-	dwOpt = 8192*5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 	setsockopt(m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 
@@ -369,7 +369,9 @@ int XSocket::_iSend(char * cData, int iSize, bool bSaveFlag)
 				return DEF_XSOCKEVENT_SOCKETERROR;
 			}
 			else {
-				// ���������̸� ���̻� ���� �� �����Ƿ� �����ִ� �����͸� ����Ʈ�� ����ϰ� ���� 
+				// Socket blocked - mark write disabled until next FD_WRITE
+				m_bIsWriteEnabled = false;
+				// ���������̸� ���̻� ���� �� �����Ƿ� �����ִ� �����͸� ����Ʈ�� ����ϰ� ����
 				if (bSaveFlag ) {
 					iRet = _iRegisterUnsentData((cData + iOutLen), (iSize - iOutLen));
 					switch (iRet) {
@@ -495,7 +497,10 @@ int XSocket::_iSendUnsentData()
 
 			delete m_pUnsentDataList[m_sHead];
 			m_pUnsentDataList[m_sHead] = pTemp;
+			m_iUnsentDataSize[m_sHead] = m_iUnsentDataSize[m_sHead] - iRet;
 
+			// Socket blocked during drain - wait for next FD_WRITE
+			m_bIsWriteEnabled = false;
 			return DEF_XSOCKEVENT_UNSENTDATASENDBLOCK;
 		}
 	}
@@ -623,9 +628,10 @@ bool XSocket::bAccept(class XSocket * pXSock)
 
 	// Accept�� ������ ���� �������� �ʱ�ȭ �ȴ�.
 	pXSock->m_cType = DEF_XSOCK_NORMALSOCK;
+	pXSock->m_bIsWriteEnabled = true; // Socket is writable immediately after accept
 
 	// ���� �ɼ��� �����Ѵ�.
-	dwOpt = 8192*5;
+	dwOpt = DEF_MSGBUFFERSIZE * 2;
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_RCVBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 	setsockopt(pXSock->m_Sock, SOL_SOCKET, SO_SNDBUF, (const char FAR *)&dwOpt, sizeof(dwOpt));
 

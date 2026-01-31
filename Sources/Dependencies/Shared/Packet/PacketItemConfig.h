@@ -2,6 +2,7 @@
 
 #include "PacketCommon.h"
 #include "PacketHeaders.h"
+#include "NetConstants.h"
 #include <cstdint>
 
 namespace hb {
@@ -17,7 +18,7 @@ HB_PACK_BEGIN
 struct HB_PACKED PacketItemConfigEntry
 {
 	int16_t  itemId;                // Item ID number
-	char     name[21];              // Item display name (fixed size, null-padded)
+	char     name[DEF_ITEMNAME];    // Item display name (fixed size, null-padded)
 	int8_t   itemType;              // Item type (see ItemType enum)
 	int8_t   equipPos;              // Equipment position (see EquipPos enum)
 	int16_t  effectType;            // Primary effect type

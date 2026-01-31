@@ -22,7 +22,7 @@ void HandleFishChance(CGame* pGame, char* pData)
 void HandleEventFishMode(CGame* pGame, char* pData)
 {
 	short sSprite, sSpriteFrame;
-	char cName[21];
+	char cName[DEF_ITEMNAME];
 	WORD wPrice;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEventFishMode>(
@@ -34,7 +34,7 @@ void HandleEventFishMode(CGame* pGame, char* pData)
 	sSpriteFrame = static_cast<short>(pkt->sprite_frame);
 
 	std::memset(cName, 0, sizeof(cName));
-	memcpy(cName, pkt->name, 20);
+	memcpy(cName, pkt->name, sizeof(pkt->name));
 
 	pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Fishing, 0, 0, wPrice, cName);
 	pGame->m_dialogBoxManager.Info(DialogBoxId::Fishing).sV3 = sSprite;

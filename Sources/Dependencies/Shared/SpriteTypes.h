@@ -146,6 +146,28 @@ struct DrawParams {
         return p;
     }
 
+    // Additive without color key - matches original PutTransSprite_NoColorKey
+    // Black pixels naturally become transparent through additive blending (adding 0 = no change)
+    static DrawParams AdditiveNoColorKey(float a = 1.0f) {
+        DrawParams p;
+        p.alpha = a;
+        p.useColorKey = false;
+        p.blendMode = BlendMode::Additive;
+        return p;
+    }
+
+    // Additive with tint offset and no color key - matches original PutTransSpriteRGB
+    // Applies RGB offset to source channels before additive blending
+    static DrawParams AdditiveTinted(int16_t r, int16_t g, int16_t b) {
+        DrawParams p;
+        p.tintR = r;
+        p.tintG = g;
+        p.tintB = b;
+        p.useColorKey = false;
+        p.blendMode = BlendMode::Additive;
+        return p;
+    }
+
     // Additive with color boost for light effects - multiplies sprite by bright color before adding
     static DrawParams AdditiveColored(int16_t r, int16_t g, int16_t b, float a = 1.0f) {
         DrawParams p;

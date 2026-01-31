@@ -539,10 +539,10 @@ void DDrawSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& par
     }
     else if (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) {
         if (params.alpha < 1.0f) {
-            DrawTintedTransparent(x, y, frame, params.tintR, params.tintG, params.tintB, params.alpha, params.useColorKey);
+            DrawTintedTransparent(x, y, frame, params.tintR, params.tintG, params.tintB, params.alpha, params.useColorKey, params.isColorReplace);
         }
         else {
-            DrawTinted(x, y, frame, params.tintR, params.tintG, params.tintB, params.useColorKey);
+            DrawTinted(x, y, frame, params.tintR, params.tintG, params.tintB, params.useColorKey, params.isColorReplace);
         }
     }
     else if (params.alpha < 1.0f) {
@@ -1024,7 +1024,7 @@ void DDrawSprite::DrawShiftedTransparent(int x, int y, int shiftX, int shiftY, i
 // CPU-Based Tinted Drawing
 //////////////////////////////////////////////////////////////////////
 
-void DDrawSprite::DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int16_t b, bool useColorKey)
+void DDrawSprite::DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int16_t b, bool useColorKey, bool isColorReplace)
 {
     m_rcBound.top = -1;
     m_bOnCriticalSection = true;
@@ -1052,9 +1052,26 @@ void DDrawSprite::DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int1
         return;
     }
 
-    int iRedPlus255 = r + 255;
-    int iGreenPlus255 = g + 255;
-    int iBluePlus255 = b + 255;
+    int iRedPlus255, iGreenPlus255, iBluePlus255;
+
+    if (isColorReplace) {
+        // Color replacement (text, UI): use values directly without scaling
+        iRedPlus255 = r + 255;
+        iGreenPlus255 = g + 255;
+        iBluePlus255 = b + 255;
+    }
+    else {
+        // Sprite tinting (frozen, items): scale 8bpp to 16bpp
+        // R/B: 8bpp -> 5-bit (multiply by 31/255)
+        // G: 8bpp -> 6-bit (multiply by 63/255)
+        int scaledR = (r * 31) / 255;
+        int scaledG = (g * 63) / 255;
+        int scaledB = (b * 31) / 255;
+
+        iRedPlus255 = scaledR + 255;
+        iGreenPlus255 = scaledG + 255;
+        iBluePlus255 = scaledB + 255;
+    }
 
     switch (m_pDDraw->m_cPixelFormat) {
     case 1: // RGB565
@@ -1097,7 +1114,7 @@ void DDrawSprite::DrawTinted(int x, int y, int frame, int16_t r, int16_t g, int1
 // CPU-Based Tinted + Transparent Drawing
 //////////////////////////////////////////////////////////////////////
 
-void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool useColorKey)
+void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int16_t g, int16_t b, float alpha, bool useColorKey, bool isColorReplace)
 {
     m_rcBound.top = -1;
     m_bOnCriticalSection = true;
@@ -1125,9 +1142,26 @@ void DDrawSprite::DrawTintedTransparent(int x, int y, int frame, int16_t r, int1
         return;
     }
 
-    int iRedPlus255 = r + 255;
-    int iGreenPlus255 = g + 255;
-    int iBluePlus255 = b + 255;
+    int iRedPlus255, iGreenPlus255, iBluePlus255;
+
+    if (isColorReplace) {
+        // Color replacement (text, UI): use values directly without scaling
+        iRedPlus255 = r + 255;
+        iGreenPlus255 = g + 255;
+        iBluePlus255 = b + 255;
+    }
+    else {
+        // Sprite tinting (frozen, items): scale 8bpp to 16bpp
+        // R/B: 8bpp -> 5-bit (multiply by 31/255)
+        // G: 8bpp -> 6-bit (multiply by 63/255)
+        int scaledR = (r * 31) / 255;
+        int scaledG = (g * 63) / 255;
+        int scaledB = (b * 31) / 255;
+
+        iRedPlus255 = scaledR + 255;
+        iGreenPlus255 = scaledG + 255;
+        iBluePlus255 = scaledB + 255;
+    }
 
     // Tinted transparent drawing with variable alpha
     // 1. Apply tint to source
@@ -1424,13 +1458,19 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
         return;
     }
 
+    // Tint offset mode: apply RGB offset to source channels before additive blend
+    // This matches the original PutTransSpriteRGB behavior
+    bool useTintOffset = !isColorReplace && (r != 0 || g != 0 || b != 0);
+    int rOff255 = r + 255;
+    int gOff255 = g + 255;
+    int bOff255 = b + 255;
+
     // Color multipliers for isColorReplace mode (normalized to 0-31/63 range)
-    // r,g,b are in 0-255 range, we need to scale them
     float rMult = isColorReplace ? (r / 255.0f) : 1.0f;
     float gMult = isColorReplace ? (g / 255.0f) : 1.0f;
     float bMult = isColorReplace ? (b / 255.0f) : 1.0f;
 
-    // Apply alpha to the multipliers
+    // Apply alpha to the multipliers (not used when tint offset mode is active)
     rMult *= alpha;
     gMult *= alpha;
     bMult *= alpha;
@@ -1445,10 +1485,17 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
                     int srcG = (pSrc[ix] & 0x7E0) >> 5;
                     int srcB = (pSrc[ix] & 0x1F);
 
-                    // Apply color multiplier
-                    srcR = static_cast<int>(srcR * rMult);
-                    srcG = static_cast<int>(srcG * gMult);
-                    srcB = static_cast<int>(srcB * bMult);
+                    if (useTintOffset) {
+                        // Apply tint offset via lookup tables, then scale by alpha
+                        srcR = static_cast<int>(G_iAddTable31[srcR][rOff255] * alpha);
+                        srcG = static_cast<int>(G_iAddTable63[srcG][gOff255] * alpha);
+                        srcB = static_cast<int>(G_iAddTable31[srcB][bOff255] * alpha);
+                    } else {
+                        // Apply color multiplier (multiply mode or pure additive)
+                        srcR = static_cast<int>(srcR * rMult);
+                        srcG = static_cast<int>(srcG * gMult);
+                        srcB = static_cast<int>(srcB * bMult);
+                    }
 
                     // Extract destination RGB
                     int dstR = (pDst[ix] & 0xF800) >> 11;
@@ -1477,10 +1524,15 @@ void DDrawSprite::DrawAdditive(int x, int y, int frame, int16_t r, int16_t g, in
                     int srcG = (pSrc[ix] & 0x3E0) >> 5;
                     int srcB = (pSrc[ix] & 0x1F);
 
-                    // Apply color multiplier
-                    srcR = static_cast<int>(srcR * rMult);
-                    srcG = static_cast<int>(srcG * gMult);
-                    srcB = static_cast<int>(srcB * bMult);
+                    if (useTintOffset) {
+                        srcR = static_cast<int>(G_iAddTable31[srcR][rOff255] * alpha);
+                        srcG = static_cast<int>(G_iAddTable31[srcG][gOff255] * alpha);
+                        srcB = static_cast<int>(G_iAddTable31[srcB][bOff255] * alpha);
+                    } else {
+                        srcR = static_cast<int>(srcR * rMult);
+                        srcG = static_cast<int>(srcG * gMult);
+                        srcB = static_cast<int>(srcB * bMult);
+                    }
 
                     // Extract destination RGB
                     int dstR = (pDst[ix] & 0x7C00) >> 10;

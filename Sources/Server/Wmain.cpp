@@ -33,6 +33,11 @@
 #include "UserMessages.h"
 // #include "resource.h" - REMOVED: No resources needed for console mode
 #include "LoginServer.h"
+#include "ServerConsole.h"
+#include "ServerCommand.h"
+#include "ChatLog.h"
+#include "ItemLog.h"
+#include "GameChatCommand.h"
 
 void PutAdminLogFileList(char* cStr);
 void PutHackLogFileList(char* cStr);
@@ -725,6 +730,12 @@ int EventLoop()
 				// Poll all sockets for network events
 				PollAllSockets();
 
+				// Poll console for command input
+				char szCmd[256];
+				if (GetServerConsole().PollInput(szCmd, sizeof(szCmd))) {
+					ServerCommandManager::Get().ProcessCommand(szCmd);
+				}
+
 				// Debug: Show polling stats every 60 seconds (optional, can be removed)
 				if (dwNow - dwLastDebug > 60000) {
 					int activeClients = 0;
@@ -769,7 +780,13 @@ void Initialize()
 		return;
 	}
 
-	// ���� ����� Ÿ�̸� 
+	ServerCommandManager::Get().Initialize(G_pGame);
+	ChatLog::Get().Initialize();
+	ItemLog::Get().Initialize();
+	GameChatCommandManager::Get().Initialize(G_pGame);
+	GetServerConsole().Init();
+
+	// ���� ����� Ÿ�̸�
 	G_mmTimer = _StartTimer(300);
 
 	// MODERNIZED: Removed G_hWnd parameter, using WSAEventSelect
@@ -950,17 +967,7 @@ namespace
 			st.wHour, st.wMinute, st.wSecond, GetLevelName(level), trimmed);
 
 		if (writeConsole) {
-			HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-			CONSOLE_SCREEN_BUFFER_INFO info = {};
-			WORD original = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-			if (hOut != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hOut, &info)) {
-				original = info.wAttributes;
-				SetConsoleTextAttribute(hOut, GetLevelColor(level));
-			}
-			printf("%s\n", line);
-			if (hOut != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hOut, &info)) {
-				SetConsoleTextAttribute(hOut, original);
-			}
+			GetServerConsole().WriteLine(line, GetLevelColor(level));
 		}
 
 		WriteServerLogLine(line);
@@ -1136,26 +1143,6 @@ void PutXSocketLogFileList(char* cStr)
 	SYSTEMTIME SysTime;
 
 	pFile = fopen("GameLogs\\XSocket.log", "at");
-	if (pFile == 0) return;
-
-	std::memset(cBuffer, 0, sizeof(cBuffer));
-
-	GetLocalTime(&SysTime);
-	std::snprintf(cBuffer, sizeof(cBuffer), "(%4d:%2d:%2d:%2d:%2d) - ", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
-	strcat(cBuffer, cStr);
-	strcat(cBuffer, "\n");
-
-	fwrite(cBuffer, 1, strlen(cBuffer), pFile);
-	fclose(pFile);
-}
-
-void PutItemLogFileList(char* cStr)
-{
-	FILE* pFile;
-	char cBuffer[512];
-	SYSTEMTIME SysTime;
-
-	pFile = fopen("GameLogs\\ItemEvents.log", "at");
 	if (pFile == 0) return;
 
 	std::memset(cBuffer, 0, sizeof(cBuffer));

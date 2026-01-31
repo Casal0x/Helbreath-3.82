@@ -1,6 +1,8 @@
 
 // NetMessages.h
 
+#include "NetConstants.h"
+
 #define DEF_MSGTYPE_CONFIRM					0x0F14
 #define DEF_MSGTYPE_REJECT					0x0F15
 

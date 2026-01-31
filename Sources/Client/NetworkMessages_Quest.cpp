@@ -38,7 +38,7 @@ void HandleQuestContents(CGame* pGame, char* pData)
 void HandleQuestReward(CGame* pGame, char* pData)
 {
 	short sWho, sFlag;
-	char cRewardName[21], cTxt[120];
+	char cRewardName[DEF_ITEMNAME], cTxt[120];
 	int iAmount, iIndex, iPreCon;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestReward>(
 		pData, sizeof(hb::net::PacketNotifyQuestReward));
@@ -47,7 +47,7 @@ void HandleQuestReward(CGame* pGame, char* pData)
 	sFlag = pkt->flag;
 	iAmount = pkt->amount;
 	std::memset(cRewardName, 0, sizeof(cRewardName));
-	memcpy(cRewardName, pkt->reward_name, 20);
+	memcpy(cRewardName, pkt->reward_name, sizeof(pkt->reward_name));
 	iPreCon = pGame->m_pPlayer->m_iContribution;
 	pGame->m_pPlayer->m_iContribution = pkt->contribution;
 

@@ -17,14 +17,14 @@
 #include "GuildsMan.h"
 #include "Magic.h"
 #include "GlobalDef.h"
+#include "NetConstants.h"
 #include <fstream>
 #include <vector>
 #include <string>
 using namespace std;
 
-#define DEF_CLIENTSOCKETBLOCKLIMIT	150  // MODERNIZED: Increased from 15 to handle 50+ entities sending updates
+#define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
 
-#define DEF_MSGBUFFERSIZE	60000  // MODERNIZED: Increased from 30000 to handle more entity data
 #define DEF_MAXITEMS		50
 #define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
 #define DEF_MAXGUILDSMAN	128 // �ִ� ���� �� 
@@ -251,7 +251,7 @@ public:
 	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
 	int   m_iExchangeH;					// Client ID to Exchanging with 
 	char  m_cExchangeName[11];			// Name of Client to Exchanging with 
-	char  m_cExchangeItemName[4][21];	// Name of Item to exchange 
+	char  m_cExchangeItemName[4][DEF_ITEMNAME];	// Name of Item to exchange 
 
 	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
 	int   m_iExchangeItemAmount[4];		// Ammount to exchange with
