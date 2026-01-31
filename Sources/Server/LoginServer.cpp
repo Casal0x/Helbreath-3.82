@@ -602,12 +602,12 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateAccountRequest>(pData, sizeof(hb::net::CreateAccountRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::strncpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
 	LowercaseInPlace(cName, sizeof(cName));
-	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
-	std::memcpy(cEmailAddr, req->email, DEF_ACCOUNT_EMAIL - 1);
-	std::memcpy(cQuiz, req->quiz, DEF_ACCOUNT_QUIZ - 1);
-	std::memcpy(cAnswer, req->answer, DEF_ACCOUNT_ANSWER - 1);
+	std::strncpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::strncpy(cEmailAddr, req->email, DEF_ACCOUNT_EMAIL - 1);
+	std::strncpy(cQuiz, req->quiz, DEF_ACCOUNT_QUIZ - 1);
+	std::strncpy(cAnswer, req->answer, DEF_ACCOUNT_ANSWER - 1);
 
 	if ((strlen(cName) == 0) || (strlen(cPassword) == 0) ||
 		(strlen(cEmailAddr) == 0))
