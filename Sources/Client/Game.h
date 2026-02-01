@@ -374,7 +374,7 @@ void _LoadShopMenuContents(char cType);
 		short price;
 	} m_stRepairAll[DEF_MAXITEMS];
 
-	bool _ItemDropHistory(char * ItemName);
+	bool _ItemDropHistory(short sItemID);
 	CGame();
 	virtual ~CGame();
 
@@ -624,7 +624,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 
 	int iNpcHP, iNpcMaxHP;
 
-	char m_cItemDrop[25][25];
+	short m_sItemDropID[25];
 
 	RECT m_rcPlayerRect, m_rcBodyRect;
 

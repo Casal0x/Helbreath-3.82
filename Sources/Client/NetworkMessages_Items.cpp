@@ -46,10 +46,12 @@ namespace NetworkMessageHandlers {
 		wsprintf(cTxt, NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
 		pGame->AddEventList(cTxt, 10);
 
+		short sItemID = pkt->item_id;
+
 		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1) == 0))
+				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
 					return;
@@ -59,7 +61,7 @@ namespace NetworkMessageHandlers {
 		short nX, nY;
 		for (i = 0; i < DEF_MAXITEMS; i++)
 		{
-			if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1) == 0))
+			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
 				nX = pGame->m_pItemList[i]->m_sX;
 				nY = pGame->m_pItemList[i]->m_sY;
@@ -88,11 +90,15 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
 				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
 				pGame->m_pItemList[i]->m_wWeight = wWeight;
 				pGame->m_pItemList[i]->m_sSprite = sSprite;
 				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
+				pGame->m_pItemList[i]->m_sIDnum = sItemID;
+				if (sItemID > 0 && pGame->m_pItemConfigList[sItemID] != nullptr) {
+					pGame->m_pItemList[i]->m_wMaxLifeSpan = pGame->m_pItemConfigList[sItemID]->m_wMaxLifeSpan;
+				}
+				pGame->m_pItemList[i]->PopulateDisplayName();
 
 				for (j = 0; j < DEF_MAXITEMS; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
@@ -149,10 +155,12 @@ namespace NetworkMessageHandlers {
 
 		pGame->m_pMapData->bSetItem(pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, 0, 0, 0, false);
 
+		short sItemID = pkt->item_id;
+
 		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1) == 0))
+				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
 					pGame->m_bIsItemDisabled[i] = false;
@@ -163,7 +171,7 @@ namespace NetworkMessageHandlers {
 		short nX, nY;
 		for (i = 0; i < DEF_MAXITEMS; i++)
 		{
-			if ((pGame->m_pItemList[i] != 0) && (memcmp(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1) == 0))
+			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
 				nX = pGame->m_pItemList[i]->m_sX;
 				nY = pGame->m_pItemList[i]->m_sY;
@@ -192,13 +200,17 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
 				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
 				pGame->m_pItemList[i]->m_wWeight = wWeight;
 				pGame->m_pItemList[i]->m_sSprite = sSprite;
 				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
 				pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
 				pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
+				pGame->m_pItemList[i]->m_sIDnum = sItemID;
+				if (sItemID > 0 && pGame->m_pItemConfigList[sItemID] != nullptr) {
+					pGame->m_pItemList[i]->m_wMaxLifeSpan = pGame->m_pItemConfigList[sItemID]->m_wMaxLifeSpan;
+				}
+				pGame->m_pItemList[i]->PopulateDisplayName();
 
 				pGame->_bCheckBuildItemStatus();
 
@@ -251,10 +263,14 @@ namespace NetworkMessageHandlers {
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
 		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
 
-		if (memcmp(pGame->m_pItemList[sItemIndex]->m_cName, "AngelicPendant", 14) == 0) 
-			pGame->PlaySound('E', 53, 0);
-		else 
-			pGame->PlaySound('E', 29, 0);
+		{
+			short sID = pGame->m_pItemList[sItemIndex]->m_sIDnum;
+			if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
+				sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
+				pGame->PlaySound('E', 53, 0);
+			else
+				pGame->PlaySound('E', 29, 0);
+		}
 	}
 
 	void HandleSetItemCount(CGame* pGame, char* pData)

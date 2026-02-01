@@ -230,10 +230,9 @@ CClient::CClient(HWND hWnd)
 
 	m_iExchangeH = 0;											// ȯ  ε 
 	std::memset(m_cExchangeName, 0, sizeof(m_cExchangeName));			// ȯ  ̸ 
-	std::memset(m_cExchangeItemName, 0, sizeof(m_cExchangeItemName));	// Exchange item name 
-
 	for(i=0; i<4; i++){
-		m_cExchangeItemIndex[i]  = -1; 
+		m_sExchangeItemID[i] = 0;
+		m_cExchangeItemIndex[i]  = -1;
 		m_iExchangeItemAmount[i] = 0;
 	}
 
