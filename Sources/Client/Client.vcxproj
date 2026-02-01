@@ -325,6 +325,7 @@
     <ClInclude Include="TileSpr.h" />
     <ClInclude Include="XSocket.h" />
     <ClInclude Include="ConfigManager.h" />
+    <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
     <ClInclude Include="CmdShowFrame.h" />
@@ -369,6 +370,7 @@
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
+    <ClCompile Include="LocalCacheManager.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />
     <ClCompile Include="DialogBox_WarningMsg.cpp" />

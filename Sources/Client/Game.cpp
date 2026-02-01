@@ -27,6 +27,7 @@
 #include "ChatCommandManager.h"
 #include "HotkeyManager.h"
 #include "DevConsole.h"
+#include "LocalCacheManager.h"
 #include "Overlay_DevConsole.h"
 
 // DialogBox system
@@ -265,17 +266,6 @@ bool CGame::bInit()
 	m_iLogServerPort = DEF_SERVER_PORT;
 	m_iGameServerPort = DEF_GSERVER_PORT;
 
-	if (bInitMagicCfgList() == false) {
-		MessageBox(G_hWnd, "MAGICCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-	// Skill
-	if (bInitSkillCfgList() == false)
-	{
-		MessageBox(G_hWnd, "SKILLCFG.TXT file contains wrong infomation.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-		return false;
-	}
-
 	// Mouse position tracking removed - use Input::GetMouseX/Y
 	m_pMapData = std::make_unique<CMapData>(this);
 	std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
@@ -298,6 +288,7 @@ bool CGame::bInit()
 
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
+	LocalCacheManager::Get().Initialize();
 
 	return true;
 }
@@ -796,8 +787,28 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	break;
 
 	case MSGID_REQUEST_INITDATA:
+	{
+		hb::net::PacketRequestInitDataEx req{};
+		req.header.msg_id = dwMsgID;
+		req.header.msg_type = 0;
+		std::memset(req.player, 0, sizeof(req.player));
+		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
+		std::memset(req.account, 0, sizeof(req.account));
+		std::memcpy(req.account, m_pPlayer->m_cAccountName, sizeof(req.account));
+		std::memset(req.password, 0, sizeof(req.password));
+		std::memcpy(req.password, m_pPlayer->m_cAccountPassword, sizeof(req.password));
+		req.is_observer = static_cast<uint8_t>(m_bIsObserverMode);
+		std::memset(req.server, 0, sizeof(req.server));
+		std::memcpy(req.server, m_cGameServerName, sizeof(req.server));
+		req.padding = 0;
+		req.itemConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Items);
+		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
+		req.skillConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Skills);
+		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
+	}
+	break;
+
 	case MSGID_REQUEST_INITPLAYER:
-		// to Game Server
 	{
 		hb::net::PacketRequestInitPlayer req{};
 		req.header.msg_id = dwMsgID;
@@ -814,8 +825,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.padding = 0;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
-
-	//m_bIsObserverMode = false;
 	break;
 	case MSGID_LEVELUPSETTINGS:
 	{
@@ -1883,6 +1892,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 {
+	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Items, pData, dwMsgSize);
+
 	// Parse binary item config packet
 	constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
@@ -1952,8 +1963,130 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	for (int j = 0; j < 5000; j++) {
 		if (m_pItemConfigList[j] != 0) totalLoaded++;
 	}
-	if (totalLoaded >= totalItems) {
-		printf("[ITEMCFG] Received all %d item configs\n", totalLoaded);
+	if (totalLoaded >= totalItems && !LocalCacheManager::Get().IsReplaying()) {
+		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Items)) {
+			DevConsole::Get().Printf("[ITEMCFG] Downloaded %d item configs, cached", totalLoaded);
+		} else {
+			DevConsole::Get().Printf("[ITEMCFG] Downloaded %d item configs", totalLoaded);
+		}
+	}
+
+	return true;
+}
+
+bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
+{
+	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Magic, pData, dwMsgSize);
+
+	constexpr size_t headerSize = sizeof(hb::net::PacketMagicConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
+
+	if (dwMsgSize < headerSize) {
+		return false;
+	}
+
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketMagicConfigHeader*>(pData);
+	uint16_t magicCount = pktHeader->magicCount;
+	uint16_t totalMagics = pktHeader->totalMagics;
+
+	if (dwMsgSize < headerSize + (magicCount * entrySize)) {
+		return false;
+	}
+
+	const auto* entries = reinterpret_cast<const hb::net::PacketMagicConfigEntry*>(pData + headerSize);
+
+	for (uint16_t i = 0; i < magicCount; i++) {
+		const auto& entry = entries[i];
+		int magicId = entry.magicId;
+
+		if (magicId < 0 || magicId >= DEF_MAXMAGICTYPE) {
+			continue;
+		}
+
+		if (m_pMagicCfgList[magicId] != 0) {
+			m_pMagicCfgList[magicId].reset();
+		}
+
+		m_pMagicCfgList[magicId] = std::make_unique<CMagic>();
+		CMagic* pMagic = m_pMagicCfgList[magicId].get();
+
+		std::memset(pMagic->m_cName, 0, sizeof(pMagic->m_cName));
+		std::strncpy(pMagic->m_cName, entry.name, sizeof(pMagic->m_cName) - 1);
+		pMagic->m_sValue1 = entry.manaCost;
+		pMagic->m_sValue2 = entry.intLimit;
+		pMagic->m_sValue3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
+		pMagic->m_bIsVisible = (entry.isVisible != 0);
+	}
+
+	// Log total count on last packet
+	int totalLoaded = 0;
+	for (int j = 0; j < DEF_MAXMAGICTYPE; j++) {
+		if (m_pMagicCfgList[j] != 0) totalLoaded++;
+	}
+	if (totalLoaded >= totalMagics && !LocalCacheManager::Get().IsReplaying()) {
+		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Magic)) {
+			DevConsole::Get().Printf("[MAGICCFG] Downloaded %d magic configs, cached", totalLoaded);
+		} else {
+			DevConsole::Get().Printf("[MAGICCFG] Downloaded %d magic configs", totalLoaded);
+		}
+	}
+
+	return true;
+}
+
+bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
+{
+	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Skills, pData, dwMsgSize);
+
+	constexpr size_t headerSize = sizeof(hb::net::PacketSkillConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
+
+	if (dwMsgSize < headerSize) {
+		return false;
+	}
+
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketSkillConfigHeader*>(pData);
+	uint16_t skillCount = pktHeader->skillCount;
+	uint16_t totalSkills = pktHeader->totalSkills;
+
+	if (dwMsgSize < headerSize + (skillCount * entrySize)) {
+		return false;
+	}
+
+	const auto* entries = reinterpret_cast<const hb::net::PacketSkillConfigEntry*>(pData + headerSize);
+
+	for (uint16_t i = 0; i < skillCount; i++) {
+		const auto& entry = entries[i];
+		int skillId = entry.skillId;
+
+		if (skillId < 0 || skillId >= DEF_MAXSKILLTYPE) {
+			continue;
+		}
+
+		if (m_pSkillCfgList[skillId] != 0) {
+			m_pSkillCfgList[skillId].reset();
+		}
+
+		m_pSkillCfgList[skillId] = std::make_unique<CSkill>();
+		CSkill* pSkill = m_pSkillCfgList[skillId].get();
+
+		std::memset(pSkill->m_cName, 0, sizeof(pSkill->m_cName));
+		std::strncpy(pSkill->m_cName, entry.name, sizeof(pSkill->m_cName) - 1);
+		pSkill->m_bIsUseable = (entry.isUseable != 0);
+		pSkill->m_cUseMethod = entry.useMethod;
+	}
+
+	// Log total count on last packet
+	int totalLoaded = 0;
+	for (int j = 0; j < DEF_MAXSKILLTYPE; j++) {
+		if (m_pSkillCfgList[j] != 0) totalLoaded++;
+	}
+	if (totalLoaded >= totalSkills && !LocalCacheManager::Get().IsReplaying()) {
+		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Skills)) {
+			DevConsole::Get().Printf("[SKILLCFG] Downloaded %d skill configs, cached", totalLoaded);
+		} else {
+			DevConsole::Get().Printf("[SKILLCFG] Downloaded %d skill configs", totalLoaded);
+		}
 	}
 
 	return true;
@@ -1967,8 +2100,58 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	m_dwLastNetMsgTime = GameClock::GetTimeMS();
 	m_dwLastNetMsgSize = dwMsgSize;
 	switch (header->msg_id) {
+	case MSGID_RESPONSE_CONFIGCACHESTATUS:
+	{
+		const auto* cachePkt = hb::net::PacketCast<hb::net::PacketResponseConfigCacheStatus>(
+			pData, sizeof(hb::net::PacketResponseConfigCacheStatus));
+		if (!cachePkt) break;
+
+		struct ReplayCtx { CGame* game; };
+		ReplayCtx ctx{ this };
+
+		if (cachePkt->itemCacheValid) {
+			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
+				[](char* p, uint32_t s, void* c) -> bool {
+					static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
+					return true;
+				}, &ctx);
+			DevConsole::Get().Printf("[ITEMCFG] Loaded from cache");
+		} else {
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
+		}
+
+		if (cachePkt->magicCacheValid) {
+			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Magic,
+				[](char* p, uint32_t s, void* c) -> bool {
+					static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
+					return true;
+				}, &ctx);
+			DevConsole::Get().Printf("[MAGICCFG] Loaded from cache");
+		} else {
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
+		}
+
+		if (cachePkt->skillCacheValid) {
+			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Skills,
+				[](char* p, uint32_t s, void* c) -> bool {
+					static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
+					return true;
+				}, &ctx);
+			DevConsole::Get().Printf("[SKILLCFG] Loaded from cache");
+		} else {
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+		}
+	}
+	break;
+
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
+		break;
+	case MSGID_MAGICCONFIGURATIONCONTENTS:
+		_bDecodeMagicConfigFileContents(pData, dwMsgSize);
+		break;
+	case MSGID_SKILLCONFIGURATIONCONTENTS:
+		_bDecodeSkillConfigFileContents(pData, dwMsgSize);
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
 		ResponseChargedTeleport(pData);
@@ -3082,153 +3265,6 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	}
 }
 
-bool CGame::bInitMagicCfgList()
-{
-	char cFn[255], cTemp[255];
-	char* pContents, * token;
-	char seps[] = "= ,\t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int  iMagicCfgListIndex = 0;
-	HANDLE hFile;
-	FILE* pFile;
-	uint32_t dwFileSize;
-
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFn, 0, sizeof(cFn));
-
-	// CLEROTH - MAGIC CFG
-	strcpy(cTemp, "magiccfg.txt");
-
-	strcat(cFn, "contents");
-	strcat(cFn, "\\");
-	strcat(cFn, "\\");
-	strcat(cFn, cTemp);
-
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) return false;
-	else {
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
-		fclose(pFile);
-	}
-
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		if (cReadModeA != 0) {
-			switch (cReadModeA) {
-			case 1:
-				switch (cReadModeB) {
-				case 1:
-					if (_bGetIsStringIsNumber(token) == false)
-					{
-						delete[] pContents;
-						return false;
-					}
-					if (m_pMagicCfgList[atoi(token)] != 0)
-					{
-						delete[] pContents;
-						return false;
-					}
-					m_pMagicCfgList[atoi(token)] = std::make_unique<CMagic>();
-					iMagicCfgListIndex = atoi(token);
-
-					cReadModeB = 2;
-					break;
-
-				case 2:
-					std::memset(m_pMagicCfgList[iMagicCfgListIndex]->m_cName, 0, sizeof(m_pMagicCfgList[iMagicCfgListIndex]->m_cName));
-					memcpy(m_pMagicCfgList[iMagicCfgListIndex]->m_cName, token, strlen(token));
-					cReadModeB = 3;
-					break;
-
-				case 3: // m_sValue1
-					if (_bGetIsStringIsNumber(token) == false) {
-						delete[] pContents;
-						return false;
-					}
-					m_pMagicCfgList[iMagicCfgListIndex]->m_sValue1 = atoi(token);
-					cReadModeB = 4;
-					break;
-
-				case 4: // m_sValue2	// INT
-					if (_bGetIsStringIsNumber(token) == false) {
-						delete[] pContents;
-						return false;
-					}
-					m_pMagicCfgList[iMagicCfgListIndex]->m_sValue2 = atoi(token);
-					cReadModeB = 5;
-					break;
-
-				case 5: // m_sValue3	// COST
-					if (_bGetIsStringIsNumber(token) == false) {
-						delete[] pContents;
-						return false;
-					}
-					m_pMagicCfgList[iMagicCfgListIndex]->m_sValue3 = atoi(token);
-					cReadModeB = 6;
-					break;
-
-					// CLEROTH MAGIC CFG
-				case 6: // m_sValue4	// STR
-					if (_bGetIsStringIsNumber(token) == false)
-					{
-						delete[] pContents;
-						return false;
-					}
-					m_pMagicCfgList[iMagicCfgListIndex]->m_sValue4 = atoi(token);
-					cReadModeB = 7;
-					break;
-
-				case 7: // m_sValue5
-					cReadModeB = 8;
-					break;
-
-				case 8: // m_sValue6
-					cReadModeB = 9;
-					break;
-
-				case 9: // m_bIsVisible
-					if (_bGetIsStringIsNumber(token) == false)
-					{
-						delete[] pContents;
-						return false;
-					}
-					if (atoi(token) == 0) m_pMagicCfgList[iMagicCfgListIndex]->m_bIsVisible = false;
-					else m_pMagicCfgList[iMagicCfgListIndex]->m_bIsVisible = true;
-					cReadModeA = 0;
-					cReadModeB = 0;
-					break;
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-		else {
-			if (memcmp(token, "magic", 5) == 0) {
-				cReadModeA = 1;
-				cReadModeB = 1;
-			}
-		}
-		token = strtok(NULL, seps);
-	}
-
-	delete[] pContents;
-
-	if ((cReadModeA != 0) || (cReadModeB != 0)) {
-		return false;
-	}
-
-	return true;
-}
-
 bool CGame::bCheckImportantFile()
 {
 	HANDLE hFile;
@@ -3251,111 +3287,6 @@ bool CGame::bCheckImportantFile()
 	//	}
 
 	CloseHandle(hFile);
-	return true;
-}
-
-bool CGame::bInitSkillCfgList()
-{
-	char cFn[255], cTemp[255];
-	char* pContents, * token;
-	char seps[] = "= ,\t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int  iSkillCfgListIndex = 0;
-	HANDLE hFile;
-	FILE* pFile;
-	uint32_t dwFileSize;
-
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFn, 0, sizeof(cFn));
-
-	strcpy(cTemp, "Skillcfg.txt");
-	strcat(cFn, "contents");
-	strcat(cFn, "\\");
-	strcat(cFn, "\\");
-	strcat(cFn, cTemp);
-
-	hFile = CreateFile(cFn, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFn, "rt");
-	if (pFile == 0) return false;
-	else {
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
-		fclose(pFile);
-	}
-
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		if (cReadModeA != 0) {
-			switch (cReadModeA) {
-			case 1:
-				switch (cReadModeB) {
-				case 1:
-					if (_bGetIsStringIsNumber(token) == false)
-					{
-						delete[] pContents;
-						return false;
-					}
-					if (m_pSkillCfgList[atoi(token)] != 0)
-					{
-						delete[] pContents;
-						return false;
-					}
-					m_pSkillCfgList[atoi(token)] = std::make_unique<CSkill>();
-					iSkillCfgListIndex = atoi(token);
-					cReadModeB = 2;
-					break;
-
-				case 2:
-					std::memset(m_pSkillCfgList[iSkillCfgListIndex]->m_cName, 0, sizeof(m_pSkillCfgList[iSkillCfgListIndex]->m_cName));
-					memcpy(m_pSkillCfgList[iSkillCfgListIndex]->m_cName, token, strlen(token));
-					cReadModeB = 3;
-					break;
-
-				case 3: // m_bIsUseable
-					if (_bGetIsStringIsNumber(token) == false) {
-						delete[] pContents;
-						return false;
-					}
-					m_pSkillCfgList[iSkillCfgListIndex]->m_bIsUseable = (bool)atoi(token);
-					cReadModeB = 4;
-					break;
-
-				case 4: // m_cUseMethod
-					if (_bGetIsStringIsNumber(token) == false) {
-						delete[] pContents;
-						return false;
-					}
-					m_pSkillCfgList[iSkillCfgListIndex]->m_cUseMethod = atoi(token);
-					cReadModeA = 0;
-					cReadModeB = 0;
-					break;
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-		else {
-			if (memcmp(token, "skill", 5) == 0) {
-				cReadModeA = 1;
-				cReadModeB = 1;
-			}
-		}
-		token = strtok(NULL, seps);
-	}
-
-	delete[] pContents;
-
-	if ((cReadModeA != 0) || (cReadModeB != 0)) {
-		return false;
-	}
-
 	return true;
 }
 

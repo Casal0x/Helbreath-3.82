@@ -318,7 +318,9 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " value3 INTEGER NOT NULL,"
         " value4 INTEGER NOT NULL,"
         " value5 INTEGER NOT NULL,"
-        " value6 INTEGER NOT NULL"
+        " value6 INTEGER NOT NULL,"
+        " is_useable INTEGER NOT NULL DEFAULT 0,"
+        " use_method INTEGER NOT NULL DEFAULT 0"
         ");"
         "CREATE TABLE IF NOT EXISTS quest_configs ("
         " quest_index INTEGER PRIMARY KEY,"
@@ -1505,8 +1507,9 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
 
     const char* sql =
         "INSERT INTO skill_configs("
-        " skill_id, name, skill_type, value1, value2, value3, value4, value5, value6"
-        ") VALUES(?,?,?,?,?,?,?,?,?);";
+        " skill_id, name, skill_type, value1, value2, value3, value4, value5, value6,"
+        " is_useable, use_method"
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1533,6 +1536,8 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
         ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue4) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue5) == SQLITE_OK);
         ok &= (sqlite3_bind_int(stmt, col++, skill->m_sValue6) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_bIsUseable ? 1 : 0) == SQLITE_OK);
+        ok &= (sqlite3_bind_int(stmt, col++, skill->m_cUseMethod) == SQLITE_OK);
 
         if (!ok || sqlite3_step(stmt) != SQLITE_DONE) {
             sqlite3_finalize(stmt);
@@ -1561,7 +1566,8 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
     }
 
     const char* sql =
-        "SELECT skill_id, name, skill_type, value1, value2, value3, value4, value5, value6"
+        "SELECT skill_id, name, skill_type, value1, value2, value3, value4, value5, value6,"
+        " is_useable, use_method"
         " FROM skill_configs ORDER BY skill_id;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -1585,6 +1591,8 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
         skill->m_sValue4 = (short)sqlite3_column_int(stmt, col++);
         skill->m_sValue5 = (short)sqlite3_column_int(stmt, col++);
         skill->m_sValue6 = (short)sqlite3_column_int(stmt, col++);
+        skill->m_bIsUseable = (sqlite3_column_int(stmt, col++) != 0);
+        skill->m_cUseMethod = (char)sqlite3_column_int(stmt, col++);
 
         game->m_pSkillConfigList[skillId] = skill;
     }

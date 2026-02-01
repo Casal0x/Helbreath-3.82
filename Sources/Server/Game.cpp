@@ -13,7 +13,8 @@
 #include "GameConfigSqliteStore.h"
 #include "MapInfoSqliteStore.h"
 #include "sqlite3.h"
-#include "../../Dependencies/Shared/Packet/SharedPackets.h"
+#include "Packet/SharedPackets.h"
+#include "CRC32.h"
 #include "SharedCalculations.h"
 #include "Item/ItemAttributes.h"
 #include "ChatLog.h"
@@ -1099,6 +1100,8 @@ bool CGame::bInit()
 		return false;
 	}
 
+	ComputeConfigHashes();
+
 	m_bIsQuestAvailable = false;
 	if (HasGameConfigRows(configDb, "quest_configs")) {
 		m_bIsQuestAvailable = LoadQuestConfigs(configDb, this);
@@ -1633,7 +1636,7 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 }
 
 // 05/22/2004 - Hypnotoad - sends client to proper location after dieing
-void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
+void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, uint32_t dwMsgSize)
 {
 	char cPlayerName[11], cTxt[120];
 	int sSummonPoints;
@@ -2076,7 +2079,34 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 
 	RequestNoticementHandler(iClientH); // send noticement when log in
 
-	bSendClientItemConfigs(iClientH);
+	// Check for extended init packet with cache hashes
+	uint32_t clientItemHash = 0, clientMagicHash = 0, clientSkillHash = 0;
+	if (dwMsgSize >= sizeof(hb::net::PacketRequestInitDataEx)) {
+		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(pData);
+		clientItemHash = exReq->itemConfigHash;
+		clientMagicHash = exReq->magicConfigHash;
+		clientSkillHash = exReq->skillConfigHash;
+	}
+
+	bool bItemCacheValid  = (clientItemHash != 0 && clientItemHash == m_dwConfigHash[0]);
+	bool bMagicCacheValid = (clientMagicHash != 0 && clientMagicHash == m_dwConfigHash[1]);
+	bool bSkillCacheValid = (clientSkillHash != 0 && clientSkillHash == m_dwConfigHash[2]);
+
+	// Send cache status to client
+	{
+		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
+		cacheStatus.header.msg_id = MSGID_RESPONSE_CONFIGCACHESTATUS;
+		cacheStatus.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		cacheStatus.itemCacheValid = bItemCacheValid ? 1 : 0;
+		cacheStatus.magicCacheValid = bMagicCacheValid ? 1 : 0;
+		cacheStatus.skillCacheValid = bSkillCacheValid ? 1 : 0;
+		m_pClientList[iClientH]->m_pXSock->iSendMsg(
+			reinterpret_cast<char*>(&cacheStatus), sizeof(cacheStatus));
+	}
+
+	if (!bItemCacheValid)  bSendClientItemConfigs(iClientH);
+	if (!bMagicCacheValid) bSendClientMagicConfigs(iClientH);
+	if (!bSkillCacheValid) bSendClientSkillConfigs(iClientH);
 
 }
 
@@ -2190,6 +2220,374 @@ bool CGame::bSendClientItemConfigs(int iClientH)
 	}
 
 	return true;
+}
+
+bool CGame::bSendClientMagicConfigs(int iClientH)
+{
+	if (m_pClientList[iClientH] == 0) {
+		return false;
+	}
+
+	constexpr size_t maxPacketSize = 7000;
+	constexpr size_t headerSize = sizeof(hb::net::PacketMagicConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
+	constexpr size_t maxEntriesPerPacket = (maxPacketSize - headerSize) / entrySize;
+
+	// Count total magics
+	int totalMagics = 0;
+	for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+		if (m_pMagicConfigList[i] != 0) {
+			totalMagics++;
+		}
+	}
+
+	// Send magics in packets
+	int magicsSent = 0;
+	int packetIndex = 0;
+
+	while (magicsSent < totalMagics) {
+		std::memset(G_cData50000, 0, sizeof(G_cData50000));
+
+		auto* pktHeader = reinterpret_cast<hb::net::PacketMagicConfigHeader*>(G_cData50000);
+		pktHeader->header.msg_id = MSGID_MAGICCONFIGURATIONCONTENTS;
+		pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+		pktHeader->totalMagics = static_cast<uint16_t>(totalMagics);
+		pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+		auto* entries = reinterpret_cast<hb::net::PacketMagicConfigEntry*>(G_cData50000 + headerSize);
+
+		uint16_t entriesInPacket = 0;
+		int skipped = 0;
+
+		for (int i = 0; i < DEF_MAXMAGICTYPE && entriesInPacket < maxEntriesPerPacket; i++) {
+			if (m_pMagicConfigList[i] == 0) {
+				continue;
+			}
+
+			if (skipped < magicsSent) {
+				skipped++;
+				continue;
+			}
+
+			const CMagic* magic = m_pMagicConfigList[i];
+			auto& entry = entries[entriesInPacket];
+
+			entry.magicId = static_cast<int16_t>(i);
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::strncpy(entry.name, magic->m_cName, sizeof(entry.name) - 1);
+			entry.manaCost = magic->m_sValue1;
+			entry.intLimit = magic->m_sIntLimit;
+			entry.goldCost = magic->m_iGoldCost;
+			entry.isVisible = (magic->m_iGoldCost >= 0) ? 1 : 0;
+
+			entriesInPacket++;
+		}
+
+		pktHeader->magicCount = entriesInPacket;
+		size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
+		switch (iRet) {
+		case DEF_XSOCKEVENT_QUENEFULL:
+		case DEF_XSOCKEVENT_SOCKETERROR:
+		case DEF_XSOCKEVENT_CRITICALERROR:
+		case DEF_XSOCKEVENT_SOCKETCLOSED:
+			std::snprintf(G_cTxt, sizeof(G_cTxt),
+				"Failed to send magic configs: Client(%d) Packet(%d)",
+				iClientH, packetIndex);
+			PutLogList(G_cTxt);
+			DeleteClient(iClientH, true, true);
+			delete m_pClientList[iClientH];
+			m_pClientList[iClientH] = 0;
+			return false;
+		}
+
+		magicsSent += entriesInPacket;
+		packetIndex++;
+	}
+
+	return true;
+}
+
+bool CGame::bSendClientSkillConfigs(int iClientH)
+{
+	if (m_pClientList[iClientH] == 0) {
+		return false;
+	}
+
+	constexpr size_t maxPacketSize = 7000;
+	constexpr size_t headerSize = sizeof(hb::net::PacketSkillConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
+	constexpr size_t maxEntriesPerPacket = (maxPacketSize - headerSize) / entrySize;
+
+	// Count total skills
+	int totalSkills = 0;
+	for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+		if (m_pSkillConfigList[i] != 0) {
+			totalSkills++;
+		}
+	}
+
+	// Send skills in packets
+	int skillsSent = 0;
+	int packetIndex = 0;
+
+	while (skillsSent < totalSkills) {
+		std::memset(G_cData50000, 0, sizeof(G_cData50000));
+
+		auto* pktHeader = reinterpret_cast<hb::net::PacketSkillConfigHeader*>(G_cData50000);
+		pktHeader->header.msg_id = MSGID_SKILLCONFIGURATIONCONTENTS;
+		pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+		pktHeader->totalSkills = static_cast<uint16_t>(totalSkills);
+		pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+		auto* entries = reinterpret_cast<hb::net::PacketSkillConfigEntry*>(G_cData50000 + headerSize);
+
+		uint16_t entriesInPacket = 0;
+		int skipped = 0;
+
+		for (int i = 0; i < DEF_MAXSKILLTYPE && entriesInPacket < maxEntriesPerPacket; i++) {
+			if (m_pSkillConfigList[i] == 0) {
+				continue;
+			}
+
+			if (skipped < skillsSent) {
+				skipped++;
+				continue;
+			}
+
+			const CSkill* skill = m_pSkillConfigList[i];
+			auto& entry = entries[entriesInPacket];
+
+			entry.skillId = static_cast<int16_t>(i);
+			std::memset(entry.name, 0, sizeof(entry.name));
+			std::strncpy(entry.name, skill->m_cName, sizeof(entry.name) - 1);
+			entry.isUseable = skill->m_bIsUseable ? 1 : 0;
+			entry.useMethod = skill->m_cUseMethod;
+
+			entriesInPacket++;
+		}
+
+		pktHeader->skillCount = entriesInPacket;
+		size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+		int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(G_cData50000, static_cast<int>(packetSize));
+		switch (iRet) {
+		case DEF_XSOCKEVENT_QUENEFULL:
+		case DEF_XSOCKEVENT_SOCKETERROR:
+		case DEF_XSOCKEVENT_CRITICALERROR:
+		case DEF_XSOCKEVENT_SOCKETCLOSED:
+			std::snprintf(G_cTxt, sizeof(G_cTxt),
+				"Failed to send skill configs: Client(%d) Packet(%d)",
+				iClientH, packetIndex);
+			PutLogList(G_cTxt);
+			DeleteClient(iClientH, true, true);
+			delete m_pClientList[iClientH];
+			m_pClientList[iClientH] = 0;
+			return false;
+		}
+
+		skillsSent += entriesInPacket;
+		packetIndex++;
+	}
+
+	return true;
+}
+
+void CGame::ComputeConfigHashes()
+{
+	// Compute CRC32 for item configs
+	{
+		constexpr size_t headerSize = sizeof(hb::net::PacketItemConfigHeader);
+		constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
+		constexpr size_t maxEntriesPerPacket = (7000 - headerSize) / entrySize;
+
+		std::vector<uint8_t> allData;
+		int totalItems = 0;
+		for (int i = 0; i < DEF_MAXITEMTYPES; i++) {
+			if (m_pItemConfigList[i] != 0) totalItems++;
+		}
+
+		int itemsSent = 0;
+		int packetIndex = 0;
+		while (itemsSent < totalItems) {
+			char buf[7000]{};
+			auto* pktHeader = reinterpret_cast<hb::net::PacketItemConfigHeader*>(buf);
+			pktHeader->header.msg_id = MSGID_ITEMCONFIGURATIONCONTENTS;
+			pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+			pktHeader->totalItems = static_cast<uint16_t>(totalItems);
+			pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+			auto* entries = reinterpret_cast<hb::net::PacketItemConfigEntry*>(buf + headerSize);
+			uint16_t entriesInPacket = 0;
+			int skipped = 0;
+
+			for (int i = 0; i < DEF_MAXITEMTYPES && entriesInPacket < maxEntriesPerPacket; i++) {
+				if (m_pItemConfigList[i] == 0) continue;
+				if (skipped < itemsSent) { skipped++; continue; }
+
+				const CItem* item = m_pItemConfigList[i];
+				auto& entry = entries[entriesInPacket];
+				entry.itemId = item->m_sIDnum;
+				std::memset(entry.name, 0, sizeof(entry.name));
+				std::strncpy(entry.name, item->m_cName, sizeof(entry.name) - 1);
+				entry.itemType = item->m_cItemType;
+				entry.equipPos = item->m_cEquipPos;
+				entry.effectType = item->m_sItemEffectType;
+				entry.effectValue1 = item->m_sItemEffectValue1;
+				entry.effectValue2 = item->m_sItemEffectValue2;
+				entry.effectValue3 = item->m_sItemEffectValue3;
+				entry.effectValue4 = item->m_sItemEffectValue4;
+				entry.effectValue5 = item->m_sItemEffectValue5;
+				entry.effectValue6 = item->m_sItemEffectValue6;
+				entry.maxLifeSpan = item->m_wMaxLifeSpan;
+				entry.specialEffect = item->m_sSpecialEffect;
+				entry.sprite = item->m_sSprite;
+				entry.spriteFrame = item->m_sSpriteFrame;
+				entry.price = item->m_bIsForSale ? static_cast<int32_t>(item->m_wPrice) : -static_cast<int32_t>(item->m_wPrice);
+				entry.weight = item->m_wWeight;
+				entry.apprValue = item->m_cApprValue;
+				entry.speed = item->m_cSpeed;
+				entry.levelLimit = item->m_sLevelLimit;
+				entry.genderLimit = item->m_cGenderLimit;
+				entry.specialEffectValue1 = item->m_sSpecialEffectValue1;
+				entry.specialEffectValue2 = item->m_sSpecialEffectValue2;
+				entry.relatedSkill = item->m_sRelatedSkill;
+				entry.category = item->m_cCategory;
+				entry.itemColor = item->m_cItemColor;
+				entriesInPacket++;
+			}
+
+			pktHeader->itemCount = entriesInPacket;
+			size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+			uint16_t len = static_cast<uint16_t>(packetSize);
+			const uint8_t* lenBytes = reinterpret_cast<const uint8_t*>(&len);
+			allData.push_back(lenBytes[0]);
+			allData.push_back(lenBytes[1]);
+			allData.insert(allData.end(), reinterpret_cast<uint8_t*>(buf), reinterpret_cast<uint8_t*>(buf) + packetSize);
+
+			itemsSent += entriesInPacket;
+			packetIndex++;
+		}
+		m_dwConfigHash[0] = allData.empty() ? 0 : hb_crc32(allData.data(), allData.size());
+	}
+
+	// Compute CRC32 for magic configs
+	{
+		constexpr size_t headerSize = sizeof(hb::net::PacketMagicConfigHeader);
+		constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
+		constexpr size_t maxEntriesPerPacket = (7000 - headerSize) / entrySize;
+
+		std::vector<uint8_t> allData;
+		int totalMagics = 0;
+		for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+			if (m_pMagicConfigList[i] != 0) totalMagics++;
+		}
+
+		int magicsSent = 0;
+		int packetIndex = 0;
+		while (magicsSent < totalMagics) {
+			char buf[7000]{};
+			auto* pktHeader = reinterpret_cast<hb::net::PacketMagicConfigHeader*>(buf);
+			pktHeader->header.msg_id = MSGID_MAGICCONFIGURATIONCONTENTS;
+			pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+			pktHeader->totalMagics = static_cast<uint16_t>(totalMagics);
+			pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+			auto* entries = reinterpret_cast<hb::net::PacketMagicConfigEntry*>(buf + headerSize);
+			uint16_t entriesInPacket = 0;
+			int skipped = 0;
+
+			for (int i = 0; i < DEF_MAXMAGICTYPE && entriesInPacket < maxEntriesPerPacket; i++) {
+				if (m_pMagicConfigList[i] == 0) continue;
+				if (skipped < magicsSent) { skipped++; continue; }
+
+				const CMagic* magic = m_pMagicConfigList[i];
+				auto& entry = entries[entriesInPacket];
+				entry.magicId = static_cast<int16_t>(i);
+				std::memset(entry.name, 0, sizeof(entry.name));
+				std::strncpy(entry.name, magic->m_cName, sizeof(entry.name) - 1);
+				entry.manaCost = magic->m_sValue1;
+				entry.intLimit = magic->m_sIntLimit;
+				entry.goldCost = magic->m_iGoldCost;
+				entry.isVisible = (magic->m_iGoldCost >= 0) ? 1 : 0;
+				entriesInPacket++;
+			}
+
+			pktHeader->magicCount = entriesInPacket;
+			size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+			uint16_t len = static_cast<uint16_t>(packetSize);
+			const uint8_t* lenBytes = reinterpret_cast<const uint8_t*>(&len);
+			allData.push_back(lenBytes[0]);
+			allData.push_back(lenBytes[1]);
+			allData.insert(allData.end(), reinterpret_cast<uint8_t*>(buf), reinterpret_cast<uint8_t*>(buf) + packetSize);
+
+			magicsSent += entriesInPacket;
+			packetIndex++;
+		}
+		m_dwConfigHash[1] = allData.empty() ? 0 : hb_crc32(allData.data(), allData.size());
+	}
+
+	// Compute CRC32 for skill configs
+	{
+		constexpr size_t headerSize = sizeof(hb::net::PacketSkillConfigHeader);
+		constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
+		constexpr size_t maxEntriesPerPacket = (7000 - headerSize) / entrySize;
+
+		std::vector<uint8_t> allData;
+		int totalSkills = 0;
+		for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+			if (m_pSkillConfigList[i] != 0) totalSkills++;
+		}
+
+		int skillsSent = 0;
+		int packetIndex = 0;
+		while (skillsSent < totalSkills) {
+			char buf[7000]{};
+			auto* pktHeader = reinterpret_cast<hb::net::PacketSkillConfigHeader*>(buf);
+			pktHeader->header.msg_id = MSGID_SKILLCONFIGURATIONCONTENTS;
+			pktHeader->header.msg_type = DEF_MSGTYPE_CONFIRM;
+			pktHeader->totalSkills = static_cast<uint16_t>(totalSkills);
+			pktHeader->packetIndex = static_cast<uint16_t>(packetIndex);
+
+			auto* entries = reinterpret_cast<hb::net::PacketSkillConfigEntry*>(buf + headerSize);
+			uint16_t entriesInPacket = 0;
+			int skipped = 0;
+
+			for (int i = 0; i < DEF_MAXSKILLTYPE && entriesInPacket < maxEntriesPerPacket; i++) {
+				if (m_pSkillConfigList[i] == 0) continue;
+				if (skipped < skillsSent) { skipped++; continue; }
+
+				const CSkill* skill = m_pSkillConfigList[i];
+				auto& entry = entries[entriesInPacket];
+				entry.skillId = static_cast<int16_t>(i);
+				std::memset(entry.name, 0, sizeof(entry.name));
+				std::strncpy(entry.name, skill->m_cName, sizeof(entry.name) - 1);
+				entry.isUseable = skill->m_bIsUseable ? 1 : 0;
+				entry.useMethod = skill->m_cUseMethod;
+				entriesInPacket++;
+			}
+
+			pktHeader->skillCount = entriesInPacket;
+			size_t packetSize = headerSize + (entriesInPacket * entrySize);
+
+			uint16_t len = static_cast<uint16_t>(packetSize);
+			const uint8_t* lenBytes = reinterpret_cast<const uint8_t*>(&len);
+			allData.push_back(lenBytes[0]);
+			allData.push_back(lenBytes[1]);
+			allData.insert(allData.end(), reinterpret_cast<uint8_t*>(buf), reinterpret_cast<uint8_t*>(buf) + packetSize);
+
+			skillsSent += entriesInPacket;
+			packetIndex++;
+		}
+		m_dwConfigHash[2] = allData.empty() ? 0 : hb_crc32(allData.data(), allData.size());
+	}
+
+	std::snprintf(G_cTxt, sizeof(G_cTxt), "Config hashes computed - Items: 0x%08X, Magic: 0x%08X, Skills: 0x%08X",
+		m_dwConfigHash[0], m_dwConfigHash[1], m_dwConfigHash[2]);
+	PutLogList(G_cTxt);
 }
 
 const DropTable* CGame::GetDropTable(int id) const
@@ -5867,7 +6265,7 @@ void CGame::MsgProcess()
 				}
 				else {
 					m_pClientList[iClientH]->m_bIsClientConnected = true;
-					RequestInitDataHandler(iClientH, pData, cKey);
+					RequestInitDataHandler(iClientH, pData, cKey, dwMsgSize);
 				}
 				break;
 
@@ -8379,7 +8777,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 	}
 	break;
 
-	case DEF_NOTIFY_GIZONITEMCANGE:
+	case DEF_NOTIFY_GIZONEITEMCHANGE:
 	{
 		hb::net::PacketNotifyGizonItemChange pkt{};
 		pkt.header.msg_id = MSGID_NOTIFY;
@@ -32040,7 +32438,7 @@ void CGame::ReqCreateSlateHandler(int iClientH, char* pData)
 		}
 		else {
 			m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem);
-			SendEventToNearClient_TypeB(MSGID_MAGICCONFIGURATIONCONTENTS, DEF_COMMONTYPE_ITEMDROP, m_pClientList[iClientH]->m_cMapIndex,
+			SendEventToNearClient_TypeB(MSGID_EVENT_COMMON, DEF_COMMONTYPE_ITEMDROP, m_pClientList[iClientH]->m_cMapIndex,
 				m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
 			iRet = SendItemNotifyMsg(iClientH, DEF_NOTIFY_CANNOTCARRYMOREITEM, 0, 0);
 
@@ -35242,7 +35640,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
@@ -35285,7 +35683,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
@@ -35330,7 +35728,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
@@ -35375,7 +35773,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
@@ -35706,7 +36104,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
@@ -35750,7 +36148,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
@@ -35794,7 +36192,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
@@ -35931,7 +36329,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 
 				ItemDepleteHandler(iClientH, iSomH, false);
 
-				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMCANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,

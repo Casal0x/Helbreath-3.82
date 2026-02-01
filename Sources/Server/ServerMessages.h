@@ -19,7 +19,7 @@
 
 // CRITICAL: This conflicts with MSGID_EVENT_COMMON (0x0FA314DB) which is SHARED
 // Only the server loads magic configuration
-#define MSGID_MAGICCONFIGURATIONCONTENTS			0x0FA314DB  // Conflicts with EVENT_COMMON
+#define MSGID_MAGICCONFIGURATIONCONTENTS			0x0FA314E0
 
 // ============================================================================
 // Server-Only Common Action Types
@@ -36,12 +36,10 @@
 // ============================================================================
 
 #define DEF_NOTIFY_EVENTMSGSTRING					0x0B0C
-#define DEF_NOTIFY_SKILLTRAINFAIL					0x0B13
 #define DEF_NOTIFY_DEBUGMSG							0x0B49
 #define DEF_NOTIFY_DUTYSELECTED						0x0B96
 #define DEF_NOTIFY_HELP								0x0B99
 #define DEF_NOTIFY_HELPFAILED						0x0B9A
-#define DEF_NOTIFY_HELDENIANVICTORY					0x0BEB
 
 // ============================================================================
 // Repair All System (Server-Only Part)
@@ -55,7 +53,7 @@
 // ============================================================================
 
 #define MSGID_NPCCONFIGURATIONCONTENTS				0x0FA314DA
-#define MSGID_SKILLCONFIGURATIONCONTENTS			0x0FA314DC
+#define MSGID_SKILLCONFIGURATIONCONTENTS			0x0FA314E1
 #define MSGID_PORTIONCONFIGURATIONCONTENTS			0x0FA314DE
 #define MSGID_QUESTCONFIGURATIONCONTENTS			0x0FA40001
 #define MSGID_BUILDITEMCONFIGURATIONCONTENTS		0x0FA40002

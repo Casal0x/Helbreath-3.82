@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <windows.h>
+#include <cstring>
 
 #define DEF_MAGICTYPE_DAMAGE_SPOT		1
 #define DEF_MAGICTYPE_HPUP_SPOT			2
@@ -34,7 +34,7 @@ class CMagic
 public:
 	inline CMagic()
 	{
-		ZeroMemory(m_cName, sizeof(m_cName));
+		std::memset(m_cName, 0, sizeof(m_cName));
 	}
 
 	inline virtual ~CMagic()

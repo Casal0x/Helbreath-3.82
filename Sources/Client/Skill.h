@@ -4,14 +4,14 @@
 
 #pragma once
 
-#include <windows.h>
+#include <cstring>
 
 class CSkill
 {
 public:
 	inline CSkill()
 	{
-		ZeroMemory(m_cName, sizeof(m_cName));
+		std::memset(m_cName, 0, sizeof(m_cName));
 
 		m_iLevel = 0;
 		m_bIsUseable = false;
@@ -22,7 +22,7 @@ public:
 	{
 	}
 
-	char m_cName[21];
+	char m_cName[42];
 
 	int  m_iLevel;
 	bool m_bIsUseable;

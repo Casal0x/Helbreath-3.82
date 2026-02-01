@@ -322,6 +322,8 @@ public:
 
 	void RequestNoticementHandler(int iClientH);
 	bool bSendClientItemConfigs(int iClientH);
+	bool bSendClientMagicConfigs(int iClientH);
+	bool bSendClientSkillConfigs(int iClientH);
 	const DropTable* GetDropTable(int id) const;
 
 	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
@@ -713,7 +715,7 @@ public:
 	void SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t dwMsgID, uint16_t wMsgType, short sV1, short sV2, short sV3);
 	void DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogout = true, bool bForceCloseConn = false);
 	int  iComposeInitMapData(short sX, short sY, int iClientH, char * pData);
-	void RequestInitDataHandler(int iClientH, char * pData, char cKey);
+	void RequestInitDataHandler(int iClientH, char * pData, char cKey, uint32_t dwMsgSize = 0);
 	void RequestInitPlayerHandler(int iClientH, char * pData, char cKey);
 	int iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDir, char cMoveType);
 	void ClientMotionHandler(int iClientH, char * pData);
@@ -819,6 +821,9 @@ public:
 	class CSkill  * m_pSkillConfigList[DEF_MAXSKILLTYPE];
 	class CQuest  * m_pQuestConfigList[DEF_MAXQUESTTYPE];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
+
+	uint32_t m_dwConfigHash[3]{};
+	void ComputeConfigHashes();
 
 	class XSocket* _lsock;
 

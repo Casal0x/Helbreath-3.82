@@ -44,7 +44,20 @@ DevConsole::~DevConsole()
 
 void DevConsole::Initialize()
 {
-	// Register built-in commands
+	RegisterBuiltInCommands();
+
+	Print("=== Developer Console ===", 0x0000FF00);
+	Print("Type 'help' for available commands.", 0x00C0C0C0);
+}
+
+void DevConsole::Shutdown()
+{
+}
+
+// ============== Built-In Commands ==============
+
+void DevConsole::RegisterBuiltInCommands()
+{
 	RegisterCommand("help", [this](const char*) {
 		Print("Available commands:", 0x0000FF00);
 		for (int i = 0; i < m_iCommandCount; i++)
@@ -82,13 +95,6 @@ void DevConsole::Initialize()
 		sprintf_s(buf, "FPS: %u", FrameTiming::GetFPS());
 		Print(buf);
 	});
-
-	Print("=== Developer Console ===", 0x0000FF00);
-	Print("Type 'help' for available commands.", 0x00C0C0C0);
-}
-
-void DevConsole::Shutdown()
-{
 }
 
 // ============== Visibility ==============

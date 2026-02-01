@@ -57,6 +57,7 @@ private:
 	DevConsole(const DevConsole&) = delete;
 	DevConsole& operator=(const DevConsole&) = delete;
 
+	void RegisterBuiltInCommands();
 	void ExecuteCommand();
 	void HistoryUp();
 	void HistoryDown();

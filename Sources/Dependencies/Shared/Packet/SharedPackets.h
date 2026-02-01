@@ -6,6 +6,8 @@
 #include "PacketHelpers.h"
 #include "PacketEvent.h"
 #include "PacketItemConfig.h"
+#include "PacketMagicConfig.h"
+#include "PacketSkillConfig.h"
 #include "PacketLogin.h"
 #include "PacketLoginResponse.h"
 #include "PacketMap.h"
@@ -14,3 +16,4 @@
 #include "PacketRequest.h"
 #include "PacketResponse.h"
 #include "PacketShop.h"
+#include "PacketConfigCache.h"

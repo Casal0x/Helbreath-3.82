@@ -248,15 +248,13 @@ public:
 	int  _iLoadTextDlgContents2(int iType);
 	void DrawChatMsgs(short sX, short sY, short dX, short dY);
 	void RequestFullObjectData(uint16_t wObjectID);
-	bool bInitSkillCfgList();
 	bool bCheckImportantFile();
 	void EraseItem(char cItemID);
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
 	bool _bGetIsStringIsNumber(char * pStr);
-	bool bInitMagicCfgList();
-	void _LoadShopMenuContents(char cType);
+void _LoadShopMenuContents(char cType);
 	void _RequestShopContents(int16_t npcType);
 	void ResponseShopContentsHandler(char* pData);
 	void PutChatScrollList(char * pMsg, char cType);
@@ -621,6 +619,8 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 
 	std::array<std::unique_ptr<class CItem>, 5000> m_pItemConfigList;
 	bool _bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize);
+	bool _bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize);
+	bool _bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize);
 
 	int iNpcHP, iNpcMaxHP;
 
