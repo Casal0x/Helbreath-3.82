@@ -10,6 +10,7 @@ using namespace std;
 
 #include "AccountSqliteStore.h"
 #include "sqlite3.h"
+#include "PasswordHash.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 
 extern char	G_cData50000[50000];
@@ -176,7 +177,7 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 		return LogIn::NoAcc;
 	}
 
-	if (pass != account.password) {
+	if (!PasswordHash::VerifyPassword(pass.c_str(), account.password_salt, account.password_hash)) {
 		CloseAccountDatabase(db);
 		return LogIn::NoPass;
 	}
@@ -578,7 +579,16 @@ void LoginServer::ChangePassword(int h, char* pData)
 		return;
 	}
 
-	if (UpdateAccountPassword(db, cAcc, cNewPw)) {
+	char newSalt[DEF_PASSWORD_SALT_HEX] = {};
+	char newHash[DEF_PASSWORD_HASH_HEX] = {};
+	if (!PasswordHash::GenerateSalt(newSalt, sizeof(newSalt)) ||
+		!PasswordHash::HashPassword(cNewPw, newSalt, newHash, sizeof(newHash))) {
+		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, 0, 0, h);
+		CloseAccountDatabase(db);
+		return;
+	}
+
+	if (UpdateAccountPassword(db, cAcc, newHash, newSalt)) {
 		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS, DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS, 0, 0, h);
 	}
 	else {
@@ -593,8 +603,6 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	char cName[DEF_ACCOUNT_NAME] = {};
 	char cPassword[DEF_ACCOUNT_PASS] = {};
 	char cEmailAddr[DEF_ACCOUNT_EMAIL] = {};
-	char cQuiz[DEF_ACCOUNT_QUIZ] = {};
-	char cAnswer[DEF_ACCOUNT_ANSWER] = {};
 
 	if (G_pGame->_lclients[h] == 0)
 		return;
@@ -606,8 +614,6 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	LowercaseInPlace(cName, sizeof(cName));
 	std::strncpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
 	std::strncpy(cEmailAddr, req->email, DEF_ACCOUNT_EMAIL - 1);
-	std::strncpy(cQuiz, req->quiz, DEF_ACCOUNT_QUIZ - 1);
-	std::strncpy(cAnswer, req->answer, DEF_ACCOUNT_ANSWER - 1);
 
 	if ((strlen(cName) == 0) || (strlen(cPassword) == 0) ||
 		(strlen(cEmailAddr) == 0))
@@ -635,10 +641,18 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 
 	AccountDbAccountData data = {};
 	std::snprintf(data.name, sizeof(data.name), "%s", cName);
-	std::snprintf(data.password, sizeof(data.password), "%s", cPassword);
+
+	char salt[DEF_PASSWORD_SALT_HEX] = {};
+	char hash[DEF_PASSWORD_HASH_HEX] = {};
+	if (!PasswordHash::GenerateSalt(salt, sizeof(salt)) ||
+		!PasswordHash::HashPassword(cPassword, salt, hash, sizeof(hash))) {
+		CloseAccountDatabase(db);
+		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
+		return;
+	}
+	std::snprintf(data.password_hash, sizeof(data.password_hash), "%s", hash);
+	std::snprintf(data.password_salt, sizeof(data.password_salt), "%s", salt);
 	std::snprintf(data.email, sizeof(data.email), "%s", cEmailAddr);
-	std::snprintf(data.quiz, sizeof(data.quiz), "%s", cQuiz);
-	std::snprintf(data.answer, sizeof(data.answer), "%s", cAnswer);
 
 	SYSTEMTIME sysTime;
 	GetLocalTime(&sysTime);

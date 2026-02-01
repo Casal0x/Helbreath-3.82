@@ -69,28 +69,6 @@ namespace net {
 		char account_name[DEF_ACCOUNT_NAME - 1];
 		char password[DEF_ACCOUNT_PASS - 1];
 		char email[DEF_ACCOUNT_EMAIL - 1];
-		char quiz[DEF_ACCOUNT_QUIZ - 1];
-		char answer[DEF_ACCOUNT_ANSWER - 1];
-	};
-	HB_PACK_END
-
-	HB_PACK_BEGIN
-	struct HB_PACKED CreateAccountRequestFull
-	{
-		PacketHeader header;
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
-		char email[DEF_ACCOUNT_EMAIL - 1];
-		char gender[10];
-		char age[10];
-		char padding1[4];
-		char padding2[2];
-		char padding3[2];
-		char country[17];
-		char ssn[28];
-		char quiz[45];
-		char answer[20];
-		char cmd_line[50];
 	};
 	HB_PACK_END
 

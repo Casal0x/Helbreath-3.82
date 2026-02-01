@@ -8,10 +8,9 @@ struct sqlite3;
 struct AccountDbAccountData
 {
     char name[11];
-    char password[11];
+    char password_hash[65];
+    char password_salt[33];
     char email[52];
-    char quiz[47];
-    char answer[27];
     char createdAt[32];
     char passwordChangedAt[32];
     char lastIp[32];
@@ -186,7 +185,7 @@ class CClient;
 
 bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string& outPath);
 bool LoadAccountRecord(sqlite3* db, const char* accountName, AccountDbAccountData& outData);
-bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* newPassword);
+bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* passwordHash, const char* passwordSalt);
 bool ListCharacterSummaries(sqlite3* db, const char* accountName, std::vector<AccountDbCharacterSummary>& outChars);
 bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharacterState& outState);
 bool LoadCharacterItems(sqlite3* db, const char* characterName, std::vector<AccountDbItemRow>& outItems);

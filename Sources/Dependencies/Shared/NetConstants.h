@@ -11,5 +11,3 @@
 #define DEF_ACCOUNT_NAME    11   // 10 chars + null (wire size is 10)
 #define DEF_ACCOUNT_PASS    11   // 10 chars + null (wire size is 10)
 #define DEF_ACCOUNT_EMAIL   51   // 50 chars + null
-#define DEF_ACCOUNT_QUIZ    46   // 45 chars + null
-#define DEF_ACCOUNT_ANSWER  26   // 25 chars + null

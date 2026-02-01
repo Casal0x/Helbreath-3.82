@@ -195,7 +195,6 @@ void Screen_CreateAccount::_submit_create_account()
         std::strncpy(req.account_name, m_cNewAcctName, sizeof(req.account_name));
         std::strncpy(req.password, m_cNewAcctPassword, sizeof(req.password));
         std::strncpy(req.email, m_cEmail, sizeof(req.email));
-        // Quiz and answer sent as empty (deprecated fields)
 
         // Store packet for sending after connection completes
         auto* p = reinterpret_cast<char*>(&req);

@@ -347,6 +347,7 @@ static bool MigrateItemNamesToIds(sqlite3* db)
 
     return true;
 }
+
 } // end anonymous namespace
 
 bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string& outPath)
@@ -386,13 +387,12 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         " key TEXT PRIMARY KEY,"
         " value TEXT NOT NULL"
         ");"
-        "INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','4');"
+        "INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','6');"
         "CREATE TABLE IF NOT EXISTS accounts ("
         " account_name TEXT PRIMARY KEY,"
-        " password TEXT NOT NULL,"
+        " password_hash TEXT NOT NULL,"
+        " password_salt TEXT NOT NULL,"
         " email TEXT NOT NULL,"
-        " quiz TEXT NOT NULL,"
-        " answer TEXT NOT NULL,"
         " created_at TEXT NOT NULL,"
         " password_changed_at TEXT NOT NULL,"
         " last_ip TEXT NOT NULL"
@@ -577,7 +577,7 @@ bool LoadAccountRecord(sqlite3* db, const char* accountName, AccountDbAccountDat
     }
 
     const char* sql =
-        "SELECT account_name, password, email, quiz, answer, created_at, password_changed_at, last_ip "
+        "SELECT account_name, password_hash, password_salt, email, created_at, password_changed_at, last_ip "
         "FROM accounts WHERE account_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -590,13 +590,12 @@ bool LoadAccountRecord(sqlite3* db, const char* accountName, AccountDbAccountDat
     if (sqlite3_step(stmt) == SQLITE_ROW) {
         std::memset(&outData, 0, sizeof(outData));
         CopyColumnText(stmt, 0, outData.name, sizeof(outData.name));
-        CopyColumnText(stmt, 1, outData.password, sizeof(outData.password));
-        CopyColumnText(stmt, 2, outData.email, sizeof(outData.email));
-        CopyColumnText(stmt, 3, outData.quiz, sizeof(outData.quiz));
-        CopyColumnText(stmt, 4, outData.answer, sizeof(outData.answer));
-        CopyColumnText(stmt, 5, outData.createdAt, sizeof(outData.createdAt));
-        CopyColumnText(stmt, 6, outData.passwordChangedAt, sizeof(outData.passwordChangedAt));
-        CopyColumnText(stmt, 7, outData.lastIp, sizeof(outData.lastIp));
+        CopyColumnText(stmt, 1, outData.password_hash, sizeof(outData.password_hash));
+        CopyColumnText(stmt, 2, outData.password_salt, sizeof(outData.password_salt));
+        CopyColumnText(stmt, 3, outData.email, sizeof(outData.email));
+        CopyColumnText(stmt, 4, outData.createdAt, sizeof(outData.createdAt));
+        CopyColumnText(stmt, 5, outData.passwordChangedAt, sizeof(outData.passwordChangedAt));
+        CopyColumnText(stmt, 6, outData.lastIp, sizeof(outData.lastIp));
         ok = true;
     }
 
@@ -604,9 +603,9 @@ bool LoadAccountRecord(sqlite3* db, const char* accountName, AccountDbAccountDat
     return ok;
 }
 
-bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* newPassword)
+bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* passwordHash, const char* passwordSalt)
 {
-    if (db == nullptr || accountName == nullptr || newPassword == nullptr) {
+    if (db == nullptr || accountName == nullptr || passwordHash == nullptr || passwordSalt == nullptr) {
         return false;
     }
 
@@ -616,7 +615,7 @@ bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* new
     FormatTimestamp(sysTime, timestamp, sizeof(timestamp));
 
     const char* sql =
-        "UPDATE accounts SET password = ?, password_changed_at = ? WHERE account_name = ? COLLATE NOCASE;";
+        "UPDATE accounts SET password_hash = ?, password_salt = ?, password_changed_at = ? WHERE account_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -624,9 +623,10 @@ bool UpdateAccountPassword(sqlite3* db, const char* accountName, const char* new
     }
 
     bool ok = true;
-    ok &= PrepareAndBindText(&stmt, 1, newPassword);
-    ok &= PrepareAndBindText(&stmt, 2, timestamp);
-    ok &= PrepareAndBindText(&stmt, 3, accountName);
+    ok &= PrepareAndBindText(&stmt, 1, passwordHash);
+    ok &= PrepareAndBindText(&stmt, 2, passwordSalt);
+    ok &= PrepareAndBindText(&stmt, 3, timestamp);
+    ok &= PrepareAndBindText(&stmt, 4, accountName);
 
     if (ok) {
         ok = sqlite3_step(stmt) == SQLITE_DONE;
@@ -1385,8 +1385,8 @@ bool InsertAccountRecord(sqlite3* db, const AccountDbAccountData& data)
 
     const char* sql =
         "INSERT INTO accounts("
-        " account_name, password, email, quiz, answer, created_at, password_changed_at, last_ip"
-        ") VALUES(?,?,?,?,?,?,?,?);";
+        " account_name, password_hash, password_salt, email, created_at, password_changed_at, last_ip"
+        ") VALUES(?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1398,13 +1398,12 @@ bool InsertAccountRecord(sqlite3* db, const AccountDbAccountData& data)
 
     bool ok =
         PrepareAndBindText(&stmt, 1, data.name) &&
-        PrepareAndBindText(&stmt, 2, data.password) &&
-        PrepareAndBindText(&stmt, 3, data.email) &&
-        PrepareAndBindText(&stmt, 4, data.quiz) &&
-        PrepareAndBindText(&stmt, 5, data.answer) &&
-        PrepareAndBindText(&stmt, 6, data.createdAt) &&
-        PrepareAndBindText(&stmt, 7, data.passwordChangedAt) &&
-        PrepareAndBindText(&stmt, 8, data.lastIp);
+        PrepareAndBindText(&stmt, 2, data.password_hash) &&
+        PrepareAndBindText(&stmt, 3, data.password_salt) &&
+        PrepareAndBindText(&stmt, 4, data.email) &&
+        PrepareAndBindText(&stmt, 5, data.createdAt) &&
+        PrepareAndBindText(&stmt, 6, data.passwordChangedAt) &&
+        PrepareAndBindText(&stmt, 7, data.lastIp);
 
     if (ok) {
         ok = sqlite3_step(stmt) == SQLITE_DONE;
