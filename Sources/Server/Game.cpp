@@ -1144,6 +1144,13 @@ void CGame::OnClientRead(int iClientH)
 		m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
 		m_pClientList[iClientH]->m_dwLastMsgTime = GameClock::GetTimeMS();
 		m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+
+		// Fast-track ping responses: bypass the message queue (which only drains every 300ms)
+		// so latency measurement reflects actual round-trip time
+		if (header->msg_id == MSGID_COMMAND_CHECKCONNECTION) {
+			CheckConnectionHandler(iClientH, pData);
+			return;
+		}
 	}
 
 	if (bPutMsgQuene(DEF_MSGFROM_CLIENT, pData, dwMsgSize, iClientH, cKey) == false) {
