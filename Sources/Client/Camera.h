@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <cmath>
 
 class CCamera
 {
@@ -19,8 +20,8 @@ public:
     void Reset();
 
     // Update camera position (smooth interpolation towards destination)
-    // Call this once per frame
-    void Update();
+    // Call this once per frame with current game time in milliseconds
+    void Update(uint32_t currentTime);
 
     //------------------------------------------------------------------
     // Position Accessors
@@ -96,9 +97,8 @@ private:
     int m_iDestinationX;
     int m_iDestinationY;
 
-    // Movement velocity for smooth interpolation
-    int m_iVelocityX;
-    int m_iVelocityY;
+    // Last update timestamp for delta time calculation
+    uint32_t m_dwLastUpdateTime;
 
     // Saved position for shake effect restoration
     int m_iSavedPositionX;

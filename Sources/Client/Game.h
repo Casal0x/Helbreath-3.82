@@ -142,11 +142,6 @@ public:
 	// Camera for viewport management
 	CCamera m_Camera;
 
-	// MJ Stats Change Related vars - Alastor
-	char cStateChange1;
-	char cStateChange2;
-	char cStateChange3;
-
 	struct {
 		char cName[DEF_ITEMNAME], cDesc[11];
 		int iCount;
@@ -289,9 +284,9 @@ public:
 	SpriteLib::BoundRect __fastcall DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision);
-	SpriteLib::BoundRect __fastcall DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision);
-	SpriteLib::BoundRect __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime, bool frame_omision);
+	SpriteLib::BoundRect __fastcall DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	SpriteLib::BoundRect __fastcall DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	SpriteLib::BoundRect __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	SpriteLib::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	void ClearGuildNameList();
@@ -522,7 +517,6 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	bool m_bIsWhetherEffect;
 	bool m_bIsObserverMode, m_bIsObserverCommanded;
 		bool m_bIsFirstConn;
-	bool m_bDrawFlagDir;
 	bool m_bIsCrusadeMode;
 		bool m_bInputStatus;
 	bool m_bIsSpecial;

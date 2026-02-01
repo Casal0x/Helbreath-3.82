@@ -130,7 +130,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_pPlayer->m_iMag = pkt->mag;
 		pGame->m_pPlayer->m_iCharisma = pkt->chr;
 
-		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
 		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
 
 		wsprintf(cTxt, NOTIFYMSG_LEVELUP1, pGame->m_pPlayer->m_iLevel);

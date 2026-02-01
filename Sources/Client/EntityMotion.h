@@ -13,12 +13,11 @@
 //=============================================================================
 namespace MovementTiming {
     // Duration to cross one tile (milliseconds)
-    // For players (types 1-6), frames advance every OTHER update due to m_bSpriteOmit
-    // Walk: 7 frames * 34.5ms * 2 = 483ms (actual player animation time)
-    // Run:  7 frames * 19ms * 2 = 266ms (actual player animation time)
-    // Use slightly longer for smooth feel
-    constexpr uint32_t WALK_DURATION_MS = 500;
-    constexpr uint32_t RUN_DURATION_MS = 280;
+    // Must match animation frame timing to avoid dead time between moves
+    // Walk: 7 frames * 76ms = 532ms
+    // Run:  7 frames * 42ms = 294ms
+    constexpr uint32_t WALK_DURATION_MS = 532;
+    constexpr uint32_t RUN_DURATION_MS = 294;
     constexpr uint32_t DAMAGE_MOVE_DURATION_MS = 300;
     constexpr uint32_t ATTACK_MOVE_DURATION_MS = 480;
 

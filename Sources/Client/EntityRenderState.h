@@ -63,7 +63,6 @@ public:
         m_iDataY = 0;
         m_iEffectType = 0;
         m_iEffectFrame = 0;
-        m_bSpriteOmit = false;
     }
 
     // Set name from C-string (copies up to ENTITY_NAME_LENGTH-1 chars)
@@ -136,6 +135,4 @@ public:
     int m_iEffectType;          // Visual effect type (aura, spell, etc.)
     int m_iEffectFrame;         // Visual effect animation frame
 
-    // Rendering flags
-    bool m_bSpriteOmit;         // Skip certain sprite rendering
 };

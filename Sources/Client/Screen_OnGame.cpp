@@ -285,6 +285,27 @@ void Screen_OnGame::on_update()
     // Update frame counters and process commands
     int iUpdateRet = m_pGame->m_pMapData->iObjectFrameCounter(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_Camera.GetX(), m_pGame->m_Camera.GetY());
     if (m_pGame->m_pEffectManager) m_pGame->m_pEffectManager->Update();
+    // Pipeline movement: allow next move command just before animation completes
+    // Uses EntityMotion progress (95%) instead of fixed time thresholds to avoid
+    // visible position snapping when the next tile's motion starts
+    if (!m_pGame->m_pPlayer->m_Controller.IsCommandAvailable()) {
+        char cmd = m_pGame->m_pPlayer->m_Controller.GetCommand();
+        if (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
+            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE) {
+            int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
+            int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+            if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
+                auto& motion = m_pGame->m_pMapData->m_pData[dX][dY].m_motion;
+                if (motion.bIsMoving && motion.fProgress >= 0.95f) {
+                    m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
+                    m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+                }
+            }
+        }
+    }
+
+    // Fallback: animation-based unlock still works for non-movement actions
+    // and for the final step when the player stops
     if (iUpdateRet == 2) {
         m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
         m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
@@ -297,24 +318,23 @@ void Screen_OnGame::on_update()
     // Restore viewport
     m_pGame->m_Camera.RestorePosition();
 
-    if (iUpdateRet > 0) m_pGame->m_Camera.Update();
+    m_pGame->m_Camera.Update(m_dwTime);
 
-    // Observer mode camera
+    // Observer mode camera (additional updates for keyboard-driven movement)
     if (m_pGame->m_bIsObserverMode) {
         if ((m_dwTime - m_pGame->m_dwObserverCamTime) > 25) {
             m_pGame->m_dwObserverCamTime = m_dwTime;
-            m_pGame->m_Camera.Update();
+            m_pGame->m_Camera.Update(m_dwTime);
         }
     }
 
-    // Draw flag animation
-    if (m_pGame->m_bDrawFlagDir == false) {
-        m_pGame->m_iDrawFlag++;
-        if (m_pGame->m_iDrawFlag >= 25) { m_pGame->m_iDrawFlag = 25; m_pGame->m_bDrawFlagDir = true; }
-    }
-    else {
-        m_pGame->m_iDrawFlag--;
-        if (m_pGame->m_iDrawFlag < 0) { m_pGame->m_iDrawFlag = 0; m_pGame->m_bDrawFlagDir = false; }
+    // Draw flag animation (time-based triangle wave: 0..255..0 over 4 seconds, 32bpp range)
+    {
+        uint32_t phase = m_dwTime % 4000;
+        if (phase < 2000)
+            m_pGame->m_iDrawFlag = (phase * 255) / 2000;
+        else
+            m_pGame->m_iDrawFlag = 255 - ((phase - 2000) * 255) / 2000;
     }
 }
 

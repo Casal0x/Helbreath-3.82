@@ -380,21 +380,32 @@ namespace NetworkMessageHandlers {
 			if (pGame->m_pSkillCfgList[i] != 0)
 				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
 		}
+		// Calculate majestic cost before applying (m_wLU_* are negative for reductions)
+		int iTotalReduction = -(pGame->m_pPlayer->m_wLU_Str + pGame->m_pPlayer->m_wLU_Vit +
+			pGame->m_pPlayer->m_wLU_Dex + pGame->m_pPlayer->m_wLU_Int +
+			pGame->m_pPlayer->m_wLU_Mag + pGame->m_pPlayer->m_wLU_Char);
+		int iMajesticCost = iTotalReduction / 3;
+
+		// Apply pending stat changes (adds negative values = reduces stats)
 		pGame->m_pPlayer->m_iStr += pGame->m_pPlayer->m_wLU_Str;
 		pGame->m_pPlayer->m_iVit += pGame->m_pPlayer->m_wLU_Vit;
 		pGame->m_pPlayer->m_iDex += pGame->m_pPlayer->m_wLU_Dex;
 		pGame->m_pPlayer->m_iInt += pGame->m_pPlayer->m_wLU_Int;
 		pGame->m_pPlayer->m_iMag += pGame->m_pPlayer->m_wLU_Mag;
 		pGame->m_pPlayer->m_iCharisma += pGame->m_pPlayer->m_wLU_Char;
-		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
+		pGame->m_iGizonItemUpgradeLeft -= iMajesticCost;
 		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
+		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
+		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
 		pGame->AddEventList("Your stat has been changed.", 10);
 	}
 
 	void HandleStateChangeFailed(CGame* pGame, char* pData)
 	{
 		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
-		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
+		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ChangeStatsMajestic);
 		pGame->AddEventList("Your stat has not been changed.", 10);
 	}
 
@@ -402,7 +413,7 @@ namespace NetworkMessageHandlers {
 	{
 		pGame->AddEventList("Your stat has not been changed.", 10);
 		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
-		pGame->m_pPlayer->m_iLU_Point = pGame->m_pPlayer->m_iLevel * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70) - 3;
+		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
 	}
 
 	void HandleSpecialAbilityStatus(CGame* pGame, char* pData)

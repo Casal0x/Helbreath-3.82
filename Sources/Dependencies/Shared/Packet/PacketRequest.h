@@ -151,9 +151,12 @@ namespace net {
 
 	struct HB_PACKED PacketRequestStateChange {
 		PacketHeader header;
-		uint8_t change1;
-		uint8_t change2;
-		uint8_t change3;
+		int16_t str;
+		int16_t vit;
+		int16_t dex;
+		int16_t intel;
+		int16_t mag;
+		int16_t chr;
 	};
 
 	struct HB_PACKED PacketCommandMotionBase {

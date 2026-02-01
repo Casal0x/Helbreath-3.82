@@ -11,8 +11,6 @@
 class CTile
 {
 public:
-	bool  m_bSpriteOmit;
-
 	inline void Clear()
 	{
 		m_wObjectID     = 0;
@@ -64,7 +62,7 @@ public:
 		m_motion.Reset();
 	}
 
-	inline CTile() : m_bSpriteOmit(false)
+	inline CTile()
 	{
 		m_sOwnerType = 0;
 		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));

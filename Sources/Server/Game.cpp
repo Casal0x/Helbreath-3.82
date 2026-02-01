@@ -1695,7 +1695,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey)
 	iStats = (m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iDex + m_pClientList[iClientH]->m_iVit +
 		m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma);
 
-	m_pClientList[iClientH]->m_iLU_Pool = m_pClientList[iClientH]->m_iLevel * 3 - (iStats - 70);
+	m_pClientList[iClientH]->m_iLU_Pool = (m_pClientList[iClientH]->m_iLevel - 1) * 3 - (iStats - 70);
 	char_pkt->lu_point = static_cast<std::uint16_t>(m_pClientList[iClientH]->m_iLU_Pool);
 	char_pkt->lu_unused[0] = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_cVar);
 	char_pkt->lu_unused[1] = 0;
@@ -16361,19 +16361,8 @@ bool CGame::bCheckLevelUp(int iClientH)
 }
 // 2003-04-14 ÁöÁ¸ Æ÷ÀÎÆ®¸¦ ·¹º§ ¼öÁ¤¿¡ ¾µ¼ö ÀÖ´Ù...
 /////////////////////////////////////////////////////////////////////////////////////
-//  StateChangeHandler(int iClientH, char * pData, uint32_t dwMsgSize)
-//  desc		 :: ÁöÁ¸Æ÷ÀÎÆ®¸¦ ·¹º§¾÷ Æ÷ÀÎÆ®·Î µ¹¸°´Ù...
-//	return value :: void
-//  date		 :: [2003-04-14]    stupid koreans
-/////////////////////////////////////////////////////////////////////////////////////
 void CGame::StateChangeHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 {
-	char cStateChange1, cStateChange2, cStateChange3;
-	char cStr, cVit, cDex, cInt, cMag, cChar;
-	char cStateTxt[512];
-	int iOldStr, iOldVit, iOldDex, iOldInt, iOldMag, iOldChar;
-	int iTotalSetting = 0;
-
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft <= 0) return;
@@ -16381,170 +16370,86 @@ void CGame::StateChangeHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketRequestStateChange>(
 		pData, sizeof(hb::net::PacketRequestStateChange));
 	if (!pkt) return;
-	cStr = cVit = cDex = cInt = cMag = cChar = 0;
-	cStateChange1 = static_cast<char>(pkt->change1);
-	cStateChange2 = static_cast<char>(pkt->change2);
-	cStateChange3 = static_cast<char>(pkt->change3);
 
-	iOldStr = m_pClientList[iClientH]->m_iStr;
-	iOldVit = m_pClientList[iClientH]->m_iVit;
-	iOldDex = m_pClientList[iClientH]->m_iDex;
-	iOldInt = m_pClientList[iClientH]->m_iInt;
-	iOldMag = m_pClientList[iClientH]->m_iMag;
-	iOldChar = m_pClientList[iClientH]->m_iCharisma;
+	int16_t cStr = pkt->str;
+	int16_t cVit = pkt->vit;
+	int16_t cDex = pkt->dex;
+	int16_t cInt = pkt->intel;
+	int16_t cMag = pkt->mag;
+	int16_t cChar = pkt->chr;
 
-	try
+	// All reduction values must be >= 0
+	if (cStr < 0 || cVit < 0 || cDex < 0 || cInt < 0 || cMag < 0 || cChar < 0)
 	{
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Char(%s) Str(%d) Vit(%d) Dex(%d) Int(%d) Mag(%d) Chr(%d) ", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iStr, m_pClientList[iClientH]->m_iVit, m_pClientList[iClientH]->m_iDex, m_pClientList[iClientH]->m_iInt, m_pClientList[iClientH]->m_iMag, m_pClientList[iClientH]->m_iCharisma);
-		PutLogList(G_cTxt);
-	}
-	catch (...)
-	{
-	}
-
-	if (!bChangeState(cStateChange1, &cStr, &cVit, &cDex, &cInt, &cMag, &cChar))
-	{
-		//Å¬¶óÀÌ¾ðÆ®¿¡¼­ °ªÀ» Àß¸ø º¸³»¿Âµí...
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-	if (!bChangeState(cStateChange2, &cStr, &cVit, &cDex, &cInt, &cMag, &cChar))
-	{
-		//Å¬¶óÀÌ¾ðÆ®¿¡¼­ °ªÀ» Àß¸ø º¸³»¿Âµí...
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-	if (!bChangeState(cStateChange3, &cStr, &cVit, &cDex, &cInt, &cMag, &cChar))
-	{
-		//Å¬¶óÀÌ¾ðÆ®¿¡¼­ °ªÀ» Àß¸ø º¸³»¿Âµí...
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
 		return;
 	}
 
-	try
+	// Total must be a positive multiple of 3 (DEF_TOTALLEVELUPPOINT per majestic point)
+	int iTotalReduction = cStr + cVit + cDex + cInt + cMag + cChar;
+	if (iTotalReduction <= 0 || (iTotalReduction % DEF_TOTALLEVELUPPOINT) != 0)
 	{
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Char(%s) St1(%d) St2(%d) St3(%d) Str(%d) Vit(%d) Dex(%d) Int(%d) Mag(%d) Chr(%d) ", m_pClientList[iClientH]->m_cCharName, cStateChange1, cStateChange2, cStateChange3, cStr, cVit, cDex, cInt, cMag, cChar);
-		PutLogList(G_cTxt);
-	}
-	catch (...)
-	{
+		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
+		return;
 	}
 
-	//±æµå ¸¶½ºÅÍ¸é cChar¸¦ ¸ø ³»¸°´Ù..
+	int iMajesticCost = iTotalReduction / DEF_TOTALLEVELUPPOINT;
+	if (iMajesticCost > m_pClientList[iClientH]->m_iGizonItemUpgradeLeft)
+	{
+		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
+		return;
+	}
+
+	// Stats must equal the max-level formula (all points fully allocated)
+	int iOldStr = m_pClientList[iClientH]->m_iStr;
+	int iOldVit = m_pClientList[iClientH]->m_iVit;
+	int iOldDex = m_pClientList[iClientH]->m_iDex;
+	int iOldInt = m_pClientList[iClientH]->m_iInt;
+	int iOldMag = m_pClientList[iClientH]->m_iMag;
+	int iOldChar = m_pClientList[iClientH]->m_iCharisma;
+
+	if (iOldStr + iOldVit + iOldDex + iOldInt + iOldMag + iOldChar != ((m_iMaxLevel - 1) * 3 + 70))
+		return;
+
+	// Each stat must stay >= 10 and <= DEF_CHARPOINTLIMIT after reduction
+	if ((iOldStr - cStr < 10) || (iOldStr - cStr > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+	if ((iOldVit - cVit < 10) || (iOldVit - cVit > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+	if ((iOldDex - cDex < 10) || (iOldDex - cDex > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+	if ((iOldInt - cInt < 10) || (iOldInt - cInt > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+	if ((iOldMag - cMag < 10) || (iOldMag - cMag > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+	if ((iOldChar - cChar < 10) || (iOldChar - cChar > DEF_CHARPOINTLIMIT)) { SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0); return; }
+
+	// Guild masters cannot reduce CHR below 20
 	if (m_pClientList[iClientH]->m_iGuildRank == 0)
 	{
-		if (m_pClientList[iClientH]->m_iCharisma - cChar < 20)
+		if (iOldChar - cChar < 20)
 		{
-			//Å¬¶óÀÌ¾ðÆ®¿¡¼­ °ªÀ» Àß¸ø º¸³»¿Âµí...
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
 			return;
 		}
 	}
 
-	//Æ¯¼ºÄ¡ °ªÀÌ ·¹º§°ú ¸ÂÁö ¾Ê´Ù¸é ³»¸±¼ö ¾ø´Ù..
-	if (iOldStr + iOldVit + iOldDex + iOldInt + iOldMag + iOldChar != (179 * 3 + 70))
-	{
-		//ÇØÅ·ÀÌ´Ù... Å¬¶óÀÌ¾ðÆ®¿¡¼­ ¸øº¸³»°Ô µÇ¾î ÀÖ´Ù ±Ùµ¥ ¿Ô´Ù¸é ÇØÅ·...
-		return;
-	}
+	std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Majestic: Char(%s) cost(%d) Str(%d) Vit(%d) Dex(%d) Int(%d) Mag(%d) Chr(%d)",
+		m_pClientList[iClientH]->m_cCharName, iMajesticCost, cStr, cVit, cDex, cInt, cMag, cChar);
+	PutLogList(G_cTxt);
 
+	// Apply reductions
+	m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= iMajesticCost;
+	m_pClientList[iClientH]->m_iLU_Pool += iTotalReduction;
 
-	if (cStr < 0 || cVit < 0 || cDex < 0 || cInt < 0 || cMag < 0 || cChar < 0
-		|| cStr + cVit + cDex + cInt + cMag + cChar != 3)
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	// Æ¯¼ºÄ¡°ªÀÌ 10ÀÌÇÏ·Î ¸ø³»·Á °£´Ù... Á¦ÇÑÀ» ³ÑÀ»¼öµµ ¾ø´Ù...
-	if ((m_pClientList[iClientH]->m_iStr - cStr > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iStr - cStr < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if ((m_pClientList[iClientH]->m_iDex - cDex > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iDex - cDex < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if ((m_pClientList[iClientH]->m_iInt - cInt > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iInt - cInt < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if ((m_pClientList[iClientH]->m_iVit - cVit > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iVit - cVit < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if ((m_pClientList[iClientH]->m_iMag - cMag > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iMag - cMag < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if ((m_pClientList[iClientH]->m_iCharisma - cChar > DEF_CHARPOINTLIMIT)
-		|| (m_pClientList[iClientH]->m_iCharisma - cChar < 10))
-	{
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_FAILED, 0, 0, 0, 0);
-		return;
-	}
-
-	if (m_pClientList[iClientH]->m_iLU_Pool < 3) m_pClientList[iClientH]->m_iLU_Pool = 3;
-
-	// ¿À·ù°¡ ¾øÀ¸¸é °ªÀ» ÇÒ´çÇÑ´Ù.
-	//m_pClientList[iClientH]->m_iLU_Pool += 3;
-
-	m_pClientList[iClientH]->m_iGizonItemUpgradeLeft--;
-
-	//HBest uuendus, hp,mp,sp lowering, skillcheck
-	m_pClientList[iClientH]->m_iHP -= (cStr + 3 * cVit);
-	m_pClientList[iClientH]->m_iMP -= (cInt + 2 * cMag);
-	m_pClientList[iClientH]->m_iSP -= (2 * cStr);
 	m_pClientList[iClientH]->m_iStr -= cStr;
 	m_pClientList[iClientH]->m_iVit -= cVit;
 	m_pClientList[iClientH]->m_iDex -= cDex;
 	m_pClientList[iClientH]->m_iInt -= cInt;
-	//2003-04-22ÀÏ ¸¶¹ýÀ» »èÁ¦ ½ÃÅ²´Ù.... ÀÎÆ®°¡ ³»·Á°¡°í ³ª¼­ µ¹¾Æ°¡¾ß ÇÑ´Ù...
-	if (cInt > 0)
-		bCheckMagicInt(iClientH);
+	if (cInt > 0) bCheckMagicInt(iClientH);
 	m_pClientList[iClientH]->m_iMag -= cMag;
 	m_pClientList[iClientH]->m_iCharisma -= cChar;
-	//SkillCheck(iClientH);
 
-	try
-	{
-		std::memset(cStateTxt, 0, sizeof(cStateTxt));
+	// Recalculate derived stats
+	m_pClientList[iClientH]->m_iHP = iGetMaxHP(iClientH);
+	m_pClientList[iClientH]->m_iMP = iGetMaxMP(iClientH);
+	m_pClientList[iClientH]->m_iSP = iGetMaxSP(iClientH);
 
-		std::snprintf(cStateTxt, sizeof(cStateTxt), "STR(%d->%d)VIT(%d->%d)DEX(%d->%d)INT(%d->%d)MAG(%d->%d)CHARISMA(%d->%d)",
-			iOldStr, m_pClientList[iClientH]->m_iStr,
-			iOldVit, m_pClientList[iClientH]->m_iVit,
-			iOldDex, m_pClientList[iClientH]->m_iDex,
-			iOldInt, m_pClientList[iClientH]->m_iInt,
-			iOldMag, m_pClientList[iClientH]->m_iMag,
-			iOldChar, m_pClientList[iClientH]->m_iCharisma
-		);
-	}
-	catch (...)
-	{
-
-	}
-
-	//_bCustomLog(DEF_ITEMLOG_CUSTOM,iClientH,0,cStateTxt);
-
-	//2003-04-22ÀÏ ½ºÅ³À» ³»·Á°¡°Ô ÇÑ´Ù... 
-	//bCheckSkillState(iClientH);
-
-	//¼º°ø..!!!
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_STATECHANGE_SUCCESS, 0, 0, 0, 0);
 }
 
@@ -16586,17 +16491,15 @@ bool CGame::bChangeState(char cStateChange, char* cStr, char* cVit, char* cDex, 
 	}
 	else if (cStateChange == DEF_VIT)
 	{
-		*cInt += 1;
-		//		if(m_pClientList[iClientH]->m_iStr - cVit < 10 || m_pClientList[iClientH]->cVit - cVit < DEF_CHARPOINTLIMIT )
-		//			return 0;
+		*cVit += 1;
 	}
 	else if (cStateChange == DEF_DEX)
 	{
-		*cVit += 1;
+		*cDex += 1;
 	}
 	else if (cStateChange == DEF_INT)
 	{
-		*cDex += 1;
+		*cInt += 1;
 	}
 	else if (cStateChange == DEF_MAG)
 	{
@@ -16646,37 +16549,35 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize
 		return;
 	}
 
-	// Check if adding points would exceed the stat limit
-	if (m_pClientList[iClientH]->m_iStr + cStr > DEF_CHARPOINTLIMIT)
+	// Check if adding points would exceed the stat limit or be negative
+	if ((m_pClientList[iClientH]->m_iStr + cStr > DEF_CHARPOINTLIMIT) || (cStr < 0))
 		return;
 
-	if (m_pClientList[iClientH]->m_iDex + cDex > DEF_CHARPOINTLIMIT)
+	if ((m_pClientList[iClientH]->m_iDex + cDex > DEF_CHARPOINTLIMIT) || (cDex < 0))
 		return;
 
-	if (m_pClientList[iClientH]->m_iInt + cInt > DEF_CHARPOINTLIMIT)
+	if ((m_pClientList[iClientH]->m_iInt + cInt > DEF_CHARPOINTLIMIT) || (cInt < 0))
 		return;
 
-	if (m_pClientList[iClientH]->m_iVit + cVit > DEF_CHARPOINTLIMIT)
+	if ((m_pClientList[iClientH]->m_iVit + cVit > DEF_CHARPOINTLIMIT) || (cVit < 0))
 		return;
 
-	if (m_pClientList[iClientH]->m_iMag + cMag > DEF_CHARPOINTLIMIT)
+	if ((m_pClientList[iClientH]->m_iMag + cMag > DEF_CHARPOINTLIMIT) || (cMag < 0))
 		return;
 
-	if (m_pClientList[iClientH]->m_iCharisma + cChar > DEF_CHARPOINTLIMIT)
+	if ((m_pClientList[iClientH]->m_iCharisma + cChar > DEF_CHARPOINTLIMIT) || (cChar < 0))
 		return;
 
 	iTotalSetting = m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iDex + m_pClientList[iClientH]->m_iVit +
 		m_pClientList[iClientH]->m_iInt + m_pClientList[iClientH]->m_iMag + m_pClientList[iClientH]->m_iCharisma;
 
 	//(·¹º§ Æ¯¼º°ª + ·¹º§¾÷ Æ÷ÀÎÆ® > ·¹º§¾÷ Æ¯¼º°ª Á¤»óÄ¡)¸é ºñÁ¤»óÀÌ´Ù.. Ã³¸® ºÒ°¡.. ·¹º§¾÷ Æ÷ÀÎÆ®¸¦ Á¤»óÄ¡·Î ¸¶Ãß°í Ã³¸® ºÒ°¡..
-	if (iTotalSetting + m_pClientList[iClientH]->m_iLU_Pool - 3 > ((m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70))
+	if (iTotalSetting + m_pClientList[iClientH]->m_iLU_Pool > ((m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70))
 	{
+		m_pClientList[iClientH]->m_iLU_Pool = (m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70 - iTotalSetting;
 
-		m_pClientList[iClientH]->m_iLU_Pool = /*m_cLU_Str ÃÊ±â°ª*/3 + (m_pClientList[iClientH]->m_iLevel - 1) * 3 + 70 - iTotalSetting;
-
-		//iTotalSetting°ªÀÌ Àß¸øµÈ °æ¿ì´Ù...
-		if (m_pClientList[iClientH]->m_iLU_Pool < 3)
-			m_pClientList[iClientH]->m_iLU_Pool = 3;
+		if (m_pClientList[iClientH]->m_iLU_Pool < 0)
+			m_pClientList[iClientH]->m_iLU_Pool = 0;
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_SETTING_FAILED, 0, 0, 0, 0);
 		return;
 	}

@@ -15,65 +15,60 @@ void CCamera::Reset()
     m_iPositionY = 0;
     m_iDestinationX = 0;
     m_iDestinationY = 0;
-    m_iVelocityX = 0;
-    m_iVelocityY = 0;
+    m_dwLastUpdateTime = 0;
     m_iSavedPositionX = 0;
     m_iSavedPositionY = 0;
     m_iShakeDegree = 0;
 }
 
-void CCamera::Update()
+void CCamera::Update(uint32_t currentTime)
 {
-    // Calculate distance to destination
-    int deltaX = m_iPositionX - m_iDestinationX;
-    int deltaY = m_iPositionY - m_iDestinationY;
+    int dx = m_iDestinationX - m_iPositionX;
+    int dy = m_iDestinationY - m_iPositionY;
 
-    // X-axis interpolation
-    if (abs(deltaX) < abs(m_iVelocityX))
+    // Already at destination
+    if (dx == 0 && dy == 0)
     {
-        // Close enough - snap to destination
+        m_dwLastUpdateTime = currentTime;
+        return;
+    }
+
+    float dt = (currentTime - m_dwLastUpdateTime) * 0.001f;
+    m_dwLastUpdateTime = currentTime;
+
+    // First frame or large time gap — snap immediately
+    if (dt <= 0.0f || dt > 0.5f)
+    {
         m_iPositionX = m_iDestinationX;
-        m_iVelocityX = 0;
-    }
-    else
-    {
-        // Adjust velocity based on direction
-        if (deltaX > 0) m_iVelocityX--;
-        else if (deltaX < 0) m_iVelocityX++;
-        else m_iVelocityX = 0;
-
-        // Limit velocity when close to destination (deceleration)
-        if (abs(deltaX) < 40)
-        {
-            if (m_iVelocityX > 2) m_iVelocityX = 2;
-            else if (m_iVelocityX < -2) m_iVelocityX = -2;
-        }
-
-        m_iPositionX += m_iVelocityX;
-    }
-
-    // Y-axis interpolation
-    if (abs(deltaY) < abs(m_iVelocityY))
-    {
-        // Close enough - snap to destination
         m_iPositionY = m_iDestinationY;
-        m_iVelocityY = 0;
+        return;
+    }
+
+    // Large distance (teleport) — snap immediately
+    if (abs(dx) > 128 || abs(dy) > 128)
+    {
+        m_iPositionX = m_iDestinationX;
+        m_iPositionY = m_iDestinationY;
+        return;
+    }
+
+    // Exponential lerp: fast tracking with smooth micro-gap bridging
+    constexpr float SMOOTH_SPEED = 18.0f;
+    float t = 1.0f - expf(-SMOOTH_SPEED * dt);
+
+    int moveX = static_cast<int>(dx * t);
+    int moveY = static_cast<int>(dy * t);
+
+    // Snap when sub-pixel close to avoid never arriving
+    if (moveX == 0 && moveY == 0)
+    {
+        m_iPositionX = m_iDestinationX;
+        m_iPositionY = m_iDestinationY;
     }
     else
     {
-        // Adjust velocity based on direction
-        if (deltaY > 0) m_iVelocityY--;
-        else if (deltaY < 0) m_iVelocityY++;
-        else m_iVelocityY = 0;
-
-        // Limit velocity when close to destination (deceleration)
-        if (abs(deltaY) < 40)
-        {
-            if (m_iVelocityY > 2) m_iVelocityY = 2;
-            else if (m_iVelocityY < -2) m_iVelocityY = -2;
-        }
-
-        m_iPositionY += m_iVelocityY;
+        m_iPositionX += moveX;
+        m_iPositionY += moveY;
     }
 }
 
@@ -95,8 +90,7 @@ void CCamera::SnapTo(int x, int y)
     m_iPositionY = y;
     m_iDestinationX = x;
     m_iDestinationY = y;
-    m_iVelocityX = 0;
-    m_iVelocityY = 0;
+    m_dwLastUpdateTime = 0;
 }
 
 void CCamera::MoveDestination(int dx, int dy)
