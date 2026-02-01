@@ -370,6 +370,12 @@
     <ClInclude Include="Overlay_WaitInitData.h">
       <Filter>Screens\Overlays</Filter>
     </ClInclude>
+    <ClInclude Include="DevConsole.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
+    <ClInclude Include="Overlay_DevConsole.h">
+      <Filter>Screens\Overlays</Filter>
+    </ClInclude>
     <ClInclude Include="MouseInterface.h">
       <Filter>Input</Filter>
     </ClInclude>
@@ -729,6 +735,12 @@
       <Filter>Screens\Overlays</Filter>
     </ClCompile>
     <ClCompile Include="Overlay_WaitInitData.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="DevConsole.cpp">
+      <Filter>Screens\Overlays</Filter>
+    </ClCompile>
+    <ClCompile Include="Overlay_DevConsole.cpp">
       <Filter>Screens\Overlays</Filter>
     </ClCompile>
     <ClCompile Include="MouseInterface.cpp">

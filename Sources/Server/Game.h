@@ -48,7 +48,6 @@
 #include "TempNpcItem.h"
 #include "PartyManager.h"
 
-#define DEF_MAXADMINS				50
 #define DEF_MAXMAPS					100
 #define DEF_MAXAGRICULTURE			200
 #define DEF_MAXNPCTYPES				200
@@ -945,10 +944,6 @@ public:
 	struct {
 		char m_cBannedIPaddress[21];
 	} m_stBannedList[DEF_MAXBANNED];
-
-	struct {
-		char m_cGMName[11];
-	} m_stAdminList[DEF_MAXADMINS];
 
 	// Crusade Scheduler
 	struct {

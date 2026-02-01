@@ -40,6 +40,7 @@ public:
 
     // Screen Effects
     virtual void DrawFadeOverlay(float alpha) override;
+    virtual void DrawDarkRect(int x1, int y1, int x2, int y2, float alpha) override;
 
     // Text Rendering
     virtual void BeginTextBatch() override;

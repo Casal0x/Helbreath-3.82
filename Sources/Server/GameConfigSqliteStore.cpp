@@ -234,9 +234,6 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         " key TEXT PRIMARY KEY,"
         " value TEXT NOT NULL"
         ");"
-        "CREATE TABLE IF NOT EXISTS admin_list ("
-        " gm_name TEXT PRIMARY KEY"
-        ");"
         "CREATE TABLE IF NOT EXISTS banned_list ("
         " ip_address TEXT PRIMARY KEY"
         ");"
@@ -983,76 +980,6 @@ bool LoadSettingsConfig(sqlite3* db, CGame* game)
     return true;
 }
 
-bool SaveAdminListConfig(sqlite3* db, const CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    if (!BeginTransaction(db)) {
-        return false;
-    }
-
-    if (!ClearTable(db, "admin_list")) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "INSERT INTO admin_list(gm_name) VALUES(?);", -1, &stmt, nullptr) != SQLITE_OK) {
-        RollbackTransaction(db);
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXADMINS; i++) {
-        if (game->m_stAdminList[i].m_cGMName[0] == 0) {
-            continue;
-        }
-        sqlite3_reset(stmt);
-        sqlite3_clear_bindings(stmt);
-        if (!PrepareAndBindText(stmt, 1, game->m_stAdminList[i].m_cGMName) ||
-            sqlite3_step(stmt) != SQLITE_DONE) {
-            sqlite3_finalize(stmt);
-            RollbackTransaction(db);
-            return false;
-        }
-    }
-
-    sqlite3_finalize(stmt);
-    if (!CommitTransaction(db)) {
-        RollbackTransaction(db);
-        return false;
-    }
-    return true;
-}
-
-bool LoadAdminListConfig(sqlite3* db, CGame* game)
-{
-    if (db == nullptr || game == nullptr) {
-        return false;
-    }
-
-    for (int i = 0; i < DEF_MAXADMINS; i++) {
-        std::memset(game->m_stAdminList[i].m_cGMName, 0, sizeof(game->m_stAdminList[i].m_cGMName));
-    }
-
-    sqlite3_stmt* stmt = nullptr;
-    if (sqlite3_prepare_v2(db, "SELECT gm_name FROM admin_list ORDER BY gm_name;", -1, &stmt, nullptr) != SQLITE_OK) {
-        return false;
-    }
-
-    int index = 0;
-    while (sqlite3_step(stmt) == SQLITE_ROW) {
-        if (index >= DEF_MAXADMINS) {
-            break;
-        }
-        CopyColumnText(stmt, 0, game->m_stAdminList[index].m_cGMName, sizeof(game->m_stAdminList[index].m_cGMName));
-        index++;
-    }
-
-    sqlite3_finalize(stmt);
-    return true;
-}
 
 bool SaveBannedListConfig(sqlite3* db, const CGame* game)
 {

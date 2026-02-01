@@ -391,14 +391,20 @@ LRESULT Win32Window::HandleMessage(UINT message, WPARAM wParam, LPARAM lParam)
         return 0;
 
     case WM_KEYDOWN:
+    case WM_SYSKEYDOWN:
         if (m_pEventHandler)
             m_pEventHandler->OnKeyDown(static_cast<int>(wParam));
+        // For WM_SYSKEYDOWN: skip DefWindowProc to prevent Alt from activating the menu bar,
+        // except for Alt+F4 which should still work.
+        if (message == WM_SYSKEYDOWN && wParam != VK_F4)
+            return 0;
         return DefWindowProc(m_hWnd, message, wParam, lParam);
 
     case WM_KEYUP:
+    case WM_SYSKEYUP:
         if (m_pEventHandler)
             m_pEventHandler->OnKeyUp(static_cast<int>(wParam));
-        return DefWindowProc(m_hWnd, message, wParam, lParam);
+        return 0;
 
     case WM_CHAR:
         if (m_pEventHandler)

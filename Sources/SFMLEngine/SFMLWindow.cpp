@@ -606,6 +606,9 @@ int SFMLWindow::SfmlKeyToKeyCode(sf::Keyboard::Key key)
     case sf::Keyboard::Key::Multiply: return static_cast<int>(KeyCode::NumpadMultiply);
     case sf::Keyboard::Key::Divide: return static_cast<int>(KeyCode::NumpadDivide);
 
+    // OEM keys
+    case sf::Keyboard::Key::Grave: return static_cast<int>(KeyCode::Grave);
+
     default: return static_cast<int>(KeyCode::Unknown);
     }
 }

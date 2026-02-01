@@ -450,6 +450,19 @@ void SFMLRenderer::DrawFadeOverlay(float alpha)
     m_backBuffer.draw(overlay);
 }
 
+void SFMLRenderer::DrawDarkRect(int x1, int y1, int x2, int y2, float alpha)
+{
+    if (alpha <= 0.0f) return;
+    if (alpha > 1.0f) alpha = 1.0f;
+
+    sf::RectangleShape rect(
+        {static_cast<float>(x2 - x1), static_cast<float>(y2 - y1)}
+    );
+    rect.setPosition({static_cast<float>(x1), static_cast<float>(y1)});
+    rect.setFillColor(sf::Color(0, 0, 0, static_cast<uint8_t>(alpha * 255.0f)));
+    m_backBuffer.draw(rect);
+}
+
 void SFMLRenderer::BeginTextBatch()
 {
     // Delegate to TextLib for consistency

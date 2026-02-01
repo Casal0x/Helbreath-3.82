@@ -16,20 +16,6 @@
 PRAGMA foreign_keys = false;
 
 -- ----------------------------
--- Table structure for admin_list
--- ----------------------------
-DROP TABLE IF EXISTS "admin_list";
-CREATE TABLE "admin_list" (
-  "gm_name" TEXT,
-  PRIMARY KEY ("gm_name")
-);
-
--- ----------------------------
--- Records of admin_list
--- ----------------------------
-INSERT INTO "admin_list" VALUES ('CrazyAdmin');
-
--- ----------------------------
 -- Table structure for admin_settings
 -- ----------------------------
 DROP TABLE IF EXISTS "admin_settings";

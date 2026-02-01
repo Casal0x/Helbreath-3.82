@@ -28,6 +28,7 @@
 #include "RendererFactory.h"
 #include "GameWindowHandler.h"
 #include "Benchmark.h"
+#include "DevConsole.h"
 
 // --------------------------------------------------------------
 // GPU Selection - Force discrete GPU on hybrid systems
@@ -79,8 +80,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
 {
     srand((unsigned)time(0));
 
-    // Allocate debug console
-    DebugConsole::Allocate();
+    // Initialize in-game developer console (replaces DebugConsole window)
+    DevConsole::Get().Initialize();
 
     // Ensure consistent pixel coordinates under RDP and high-DPI setups
     if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
@@ -141,8 +142,8 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     Window::Destroy();
     Renderer::Destroy();
 
-    // Deallocate debug console
-    DebugConsole::Deallocate();
+    // Shutdown developer console
+    DevConsole::Get().Shutdown();
 
     return 0;
 }

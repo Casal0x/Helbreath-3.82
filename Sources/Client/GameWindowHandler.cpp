@@ -11,6 +11,9 @@
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "ISpriteFactory.h"
+#include "DevConsole.h"
+#include "Overlay_DevConsole.h"
+#include "GameModeManager.h"
 
 extern HWND G_hWnd;
 
@@ -113,6 +116,13 @@ void GameWindowHandler::OnKeyDown(int keyCode)
     if (Input::Get())
         Input::Get()->OnKeyDown(keyCode);
 
+    // Route arrow/page keys to DevConsole when visible
+    if (DevConsole::Get().IsVisible())
+    {
+        DevConsole::Get().HandleKeyDown(static_cast<WPARAM>(keyCode));
+        return;
+    }
+
     // Also notify game for special key handling (hotkeys, etc.)
     // Skip modifier keys as they're handled purely through Input::
     if (keyCode != VK_SHIFT && keyCode != VK_CONTROL && keyCode != VK_MENU &&
@@ -133,6 +143,27 @@ void GameWindowHandler::OnKeyUp(int keyCode)
     // Route all keys through Input system
     if (Input::Get())
         Input::Get()->OnKeyUp(keyCode);
+
+    // Alt+Tilde: Toggle developer console (checked before anything else)
+    if (keyCode == static_cast<int>(KeyCode::Grave) && Input::IsAltDown())
+    {
+        DevConsole& console = DevConsole::Get();
+        if (console.IsVisible())
+        {
+            console.Hide();
+            GameModeManager::clear_overlay();
+        }
+        else
+        {
+            console.Show();
+            GameModeManager::set_overlay<Overlay_DevConsole>();
+        }
+        return;
+    }
+
+    // Block all other keys when DevConsole is visible
+    if (DevConsole::Get().IsVisible())
+        return;
 
     // Also notify game for special key handling
     // Skip modifier keys as they're handled purely through Input::
@@ -224,6 +255,12 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
 
 bool GameWindowHandler::OnTextInput(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    // Route WM_CHAR text input to DevConsole when visible
+    if (message == WM_CHAR && DevConsole::Get().IsVisible())
+    {
+        return DevConsole::Get().HandleChar(wParam);
+    }
+
     if (m_pGame)
     {
         return m_pGame->GetText(hWnd, message, wParam, lParam) != 0;

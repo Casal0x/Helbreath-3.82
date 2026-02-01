@@ -26,6 +26,8 @@
 #include "WeatherManager.h"
 #include "ChatCommandManager.h"
 #include "HotkeyManager.h"
+#include "DevConsole.h"
+#include "Overlay_DevConsole.h"
 
 // DialogBox system
 #include "IDialogBox.h"
@@ -433,6 +435,12 @@ void CGame::RenderFrame()
 	FrameTiming::BeginProfile(ProfileStage::Update);
 	GameModeManager::UpdateScreens();
 	FrameTiming::EndProfile(ProfileStage::Update);
+
+	// Re-activate DevConsole overlay if needed (e.g. after screen transition)
+	if (DevConsole::Get().IsVisible() && !GameModeManager::has_overlay())
+	{
+		GameModeManager::set_overlay<Overlay_DevConsole>();
+	}
 
 	// ============== Render Phase ==============
 	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);

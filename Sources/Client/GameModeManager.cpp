@@ -149,8 +149,8 @@ void GameModeManager::RenderImpl()
     // Render overlay on top with shadow box
     if (m_pActiveOverlay)
     {
-        // Draw shadow box to dim the base screen
-        m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+        if (m_pActiveOverlay->wants_background_dim())
+            m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
         m_pActiveOverlay->on_render();
     }
 }

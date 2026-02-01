@@ -52,6 +52,10 @@ public:
     // Returns the screen type identifier for runtime type checking
     virtual ScreenTypeId get_type_id() const = 0;
 
+    // Whether the overlay system should draw a full-screen dim behind this overlay.
+    // Override to false for overlays that draw their own background (e.g. DevConsole).
+    virtual bool wants_background_dim() const { return true; }
+
     // Called when a server response arrives in LogResponseHandler.
     // Return true if this screen handled the response (stops further processing),
     // false to fall through to default handling. Optional — not all screens need this.

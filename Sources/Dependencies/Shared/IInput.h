@@ -89,6 +89,9 @@ enum class KeyCode : int
     // Windows keys
     LWin = 91,
     RWin = 92,
+
+    // OEM keys
+    Grave = 192,   // ` / ~ (VK_OEM_3)
 };
 
 // Abstract input interface

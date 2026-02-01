@@ -271,6 +271,78 @@ void DDrawRenderer::DrawFadeOverlay(float alpha)
     }
 }
 
+void DDrawRenderer::DrawDarkRect(int x1, int y1, int x2, int y2, float alpha)
+{
+    if (alpha <= 0.0f) return;
+
+    uint16_t* pBase = m_ddraw.m_pBackB4Addr;
+    if (!pBase) return;
+
+    int width = m_ddraw.res_x;
+    int height = m_ddraw.res_y;
+    int pitch = m_ddraw.m_sBackB4Pitch;
+
+    // Clamp bounds
+    if (x1 < 0) x1 = 0;
+    if (y1 < 0) y1 = 0;
+    if (x2 > width) x2 = width;
+    if (y2 > height) y2 = height;
+    if (x1 >= x2 || y1 >= y2) return;
+
+    if (alpha > 1.0f) alpha = 1.0f;
+    int invAlpha = static_cast<int>((1.0f - alpha) * 256.0f);
+
+    if (alpha >= 1.0f)
+    {
+        uint16_t* pDst = pBase + y1 * pitch;
+        for (int y = y1; y < y2; y++)
+        {
+            memset(&pDst[x1], 0, (x2 - x1) * sizeof(uint16_t));
+            pDst += pitch;
+        }
+        return;
+    }
+
+    if (m_ddraw.m_cPixelFormat == 1) // RGB565
+    {
+        uint16_t* pDst = pBase + y1 * pitch;
+        for (int y = y1; y < y2; y++)
+        {
+            for (int x = x1; x < x2; x++)
+            {
+                uint16_t pixel = pDst[x];
+                int r = (pixel >> 11) & 0x1F;
+                int g = (pixel >> 5) & 0x3F;
+                int b = pixel & 0x1F;
+                r = (r * invAlpha) >> 8;
+                g = (g * invAlpha) >> 8;
+                b = (b * invAlpha) >> 8;
+                pDst[x] = static_cast<uint16_t>((r << 11) | (g << 5) | b);
+            }
+            pDst += pitch;
+        }
+    }
+    else // RGB555
+    {
+        uint16_t* pDst = pBase + y1 * pitch;
+        for (int y = y1; y < y2; y++)
+        {
+            for (int x = x1; x < x2; x++)
+            {
+                uint16_t pixel = pDst[x];
+                int r = (pixel >> 10) & 0x1F;
+                int g = (pixel >> 5) & 0x1F;
+                int b = pixel & 0x1F;
+                r = (r * invAlpha) >> 8;
+                g = (g * invAlpha) >> 8;
+                b = (b * invAlpha) >> 8;
+                pDst[x] = static_cast<uint16_t>((r << 10) | (g << 5) | b);
+            }
+            pDst += pitch;
+        }
+    }
+}
+
 void DDrawRenderer::BeginTextBatch()
 {
     // Delegate to TextLib - single point of font handling

@@ -52,6 +52,10 @@ public:
     // Used for fade transitions between game modes
     virtual void DrawFadeOverlay(float alpha) = 0;
 
+    // Draw a dark rectangle with given alpha (0.0 = transparent, 1.0 = opaque)
+    // Used for partial-screen overlays like the developer console
+    virtual void DrawDarkRect(int x1, int y1, int x2, int y2, float alpha) = 0;
+
     // ============== Text Rendering ==============
     virtual void BeginTextBatch() = 0;      // GetBackBufferDC
     virtual void EndTextBatch() = 0;        // ReleaseBackBufferDC

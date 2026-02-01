@@ -363,6 +363,8 @@
     <ClInclude Include="Overlay_ConnectionLost.h" />
     <ClInclude Include="Overlay_Msg.h" />
     <ClInclude Include="Overlay_WaitInitData.h" />
+    <ClInclude Include="DevConsole.h" />
+    <ClInclude Include="Overlay_DevConsole.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
@@ -438,6 +440,8 @@
     <ClCompile Include="Overlay_ConnectionLost.cpp" />
     <ClCompile Include="Overlay_Msg.cpp" />
     <ClCompile Include="Overlay_WaitInitData.cpp" />
+    <ClCompile Include="DevConsole.cpp" />
+    <ClCompile Include="Overlay_DevConsole.cpp" />
     <ClCompile Include="EffectManager.cpp" />
     <ClCompile Include="EntityMotion.cpp" />
     <ClCompile Include="Effect_Add.cpp" />

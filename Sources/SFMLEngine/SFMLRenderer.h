@@ -43,6 +43,7 @@ public:
 
     // Screen Effects
     void DrawFadeOverlay(float alpha) override;
+    void DrawDarkRect(int x1, int y1, int x2, int y2, float alpha) override;
 
     // Text Rendering
     void BeginTextBatch() override;

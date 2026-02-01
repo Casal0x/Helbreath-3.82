@@ -2,6 +2,8 @@
 #include "AudioManager.h"
 #include "ConfigManager.h"
 #include "HotkeyManager.h"
+#include "DevConsole.h"
+#include "Overlay_DevConsole.h"
 #include "LAN_ENG.H"
 
 void CGame::RegisterHotkeys()
@@ -29,6 +31,22 @@ void CGame::RegisterHotkeys()
 		[this]() { Hotkey_ToggleSoundAndMusic(); });
 	hotkeys.Register({ 'T', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_WhisperTarget(); });
+
+	// Alt+Tilde: Toggle developer console (works on all screens)
+	hotkeys.Register({ static_cast<int>(KeyCode::Grave), false, false, true }, HotkeyManager::Trigger::KeyUp,
+		[]() {
+			DevConsole& console = DevConsole::Get();
+			if (console.IsVisible())
+			{
+				console.Hide();
+				GameModeManager::clear_overlay();
+			}
+			else
+			{
+				console.Show();
+				GameModeManager::set_overlay<Overlay_DevConsole>();
+			}
+		});
 }
 
 void CGame::Hotkey_ToggleForceAttack()

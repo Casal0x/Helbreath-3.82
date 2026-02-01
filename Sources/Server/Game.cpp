@@ -773,10 +773,6 @@ bool CGame::bInit()
 		m_stCrusadeStructures[i].dY = 0;
 	}
 
-	for (i = 0; i < DEF_MAXADMINS; i++) {
-		std::memset(m_stAdminList[i].m_cGMName, 0, sizeof(m_stAdminList[i].m_cGMName));
-	}
-
 	for (i = 0; i < DEF_MAXBANNED; i++) {
 		std::memset(m_stBannedList[i].m_cBannedIPaddress, 0, sizeof(m_stBannedList[i].m_cBannedIPaddress));
 	}
@@ -900,13 +896,6 @@ bool CGame::bInit()
 	m_iMaxStatValue = m_iBaseStatValue + m_iCreationStatBonus + (m_iLevelupStatGain * m_iMaxLevel) + 16;
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Max stat value calculated: %d", m_iMaxStatValue);
 	PutLogList(G_cTxt);
-
-	if (!LoadAdminListConfig(configDb, this)) {
-		PutLogList(" ");
-		PutLogList("(!!!) CRITICAL ERROR! Cannot execute server! Admin list unavailable in GameConfigs.db.");
-		CloseGameConfigDatabase(configDb);
-		return false;
-	}
 
 	if (!LoadBannedListConfig(configDb, this)) {
 		PutLogList(" ");
@@ -34014,8 +34003,7 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 		PutLogList(ok ? "(!!!) Settings updated successfully!" : "(!!!) Settings reload failed!");
 	}
 	if (cConfigType == 2) {
-		ok = LoadAdminListConfig(configDb, this);
-		PutLogList(ok ? "(!!!) AdminList updated successfully!" : "(!!!) AdminList reload failed!");
+		PutLogList("(!) AdminList config type is no longer used. Admin level is set per-character in the player table.");
 	}
 	if (cConfigType == 3) {
 		ok = LoadBannedListConfig(configDb, this);
