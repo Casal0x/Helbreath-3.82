@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include <memory>
 
 // Maximum sound effects per category
 static const int AUDIO_MAX_CHARACTER_SOUNDS = 25;   // C1-C24
@@ -27,6 +28,17 @@ enum class SoundType
 	Character,  // Combat sounds (C1-C24)
 	Monster,    // Magic/Monster sounds (M1-M156)
 	Effect      // Environmental/Effect sounds (E1-E53)
+};
+
+// Decoded sound data stored in our own memory (bypasses miniaudio resource manager)
+struct DecodedSound
+{
+	void* pData = nullptr;
+	ma_uint64 frameCount = 0;
+	ma_format format = ma_format_f32;
+	ma_uint32 channels = 0;
+	ma_uint32 sampleRate = 0;
+	bool loaded = false;
 };
 
 class AudioManager
@@ -96,14 +108,15 @@ private:
 	AudioManager(const AudioManager&) = delete;
 	AudioManager& operator=(const AudioManager&) = delete;
 
-	// Helper to build sound file path
-	std::string GetSoundPath(SoundType type, int index) const;
+	// Decode a WAV file into a DecodedSound buffer (bypasses resource manager)
+	bool DecodeFile(const char* filePath, DecodedSound& out);
+	void FreeDecodedSound(DecodedSound& sound);
 
 	// Convert 0-100 volume to 0.0-1.0
 	float VolumeToFloat(int volume) const;
 
-	// Get pre-loaded sound for a type/index
-	ma_sound* GetPreloadedSound(SoundType type, int index);
+	// Get decoded sound data for a type/index
+	DecodedSound* GetDecodedSound(SoundType type, int index);
 
 	// Get the appropriate sound group for a given sound type/index
 	ma_sound_group* GetGroupForSound(SoundType type, int index);
@@ -126,24 +139,21 @@ private:
 	ma_sound_group m_uiGroup;
 	bool m_bUIGroupInitialized = false;
 
-	// Pre-loaded sound templates (decoded into memory)
-	std::array<ma_sound, AUDIO_MAX_CHARACTER_SOUNDS> m_characterSounds;
-	std::array<bool, AUDIO_MAX_CHARACTER_SOUNDS> m_characterSoundsLoaded = {};
-
-	std::array<ma_sound, AUDIO_MAX_MONSTER_SOUNDS> m_monsterSounds;
-	std::array<bool, AUDIO_MAX_MONSTER_SOUNDS> m_monsterSoundsLoaded = {};
-
-	std::array<ma_sound, AUDIO_MAX_EFFECT_SOUNDS> m_effectSounds;
-	std::array<bool, AUDIO_MAX_EFFECT_SOUNDS> m_effectSoundsLoaded = {};
+	// Pre-decoded sound data (our own memory, no resource manager)
+	std::array<DecodedSound, AUDIO_MAX_CHARACTER_SOUNDS> m_characterSounds = {};
+	std::array<DecodedSound, AUDIO_MAX_MONSTER_SOUNDS> m_monsterSounds = {};
+	std::array<DecodedSound, AUDIO_MAX_EFFECT_SOUNDS> m_effectSounds = {};
 
 	// Active sound pool for concurrent playback
 	struct ActiveSound {
+		ma_audio_buffer_ref bufferRef;
 		ma_sound sound;
 		bool inUse = false;
+		bool soundInitialized = false;
 	};
 	std::array<ActiveSound, AUDIO_MAX_ACTIVE_SOUNDS> m_activeSounds;
 
-	// Background music sound
+	// Background music sound (still uses resource manager - single file, streamed)
 	ma_sound m_bgmSound;
 	bool m_bBgmLoaded = false;
 

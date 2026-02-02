@@ -1,5 +1,6 @@
 #include "AudioManager.h"
 #include <cstdio>
+#include <cstdlib>
 
 AudioManager& AudioManager::Get()
 {
@@ -57,37 +58,86 @@ bool AudioManager::Initialize(HWND hWnd)
 	return true;
 }
 
+bool AudioManager::DecodeFile(const char* filePath, DecodedSound& out)
+{
+	// Decode to f32 at the engine's sample rate so playback doesn't need resampling
+	ma_uint32 engineSampleRate = ma_engine_get_sample_rate(&m_engine);
+	ma_decoder_config decoderConfig = ma_decoder_config_init(ma_format_f32, 0, engineSampleRate);
+	ma_decoder decoder;
+
+	ma_result result = ma_decoder_init_file(filePath, &decoderConfig, &decoder);
+	if (result != MA_SUCCESS)
+		return false;
+
+	ma_uint64 totalFrames = 0;
+	result = ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames);
+	if (result != MA_SUCCESS || totalFrames == 0)
+	{
+		ma_decoder_uninit(&decoder);
+		return false;
+	}
+
+	ma_uint32 bytesPerFrame = ma_get_bytes_per_frame(decoder.outputFormat, decoder.outputChannels);
+	size_t dataSize = (size_t)(totalFrames * bytesPerFrame);
+
+	void* pData = std::malloc(dataSize);
+	if (pData == nullptr)
+	{
+		ma_decoder_uninit(&decoder);
+		return false;
+	}
+
+	ma_uint64 framesRead = 0;
+	result = ma_decoder_read_pcm_frames(&decoder, pData, totalFrames, &framesRead);
+
+	out.pData = pData;
+	out.frameCount = framesRead;
+	out.format = decoder.outputFormat;
+	out.channels = decoder.outputChannels;
+	out.sampleRate = decoder.outputSampleRate;
+	out.loaded = true;
+
+	ma_decoder_uninit(&decoder);
+	return true;
+}
+
+void AudioManager::FreeDecodedSound(DecodedSound& sound)
+{
+	if (sound.pData != nullptr)
+	{
+		std::free(sound.pData);
+		sound.pData = nullptr;
+	}
+	sound.frameCount = 0;
+	sound.loaded = false;
+}
+
 void AudioManager::LoadSounds()
 {
 	if (!m_bSoundAvailable)
 		return;
 
 	char filename[64];
-	ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_NO_SPATIALIZATION;
 
 	// Load Character sounds (C1-C24)
 	for (int i = 1; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
 	{
 		std::sprintf(filename, "sounds\\C%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_characterSounds[i]);
-		m_characterSoundsLoaded[i] = (result == MA_SUCCESS);
+		DecodeFile(filename, m_characterSounds[i]);
 	}
 
 	// Load Monster/Magic sounds (M1-M156)
 	for (int i = 1; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
 	{
 		std::sprintf(filename, "sounds\\M%d.wav", i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, &m_sfxGroup, NULL, &m_monsterSounds[i]);
-		m_monsterSoundsLoaded[i] = (result == MA_SUCCESS);
+		DecodeFile(filename, m_monsterSounds[i]);
 	}
 
-	// Load Effect sounds (E1-E53) - route to appropriate group
+	// Load Effect sounds (E1-E53)
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
 		std::sprintf(filename, "sounds\\E%d.wav", i);
-		ma_sound_group* pGroup = GetGroupForSound(SoundType::Effect, i);
-		ma_result result = ma_sound_init_from_file(&m_engine, filename, flags, pGroup, NULL, &m_effectSounds[i]);
-		m_effectSoundsLoaded[i] = (result == MA_SUCCESS);
+		DecodeFile(filename, m_effectSounds[i]);
 	}
 }
 
@@ -136,40 +186,27 @@ void AudioManager::UnloadSounds()
 	{
 		if (active.inUse)
 		{
-			ma_sound_uninit(&active.sound);
+			if (active.soundInitialized)
+			{
+				ma_sound_stop(&active.sound);
+				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
+			}
 			active.inUse = false;
 		}
 	}
 
-	// Uninit pre-loaded Character sounds
+	// Free decoded Character sounds
 	for (int i = 0; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
-	{
-		if (m_characterSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_characterSounds[i]);
-			m_characterSoundsLoaded[i] = false;
-		}
-	}
+		FreeDecodedSound(m_characterSounds[i]);
 
-	// Uninit pre-loaded Monster sounds
+	// Free decoded Monster sounds
 	for (int i = 0; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
-	{
-		if (m_monsterSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_monsterSounds[i]);
-			m_monsterSoundsLoaded[i] = false;
-		}
-	}
+		FreeDecodedSound(m_monsterSounds[i]);
 
-	// Uninit pre-loaded Effect sounds
+	// Free decoded Effect sounds
 	for (int i = 0; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
-	{
-		if (m_effectSoundsLoaded[i])
-		{
-			ma_sound_uninit(&m_effectSounds[i]);
-			m_effectSoundsLoaded[i] = false;
-		}
-	}
+		FreeDecodedSound(m_effectSounds[i]);
 
 	// Stop music
 	StopMusic();
@@ -179,32 +216,13 @@ void AudioManager::CleanupFinishedSounds()
 {
 	for (auto& active : m_activeSounds)
 	{
-		if (active.inUse && !ma_sound_is_playing(&active.sound))
+		if (active.inUse && active.soundInitialized && !ma_sound_is_playing(&active.sound))
 		{
 			ma_sound_uninit(&active.sound);
+			active.soundInitialized = false;
 			active.inUse = false;
 		}
 	}
-}
-
-std::string AudioManager::GetSoundPath(SoundType type, int index) const
-{
-	char filename[64];
-	switch (type)
-	{
-	case SoundType::Character:
-		std::sprintf(filename, "sounds\\C%d.wav", index);
-		break;
-	case SoundType::Monster:
-		std::sprintf(filename, "sounds\\M%d.wav", index);
-		break;
-	case SoundType::Effect:
-		std::sprintf(filename, "sounds\\E%d.wav", index);
-		break;
-	default:
-		return "";
-	}
-	return filename;
 }
 
 float AudioManager::VolumeToFloat(int volume) const
@@ -215,20 +233,20 @@ float AudioManager::VolumeToFloat(int volume) const
 	return volume / 100.0f;
 }
 
-ma_sound* AudioManager::GetPreloadedSound(SoundType type, int index)
+DecodedSound* AudioManager::GetDecodedSound(SoundType type, int index)
 {
 	switch (type)
 	{
 	case SoundType::Character:
-		if (index >= 0 && index < AUDIO_MAX_CHARACTER_SOUNDS && m_characterSoundsLoaded[index])
+		if (index >= 0 && index < AUDIO_MAX_CHARACTER_SOUNDS && m_characterSounds[index].loaded)
 			return &m_characterSounds[index];
 		break;
 	case SoundType::Monster:
-		if (index >= 0 && index < AUDIO_MAX_MONSTER_SOUNDS && m_monsterSoundsLoaded[index])
+		if (index >= 0 && index < AUDIO_MAX_MONSTER_SOUNDS && m_monsterSounds[index].loaded)
 			return &m_monsterSounds[index];
 		break;
 	case SoundType::Effect:
-		if (index >= 0 && index < AUDIO_MAX_EFFECT_SOUNDS && m_effectSoundsLoaded[index])
+		if (index >= 0 && index < AUDIO_MAX_EFFECT_SOUNDS && m_effectSounds[index].loaded)
 			return &m_effectSounds[index];
 		break;
 	}
@@ -274,13 +292,13 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 	// Clean up finished sounds first
 	CleanupFinishedSounds();
 
-	// Get the pre-loaded sound template
-	ma_sound* pTemplate = GetPreloadedSound(type, index);
-	if (pTemplate == nullptr)
+	// Get the decoded sound data
+	DecodedSound* pDecoded = GetDecodedSound(type, index);
+	if (pDecoded == nullptr)
 		return;
 
 	// Calculate volume based on distance
-	float volume = 1.0f;  // Base volume (group volume handles overall level)
+	float volume = 1.0f;
 
 	// Distance attenuation (reduce by 10% per distance unit, max 10 units)
 	if (distance > 0)
@@ -309,9 +327,10 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 	{
 		for (auto& active : m_activeSounds)
 		{
-			if (!ma_sound_is_playing(&active.sound))
+			if (active.soundInitialized && !ma_sound_is_playing(&active.sound))
 			{
 				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
 				active.inUse = false;
 				pSlot = &active;
 				break;
@@ -323,13 +342,19 @@ void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
 	if (pSlot == nullptr)
 		return;
 
-	// Create a copy of the pre-loaded sound for playback
+	// Create an audio buffer ref pointing to our decoded data
+	ma_result result = ma_audio_buffer_ref_init(pDecoded->format, pDecoded->channels, pDecoded->pData, pDecoded->frameCount, &pSlot->bufferRef);
+	if (result != MA_SUCCESS)
+		return;
+
+	// Create a sound from the audio buffer ref (bypasses resource manager entirely)
 	ma_sound_group* pGroup = GetGroupForSound(type, index);
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, pGroup, &pSlot->sound);
+	result = ma_sound_init_from_data_source(&m_engine, &pSlot->bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, pGroup, &pSlot->sound);
 	if (result != MA_SUCCESS)
 		return;
 
 	pSlot->inUse = true;
+	pSlot->soundInitialized = true;
 
 	// Set volume for this instance
 	ma_sound_set_volume(&pSlot->sound, volume);
@@ -352,9 +377,9 @@ void AudioManager::PlaySoundLoop(SoundType type, int index)
 	if (!m_bSoundAvailable || !IsCategoryEnabled(type, index))
 		return;
 
-	// Get the pre-loaded sound template
-	ma_sound* pTemplate = GetPreloadedSound(type, index);
-	if (pTemplate == nullptr)
+	// Get the decoded sound data
+	DecodedSound* pDecoded = GetDecodedSound(type, index);
+	if (pDecoded == nullptr)
 		return;
 
 	// Clean up finished sounds first
@@ -374,20 +399,26 @@ void AudioManager::PlaySoundLoop(SoundType type, int index)
 	if (pSlot == nullptr)
 		return;
 
-	// Create a copy for looping playback
+	// Create an audio buffer ref pointing to our decoded data
+	ma_result result = ma_audio_buffer_ref_init(pDecoded->format, pDecoded->channels, pDecoded->pData, pDecoded->frameCount, &pSlot->bufferRef);
+	if (result != MA_SUCCESS)
+		return;
+
+	// Create a sound from the audio buffer ref
 	ma_sound_group* pGroup = GetGroupForSound(type, index);
-	ma_result result = ma_sound_init_copy(&m_engine, pTemplate, 0, pGroup, &pSlot->sound);
+	result = ma_sound_init_from_data_source(&m_engine, &pSlot->bufferRef, MA_SOUND_FLAG_NO_SPATIALIZATION, pGroup, &pSlot->sound);
 	if (result != MA_SUCCESS)
 		return;
 
 	pSlot->inUse = true;
+	pSlot->soundInitialized = true;
 	ma_sound_set_looping(&pSlot->sound, MA_TRUE);
 	ma_sound_start(&pSlot->sound);
 }
 
 void AudioManager::StopSound(SoundType type, int index)
 {
-	// With the copy-based system, we can't easily identify which active sound
+	// With the buffer-ref system, we can't easily identify which active sound
 	// corresponds to a specific type/index. This would require additional tracking.
 	(void)type;
 	(void)index;
@@ -400,8 +431,12 @@ void AudioManager::StopAllSounds()
 	{
 		if (active.inUse)
 		{
-			ma_sound_stop(&active.sound);
-			ma_sound_uninit(&active.sound);
+			if (active.soundInitialized)
+			{
+				ma_sound_stop(&active.sound);
+				ma_sound_uninit(&active.sound);
+				active.soundInitialized = false;
+			}
 			active.inUse = false;
 		}
 	}

@@ -168,7 +168,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -236,7 +236,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
