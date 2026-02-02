@@ -11,6 +11,8 @@
 #include <array>
 #include <cstring>
 
+#include "StatusFlags.h"
+
 // Maximum length for entity names
 constexpr int ENTITY_NAME_LENGTH = 12;
 
@@ -22,20 +24,6 @@ enum class EEntityRelation : int8_t
     Neutral = 0,        // Not a citizen, or indeterminate
     Friendly = 1        // Same faction as player
 };
-
-// Status flag bits (extracted from m_iStatus)
-namespace EntityStatusFlags
-{
-    constexpr int PK       = 0x80000000;  // Player Killer
-    constexpr int Citizen  = 0x40000000;  // Is a citizen of a town
-    constexpr int Aresden  = 0x20000000;  // Belongs to Aresden faction
-    constexpr int Hunter   = 0x10000000;  // Is a hunter
-
-    // Lower bits contain other status effects
-    constexpr int Poisoned   = 0x00000080;
-    constexpr int Frozen     = 0x00000020;
-    constexpr int Confused   = 0x00000010;
-}
 
 class CEntityRenderState
 {
@@ -81,14 +69,16 @@ public:
     // Status Flag Helpers
     //------------------------------------------------------------------
 
-    bool IsPK() const { return (m_iStatus & EntityStatusFlags::PK) != 0; }
-    bool IsCitizen() const { return (m_iStatus & EntityStatusFlags::Citizen) != 0; }
-    bool IsAresden() const { return (m_iStatus & EntityStatusFlags::Aresden) != 0; }
+    bool IsPK() const { return (m_iStatus & hb::status::PK) != 0; }
+    bool IsCitizen() const { return (m_iStatus & hb::status::Citizen) != 0; }
+    bool IsAresden() const { return (m_iStatus & hb::status::Aresden) != 0; }
     bool IsElvine() const { return IsCitizen() && !IsAresden(); }
-    bool IsHunter() const { return (m_iStatus & EntityStatusFlags::Hunter) != 0; }
-    bool IsPoisoned() const { return (m_iStatus & EntityStatusFlags::Poisoned) != 0; }
-    bool IsFrozen() const { return (m_iStatus & EntityStatusFlags::Frozen) != 0; }
-    bool IsConfused() const { return (m_iStatus & EntityStatusFlags::Confused) != 0; }
+    bool IsHunter() const { return (m_iStatus & hb::status::Hunter) != 0; }
+    bool IsPoisoned() const { return (m_iStatus & hb::status::Poisoned) != 0; }
+    bool IsFrozen() const { return (m_iStatus & hb::status::Frozen) != 0; }
+    bool IsBerserk() const { return (m_iStatus & hb::status::Berserk) != 0; }
+    bool IsHasted() const { return (m_iStatus & hb::status::Haste) != 0; }
+    bool IsInvisible() const { return (m_iStatus & hb::status::Invisibility) != 0; }
 
     //------------------------------------------------------------------
     // Entity Type Helpers

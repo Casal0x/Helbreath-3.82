@@ -2622,7 +2622,7 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 			/*if ((m_pClientList[pTile->m_sOwner] != 0) && (pTile->m_sOwner != iClientH))
 				if ((m_pClientList[pTile->m_sOwner]->m_cSide != 0) &&
 					(m_pClientList[pTile->m_sOwner]->m_cSide != m_pClientList[iClientH]->m_cSide) &&
-					((m_pClientList[pTile->m_sOwner]->m_iStatus & 0x00000010) != 0)) {
+					((m_pClientList[pTile->m_sOwner]->m_iStatus & hb::status::Invisibility) != 0)) {
 					continue;
 				}*/
 
@@ -3644,7 +3644,7 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 		/*if ((m_pClientList[pTile->m_sOwner] != 0) && (pTile->m_sOwner != iClientH))
 			if ((m_pClientList[pTile->m_sOwner]->m_cSide != 0) &&
 				(m_pClientList[pTile->m_sOwner]->m_cSide != m_pClientList[iClientH]->m_cSide) &&
-				((m_pClientList[pTile->m_sOwner]->m_iStatus & 0x00000010) != 0)) {
+				((m_pClientList[pTile->m_sOwner]->m_iStatus & hb::status::Invisibility) != 0)) {
 				continue;
 			}*/
 
@@ -11423,7 +11423,7 @@ int CGame::iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cD
 	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(0, iClientH, DEF_OWNERTYPE_PLAYER, sX, sY);
 	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH, DEF_OWNERTYPE_PLAYER, sX, sY);
 
-	if ((m_pClientList[iClientH]->m_iStatus & 0x10) != 0) {
+	if ((m_pClientList[iClientH]->m_iStatus & hb::status::Invisibility) != 0) {
 		SetInvisibilityFlag(iClientH, DEF_OWNERTYPE_PLAYER, false);
 		bRemoveFromDelayEventList(iClientH, DEF_OWNERTYPE_PLAYER, DEF_MAGICTYPE_INVISIBILITY);
 		m_pClientList[iClientH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
@@ -11510,7 +11510,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsAttackEnabled == false) && (m_pClientList[iClientH]->m_iAdminUserLevel == 0)) return;
 	//if ((var_874 ) && (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsHeldenianMap ) && (m_pMagicConfigList[sType]->m_sType != 8)) return;
 
-	if (((m_pClientList[iClientH]->m_iStatus & 0x100000) != 0) && (bItemEffect != true)) {
+	if (((m_pClientList[iClientH]->m_iStatus & hb::status::InhibitionCasting) != 0) && (bItemEffect != true)) {
 		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, 0, -1, 0);
 		return;
 	}
@@ -11678,7 +11678,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	}
 
 	iMagicAttr = m_pMagicConfigList[sType]->m_iAttribute;
-	if ((m_pClientList[iClientH]->m_iStatus & 0x10) != 0) {
+	if ((m_pClientList[iClientH]->m_iStatus & hb::status::Invisibility) != 0) {
 		SetInvisibilityFlag(iClientH, DEF_OWNERTYPE_PLAYER, false);
 		bRemoveFromDelayEventList(iClientH, DEF_OWNERTYPE_PLAYER, DEF_MAGICTYPE_INVISIBILITY);
 		m_pClientList[iClientH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
@@ -13968,7 +13968,7 @@ MAGIC_NOEFFECT:
 	if (m_pClientList[iClientH] == 0) return;
 
 	//Mana Slate
-	if ((m_pClientList[iClientH]->m_iStatus & 0x800000) != 0) {
+	if ((m_pClientList[iClientH]->m_iStatus & hb::status::SlateMana) != 0) {
 		iManaCost = 0;
 	}
 
@@ -18633,7 +18633,7 @@ void CGame::UseItemHandler(int iClientH, short sItemIndex, short dX, short dY, s
 				// New 15/05/2004 Changed
 		case DEF_ITEMEFFECTTYPE_MAGIC:
 			// Åõ¸í ¸ðµå¿´´Ù¸é ¸¶¹ý È¿°ú ¾ÆÀÌÅÛ »ç¿ë½Ã¿¡ ÇØÁ¦µÈ´Ù.
-			if ((m_pClientList[iClientH]->m_iStatus & 0x10) != 0) {
+			if ((m_pClientList[iClientH]->m_iStatus & hb::status::Invisibility) != 0) {
 				if (m_pClientList[iClientH]->m_iAdminUserLevel == 0) {
 					SetInvisibilityFlag(iClientH, DEF_OWNERTYPE_PLAYER, false);
 
@@ -19021,7 +19021,7 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 		if (m_pClientList[sTargetH]->m_bIsInitComplete == false) return;
 		if (m_pClientList[sTargetH]->m_bIsKilled) return;
 
-		if ((m_pClientList[sTargetH]->m_iStatus & 0x400000) != 0) return;
+		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return;
 
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_bIsCrusadeMode == false) &&
 			(m_pClientList[sTargetH]->m_iPKCount == 0) && (m_pClientList[sTargetH]->m_bIsPlayerCivil)) return;
@@ -19965,7 +19965,7 @@ void CGame::Effect_SpDown_Spot(short sAttackerH, char cAttackerType, short sTarg
 
 		// New 19/05/2004
 		// Is the user having an invincibility slate
-		if ((m_pClientList[sTargetH]->m_iStatus & 0x400000) != 0) return;
+		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return;
 
 		iMaxSP = (2 * (m_pClientList[sTargetH]->m_iStr + m_pClientList[sTargetH]->m_iAngelicStr)) + (2 * m_pClientList[sTargetH]->m_iLevel);
 		if (m_pClientList[sTargetH]->m_iSP > 0) {
@@ -20039,7 +20039,7 @@ bool CGame::bCheckResistingMagicSuccess(char cAttackerDir, short sTargetH, char 
 		if (m_pClientList[sTargetH] == 0) return false;
 		if (m_pMapList[m_pClientList[sTargetH]->m_cMapIndex]->m_bIsAttackEnabled == false) return false;
 		if (m_pClientList[sTargetH]->m_iAdminUserLevel > 0) return true;
-		if ((m_pClientList[sTargetH]->m_iStatus & 0x400000) != 0) return true;
+		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return true;
 		cTargetDir = m_pClientList[sTargetH]->m_cDir;
 		iTargetMagicResistRatio = m_pClientList[sTargetH]->m_cSkillMastery[3] + m_pClientList[sTargetH]->m_iAddMR;
 		if ((m_pClientList[sTargetH]->m_iMag + m_pClientList[sTargetH]->m_iAngelicMag) > 50)
@@ -20452,13 +20452,13 @@ void CGame::DelayEventProcessor()
 			switch (m_pDelayEventList[i]->m_iDelayType) {
 
 			case DEF_DELAYEVENTTYPE_ANCIENT_TABLET:
-				if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & 0x400000) != 0) {
+				if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) {
 					iTemp = 1;
 				}
-				else if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & 0x800000) != 0) {
+				else if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & hb::status::SlateMana) != 0) {
 					iTemp = 3;
 				}
-				else if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & 0x10000) != 0) {
+				else if ((m_pClientList[m_pDelayEventList[i]->m_iTargetH]->m_iStatus & hb::status::SlateExp) != 0) {
 					iTemp = 4;
 				}
 
@@ -25381,7 +25381,7 @@ void CGame::_CheckMiningAction(int iClientH, int dX, int dY)
 
 	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bGetDynamicObject(dX, dY, &sType, &dwRegisterTime, &iDynamicIndex);
 
-	if ((m_pClientList[iClientH]->m_iStatus & 0x10) != 0) {
+	if ((m_pClientList[iClientH]->m_iStatus & hb::status::Invisibility) != 0) {
 		SetInvisibilityFlag(iClientH, DEF_OWNERTYPE_PLAYER, false);
 		bRemoveFromDelayEventList(iClientH, DEF_OWNERTYPE_PLAYER, DEF_MAGICTYPE_INVISIBILITY);
 		m_pClientList[iClientH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
@@ -31337,16 +31337,16 @@ void CGame::SetInvisibilityFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00000010;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFFFFEF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Invisibility;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Invisibility;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00000010;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFFFFFEF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Invisibility;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Invisibility;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31364,16 +31364,16 @@ void CGame::SetInhibitionCastingFlag(short sOwnerH, char cOwnerType, bool bStatu
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00100000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFEFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::InhibitionCasting;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::InhibitionCasting;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00100000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFEFFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::InhibitionCasting;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::InhibitionCasting;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31391,16 +31391,16 @@ void CGame::SetBerserkFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00000020;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFFFFDF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Berserk;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Berserk;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00000020;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFFFFFDF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Berserk;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Berserk;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31412,8 +31412,8 @@ void CGame::SetHasteFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus |= 0x00040000;
-		else m_pClientList[sOwnerH]->m_iStatus ^= 0x00040000;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Haste;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Haste;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
@@ -31434,16 +31434,16 @@ void CGame::SetIceFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00000040;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFFFFBF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Frozen;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Frozen;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00000040;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFFFFFBF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Frozen;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Frozen;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31461,16 +31461,16 @@ void CGame::SetPoisonFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00000080;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFFFF7F;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Poisoned;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Poisoned;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00000080;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFFFFF7F;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Poisoned;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Poisoned;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31488,16 +31488,16 @@ void CGame::SetIllusionFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x01000000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFEFFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Illusion;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Illusion;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x01000000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFEFFFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Illusion;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Illusion;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31515,16 +31515,16 @@ void CGame::SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00020000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFDFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::Hero;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::Hero;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x00020000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFFFDFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::Hero;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::Hero;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31542,16 +31542,16 @@ void CGame::SetDefenseShieldFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x02000000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFDFFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::DefenseShield;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::DefenseShield;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x02000000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFDFFFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::DefenseShield;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::DefenseShield;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31569,16 +31569,16 @@ void CGame::SetMagicProtectionFlag(short sOwnerH, char cOwnerType, bool bStatus)
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x04000000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFBFFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::MagicProtection;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::MagicProtection;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x04000000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xFBFFFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::MagicProtection;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::MagicProtection;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31596,16 +31596,16 @@ void CGame::SetProtectionFromArrowFlag(short sOwnerH, char cOwnerType, bool bSta
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x08000000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xF7FFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::ProtectionFromArrow;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::ProtectionFromArrow;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus | 0x08000000;
-		else m_pNpcList[sOwnerH]->m_iStatus = m_pNpcList[sOwnerH]->m_iStatus & 0xF7FFFFFF;
+			m_pNpcList[sOwnerH]->m_iStatus |= hb::status::ProtectionFromArrow;
+		else m_pNpcList[sOwnerH]->m_iStatus &= ~hb::status::ProtectionFromArrow;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_NPC, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31623,8 +31623,8 @@ void CGame::SetIllusionMovementFlag(short sOwnerH, char cOwnerType, bool bStatus
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[sOwnerH] == 0) return;
 		if (bStatus)
-			m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00200000;
-		else m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFDFFFFF;
+			m_pClientList[sOwnerH]->m_iStatus |= hb::status::IllusionMovement;
+		else m_pClientList[sOwnerH]->m_iStatus &= ~hb::status::IllusionMovement;
 		SendEventToNearClient_TypeA(sOwnerH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		break;
 	}
@@ -31970,7 +31970,7 @@ void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 
 				iH = m_stPartyInfo[m_pClientList[iClientH]->m_iPartyID].iIndex[i];
 				if ((m_pClientList[iH] != 0) && (m_pClientList[iH]->m_bSkillUsingStatus[19] != 1) && (m_pClientList[iH]->m_iHP > 0)) { // Is player alive ??
-					if ((m_pClientList[iH]->m_iStatus & 0x10000) != 0)  iUnitValue *= 3;
+					if ((m_pClientList[iH]->m_iStatus & hb::status::SlateExp) != 0)  iUnitValue *= 3;
 					m_pClientList[iH]->m_iExpStock += iUnitValue;
 				}
 			}
@@ -31978,7 +31978,7 @@ void CGame::GetExp(int iClientH, uint32_t iExp, bool bIsAttackerOwn)
 	}
 	else {
 		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_bSkillUsingStatus[19] != 1) && (m_pClientList[iClientH]->m_iHP > 0)) { // Is player alive ??
-			if ((m_pClientList[iClientH]->m_iStatus & 0x10000) != 0)  iExp *= 3;
+			if ((m_pClientList[iClientH]->m_iStatus & hb::status::SlateExp) != 0)  iExp *= 3;
 			m_pClientList[iClientH]->m_iExpStock += iExp;
 		}
 	}
@@ -32367,32 +32367,32 @@ void CGame::SetSlateFlag(int iClientH, short sType, bool bFlag)
 	if (m_pClientList[iClientH] == 0) return;
 
 	if (sType == DEF_NOTIFY_SLATECLEAR) {
-		m_pClientList[iClientH]->m_iStatus &= 0xFFBFFFFF;
-		m_pClientList[iClientH]->m_iStatus &= 0xFF7FFFFF;
-		m_pClientList[iClientH]->m_iStatus &= 0xFFFEFFFF;
+		m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateInvincible;
+		m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateMana;
+		m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateExp;
 		return;
 	}
 
 	if (bFlag) {
 		if (sType == 1) { // Invincible slate
-			m_pClientList[iClientH]->m_iStatus |= 0x400000;
+			m_pClientList[iClientH]->m_iStatus |= hb::status::SlateInvincible;
 		}
 		else if (sType == 3) { // Mana slate
-			m_pClientList[iClientH]->m_iStatus |= 0x800000;
+			m_pClientList[iClientH]->m_iStatus |= hb::status::SlateMana;
 		}
 		else if (sType == 4) { // Exp slate
-			m_pClientList[iClientH]->m_iStatus |= 0x10000;
+			m_pClientList[iClientH]->m_iStatus |= hb::status::SlateExp;
 		}
 	}
 	else {
-		if ((m_pClientList[iClientH]->m_iStatus & 0x400000) != 0) {
-			m_pClientList[iClientH]->m_iStatus &= 0xFFBFFFFF;
+		if ((m_pClientList[iClientH]->m_iStatus & hb::status::SlateInvincible) != 0) {
+			m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateInvincible;
 		}
-		else if ((m_pClientList[iClientH]->m_iStatus & 0x800000) != 0) {
-			m_pClientList[iClientH]->m_iStatus &= 0xFF7FFFFF;
+		else if ((m_pClientList[iClientH]->m_iStatus & hb::status::SlateMana) != 0) {
+			m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateMana;
 		}
-		else if ((m_pClientList[iClientH]->m_iStatus & 0x10000) != 0) {
-			m_pClientList[iClientH]->m_iStatus &= 0xFFFEFFFF;
+		else if ((m_pClientList[iClientH]->m_iStatus & hb::status::SlateExp) != 0) {
+			m_pClientList[iClientH]->m_iStatus &= ~hb::status::SlateExp;
 		}
 	}
 
@@ -36918,7 +36918,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 		if ((m_pMapList[m_pClientList[sAttackerH]->m_cMapIndex] == 0) && (m_pMapList[m_pClientList[sAttackerH]->m_cMapIndex]->m_bIsHeldenianMap) && (m_bIsHeldenianMode)) return 0;
 		if ((m_bIsCrusadeMode == false) && (m_pClientList[sAttackerH]->m_bIsPlayerCivil) && (cTargetType == DEF_OWNERTYPE_PLAYER)) return 0;
 
-		if ((m_pClientList[sAttackerH]->m_iStatus & 0x10) != 0) {
+		if ((m_pClientList[sAttackerH]->m_iStatus & hb::status::Invisibility) != 0) {
 			SetInvisibilityFlag(sAttackerH, DEF_OWNERTYPE_PLAYER, false);
 			bRemoveFromDelayEventList(sAttackerH, DEF_OWNERTYPE_PLAYER, DEF_MAGICTYPE_INVISIBILITY);
 			m_pClientList[sAttackerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
@@ -37156,7 +37156,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 		if (m_pNpcList[sAttackerH] == 0) return 0;
 		if (m_pMapList[m_pNpcList[sAttackerH]->m_cMapIndex]->m_bIsAttackEnabled == false) return 0;
 
-		if ((m_pNpcList[sAttackerH]->m_iStatus & 0x10) != 0) {
+		if ((m_pNpcList[sAttackerH]->m_iStatus & hb::status::Invisibility) != 0) {
 			SetInvisibilityFlag(sAttackerH, DEF_OWNERTYPE_NPC, false);
 			bRemoveFromDelayEventList(sAttackerH, DEF_OWNERTYPE_NPC, DEF_MAGICTYPE_INVISIBILITY);
 			m_pNpcList[sAttackerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
@@ -37196,7 +37196,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 
 		if (m_pClientList[sTargetH] == 0) return 0;
 		if (m_pClientList[sTargetH]->m_bIsKilled) return 0;
-		if ((m_pClientList[sTargetH]->m_iStatus & 0x400000) != 0) return 0;
+		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return 0;
 
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_bIsCrusadeMode == false) &&
 			(m_pClientList[sTargetH]->m_iPKCount == 0) && (m_pClientList[sTargetH]->m_bIsPlayerCivil)) return 0;
@@ -39302,7 +39302,7 @@ void CGame::ForceRecallProcess() {
 					|| (memcmp(m_pMapList[m_pClientList[i]->m_cMapIndex]->m_cName, "gldhall", 7) == 0))
 				{
 					//SetIllusionFlag(i, DEF_OWNERTYPE_PLAYER, false);
-					if (m_pClientList[i]->m_iStatus & 0x00200000) {
+					if (m_pClientList[i]->m_iStatus & hb::status::IllusionMovement) {
 						SetIllusionMovementFlag(i, DEF_OWNERTYPE_PLAYER, false);
 						bRemoveFromDelayEventList(i, DEF_OWNERTYPE_PLAYER, DEF_MAGICTYPE_CONFUSE);
 						bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_CONFUSE, dwTime + 2, i, DEF_OWNERTYPE_PLAYER, 0, 0, 0, 4, 0, 0);
@@ -39857,20 +39857,20 @@ void CGame::SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp)
 	if (m_pClientList[sOwnerH] == 0) return;
 	switch (iStatus) {
 	case 1: // STR Angel
-		m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00001000;
+		m_pClientList[sOwnerH]->m_iStatus |= hb::status::AngelSTR;
 		break;
 	case 2: // DEX Angel
-		m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00002000;
+		m_pClientList[sOwnerH]->m_iStatus |= hb::status::AngelDEX;
 		break;
 	case 3: // INT Angel
-		m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00004000;
+		m_pClientList[sOwnerH]->m_iStatus |= hb::status::AngelINT;
 		break;
 	case 4: // MAG Angel
-		m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus | 0x00008000;
+		m_pClientList[sOwnerH]->m_iStatus |= hb::status::AngelMAG;
 		break;
 	default:
 	case 0: // Remove all Angels
-		m_pClientList[sOwnerH]->m_iStatus = m_pClientList[sOwnerH]->m_iStatus & 0xFFFF00FF;
+		m_pClientList[sOwnerH]->m_iStatus &= ~(hb::status::AngelPercentMask | hb::status::AngelTypeMask);
 		break;
 	}
 	if (iTemp > 4)

@@ -270,8 +270,17 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 		return;
 	}
 
+	// Read the actual stored account_name so the FK constraint matches exactly.
+	// cAcc was lowercased (line 210) but the accounts table may store original case.
+	AccountDbAccountData storedAccount = {};
+	if (!LoadAccountRecord(db, cAcc, storedAccount)) {
+		CloseAccountDatabase(db);
+		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		return;
+	}
+
 	AccountDbCharacterState state = {};
-	std::snprintf(state.accountName, sizeof(state.accountName), "%s", cAcc);
+	std::snprintf(state.accountName, sizeof(state.accountName), "%s", storedAccount.name);
 	std::snprintf(state.characterName, sizeof(state.characterName), "%s", cName);
 	std::snprintf(state.profile, sizeof(state.profile), "__________");
 	std::snprintf(state.location, sizeof(state.location), "NONE");

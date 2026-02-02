@@ -45,6 +45,7 @@
 #include "BuildItem.h"
 #include "TeleportLoc.h"
 #include "GlobalDef.h"
+#include "StatusFlags.h"
 #include "TempNpcItem.h"
 #include "PartyManager.h"
 

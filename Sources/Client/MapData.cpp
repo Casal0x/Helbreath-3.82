@@ -5,6 +5,7 @@
 
 #include "MapData.h"
 #include "CommonTypes.h"
+#include "StatusFlags.h"
 #include "Benchmark.h"
 #include "EntityMotion.h"
 #include <cstring>
@@ -1971,7 +1972,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 				switch (m_pData[dX][dY].m_cOwnerAction) {
 				case DEF_OBJECTATTACK: // 3
 				case DEF_OBJECTATTACKMOVE:	// 8
-					iDelay = (m_pData[dX][dY].m_iStatus & 0x000F) * 12;
+					iDelay = (m_pData[dX][dY].m_iStatus & hb::status::AttackDelayMask) * 12;
 					break;
 				case DEF_OBJECTMAGIC: // 4
 					if (m_pGame->m_pPlayer->m_iSkillMastery[4] == 100) iDelay = -17;
@@ -1982,10 +1983,10 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 					break;
 				}
 				// v1.42 Frozen
-				if ((m_pData[dX][dY].m_iStatus & 0x40) != 0)
+				if ((m_pData[dX][dY].m_iStatus & hb::status::Frozen) != 0)
 					iDelay += (m_stFrame[m_pData[dX][dY].m_sOwnerType][m_pData[dX][dY].m_cOwnerAction].m_sFrameTime) >> 2;
 
-				if ((m_pData[dX][dY].m_iStatus & 0x40000) != 0) // haste
+				if ((m_pData[dX][dY].m_iStatus & hb::status::Haste) != 0) // haste
 					iDelay -= (m_stFrame[m_pData[dX][dY].m_sOwnerType][DEF_OBJECTRUN].m_sFrameTime) / 2.3;
 
 				dwFrameTime = m_stFrame[m_pData[dX][dY].m_sOwnerType][m_pData[dX][dY].m_cOwnerAction].m_sFrameTime + iDelay;
@@ -2066,14 +2067,14 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6: // glowing armor/weapon
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2124,7 +2125,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
 								m_pGame->PlaySound('C', 8, sDist, lPan);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									cTotalFrame = 8;
 									cFrameMoveDots = 32 / cTotalFrame;
@@ -2143,9 +2144,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2414,15 +2415,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								else m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2456,15 +2457,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 7: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								case 8: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); dy = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								}
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels						
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2588,15 +2589,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									}
 								}
 								// Weapon Glare = m_sAppr4 & 0x000F
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -3471,15 +3472,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if (m_pData[dX][dY].m_cOwnerFrame == 1)
 							{
 								if (true) m_pGame->PlaySound('C', 16, sDist, lPan);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & 0x00000F00) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & 0x0000F000) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & 0x10) == 0))
+								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
+									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}

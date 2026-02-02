@@ -3378,7 +3378,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -3616,7 +3616,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -3747,7 +3747,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -3855,7 +3855,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			}
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel((m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -3965,7 +3965,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -4252,7 +4252,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
@@ -4362,7 +4362,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
@@ -4463,7 +4463,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		}
 
 		// Berserk
-		if ((m_entityState.m_iStatus & 0x20) != 0)
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(8 + (m_entityState.m_iDir - 1), sX + dx + 20, sY + dy - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
@@ -4530,7 +4530,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
 			bInv = true;
@@ -4650,7 +4650,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		if (bInv == true)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else {
-			if ((m_entityState.m_iStatus & 0x40) != 0)
+			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
@@ -4714,7 +4714,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(32 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 16, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -4773,7 +4773,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
 	}
 
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -4887,7 +4887,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		if (bInv == true)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else {
-			if ((m_entityState.m_iStatus & 0x40) != 0)
+			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
@@ -4983,7 +4983,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			}
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -5046,7 +5046,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -5320,7 +5320,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((m_entityState.m_iStatus & 0x40) != 0)
+					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5445,7 +5445,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((m_entityState.m_iStatus & 0x40) != 0)
+					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5552,7 +5552,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				}
 			}
 
-			if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+			if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -5606,7 +5606,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else if (bInv == true)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((m_entityState.m_iStatus & 0x40) != 0)
+					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5728,7 +5728,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else if (bInv == true)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((m_entityState.m_iStatus & 0x40) != 0)
+					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5836,7 +5836,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				}
 			}
 
-			if ((m_entityState.m_iStatus & 0x20) != 0)	// Berserk
+			if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)	// Berserk
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -6202,7 +6202,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 		else
 		{
-			if ((m_entityState.m_iStatus & 0x40) != 0)
+			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 		}
@@ -6267,7 +6267,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) // Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(24 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -6498,7 +6498,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		if (m_entityState.m_iFrame == -1)
 		{
 			m_entityState.m_iFrame = 7;
-			if ((m_entityState.m_iStatus & 0x40) != 0)
+			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame);
 
@@ -6562,7 +6562,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
-		else if ((m_entityState.m_iStatus & 0x20) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame + 5, -2 * m_entityState.m_iFrame - 5, -2 * m_entityState.m_iFrame - 5, 0.7f));
 		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, 0.7f));
 
@@ -6634,7 +6634,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -6949,7 +6949,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -7120,7 +7120,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -7277,7 +7277,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		}
 
 		// Berserk
-		if ((m_entityState.m_iStatus & 0x20) != 0)
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
@@ -7390,7 +7390,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -7561,7 +7561,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
@@ -7685,7 +7685,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
@@ -7795,7 +7795,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			}
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(16 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
@@ -8048,7 +8048,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -8310,7 +8310,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -8481,7 +8481,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -8650,7 +8650,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 		}
 		// Berserk
-		if ((m_entityState.m_iStatus & 0x20) != 0)
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -9706,7 +9706,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
 	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
 		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
@@ -9870,7 +9870,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -10034,7 +10034,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
-				if ((m_entityState.m_iStatus & 0x40) != 0)
+				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -10190,13 +10190,13 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			}
 		}
 
-		if ((m_entityState.m_iStatus & 0x20) != 0) 	// Berserk
+		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
 		// Centuu : Haste effect
-		if ((m_entityState.m_iStatus & 0x40000) != 0) {
+		if ((m_entityState.m_iStatus & hb::status::Haste) != 0) {
 			for (int i = 1; i <= 5; i++)
 			{
 				switch (m_entityState.m_iDir) {
@@ -13609,13 +13609,13 @@ int CGame::_iGetFOE(int iStatus)
 	bool bPK, bCitizen, bAresden, bHunter;
 	if (m_pPlayer->m_iPKCount != 0) return -1;
 	//	CLEROTH			0x00000000 status is int NOT short ( 3.51 )
-	if (iStatus & 0x80000000) bPK = true;
+	if (iStatus & hb::status::PK) bPK = true;
 	else bPK = false;
-	if (iStatus & 0x40000000) bCitizen = true;
+	if (iStatus & hb::status::Citizen) bCitizen = true;
 	else bCitizen = false;
-	if (iStatus & 0x20000000) bAresden = true;
+	if (iStatus & hb::status::Aresden) bAresden = true;
 	else bAresden = false;
-	if (iStatus & 0x10000000) bHunter = true;
+	if (iStatus & hb::status::Hunter) bHunter = true;
 	else bHunter = false;
 	if (bPK == true) return -2;
 	if (bCitizen == false) return 0;
@@ -14297,13 +14297,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	}
 	else
 	{	// CLEROTH - CRASH BUG ( STATUS )
-		if (iStatus & 0x80000000) bPK = true;
+		if (iStatus & hb::status::PK) bPK = true;
 		else bPK = false;
-		if (iStatus & 0x40000000) bCitizen = true;
+		if (iStatus & hb::status::Citizen) bCitizen = true;
 		else bCitizen = false;
-		if (iStatus & 0x20000000) bAresden = true;
+		if (iStatus & hb::status::Aresden) bAresden = true;
 		else bAresden = false;
-		if (iStatus & 0x10000000) bHunter = true;
+		if (iStatus & hb::status::Hunter) bHunter = true;
 		else bHunter = false;
 		if (m_bIsCrusadeMode == false || iFOE >= 0)
 		{
@@ -18032,47 +18032,47 @@ void CGame::ItemEquipHandler(char cItemID)
 void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Used at the beginning of character drawing
 	// DefenseShield
-	if ((m_entityState.m_iStatus & 0x02000000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::DefenseShield) != 0)
 		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
-	if ((m_entityState.m_iStatus & 0x04000000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::MagicProtection) != 0)
 		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
-	if ((m_entityState.m_iStatus & 0x08000000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::ProtectionFromArrow) != 0)
 		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion
-	if ((m_entityState.m_iStatus & 0x01000000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Illusion) != 0)
 		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
-	if ((m_entityState.m_iStatus & 0x00200000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::IllusionMovement) != 0)
 		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
-	if ((m_entityState.m_iStatus & 0x00400000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::SlateInvincible) != 0)
 		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Blue (Mana) Bleu au sol
-	if ((m_entityState.m_iStatus & 0x00800000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::SlateMana) != 0)
 		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Green (XP) Mauve au sol
-	if ((m_entityState.m_iStatus & 0x00010000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::SlateExp) != 0)
 		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Hero Flag (Heldenian)  Flameches d'entangle
-	if ((m_entityState.m_iStatus & 0x00020000) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Hero) != 0)
 		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
 }
@@ -18084,7 +18084,7 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 **********************************************************************************************************************/
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
-	if ((m_entityState.m_iStatus & 0x80) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Poisoned) != 0)
 		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
 	//	_iAttackerHeight[]
@@ -18101,26 +18101,26 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 		sX -= 30;
 		break;
 	}
-	if ((m_entityState.m_iStatus & 0x10) != 0)
+	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
-		if ((m_entityState.m_iStatus & 0x1000) != 0)
+		if ((m_entityState.m_iStatus & hb::status::AngelSTR) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
-		else if ((m_entityState.m_iStatus & 0x2000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelDEX) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
-		else if ((m_entityState.m_iStatus & 0x4000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelINT) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
-		else if ((m_entityState.m_iStatus & 0x8000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelMAG) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
-		if ((m_entityState.m_iStatus & 0x1000) != 0)
+		if ((m_entityState.m_iStatus & hb::status::AngelSTR) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
-		else if ((m_entityState.m_iStatus & 0x2000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelDEX) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
-		else if ((m_entityState.m_iStatus & 0x4000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelINT) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
-		else if ((m_entityState.m_iStatus & 0x8000) != 0)
+		else if ((m_entityState.m_iStatus & hb::status::AngelMAG) != 0)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
 	}
 
