@@ -129,11 +129,12 @@ CGame::CGame()
 	RegisterHotkeys();
 
 	iMaxStats = 0;
-	iMaxLevel = 0;
+	iMaxLevel = DEF_PLAYERMAXLEVEL;
 	iMaxBankItems = 200; // Default soft cap, server overrides
 	m_cLoading = 0;
 	m_bIsFirstConn = true;
-m_iItemDropCnt = 0;
+	m_iItemDropCnt = 0;
+	std::memset(m_sItemDropID, 0, sizeof(m_sItemDropID));
 	m_bItemDrop = false;
 	m_bIsSpecial = false;
 	m_cWhisperIndex = DEF_MAXWHISPERMSG;
@@ -2548,7 +2549,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 		}
 		else
 		{
-			if (_ItemDropHistory(m_pItemList[cItemID]->m_cName))
+			if (_ItemDropHistory(m_pItemList[cItemID]->m_sIDnum))
 			{
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sX = msX - 140;
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sY = msY - 70;
@@ -10222,8 +10223,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 void CGame::InitItemList(char* pData)
 {
 	int     i, iAngelValue;
-	uint8_t cTotalItems;
-	const char* cp;
+	uint16_t cTotalItems;
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		m_cItemOrder[i] = -1;
@@ -10238,7 +10238,6 @@ void CGame::InitItemList(char* pData)
 		pData, sizeof(hb::net::PacketResponseItemListHeader));
 	if (!header) return;
 	cTotalItems = header->item_count;
-	cp = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseItemListHeader);
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0)
@@ -10252,7 +10251,7 @@ void CGame::InitItemList(char* pData)
 			m_pBankList[i].reset();
 		}
 
-	const auto* itemEntries = reinterpret_cast<const hb::net::PacketResponseItemListEntry*>(cp);
+	const auto* itemEntries = reinterpret_cast<const hb::net::PacketResponseItemListEntry*>(header + 1);
 	for (i = 0; i < cTotalItems; i++)
 	{
 		const auto& entry = itemEntries[i];
@@ -10279,7 +10278,9 @@ void CGame::InitItemList(char* pData)
 		m_pItemList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pItemList[i]->m_dwAttribute = entry.attribute;
 		m_pItemList[i]->m_sIDnum = entry.item_id;
-		m_pItemList[i]->m_wMaxLifeSpan = entry.max_lifespan;
+		if (entry.item_id > 0 && m_pItemConfigList[entry.item_id] != nullptr) {
+			m_pItemList[i]->m_wMaxLifeSpan = m_pItemConfigList[entry.item_id]->m_wMaxLifeSpan;
+		}
 		/*
 		m_pItemList[i]->m_bIsCustomMade = (bool)*cp;
 		cp++;
@@ -10292,32 +10293,20 @@ void CGame::InitItemList(char* pData)
 			&& (m_bIsItemEquipped[i] == true)
 			&& (m_pItemList[i]->m_cEquipPos >= 11))
 		{
-			if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(STR)", 19) == 0)
-			{
-				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 				m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-			}
-			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-			{
-				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
 				m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-			}
-			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(INT)", 19) == 0)
-			{
-				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
 				m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-			}
-			else if (memcmp(m_pItemList[i]->m_cName, "AngelicPandent(MAG)", 19) == 0)
-			{
-				iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
+			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
 				m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
-			}
 		}
 	}
 
-	cp = reinterpret_cast<const char*>(itemEntries + cTotalItems);
-	cTotalItems = static_cast<uint8_t>(*cp);
-	cp++;
+	const auto* bank_header = reinterpret_cast<const hb::net::PacketResponseBankItemListHeader*>(itemEntries + cTotalItems);
+	cTotalItems = bank_header->bank_item_count;
 
 	for (i = 0; i < DEF_MAXBANKITEMS; i++)
 		if (m_pBankList[i] != 0)
@@ -10325,7 +10314,7 @@ void CGame::InitItemList(char* pData)
 			m_pBankList[i].reset();
 		}
 
-	const auto* bankEntries = reinterpret_cast<const hb::net::PacketResponseBankItemEntry*>(cp);
+	const auto* bankEntries = reinterpret_cast<const hb::net::PacketResponseBankItemEntry*>(bank_header + 1);
 	for (i = 0; i < cTotalItems; i++)
 	{
 		const auto& entry = bankEntries[i];
@@ -10348,7 +10337,9 @@ void CGame::InitItemList(char* pData)
 		m_pBankList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pBankList[i]->m_dwAttribute = entry.attribute;
 		m_pBankList[i]->m_sIDnum = entry.item_id;
-		m_pBankList[i]->m_wMaxLifeSpan = entry.max_lifespan;
+		if (entry.item_id > 0 && m_pItemConfigList[entry.item_id] != nullptr) {
+			m_pBankList[i]->m_wMaxLifeSpan = m_pItemConfigList[entry.item_id]->m_wMaxLifeSpan;
+		}
 		/*
 		m_pBankList[i]->m_bIsCustomMade = (bool)*cp;
 		cp++;
@@ -10357,20 +10348,16 @@ void CGame::InitItemList(char* pData)
 		m_pBankList[i]->PopulateDisplayName();
 	}
 
-	cp = reinterpret_cast<const char*>(bankEntries + cTotalItems);
-	// Magic, Skill Mastery
+	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + cTotalItems);
+
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
-	{
-		m_pPlayer->m_iMagicMastery[i] = *cp;
-		cp++;
-	}
+		m_pPlayer->m_iMagicMastery[i] = mastery->magic_mastery[i];
 
 	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
 	{
-		m_pPlayer->m_iSkillMastery[i] = (unsigned char)*cp;
+		m_pPlayer->m_iSkillMastery[i] = static_cast<unsigned char>(mastery->skill_mastery[i]);
 		if (m_pSkillCfgList[i] != 0)
-			m_pSkillCfgList[i]->m_iLevel = (int)*cp;
-		cp++;
+			m_pSkillCfgList[i]->m_iLevel = static_cast<int>(mastery->skill_mastery[i]);
 	}
 }
 
@@ -12954,12 +12941,12 @@ bool CGame::_bCheckBuildItemStatus()
 	return true;
 }
 
-bool CGame::_ItemDropHistory(char* ItemName)
+bool CGame::_ItemDropHistory(short sItemID)
 {
 	bool bFlag = false;
 	if (m_iItemDropCnt == 0)
 	{
-		strcpy(m_cItemDrop[m_iItemDropCnt], ItemName);
+		m_sItemDropID[m_iItemDropCnt] = sItemID;
 		m_iItemDropCnt++;
 		return true;
 	}
@@ -12967,7 +12954,7 @@ bool CGame::_ItemDropHistory(char* ItemName)
 	{
 		for (int i = 0; i < m_iItemDropCnt; i++)
 		{
-			if (strcmp(m_cItemDrop[i], ItemName) == 0)
+			if (m_sItemDropID[i] == sItemID)
 			{
 				bFlag = true;
 				break;
@@ -12984,13 +12971,13 @@ bool CGame::_ItemDropHistory(char* ItemName)
 		if (20 < m_iItemDropCnt)
 		{
 			for (int i = 0; i < m_iItemDropCnt; i++)
-				strcpy(m_cItemDrop[i - 1], ItemName);
-			strcpy(m_cItemDrop[20], ItemName);
+				m_sItemDropID[i - 1] = sItemID;
+			m_sItemDropID[20] = sItemID;
 			m_iItemDropCnt = 21;
 		}
 		else
 		{
-			strcpy(m_cItemDrop[m_iItemDropCnt], ItemName);
+			m_sItemDropID[m_iItemDropCnt] = sItemID;
 			m_iItemDropCnt++;
 		}
 	}
@@ -13312,36 +13299,7 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	//	throw std::runtime_error("Item not found for ID: " + std::to_string(pItem->m_sIDnum));
 	//}
 
-	if (0 == memcmp(pItem->m_cName, "AcientTablet", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "NecklaceOf", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DarkElfBow", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DarkExecutor", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "The_Devastator", 14)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "DemonSlayer", 10)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "LightingBlade", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "5thAnniversary", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "RubyRing", 8)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "SapphireRing", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Ringof", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicNecklace", 13)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicWand(M.Shield)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "MagicWand(MS30-LLF)", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Merien", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "BerserkWand", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "ResurWand", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Blood", 5)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Swordof", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "StoneOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "ZemstoneofSacrifice", 19)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "StormBringer", 12)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Aresden", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Elvine", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "EmeraldRing", 11)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Excaliber", 9)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Xelima", 6)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "Kloness", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "aHeroOf", 7)) m_bIsSpecial = true;
-	else if (0 == memcmp(pItem->m_cName, "eHeroOf", 7)) m_bIsSpecial = true;
+	if (hb::item::IsSpecialItem(pItem->m_sIDnum)) m_bIsSpecial = true;
 
 	if ((pItem->m_dwAttribute & 0x00000001) != 0)
 	{
@@ -14074,7 +14032,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				nY = 30;
 				for (j = 0; j < DEF_MAXITEMS; j++)
 				{
-					if ((m_pItemList[j] != 0) && (memcmp(m_pItemList[j]->m_cName, cStr1, DEF_ITEMNAME - 1) == 0))
+					if ((m_pItemList[j] != 0) && (m_pItemList[j]->m_sIDnum == m_pBankList[cBankItemIndex]->m_sIDnum))
 					{
 						nX = m_pItemList[j]->m_sX + 1;
 						nY = m_pItemList[j]->m_sY + 1;
@@ -17921,22 +17879,14 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 		&& (m_pItemList[m_sItemEquipmentStatus[cEquipPos]]->m_cItemType == 1))
 	{
 		char cItemID = m_sItemEquipmentStatus[cEquipPos];
-		if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
-		{
+		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 			m_pPlayer->m_iAngelicStr = 0;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-		{
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
 			m_pPlayer->m_iAngelicDex = 0;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
-		{
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
 			m_pPlayer->m_iAngelicInt = 0;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
-		{
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
 			m_pPlayer->m_iAngelicMag = 0;
-		}
 	}
 
 	GetItemName(m_pItemList[m_sItemEquipmentStatus[cEquipPos]].get(), cStr1, cStr2, cStr3);
@@ -18036,27 +17986,15 @@ void CGame::ItemEquipHandler(char cItemID)
 	if ((m_pItemList[cItemID]->m_cItemType == 1)
 		&& (m_pItemList[cItemID]->m_cEquipPos >= 11))
 	{
-		int iAngelValue = 0;
-		if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
-		{
-			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
+		int iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
+		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 			m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-		{
-			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
 			m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
-		{
-			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
 			m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-		}
-		else if (memcmp(m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
-		{
-			iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
 			m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
-		}
 	}
 
 	char cStr1[64], cStr2[64], cStr3[64];

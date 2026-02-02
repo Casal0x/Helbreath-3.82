@@ -63,6 +63,12 @@ namespace NetworkMessageHandlers {
 			pGame->m_pBankList[cIndex]->m_sItemEffectValue2 = sItemEffectValue2;
 			pGame->m_pBankList[cIndex]->m_dwAttribute = dwAttribute;
 			pGame->m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
+			pGame->m_pBankList[cIndex]->m_sIDnum = static_cast<short>(pkt->item_id);
+			// Look up static properties from item config table
+			if (pkt->item_id > 0 && pGame->m_pItemConfigList[pkt->item_id] != nullptr) {
+				pGame->m_pBankList[cIndex]->m_wMaxLifeSpan = pGame->m_pItemConfigList[pkt->item_id]->m_wMaxLifeSpan;
+			}
+			pGame->m_pBankList[cIndex]->PopulateDisplayName();
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMTOBANK3, cStr1);

@@ -20,3 +20,12 @@
 #define DEF_VIEWTILES_Y				17
 #define DEF_VIEWRANGE_X				(DEF_VIEWTILES_X / 2)	// 12
 #define DEF_VIEWRANGE_Y				(DEF_VIEWTILES_Y / 2)	// 8
+// Mastery array sizes (must match client and server)
+#define DEF_MAXMAGICTYPE    100
+#define DEF_MAXSKILLTYPE    60
+
+// Default max player level (server may override via GameConfigs.db)
+#define DEF_PLAYERMAXLEVEL  180
+
+// Extra tiles beyond screen edge for entity broadcast (prevents pop-in/out)
+#define DEF_VIEWRANGE_BUFFER 3

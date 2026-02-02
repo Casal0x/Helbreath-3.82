@@ -90,6 +90,10 @@ namespace net {
 		uint16_t max_lifespan;     // Maximum durability
 	};
 
+	struct HB_PACKED PacketResponseBankItemListHeader {
+		uint16_t bank_item_count;
+	};
+
 	struct HB_PACKED PacketResponseBankItemEntry {
 		char name[DEF_ITEMNAME - 1];
 		uint32_t count;
@@ -106,6 +110,11 @@ namespace net {
 		uint32_t attribute;
 		int16_t item_id;           // Item ID for config lookup
 		uint16_t max_lifespan;     // Maximum durability
+	};
+
+	struct HB_PACKED PacketResponseMasteryData {
+		char magic_mastery[DEF_MAXMAGICTYPE];
+		uint8_t skill_mastery[DEF_MAXSKILLTYPE];
 	};
 
 	struct HB_PACKED PacketResponseDynamicObject {

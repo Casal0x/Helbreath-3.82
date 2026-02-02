@@ -463,7 +463,7 @@ bool DialogBox_GuildMenu::OnClickMode9(short sX, short sY, short msX, short msY)
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
 		std::memset(cTemp, 0, sizeof(cTemp));
 		strcpy(cTemp, "GuildAdmissionTicket");
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, 0, 0, cTemp);
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, hb::item::ItemId::GuildAdmissionTicket, 0, cTemp);
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -487,7 +487,7 @@ bool DialogBox_GuildMenu::OnClickMode11(short sX, short sY, short msX, short msY
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
 		std::memset(cTemp, 0, sizeof(cTemp));
 		strcpy(cTemp, "GuildSecessionTicket");
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, 0, 0, cTemp);
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, hb::item::ItemId::GuildSecessionTicket, 0, cTemp);
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;

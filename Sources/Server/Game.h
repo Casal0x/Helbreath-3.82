@@ -69,7 +69,6 @@
 #define DEF_SUMMONTIME				300000
 #define DEF_AUTOSAVETIME			600000
 #define MAX_HELDENIANTOWER			200
-// DEF_VIEWTILES_X/Y and DEF_VIEWRANGE_X/Y are now in NetConstants.h (shared with client)
 
 #define DEF_EXPSTOCKTIME		1000*10		// ExpStock�� ����ϴ�? �ð� ���� 
 #define DEF_MSGQUENESIZE		100000		// �޽��� ť ������ 10���� 
@@ -147,9 +146,7 @@
 #define DEF_MAXIMUMHITRATIO	99				// �ִ� ���� Ȯ��
 //============================
 
-//============================
-#define DEF_PLAYERMAXLEVEL	180				// �ִ� ����: Npc.cfg ���Ͽ� �����Ǿ� ���� ���� ���? m_iPlayerMaxLevel�� �Էµȴ�.
-//============================
+// DEF_PLAYERMAXLEVEL is defined in NetConstants.h
 
 //============================
 // New Changed 12/05/2004
@@ -653,10 +650,8 @@ public:
 	bool _bInitNpcAttr(class CNpc * pNpc, char * pNpcName, short sClass, char cSA);
 	void ReleaseItemHandler(int iClientH, short sItemIndex, bool bNotice);
 	void ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage);
-	int  SetItemCount(int iClientH, char * pItemName, uint32_t dwCount);
 	int  SetItemCount(int iClientH, int iItemIndex, uint32_t dwCount);
 	int  SetItemCountByID(int iClientH, short sItemID, uint32_t dwCount);
-	uint32_t dwGetItemCount(int iClientH, char * pName);
 	uint32_t dwGetItemCountByID(int iClientH, short sItemID);
 	void DismissGuildRejectHandler(int iClientH, const char * pName);
 	void DismissGuildApproveHandler(int iClientH, const char * pName);

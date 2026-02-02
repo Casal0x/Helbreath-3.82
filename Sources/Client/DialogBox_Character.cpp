@@ -522,22 +522,26 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 			wsprintf(m_pGame->G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 			AddEventList(m_pGame->G_cTxt, 10);
 
-			if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPendant", 14) == 0)
-				m_pGame->PlaySound('E', 53, 0);
-			else
-				m_pGame->PlaySound('E', 29, 0);
+			{
+				short sID = m_pGame->m_pItemList[cItemID]->m_sIDnum;
+				if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
+					sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
+					m_pGame->PlaySound('E', 53, 0);
+				else
+					m_pGame->PlaySound('E', 29, 0);
+			}
 
 			// Remove Angelic Stats
 			if (m_pGame->m_pItemList[cItemID]->m_cEquipPos >= 11 &&
 				m_pGame->m_pItemList[cItemID]->m_cItemType == 1)
 			{
-				if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(STR)", 19) == 0)
+				if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 					m_pGame->m_pPlayer->m_iAngelicStr = 0;
-				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(DEX)", 19) == 0)
+				else if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
 					m_pGame->m_pPlayer->m_iAngelicDex = 0;
-				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(INT)", 19) == 0)
+				else if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
 					m_pGame->m_pPlayer->m_iAngelicInt = 0;
-				else if (memcmp(m_pGame->m_pItemList[cItemID]->m_cName, "AngelicPandent(MAG)", 19) == 0)
+				else if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
 					m_pGame->m_pPlayer->m_iAngelicMag = 0;
 			}
 

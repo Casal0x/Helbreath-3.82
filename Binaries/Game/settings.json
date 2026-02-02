@@ -5,8 +5,8 @@
         "masterEnabled": true,
         "masterVolume": 100,
         "musicEnabled": false,
-        "musicVolume": 34,
-        "soundEnabled": false,
+        "musicVolume": 16,
+        "soundEnabled": true,
         "soundVolume": 100,
         "uiEnabled": true,
         "uiVolume": 100
@@ -32,12 +32,12 @@
         "port": 2500
     },
     "shortcuts": {
-        "magic": 81,
+        "magic": 91,
         "slots": [
             -1,
             -1,
             191,
-            195,
+            196,
             -1
         ]
     },

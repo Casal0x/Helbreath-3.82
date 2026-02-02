@@ -62,10 +62,9 @@ int DialogBox_ItemUpgrade::CalculateUpgradeCost(int iItemIndex)
     if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos >= 11)
         && (m_pGame->m_pItemList[iItemIndex]->m_cItemType == 1))
     {
-        if ((memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(STR)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(DEX)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(INT)", 19) == 0)
-            || (memcmp(m_pGame->m_pItemList[iItemIndex]->m_cName, "AngelicPandent(MAG)", 19) == 0))
+        short sID = m_pGame->m_pItemList[iItemIndex]->m_sIDnum;
+        if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
+            sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
         {
             iValue = (m_pGame->m_pItemList[iItemIndex]->m_dwAttribute & 0xF0000000) >> 28;
             switch (iValue) {

@@ -223,11 +223,163 @@ constexpr TouchEffectType ToTouchEffectType(int16_t val) { return static_cast<To
 //------------------------------------------------------------------------
 namespace ItemId
 {
+    constexpr short Excaliber = 20;
     constexpr short Arrow = 77;
     constexpr short PoisonArrow = 78;
     constexpr short GuildAdmissionTicket = 88;
     constexpr short GuildSecessionTicket = 89;
     constexpr short Gold = 90;
+    constexpr short MagicWandMShield = 259;
+    constexpr short MagicWandMS30LLF = 291;
+    constexpr short MagicNecklaceRM10 = 300;
+    constexpr short MagicNecklaceDMp1 = 305;
+    constexpr short MagicNecklaceMS10 = 308;
+    constexpr short MagicNecklaceDFp10 = 311;
+    constexpr short EmeraldRing = 335;
+    constexpr short SapphireRing = 336;
+    constexpr short RubyRing = 337;
+    constexpr short AresdenHeroCape = 400;
+    constexpr short ElvineHeroCape = 401;
+    constexpr short AresdenHeroHelmM = 403;
+    constexpr short ElvineHeroLeggingsW = 426;
+    constexpr short AresdenHeroCapePlus1 = 427;
+    constexpr short ElvineHeroCapePlus1 = 428;
+    constexpr short BloodSword = 490;
+    constexpr short BloodAxe = 491;
+    constexpr short BloodRapier = 492;
+    constexpr short XelimaBlade = 610;
+    constexpr short XelimaAxe = 611;
+    constexpr short XelimaRapier = 612;
+    constexpr short DemonSlayer = 616;
+    constexpr short DarkElfBow = 618;
+    constexpr short MerienShield = 620;
+    constexpr short MerienPlateMailM = 621;
+    constexpr short MerienPlateMailW = 622;
+    constexpr short RingoftheXelima = 630;
+    constexpr short RingoftheAbaddon = 631;
+    constexpr short RingofOgrepower = 632;
+    constexpr short RingofDemonpower = 633;
+    constexpr short RingofWizard = 634;
+    constexpr short RingofMage = 635;
+    constexpr short RingofGrandMage = 636;
+    constexpr short NecklaceOfBeholder = 646;
+    constexpr short NecklaceOfStoneGol = 647;
+    constexpr short NecklaceOfLiche = 648;
+    constexpr short StoneOfXelima = 656;
+    constexpr short StoneOfMerien = 657;
+    constexpr short SwordofMedusa = 724;
+    constexpr short SwordofIceElemental = 725;
+    constexpr short RingofArcmage = 734;
+    constexpr short RingofDragonpower = 735;
+    constexpr short ZemstoneofSacrifice = 753;
+    constexpr short StormBringer = 845;
+    constexpr short KlonessBlade = 849;
+    constexpr short KlonessAxe = 850;
+    constexpr short KlonessEsterk = 851;
+    constexpr short NecklaceOfMerien = 858;
+    constexpr short NecklaceOfKloness = 859;
+    constexpr short NecklaceOfXelima = 860;
+    constexpr short BerserkWandMS20 = 861;
+    constexpr short BerserkWandMS10 = 862;
+    constexpr short KlonessWandMS20 = 863;
+    constexpr short KlonessWandMS10 = 864;
+    constexpr short ResurWandMS20 = 865;
+    constexpr short ResurWandMS10 = 866;
+    constexpr short AcientTablet = 867;
+    constexpr short AcientTabletLU = 868;
+    constexpr short AcientTabletLD = 869;
+    constexpr short AcientTabletRU = 870;
+    constexpr short AcientTabletRD = 871;
+    constexpr short DarkExecutor = 879;
+    constexpr short TheDevastator = 880;
+    constexpr short LightingBlade = 881;
+    constexpr short MagicNecklaceDFp15 = 1086;
+    constexpr short MagicNecklaceRM30 = 1101;
+    constexpr short AngelicPandentSTR = 1108;
+    constexpr short AngelicPandentDEX = 1109;
+    constexpr short AngelicPandentINT = 1110;
+    constexpr short AngelicPandentMAG = 1111;
+}
+
+inline bool IsSpecialItem(short sIDnum)
+{
+    switch (sIDnum) {
+    case ItemId::Excaliber:
+    case ItemId::MagicWandMShield:
+    case ItemId::MagicWandMS30LLF:
+    case ItemId::MagicNecklaceRM10:
+    case ItemId::MagicNecklaceDMp1:
+    case ItemId::MagicNecklaceMS10:
+    case ItemId::MagicNecklaceDFp10:
+    case ItemId::EmeraldRing:
+    case ItemId::SapphireRing:
+    case ItemId::RubyRing:
+    case ItemId::AresdenHeroCape:
+    case ItemId::ElvineHeroCape:
+    case ItemId::AresdenHeroCapePlus1:
+    case ItemId::ElvineHeroCapePlus1:
+    case ItemId::BloodSword:
+    case ItemId::BloodAxe:
+    case ItemId::BloodRapier:
+    case ItemId::XelimaBlade:
+    case ItemId::XelimaAxe:
+    case ItemId::XelimaRapier:
+    case ItemId::DemonSlayer:
+    case ItemId::DarkElfBow:
+    case ItemId::MerienShield:
+    case ItemId::MerienPlateMailM:
+    case ItemId::MerienPlateMailW:
+    case ItemId::RingoftheXelima:
+    case ItemId::RingoftheAbaddon:
+    case ItemId::RingofOgrepower:
+    case ItemId::RingofDemonpower:
+    case ItemId::RingofWizard:
+    case ItemId::RingofMage:
+    case ItemId::RingofGrandMage:
+    case ItemId::NecklaceOfBeholder:
+    case ItemId::NecklaceOfStoneGol:
+    case ItemId::NecklaceOfLiche:
+    case ItemId::StoneOfXelima:
+    case ItemId::StoneOfMerien:
+    case ItemId::SwordofMedusa:
+    case ItemId::SwordofIceElemental:
+    case ItemId::RingofArcmage:
+    case ItemId::RingofDragonpower:
+    case ItemId::ZemstoneofSacrifice:
+    case ItemId::StormBringer:
+    case ItemId::KlonessBlade:
+    case ItemId::KlonessAxe:
+    case ItemId::KlonessEsterk:
+    case ItemId::NecklaceOfMerien:
+    case ItemId::NecklaceOfKloness:
+    case ItemId::NecklaceOfXelima:
+    case ItemId::BerserkWandMS20:
+    case ItemId::BerserkWandMS10:
+    case ItemId::KlonessWandMS20:
+    case ItemId::KlonessWandMS10:
+    case ItemId::ResurWandMS20:
+    case ItemId::ResurWandMS10:
+    case ItemId::AcientTablet:
+    case ItemId::AcientTabletLU:
+    case ItemId::AcientTabletLD:
+    case ItemId::AcientTabletRU:
+    case ItemId::AcientTabletRD:
+    case ItemId::DarkExecutor:
+    case ItemId::TheDevastator:
+    case ItemId::LightingBlade:
+    case ItemId::MagicNecklaceDFp15:
+    case ItemId::MagicNecklaceRM30:
+    case ItemId::AngelicPandentSTR:
+    case ItemId::AngelicPandentDEX:
+    case ItemId::AngelicPandentINT:
+    case ItemId::AngelicPandentMAG:
+        return true;
+    default:
+        // Also check ranges for items between known IDs
+        if (sIDnum >= ItemId::AresdenHeroHelmM && sIDnum <= ItemId::ElvineHeroLeggingsW) return true;  // Hero items 403-426
+        if (sIDnum >= ItemId::MagicNecklaceDFp15 && sIDnum <= ItemId::MagicNecklaceRM30) return true;  // Magic necklaces 1086-1101
+        return false;
+    }
 }
 
 } // namespace item

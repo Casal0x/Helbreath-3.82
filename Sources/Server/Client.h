@@ -29,8 +29,7 @@ using namespace std;
 #define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
 #define DEF_MAXGUILDSMAN	128 // �ִ� ���� �� 
 
-#define	DEF_MAXMAGICTYPE	100	// �����Ϸ��� �α׼������뵵 �ٲپ��? �Ѵ�.
-#define DEF_MAXSKILLTYPE	60
+// DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h
 
 #define DEF_MAXPARTYMEMBERS	100
 
@@ -251,7 +250,7 @@ public:
 	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
 	int   m_iExchangeH;					// Client ID to Exchanging with 
 	char  m_cExchangeName[11];			// Name of Client to Exchanging with 
-	char  m_cExchangeItemName[4][DEF_ITEMNAME];	// Name of Item to exchange 
+	short m_sExchangeItemID[4];	// Item ID to validate exchange hasn't been tampered
 
 	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
 	int   m_iExchangeItemAmount[4];		// Ammount to exchange with
