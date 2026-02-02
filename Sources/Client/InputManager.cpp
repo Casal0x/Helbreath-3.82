@@ -2,6 +2,10 @@
 #include "ConfigManager.h"
 #include <cstring>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 InputManager& InputManager::Get()
 {
 	static InputManager s_instance;
@@ -28,7 +32,7 @@ InputManager::InputManager()
 
 InputManager::~InputManager() = default;
 
-void InputManager::Initialize(HWND hWnd)
+void InputManager::Initialize(NativeWindowHandle hWnd)
 {
 	m_hWnd = hWnd;
 	UpdateCursorClip(false);

@@ -5,15 +5,11 @@
 //
 // --------------------------------------------------------------
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-
-#include <windows.h>
+#include "NativeTypes.h"
 #include "CommonTypes.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <mmsystem.h>
-#include <process.h>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <atomic>
 #include <thread>
 #include <chrono>
@@ -32,19 +28,10 @@
 #include "DevConsole.h"
 
 // --------------------------------------------------------------
-// GPU Selection - Force discrete GPU on hybrid systems
-// These exports tell NVIDIA Optimus and AMD PowerXpress to prefer
-// the high-performance GPU over integrated graphics
-extern "C"
-{
-    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
-    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-}
-
-// --------------------------------------------------------------
 // Global state
-HWND G_hWnd = 0;
-HWND G_hEditWnd = 0;
+// G_hWnd/G_hEditWnd kept for DDrawEngine internals (DXC_ddraw.cpp) which reference them directly
+NativeWindowHandle G_hWnd = nullptr;
+NativeWindowHandle G_hEditWnd = nullptr;
 class CGame* G_pGame = nullptr;
 
 // Timer thread state (replaces Windows multimedia timer)
@@ -55,13 +42,11 @@ class XSocket* G_pCalcSocket = 0;
 bool G_bIsCalcSocketConnected = true;
 uint32_t G_dwCalcSocketTime = 0, G_dwCalcSocketSendTime = 0;
 
-
 // Window event handler
 static GameWindowHandler* g_pWindowHandler = nullptr;
 
 // Function declarations
 void EventLoop();
-void Initialize(char* pCmdLine);
 void StartTimerThread();
 void StopTimerThread();
 
@@ -77,17 +62,13 @@ void TimerThreadFunc()
 }
 
 // --------------------------------------------------------------
-int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
+// Platform-independent core
+int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
 {
     srand((unsigned)time(0));
 
     // Initialize in-game developer console (replaces DebugConsole window)
     DevConsole::Get().Initialize();
-
-    // Ensure consistent pixel coordinates under RDP and high-DPI setups
-    if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
-        SetProcessDPIAware();
-    }
 
     // Load settings early so window size is available
     ConfigManager::Get().Initialize();
@@ -112,12 +93,12 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     params.height = ConfigManager::Get().GetWindowHeight();
     params.fullscreen = false;
     params.centered = true;
-    params.hInstance = hInstance;
-    params.iconResourceId = IDI_ICON1;
+    params.nativeInstance = nativeInstance;
+    params.iconResourceId = iconResourceId;
 
     if (!Window::Create(params))
     {
-        MessageBox(nullptr, "Failed to create window!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+        Window::ShowError("ERROR", "Failed to create window!");
         delete G_pGame;
         return 1;
     }
@@ -127,11 +108,38 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     Window::Get()->SetEventHandler(g_pWindowHandler);
     Window::Get()->Show();
 
-    // Store window handle globally for legacy code
+    // Store window handle for DDrawEngine internals (DXC_ddraw.cpp)
     G_hWnd = Window::GetHandle();
 
-    // Initialize game systems
-    Initialize((char*)lpCmdLine);
+    // Initialize timing systems
+    FrameTiming::Initialize();
+
+    // Initialize Winsock
+#ifdef _WIN32
+    {
+        WSADATA wsaData;
+        uint16_t wVersionRequested = MAKEWORD(2, 2);
+        int iErrCode = WSAStartup(wVersionRequested, &wsaData);
+        if (iErrCode)
+        {
+            Window::ShowError("ERROR", "Winsock-V2.2 not found! Cannot execute program.");
+            Window::Close();
+            delete G_pGame;
+            return 1;
+        }
+    }
+#endif
+
+    // Initialize game
+    if (G_pGame->bInit() == false)
+    {
+        Window::Close();
+        delete G_pGame;
+        return 1;
+    }
+
+    // Start timer thread
+    StartTimerThread();
 
     // Main loop
     EventLoop();
@@ -158,6 +166,48 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     return 0;
 }
 
+// --------------------------------------------------------------
+// Platform-specific entry points
+
+#ifdef _WIN32
+#include <windows.h>
+
+// GPU Selection - Force discrete GPU on hybrid systems
+// These exports tell NVIDIA Optimus and AMD PowerXpress to prefer
+// the high-performance GPU over integrated graphics
+extern "C"
+{
+    __declspec(dllexport) DWORD NvOptimusEnablement = 0x00000001;
+    __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
+}
+
+static void InitDpiAwareness()
+{
+    if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)) {
+        SetProcessDPIAware();
+    }
+}
+
+int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
+{
+    InitDpiAwareness();
+    return GameMain(hInstance, IDI_ICON1, lpCmdLine);
+}
+
+// Console subsystem entry point (used by SFML build)
+int main(int argc, char* argv[])
+{
+    InitDpiAwareness();
+    return GameMain(GetModuleHandle(nullptr), IDI_ICON1, argc > 1 ? argv[1] : "");
+}
+#else
+int main(int argc, char* argv[])
+{
+    return GameMain(nullptr, 0, argc > 1 ? argv[1] : "");
+}
+#endif
+
+// --------------------------------------------------------------
 void EventLoop()
 {
     IWindow* pWindow = Window::Get();
@@ -179,36 +229,6 @@ void EventLoop()
         G_pGame->RenderFrame();
         FrameTiming::EndFrame();
     }
-}
-
-void Initialize(char* pCmdLine)
-{
-    int iErrCode;
-    uint16_t wVersionRequested;
-    WSADATA wsaData;
-
-    // Initialize timing systems
-    FrameTiming::Initialize();
-
-    // Initialize Winsock
-    wVersionRequested = MAKEWORD(2, 2);
-    iErrCode = WSAStartup(wVersionRequested, &wsaData);
-    if (iErrCode)
-    {
-        MessageBox(G_hWnd, "Winsock-V2.2 not found! Cannot execute program.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-        PostQuitMessage(0);
-        return;
-    }
-
-    // Initialize game
-    if (G_pGame->bInit() == false)
-    {
-        PostQuitMessage(0);
-        return;
-    }
-
-    // Start timer thread
-    StartTimerThread();
 }
 
 void StartTimerThread()

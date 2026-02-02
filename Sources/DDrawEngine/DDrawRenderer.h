@@ -19,13 +19,13 @@ public:
     // ============== IRenderer Implementation ==============
 
     // Initialization
-    virtual bool Init(HWND hWnd) override;
+    virtual bool Init(NativeWindowHandle hWnd) override;
     virtual void Shutdown() override;
 
     // Display Modes
     virtual void SetFullscreen(bool fullscreen) override;
     virtual bool IsFullscreen() const override;
-    virtual void ChangeDisplayMode(HWND hWnd) override;
+    virtual void ChangeDisplayMode(NativeWindowHandle hWnd) override;
 
     // Frame Management
     virtual void BeginFrame() override;

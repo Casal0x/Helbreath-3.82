@@ -56,7 +56,7 @@ Win32Input::~Win32Input()
     UpdateCursorClip(false);
 }
 
-void Win32Input::Initialize(HWND hWnd)
+void Win32Input::Initialize(NativeWindowHandle hWnd)
 {
     m_hWnd = hWnd;
     UpdateCursorClip(false);

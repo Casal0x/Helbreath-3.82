@@ -34,10 +34,10 @@ public:
     virtual void OnMouseWheel(int delta, int x, int y) override;
 
     // Custom Messages
-    virtual bool OnCustomMessage(UINT message, WPARAM wParam, LPARAM lParam) override;
+    virtual bool OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam) override;
 
     // Text Input
-    virtual bool OnTextInput(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) override;
+    virtual bool OnTextInput(NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam) override;
 
 private:
     CGame* m_pGame;

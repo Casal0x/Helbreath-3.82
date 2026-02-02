@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <windows.h>
-#include <string.h>
-#include <winbase.h>
+#include <cstring>
 #include "CommonTypes.h"
 
 class CMsg

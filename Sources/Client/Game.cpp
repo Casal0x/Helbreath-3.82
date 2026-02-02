@@ -13,7 +13,10 @@
 #include "Packet/SharedPackets.h"
 #include "SharedCalculations.h"
 #include <cstdio>
+#ifdef _WIN32
 #include <windows.h>
+#include <direct.h>
+#endif
 #include <charconv>
 
 // Renderer
@@ -69,7 +72,7 @@ extern char G_cSpriteAlphaDegree;
 extern class XSocket* G_pCalcSocket;
 extern bool G_bIsCalcSocketConnected;
 extern uint32_t G_dwCalcSocketTime, G_dwCalcSocketSendTime;
-extern HWND	G_hWnd, G_hEditWnd;
+
 
 char _cDrawingOrder[] = { 0, 1, 0, 0, 0, 0, 0, 1, 1 };
 char _cMantleDrawingOrder[] = { 0, 1, 1, 1, 0, 0, 0, 2, 2 };
@@ -219,7 +222,7 @@ bool CGame::bInit()
 	m_dwTime = GameClock::GetTimeMS();
 
 	// Initialize AudioManager (sounds loaded later during loading screen)
-	AudioManager::Get().Initialize(G_hWnd);
+	AudioManager::Get().Initialize();
 
 	// Initialize ChatCommandManager
 	ChatCommandManager::Get().Initialize(this);
@@ -240,14 +243,14 @@ bool CGame::bInit()
 #error "No renderer engine defined. Define SFML_ENGINE or DDRAW_ENGINE."
 #endif
 	{
-		MessageBox(G_hWnd, "Failed to create renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		Window::ShowError("ERROR", "Failed to create renderer!");
 		return false;
 	}
 
 	m_Renderer = Renderer::Get();
-	if (m_Renderer->Init(G_hWnd) == false)
+	if (m_Renderer->Init(Window::GetHandle()) == false)
 	{
-		MessageBox(G_hWnd, "Failed to init renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		Window::ShowError("ERROR", "Failed to init renderer!");
 		return false;
 	}
 
@@ -266,13 +269,13 @@ bool CGame::bInit()
 
 	if (bCheckImportantFile() == false)
 	{
-		MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
+		Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
 		return false;
 	}
 
 	if (_bDecodeBuildItemContents() == false)
 	{
-		MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR2", MB_ICONEXCLAMATION | MB_OK);
+		Window::ShowError("ERROR2", "File checksum error! Get Update again please!");
 		return false;
 	}
 
@@ -1151,7 +1154,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		delete G_pCalcSocket;
 		G_pCalcSocket = 0;
 	}
-	SendMessage(G_hWnd, WM_DESTROY, 0, 0);
+	Window::Close();
 	break;
 	}
 	return true;
@@ -3351,7 +3354,7 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 			delete G_pCalcSocket;
 			G_pCalcSocket = 0;
 		}
-		SendMessage(G_hWnd, WM_DESTROY, 0, 0);
+		Window::Close();
 		break;
 	}
 }
@@ -11440,13 +11443,21 @@ void CGame::AddMapStatusInfo(char* pData, bool bIsLastData)
 	}
 }
 
-bool CGame::GetText(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
+bool CGame::GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
 {
 	int len;
-	HIMC hIMC = 0;
 	if (m_pInputBuffer == 0) return false;
+
+#ifndef WM_CHAR
+#define WM_CHAR 0x0102
+#define WM_IME_COMPOSITION 0x010F
+#endif
+
 	switch (msg) {
+#ifdef _WIN32
 	case WM_IME_COMPOSITION:
+	{
+		HIMC hIMC = 0;
 		std::memset(m_cEdit, 0, sizeof(m_cEdit));
 		if (lparam & GCS_RESULTSTR)
 		{
@@ -11470,6 +11481,8 @@ bool CGame::GetText(HWND hWnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			if (len >= m_cInputMaxLen) std::memset(m_cEdit, 0, sizeof(m_cEdit));
 		}
 		return true;
+	}
+#endif
 
 	case WM_CHAR:
 		if (wparam == 8)

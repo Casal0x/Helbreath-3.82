@@ -5,12 +5,7 @@
 
 #pragma once
 
-// Prevent winsock.h conflicts
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_
-#endif
-
-#include <windows.h>
+#include "NativeTypes.h"
 #include "IInput.h"
 
 namespace sf { class RenderWindow; }
@@ -21,7 +16,7 @@ public:
     SFMLInput();
     virtual ~SFMLInput();
 
-    void Initialize(HWND hWnd);
+    void Initialize(NativeWindowHandle hWnd);
     void SetRenderWindow(sf::RenderWindow* pWindow);
 
     // ============== IInput Implementation ==============
@@ -70,7 +65,7 @@ public:
 private:
     void ClearAllKeys();
 
-    HWND m_hWnd;
+    NativeWindowHandle m_hWnd;
     sf::RenderWindow* m_pRenderWindow;
     bool m_active;
     bool m_suppressed;

@@ -32,7 +32,7 @@ bool Win32Window::Create(const WindowParams& params)
     if (m_open)
         return false;  // Already created
 
-    m_hInstance = params.hInstance;
+    m_hInstance = params.nativeInstance;
     m_width = params.width;
     m_height = params.height;
     m_fullscreen = params.fullscreen;
@@ -155,7 +155,7 @@ void Win32Window::Close()
     }
 }
 
-HWND Win32Window::GetHandle() const
+NativeWindowHandle Win32Window::GetHandle() const
 {
     return m_hWnd;
 }
@@ -294,6 +294,11 @@ void Win32Window::SetTitle(const char* title)
     {
         SetWindowText(m_hWnd, title);
     }
+}
+
+void Win32Window::ShowMessageBox(const char* title, const char* message)
+{
+    MessageBox(m_hWnd, message, title, MB_ICONEXCLAMATION | MB_OK);
 }
 
 bool Win32Window::ProcessMessages()

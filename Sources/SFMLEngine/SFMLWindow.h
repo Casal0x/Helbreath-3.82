@@ -25,7 +25,7 @@ public:
     void Close() override;
 
     // Properties
-    HWND GetHandle() const override;
+    NativeWindowHandle GetHandle() const override;
     int GetWidth() const override;
     int GetHeight() const override;
     bool IsFullscreen() const override;
@@ -39,6 +39,9 @@ public:
     void Show() override;
     void Hide() override;
     void SetTitle(const char* title) override;
+
+    // Dialogs
+    void ShowMessageBox(const char* title, const char* message) override;
 
     // Message Processing
     bool ProcessMessages() override;
@@ -61,7 +64,7 @@ private:
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;
 
     sf::RenderWindow m_renderWindow;
-    HWND m_hWnd;  // Native handle for compatibility
+    NativeWindowHandle m_hWnd;  // Native handle for compatibility
     IWindowEventHandler* m_pEventHandler;
     int m_width;
     int m_height;

@@ -56,7 +56,7 @@ SFMLInput::SFMLInput()
 
 SFMLInput::~SFMLInput() = default;
 
-void SFMLInput::Initialize(HWND hWnd)
+void SFMLInput::Initialize(NativeWindowHandle hWnd)
 {
     m_hWnd = hWnd;
     m_active = true;

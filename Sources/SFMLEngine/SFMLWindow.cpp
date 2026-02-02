@@ -115,7 +115,7 @@ void SFMLWindow::Close()
     m_renderWindow.close();
 }
 
-HWND SFMLWindow::GetHandle() const
+NativeWindowHandle SFMLWindow::GetHandle() const
 {
     return m_hWnd;
 }
@@ -335,6 +335,15 @@ void SFMLWindow::SetTitle(const char* title)
     }
 }
 
+void SFMLWindow::ShowMessageBox(const char* title, const char* message)
+{
+#ifdef _WIN32
+    MessageBox(m_hWnd, message, title, MB_ICONEXCLAMATION | MB_OK);
+#else
+    fprintf(stderr, "%s: %s\n", title, message);
+#endif
+}
+
 bool SFMLWindow::ProcessMessages()
 {
     // Check if window was closed programmatically (via Close() method)
@@ -393,8 +402,8 @@ bool SFMLWindow::ProcessMessages()
             {
                 // Call OnTextInput with WM_CHAR-style parameters
                 // The game's GetText() function expects Win32 message format
-                m_pEventHandler->OnTextInput(m_hWnd, WM_CHAR,
-                    static_cast<WPARAM>(textEntered->unicode), 0);
+                m_pEventHandler->OnTextInput(m_hWnd, 0x0102 /*WM_CHAR*/,
+                    static_cast<uintptr_t>(textEntered->unicode), 0);
             }
         }
 

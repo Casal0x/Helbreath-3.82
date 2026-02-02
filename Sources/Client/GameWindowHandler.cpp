@@ -3,9 +3,6 @@
 // Routes window events to CGame and Input::
 //////////////////////////////////////////////////////////////////////
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-
 #include "GameWindowHandler.h"
 #include "Game.h"
 #include "IInput.h"
@@ -15,7 +12,9 @@
 #include "Overlay_DevConsole.h"
 #include "GameModeManager.h"
 
-extern HWND G_hWnd;
+#ifdef _WIN32
+#include <windowsx.h>
+#endif
 
 // Custom message IDs (these should match what's used in the game)
 #define WM_USER_CALCSOCKETEVENT (WM_USER + 600)
@@ -30,7 +29,7 @@ void GameWindowHandler::OnClose()
     if (!m_pGame)
     {
         // No game, just close via Window abstraction
-        DestroyWindow(Window::GetHandle());
+        Window::Close();
         return;
     }
 
@@ -53,12 +52,12 @@ void GameWindowHandler::OnClose()
     else if (GameModeManager::GetMode() == GameMode::Null)
     {
         // Game code requested close (e.g., from quit screen), proceed with destruction
-        DestroyWindow(G_hWnd);
+        Window::Close();
     }
     else
     {
         // Other modes (loading, etc.), proceed with closing
-        DestroyWindow(G_hWnd);
+        Window::Close();
     }
 }
 
@@ -68,7 +67,9 @@ void GameWindowHandler::OnDestroy()
     {
         m_pGame->Quit();
     }
+#ifdef _WIN32
     WSACleanup();
+#endif
 }
 
 void GameWindowHandler::OnActivate(bool active)
@@ -95,8 +96,8 @@ void GameWindowHandler::OnActivate(bool active)
         {
             if (m_pGame->bCheckImportantFile() == false)
             {
-                MessageBox(G_hWnd, "File checksum error! Get Update again please!", "ERROR1", MB_ICONEXCLAMATION | MB_OK);
-                PostQuitMessage(0);
+                Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
+                Window::Close();
             }
         }
     }
@@ -215,7 +216,7 @@ void GameWindowHandler::OnMouseWheel(int delta, int x, int y)
     }
 }
 
-bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lParam)
+bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
     if (!m_pGame)
         return false;
@@ -227,7 +228,9 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
         return true;
 
     case WM_SETCURSOR:
+#ifdef _WIN32
         SetCursor(nullptr);
+#endif
         return true;
 
     case WM_SETFOCUS:
@@ -244,7 +247,7 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
         // Handle double-click as button down for manual detection
         if (Input::Get())
         {
-            Input::Get()->OnMouseMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            Input::Get()->OnMouseMove(GET_X_LPARAM(static_cast<LPARAM>(lParam)), GET_Y_LPARAM(static_cast<LPARAM>(lParam)));
             Input::Get()->OnMouseDown(MOUSE_BUTTON_LEFT);
         }
         return true;
@@ -253,7 +256,7 @@ bool GameWindowHandler::OnCustomMessage(UINT message, WPARAM wParam, LPARAM lPar
     return false;
 }
 
-bool GameWindowHandler::OnTextInput(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+bool GameWindowHandler::OnTextInput(NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam)
 {
     // Route WM_CHAR text input to DevConsole when visible
     if (message == WM_CHAR && DevConsole::Get().IsVisible())

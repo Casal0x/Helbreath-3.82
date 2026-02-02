@@ -1,11 +1,6 @@
 #pragma once
 
-// Prevent winsock.h conflicts when windows.h is included here.
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_
-#endif
-
-#include <windows.h>
+#include "NativeTypes.h"
 #include "GlobalDef.h"
 
 class InputManager
@@ -13,7 +8,7 @@ class InputManager
 public:
 	static InputManager& Get();
 
-	void Initialize(HWND hWnd);
+	void Initialize(NativeWindowHandle hWnd);
 	void SetActive(bool active);
 	void BeginFrame();
 
@@ -64,7 +59,7 @@ private:
 	void UpdateLogicalPosition(int clientX, int clientY);
 	void UpdateCursorClip(bool active);
 
-	HWND m_hWnd;
+	NativeWindowHandle m_hWnd;
 	bool m_active;
 
 	short m_mouseX;

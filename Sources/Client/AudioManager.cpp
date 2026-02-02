@@ -8,9 +8,8 @@ AudioManager& AudioManager::Get()
 	return instance;
 }
 
-bool AudioManager::Initialize(HWND hWnd)
+bool AudioManager::Initialize()
 {
-	(void)hWnd; // Not needed for miniaudio
 
 	if (m_bInitialized)
 		return m_bSoundAvailable;

@@ -5,11 +5,11 @@
 #include "Overlay_VersionNotMatch.h"
 #include "Game.h"
 #include "GameModeManager.h"
+#include "RendererFactory.h"
 #include "lan_eng.h"
 #include "IInput.h"
 #include "XSocket.h"
 
-extern HWND G_hWnd;
 extern class XSocket* G_pCalcSocket;
 
 Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* pGame)
@@ -47,7 +47,7 @@ void Overlay_VersionNotMatch::on_update()
     if (Input::IsKeyPressed(VK_ESCAPE) || Input::IsKeyPressed(VK_RETURN))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        SendMessage(G_hWnd, WM_DESTROY, 0, 0);
+        Window::Close();
         return;
     }
 
@@ -55,7 +55,7 @@ void Overlay_VersionNotMatch::on_update()
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        SendMessage(G_hWnd, WM_DESTROY, 0, 0);
+        Window::Close();
         return;
     }
 }

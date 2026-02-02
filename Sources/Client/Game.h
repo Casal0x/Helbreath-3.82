@@ -4,28 +4,13 @@
 
 #pragma once
 
-// MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
-
-#include <windows.h>
-#include <windowsx.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <mmsystem.h>
-#include <winbase.h>
-
-// Undefine Windows PlaySound macro (from mmsystem.h) to prevent name collision
-// with CGame::PlaySound method. We use AudioManager for audio, not Windows API.
-#ifdef PlaySound
-#undef PlaySound
-#endif
+#include "NativeTypes.h"
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <ctime>
+#include <cstring>
 #include <memory>
-#include <string.h>
-#include <process.h>
-#include <direct.h>
-#include <tlhelp32.h>
 #include <fstream>
 #include <iostream>
 #include <iosfwd>
@@ -106,8 +91,11 @@
 #define DEF_MAXGUILDNAMES		100
 #define DEF_MAXSELLLIST			12
 
-#define WM_USER_GAMESOCKETEVENT	WM_USER + 2000
-#define WM_USER_LOGSOCKETEVENT	WM_USER + 2001
+#ifndef WM_USER
+#define WM_USER 0x0400
+#endif
+#define WM_USER_GAMESOCKETEVENT	(WM_USER + 2000)
+#define WM_USER_LOGSOCKETEVENT	(WM_USER + 2001)
 
 #define DEF_SERVERTYPE_GAME			1
 #define DEF_SERVERTYPE_LOG			2
@@ -188,7 +176,7 @@ public:
 	void EndInputString();
 	void ClearInputString();
 	void ShowReceivedString(bool bIsHide = false);
-	bool GetText(HWND hWnd,UINT msg,WPARAM wparam, LPARAM lparam);
+	bool GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
 

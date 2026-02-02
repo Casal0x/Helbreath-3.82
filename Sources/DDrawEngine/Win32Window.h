@@ -23,7 +23,7 @@ public:
     virtual void Close() override;
 
     // Properties
-    virtual HWND GetHandle() const override;
+    virtual NativeWindowHandle GetHandle() const override;
     virtual int GetWidth() const override;
     virtual int GetHeight() const override;
     virtual bool IsFullscreen() const override;
@@ -37,6 +37,9 @@ public:
     virtual void Show() override;
     virtual void Hide() override;
     virtual void SetTitle(const char* title) override;
+
+    // Dialogs
+    virtual void ShowMessageBox(const char* title, const char* message) override;
 
     // Message Processing
     virtual bool ProcessMessages() override;

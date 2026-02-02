@@ -129,7 +129,7 @@ static void LogGPUInfo()
 }
 #endif
 
-bool SFMLRenderer::Init(HWND hWnd)
+bool SFMLRenderer::Init(NativeWindowHandle hWnd)
 {
     // Log GPU information for debugging/verification
 #ifdef _WIN32
@@ -201,7 +201,7 @@ bool SFMLRenderer::IsFullscreen() const
     return m_fullscreen;
 }
 
-void SFMLRenderer::ChangeDisplayMode(HWND hWnd)
+void SFMLRenderer::ChangeDisplayMode(NativeWindowHandle hWnd)
 {
     // Get the window through the Window factory
     IWindow* pWindow = Window::Get();

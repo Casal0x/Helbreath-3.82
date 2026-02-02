@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <windows.h>
+#include "NativeTypes.h"
 #include <cstdint>
 
 // Forward declaration
@@ -20,7 +20,7 @@ struct WindowParams
     int height;
     bool fullscreen;
     bool centered;
-    HINSTANCE hInstance;
+    NativeInstance nativeInstance;
     int iconResourceId;  // 0 for default
 };
 
@@ -37,7 +37,7 @@ public:
     virtual void Close() = 0;  // Request window close (triggers close event)
 
     // ============== Properties ==============
-    virtual HWND GetHandle() const = 0;
+    virtual NativeWindowHandle GetHandle() const = 0;
     virtual int GetWidth() const = 0;
     virtual int GetHeight() const = 0;
     virtual bool IsFullscreen() const = 0;
@@ -51,6 +51,9 @@ public:
     virtual void Show() = 0;
     virtual void Hide() = 0;
     virtual void SetTitle(const char* title) = 0;
+
+    // ============== Dialogs ==============
+    virtual void ShowMessageBox(const char* title, const char* message) = 0;
 
     // ============== Message Processing ==============
     // Process pending messages, returns false if WM_QUIT received
@@ -89,11 +92,11 @@ public:
     // ============== Custom Messages ==============
     // For game-specific messages (sockets, timers, etc.)
     // Return true if handled, false to pass to DefWindowProc
-    virtual bool OnCustomMessage(UINT message, WPARAM wParam, LPARAM lParam) = 0;
+    virtual bool OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam) = 0;
 
     // ============== Text Input ==============
     // For IME and text composition
-    virtual bool OnTextInput(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) = 0;
+    virtual bool OnTextInput(NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam) = 0;
 };
 
 // Mouse button constants

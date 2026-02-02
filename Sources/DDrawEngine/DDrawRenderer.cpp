@@ -26,7 +26,7 @@ DDrawRenderer::~DDrawRenderer()
     Shutdown();
 }
 
-bool DDrawRenderer::Init(HWND hWnd)
+bool DDrawRenderer::Init(NativeWindowHandle hWnd)
 {
     return m_ddraw.bInit(hWnd);
 }
@@ -46,7 +46,7 @@ bool DDrawRenderer::IsFullscreen() const
     return m_ddraw.m_bFullMode;
 }
 
-void DDrawRenderer::ChangeDisplayMode(HWND hWnd)
+void DDrawRenderer::ChangeDisplayMode(NativeWindowHandle hWnd)
 {
     m_ddraw.ChangeDisplayMode(hWnd);
 }

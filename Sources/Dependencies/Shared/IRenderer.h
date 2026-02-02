@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <windows.h>
+#include "NativeTypes.h"
 #include <cstdint>
 
 // Undefine Windows DrawText macro to avoid naming conflict with IRenderer::DrawText
@@ -25,13 +25,13 @@ public:
     virtual ~IRenderer() = default;
 
     // ============== Initialization ==============
-    virtual bool Init(HWND hWnd) = 0;
+    virtual bool Init(NativeWindowHandle hWnd) = 0;
     virtual void Shutdown() = 0;
 
     // ============== Display Modes ==============
     virtual void SetFullscreen(bool fullscreen) = 0;
     virtual bool IsFullscreen() const = 0;
-    virtual void ChangeDisplayMode(HWND hWnd) = 0;
+    virtual void ChangeDisplayMode(NativeWindowHandle hWnd) = 0;
 
     // ============== Frame Management ==============
     virtual void BeginFrame() = 0;      // ClearBackBuffer

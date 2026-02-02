@@ -80,13 +80,16 @@ public:
     static void Destroy();
 
     // Get the window handle (HWND on Windows)
-    static HWND GetHandle();
+    static NativeWindowHandle GetHandle();
 
     // Convenience: Check if window is open and active
     static bool IsActive();
 
     // Request window close (triggers close event, works for both DDraw and SFML)
     static void Close();
+
+    // Show an error message box (platform-appropriate)
+    static void ShowError(const char* title, const char* message);
 
     // Resize the window
     static void SetSize(int width, int height, bool center = true);

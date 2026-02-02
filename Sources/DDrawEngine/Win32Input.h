@@ -5,12 +5,7 @@
 
 #pragma once
 
-// Prevent winsock.h conflicts
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_
-#endif
-
-#include <windows.h>
+#include "NativeTypes.h"
 #include "IInput.h"
 
 class Win32Input : public IInput
@@ -19,7 +14,7 @@ public:
     Win32Input();
     virtual ~Win32Input();
 
-    void Initialize(HWND hWnd);
+    void Initialize(NativeWindowHandle hWnd);
 
     // ============== IInput Implementation ==============
 
@@ -69,7 +64,7 @@ private:
     void UpdateCursorClip(bool active);
     void ClearAllKeys();
 
-    HWND m_hWnd;
+    NativeWindowHandle m_hWnd;
     bool m_active;
     bool m_suppressed;
 

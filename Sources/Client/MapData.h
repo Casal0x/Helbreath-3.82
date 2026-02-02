@@ -4,9 +4,7 @@
 
 #pragma once
 
-#include <windows.h>
-#include <winbase.h>
-#include <stdio.h>
+#include <cstdio>
 #include <stdlib.h>
 #include <io.h>
 #include <sys/types.h>

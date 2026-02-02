@@ -22,13 +22,13 @@ public:
     // ============== IRenderer Implementation ==============
 
     // Initialization
-    bool Init(HWND hWnd) override;
+    bool Init(NativeWindowHandle hWnd) override;
     void Shutdown() override;
 
     // Display Modes
     void SetFullscreen(bool fullscreen) override;
     bool IsFullscreen() const override;
-    void ChangeDisplayMode(HWND hWnd) override;
+    void ChangeDisplayMode(NativeWindowHandle hWnd) override;
 
     // Frame Management
     void BeginFrame() override;

@@ -236,7 +236,7 @@ void Window::Destroy()
     }
 }
 
-HWND Window::GetHandle()
+NativeWindowHandle Window::GetHandle()
 {
     return s_pWindow ? s_pWindow->GetHandle() : nullptr;
 }
@@ -267,6 +267,22 @@ void Window::SetBorderless(bool borderless)
     if (s_pWindow)
     {
         s_pWindow->SetBorderless(borderless);
+    }
+}
+
+void Window::ShowError(const char* title, const char* message)
+{
+    if (s_pWindow)
+    {
+        s_pWindow->ShowMessageBox(title, message);
+    }
+    else
+    {
+#ifdef _WIN32
+        MessageBox(nullptr, message, title, MB_ICONEXCLAMATION | MB_OK);
+#else
+        fprintf(stderr, "%s: %s\n", title, message);
+#endif
     }
 }
 
