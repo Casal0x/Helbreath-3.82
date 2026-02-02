@@ -30,8 +30,8 @@ SFMLRenderer::SFMLRenderer()
     , m_texturesCreated(false)
     , m_pdbgsWrapper(nullptr)
     , m_backBufferLocked(false)
-    , m_width(RENDER_LOGICAL_WIDTH)
-    , m_height(RENDER_LOGICAL_HEIGHT)
+    , m_width(640)  // Default, updated in CreateRenderTextures
+    , m_height(480) // Default, updated in CreateRenderTextures
     , m_fullscreen(false)
     , m_spriteAlphaDegree(1)
 {
@@ -145,6 +145,11 @@ bool SFMLRenderer::CreateRenderTextures()
     if (m_texturesCreated)
         return true;
 
+    // Update dimensions from ResolutionConfig (initialized before renderer creation)
+    m_width = RENDER_LOGICAL_WIDTH();
+    m_height = RENDER_LOGICAL_HEIGHT();
+    SetRect(&m_clipArea, 0, 0, m_width, m_height);
+
     // Create back buffer render texture
     if (!m_backBuffer.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
     {
@@ -155,7 +160,7 @@ bool SFMLRenderer::CreateRenderTextures()
     // Create PDBGS (Pre-Draw Background Surface)
     // PDBGS must be larger than visible area for smooth tile scrolling
     // Game draws tiles with 32-pixel buffer zone and copies with offset
-    if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH), static_cast<unsigned int>(PDBGS_HEIGHT)}))
+    if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH()), static_cast<unsigned int>(PDBGS_HEIGHT())}))
     {
         printf("[ERROR] SFMLRenderer::CreateRenderTextures - Failed to create PDBGS\n");
         return false;
@@ -176,7 +181,7 @@ bool SFMLRenderer::CreateRenderTextures()
     m_backBuffer.setView(backBufferView);
 
     // PDBGS has its own larger view
-    sf::View pdbgsView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(PDBGS_WIDTH), static_cast<float>(PDBGS_HEIGHT)}));
+    sf::View pdbgsView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(PDBGS_WIDTH()), static_cast<float>(PDBGS_HEIGHT())}));
     m_pdbgs.setView(pdbgsView);
 
     // Clear both buffers - use transparent for proper alpha compositing
@@ -644,7 +649,7 @@ ITexture* SFMLRenderer::GetBackgroundSurface()
     if (!m_pdbgsWrapper)
     {
         // PDBGS is larger than visible area for smooth tile scrolling
-        m_pdbgsWrapper = new SFMLTexture(static_cast<uint16_t>(PDBGS_WIDTH), static_cast<uint16_t>(PDBGS_HEIGHT));
+        m_pdbgsWrapper = new SFMLTexture(static_cast<uint16_t>(PDBGS_WIDTH()), static_cast<uint16_t>(PDBGS_HEIGHT()));
     }
     return m_pdbgsWrapper;
 }
@@ -761,8 +766,8 @@ void SFMLRenderer::BltBackBufferFromPDBGS(RECT* srcRect)
     // Clamp to PDBGS bounds
     if (srcLeft < 0) srcLeft = 0;
     if (srcTop < 0) srcTop = 0;
-    if (srcRight > PDBGS_WIDTH) srcRight = PDBGS_WIDTH;
-    if (srcBottom > PDBGS_HEIGHT) srcBottom = PDBGS_HEIGHT;
+    if (srcRight > PDBGS_WIDTH()) srcRight = PDBGS_WIDTH();
+    if (srcBottom > PDBGS_HEIGHT()) srcBottom = PDBGS_HEIGHT();
 
     // Calculate clamped dimensions
     int width = srcRight - srcLeft;

@@ -160,8 +160,8 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
         // Use configured window size for windowed mode
         windowWidth = ConfigManager::Get().GetWindowWidth();
         windowHeight = ConfigManager::Get().GetWindowHeight();
-        if (windowWidth <= 0) windowWidth = LOGICAL_WIDTH;
-        if (windowHeight <= 0) windowHeight = LOGICAL_HEIGHT;
+        if (windowWidth <= 0) windowWidth = LOGICAL_WIDTH();
+        if (windowHeight <= 0) windowHeight = LOGICAL_HEIGHT();
     }
 
     // Recreate window with new mode
@@ -646,12 +646,12 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     if (m_fullscreen)
     {
         // Fullscreen with letterboxing - need to account for scale and offset
-        float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH);
-        float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT);
+        float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH());
+        float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT());
         float scale = (scaleY < scaleX) ? scaleY : scaleX;
 
-        float destWidth = static_cast<float>(RENDER_LOGICAL_WIDTH) * scale;
-        float destHeight = static_cast<float>(RENDER_LOGICAL_HEIGHT) * scale;
+        float destWidth = static_cast<float>(RENDER_LOGICAL_WIDTH()) * scale;
+        float destHeight = static_cast<float>(RENDER_LOGICAL_HEIGHT()) * scale;
         float offsetX = (windowWidth - destWidth) / 2.0f;
         float offsetY = (windowHeight - destHeight) / 2.0f;
 
@@ -662,8 +662,8 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     else
     {
         // Windowed mode - simple scaling
-        float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH);
-        float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT);
+        float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH());
+        float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT());
 
         logicalX = static_cast<int>(mouseX / scaleX);
         logicalY = static_cast<int>(mouseY / scaleY);
@@ -671,7 +671,7 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
 
     // Clamp to valid range
     if (logicalX < 0) logicalX = 0;
-    if (logicalX > LOGICAL_MAX_X) logicalX = LOGICAL_MAX_X;
+    if (logicalX > LOGICAL_MAX_X()) logicalX = LOGICAL_MAX_X();
     if (logicalY < 0) logicalY = 0;
-    if (logicalY > LOGICAL_MAX_Y) logicalY = LOGICAL_MAX_Y;
+    if (logicalY > LOGICAL_MAX_Y()) logicalY = LOGICAL_MAX_Y();
 }

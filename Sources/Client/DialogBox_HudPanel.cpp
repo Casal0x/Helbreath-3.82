@@ -20,12 +20,12 @@ const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] 
 DialogBox_HudPanel::DialogBox_HudPanel(CGame* pGame)
 	: IDialogBox(DialogBoxId::HudPanel, pGame)
 {
-	SetDefaultRect(0, LOGICAL_HEIGHT - ICON_PANEL_HEIGHT, ICON_PANEL_WIDTH, ICON_PANEL_HEIGHT);
+	SetDefaultRect(0, LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT(), ICON_PANEL_WIDTH(), ICON_PANEL_HEIGHT());
 }
 
 bool DialogBox_HudPanel::IsInButton(short msX, short msY, int x1, int x2) const
 {
-	return (msX > x1) && (msX < x2) && (msY > BTN_Y1) && (msY < BTN_Y2);
+	return (msX > x1) && (msX < x2) && (msY > BTN_Y1()) && (msY < BTN_Y2());
 }
 
 void DialogBox_HudPanel::ToggleDialogWithSound(DialogBoxId::Type dialogId)
@@ -50,22 +50,22 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iHP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->DrawWidth(HP_BAR_X, HP_BAR_Y, 12, iBarWidth);
+	pSprite->DrawWidth(HP_BAR_X(), HP_BAR_Y(), 12, iBarWidth);
 
 	// HP number
 	char statBuf[16];
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iHP);
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
-		TextLib::DrawText(GameFont::Numbers, 85, HP_NUM_Y, statBuf,
+		TextLib::DrawText(GameFont::Numbers, 85 + HudXOffset(), HP_NUM_Y(), statBuf,
 			TextLib::TextStyle::Color(GameColors::PoisonText.r, GameColors::PoisonText.g, GameColors::PoisonText.b));
-		TextLib::DrawText(GameFont::SprFont3_2, 35, HP_BAR_Y + 2, "Poisoned",
+		TextLib::DrawText(GameFont::SprFont3_2, 35 + HudXOffset(), HP_BAR_Y() + 2, "Poisoned",
 			TextLib::TextStyle::Color(GameColors::PoisonLabel.r, GameColors::PoisonLabel.g, GameColors::PoisonLabel.b).WithAlpha(0.7f));
 	}
 	else
 	{
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, HP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X, HP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	}
 
 	// MP bar
@@ -75,12 +75,12 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = HP_MP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iMP * HP_MP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > HP_MP_BAR_WIDTH) iBarWidth = HP_MP_BAR_WIDTH;
-	pSprite->DrawWidth(HP_BAR_X, MP_BAR_Y, 12, iBarWidth);
+	pSprite->DrawWidth(HP_BAR_X(), MP_BAR_Y(), 12, iBarWidth);
 
 	// MP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X + 1, MP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X, MP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
 	// SP bar
 	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -88,22 +88,22 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	iBarWidth = SP_BAR_WIDTH - (m_pGame->m_pPlayer->m_iSP * SP_BAR_WIDTH) / iMaxPoint;
 	if (iBarWidth < 0) iBarWidth = 0;
 	if (iBarWidth > SP_BAR_WIDTH) iBarWidth = SP_BAR_WIDTH;
-	pSprite->DrawWidth(SP_BAR_X, SP_BAR_Y, 13, iBarWidth);
+	pSprite->DrawWidth(SP_BAR_X(), SP_BAR_Y(), 13, iBarWidth);
 
 	// SP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X + 1, SP_NUM_Y + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X, SP_NUM_Y, statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
 	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);
 	uint32_t iExpRange = iNextLevelExp - iCurLevelExp;
 	uint32_t iExpProgress = m_pGame->m_pPlayer->m_iExp - iCurLevelExp;
-	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH) / iExpRange;
+	iBarWidth = (iExpProgress * ICON_PANEL_WIDTH()) / iExpRange;
 	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > ICON_PANEL_WIDTH) iBarWidth = ICON_PANEL_WIDTH;
-	pSprite->DrawWidth(0, EXP_BAR_Y, 18, iBarWidth);
+	if (iBarWidth > ICON_PANEL_WIDTH()) iBarWidth = ICON_PANEL_WIDTH();
+	pSprite->DrawWidth(HudXOffset(), EXP_BAR_Y(), 18, iBarWidth);
 }
 
 void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
@@ -117,25 +117,25 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		if ((m_pGame->m_pPlayer->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
 		{
 			int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-			TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Level Up!", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
+			TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Level Up!", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
 		}
 	}
 	else if (m_pGame->m_cRestartCount == -1)
 	{
 		int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-		TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X, LEVELUP_TEXT_Y, "Restart", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
+		TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
 	}
 
 	// Combat mode / Safe attack icon
 	if (m_pGame->m_pPlayer->m_bIsSafeAttackMode)
-		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 4);
+		pSprite->Draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 4);
 	else if (m_pGame->m_pPlayer->m_bIsCombatMode)
-		pSprite->Draw(COMBAT_ICON_X, COMBAT_ICON_Y, 5);
+		pSprite->Draw(COMBAT_ICON_X(), COMBAT_ICON_Y(), 5);
 
 	// Combat mode button hover
-	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
+	if (IsInButton(msX, msY, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
 	{
-		pSprite->Draw(BTN_COMBAT_X1, BTN_Y1, 16);
+		pSprite->Draw(BTN_COMBAT_X1(), BTN_Y1(), 16);
 		const char* tooltip = m_pGame->m_pPlayer->m_bIsCombatMode
 			? (m_pGame->m_pPlayer->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
@@ -145,11 +145,11 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	// Crusade icon
 	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_pPlayer->m_iCrusadeDuty != 0)
 	{
-		bool bHover = IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2);
+		bool bHover = IsInButton(msX, msY, BTN_CRUSADE_X1(), BTN_CRUSADE_X2());
 		if (m_pGame->m_pPlayer->m_bAresden)
-			pSprite->Draw(BTN_CRUSADE_X1 + (bHover ? 1 : 0), BTN_Y1, bHover ? 1 : 2);
+			pSprite->Draw(BTN_CRUSADE_X1() + (bHover ? 1 : 0), BTN_Y1(), bHover ? 1 : 2);
 		else
-			pSprite->Draw(BTN_CRUSADE_X1, BTN_Y1, bHover ? 0 : 15);
+			pSprite->Draw(BTN_CRUSADE_X1(), BTN_Y1(), bHover ? 0 : 15);
 	}
 
 	// Map message / coordinates (or remaining EXP when Ctrl pressed)
@@ -173,23 +173,25 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	{
 		snprintf(infoBuf, sizeof(infoBuf), "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
-	PutAlignedString(MAP_MSG_X1 + 1, MAP_MSG_X2 + 1, MAP_MSG_Y + 1, infoBuf, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
-	PutAlignedString(MAP_MSG_X1, MAP_MSG_X2, MAP_MSG_Y, infoBuf, GameColors::UIPaleYellow.r, GameColors::UIPaleYellow.g, GameColors::UIPaleYellow.b);
+	PutAlignedString(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+	PutAlignedString(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf, GameColors::UIPaleYellow.r, GameColors::UIPaleYellow.g, GameColors::UIPaleYellow.b);
 }
 
 void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 {
-	if (msY <= BTN_Y1 || msY >= BTN_Y2) return;
+	if (msY <= BTN_Y1() || msY >= BTN_Y2()) return;
 
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	int xOffset = HudXOffset();
 
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
 	{
 		const auto& btn = TOGGLE_BUTTONS[i];
-		if (msX > btn.x1 && msX < btn.x2)
+		// Add X offset for wider resolutions
+		if (msX > btn.x1 + xOffset && msX < btn.x2 + xOffset)
 		{
-			pSprite->Draw(btn.spriteX, BTN_Y1, btn.spriteFrame);
+			pSprite->Draw(btn.spriteX + xOffset, BTN_Y1(), btn.spriteFrame);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
 			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, GameColors::UITooltip.ToColorRef());
 			break;
@@ -199,10 +201,21 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 
 void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
 {
-	short panelX = Info().sX;
 	short panelY = Info().sY;
+	int xOffset = HudXOffset();
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(panelX, panelY, 14);
+	// At higher resolutions, fill the sides with black and center the HUD
+	if (xOffset > 0)
+	{
+		// Fill left side (0 to xOffset) with dark
+		m_pGame->m_Renderer->DrawDarkRect(0, panelY, xOffset, panelY + ICON_PANEL_HEIGHT(), 1.0f);
+		// Fill right side (xOffset + 640 to end) with dark
+		m_pGame->m_Renderer->DrawDarkRect(xOffset + 640, panelY, LOGICAL_WIDTH(), panelY + ICON_PANEL_HEIGHT(), 1.0f);
+	}
+
+	// Draw main HUD background centered (at xOffset, which is 0 for 640x480, 80 for 800x600)
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(xOffset, panelY, 14);
+
 	DrawGaugeBars();
 	DrawStatusIcons(msX, msY);
 	DrawIconButtons(msX, msY);
@@ -211,7 +224,7 @@ void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
 bool DialogBox_HudPanel::OnClick(short msX, short msY)
 {
 	// Crusade button
-	if (IsInButton(msX, msY, BTN_CRUSADE_X1, BTN_CRUSADE_X2))
+	if (IsInButton(msX, msY, BTN_CRUSADE_X1(), BTN_CRUSADE_X2()))
 	{
 		if (!m_pGame->m_bIsCrusadeMode) return false;
 		switch (m_pGame->m_pPlayer->m_iCrusadeDuty)
@@ -226,7 +239,7 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 	}
 
 	// Combat mode toggle
-	if (IsInButton(msX, msY, BTN_COMBAT_X1, BTN_COMBAT_X2))
+	if (IsInButton(msX, msY, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
 		m_pGame->PlaySound('E', 14, 5);
@@ -234,10 +247,12 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 	}
 
 	// Dialog toggle buttons (Character, Inventory, Magic, Skill, Chat, System)
+	int xOffset = HudXOffset();
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
 	{
 		const auto& btn = TOGGLE_BUTTONS[i];
-		if (IsInButton(msX, msY, btn.x1, btn.x2))
+		// Add X offset for wider resolutions
+		if (IsInButton(msX, msY, btn.x1 + xOffset, btn.x2 + xOffset))
 		{
 			ToggleDialogWithSound(btn.dialogId);
 			return true;
@@ -253,8 +268,11 @@ bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 	if (m_pGame->m_bIsItemDisabled[sItemIndex]) return true;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return true;
 
+	int xOffset = HudXOffset();
+	int yOffset = HudYOffset();
+
 	// Inventory icon area - drop item into inventory
-	if ((453 < msX) && (486 > msX) && (440 < msY) && (475 > msY))
+	if ((453 + xOffset < msX) && (486 + xOffset > msX) && (440 + yOffset < msY) && (475 + yOffset > msY))
 	{
 		auto& invInfo = InfoOf(DialogBoxId::Inventory);
 		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory)->OnItemDrop(invInfo.sX + (rand() % 148), invInfo.sY + (rand() % 55));
@@ -262,7 +280,7 @@ bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 	}
 
 	// Character icon area - equip item
-	if ((425 < msX) && (448 > msX) && (440 < msY) && (475 > msY))
+	if ((425 + xOffset < msX) && (448 + xOffset > msX) && (440 + yOffset < msY) && (475 + yOffset > msY))
 	{
 		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
 		return true;

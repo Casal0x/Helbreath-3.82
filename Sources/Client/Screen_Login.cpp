@@ -35,7 +35,7 @@ void Screen_Login::on_initialize()
     std::memset(m_cLoginName, 0, sizeof(m_cLoginName));
     std::memset(m_cLoginPassword, 0, sizeof(m_cLoginPassword));
     
-    m_pGame->StartInputString(180 + SCREENX, 162 + SCREENY, 11, m_cLoginName);
+    m_pGame->StartInputString(180 + MENUX(), 162 + MENUY(), 11, m_cLoginName);
     m_pGame->ClearInputString();
 }
 
@@ -138,10 +138,10 @@ void Screen_Login::on_update()
          m_pGame->EndInputString();
         switch (m_cCurFocus) {
         case 1:
-            m_pGame->StartInputString(180 + SCREENX, 162 + SCREENY, 11, m_cLoginName);
+            m_pGame->StartInputString(180 + MENUX(), 162 + MENUY(), 11, m_cLoginName);
             break;
         case 2:
-            m_pGame->StartInputString(180 + SCREENX, 185 + SCREENY, 11, m_cLoginPassword, true);
+            m_pGame->StartInputString(180 + MENUX(), 185 + MENUY(), 11, m_cLoginPassword, true);
             break;
         case 3:
         case 4:
@@ -154,17 +154,17 @@ void Screen_Login::on_update()
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         // Name field click
-        if (Input::IsMouseInRect(80 + SCREENX, 151 + SCREENY, 337 + SCREENX, 179 + SCREENY)) {
+        if (Input::IsMouseInRect(80 + MENUX(), 151 + MENUY(), 337 + MENUX(), 179 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 1;
         }
         // Password field click
-        else if (Input::IsMouseInRect(80 + SCREENX, 180 + SCREENY, 337 + SCREENX, 205 + SCREENY)) {
+        else if (Input::IsMouseInRect(80 + MENUX(), 180 + MENUY(), 337 + MENUX(), 205 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 2;
         }
         // Login button click
-        else if (Input::IsMouseInRect(80 + SCREENX, 280 + SCREENY, 163 + SCREENX, 302 + SCREENY)) {
+        else if (Input::IsMouseInRect(80 + MENUX(), 280 + MENUY(), 163 + MENUX(), 302 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
                 m_pGame->EndInputString();
@@ -185,15 +185,15 @@ void Screen_Login::on_update()
             }
         }
         // Cancel button click
-        else if (Input::IsMouseInRect(258 + SCREENX, 280 + SCREENY, 327 + SCREENX, 302 + SCREENY)) {
+        else if (Input::IsMouseInRect(258 + MENUX(), 280 + MENUY(), 327 + MENUX(), 302 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }
 
-    if ((Input::GetMouseX() >= 80 + SCREENX) && (Input::GetMouseX() <= 163 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 3;
-    if ((Input::GetMouseX() >= 258 + SCREENX) && (Input::GetMouseX() <= 327 + SCREENX) && (Input::GetMouseY() >= 280 + SCREENY) && (Input::GetMouseY() <= 302 + SCREENY)) m_cCurFocus = 4;
+    if ((Input::GetMouseX() >= 80 + MENUX()) && (Input::GetMouseX() <= 163 + MENUX()) && (Input::GetMouseY() >= 280 + MENUY()) && (Input::GetMouseY() <= 302 + MENUY())) m_cCurFocus = 3;
+    if ((Input::GetMouseX() >= 258 + MENUX()) && (Input::GetMouseX() <= 327 + MENUX()) && (Input::GetMouseY() >= 280 + MENUY()) && (Input::GetMouseY() <= 302 + MENUY())) m_cCurFocus = 4;
 }
 
 void Screen_Login::on_render()
@@ -205,7 +205,7 @@ void Screen_Login::on_render()
 void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY)
 {
     bool bFlag = true;
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0 + SCREENX, 0 + SCREENY, 0, true);
+    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0 + MENUX(), 0 + MENUY(), 0, true);
     m_pGame->DrawVersion();
 
     // Smooth alpha fade-in for login box: 0-500ms delay, then 500-700ms fade from 0 to 1
@@ -216,13 +216,13 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
     if (elapsedMs > FADE_DELAY_MS) {
         float fadeProgress = static_cast<float>(elapsedMs - FADE_DELAY_MS) / FADE_DURATION_MS;
         float alpha = fadeProgress > 1.0f ? 1.0f : fadeProgress;
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(39 + SCREENX, 121 + SCREENY, 2, SpriteLib::DrawParams::Alpha(alpha));
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(39 + MENUX(), 121 + MENUY(), 2, SpriteLib::DrawParams::Alpha(alpha));
     }
 
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(pAccount) != false)
-            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 162 + SCREENY, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b));
-        else TextLib::DrawText(GameFont::Default, 180 + SCREENX, 162 + SCREENY, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b));
+            TextLib::DrawText(GameFont::Default, 180 + MENUX(), 162 + MENUY(), pAccount, TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b));
+        else TextLib::DrawText(GameFont::Default, 180 + MENUX(), 162 + MENUY(), pAccount, TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b));
     }
     if ((CMisc::bCheckValidName(pAccount) == false) || (strlen(pAccount) == 0)) bFlag = false;
 
@@ -230,10 +230,10 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
         // Mask password with asterisks
         std::string masked(strlen(pPassword), '*');
         if ((CMisc::bCheckValidString(pPassword) != false))
-            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 185 + SCREENY, masked.c_str(),
+            TextLib::DrawText(GameFont::Default, 180 + MENUX(), 185 + MENUY(), masked.c_str(),
                               TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b));
         else
-            TextLib::DrawText(GameFont::Default, 180 + SCREENX, 185 + SCREENY, masked.c_str(),
+            TextLib::DrawText(GameFont::Default, 180 + MENUX(), 185 + MENUY(), masked.c_str(),
                               TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b));
     }
     if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
@@ -246,7 +246,7 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
 
     if (bFlag == true)
     {
-        if (m_cCurFocus == 3) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 80 + SCREENX, 282 + SCREENY, 3, true);
+        if (m_cCurFocus == 3) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 80 + MENUX(), 282 + MENUY(), 3, true);
     }
-    if (m_cCurFocus == 4) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256 + SCREENX, 282 + SCREENY, 4, true);
+    if (m_cCurFocus == 4) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 256 + MENUX(), 282 + MENUY(), 4, true);
 }

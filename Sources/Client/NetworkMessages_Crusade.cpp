@@ -32,7 +32,7 @@ namespace NetworkMessageHandlers {
 					pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
 				else pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
 				
-				if (pGame->m_pPlayer->m_bCitizen == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH, 0, 0);
+				if (pGame->m_pPlayer->m_bCitizen == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, LOGICAL_WIDTH(), 0, 0);
 				else if (pGame->m_pPlayer->m_bAresden == true) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 801, 0, 0);
 				else if (pGame->m_pPlayer->m_bAresden == false) pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 802, 0, 0);
 				
@@ -113,7 +113,7 @@ namespace NetworkMessageHandlers {
 		int i;
 		pGame->SetTopMsg(pGame->m_pGameMsgList[17]->m_pMsg, 5);
 		for (i = 0; i < 36; i++)
-			pGame->m_pEffectManager->AddEffect(EffectType::METEOR_FLYING, pGame->m_Camera.GetX() + (rand() % LOGICAL_MAX_X), pGame->m_Camera.GetY() + (rand() % LOGICAL_MAX_Y), 0, 0, -(rand() % 80));
+			pGame->m_pEffectManager->AddEffect(EffectType::METEOR_FLYING, pGame->m_Camera.GetX() + (rand() % LOGICAL_MAX_X()), pGame->m_Camera.GetY() + (rand() % LOGICAL_MAX_Y()), 0, 0, -(rand() % 80));
 	}
 
 	void HandleCannotConstruct(CGame* pGame, char* pData)

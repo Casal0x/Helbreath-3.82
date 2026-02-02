@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 // Game.h must come first to ensure winsock2 is loaded before winsock
-#include "Game.h"         // For CGame, m_Renderer, LOGICAL_MAX_X/Y
+#include "Game.h"         // For CGame, m_Renderer, LOGICAL_MAX_X()/Y
 #include "GameModeManager.h"
 #include "IGameScreen.h"
 #include "CommonTypes.h"  // For GameClock
@@ -150,7 +150,7 @@ void GameModeManager::RenderImpl()
     if (m_pActiveOverlay)
     {
         if (m_pActiveOverlay->wants_background_dim())
-            m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+            m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y());
         m_pActiveOverlay->on_render();
     }
 }

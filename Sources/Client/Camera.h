@@ -56,7 +56,7 @@ public:
     //------------------------------------------------------------------
 
     // Center camera on a tile position
-    // viewCenterTileX/Y are the center offsets (typically VIEW_CENTER_TILE_X/Y)
+    // viewCenterTileX/Y are the center offsets (typically VIEW_CENTER_TILE_X()/Y)
     void CenterOnTile(int tileX, int tileY, int viewCenterTileX, int viewCenterTileY);
 
     // Convert world coordinates to screen coordinates

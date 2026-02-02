@@ -54,9 +54,9 @@ void Screen_MainMenu::on_update()
     m_pGame->m_dwCurTime = dwTime;
 
     // Update focus based on mouse position
-    if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 177 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 198 + SCREENY)) m_cCurFocus = 1;
-    if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 215 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 236 + SCREENY)) m_cCurFocus = 2;
-    if ((Input::GetMouseX() >= 384 + SCREENX) && (Input::GetMouseY() >= 254 + SCREENY) && (Input::GetMouseX() <= 548 + SCREENX) && (Input::GetMouseY() <= 275 + SCREENY)) m_cCurFocus = 3;
+    if ((Input::GetMouseX() >= 384 + MENUX()) && (Input::GetMouseY() >= 177 + MENUY()) && (Input::GetMouseX() <= 548 + MENUX()) && (Input::GetMouseY() <= 198 + MENUY())) m_cCurFocus = 1;
+    if ((Input::GetMouseX() >= 384 + MENUX()) && (Input::GetMouseY() >= 215 + MENUY()) && (Input::GetMouseX() <= 548 + MENUX()) && (Input::GetMouseY() <= 236 + MENUY())) m_cCurFocus = 2;
+    if ((Input::GetMouseX() >= 384 + MENUX()) && (Input::GetMouseY() >= 254 + MENUY()) && (Input::GetMouseX() <= 548 + MENUX()) && (Input::GetMouseY() <= 275 + MENUY())) m_cCurFocus = 3;
 
     if (m_pGame->m_cArrowPressed != 0) {
         switch (m_pGame->m_cArrowPressed) {
@@ -109,21 +109,21 @@ void Screen_MainMenu::on_update()
     // Mouse click detection
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         // Game button
-        if (Input::IsMouseInRect(384 + SCREENX, 177 + SCREENY, 548 + SCREENX, 198 + SCREENY)) {
+        if (Input::IsMouseInRect(384 + MENUX(), 177 + MENUY(), 548 + MENUX(), 198 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 1;
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         }
         // Account button
-        else if (Input::IsMouseInRect(384 + SCREENX, 215 + SCREENY, 548 + SCREENX, 236 + SCREENY)) {
+        else if (Input::IsMouseInRect(384 + MENUX(), 215 + MENUY(), 548 + MENUX(), 236 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 2;
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         }
         // Quit button
-        else if (Input::IsMouseInRect(384 + SCREENX, 254 + SCREENY, 548 + SCREENX, 275 + SCREENY)) {
+        else if (Input::IsMouseInRect(384 + MENUX(), 254 + MENUY(), 548 + MENUX(), 275 + MENUY())) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 3;
             m_pGame->ChangeGameMode(GameMode::Quit);
@@ -134,17 +134,17 @@ void Screen_MainMenu::on_update()
 
 void Screen_MainMenu::on_render()
 {
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_MAINMENU, 0 + SCREENX, 0 + SCREENY, 0, true);
+    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_MAINMENU, 0 + MENUX(), 0 + MENUY(), 0, true);
 
     switch (m_cCurFocus) {
     case 1:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 177 + SCREENY, 1);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + MENUX(), 177 + MENUY(), 1);
         break;
     case 2:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 215 + SCREENY, 2);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + MENUX(), 215 + MENUY(), 2);
         break;
     case 3:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + SCREENX, 254 + SCREENY, 3);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(384 + MENUX(), 254 + MENUY(), 3);
         break;
     }
 

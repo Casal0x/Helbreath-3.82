@@ -61,19 +61,19 @@ void Overlay_WaitInitData::on_render()
     uint32_t dwTime = GameClock::GetTimeMS();
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX(), 125 + SCREENY(), 2);
 
     wsprintf(m_pGame->G_cTxt, "Waiting for response... %dsec", dwElapsed / 1000);
-    TextLib::DrawText(GameFont::Bitmap1, 172 + 44 + SCREENX, 190 + SCREENY, m_pGame->G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 44 + SCREENX(), 190 + SCREENY(), m_pGame->G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     if (dwElapsed > 7000)
     {
-        PutAlignedString(174 + SCREENX, 467 + SCREENX, 190 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA1);
-        PutAlignedString(174 + SCREENX, 467 + SCREENX, 190 + 45 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA2);
+        PutAlignedString(174 + SCREENX(), 467 + SCREENX(), 190 + 30 + SCREENY(), UPDATE_SCREEN_ON_WAIT_INIT_DATA1);
+        PutAlignedString(174 + SCREENX(), 467 + SCREENX(), 190 + 45 + SCREENY(), UPDATE_SCREEN_ON_WAIT_INIT_DATA2);
     }
     else
     {
-        PutAlignedString(174 + SCREENX, 467 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
+        PutAlignedString(174 + SCREENX(), 467 + SCREENX(), 195 + 30 + SCREENY(), UPDATE_SCREEN_ON_WAIT_INIT_DATA3);
     }
 
     DrawVersion();

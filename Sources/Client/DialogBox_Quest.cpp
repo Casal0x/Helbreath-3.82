@@ -5,7 +5,7 @@
 DialogBox_Quest::DialogBox_Quest(CGame* pGame)
 	: IDialogBox(DialogBoxId::Quest, pGame)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 258, 339);
+	SetDefaultRect(0 + SCREENX(), 0 + SCREENY(), 258, 339);
 }
 
 void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)

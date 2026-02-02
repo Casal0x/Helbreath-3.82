@@ -129,7 +129,7 @@ namespace CursorTarget {
     //-------------------------------------------------------------------------
     // Test if mouse is over object's bounding rect
     // screenY used for depth sorting (lower Y = further back)
-    // maxScreenY: bottom boundary for valid targeting (typically LOGICAL_HEIGHT - 49)
+    // maxScreenY: bottom boundary for valid targeting (typically LOGICAL_HEIGHT() - 49)
     void TestObject(const SpriteLib::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY);
 
     // Test ground item with circular proximity (13px radius)

@@ -95,7 +95,7 @@ DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
 	, m_iSmallBoxWidth(0)
 	, m_iSmallBoxHeight(0)
 {
-	SetDefaultRect(237 + SCREENX, 67 + SCREENY, 331, 303);
+	SetDefaultRect(237 + SCREENX(), 67 + SCREENY(), 331, 303);
 }
 
 void DialogBox_SysMenu::OnUpdate()

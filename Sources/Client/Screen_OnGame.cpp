@@ -124,9 +124,9 @@ void Screen_OnGame::on_update()
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
-                                if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+                                if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
-                                if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+                                if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
                                 std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 strcpy(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);
@@ -139,9 +139,9 @@ void Screen_OnGame::on_update()
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV6 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
-                                if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+                                if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
-                                if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+                                if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
                                 std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 m_pGame->GetNpcName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
@@ -152,9 +152,9 @@ void Screen_OnGame::on_update()
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_pGame->m_wCommObjectID;
                                 tX = m_sMsX - 117; tY = m_sMsY - 50;
                                 if (tX < 0) tX = 0;
-                                if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+                                if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
                                 if (tY < 0) tY = 0;
-                                if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+                                if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
                                 std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
                                 m_pGame->GetNpcName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
@@ -208,10 +208,10 @@ void Screen_OnGame::on_update()
                 case '!': case '@': case '#': case '$': case '^':
                     std::memset(m_pGame->m_cChatMsg, 0, sizeof(m_pGame->m_cChatMsg));
                     m_pGame->m_cChatMsg[0] = m_pGame->m_cBackupChatMsg[0];
-                    m_pGame->StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    m_pGame->StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
                     break;
                 default:
-                    m_pGame->StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    m_pGame->StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
                     m_pGame->ClearInputString();
                     break;
                 }
@@ -364,8 +364,8 @@ void Screen_OnGame::on_render()
     // Player ambient light at night
     if (G_cSpriteAlphaDegree == 2)
     {
-        constexpr int PLAYER_SCREEN_X = LOGICAL_WIDTH / 2;
-        constexpr int PLAYER_SCREEN_Y = (LOGICAL_HEIGHT / 2) + 16;
+        const int PLAYER_SCREEN_X = LOGICAL_WIDTH() / 2;
+        const int PLAYER_SCREEN_Y = (LOGICAL_HEIGHT() / 2) + 16;
         constexpr int PLAYER_LIGHT_RADIUS = 2;
         constexpr float PLAYER_CENTER_INTENSITY = 0.35f;
         constexpr float PLAYER_EDGE_INTENSITY = 0.05f;
@@ -407,7 +407,7 @@ void Screen_OnGame::on_render()
     FrameTiming::EndProfile(ProfileStage::DrawWeather);
 
     FrameTiming::BeginProfile(ProfileStage::DrawChat);
-    m_pGame->DrawChatMsgs(-100, 0, LOGICAL_WIDTH, LOGICAL_HEIGHT);
+    m_pGame->DrawChatMsgs(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT());
     FrameTiming::EndProfile(ProfileStage::DrawChat);
 
     m_pGame->WhetherObjectFrameCounter();
@@ -428,8 +428,8 @@ void Screen_OnGame::on_render()
     }
 
     // Apocalypse gate
-    if ((m_pGame->m_iGatePositX >= m_pGame->m_Camera.GetX() / 32) && (m_pGame->m_iGatePositX <= m_pGame->m_Camera.GetX() / 32 + VIEW_TILE_WIDTH)
-        && (m_pGame->m_iGatePositY >= m_pGame->m_Camera.GetY() / 32) && (m_pGame->m_iGatePositY <= m_pGame->m_Camera.GetY() / 32 + VIEW_TILE_HEIGHT)) {
+    if ((m_pGame->m_iGatePositX >= m_pGame->m_Camera.GetX() / 32) && (m_pGame->m_iGatePositX <= m_pGame->m_Camera.GetX() / 32 + VIEW_TILE_WIDTH())
+        && (m_pGame->m_iGatePositY >= m_pGame->m_Camera.GetY() / 32) && (m_pGame->m_iGatePositY <= m_pGame->m_Camera.GetY() / 32 + VIEW_TILE_HEIGHT())) {
         m_pGame->m_pEffectSpr[101]->Draw(m_pGame->m_iGatePositX * 32 - m_pGame->m_Camera.GetX() - 96, m_pGame->m_iGatePositY * 32 - m_pGame->m_Camera.GetY() - 69, m_pGame->m_entityState.m_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.5f));
     }
 
@@ -443,7 +443,7 @@ void Screen_OnGame::on_render()
         if (((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
             ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
         }
-        else m_pGame->m_Renderer->DrawShadowBox(0, LOGICAL_HEIGHT - 69, LOGICAL_MAX_X, LOGICAL_HEIGHT - 51);
+        else m_pGame->m_Renderer->DrawShadowBox(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), LOGICAL_HEIGHT() - 51);
         m_pGame->ShowReceivedString();
     }
 
@@ -458,7 +458,7 @@ void Screen_OnGame::on_render()
 
     // Druncncity bubbles
     if (m_pGame->m_cMapIndex == 25)
-        m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_pGame->m_Camera.GetX() + rand() % LOGICAL_MAX_X, m_pGame->m_Camera.GetY() + rand() % LOGICAL_MAX_Y, 0, 0, -1 * (rand() % 80), 1);
+        m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, m_pGame->m_Camera.GetX() + rand() % LOGICAL_MAX_X(), m_pGame->m_Camera.GetY() + rand() % LOGICAL_MAX_Y(), 0, 0, -1 * (rand() % 80), 1);
 
     // Heldenian tower count
     if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_pGame->m_cCurLocation, "BtField", 7) == 0)) {

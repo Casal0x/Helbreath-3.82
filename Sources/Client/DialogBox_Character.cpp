@@ -8,7 +8,7 @@
 DialogBox_Character::DialogBox_Character(CGame* pGame)
 	: IDialogBox(DialogBoxId::CharacterInfo, pGame)
 {
-	SetDefaultRect(30 + SCREENX, 30 + SCREENY, 270, 376);
+	SetDefaultRect(30 + SCREENX(), 30 + SCREENY(), 270, 376);
 }
 
 // Helper: Display stat with optional angelic bonus (blue if boosted)

@@ -7,7 +7,7 @@
 DialogBox_WarningMsg::DialogBox_WarningMsg(CGame* pGame)
 	: IDialogBox(DialogBoxId::WarningBattleArea, pGame)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 310, 170);
+	SetDefaultRect(0 + SCREENX(), 0 + SCREENY(), 310, 170);
 }
 
 void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)

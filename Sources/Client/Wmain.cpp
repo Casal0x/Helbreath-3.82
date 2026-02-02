@@ -24,6 +24,7 @@
 #include "resource.h"
 #include "FrameTiming.h"
 #include "ConfigManager.h"
+#include "ResolutionConfig.h"
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "GameWindowHandler.h"
@@ -91,6 +92,15 @@ int APIENTRY WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
     // Load settings early so window size is available
     ConfigManager::Get().Initialize();
     ConfigManager::Get().Load();
+
+    // Initialize resolution config from settings
+    // This must happen before creating the window or any rendering
+    ResolutionConfig::Initialize(
+        ConfigManager::Get().GetBaseResolutionWidth(),
+        ConfigManager::Get().GetBaseResolutionHeight(),
+        ConfigManager::Get().GetWindowWidth(),
+        ConfigManager::Get().GetWindowHeight()
+    );
 
     // Create game instance
     G_pGame = new class CGame;

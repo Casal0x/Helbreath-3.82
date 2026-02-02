@@ -81,15 +81,15 @@ void Screen_Quit::on_update()
 
 void Screen_Quit::on_render()
 {
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0 + SCREENX, 0 + SCREENY, 0, true);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0 + MENUX(), 0 + MENUY(), 0, true);
 
     if (m_iFrameCount > 20)
     {
-        DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 255 + SCREENX, 123 + SCREENY, 1, true);
+        DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 255 + MENUX(), 123 + MENUY(), 1, true);
     }
     else if ((m_iFrameCount >= 15) && (m_iFrameCount <= 20))
     {
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(255 + SCREENX, 123 + SCREENY, 1, SpriteLib::DrawParams::Alpha(0.25f));
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(255 + MENUX(), 123 + MENUY(), 1, SpriteLib::DrawParams::Alpha(0.25f));
     }
 
     DrawVersion();

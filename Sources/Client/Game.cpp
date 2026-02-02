@@ -1158,9 +1158,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	int iItemSelectedx, iItemSelectedy;
 	short sItemID, sItemSelectedID = -1;
 
-	int res_x = LOGICAL_MAX_X;
-	int res_y = LOGICAL_MAX_Y;
-	int res_msy = LOGICAL_HEIGHT - 49;
+	int res_x = LOGICAL_MAX_X();
+	int res_y = LOGICAL_MAX_Y();
+	int res_msy = LOGICAL_HEIGHT() - 49;
 
 	if (sDivY < 0 || sDivX < 0) return;
 
@@ -1435,8 +1435,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					{
 						if (m_bIsObserverMode == false)
 						{
-							int camX = (indexX - VIEW_CENTER_TILE_X) * 32 + static_cast<int>(m_pMapData->m_pData[dX][dY].m_motion.fCurrentOffsetX);
-							int camY = (indexY - (VIEW_CENTER_TILE_Y + 1)) * 32 + static_cast<int>(m_pMapData->m_pData[dX][dY].m_motion.fCurrentOffsetY);
+							int camX = (indexX - VIEW_CENTER_TILE_X()) * 32 + static_cast<int>(m_pMapData->m_pData[dX][dY].m_motion.fCurrentOffsetX) - 16;
+							int camY = (indexY - VIEW_CENTER_TILE_Y()) * 32 + static_cast<int>(m_pMapData->m_pData[dX][dY].m_motion.fCurrentOffsetY) - 16;
 							m_Camera.SetDestination(camX, camY);
 						}
 						SetRect(&m_rcPlayerRect, m_rcBodyRect.left, m_rcBodyRect.top, m_rcBodyRect.right, m_rcBodyRect.bottom);
@@ -2470,9 +2470,9 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					tX = msX - 117;
 					tY = msY - 50;
 					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
@@ -2491,9 +2491,9 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					tX = msX - 117;
 					tY = msY - 50;
 					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
@@ -2513,9 +2513,9 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					tX = msX - 117;
 					tY = msY - 50;
 					if (tX < 0) tX = 0;
-					if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+					if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 					if (tY < 0) tY = 0;
-					if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+					if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
@@ -3280,12 +3280,6 @@ bool CGame::bCheckImportantFile()
 	std::string spritePath = SpriteLib::Sprites::GetSpritePath() + "\\TREES1.PAK";
 	hFile = CreateFile(spritePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (hFile == INVALID_HANDLE_VALUE) return false;
-
-	//	// FileSize : 1846406.... Anti Tree1.pak hack....inutile ca peut se modifier sans changer la taille!
-	//	if( GetFileSize( hFile, 0 ) != 2945524 )
-	//	{	CloseHandle( hFile );
-	//		return false;
-	//	}
 
 	CloseHandle(hFile);
 	return true;
@@ -9624,8 +9618,8 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 
 	// Tile-based loop constants
 	constexpr int TILE_SIZE = 32;
-	const int visibleTilesX = (LOGICAL_WIDTH / TILE_SIZE) + 2;   // +2 for partial tiles on edges
-	const int visibleTilesY = (LOGICAL_HEIGHT / TILE_SIZE) + 2;
+	const int visibleTilesX = (LOGICAL_WIDTH() / TILE_SIZE) + 2;   // +2 for partial tiles on edges
+	const int visibleTilesY = (LOGICAL_HEIGHT() / TILE_SIZE) + 2;
 
 	// Map pivot for tile array access
 	const short pivotX = m_pMapData->m_sPivotX;
@@ -10916,8 +10910,8 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CrusadeJob) == false)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 + SCREENX;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 + SCREENY;
+			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 + SCREENX();
+			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 + SCREENY();
 			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sV1 = sV1;
 		}
 		break;
@@ -11663,10 +11657,10 @@ void CGame::SetTopMsg(char* pString, unsigned char iLastSec)
 void CGame::DrawTopMsg()
 {
 	if (strlen(m_cTopMsg) == 0) return;
-	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, 30);
+	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), 30);
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X, 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b), TextLib::Align::TopCenter);
+		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b), TextLib::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
@@ -12440,7 +12434,7 @@ void CGame::WhetherObjectFrameCounter()
 				else
 				{
 					m_stWhetherObject[i].sX = (m_pMapData->m_sPivotX * 32) + ((rand() % 940) - 200) + 300;
-					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH) - LOGICAL_HEIGHT) + 240;
+					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH()) - LOGICAL_HEIGHT()) + 240;
 					m_stWhetherObject[i].cStep = -1 * (rand() % 10);
 				}
 			}
@@ -12486,7 +12480,7 @@ void CGame::WhetherObjectFrameCounter()
 				else
 				{
 					m_stWhetherObject[i].sX = (m_pMapData->m_sPivotX * 32) + ((rand() % 940) - 200) + 300;
-					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH) - LOGICAL_HEIGHT) + LOGICAL_HEIGHT;
+					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH()) - LOGICAL_HEIGHT()) + LOGICAL_HEIGHT();
 					m_stWhetherObject[i].cStep = -1 * (rand() % 10);
 					m_stWhetherObject[i].sBX = 0;
 				}
@@ -13680,7 +13674,7 @@ void CGame::CreateScreenShot()
 		, SysTime.wMonth, SysTime.wDay
 		, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
 		, LongMapName);
-	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX, 30, (650 + SCREENY) - (500 + SCREENX), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
+	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX(), 30, (650 + SCREENY()) - (500 + SCREENX()), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
 
 	for (i = 0; i < 1000; i++)
 	{
@@ -13948,7 +13942,7 @@ void CGame::OnKeyDown(int key)
 		// Only Enter key activates chat input - not every key press
 		else if (_key == KeyCode::Enter && (m_bInputStatus == false) && (!Input::IsAltDown()))
 		{
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 			ClearInputString();
 		}
 	}
@@ -14387,7 +14381,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	TextLib::DrawText(GameFont::Default, 12 + SCREENX, (LOGICAL_HEIGHT - 12 - 14) + SCREENY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	TextLib::DrawText(GameFont::Default, 12 + SCREENX(), (LOGICAL_HEIGHT() - 12 - 14) + SCREENY(), G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -15296,7 +15290,7 @@ void CGame::MotionResponseHandler(char* pData)
 			DEF_OBJECTSTOP, 0, 0, 0);
 		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
-		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
+		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 		break;
 
 	case DEF_OBJECTMOVE_CONFIRM:
@@ -15367,7 +15361,7 @@ void CGame::MotionResponseHandler(char* pData)
 			0, 7);
 		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
-		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
+		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 		m_pPlayer->m_Controller.SetPrevMoveBlocked(true);
 		switch (m_pPlayer->m_sPlayerType) {
 		case 1:
@@ -15405,21 +15399,21 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	// Fixed by Snoopy
 	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
 	{
-		if ((msX == 0) && (msY == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
+		if ((msX == 0) && (msY == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 8, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (msY == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
+		else if ((msX == LOGICAL_MAX_X()) && (msY == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 2, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (msY == LOGICAL_MAX_Y) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
+		else if ((msX == LOGICAL_MAX_X()) && (msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 4, 0, 0, 0, 0);
-		else if ((msX == 0) && (msY == LOGICAL_MAX_Y))
+		else if ((msX == 0) && (msY == LOGICAL_MAX_Y()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 6, 0, 0, 0, 0);
-		else if ((msX == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH))
+		else if ((msX == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 7, 0, 0, 0, 0);
-		else if ((msX == LOGICAL_MAX_X) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH))
+		else if ((msX == LOGICAL_MAX_X()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 3, 0, 0, 0, 0);
-		else if ((msY == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT))
+		else if ((msY == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 1, 0, 0, 0, 0);
-		else if ((msY == LOGICAL_MAX_Y) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT))
+		else if ((msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
 			bSendCommand(MSGID_REQUEST_PANNING, 0, 5, 0, 0, 0, 0);
 		else return;
 
@@ -15448,7 +15442,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			{
 				CursorTarget::SetCursorStatus(CursorStatus::Pressed);
 				// Snoopy: Added Golden LevelUp
-				if ((msX > LEVELUP_TEXT_X) && (msX < (LEVELUP_TEXT_X)+75) && (msY > LEVELUP_TEXT_Y) && (msY < (LEVELUP_TEXT_Y)+21))
+				if ((msX > LEVELUP_TEXT_X()) && (msX < (LEVELUP_TEXT_X())+75) && (msY > LEVELUP_TEXT_Y()) && (msY < (LEVELUP_TEXT_Y())+21))
 				{
 					if (m_pPlayer->m_iHP > 0)
 					{
@@ -15608,7 +15602,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 						}
 						else
 						{
-							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = LOGICAL_MAX_X - m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
+							m_dialogBoxManager.Info(DialogBoxId::GuideMap).sX = LOGICAL_MAX_X() - m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeX;
 						}
 
 						if (msY < 273)
@@ -15987,9 +15981,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 15;
@@ -16004,9 +15998,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 19;
@@ -16021,9 +16015,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 20;
@@ -16042,9 +16036,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 24;
@@ -16063,9 +16057,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 25;
@@ -16080,9 +16074,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 26;
@@ -16097,9 +16091,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								tX = msX - 117;
 								tY = msY - 50;
 								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 21;
@@ -16114,9 +16108,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								tX = msX - 117;
 								tY = msY - 50;
 								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = sObjectType;
@@ -16130,9 +16124,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								tX = msX - 117;
 								tY = msY - 50;
 								if (tX < 0) tX = 0;
-								if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+								if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 								if (tY < 0) tY = 0;
-								if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+								if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 32;
@@ -16146,9 +16140,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							tX = msX - 117;
 							tY = msY - 50;
 							if (tX < 0) tX = 0;
-							if ((tX + 235) > LOGICAL_MAX_X) tX = LOGICAL_MAX_X - 235;
+							if ((tX + 235) > LOGICAL_MAX_X()) tX = LOGICAL_MAX_X() - 235;
 							if (tY < 0) tY = 0;
-							if ((tY + 100) > LOGICAL_MAX_Y) tY = LOGICAL_MAX_Y - 100;
+							if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 90;
@@ -16925,7 +16919,7 @@ void CGame::ResponseChargedTeleport(char* pData)
 void CGame::ShowEventList(uint32_t dwTime)
 {
 	int i;
-	int baseY = EVENTLIST2_BASE_Y;
+	int baseY = EVENTLIST2_BASE_Y();
 	m_Renderer->BeginTextBatch();
 	for (i = 0; i < 6; i++)
 		if ((dwTime - m_stEventHistory[i].dwTime) < 5000)
@@ -17180,9 +17174,9 @@ void CGame::InitDataResponseHandler(char* pData)
 			DEF_OBJECTSTOP, 0, 0, 0);
 	}
 
-	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X) * 32 - 16;
-	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y + 1) * 32 - 16;
-	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X) * 32, (m_pPlayer->m_sPlayerY - (VIEW_CENTER_TILE_Y + 1)) * 32);
+	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X()) * 32 - 16;
+	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y()) * 32 - 16;
+	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 	_ReadMapData(sX + 7, sY + 8, cp);
 	// ------------------------------------------------------------------------+
 	wsprintf(cTxt, INITDATA_RESPONSE_HANDLER1, m_cMapMessage);

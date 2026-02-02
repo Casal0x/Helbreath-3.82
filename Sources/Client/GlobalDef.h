@@ -25,27 +25,57 @@
 #define DEF_SERVER_PORT			2500
 #define DEF_GSERVER_PORT		9907
 
-#define LOGICAL_WIDTH			640
-#define LOGICAL_HEIGHT			480
-#define BASE_SCREEN_WIDTH		LOGICAL_WIDTH
-#define BASE_SCREEN_HEIGHT		LOGICAL_HEIGHT
-#define SCREENX					((LOGICAL_WIDTH - BASE_SCREEN_WIDTH) / 2)
-#define SCREENY					((LOGICAL_HEIGHT - BASE_SCREEN_HEIGHT) / 2)
-#define LOGICAL_MAX_X			(LOGICAL_WIDTH - 1)
-#define LOGICAL_MAX_Y			(LOGICAL_HEIGHT - 1)
-#define VIEW_TILE_WIDTH			(LOGICAL_WIDTH / 32)
-#define VIEW_TILE_HEIGHT		(LOGICAL_HEIGHT / 32)
-#define VIEW_CENTER_TILE_X		(VIEW_TILE_WIDTH / 2)
-#define VIEW_CENTER_TILE_Y		(VIEW_TILE_HEIGHT / 2)
-#define ICON_PANEL_WIDTH		LOGICAL_WIDTH
-#define ICON_PANEL_HEIGHT		53
-#define ICON_PANEL_OFFSET_X		((LOGICAL_WIDTH - ICON_PANEL_WIDTH) / 2)
+// Resolution-dependent values are now provided by ResolutionConfig singleton
+// Include ResolutionConfig.h and use ResolutionConfig::Get().MethodName()
+//
+// For backward compatibility, these inline functions provide the same interface
+// as the old macros but now return dynamic values based on settings.json
 
-#define CHAT_INPUT_X			10
-#define CHAT_INPUT_Y			(LOGICAL_HEIGHT - ICON_PANEL_HEIGHT - 16)
-#define EVENTLIST2_BASE_Y		(CHAT_INPUT_Y - (6 * 15) - 4)
-#define LEVELUP_TEXT_X			(LOGICAL_WIDTH - 90)
-#define LEVELUP_TEXT_Y			(EVENTLIST2_BASE_Y + (5 * 15))
+// Define guard to prevent RenderConstants.h from redefining these functions
+#define GLOBALDEF_H_RESOLUTION_FUNCTIONS
+
+#include "ResolutionConfig.h"
+
+inline int LOGICAL_WIDTH()      { return ResolutionConfig::Get().LogicalWidth(); }
+inline int LOGICAL_HEIGHT()     { return ResolutionConfig::Get().LogicalHeight(); }
+inline int BASE_SCREEN_WIDTH()  { return ResolutionConfig::Get().LogicalWidth(); }
+inline int BASE_SCREEN_HEIGHT() { return ResolutionConfig::Get().LogicalHeight(); }
+// SCREENX/SCREENY: Window centering offset - used by renderer for presentation
+// For drawing within the render target, these should be 0
+// The renderer handles centering the render target in the window
+inline int SCREENX()            { return 0; }
+inline int SCREENY()            { return 0; }
+inline int LOGICAL_MAX_X()      { return ResolutionConfig::Get().LogicalMaxX(); }
+inline int LOGICAL_MAX_Y()      { return ResolutionConfig::Get().LogicalMaxY(); }
+inline int VIEW_TILE_WIDTH()    { return ResolutionConfig::Get().ViewTileWidth(); }
+inline int VIEW_TILE_HEIGHT()   { return ResolutionConfig::Get().ViewTileHeight(); }
+inline int VIEW_CENTER_TILE_X() { return ResolutionConfig::Get().ViewCenterTileX(); }
+inline int VIEW_CENTER_TILE_Y() { return ResolutionConfig::Get().ViewCenterTileY(); }
+inline int ICON_PANEL_WIDTH()   { return ResolutionConfig::Get().IconPanelWidth(); }
+inline int ICON_PANEL_HEIGHT()  { return ResolutionConfig::Get().IconPanelHeight(); }
+inline int ICON_PANEL_OFFSET_X(){ return ResolutionConfig::Get().IconPanelOffsetX(); }
+
+inline int CHAT_INPUT_X()       { return ResolutionConfig::Get().ChatInputX(); }
+inline int CHAT_INPUT_Y()       { return ResolutionConfig::Get().ChatInputY(); }
+inline int EVENTLIST2_BASE_Y()  { return ResolutionConfig::Get().EventList2BaseY(); }
+inline int LEVELUP_TEXT_X()     { return ResolutionConfig::Get().LevelUpTextX(); }
+inline int LEVELUP_TEXT_Y()     { return ResolutionConfig::Get().LevelUpTextY(); }
+
+// PDBGS dimensions for backward compatibility
+inline int PDBGS_WIDTH()        { return ResolutionConfig::Get().PdbgsWidth(); }
+inline int PDBGS_HEIGHT()       { return ResolutionConfig::Get().PdbgsHeight(); }
+
+// Menu offset - for centering 640x480 menu content in larger resolutions
+// At 800x600: MENU_OFFSET_X() = 80, MENU_OFFSET_Y() = 60
+// At 640x480: Both return 0
+inline int MENU_OFFSET_X()      { return ResolutionConfig::Get().MenuOffsetX(); }
+inline int MENU_OFFSET_Y()      { return ResolutionConfig::Get().MenuOffsetY(); }
+
+// Menu offset for centering 640x480 menus in the base resolution
+// Use MENUX()/MENUY() instead of SCREENX()/SCREENY() in menu screens
+// Note: SCREENX/SCREENY are for window centering (handled by renderer), not drawing
+inline int MENUX()              { return MENU_OFFSET_X(); }
+inline int MENUY()              { return MENU_OFFSET_Y(); }
 
 
 /*** Some more compilation options ***/

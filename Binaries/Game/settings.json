@@ -14,13 +14,17 @@
     "display": {
         "borderless": false,
         "captureMouse": false,
-        "detailLevel": 2,
+        "detailLevel": 0,
         "dialogTransparency": false,
         "fullscreen": false,
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
-        "zoomMap": true
+        "zoomMap": false
+    },
+    "resolution": {
+        "height": 600,
+        "width": 800
     },
     "server": {
         "address": "127.0.0.1",
@@ -38,7 +42,7 @@
         ]
     },
     "window": {
-        "height": 1080,
-        "width": 1440
+        "height": 600,
+        "width": 800
     }
 }
