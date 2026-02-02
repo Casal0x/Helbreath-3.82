@@ -47,26 +47,27 @@ CMapData::CMapData(class CGame* pGame)
 	}
 	for (i = 1; i <= 6; i++)
 	{
+		// Original Helbreath 3.82 timing values
 		m_stFrame[i][DEF_OBJECTSTOP].m_sMaxFrame = 14;
-		m_stFrame[i][DEF_OBJECTSTOP].m_sFrameTime = 70;
+		m_stFrame[i][DEF_OBJECTSTOP].m_sFrameTime = 60;
 		m_stFrame[i][DEF_OBJECTMOVE].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTMOVE].m_sFrameTime = 76;
+		m_stFrame[i][DEF_OBJECTMOVE].m_sFrameTime = 74;
 		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sMaxFrame = 3;
-		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sFrameTime = 53;
+		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sFrameTime = 50;
 		m_stFrame[i][DEF_OBJECTRUN].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTRUN].m_sFrameTime = 42;
+		m_stFrame[i][DEF_OBJECTRUN].m_sFrameTime = 39;
 		m_stFrame[i][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTATTACK].m_sFrameTime = 82;
+		m_stFrame[i][DEF_OBJECTATTACK].m_sFrameTime = 78;
 		m_stFrame[i][DEF_OBJECTATTACKMOVE].m_sMaxFrame = 12;
-		m_stFrame[i][DEF_OBJECTATTACKMOVE].m_sFrameTime = 84;
+		m_stFrame[i][DEF_OBJECTATTACKMOVE].m_sFrameTime = 78;
 		m_stFrame[i][DEF_OBJECTMAGIC].m_sMaxFrame = 15;
 		m_stFrame[i][DEF_OBJECTMAGIC].m_sFrameTime = 88;
 		m_stFrame[i][DEF_OBJECTGETITEM].m_sMaxFrame = 3;
-		m_stFrame[i][DEF_OBJECTGETITEM].m_sFrameTime = 110;
-		m_stFrame[i][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
+		m_stFrame[i][DEF_OBJECTGETITEM].m_sFrameTime = 150;
+		m_stFrame[i][DEF_OBJECTDAMAGE].m_sMaxFrame = 3 + 4;
 		m_stFrame[i][DEF_OBJECTDAMAGE].m_sFrameTime = 70;
 		m_stFrame[i][DEF_OBJECTDYING].m_sMaxFrame = 12;
-		m_stFrame[i][DEF_OBJECTDYING].m_sFrameTime = 88;
+		m_stFrame[i][DEF_OBJECTDYING].m_sFrameTime = 80;
 	}
 
 	int restar = 20;
@@ -1993,8 +1994,18 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 				if ((dwTime - m_pData[dX][dY].m_dwOwnerTime) > dwFrameTime)
 				{
-					m_pData[dX][dY].m_cOwnerFrame++;
-					m_pData[dX][dY].m_dwOwnerTime += dwFrameTime;
+					// Frame skip mechanism (original behavior)
+					if ((dwTime - m_pData[dX][dY].m_dwOwnerTime) >= (dwFrameTime + dwFrameTime))
+					{
+						iSkipFrame = ((dwTime - m_pData[dX][dY].m_dwOwnerTime) / dwFrameTime);
+						if (iSkipFrame > 3) iSkipFrame = 3;
+						m_pData[dX][dY].m_cOwnerFrame += iSkipFrame;
+					}
+					else
+					{
+						m_pData[dX][dY].m_cOwnerFrame++;
+					}
+					m_pData[dX][dY].m_dwOwnerTime = dwTime; // Absolute time (original)
 					if (iRet == 0)
 					{
 						iRet = -1;
