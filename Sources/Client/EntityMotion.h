@@ -13,13 +13,12 @@
 //=============================================================================
 namespace MovementTiming {
     // Duration to cross one tile (milliseconds)
-    // Must match animation frame timing to avoid dead time between moves
-    // Walk: 7 frames * 76ms = 532ms
-    // Run:  7 frames * 42ms = 294ms
-    constexpr uint32_t WALK_DURATION_MS = 532;
-    constexpr uint32_t RUN_DURATION_MS = 294;
-    constexpr uint32_t DAMAGE_MOVE_DURATION_MS = 300;
-    constexpr uint32_t ATTACK_MOVE_DURATION_MS = 480;
+    // Must match animation frame timing: (maxFrame + 1) * frameTime
+    // Movement duration = (maxFrame + 1) * frameTime
+    constexpr uint32_t WALK_DURATION_MS = 592;         // 8 frames (0-7) * 74ms
+    constexpr uint32_t RUN_DURATION_MS = 312;          // 8 frames (0-7) * 39ms
+    constexpr uint32_t DAMAGE_MOVE_DURATION_MS = 200;  // 4 frames (0-3) * 50ms
+    constexpr uint32_t ATTACK_MOVE_DURATION_MS = 1014; // 13 frames (0-12) * 78ms
 
     // Tile size in pixels (matches original offset range of ~30)
     constexpr int16_t TILE_SIZE = 32;
