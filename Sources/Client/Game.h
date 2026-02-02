@@ -29,7 +29,7 @@
 #include "IBitmapFont.h"
 #include "BitmapFontFactory.h"
 #include "IInput.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "SpriteID.h"
 #include "Misc.h"
 #include "ChatMsg.h"
@@ -448,8 +448,8 @@ void _LoadShopMenuContents(char cType);
 
 	std::unique_ptr<CPlayer> m_pPlayer;  // Main player data
 	std::unique_ptr<class CMapData> m_pMapData;
-	std::unique_ptr<class XSocket> m_pGSock;
-	std::unique_ptr<class XSocket> m_pLSock;
+	std::unique_ptr<class ASIOSocket> m_pGSock;
+	std::unique_ptr<class ASIOSocket> m_pLSock;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATMSGS> m_pChatMsgList;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATSCROLLMSGS> m_pChatScrollList;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXWHISPERMSG> m_pWhisperMsg;

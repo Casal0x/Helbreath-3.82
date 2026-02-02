@@ -1,4 +1,3 @@
-#define _WINSOCKAPI_
 #include <windows.h>
 #include "CmdHelp.h"
 #include "winmain.h"

@@ -5,7 +5,6 @@
 #pragma once
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
 #include <windows.h>
 #include "CommonTypes.h"
@@ -39,7 +38,6 @@
 #define DEF_MAXHELDENIANTOWER	200
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
 #include <windows.h>
 #include "CommonTypes.h"

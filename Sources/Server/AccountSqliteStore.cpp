@@ -1,6 +1,5 @@
 #include "AccountSqliteStore.h"
 
-#define _WINSOCKAPI_
 #include <windows.h>
 #include <direct.h>
 #include <cstdio>

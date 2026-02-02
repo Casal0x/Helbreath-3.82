@@ -67,9 +67,7 @@ void GameWindowHandler::OnDestroy()
     {
         m_pGame->Quit();
     }
-#ifdef _WIN32
-    WSACleanup();
-#endif
+    // ASIO handles Winsock cleanup internally
 }
 
 void GameWindowHandler::OnActivate(bool active)

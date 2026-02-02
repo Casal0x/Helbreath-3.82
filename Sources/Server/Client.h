@@ -5,14 +5,13 @@
 #pragma once
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
 #include <windows.h>
 #include "CommonTypes.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "Item.h"
 #include "GuildsMan.h"
 #include "Magic.h"
@@ -188,7 +187,7 @@ public:
 	//v1.4311-3 �߰� ���� ���� ������ ��ȣ�� ������ ������ �ð�
 	int   m_iFightzoneNumber , m_iReserveTime, m_iFightZoneTicketNumber ; 
 
-	class XSocket * m_pXSock;
+	class ASIOSocket * m_pXSock;
 
 	int   m_iAdminUserLevel;     // ������ ����. 0�̸� ��ȿ. ��ȣ�� �ö� ���� ������ Ŀ����.
 	int   m_iRating;

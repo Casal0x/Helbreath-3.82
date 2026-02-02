@@ -7,10 +7,10 @@
 #include "GameModeManager.h"
 #include "CommonTypes.h"
 #include "IInput.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "SpriteID.h"
 
-extern class XSocket* G_pCalcSocket;
+extern class ASIOSocket* G_pCalcSocket;
 
 Screen_Quit::Screen_Quit(CGame* pGame)
     : IGameScreen(pGame)

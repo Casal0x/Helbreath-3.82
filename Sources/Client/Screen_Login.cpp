@@ -7,12 +7,12 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
-#include "XSocket.h" // For XSocket
+#include "ASIOSocket.h" // For XSocket
 #include "Misc.h"    // For CMisc
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
-extern class XSocket* G_pCalcSocket; // Sockets are often externs in this codebase
+extern class ASIOSocket* G_pCalcSocket; // Sockets are often externs in this codebase
 
 Screen_Login::Screen_Login(CGame* pGame)
     : IGameScreen(pGame), m_cPrevFocus(0)
@@ -110,7 +110,7 @@ void Screen_Login::on_update()
             strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cLoginPassword);
             
             // Connect
-            m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
             
@@ -173,7 +173,7 @@ void Screen_Login::on_update()
                 strcpy(m_pGame->m_pPlayer->m_cAccountName, m_cLoginName);
                 strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cLoginPassword);
                 
-                m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+                m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
                 m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                 m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                 

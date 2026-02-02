@@ -109,9 +109,6 @@
     <ClInclude Include="ChatMsg.h">
       <Filter>Chat</Filter>
     </ClInclude>
-    <ClInclude Include="XSocket.h">
-      <Filter>Network</Filter>
-    </ClInclude>
     <ClInclude Include="ClientMessages.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -373,7 +370,12 @@
     <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="..\Dependencies\Shared\GameGeometry.h" />
+    <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\GameGeometry.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -416,9 +418,6 @@
     </ClCompile>
     <ClCompile Include="ChatCommandManager.cpp">
       <Filter>Chat</Filter>
-    </ClCompile>
-    <ClCompile Include="XSocket.cpp">
-      <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="NetworkMessages_Admin.cpp">
       <Filter>NetworkMessages</Filter>
@@ -725,6 +724,9 @@
     </ClCompile>
     <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp">
+      <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

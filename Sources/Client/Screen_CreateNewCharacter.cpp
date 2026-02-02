@@ -7,7 +7,7 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "Misc.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -298,7 +298,7 @@ void Screen_CreateNewCharacter::on_update()
             if (CMisc::bCheckValidName(m_cNewCharName) == false) break;
             std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
             strcpy(m_pGame->m_pPlayer->m_cPlayerName, m_cNewCharName);
-            m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
             m_pGame->ChangeGameMode(GameMode::Connecting);

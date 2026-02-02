@@ -1,4 +1,3 @@
-#define _WINSOCKAPI_
 #include <windows.h>
 #include "CmdShowChat.h"
 #include "winmain.h"

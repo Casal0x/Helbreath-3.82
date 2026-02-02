@@ -5,7 +5,6 @@
 #pragma once
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
 #include <windows.h>
 #include "CommonTypes.h"
@@ -20,7 +19,7 @@
 #include <map>
 
 #include "winmain.h"
-#include "Xsocket.h"
+#include "ASIOSocket.h"
 #include "Client.h"
 #include "Npc.h"
 #include "Map.h"
@@ -298,14 +297,14 @@ struct LoginClient
 	LoginClient(HWND hWnd)
 	{
 		_sock = 0;
-		_sock = new class XSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
+		_sock = new class ASIOSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
 		_sock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 		_timeout_tm = 0;
 	}
 
 	u32 _timeout_tm;
 	~LoginClient();
-	XSocket* _sock;
+	ASIOSocket* _sock;
 	char _ip[21];
 };
 
@@ -323,7 +322,7 @@ public:
 
 	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
 
-	bool bAcceptLogin(XSocket* sock);
+	bool bAcceptLogin(ASIOSocket* sock);
 
 	void PartyOperation(char* pData);
 
@@ -723,7 +722,7 @@ public:
 	void OnClientRead(int iClientH);
 	bool bInit();
 	void OnClientSocketEvent(int iClientH);  // MODERNIZED: Polls socket instead of handling window messages
-	bool bAccept(class XSocket * pXSock);
+	bool bAccept(class ASIOSocket * pXSock);
 	void GetFightzoneTicketHandler(int iClientH);
 	void FightzoneReserveProcessor() ;
 
@@ -803,7 +802,7 @@ public:
 	class CMsg    * m_pMsgQuene[DEF_MSGQUENESIZE];
 	int             m_iQueneHead, m_iQueneTail;
 	int             m_iTotalMaps;
-	//class XSocket * m_pMainLogSock, * m_pGateSock;
+	//class ASIOSocket * m_pMainLogSock, * m_pGateSock;
 	//int				m_iGateSockConnRetryTimes;
 	bool			m_bIsGameStarted;
 	//bool            m_bIsLogSockAvailable, m_bIsGateSockAvailable;
@@ -826,7 +825,7 @@ public:
 	uint32_t m_dwConfigHash[3]{};
 	void ComputeConfigHashes();
 
-	class XSocket* _lsock;
+	class ASIOSocket* _lsock;
 
 	class PartyManager* m_pPartyManager;
 
@@ -896,7 +895,7 @@ public:
 	
 	int	  m_iStrategicStatus;
 	
-	class XSocket * m_pSubLogSock[DEF_MAXSUBLOGSOCK];
+	class ASIOSocket * m_pSubLogSock[DEF_MAXSUBLOGSOCK];
 	int   m_iSubLogSockInitIndex;
 	bool  m_bIsSubLogSockAvailable[DEF_MAXSUBLOGSOCK];
 	int	  m_iCurSubLogSockIndex;

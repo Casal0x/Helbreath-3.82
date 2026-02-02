@@ -8,7 +8,7 @@
 #include "CommonTypes.h"
 #include "lan_eng.h"
 #include "IInput.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "Misc.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -143,7 +143,7 @@ void Overlay_ChangePassword::HandleSubmit()
     m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
     // Create connection
-    m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
     m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

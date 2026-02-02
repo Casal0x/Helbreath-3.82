@@ -7,9 +7,9 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 
-extern class XSocket* G_pCalcSocket;
+extern class ASIOSocket* G_pCalcSocket;
 
 Screen_MainMenu::Screen_MainMenu(CGame* pGame)
     : IGameScreen(pGame), m_cCurFocus(1), m_cMaxFocus(3)

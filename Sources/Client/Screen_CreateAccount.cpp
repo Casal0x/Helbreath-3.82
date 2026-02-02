@@ -3,7 +3,7 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "Misc.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -201,7 +201,7 @@ void Screen_CreateAccount::_submit_create_account()
         m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
         // Connection logic
-        m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort);
         m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

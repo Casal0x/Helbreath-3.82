@@ -1,0 +1,692 @@
+// ASIOSocket.cpp: Unified socket implementation using standalone ASIO
+//
+// Replaces the legacy XSocket (Winsock2/WSAEventSelect) with ASIO.
+// Shared between Client and Server.
+//
+//////////////////////////////////////////////////////////////////////
+
+#include "ASIOSocket.h"
+#include <cstdio>
+#include <algorithm>
+
+using asio::ip::tcp;
+
+//////////////////////////////////////////////////////////////////////
+// Construction/Destruction
+//////////////////////////////////////////////////////////////////////
+
+ASIOSocket::ASIOSocket(int iBlockLimit)
+	: m_ioContext()
+	, m_socket(m_ioContext)
+	, m_acceptor(m_ioContext)
+	, m_iBlockLimit(iBlockLimit)
+{
+}
+
+ASIOSocket::~ASIOSocket()
+{
+	CloseConnection();
+}
+
+bool ASIOSocket::bInitBufferSize(uint32_t dwBufferSize)
+{
+	m_rcvBuffer.assign(dwBufferSize + 8, 0);
+	m_sndBuffer.assign(dwBufferSize + 8, 0);
+	m_dwBufferSize = dwBufferSize;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Poll - non-blocking event check (replaces WSAEventSelect + iOnSocketEvent)
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::Poll()
+{
+	if (m_cType == 0) return DEF_XSOCKEVENT_NOTINITIALIZED;
+
+	// Process any pending async operations (connect completion)
+	m_ioContext.poll();
+	m_ioContext.restart();
+
+	// --- Handle async connect completion ---
+	if (m_connectResultReady) {
+		m_connectResultReady = false;
+		m_connectPending = false;
+
+		if (!m_connectError) {
+			m_bIsAvailable = true;
+			m_bIsWriteEnabled = true;
+			return DEF_XSOCKEVENT_CONNECTIONESTABLISH;
+		}
+		else {
+			m_WSAErr = m_connectError.value();
+			// Retry connection (same as legacy behavior)
+			if (bConnect(m_pAddr, m_iPortNum) == false) {
+				return DEF_XSOCKEVENT_SOCKETERROR;
+			}
+			return DEF_XSOCKEVENT_RETRYINGCONNECTION;
+		}
+	}
+
+	// Still waiting for connect
+	if (m_connectPending) return 0;
+
+	// --- Listen socket: probe for pending accept ---
+	if (m_cType == DEF_XSOCK_LISTENSOCK) {
+		if (m_pendingAcceptSocket.has_value()) {
+			// Already have a pending accept from a previous poll
+			return DEF_XSOCKEVENT_CONNECTIONESTABLISH;
+		}
+
+		asio::error_code ec;
+		tcp::socket peer(m_ioContext);
+		m_acceptor.accept(peer, ec);
+		if (!ec) {
+			m_pendingAcceptSocket.emplace(std::move(peer));
+			return DEF_XSOCKEVENT_CONNECTIONESTABLISH;
+		}
+		// would_block = no pending connections
+		return 0;
+	}
+
+	// --- Normal socket: check for data and handle writes ---
+	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
+
+	int iResult = 0;
+
+	// Check if socket has been closed by peer
+	asio::error_code ec;
+	size_t avail = m_socket.available(ec);
+	if (ec) {
+		if (ec == asio::error::eof || ec == asio::error::connection_reset ||
+			ec == asio::error::connection_aborted) {
+			m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
+			return DEF_XSOCKEVENT_SOCKETCLOSED;
+		}
+		m_WSAErr = ec.value();
+		return DEF_XSOCKEVENT_SOCKETERROR;
+	}
+
+	// Read available data
+	if (avail > 0) {
+		int readResult = _iOnRead();
+		if (readResult != DEF_XSOCKEVENT_ONREAD) {
+			iResult = readResult;
+		}
+	}
+
+	// Try to drain unsent data queue
+	if (!m_unsentQueue.empty() && m_bIsWriteEnabled) {
+		int writeResult = _iSendUnsentData();
+		if (writeResult != DEF_XSOCKEVENT_UNSENTDATASENDCOMPLETE && iResult == 0) {
+			iResult = writeResult;
+		}
+	}
+
+	return iResult;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Connect - async non-blocking connect
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::bConnect(char* pAddr, int iPort)
+{
+	if (m_cType == DEF_XSOCK_LISTENSOCK) return false;
+
+	// Close existing socket if open
+	asio::error_code ec;
+	if (m_socket.is_open()) {
+		m_socket.close(ec);
+	}
+
+	m_socket = tcp::socket(m_ioContext);
+	m_socket.open(tcp::v4(), ec);
+	if (ec) {
+		printf("[ERROR] ASIOSocket::bConnect - open() failed: %s\n", ec.message().c_str());
+		return false;
+	}
+
+	// Set non-blocking
+	m_socket.non_blocking(true, ec);
+
+	// Set socket options
+	uint32_t bufSize = DEF_MSGBUFFERSIZE * 2;
+	m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
+	m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
+	m_socket.set_option(tcp::no_delay(true), ec);
+
+	// Store connection info for reconnect
+	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != nullptr) ? pAddr : "", _TRUNCATE);
+	m_iPortNum = iPort;
+
+	// Start async connect
+	tcp::endpoint endpoint(asio::ip::make_address(pAddr, ec), static_cast<unsigned short>(iPort));
+	if (ec) {
+		printf("[ERROR] ASIOSocket::bConnect - invalid address '%s': %s\n", pAddr, ec.message().c_str());
+		return false;
+	}
+
+	m_connectPending = true;
+	m_connectResultReady = false;
+	m_connectError.clear();
+
+	m_socket.async_connect(endpoint, [this](const asio::error_code& err) {
+		m_connectError = err;
+		m_connectResultReady = true;
+	});
+
+	m_cType = DEF_XSOCK_NORMALSOCK;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// BlockConnect - blocking connect with hostname resolution
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::bBlockConnect(char* pAddr, int iPort)
+{
+	if (m_cType == DEF_XSOCK_LISTENSOCK) return false;
+
+	asio::error_code ec;
+	if (m_socket.is_open()) {
+		m_socket.close(ec);
+	}
+
+	// Resolve hostname
+	tcp::resolver resolver(m_ioContext);
+	auto results = resolver.resolve(pAddr, std::to_string(iPort), ec);
+	if (ec || results.empty()) {
+		return false;
+	}
+
+	m_socket = tcp::socket(m_ioContext);
+
+	// Blocking connect to first resolved endpoint
+	asio::connect(m_socket, results, ec);
+	if (ec) {
+		m_WSAErr = ec.value();
+		return false;
+	}
+
+	// Set socket options
+	uint32_t bufSize = DEF_MSGBUFFERSIZE * 2;
+	m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
+	m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
+	m_socket.set_option(tcp::no_delay(true), ec);
+
+	// Set non-blocking after connect completes
+	m_socket.non_blocking(true, ec);
+
+	strncpy_s(m_pAddr, sizeof(m_pAddr), (pAddr != nullptr) ? pAddr : "", _TRUNCATE);
+	m_iPortNum = iPort;
+
+	m_cType = DEF_XSOCK_NORMALSOCK;
+	m_bIsAvailable = true;
+	m_bIsWriteEnabled = true;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Listen - set up listening acceptor
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::bListen(char* pAddr, int iPort)
+{
+	if (m_cType != 0) return false;
+
+	asio::error_code ec;
+
+	tcp::endpoint endpoint(asio::ip::make_address(pAddr, ec), static_cast<unsigned short>(iPort));
+	if (ec) return false;
+
+	m_acceptor.open(tcp::v4(), ec);
+	if (ec) return false;
+
+	m_acceptor.set_option(asio::socket_base::reuse_address(true), ec);
+
+	m_acceptor.bind(endpoint, ec);
+	if (ec) {
+		m_acceptor.close();
+		return false;
+	}
+
+	m_acceptor.listen(5, ec);
+	if (ec) {
+		m_acceptor.close();
+		return false;
+	}
+
+	// Set non-blocking so Poll() can probe for accepts
+	m_acceptor.non_blocking(true, ec);
+
+	m_cType = DEF_XSOCK_LISTENSOCK;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Accept - accept pending connection into target socket
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::bAccept(ASIOSocket* pSock)
+{
+	if (m_cType != DEF_XSOCK_LISTENSOCK) return false;
+	if (pSock == nullptr) return false;
+
+	asio::error_code ec;
+
+	// Use pending socket from Poll() if available
+	if (m_pendingAcceptSocket.has_value()) {
+		if (pSock->m_socket.is_open()) {
+			pSock->m_socket.close(ec);
+		}
+		pSock->m_socket = std::move(m_pendingAcceptSocket.value());
+		m_pendingAcceptSocket.reset();
+	}
+	else {
+		// Try direct non-blocking accept
+		if (pSock->m_socket.is_open()) {
+			pSock->m_socket.close(ec);
+		}
+		pSock->m_socket = tcp::socket(m_ioContext);
+		m_acceptor.accept(pSock->m_socket, ec);
+		if (ec) return false;
+	}
+
+	// Configure accepted socket
+	pSock->m_socket.non_blocking(true, ec);
+
+	uint32_t bufSize = DEF_MSGBUFFERSIZE * 2;
+	pSock->m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
+	pSock->m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
+	pSock->m_socket.set_option(tcp::no_delay(true), ec);
+
+	pSock->m_cType = DEF_XSOCK_NORMALSOCK;
+	pSock->m_bIsWriteEnabled = true;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iOnRead - read state machine (header then body)
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::_iOnRead()
+{
+	asio::error_code ec;
+
+	if (m_cStatus == DEF_XSOCKSTATUS_READINGHEADER) {
+		size_t n = m_socket.read_some(
+			asio::buffer(m_rcvBuffer.data() + m_dwTotalReadSize, m_dwReadSize), ec);
+
+		if (ec == asio::error::would_block) return DEF_XSOCKEVENT_BLOCK;
+		if (ec || n == 0) {
+			if (ec == asio::error::eof || ec == asio::error::connection_reset || n == 0) {
+				m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
+				return DEF_XSOCKEVENT_SOCKETCLOSED;
+			}
+			m_WSAErr = ec.value();
+			return DEF_XSOCKEVENT_SOCKETERROR;
+		}
+
+		m_dwReadSize -= static_cast<uint32_t>(n);
+		m_dwTotalReadSize += static_cast<uint32_t>(n);
+
+		if (m_dwReadSize == 0) {
+			m_cStatus = DEF_XSOCKSTATUS_READINGBODY;
+			uint16_t* wp = reinterpret_cast<uint16_t*>(m_rcvBuffer.data() + 1);
+			m_dwReadSize = static_cast<uint32_t>(*wp - 3);
+
+			if (m_dwReadSize == 0) {
+				m_cStatus = DEF_XSOCKSTATUS_READINGHEADER;
+				m_dwReadSize = 3;
+				m_dwTotalReadSize = 0;
+				return DEF_XSOCKEVENT_READCOMPLETE;
+			}
+			else if (m_dwReadSize > m_dwBufferSize) {
+				m_cStatus = DEF_XSOCKSTATUS_READINGHEADER;
+				m_dwReadSize = 3;
+				m_dwTotalReadSize = 0;
+				return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
+			}
+		}
+		return DEF_XSOCKEVENT_ONREAD;
+	}
+	else if (m_cStatus == DEF_XSOCKSTATUS_READINGBODY) {
+		size_t n = m_socket.read_some(
+			asio::buffer(m_rcvBuffer.data() + m_dwTotalReadSize, m_dwReadSize), ec);
+
+		if (ec == asio::error::would_block) return DEF_XSOCKEVENT_BLOCK;
+		if (ec || n == 0) {
+			if (ec == asio::error::eof || ec == asio::error::connection_reset || n == 0) {
+				m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
+				return DEF_XSOCKEVENT_SOCKETCLOSED;
+			}
+			m_WSAErr = ec.value();
+			return DEF_XSOCKEVENT_SOCKETERROR;
+		}
+
+		m_dwReadSize -= static_cast<uint32_t>(n);
+		m_dwTotalReadSize += static_cast<uint32_t>(n);
+
+		if (m_dwReadSize == 0) {
+			m_cStatus = DEF_XSOCKSTATUS_READINGHEADER;
+			m_dwReadSize = 3;
+			m_dwTotalReadSize = 0;
+		}
+		else {
+			return DEF_XSOCKEVENT_ONREAD;
+		}
+	}
+
+	return DEF_XSOCKEVENT_READCOMPLETE;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iSend - send with unsent queue fallback
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::_iSend(const char* cData, int iSize, bool bSaveFlag)
+{
+	// If there's queued data, queue this too to preserve ordering
+	if (!m_unsentQueue.empty()) {
+		if (bSaveFlag) {
+			if (!_iRegisterUnsentData(cData, iSize)) {
+				return DEF_XSOCKEVENT_QUENEFULL;
+			}
+			return DEF_XSOCKEVENT_BLOCK;
+		}
+		else {
+			return 0;
+		}
+	}
+
+	int iOutLen = 0;
+	while (iOutLen < iSize) {
+		asio::error_code ec;
+		size_t n = m_socket.write_some(
+			asio::buffer(cData + iOutLen, iSize - iOutLen), ec);
+
+		if (ec) {
+			if (ec == asio::error::would_block) {
+				m_bIsWriteEnabled = false;
+				if (bSaveFlag) {
+					if (!_iRegisterUnsentData(cData + iOutLen, iSize - iOutLen)) {
+						return DEF_XSOCKEVENT_QUENEFULL;
+					}
+				}
+				return DEF_XSOCKEVENT_BLOCK;
+			}
+			m_WSAErr = ec.value();
+			return DEF_XSOCKEVENT_SOCKETERROR;
+		}
+		iOutLen += static_cast<int>(n);
+	}
+
+	return iOutLen;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iSend_ForInternalUse - send without queueing (for draining unsent queue)
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::_iSend_ForInternalUse(const char* cData, int iSize)
+{
+	int iOutLen = 0;
+	while (iOutLen < iSize) {
+		asio::error_code ec;
+		size_t n = m_socket.write_some(
+			asio::buffer(cData + iOutLen, iSize - iOutLen), ec);
+
+		if (ec) {
+			if (ec == asio::error::would_block) {
+				return iOutLen;
+			}
+			m_WSAErr = ec.value();
+			return DEF_XSOCKEVENT_SOCKETERROR;
+		}
+		iOutLen += static_cast<int>(n);
+	}
+	return iOutLen;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iRegisterUnsentData - queue data for later sending
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::_iRegisterUnsentData(const char* cData, int iSize)
+{
+	if (static_cast<int>(m_unsentQueue.size()) >= m_iBlockLimit) {
+		printf("[ASIO] Queue full! Dropped packet. Queue size: %d, limit: %d\n",
+			static_cast<int>(m_unsentQueue.size()), m_iBlockLimit);
+		return false;
+	}
+
+	m_unsentQueue.emplace_back(cData, iSize);
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iSendUnsentData - drain the unsent queue
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::_iSendUnsentData()
+{
+	while (!m_unsentQueue.empty()) {
+		auto& block = m_unsentQueue.front();
+		int iRet = _iSend_ForInternalUse(block.remaining(), block.remainingSize());
+
+		if (iRet == block.remainingSize()) {
+			// Entire block sent
+			m_unsentQueue.pop_front();
+		}
+		else if (iRet >= 0) {
+			// Partial send - advance offset, wait for next writable
+			block.offset += iRet;
+			m_bIsWriteEnabled = false;
+			return DEF_XSOCKEVENT_UNSENTDATASENDBLOCK;
+		}
+		else {
+			// Error
+			return iRet;
+		}
+	}
+
+	return DEF_XSOCKEVENT_UNSENTDATASENDCOMPLETE;
+}
+
+//////////////////////////////////////////////////////////////////////
+// iSendMsg - send message with protocol header and optional encryption
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
+{
+	if (dwSize > m_dwBufferSize) return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
+	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
+	if (m_cType == 0) return DEF_XSOCKEVENT_NOTINITIALIZED;
+
+	// Build protocol message: [key:1][size:2][payload:N]
+	m_sndBuffer[0] = cKey;
+
+	uint16_t* wp = reinterpret_cast<uint16_t*>(m_sndBuffer.data() + 1);
+	*wp = static_cast<uint16_t>(dwSize + 3);
+
+	std::memcpy(m_sndBuffer.data() + 3, cData, dwSize);
+
+	// Encrypt payload if key is set
+	if (cKey != 0) {
+		for (uint32_t i = 0; i < dwSize; i++) {
+			m_sndBuffer[3 + i] += static_cast<char>(i ^ cKey);
+			m_sndBuffer[3 + i] = static_cast<char>(m_sndBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+		}
+	}
+
+	int iRet;
+	if (m_bIsWriteEnabled == false) {
+		if (!_iRegisterUnsentData(m_sndBuffer.data(), dwSize + 3)) {
+			return DEF_XSOCKEVENT_QUENEFULL;
+		}
+		iRet = static_cast<int>(dwSize + 3);
+	}
+	else {
+		iRet = _iSend(m_sndBuffer.data(), dwSize + 3, true);
+	}
+
+	if (iRet < 0) return iRet;
+	else return (iRet - 3);
+}
+
+//////////////////////////////////////////////////////////////////////
+// iSendMsgBlockingMode - blocking send for shutdown phase
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::iSendMsgBlockingMode(char* buf, int nbytes)
+{
+	int nleft = nbytes;
+	while (nleft > 0) {
+		asio::error_code ec;
+		// Temporarily set blocking for this operation
+		m_socket.non_blocking(false, ec);
+		size_t nwritten = m_socket.write_some(asio::buffer(buf, nleft), ec);
+		m_socket.non_blocking(true, ec);
+
+		if (ec) return -1;
+		if (nwritten == 0) break;
+		nleft -= static_cast<int>(nwritten);
+		buf += nwritten;
+	}
+	return (nbytes - nleft);
+}
+
+//////////////////////////////////////////////////////////////////////
+// pGetRcvDataPointer - get received message with decryption
+//////////////////////////////////////////////////////////////////////
+
+char* ASIOSocket::pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey)
+{
+	char cKey = m_rcvBuffer[0];
+	if (pKey != nullptr) *pKey = cKey;
+
+	uint16_t* wp = reinterpret_cast<uint16_t*>(m_rcvBuffer.data() + 1);
+	*pMsgSize = (*wp) - 3;
+	uint32_t dwSize = (*wp) - 3;
+
+	if (dwSize > DEF_MSGBUFFERSIZE) dwSize = DEF_MSGBUFFERSIZE;
+
+	// Decrypt payload if key is set
+	if (cKey != 0) {
+		for (uint32_t i = 0; i < dwSize; i++) {
+			m_rcvBuffer[3 + i] = static_cast<char>(m_rcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+			m_rcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
+		}
+	}
+	return (m_rcvBuffer.data() + 3);
+}
+
+//////////////////////////////////////////////////////////////////////
+// DrainToQueue - read all available packets into the receive queue
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::DrainToQueue()
+{
+	int iPacketsQueued = 0;
+	constexpr int MAX_DRAIN_PER_CALL = 300;
+
+	while (iPacketsQueued < MAX_DRAIN_PER_CALL &&
+		m_RecvQueue.size() < MAX_QUEUE_SIZE)
+	{
+		int iRet = _iOnRead();
+
+		switch (iRet) {
+		case DEF_XSOCKEVENT_READCOMPLETE:
+		{
+			uint32_t dwSize = 0;
+			char* pData = pGetRcvDataPointer(&dwSize);
+
+			if (pData != nullptr && dwSize > 0) {
+				m_RecvQueue.emplace_back(pData, dwSize);
+				iPacketsQueued++;
+			}
+		}
+		break;
+
+		case DEF_XSOCKEVENT_BLOCK:
+			return iPacketsQueued;
+
+		case DEF_XSOCKEVENT_SOCKETERROR:
+		case DEF_XSOCKEVENT_SOCKETCLOSED:
+		case DEF_XSOCKEVENT_MSGSIZETOOLARGE:
+			return -1;
+
+		case DEF_XSOCKEVENT_ONREAD:
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	return iPacketsQueued;
+}
+
+bool ASIOSocket::PeekPacket(NetworkPacket& outPacket) const
+{
+	if (m_RecvQueue.empty()) return false;
+	outPacket = m_RecvQueue.front();
+	return true;
+}
+
+bool ASIOSocket::PopPacket()
+{
+	if (m_RecvQueue.empty()) return false;
+	m_RecvQueue.pop_front();
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// Connection info
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::iGetPeerAddress(char* pAddrString)
+{
+	asio::error_code ec;
+	auto ep = m_socket.remote_endpoint(ec);
+	if (!ec) {
+		std::string addr = ep.address().to_string();
+		strcpy(pAddrString, addr.c_str());
+		return 0;
+	}
+	return -1;
+}
+
+NativeSocketHandle ASIOSocket::iGetSocket()
+{
+	return m_socket.native_handle();
+}
+
+//////////////////////////////////////////////////////////////////////
+// CloseConnection - graceful shutdown and close
+//////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::CloseConnection()
+{
+	asio::error_code ec;
+
+	if (!m_socket.is_open()) return;
+
+	// Shutdown send side
+	m_socket.shutdown(tcp::socket::shutdown_send, ec);
+
+	// Drain receive buffer
+	char cTmp[100];
+	for (;;) {
+		size_t n = m_socket.read_some(asio::buffer(cTmp, sizeof(cTmp)), ec);
+		if (ec || n == 0) break;
+	}
+
+	m_socket.close(ec);
+	m_cType = DEF_XSOCK_SHUTDOWNEDSOCK;
+}
+
+//////////////////////////////////////////////////////////////////////
+// bListen / bAccept already defined above
+//////////////////////////////////////////////////////////////////////

@@ -8,9 +8,9 @@
 #include "RendererFactory.h"
 #include "lan_eng.h"
 #include "IInput.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 
-extern class XSocket* G_pCalcSocket;
+extern class ASIOSocket* G_pCalcSocket;
 
 Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* pGame)
     : IGameScreen(pGame)

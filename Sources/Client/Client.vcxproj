@@ -166,7 +166,7 @@
     </ClCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <SetChecksum>false</SetChecksum>
       <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -322,7 +322,7 @@
     <ClInclude Include="SpriteID.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileSpr.h" />
-    <ClInclude Include="XSocket.h" />
+    <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
     <ClInclude Include="..\Dependencies\Shared\GameGeometry.h" />
@@ -471,7 +471,7 @@
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="Wmain.cpp" />
     <ClCompile Include="GameWindowHandler.cpp" />
-    <ClCompile Include="XSocket.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />

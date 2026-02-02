@@ -38,7 +38,7 @@ class CGame* G_pGame = nullptr;
 std::atomic<bool> G_bTimerSignal{false};
 std::atomic<bool> G_bTimerRunning{false};
 std::thread G_timerThread;
-class XSocket* G_pCalcSocket = 0;
+class ASIOSocket* G_pCalcSocket = 0;
 bool G_bIsCalcSocketConnected = true;
 uint32_t G_dwCalcSocketTime = 0, G_dwCalcSocketSendTime = 0;
 
@@ -114,21 +114,7 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     // Initialize timing systems
     FrameTiming::Initialize();
 
-    // Initialize Winsock
-#ifdef _WIN32
-    {
-        WSADATA wsaData;
-        uint16_t wVersionRequested = MAKEWORD(2, 2);
-        int iErrCode = WSAStartup(wVersionRequested, &wsaData);
-        if (iErrCode)
-        {
-            Window::ShowError("ERROR", "Winsock-V2.2 not found! Cannot execute program.");
-            Window::Close();
-            delete G_pGame;
-            return 1;
-        }
-    }
-#endif
+    // ASIO handles Winsock initialization internally
 
     // Initialize game
     if (G_pGame->bInit() == false)

@@ -69,7 +69,7 @@ using namespace hb::item;
 
 extern char G_cSpriteAlphaDegree;
 
-extern class XSocket* G_pCalcSocket;
+extern class ASIOSocket* G_pCalcSocket;
 extern bool G_bIsCalcSocketConnected;
 extern uint32_t G_dwCalcSocketTime, G_dwCalcSocketSendTime;
 
@@ -9235,7 +9235,7 @@ void CGame::LogResponseHandler(char* pData)
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
 
-		m_pGSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+		m_pGSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
 		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	}

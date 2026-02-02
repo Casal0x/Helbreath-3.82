@@ -21,7 +21,7 @@ CClient::CClient(HWND hWnd)
  int i;
 
 	m_pXSock = 0;
-	m_pXSock = new class XSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
+	m_pXSock = new class ASIOSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
 	m_pXSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
 	std::memset(m_cProfile, 0, sizeof(m_cProfile));

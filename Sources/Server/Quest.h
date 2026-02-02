@@ -5,7 +5,6 @@
 #pragma once
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 #include <windows.h>
 #include "CommonTypes.h"
 #include <stdio.h>

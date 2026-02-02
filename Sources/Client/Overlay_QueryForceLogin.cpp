@@ -8,7 +8,7 @@
 #include "CommonTypes.h"
 #include "lan_eng.h"
 #include "IInput.h"
-#include "XSocket.h"
+#include "ASIOSocket.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
 
@@ -54,7 +54,7 @@ void Overlay_QueryForceLogin::on_update()
         if (Input::IsMouseInRect(dlgX + 38, dlgY + 114, DEF_BTNSZX, DEF_BTNSZY))
         {
             // Create login socket and initiate force disconnect
-            m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
+            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

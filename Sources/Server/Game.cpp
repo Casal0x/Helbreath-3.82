@@ -345,7 +345,7 @@ CGame::~CGame()
 	}
 }
 
-bool CGame::bAcceptLogin(XSocket* sock)
+bool CGame::bAcceptLogin(ASIOSocket* sock)
 {
 	if (m_bIsGameStarted == false)
 	{
@@ -369,17 +369,17 @@ bool CGame::bAcceptLogin(XSocket* sock)
 CLOSE_ANYWAY:
 
 	// MODERNIZED: Removed m_hWnd parameter
-	auto pTmpSock = new XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	auto pTmpSock = new ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
 	sock->bAccept(pTmpSock);
 	delete pTmpSock;
 
 	return false;
 }
 
-bool CGame::bAccept(class XSocket* pXSock)
+bool CGame::bAccept(class ASIOSocket* pXSock)
 {
 	int i, iTotalip = 0, a;
-	class XSocket* pTmpSock;
+	class ASIOSocket* pTmpSock;
 	char cIPtoBan[21];
 	FILE* pFile;
 
@@ -455,7 +455,7 @@ bool CGame::bAccept(class XSocket* pXSock)
 
 CLOSE_ANYWAY:
 
-	pTmpSock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	pTmpSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
 	pXSock->bAccept(pTmpSock);
 	delete pTmpSock;
 
@@ -896,7 +896,7 @@ bool CGame::bInit()
 	}
 
 	srand((unsigned)time(0));
-	//m_pMainLogSock = new class XSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
+	//m_pMainLogSock = new class ASIOSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
 	//m_pMainLogSock->bConnect(m_cLogServerAddr, m_iLogServerPort, WM_ONLOGSOCKETEVENT);
 	//m_pMainLogSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -904,7 +904,7 @@ bool CGame::bInit()
 	//PutLogList(cTxt);
 	////Sleep(100);
 
-	//m_pGateSock = new class XSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
+	//m_pGateSock = new class ASIOSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
 	//m_pGateSock->bConnect(m_cGateServerAddr, m_iGateServerPort, WM_ONGATESOCKETEVENT);
 	//m_pGateSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	//m_iGateSockConnRetryTimes = 1;
@@ -912,7 +912,7 @@ bool CGame::bInit()
 	//std::snprintf(cTxt, sizeof(cTxt), "(!) Try to Connect Gate Server... Addr:%s  Port:%d", m_cGateServerAddr, m_iGateServerPort);
 	//PutLogList(cTxt);
 
-	_lsock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
+	_lsock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
 	_lsock->bConnect(m_cLoginListenIP, m_iLoginListenPort);  // MODERNIZED: Removed WM_ONLOGSOCKETEVENT
 	_lsock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -11230,7 +11230,7 @@ void CGame::OnGateSocketEvent(UINT message, WPARAM wParam, LPARAM lParam)
 	   //	m_bIsGateSockAvailable = false;
 
 	   //	// v1.41 Gate Server·ÎÀÇ Àç¿¬°á ½Ãµµ 
-	   //	m_pGateSock = new class XSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
+	   //	m_pGateSock = new class ASIOSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
 	   //	m_pGateSock->bConnect(m_cGateServerAddr, m_iGateServerPort, WM_ONGATESOCKETEVENT);
 	   //	m_pGateSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	   //	// v1.41 ¿¬°á ½Ã°£ Ã¼Å©¿ë 
@@ -11380,7 +11380,7 @@ void CGame::SendMsgToGateServer(uint32_t dwMsg, int iClientH, char* pData)
 	   //	m_bIsGateSockAvailable = false;
 
 	   //	// v1.41 Gate Server·ÎÀÇ Àç¿¬°á ½Ãµµ: ¼­¹ö¸¦ ¼Ë´Ù¿î ÇÏ´Â °ÍÀÌ ¾Æ´Ï´Ù. 
-	   //	m_pGateSock = new class XSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
+	   //	m_pGateSock = new class ASIOSocket(m_hWnd, DEF_SERVERSOCKETBLOCKLIMIT);
 	   //	m_pGateSock->bConnect(m_cGateServerAddr, m_iGateServerPort, WM_ONGATESOCKETEVENT);
 	   //	m_pGateSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	   //	// v1.41 ¿¬°á ½Ã°£ Ã¼Å©¿ë 
@@ -27654,7 +27654,7 @@ void CGame::OnSubLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam)
 		PutLogList(G_cTxt);
 		PutLogFileList(G_cTxt);
 
-		m_pSubLogSock[iLogSockH] = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
+		m_pSubLogSock[iLogSockH] = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
 		m_pSubLogSock[iLogSockH]->bConnect(m_cLogServerAddr, m_iLogServerPort);  // MODERNIZED: Removed WM_ONLOGSOCKETEVENT
 		m_pSubLogSock[iLogSockH]->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -32844,7 +32844,7 @@ void CGame::OnTimer(char cType)
 
 		// v1.432-3 Sub-Log-Socket�� �Ѳ����� ����� ���� �ƴ϶� ������ �����.
 		/*if (m_iSubLogSockInitIndex < DEF_MAXSUBLOGSOCK) {
-		 m_pSubLogSock[m_iSubLogSockInitIndex] = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
+		 m_pSubLogSock[m_iSubLogSockInitIndex] = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
 		 m_pSubLogSock[m_iSubLogSockInitIndex]->bConnect(m_cLogServerAddr, m_iLogServerPort);  // MODERNIZED: Removed WM_ONLOGSOCKETEVENT
 		 m_pSubLogSock[m_iSubLogSockInitIndex]->bInitBufferSize(DEF_MSGBUFFERSIZE);
 		 std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Try to connect sub-log-socket(%d)... Addr:%s  Port:%d", m_iSubLogSockInitIndex, m_cLogServerAddr, m_iLogServerPort);

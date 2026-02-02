@@ -1,6 +1,5 @@
 #include "GameConfigSqliteStore.h"
 
-#define _WINSOCKAPI_
 #include <windows.h>
 #include <cstdio>
 #include <cstring>

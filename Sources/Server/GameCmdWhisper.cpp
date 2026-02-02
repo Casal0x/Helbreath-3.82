@@ -1,4 +1,3 @@
-#define _WINSOCKAPI_
 #include <windows.h>
 #include "GameCmdWhisper.h"
 #include "Game.h"

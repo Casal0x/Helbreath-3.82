@@ -16,7 +16,6 @@
 
 #ifdef _WIN32
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
-#define _WINSOCKAPI_
 
 #include <windows.h>
 #include "CommonTypes.h"
@@ -55,10 +54,10 @@ char			G_cData50000[50000];
 MMRESULT        G_mmTimer = 0;
 
 
-class XSocket* G_pListenSock = 0;
-class XSocket* G_pLogSock = 0;
+class ASIOSocket* G_pListenSock = 0;
+class ASIOSocket* G_pLogSock = 0;
 class CGame* G_pGame = 0;
-class XSocket* G_pLoginSock = 0;
+class ASIOSocket* G_pLoginSock = 0;
 class LoginServer* g_login;
 
 int             G_iQuitProgramCount = 0;
@@ -342,16 +341,6 @@ int EventLoop()
 void Initialize()
 {
 
-	if (_InitWinsock() == false) {
-#ifdef _WIN32
-		MessageBox(G_hWnd, "Socket 1.1 not found! Cannot execute program.", "ERROR", MB_ICONEXCLAMATION | MB_OK);
-#else
-		fprintf(stderr, "Socket 1.1 not found! Cannot execute program.\n");
-#endif
-		PostQuitMessage(0);
-		return;
-	}
-
 	G_pGame = new class CGame(G_hWnd);
 	if (G_pGame->bInit() == false) {
 		PutLogList("(!!!) STOPPED!");
@@ -368,10 +357,10 @@ void Initialize()
 	G_mmTimer = _StartTimer(300);
 
 	// MODERNIZED: Removed G_hWnd parameter, using WSAEventSelect
-	G_pListenSock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pListenSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
 
-	G_pLoginSock = new class XSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pLoginSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
 
 	pLogFile = 0;
@@ -396,7 +385,6 @@ void OnDestroy()
 	}
 
 	if (G_mmTimer != 0) _StopTimer(G_mmTimer);
-	_TermWinsock();
 
 	if (pLogFile != 0) fclose(pLogFile);
 
