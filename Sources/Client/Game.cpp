@@ -2149,6 +2149,23 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	}
 	break;
 
+	case MSGID_NOTIFY_CONFIG_RELOAD:
+	{
+		const auto* reloadPkt = hb::net::PacketCast<hb::net::PacketNotifyConfigReload>(
+			pData, sizeof(hb::net::PacketNotifyConfigReload));
+		if (!reloadPkt) break;
+
+		if (reloadPkt->reloadItems)
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
+		if (reloadPkt->reloadMagic)
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
+		if (reloadPkt->reloadSkills)
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+
+		SetTopMsg((char*)"Administration kicked off a config reload, some lag may occur.", 5);
+	}
+	break;
+
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		break;
@@ -2437,7 +2454,8 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 		}
 		else
 		{
-			if (((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) || (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW))
+			CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
+			if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))
 				&& (m_pItemList[cItemID]->m_dwCount > 1))
 			{
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
@@ -2528,7 +2546,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					break;
 
 				default:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
+					if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, pCfg->m_cName);
 					break;
 				}
 				//m_bIsItemDisabled[cItemID] = true;
@@ -2538,7 +2556,8 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 	}
 	else
 	{
-		if (((m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) || (m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW))
+		CItem* pCfg2 = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
+		if (pCfg2 && ((pCfg2->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg2->m_cItemType == DEF_ITEMTYPE_ARROW))
 			&& (m_pItemList[cItemID]->m_dwCount > 1))
 		{
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
@@ -2568,7 +2587,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 			}
 			else
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, cItemID, 1, 0, m_pItemList[cItemID]->m_cName);
+				if (pCfg2) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, cItemID, 1, 0, pCfg2->m_cName);
 			}
 		}
 		m_bIsItemDisabled[cItemID] = true;
@@ -10260,42 +10279,26 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = itemEntries[i];
 		m_pItemList[i] = std::make_unique<CItem>();
-		memcpy(m_pItemList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
+		m_pItemList[i]->m_sIDnum = entry.item_id;
 		m_pItemList[i]->m_dwCount = entry.count;
 		m_pItemList[i]->m_sX = 40;
 		m_pItemList[i]->m_sY = 30;
-		m_pItemList[i]->m_cItemType = entry.item_type;
-		m_pItemList[i]->m_cEquipPos = entry.equip_pos;
 		if (entry.is_equipped == 0) m_bIsItemEquipped[i] = false;
 		else m_bIsItemEquipped[i] = true;
-		if (m_bIsItemEquipped[i] == true)
+		CItem* pCfg = GetItemConfig(entry.item_id);
+		if (m_bIsItemEquipped[i] == true && pCfg)
 		{
-			m_sItemEquipmentStatus[m_pItemList[i]->m_cEquipPos] = i;
+			m_sItemEquipmentStatus[pCfg->m_cEquipPos] = i;
 		}
-		m_pItemList[i]->m_sLevelLimit = entry.level_limit;
-		m_pItemList[i]->m_cGenderLimit = entry.gender_limit;
 		m_pItemList[i]->m_wCurLifeSpan = entry.cur_lifespan;
-		m_pItemList[i]->m_wWeight = entry.weight;
-		m_pItemList[i]->m_sSprite = entry.sprite;
-		m_pItemList[i]->m_sSpriteFrame = entry.sprite_frame;
 		m_pItemList[i]->m_cItemColor = entry.item_color;
 		m_pItemList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pItemList[i]->m_dwAttribute = entry.attribute;
-		m_pItemList[i]->m_sIDnum = entry.item_id;
-		if (entry.item_id > 0 && m_pItemConfigList[entry.item_id] != nullptr) {
-			m_pItemList[i]->m_wMaxLifeSpan = m_pItemConfigList[entry.item_id]->m_wMaxLifeSpan;
-		}
-		/*
-		m_pItemList[i]->m_bIsCustomMade = (bool)*cp;
-		cp++;
-		*/
-		// Populate display name from the shared item display name map
-		m_pItemList[i]->PopulateDisplayName();
 		m_cItemOrder[i] = i;
 		// Snoopy: Add Angelic Stats
-		if ((m_pItemList[i]->m_cItemType == 1)
+		if (pCfg && (pCfg->m_cItemType == 1)
 			&& (m_bIsItemEquipped[i] == true)
-			&& (m_pItemList[i]->m_cEquipPos >= 11))
+			&& (pCfg->m_cEquipPos >= 11))
 		{
 			iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
 			if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
@@ -10323,33 +10326,14 @@ void CGame::InitItemList(char* pData)
 	{
 		const auto& entry = bankEntries[i];
 		m_pBankList[i] = std::make_unique<CItem>();
-		memcpy(m_pBankList[i]->m_cName, entry.name, DEF_ITEMNAME - 1);
+		m_pBankList[i]->m_sIDnum = entry.item_id;
 		m_pBankList[i]->m_dwCount = entry.count;
-
 		m_pBankList[i]->m_sX = 40;
 		m_pBankList[i]->m_sY = 30;
-
-		m_pBankList[i]->m_cItemType = entry.item_type;
-		m_pBankList[i]->m_cEquipPos = entry.equip_pos;
-		m_pBankList[i]->m_sLevelLimit = entry.level_limit;
-		m_pBankList[i]->m_cGenderLimit = entry.gender_limit;
 		m_pBankList[i]->m_wCurLifeSpan = entry.cur_lifespan;
-		m_pBankList[i]->m_wWeight = entry.weight;
-		m_pBankList[i]->m_sSprite = entry.sprite;
-		m_pBankList[i]->m_sSpriteFrame = entry.sprite_frame;
 		m_pBankList[i]->m_cItemColor = entry.item_color;
 		m_pBankList[i]->m_sItemSpecEffectValue2 = static_cast<short>(entry.spec_value2); // v1.41
 		m_pBankList[i]->m_dwAttribute = entry.attribute;
-		m_pBankList[i]->m_sIDnum = entry.item_id;
-		if (entry.item_id > 0 && m_pItemConfigList[entry.item_id] != nullptr) {
-			m_pBankList[i]->m_wMaxLifeSpan = m_pItemConfigList[entry.item_id]->m_wMaxLifeSpan;
-		}
-		/*
-		m_pBankList[i]->m_bIsCustomMade = (bool)*cp;
-		cp++;
-		*/
-		// Populate display name from the shared item display name map
-		m_pBankList[i]->PopulateDisplayName();
 	}
 
 	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + cTotalItems);
@@ -12213,7 +12197,10 @@ bool CGame::_bCheckItemByType(char cType)
 	int i;
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_pItemList[i]->m_cItemType == cType)) return true;
+		if (m_pItemList[i] != 0) {
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && pCfg->m_cItemType == cType) return true;
+		}
 
 	return false;
 }
@@ -12248,14 +12235,16 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
-			if ((m_pItemList[i]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (m_pItemList[i]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
+				|| (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
 				return true;
 		}
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
-			if (m_pItemList[i]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
 			{
 				wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
 				// Snoopy 34 for all wands.
@@ -12275,14 +12264,15 @@ int CGame::_iCalcTotalWeight()
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0)
 		{
-			if ((m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_CONSUME)
-				|| (m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_ARROW))
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
+				|| (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)))
 			{
-				iTemp = m_pItemList[i]->m_wWeight * m_pItemList[i]->m_dwCount;
+				iTemp = pCfg->m_wWeight * m_pItemList[i]->m_dwCount;
 				if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::Gold) iTemp = iTemp / 20;
 				iWeight += iTemp;
 			}
-			else iWeight += m_pItemList[i]->m_wWeight;
+			else if (pCfg) iWeight += pCfg->m_wWeight;
 			iCnt++;
 		}
 
@@ -12819,7 +12809,8 @@ bool CGame::_bCheckBuildItemStatus()
 				{
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0) {
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12841,7 +12832,8 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12863,7 +12855,8 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12885,7 +12878,8 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12908,7 +12902,8 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -12931,7 +12926,8 @@ bool CGame::_bCheckBuildItemStatus()
 					for (j = 0; j < DEF_MAXITEMS; j++)
 						if (m_pItemList[j] != 0)
 						{
-							if ((memcmp(m_pItemList[j]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -13149,7 +13145,9 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13172,7 +13170,9 @@ CCBIS_STEP2:;
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13195,7 +13195,9 @@ CCBIS_STEP3:;
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13218,7 +13220,9 @@ CCBIS_STEP4:;
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13241,7 +13245,9 @@ CCBIS_STEP5:;
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13264,7 +13270,9 @@ CCBIS_STEP6:;
 	{
 		for (i = 1; i <= 6; i++)
 		{
-			if ((iItemIndex[i] != -1) && (memcmp(m_pItemList[iItemIndex[i]]->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (iItemIndex[i] == -1) continue;
+			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -13298,16 +13306,13 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	std::memset(pStr2, 0, 64);
 	std::memset(pStr3, 0, 64);
 
-	// Use the display name from the item (populated from ItemDisplayNames.h)
-	const char* cName = pItem->GetDisplayName();
+	CItem* pCfg = GetItemConfig(pItem->m_sIDnum);
+	if (!pCfg) {
+		strcpy(pStr1, "Unknown Item");
+		return;
+	}
 
-	//auto it = std::find_if(m_pItemConfigList.begin(), m_pItemConfigList.end(), [&](const auto& configItem) {
-	//		return configItem != nullptr && configItem->m_sIDnum == pItem->m_sIDnum;
-	//	});
-	//if (it == m_pItemConfigList.end())
-	//{
-	//	throw std::runtime_error("Item not found for ID: " + std::to_string(pItem->m_sIDnum));
-	//}
+	const char* cName = pCfg->GetDisplayName();
 
 	if (hb::item::IsSpecialItem(pItem->m_sIDnum)) m_bIsSpecial = true;
 
@@ -13315,11 +13320,11 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	{
 		m_bIsSpecial = true;
 		strcpy(pStr1, cName);
-		if (pItem->m_cItemType == DEF_ITEMTYPE_MATERIAL)
+		if (pCfg->m_cItemType == DEF_ITEMTYPE_MATERIAL)
 			wsprintf(pStr2, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
 		else
 		{
-			if (pItem->m_cEquipPos == DEF_EQUIPPOS_LFINGER)
+			if (pCfg->m_cEquipPos == DEF_EQUIPPOS_LFINGER)
 			{
 				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
 			}
@@ -13425,16 +13430,16 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	}
 
 	// Display mana save effect if present
-	auto effectType = pItem->GetItemEffectType();
+	auto effectType = pCfg->GetItemEffectType();
 	int iManaSaveValue = 0;
 	if (effectType == hb::item::ItemEffectType::AttackManaSave)
 	{
-		iManaSaveValue = pItem->m_sItemEffectValue4;
+		iManaSaveValue = pCfg->m_sItemEffectValue4;
 	}
 	else if (effectType == hb::item::ItemEffectType::AddEffect &&
-	         pItem->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
+	         pCfg->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
 	{
-		iManaSaveValue = pItem->m_sItemEffectValue2;
+		iManaSaveValue = pCfg->m_sItemEffectValue2;
 	}
 
 	if (iManaSaveValue > 0)
@@ -13559,6 +13564,12 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			strcat(pStr1, cTxt);
 		}
 	}
+}
+
+CItem* CGame::GetItemConfig(int iItemID) const
+{
+	if (iItemID <= 0 || iItemID >= 5000) return nullptr;
+	return m_pItemConfigList[iItemID].get();
 }
 
 short CGame::FindItemIdByName(const char* cItemName)
@@ -14020,8 +14031,9 @@ void CGame::RetrieveItemHandler(char* pData)
 			wsprintf(cTxt, RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
 			AddEventList(cTxt, 10);
 
-			if ((m_pBankList[cBankItemIndex]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-				(m_pBankList[cBankItemIndex]->m_cItemType == DEF_ITEMTYPE_ARROW))
+			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
+			if (pCfgBank && ((pCfgBank->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+				(pCfgBank->m_cItemType == DEF_ITEMTYPE_ARROW)))
 			{
 				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
 				m_pBankList[cBankItemIndex].reset();
@@ -15177,7 +15189,8 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 	{
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, m_iPointCommandType, indexX, indexY, cTemp, cItemID); // v1.4
 
-		if (m_pItemList[m_iPointCommandType]->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
+		CItem* pCfgPt = GetItemConfig(m_pItemList[m_iPointCommandType]->m_sIDnum);
+		if (pCfgPt && pCfgPt->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
 			m_bSkillUsingStatus = true;
 	}
 	else if (m_iPointCommandType == 200) // Normal Hand
@@ -17885,8 +17898,9 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 	char cStr1[64], cStr2[64], cStr3[64];
 	if (m_sItemEquipmentStatus[cEquipPos] < 0) return;
 	// Remove Angelic Stats
+	CItem* pCfgEq = GetItemConfig(m_pItemList[m_sItemEquipmentStatus[cEquipPos]]->m_sIDnum);
 	if ((cEquipPos >= 11)
-		&& (m_pItemList[m_sItemEquipmentStatus[cEquipPos]]->m_cItemType == 1))
+		&& (pCfgEq && pCfgEq->m_cItemType == 1))
 	{
 		char cItemID = m_sItemEquipmentStatus[cEquipPos];
 		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
@@ -17910,7 +17924,9 @@ void CGame::ItemEquipHandler(char cItemID)
 {
 	if (bCheckItemOperationEnabled(cItemID) == false) return;
 	if (m_bIsItemEquipped[cItemID] == true) return;
-	if (m_pItemList[cItemID]->m_cEquipPos == DEF_EQUIPPOS_NONE)
+	CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
+	if (!pCfg) return;
+	if (pCfg->m_cEquipPos == DEF_EQUIPPOS_NONE)
 	{
 		AddEventList(BITEMDROP_CHARACTER3, 10);//"The item is not available."
 		return;
@@ -17920,12 +17936,12 @@ void CGame::ItemEquipHandler(char cItemID)
 		AddEventList(BITEMDROP_CHARACTER1, 10); //"The item is exhausted. Fix it to use it."
 		return;
 	}
-	if (m_pItemList[cItemID]->m_wWeight / 100 > m_pPlayer->m_iStr + m_pPlayer->m_iAngelicStr)
+	if (pCfg->m_wWeight / 100 > m_pPlayer->m_iStr + m_pPlayer->m_iAngelicStr)
 	{
 		AddEventList(BITEMDROP_CHARACTER2, 10);
 		return;
 	}
-	if (((m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (m_pItemList[cItemID]->m_sLevelLimit > m_pPlayer->m_iLevel))
+	if (((m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (pCfg->m_sLevelLimit > m_pPlayer->m_iLevel))
 	{
 		AddEventList(BITEMDROP_CHARACTER4, 10);
 		return;
@@ -17935,13 +17951,13 @@ void CGame::ItemEquipHandler(char cItemID)
 		AddEventList(BITEMDROP_CHARACTER5, 10);
 		return;
 	}
-	if (m_pItemList[cItemID]->m_cGenderLimit != 0)
+	if (pCfg->m_cGenderLimit != 0)
 	{
 		switch (m_pPlayer->m_sPlayerType) {
 		case 1:
 		case 2:
 		case 3:
-			if (m_pItemList[cItemID]->m_cGenderLimit != 1)
+			if (pCfg->m_cGenderLimit != 1)
 			{
 				AddEventList(BITEMDROP_CHARACTER6, 10);
 				return;
@@ -17950,7 +17966,7 @@ void CGame::ItemEquipHandler(char cItemID)
 		case 4:
 		case 5:
 		case 6:
-			if (m_pItemList[cItemID]->m_cGenderLimit != 2)
+			if (pCfg->m_cGenderLimit != 2)
 			{
 				AddEventList(BITEMDROP_CHARACTER7, 10);
 				return;
@@ -17961,8 +17977,8 @@ void CGame::ItemEquipHandler(char cItemID)
 
 	bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EQUIPITEM, 0, cItemID, 0, 0, 0);
 	m_sRecentShortCut = cItemID;
-	ReleaseEquipHandler(m_pItemList[cItemID]->m_cEquipPos);
-	switch (m_pItemList[cItemID]->m_cEquipPos) {
+	ReleaseEquipHandler(pCfg->m_cEquipPos);
+	switch (pCfg->m_cEquipPos) {
 	case DEF_EQUIPPOS_HEAD:
 	case DEF_EQUIPPOS_BODY:
 	case DEF_EQUIPPOS_ARMS:
@@ -17989,12 +18005,12 @@ void CGame::ItemEquipHandler(char cItemID)
 		break;
 	}
 
-	m_sItemEquipmentStatus[m_pItemList[cItemID]->m_cEquipPos] = cItemID;
+	m_sItemEquipmentStatus[pCfg->m_cEquipPos] = cItemID;
 	m_bIsItemEquipped[cItemID] = true;
 
 	// Add Angelic Stats
-	if ((m_pItemList[cItemID]->m_cItemType == 1)
-		&& (m_pItemList[cItemID]->m_cEquipPos >= 11))
+	if ((pCfg->m_cItemType == 1)
+		&& (pCfg->m_cEquipPos >= 11))
 	{
 		int iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
 		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)

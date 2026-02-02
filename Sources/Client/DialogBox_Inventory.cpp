@@ -16,29 +16,32 @@ DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 // Helper: Draw a single inventory item with proper coloring and state
 void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX, int baseY)
 {
+	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
+	if (pCfg == nullptr) return;
+
 	char cItemColor = pItem->m_cItemColor;
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
-	bool bIsWeapon = (pItem->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-	                 (pItem->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-	                 (pItem->m_cEquipPos == DEF_EQUIPPOS_TWOHAND);
+	bool bIsWeapon = (pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
+	                 (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
+	                 (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND);
 
 	int drawX = baseX + ITEM_OFFSET_X + pItem->m_sX;
 	int drawY = baseY + ITEM_OFFSET_Y + pItem->m_sY;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pItem->m_sSprite];
+	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite];
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
 	const GameColor* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
 	// (wG/wB merged into GameColor array above)
-	
+
 
 	if (cItemColor == 0)
 	{
 		// No color tint
 		if (bDisabled)
-			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else
-			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame);
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame);
 	}
 	else
 	{
@@ -48,13 +51,13 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 		int b = colors[cItemColor].b - GameColors::Base.b;
 
 		if (bDisabled)
-			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));
 		else
-			pSprite->Draw(drawX, drawY, pItem->m_sSpriteFrame, SpriteLib::DrawParams::Tint(r, g, b));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(r, g, b));
 	}
 
 	// Show item count for consumables and arrows
-	if ((pItem->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pItem->m_cItemType == DEF_ITEMTYPE_ARROW))
+	if ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
@@ -143,9 +146,11 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 			for (int i = 0; i < DEF_MAXITEMS; i++)
 			{
 				CItem* pItem = m_pGame->m_pItemList[i].get();
-				if (pItem != nullptr &&
-				    pItem->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX &&
-				    pItem->m_sSpriteFrame == 113 &&
+				if (pItem == nullptr) continue;
+				CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
+				if (pCfg != nullptr &&
+				    pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX &&
+				    pCfg->m_sSpriteFrame == 113 &&
 				    pItem->m_wCurLifeSpan > 0)
 				{
 					EnableDialogBox(DialogBoxId::Manufacture, 3, 0, 0);
@@ -172,11 +177,14 @@ char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short 
 		char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
 		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
 
-		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+		if (pCfg == nullptr) continue;
+
+		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
 		int drawX = sX + ITEM_OFFSET_X + m_pGame->m_pItemList[cItemID]->m_sX;
 		int drawY = sY + ITEM_OFFSET_Y + m_pGame->m_pItemList[cItemID]->m_sY;
 
-		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
+		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, pCfg->m_sSpriteFrame);
 		auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
 
 		if (!m_pGame->m_bIsItemDisabled[cItemID] && !m_pGame->m_bIsItemEquipped[cItemID] &&
@@ -204,6 +212,9 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 
 	m_pGame->_SetItemOrder(0, cItemID);
 
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+	if (pCfg == nullptr) return false;
+
 	char cStr1[64], cStr2[64], cStr3[64];
 	m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 
@@ -212,11 +223,11 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
 	{
-		if (m_pGame->m_pItemList[cItemID]->m_cEquipPos != DEF_EQUIPPOS_NONE)
+		if (pCfg->m_cEquipPos != DEF_EQUIPPOS_NONE)
 		{
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
-				m_pGame->m_pItemList[cItemID]->m_cName,
+				pCfg->m_cName,
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
 			return true;
 		}
@@ -242,19 +253,19 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle consumable/depletable items
-	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
-		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_PERM ||
-		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW ||
-		m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT)
+	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
+		pCfg->m_cItemType == DEF_ITEMTYPE_USE_PERM ||
+		pCfg->m_cItemType == DEF_ITEMTYPE_ARROW ||
+		pCfg->m_cItemType == DEF_ITEMTYPE_EAT)
 	{
 		if (!m_pGame->bCheckItemOperationEnabled(cItemID)) return true;
 
 		// Check damage cooldown for scrolls
 		if ((m_pGame->m_dwCurTime - m_pGame->m_dwDamagedTime) < 10000)
 		{
-			if ((m_pGame->m_pItemList[cItemID]->m_sSprite == 6) &&
-				(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame == 9 ||
-				 m_pGame->m_pItemList[cItemID]->m_sSpriteFrame == 89))
+			if ((pCfg->m_sSprite == 6) &&
+				(pCfg->m_sSpriteFrame == 9 ||
+				 pCfg->m_sSpriteFrame == 89))
 			{
 				wsprintf(m_pGame->G_cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);
 				AddEventList(m_pGame->G_cTxt, 10);
@@ -264,8 +275,8 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, cItemID, 0, 0, 0);
 
-		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
-			m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EAT)
+		if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
+			pCfg->m_cItemType == DEF_ITEMTYPE_EAT)
 		{
 			m_pGame->m_bIsItemDisabled[cItemID] = true;
 			m_pGame->m_bItemUsingStatus = true;
@@ -273,7 +284,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle skill items (pointing mode)
-	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
+	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -300,7 +311,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle deplete-dest items (use on other items)
-	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
+	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -327,7 +338,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle skill items that enable dialog boxes (alchemy pot, anvil, crafting, slates)
-	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
+	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -345,7 +356,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		}
 		else
 		{
-			switch (m_pGame->m_pItemList[cItemID]->m_sSpriteFrame)
+			switch (pCfg->m_sSpriteFrame)
 			{
 			case 55: // Alchemy pot
 				if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0)
@@ -391,7 +402,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Auto-equip equipment items
-	if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_EQUIP)
+	if (pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP)
 	{
 		CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
 		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
@@ -419,16 +430,19 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 		CItem* pItem = m_pGame->m_pItemList[cItemID].get();
 		if (pItem == nullptr) continue;
 
+		CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
+		if (pCfg == nullptr) continue;
+
 		// Skip disabled or equipped items
 		if (m_pGame->m_bIsItemDisabled[cItemID]) continue;
 		if (m_pGame->m_bIsItemEquipped[cItemID]) continue;
 
 		// Calculate item bounds
-		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pItem->m_sSprite;
+		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
 		int itemDrawX = sX + ITEM_OFFSET_X + pItem->m_sX;
 		int itemDrawY = sY + ITEM_OFFSET_Y + pItem->m_sY;
 
-		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(itemDrawX, itemDrawY, pItem->m_sSpriteFrame);
+		m_pGame->m_pSprite[spriteIdx]->CalculateBounds(itemDrawX, itemDrawY, pCfg->m_sSpriteFrame);
 		auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
 
 		// Check if click is within item bounds
@@ -436,23 +450,29 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 			msY > bounds.top && msY < bounds.bottom)
 		{
 			// Pixel-perfect collision check
-			if (m_pGame->m_pSprite[spriteIdx]->CheckCollision(itemDrawX, itemDrawY, pItem->m_sSpriteFrame, msX, msY))
+			if (m_pGame->m_pSprite[spriteIdx]->CheckCollision(itemDrawX, itemDrawY, pCfg->m_sSpriteFrame, msX, msY))
 			{
 				// Bring item to top of order
 				m_pGame->_SetItemOrder(0, cItemID);
 
 				// Handle pointing mode (using items on other items)
+				bool bHandledPointing = false;
 				if (m_pGame->m_bIsGetPointingMode &&
 					m_pGame->m_iPointCommandType >= 0 &&
 					m_pGame->m_iPointCommandType < 100 &&
 					m_pGame->m_pItemList[m_pGame->m_iPointCommandType] != nullptr &&
-					m_pGame->m_pItemList[m_pGame->m_iPointCommandType]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST &&
 					m_pGame->m_iPointCommandType != cItemID)
 				{
-					m_pGame->PointCommandHandler(0, 0, cItemID);
-					m_pGame->m_bIsGetPointingMode = false;
+					CItem* pPointCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_iPointCommandType]->m_sIDnum);
+					if (pPointCfg != nullptr &&
+						pPointCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
+					{
+						m_pGame->PointCommandHandler(0, 0, cItemID);
+						m_pGame->m_bIsGetPointingMode = false;
+						bHandledPointing = true;
+					}
 				}
-				else
+				if (!bHandledPointing)
 				{
 					// Select the item for dragging
 					CursorTarget::SetSelection(SelectedObjectType::Item, cItemID,
@@ -522,6 +542,9 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 	// If item was equipped, unequip it
 	if (m_pGame->m_bIsItemEquipped[cSelectedID])
 	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cSelectedID]->m_sIDnum);
+		if (pCfg == nullptr) return false;
+
 		char cStr1[64], cStr2[64], cStr3[64];
 		char cTxt[120];
 		m_pGame->GetItemName(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
@@ -538,8 +561,8 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 		}
 
 		// Remove Angelic Stats
-		if (m_pGame->m_pItemList[cSelectedID]->m_cEquipPos >= 11 &&
-			m_pGame->m_pItemList[cSelectedID]->m_cItemType == 1)
+		if (pCfg->m_cEquipPos >= 11 &&
+			pCfg->m_cItemType == 1)
 		{
 			if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 				m_pGame->m_pPlayer->m_iAngelicStr = 0;
@@ -553,7 +576,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, cSelectedID, 0, 0, 0);
 		m_pGame->m_bIsItemEquipped[cSelectedID] = false;
-		m_pGame->m_sItemEquipmentStatus[m_pGame->m_pItemList[cSelectedID]->m_cEquipPos] = -1;
+		m_pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 	}
 
 	return true;

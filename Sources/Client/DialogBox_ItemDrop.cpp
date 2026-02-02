@@ -91,13 +91,14 @@ bool DialogBox_ItemDrop::OnClick(short msX, short msY)
 	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
 	{
 		Info().cMode = 3;
-		bSendCommand(MSGID_COMMAND_COMMON,
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sView]->m_sIDnum);
+		if (pCfg) bSendCommand(MSGID_COMMAND_COMMON,
 			DEF_COMMONTYPE_ITEMDROP,
 			0,
 			Info().sView,
 			1,
 			0,
-			m_pGame->m_pItemList[Info().sView]->m_cName);
+			pCfg->m_cName);
 		DisableThisDialog();
 		return true;
 	}

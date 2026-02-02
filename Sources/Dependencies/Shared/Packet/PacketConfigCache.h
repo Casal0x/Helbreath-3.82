@@ -30,6 +30,13 @@ namespace net {
 		uint8_t magicCacheValid;
 		uint8_t skillCacheValid;
 	};
+
+	struct HB_PACKED PacketNotifyConfigReload {
+		PacketHeader header;
+		uint8_t reloadItems;
+		uint8_t reloadMagic;
+		uint8_t reloadSkills;
+	};
 	HB_PACK_END
 }
 }

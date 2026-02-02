@@ -9,6 +9,7 @@
 
 #include "ISprite.h"
 #include "PAK.h"
+#include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <string>
@@ -108,6 +109,7 @@ private:
 
     // SFML texture (32-bit RGBA, lazy loaded)
     sf::Texture m_texture;
+    sf::Image m_collisionImage;  // Retained for pixel-perfect collision detection
     bool m_textureLoaded;
 
     // Alpha effect

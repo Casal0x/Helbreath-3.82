@@ -338,6 +338,14 @@ public:
 	//bool _bDecodeNpcItemConfigFileContents(char * pData, uint32_t dwMsgSize);
 	void GlobalUpdateConfigs(char cConfigType);
 	void LocalUpdateConfigs(char cConfigType);
+
+	void ReloadItemConfigs();
+	void ReloadMagicConfigs();
+	void ReloadSkillConfigs();
+	void ReloadNpcConfigs();
+	void SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills);
+	void PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills);
+
 	//void UpdateHeldenianStatus();
 	void GlobalEndHeldenianMode();
 	void LocalEndHeldenianMode();

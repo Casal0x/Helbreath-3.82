@@ -25,8 +25,9 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((i + Info().sView) < m_pGame->totalItemRepair)
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_stRepairAll[i + Info().sView].index]->m_sIDnum);
 			wsprintf(cTxt, "%s - Cost: %d",
-				m_pGame->m_pItemList[m_pGame->m_stRepairAll[i + Info().sView].index]->m_cName,
+				pCfg ? pCfg->m_cName : "Unknown",
 				m_pGame->m_stRepairAll[i + Info().sView].price);
 
 			PutString(sX + 30, sY + 45 + i * 15, cTxt, GameColors::UIBlack.ToColorRef());

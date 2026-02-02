@@ -157,9 +157,11 @@ bool DialogBox_SellOrRepair::OnClick(short msX, short msY)
 
 	switch (Info().cMode) {
 	case 1:
+	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
 			// Sell
-			m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEMCONFIRM, 0, Info().sV1, Info().sV4, Info().sV3, m_pGame->m_pItemList[Info().sV1]->m_cName);
+			if (pCfg) m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEMCONFIRM, 0, Info().sV1, Info().sV4, Info().sV3, pCfg->m_cName);
 			Info().cMode = 3;
 			return true;
 		}
@@ -170,11 +172,14 @@ bool DialogBox_SellOrRepair::OnClick(short msX, short msY)
 			return true;
 		}
 		break;
+	}
 
 	case 2:
+	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
 			// Repair
-			m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEMCONFIRM, 0, Info().sV1, 0, 0, m_pGame->m_pItemList[Info().sV1]->m_cName);
+			if (pCfg) m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEMCONFIRM, 0, Info().sV1, 0, 0, pCfg->m_cName);
 			Info().cMode = 4;
 			return true;
 		}
@@ -185,6 +190,7 @@ bool DialogBox_SellOrRepair::OnClick(short msX, short msY)
 			return true;
 		}
 		break;
+	}
 	}
 
 	return false;

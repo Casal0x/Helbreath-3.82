@@ -82,7 +82,11 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	std::memset(cStr2, 0, sizeof(cStr2));
 	std::memset(cStr3, 0, sizeof(cStr3));
 
-	m_pGame->GetItemName(m_pGame->m_pBankList[iItemIndex].get(), cStr1, cStr2, cStr3);
+	CItem* pItem = m_pGame->m_pBankList[iItemIndex].get();
+	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
+	if (pCfg == nullptr) return;
+
+	m_pGame->GetItemName(pItem, cStr1, cStr2, cStr3);
 
 	if (m_pGame->m_bIsSpecial)
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
@@ -99,38 +103,38 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	}
 
 	// Level limit
-	if (m_pGame->m_pBankList[iItemIndex]->m_sLevelLimit != 0 &&
-		m_pGame->m_pBankList[iItemIndex]->m_dwAttribute & 0x00000001) {
+	if (pCfg->m_sLevelLimit != 0 &&
+		pItem->m_dwAttribute & 0x00000001) {
 		iLoc += 15;
 		char buf[128];
-		snprintf(buf, sizeof(buf), "%s: %d", DRAW_DIALOGBOX_SHOP24, m_pGame->m_pBankList[iItemIndex]->m_sLevelLimit);
+		snprintf(buf, sizeof(buf), "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 	}
 
 	// Weight for equipment
-	if ((m_pGame->m_pBankList[iItemIndex]->m_cEquipPos != DEF_EQUIPPOS_NONE) &&
-		(m_pGame->m_pBankList[iItemIndex]->m_wWeight >= 1100)) {
+	if ((pCfg->m_cEquipPos != DEF_EQUIPPOS_NONE) &&
+		(pCfg->m_wWeight >= 1100)) {
 		iLoc += 15;
 		int _wWeight = 0;
-		if (m_pGame->m_pBankList[iItemIndex]->m_wWeight % 100) _wWeight = 1;
+		if (pCfg->m_wWeight % 100) _wWeight = 1;
 		char buf[128];
-		snprintf(buf, sizeof(buf), DRAW_DIALOGBOX_SHOP15, m_pGame->m_pBankList[iItemIndex]->m_wWeight / 100 + _wWeight);
+		snprintf(buf, sizeof(buf), DRAW_DIALOGBOX_SHOP15, pCfg->m_wWeight / 100 + _wWeight);
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
 	}
 
 	// Draw item sprite
-	char cItemColor = m_pGame->m_pBankList[iItemIndex]->m_cItemColor;
+	char cItemColor = pItem->m_cItemColor;
 	if (cItemColor == 0) {
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame);
 	}
 	else {
-		if ((m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-			(m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-			(m_pGame->m_pBankList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+		if ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
+			(pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
+			(pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
 		}
 		else {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pBankList[iItemIndex]->m_sSprite]->Draw(sX + 60, sY + 68, m_pGame->m_pBankList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
 		}
 	}
 }
@@ -249,8 +253,11 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 	}
 
 	// Stackable items - open quantity dialog
-	if (((m_pGame->m_pItemList[giveInfo.sV1]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-		(m_pGame->m_pItemList[giveInfo.sV1]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[giveInfo.sV1]->m_sIDnum);
+	if (pCfg == nullptr) return false;
+
+	if (((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+		(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
 		(m_pGame->m_pItemList[giveInfo.sV1]->m_dwCount > 1))
 	{
 		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);
@@ -272,7 +279,7 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 			AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 		else
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, giveInfo.sV1, 1,
-				giveInfo.sV5, giveInfo.sV6, m_pGame->m_pItemList[giveInfo.sV1]->m_cName, giveInfo.sV4);
+				giveInfo.sV5, giveInfo.sV6, pCfg->m_cName, giveInfo.sV4);
 	}
 
 	return true;

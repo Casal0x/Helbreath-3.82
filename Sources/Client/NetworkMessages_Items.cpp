@@ -78,27 +78,16 @@ namespace NetworkMessageHandlers {
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
-				memcpy(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1);
+				pGame->m_pItemList[i]->m_sIDnum = sItemID;
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
 				pGame->m_pItemList[i]->m_sY = nY;
 				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
-				pGame->m_pItemList[i]->m_cItemType = cItemType;
-				pGame->m_pItemList[i]->m_cEquipPos = cEquipPos;
 				pGame->m_bIsItemDisabled[i] = false;
 				pGame->m_bIsItemEquipped[i] = false;
-				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
-				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wWeight = wWeight;
-				pGame->m_pItemList[i]->m_sSprite = sSprite;
-				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
-				pGame->m_pItemList[i]->m_sIDnum = sItemID;
-				if (sItemID > 0 && pGame->m_pItemConfigList[sItemID] != nullptr) {
-					pGame->m_pItemList[i]->m_wMaxLifeSpan = pGame->m_pItemConfigList[sItemID]->m_wMaxLifeSpan;
-				}
-				pGame->m_pItemList[i]->PopulateDisplayName();
+				pGame->m_pItemList[i]->m_dwAttribute = 0;
 
 				for (j = 0; j < DEF_MAXITEMS; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
@@ -188,29 +177,17 @@ namespace NetworkMessageHandlers {
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
-				memcpy(pGame->m_pItemList[i]->m_cName, cName, DEF_ITEMNAME - 1);
+				pGame->m_pItemList[i]->m_sIDnum = sItemID;
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
 				pGame->m_pItemList[i]->m_sY = nY;
 				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
-				pGame->m_pItemList[i]->m_cItemType = cItemType;
-				pGame->m_pItemList[i]->m_cEquipPos = cEquipPos;
 				pGame->m_bIsItemDisabled[i] = false;
 				pGame->m_bIsItemEquipped[i] = false;
-				pGame->m_pItemList[i]->m_sLevelLimit = sLevelLimit;
-				pGame->m_pItemList[i]->m_cGenderLimit = cGenderLimit;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
-				pGame->m_pItemList[i]->m_wWeight = wWeight;
-				pGame->m_pItemList[i]->m_sSprite = sSprite;
-				pGame->m_pItemList[i]->m_sSpriteFrame = sSpriteFrame;
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
 				pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
 				pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
-				pGame->m_pItemList[i]->m_sIDnum = sItemID;
-				if (sItemID > 0 && pGame->m_pItemConfigList[sItemID] != nullptr) {
-					pGame->m_pItemList[i]->m_wMaxLifeSpan = pGame->m_pItemConfigList[sItemID]->m_wMaxLifeSpan;
-				}
-				pGame->m_pItemList[i]->PopulateDisplayName();
 
 				pGame->_bCheckBuildItemStatus();
 
@@ -308,26 +285,28 @@ namespace NetworkMessageHandlers {
 		char cStr1[64], cStr2[64], cStr3[64];
 		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 
+		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
+
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
 			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 			pGame->AddEventList(cTxt, 10);
 
-			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
+			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
 
 		std::memset(cTxt, 0, sizeof(cTxt));
-		if ((pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-			(pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_ARROW)) {
+		if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+			(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))) {
 			wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, cStr1);
 		}
-		else {
-			if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE) {
+		else if (pCfg) {
+			if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}
 			}
-			else if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_EAT) {
+			else if (pCfg->m_cItemType == DEF_ITEMTYPE_EAT) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 1) && (pGame->m_pPlayer->m_sPlayerType <= 3))
@@ -336,7 +315,7 @@ namespace NetworkMessageHandlers {
 						pGame->PlaySound('C', 20, 0);
 				}
 			}
-			else if (pGame->m_pItemList[sItemIndex]->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST) {
+			else if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}
@@ -412,7 +391,8 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[sItemIndex]->m_cName);
+		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
+		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
@@ -420,7 +400,7 @@ namespace NetworkMessageHandlers {
 			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
 			pGame->AddEventList(cTxt, 10);
 
-			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
+			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
 		if (cName[0] == 0) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cStr1);
@@ -645,7 +625,8 @@ namespace NetworkMessageHandlers {
 		const auto iAmount = static_cast<int>(pkt->amount);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[wItemIndex]->m_cName);
+		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
+		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 		wsprintf(cTxt, NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
@@ -669,7 +650,8 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, pGame->m_pItemList[wItemIndex]->m_cName);
+		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
+		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
@@ -909,15 +891,11 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyGizonItemChange));
 		if (!pkt) return;
 		sV1 = static_cast<short>(pkt->item_index);
-		pGame->m_pItemList[sV1]->m_cItemType = pkt->item_type;
+		if (pkt->item_id > 0) pGame->m_pItemList[sV1]->m_sIDnum = pkt->item_id;
 		pGame->m_pItemList[sV1]->m_wCurLifeSpan = pkt->cur_lifespan;
-		pGame->m_pItemList[sV1]->m_sSprite = pkt->sprite;
-		pGame->m_pItemList[sV1]->m_sSpriteFrame = pkt->sprite_frame;
 		pGame->m_pItemList[sV1]->m_cItemColor = pkt->item_color;
 		pGame->m_pItemList[sV1]->m_sItemSpecEffectValue2 = pkt->spec_value2;
 		pGame->m_pItemList[sV1]->m_dwAttribute = pkt->attribute;
-		std::memset(pGame->m_pItemList[sV1]->m_cName, 0, sizeof(pGame->m_pItemList[sV1]->m_cName));
-		memcpy(pGame->m_pItemList[sV1]->m_cName, pkt->item_name, sizeof(pkt->item_name));
 		
 		if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == true)
 		{

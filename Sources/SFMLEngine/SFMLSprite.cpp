@@ -72,23 +72,22 @@ bool SFMLSprite::CreateTexture()
         return false;
 
     // Load image data - SFML handles PNG natively with alpha channel support
-    sf::Image tempImage;
-    if (!tempImage.loadFromMemory(m_imageData.data(), m_imageData.size()))
+    if (!m_collisionImage.loadFromMemory(m_imageData.data(), m_imageData.size()))
         return false;
 
     // Get dimensions from loaded image
-    sf::Vector2u size = tempImage.getSize();
+    sf::Vector2u size = m_collisionImage.getSize();
     m_bitmapWidth = static_cast<uint16_t>(size.x);
     m_bitmapHeight = static_cast<uint16_t>(size.y);
 
     // Create texture from image
-    if (!m_texture.loadFromImage(tempImage))
+    if (!m_texture.loadFromImage(m_collisionImage))
         return false;
 
     // Disable smooth filtering to prevent edge artifacts and ensure crisp pixel art
     m_texture.setSmooth(false);
 
-    // Clear PNG data to free memory - we have the texture now
+    // Clear PNG data to free memory - we have the texture and collision image now
     m_imageData.clear();
     m_imageData.shrink_to_fit();
 
@@ -663,8 +662,21 @@ bool SFMLSprite::CheckCollision(int spriteX, int spriteY, int frame, int pointX,
     int right = left + frameRect.width;
     int bottom = top + frameRect.height;
 
-    // Bounding box check (no pixel-perfect collision to save memory)
-    return (pointX >= left && pointX < right && pointY >= top && pointY < bottom);
+    // Bounding box check
+    if (pointX < left || pointX >= right || pointY < top || pointY >= bottom)
+        return false;
+
+    // Pixel-perfect check using cached image alpha channel
+    if (m_collisionImage.getSize().x == 0)
+        return true; // Fallback to bounding box if image not available
+
+    int localX = pointX - left;
+    int localY = pointY - top;
+    sf::Color pixel = m_collisionImage.getPixel({
+        static_cast<unsigned int>(frameRect.x + localX),
+        static_cast<unsigned int>(frameRect.y + localY)
+    });
+    return pixel.a > 0;
 }
 
 void SFMLSprite::Preload()

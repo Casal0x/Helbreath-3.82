@@ -179,10 +179,16 @@ void Screen_OnGame::on_update()
                                 break;
                             case 1002:
                                 if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) m_pGame->AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
-                                else m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1, iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6, m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1]->m_cName, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+                                else {
+                                    CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1]->m_sIDnum);
+                                    if (pCfg) m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1, iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6, pCfg->m_cName, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
+                                }
                                 break;
                             default:
-                                m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, (char)(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName);
+                            {
+                                CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_sIDnum);
+                                if (pCfg) m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, (char)(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView), iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV2, pCfg->m_cName);
+                            }
                                 break;
                             }
                             m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
@@ -192,7 +198,8 @@ void Screen_OnGame::on_update()
                     else {
                         if (iAmount <= 0) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME8, 10);
                         else {
-                            m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, iAmount, 0, m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_cName);
+                            CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView]->m_sIDnum);
+                            if (pCfg) m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, iAmount, 0, pCfg->m_cName);
                             m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = true;
                         }
                     }
@@ -450,8 +457,10 @@ void Screen_OnGame::on_render()
     m_pGame->ShowEventList(m_pGame->m_dwCurTime);
 
     // Item tooltip on cursor
+    short iTooltipItemID = CursorTarget::GetSelectedID();
     if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
-        (m_pGame->m_pItemList[CursorTarget::GetSelectedID()] != 0))
+        (iTooltipItemID >= 0) && (iTooltipItemID < DEF_MAXITEMS) &&
+        (m_pGame->m_pItemList[iTooltipItemID] != 0))
     {
         RenderItemTooltip();
     }
@@ -515,21 +524,24 @@ void Screen_OnGame::RenderItemTooltip()
 {
 	short target_id = CursorTarget::GetSelectedID();
     CItem* item = m_pGame->m_pItemList[target_id].get();
+    CItem* pCfg = m_pGame->GetItemConfig(item->m_sIDnum);
+    if (!pCfg) return;
+
     char cItemColor = item->m_cItemColor;
-    bool is_hand_item = item->m_cEquipPos == DEF_EQUIPPOS_LHAND || item->m_cEquipPos == DEF_EQUIPPOS_RHAND || item->m_cEquipPos == DEF_EQUIPPOS_TWOHAND;
-    size_t item_sprite_index = DEF_SPRID_ITEMPACK_PIVOTPOINT + item->m_sSprite;
+    bool is_hand_item = pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND || pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND || pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND;
+    size_t item_sprite_index = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
     SpriteLib::ISprite* sprite = m_pGame->m_pSprite[item_sprite_index].get();
-    bool is_equippable = item->IsArmor() || item->IsWeapon() || item->IsAccessory();
+    bool is_equippable = pCfg->IsArmor() || pCfg->IsWeapon() || pCfg->IsAccessory();
 
     if (cItemColor != 0) {
         if (is_hand_item) {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
         }
         else {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
         }
     }
-    else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), item->m_sSpriteFrame);
+    else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame);
 
     char cStr1[64], cStr2[64], cStr3[64];
     int iLoc;
@@ -542,26 +554,26 @@ void Screen_OnGame::RenderItemTooltip()
     }
     if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15; }
     if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15; }
-    if ((item->m_sLevelLimit != 0) && item->IsCustomMade()) {
-        wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, item->m_sLevelLimit);
+    if ((pCfg->m_sLevelLimit != 0) && item->IsCustomMade()) {
+        wsprintf(m_pGame->G_cTxt, "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
         TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
     }
     if (is_equippable) {
         // Weight below 1100 is not displayed as a strength requirement
-        if (item->m_wWeight >= 1100)
+        if (pCfg->m_wWeight >= 1100)
         {
             // Display weight, whatever the weight calculation is, divide by 100, and round up
-            int _wWeight = static_cast<int>(std::ceil(item->m_wWeight / 100.0f));
+            int _wWeight = static_cast<int>(std::ceil(pCfg->m_wWeight / 100.0f));
             wsprintf(m_pGame->G_cTxt, DRAW_DIALOGBOX_SHOP15, _wWeight);
             TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
         }
 
         // Display durability
-        wsprintf(m_pGame->G_cTxt, UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, item->m_wMaxLifeSpan);
+        wsprintf(m_pGame->G_cTxt, UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, pCfg->m_wMaxLifeSpan);
         TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
     }
 
-    if (item->IsStackable()) {
+    if (pCfg->IsStackable()) {
         auto count = std::count_if(m_pGame->m_pItemList.begin(), m_pGame->m_pItemList.end(),
             [item](const std::unique_ptr<CItem>& otherItem) {
                 return otherItem != nullptr && otherItem->m_sIDnum == item->m_sIDnum;

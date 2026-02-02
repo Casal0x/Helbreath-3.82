@@ -115,8 +115,9 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 
-	if ((m_pGame->m_pItemList[Info().sV1]->m_cItemType != DEF_ITEMTYPE_CONSUME) &&
-		(m_pGame->m_pItemList[Info().sV1]->m_cItemType != DEF_ITEMTYPE_ARROW))
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+	if (pCfg && (pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME) &&
+		(pCfg->m_cItemType != DEF_ITEMTYPE_ARROW))
 	{
 		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
 	}
@@ -296,11 +297,13 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		break;
 
 	case 1: // On other player
+	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+			if ((absX <= 4) && (absY <= 4) && pCfg)
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
 			DisableThisDialog();
 			return true;
@@ -308,30 +311,36 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		else if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
-			if ((absX <= 4) && (absY <= 4))
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+			if ((absX <= 4) && (absY <= 4) && pCfg)
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY8, 10);
 			DisableThisDialog();
 			return true;
 		}
 		break;
+	}
 
 	case 2: // Item on Shop/BS
+	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEM, 0, Info().sV1, Info().sV2, Info().sV3, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+			if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEM, 0, Info().sV1, Info().sV2, Info().sV3, pCfg->m_cName, Info().sV4);
 			DisableThisDialog();
 			return true;
 		}
 		else if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
 			if (Info().sV3 == 1) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, Info().sV1, Info().sV2, 0, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+				if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, Info().sV1, Info().sV2, 0, pCfg->m_cName, Info().sV4);
 				DisableThisDialog();
 				return true;
 			}
 		}
 		break;
+	}
 
 	case 3: // Put item in the WH
+	{
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX > sX + 25) && (msX < sX + 105) && (msY > sY + 55) && (msY < sY + 70)) {
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
@@ -339,13 +348,14 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
 					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 				}
-				else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, m_pGame->m_pItemList[Info().sV1]->m_cName, Info().sV4);
+				else if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			}
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
 			DisableThisDialog();
 			return true;
 		}
 		break;
+	}
 
 	case 4: // talk to npc or Unicorn
 		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {

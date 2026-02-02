@@ -46,29 +46,12 @@ namespace NetworkMessageHandlers {
 
 		if (pGame->m_pBankList[cIndex] == 0) {
 			pGame->m_pBankList[cIndex] = std::make_unique<CItem>();
-
-			memcpy(pGame->m_pBankList[cIndex]->m_cName, cName, DEF_ITEMNAME - 1);
+			pGame->m_pBankList[cIndex]->m_sIDnum = static_cast<short>(pkt->item_id);
 			pGame->m_pBankList[cIndex]->m_dwCount = dwCount;
-
-			pGame->m_pBankList[cIndex]->m_cItemType = cItemType;
-			pGame->m_pBankList[cIndex]->m_cEquipPos = cEquipPos;
-
-			pGame->m_pBankList[cIndex]->m_sLevelLimit = sLevelLimit;
-			pGame->m_pBankList[cIndex]->m_cGenderLimit = cGenderLimit;
 			pGame->m_pBankList[cIndex]->m_wCurLifeSpan = wCurLifeSpan;
-			pGame->m_pBankList[cIndex]->m_wWeight = wWeight;
-			pGame->m_pBankList[cIndex]->m_sSprite = sSprite;
-			pGame->m_pBankList[cIndex]->m_sSpriteFrame = sSpriteFrame;
 			pGame->m_pBankList[cIndex]->m_cItemColor = cItemColor;
-			pGame->m_pBankList[cIndex]->m_sItemEffectValue2 = sItemEffectValue2;
 			pGame->m_pBankList[cIndex]->m_dwAttribute = dwAttribute;
 			pGame->m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
-			pGame->m_pBankList[cIndex]->m_sIDnum = static_cast<short>(pkt->item_id);
-			// Look up static properties from item config table
-			if (pkt->item_id > 0 && pGame->m_pItemConfigList[pkt->item_id] != nullptr) {
-				pGame->m_pBankList[cIndex]->m_wMaxLifeSpan = pGame->m_pItemConfigList[pkt->item_id]->m_wMaxLifeSpan;
-			}
-			pGame->m_pBankList[cIndex]->PopulateDisplayName();
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMTOBANK3, cStr1);

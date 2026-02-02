@@ -112,29 +112,41 @@ void DialogBox_Manufacture::DrawAlchemyWaiting(short sX, short sY, short msX, sh
 
 	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX, sY, 1);
 
-	if (Info().sV1 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV1 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV2 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV2 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV3 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV3 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV4 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV4 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV5 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV5 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV6 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV6 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
 		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue.r, GameColors::BmpBtnBlue.g, GameColors::BmpBtnBlue.b));
@@ -149,29 +161,41 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 
 	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX, sY, 1);
 
-	if (Info().sV1 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV1 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV2 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV2 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV3 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV3 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV4 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV4 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV5 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV5 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
-	if (Info().sV6 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	if (Info().sV6 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
 
 	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed.r, GameColors::BmpBtnRed.g, GameColors::BmpBtnRed.b));
 
@@ -336,18 +360,30 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		}
 
 		// Draw items in slots
-		if (Info().sV1 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame);
-		if (Info().sV2 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame);
-		if (Info().sV3 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame);
-		if (Info().sV4 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame);
-		if (Info().sV5 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame);
-		if (Info().sV6 != -1)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
+		if (Info().sV1 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+		}
+		if (Info().sV2 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+		}
+		if (Info().sV3 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+		}
+		if (Info().sV4 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+		}
+		if (Info().sV5 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+		}
+		if (Info().sV6 != -1) {
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+			if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+		}
 
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG15, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG16, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
@@ -435,18 +471,30 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 	}
 
 	// Draw items in slots
-	if (Info().sV1 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame);
-	if (Info().sV2 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame);
-	if (Info().sV3 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 55 + 180, m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame);
-	if (Info().sV4 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame);
-	if (Info().sV5 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame);
-	if (Info().sV6 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
+	if (Info().sV1 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV2 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV3 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 55 + 180, pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV4 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV5 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV6 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 90 + 30 + 13, sY + iAdjY + 100 + 180, pCfg->m_sSpriteFrame);
+	}
 
 	PutString(sX + iAdjX + 33, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG29, GameColors::UILabel.ToColorRef());
 	PutString(sX + iAdjX + 33, sY + iAdjY + 245 + 75, DRAW_DIALOGBOX_SKILLDLG30, GameColors::UILabel.ToColorRef());
@@ -513,18 +561,30 @@ void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, s
 
 	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_CRAFTING]->Draw(sX, sY, 0);
 
-	if (Info().sV1 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame);
-	if (Info().sV2 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 40 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame);
-	if (Info().sV3 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 65 + 90 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame);
-	if (Info().sV4 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 65 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame);
-	if (Info().sV5 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 115 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame);
-	if (Info().sV6 != -1)
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
+	if (Info().sV1 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV2 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 40 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV3 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 90 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV4 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV5 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 115 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
+	if (Info().sV6 != -1) {
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+	}
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
 		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue.r, GameColors::BmpBtnBlue.g, GameColors::BmpBtnBlue.b));
@@ -541,39 +601,57 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 
 	if (Info().sV1 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV1]->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV1]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV1]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV1]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 	if (Info().sV2 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV2]->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 40 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV2]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV2]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV2]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 40 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 	if (Info().sV3 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV3]->m_sSprite]->Draw(sX + iAdjX + 65 + 90 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV3]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV3]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV3]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 90 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 	if (Info().sV4 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV4]->m_sSprite]->Draw(sX + iAdjX + 65 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV4]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV4]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV4]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 	if (Info().sV5 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV5]->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 115 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV5]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV5]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV5]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 115 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 	if (Info().sV6 != -1)
 	{
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[Info().sV6]->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), m_pGame->m_pItemList[Info().sV6]->m_sSpriteFrame);
-		if ((m_pGame->m_pItemList[Info().sV6]->m_cItemType == DEF_ITEMTYPE_EQUIP) && (m_pGame->m_pItemList[Info().sV6]->m_cEquipPos == DEF_EQUIPPOS_NECK))
-			m_pGame->m_iContributionPrice = 10;
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
+		if (pCfg) {
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
+			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+				m_pGame->m_iContributionPrice = 10;
+		}
 	}
 
 	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed.r, GameColors::BmpBtnRed.g, GameColors::BmpBtnRed.b));
@@ -710,8 +788,11 @@ bool DialogBox_Manufacture::CheckSlotItemClick(int slotIndex, int itemIdx, int d
 	if (itemIdx == -1 || m_pGame->m_pItemList[itemIdx] == nullptr)
 		return false;
 
-	int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[itemIdx]->m_sSprite;
-	m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, m_pGame->m_pItemList[itemIdx]->m_sSpriteFrame);
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
+	if (!pCfg) return false;
+
+	int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
+	m_pGame->m_pSprite[spriteIdx]->CalculateBounds(drawX, drawY, pCfg->m_sSpriteFrame);
 	auto bounds = m_pGame->m_pSprite[spriteIdx]->GetBoundRect();
 
 	if (msX > bounds.left && msX < bounds.right && msY > bounds.top && msY < bounds.bottom)
@@ -828,7 +909,8 @@ bool DialogBox_Manufacture::TryAddItemToSlot(char cItemID, bool updateBuildStatu
 				info.cStr[4] = (char)m_pGame->_bCheckCurrentBuildItemStatus();
 
 			// Only disable non-stackable items (stackable consumables can be added multiple times)
-			if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME ||
+			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+			if (!pCfg || pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME ||
 				m_pGame->m_pItemList[cItemID]->m_dwCount <= 1)
 			{
 				m_pGame->m_bIsItemDisabled[cItemID] = true;
@@ -846,6 +928,8 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	char cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pGame->m_pItemList[cItemID] == nullptr) return false;
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+	if (!pCfg) return false;
 
 	// Check if other dialogs are blocking
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal))
@@ -872,7 +956,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 1: // Alchemy
 	{
 		// Check consumable item count - can't add if all instances are already used
-		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		if (pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
 		{
 			int iConsumeNum = 0;
 			if (info.sV1 == cItemID) iConsumeNum++;
@@ -885,9 +969,9 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 		}
 
 		// Only allow EAT, CONSUME, or NONE item types for alchemy
-		if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_EAT &&
-			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME &&
-			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_NONE)
+		if (pCfg->m_cItemType != DEF_ITEMTYPE_EAT &&
+			pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME &&
+			pCfg->m_cItemType != DEF_ITEMTYPE_NONE)
 		{
 			return false;
 		}
@@ -900,7 +984,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 4: // Manufacture
 	{
 		// Check consumable item count
-		if (m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		if (pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
 		{
 			int iConsumeNum = 0;
 			if (info.sV1 == cItemID) iConsumeNum++;
@@ -920,10 +1004,10 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 7: // Crafting
 	{
 		// Only allow specific item types for crafting
-		if (m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_NONE &&      // Merien Stone
-			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_EQUIP &&     // Necklaces, Rings
-			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_CONSUME &&   // Stones
-			m_pGame->m_pItemList[cItemID]->m_cItemType != DEF_ITEMTYPE_MATERIAL)    // Craftwares
+		if (pCfg->m_cItemType != DEF_ITEMTYPE_NONE &&      // Merien Stone
+			pCfg->m_cItemType != DEF_ITEMTYPE_EQUIP &&     // Necklaces, Rings
+			pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME &&   // Stones
+			pCfg->m_cItemType != DEF_ITEMTYPE_MATERIAL)    // Craftwares
 		{
 			return false;
 		}

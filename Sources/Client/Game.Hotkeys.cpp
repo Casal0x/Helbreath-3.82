@@ -244,24 +244,34 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 		return;
 	}
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 1))
+	{
+		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 1))
+			{
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				m_bIsItemDisabled[i] = true;
+				m_bItemUsingStatus = true;
+				return;
+			}
 		}
+	}
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 2))
+	{
+		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 2))
+			{
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				m_bIsItemDisabled[i] = true;
+				m_bItemUsingStatus = true;
+				return;
+			}
 		}
+	}
 }
 
 void CGame::Hotkey_Simple_UseManaPotion()
@@ -280,24 +290,34 @@ void CGame::Hotkey_Simple_UseManaPotion()
 	}
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 3))
+	{
+		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 3))
+			{
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				m_bIsItemDisabled[i] = true;
+				m_bItemUsingStatus = true;
+				return;
+			}
 		}
+	}
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
-		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true) &&
-			(m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 4))
+	{
+		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
-			m_bIsItemDisabled[i] = true;
-			m_bItemUsingStatus = true;
-			return;
+			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
+			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 4))
+			{
+				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				m_bIsItemDisabled[i] = true;
+				m_bItemUsingStatus = true;
+				return;
+			}
 		}
+	}
 }
 
 void CGame::Hotkey_Simple_LoadBackupChat()

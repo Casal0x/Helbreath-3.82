@@ -256,8 +256,9 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	}
 
 	// Stackable items - open quantity dialog
-	if (((m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-		(m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+	if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
+		(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
 		(m_pGame->m_pItemList[cItemID]->m_dwCount > 1))
 	{
 		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);

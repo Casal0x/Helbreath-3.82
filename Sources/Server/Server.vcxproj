@@ -188,6 +188,7 @@
     <ClInclude Include="CmdBroadcast.h" />
     <ClInclude Include="CmdShowChat.h" />
     <ClInclude Include="CmdGiveItem.h" />
+    <ClInclude Include="CmdReload.h" />
     <ClInclude Include="GameChatCommand.h" />
     <ClInclude Include="GameCmdWhisper.h" />
     <ClInclude Include="PasswordHash.h" />
@@ -217,6 +218,7 @@
     <ClCompile Include="CmdBroadcast.cpp" />
     <ClCompile Include="CmdShowChat.cpp" />
     <ClCompile Include="CmdGiveItem.cpp" />
+    <ClCompile Include="CmdReload.cpp" />
     <ClCompile Include="GameChatCommand.cpp" />
     <ClCompile Include="GameCmdWhisper.cpp" />
   </ItemGroup>

@@ -140,6 +140,7 @@ namespace net {
 		uint8_t spec_value2;
 		uint32_t attribute;
 		char item_name[DEF_ITEMNAME - 1];
+		int16_t item_id;
 	};
 
 	struct HB_PACKED PacketNotifyTCLoc {

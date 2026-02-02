@@ -59,8 +59,9 @@ int DialogBox_ItemUpgrade::CalculateUpgradeCost(int iItemIndex)
     iValue = iValue * (iValue + 6) / 8 + 2;
 
     // Special handling for Angelic Pendants
-    if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos >= 11)
-        && (m_pGame->m_pItemList[iItemIndex]->m_cItemType == 1))
+    CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
+    if (pCfg && (pCfg->m_cEquipPos >= 11)
+        && (pCfg->m_cItemType == 1))
     {
         short sID = m_pGame->m_pItemList[iItemIndex]->m_sIDnum;
         if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
@@ -90,15 +91,16 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
     char cStr1[120], cStr2[120], cStr3[120];
 
     char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
-    if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-        || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-        || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
+    CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
+    if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
+        || (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
+        || (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
     }
-    else
+    else if (pCfg)
     {
-        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+        m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
     }
 
     std::memset(cStr1, 0, sizeof(cStr1));
@@ -170,21 +172,22 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
     {
         m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
         char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
+        CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
 
-        if ((m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-            || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-            || (m_pGame->m_pItemList[iItemIndex]->m_cEquipPos == DEF_EQUIPPOS_TWOHAND))
+        if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
+            || (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
+            || (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
         }
-        else
+        else if (pCfg)
         {
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
         }
 
         // Flickering effect
-        if ((rand() % 5) == 0)
-            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[iItemIndex]->m_sSprite]->Draw(sX + 134, sY + 182, m_pGame->m_pItemList[iItemIndex]->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
+        if (pCfg && (rand() % 5) == 0)
+            m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
 
         char cStr1[120], cStr2[120], cStr3[120];
         std::memset(cStr1, 0, sizeof(cStr1));
@@ -504,7 +507,8 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 	char cItemID = (char)CursorTarget::GetSelectedID();
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
-	if (m_pGame->m_pItemList[cItemID]->m_cEquipPos == DEF_EQUIPPOS_NONE) return false;
+	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+	if (!pCfg || pCfg->m_cEquipPos == DEF_EQUIPPOS_NONE) return false;
 
 	switch (Info().cMode) {
 	case 1:

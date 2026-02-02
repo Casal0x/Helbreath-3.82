@@ -1,5 +1,14 @@
 #pragma once
 #include "IDialogBox.h"
+#include "Item/ItemEnums.h"
+
+struct EquipSlotLayout
+{
+	hb::item::EquipPos equipPos;
+	int offsetX;
+	int offsetY;
+	bool useWeaponColors;
+};
 
 class DialogBox_Character : public IDialogBox
 {
@@ -16,7 +25,7 @@ public:
 private:
 	// Helper methods
 	void DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus);
-	char DrawEquippedItem(int equipPos, int drawX, int drawY, short msX, short msY,
+	char DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY, short msX, short msY,
 		const char* cEquipPoiStatus, bool useWeaponColors, int spriteOffset = 0);
 	void DrawHoverButton(int sX, int sY, int btnX, int btnY,
 		short msX, short msY, int hoverFrame, int normalFrame);
@@ -25,12 +34,8 @@ private:
 	void DrawFemaleCharacter(short sX, short sY, short msX, short msY,
 		const char* cEquipPoiStatus, char& cCollison);
 
-	// Press/collision helpers
-	bool CheckEquipSlotCollision(int equipPos, int drawX, int drawY, short msX, short msY,
-		const char* cEquipPoiStatus, int spriteOffset = 0);
-
-	// Double-click helpers
-	char GetClickedEquipSlot(int equipPos, int drawX, int drawY, short msX, short msY,
-		const char* cEquipPoiStatus, int spriteOffset = 0);
-	char FindClickedEquipItem(short msX, short msY, short sX, short sY, const char* cEquipPoiStatus);
+	// Shared helpers
+	void BuildEquipStatusArray(char (&cEquipPoiStatus)[DEF_MAXITEMEQUIPPOS]) const;
+	char FindEquipItemAtPoint(short msX, short msY, short sX, short sY,
+		const char* cEquipPoiStatus) const;
 };

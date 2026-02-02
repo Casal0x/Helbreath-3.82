@@ -200,6 +200,7 @@ public:
 	void NoticementHandler(char * pData);
 	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
 	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
+	CItem* GetItemConfig(int iItemID) const;
 	short FindItemIdByName(const char* cItemName);
 	void _LoadGameMsgTextContents();
 	bool _bCheckCurrentBuildItemStatus();

@@ -8752,6 +8752,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		pkt.item_color = static_cast<uint8_t>(sV6);
 		pkt.spec_value2 = static_cast<uint8_t>(sV7);
 		pkt.attribute = sV8;
+		pkt.item_id = static_cast<int16_t>(sV9);
 		if (pString != 0) {
 			memcpy(pkt.item_name, pString, sizeof(pkt.item_name));
 		}
@@ -34319,6 +34320,168 @@ void CGame::LocalUpdateConfigs(char cConfigType)
 	CloseGameConfigDatabase(configDb);
 }
 
+void CGame::ReloadItemConfigs()
+{
+	sqlite3* configDb = nullptr;
+	std::string configDbPath;
+	bool configDbCreated = false;
+	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
+	{
+		PutLogList((char*)"(!) Item config reload FAILED - GameConfigs.db unavailable");
+		return;
+	}
+
+	for (int i = 0; i < DEF_MAXITEMTYPES; i++)
+	{
+		if (m_pItemConfigList[i] != 0)
+		{
+			delete m_pItemConfigList[i];
+			m_pItemConfigList[i] = 0;
+		}
+	}
+
+	if (!LoadItemConfigs(configDb, m_pItemConfigList, DEF_MAXITEMTYPES))
+	{
+		PutLogList((char*)"(!) Item config reload FAILED");
+		CloseGameConfigDatabase(configDb);
+		return;
+	}
+
+	CloseGameConfigDatabase(configDb);
+	ComputeConfigHashes();
+	PutLogList((char*)"(*) Item configs reloaded successfully");
+}
+
+void CGame::ReloadMagicConfigs()
+{
+	sqlite3* configDb = nullptr;
+	std::string configDbPath;
+	bool configDbCreated = false;
+	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
+	{
+		PutLogList((char*)"(!) Magic config reload FAILED - GameConfigs.db unavailable");
+		return;
+	}
+
+	for (int i = 0; i < DEF_MAXMAGICTYPE; i++)
+	{
+		if (m_pMagicConfigList[i] != 0)
+		{
+			delete m_pMagicConfigList[i];
+			m_pMagicConfigList[i] = 0;
+		}
+	}
+
+	if (!LoadMagicConfigs(configDb, this))
+	{
+		PutLogList((char*)"(!) Magic config reload FAILED");
+		CloseGameConfigDatabase(configDb);
+		return;
+	}
+
+	CloseGameConfigDatabase(configDb);
+	ComputeConfigHashes();
+	PutLogList((char*)"(*) Magic configs reloaded successfully");
+}
+
+void CGame::ReloadSkillConfigs()
+{
+	sqlite3* configDb = nullptr;
+	std::string configDbPath;
+	bool configDbCreated = false;
+	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
+	{
+		PutLogList((char*)"(!) Skill config reload FAILED - GameConfigs.db unavailable");
+		return;
+	}
+
+	for (int i = 0; i < DEF_MAXSKILLTYPE; i++)
+	{
+		if (m_pSkillConfigList[i] != 0)
+		{
+			delete m_pSkillConfigList[i];
+			m_pSkillConfigList[i] = 0;
+		}
+	}
+
+	if (!LoadSkillConfigs(configDb, this))
+	{
+		PutLogList((char*)"(!) Skill config reload FAILED");
+		CloseGameConfigDatabase(configDb);
+		return;
+	}
+
+	CloseGameConfigDatabase(configDb);
+	ComputeConfigHashes();
+	PutLogList((char*)"(*) Skill configs reloaded successfully");
+}
+
+void CGame::ReloadNpcConfigs()
+{
+	sqlite3* configDb = nullptr;
+	std::string configDbPath;
+	bool configDbCreated = false;
+	if (!EnsureGameConfigDatabase(&configDb, configDbPath, &configDbCreated) || configDbCreated)
+	{
+		PutLogList((char*)"(!) NPC config reload FAILED - GameConfigs.db unavailable");
+		return;
+	}
+
+	for (int i = 0; i < DEF_MAXNPCTYPES; i++)
+	{
+		if (m_pNpcConfigList[i] != 0)
+		{
+			delete m_pNpcConfigList[i];
+			m_pNpcConfigList[i] = 0;
+		}
+	}
+
+	if (!LoadNpcConfigs(configDb, this))
+	{
+		PutLogList((char*)"(!) NPC config reload FAILED");
+		CloseGameConfigDatabase(configDb);
+		return;
+	}
+
+	CloseGameConfigDatabase(configDb);
+	PutLogList((char*)"(*) NPC configs reloaded successfully (new spawns will use updated data)");
+}
+
+void CGame::SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills)
+{
+	hb::net::PacketNotifyConfigReload pkt{};
+	pkt.header.msg_id = MSGID_NOTIFY_CONFIG_RELOAD;
+	pkt.header.msg_type = DEF_MSGTYPE_CONFIRM;
+	pkt.reloadItems = bItems ? 1 : 0;
+	pkt.reloadMagic = bMagic ? 1 : 0;
+	pkt.reloadSkills = bSkills ? 1 : 0;
+
+	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	{
+		if (m_pClientList[i] != 0 && m_pClientList[i]->m_bIsInitComplete)
+			m_pClientList[i]->m_pXSock->iSendMsg((char*)&pkt, sizeof(pkt));
+	}
+}
+
+void CGame::PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills)
+{
+	int iCount = 0;
+	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	{
+		if (m_pClientList[i] != 0 && m_pClientList[i]->m_bIsInitComplete)
+		{
+			if (bItems)  bSendClientItemConfigs(i);
+			if (bMagic)  bSendClientMagicConfigs(i);
+			if (bSkills) bSendClientSkillConfigs(i);
+			iCount++;
+		}
+	}
+
+	char buf[128];
+	std::snprintf(buf, sizeof(buf), "(*) Config reload pushed to %d client(s)", iCount);
+	PutLogList(buf);
+}
+
 void CGame::LocalEndApocalypse()
 {
 	int i;
@@ -35541,7 +35704,7 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 				iValue += 1;
 				if (iValue > 15) iValue = 15;
 				dwTemp = m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute;
-				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î 
+				dwTemp = dwTemp & 0x0FFFFFFF; // ºñÆ® Å¬¸®¾î
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute = dwTemp | (iValue << 28); // ¾÷±×·¹ÀÌµåµÈ ºñÆ®°ª ÀÔ·Â
 
 				SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONEITEMCHANGE, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemType,
@@ -35550,7 +35713,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
@@ -35595,7 +35759,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
@@ -35640,7 +35805,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
@@ -35685,7 +35851,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
@@ -36014,7 +36181,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
@@ -36058,7 +36226,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
@@ -36102,7 +36271,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 
@@ -36239,7 +36409,8 @@ void CGame::RequestItemUpgradeHandler(int iClientH, int iItemIndex)
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2,
-					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+					m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum);
 				_bItemLog(DEF_ITEMLOG_UPGRADESUCCESS, iClientH, (int)-1, m_pClientList[iClientH]->m_pItemList[iItemIndex]);
 				break;
 

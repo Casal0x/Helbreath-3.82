@@ -131,13 +131,15 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 
 	switch (Info().cMode) {
 	case 1:
+	{
 		// Only accept slate items (sprite frame 151-154)
-		if ((m_pGame->m_pItemList[cItemID]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
-			(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame >= 151) &&
-			(m_pGame->m_pItemList[cItemID]->m_sSpriteFrame <= 154))
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
+		if (pCfg && (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
+			(pCfg->m_sSpriteFrame >= 151) &&
+			(pCfg->m_sSpriteFrame <= 154))
 		{
 			char cItemIDText[20];
-			switch (m_pGame->m_pItemList[cItemID]->m_sSpriteFrame) {
+			switch (pCfg->m_sSpriteFrame) {
 			case 151:
 				if (Info().sV1 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
@@ -173,6 +175,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 			}
 		}
 		break;
+	}
 	}
 
 	return true;

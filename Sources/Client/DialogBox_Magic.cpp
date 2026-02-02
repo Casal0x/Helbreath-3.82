@@ -246,14 +246,18 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 		else
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)
-				if ((m_pGame->m_pItemList[i] != 0) && (m_pGame->m_pItemList[i]->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
-					(m_pGame->m_pItemList[i]->m_sSpriteFrame == 55))
+			{
+				if (m_pGame->m_pItemList[i] == 0) continue;
+				CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[i]->m_sIDnum);
+				if (pCfg && (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
+					(pCfg->m_sSpriteFrame == 55))
 				{
 					EnableDialogBox(DialogBoxId::Manufacture, 1, 0, 0, 0);
 					AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY10, 10);
 					PlaySoundEffect('E', 14, 5);
 					return true;
 				}
+			}
 			AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY15, 10);
 		}
 		PlaySoundEffect('E', 14, 5);
