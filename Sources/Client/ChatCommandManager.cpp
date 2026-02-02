@@ -1,11 +1,4 @@
 #include "ChatCommandManager.h"
-#include "CmdShowFrame.h"
-#include "CmdShowPing.h"
-#include "CmdWhisper.h"
-#include "CmdShout.h"
-#include "CmdIgnore.h"
-#include "CmdWeather.h"
-#include "CmdProfile.h"
 #include "Game.h"
 #include <cstring>
 
@@ -69,14 +62,5 @@ bool ChatCommandManager::ProcessCommand(const char* pMessage)
 
 void ChatCommandManager::RegisterBuiltInCommands()
 {
-	RegisterCommand(std::make_unique<CmdShowFrame>());
-	RegisterCommand(std::make_unique<CmdShowPing>());
-	RegisterCommand(std::make_unique<CmdWhisperOn>());
-	RegisterCommand(std::make_unique<CmdWhisperOff>());
-	RegisterCommand(std::make_unique<CmdShoutOn>());
-	RegisterCommand(std::make_unique<CmdShoutOff>());
-	RegisterCommand(std::make_unique<CmdIgnoreOn>());
-	RegisterCommand(std::make_unique<CmdIgnoreOff>());
-	RegisterCommand(std::make_unique<CmdWeather>());
-	RegisterCommand(std::make_unique<CmdProfile>());
+
 }

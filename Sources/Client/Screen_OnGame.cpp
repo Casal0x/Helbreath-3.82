@@ -505,7 +505,7 @@ void Screen_OnGame::on_render()
             int wholePart = static_cast<int>(avgMs);
             int fracPart = static_cast<int>((avgMs - wholePart) * 100);
             wsprintf(m_pGame->G_cTxt, "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UIDisabled.ToColorRef()));
+            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UINearWhite.ToColorRef()));
             iDisplayY += 12;
         }
     }

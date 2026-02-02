@@ -329,13 +329,6 @@
     <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
-    <ClInclude Include="CmdShowFrame.h" />
-    <ClInclude Include="CmdShowPing.h" />
-    <ClInclude Include="CmdWhisper.h" />
-    <ClInclude Include="CmdShout.h" />
-    <ClInclude Include="CmdIgnore.h" />
-    <ClInclude Include="CmdWeather.h" />
-    <ClInclude Include="CmdProfile.h" />
     <ClInclude Include="WeatherManager.h" />
     <ClInclude Include="CursorTarget.h" />
     <ClInclude Include="Player.h" />
@@ -482,13 +475,6 @@
     <ClCompile Include="XSocket.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
-    <ClCompile Include="CmdShowFrame.cpp" />
-    <ClCompile Include="CmdShowPing.cpp" />
-    <ClCompile Include="CmdWhisper.cpp" />
-    <ClCompile Include="CmdShout.cpp" />
-    <ClCompile Include="CmdIgnore.cpp" />
-    <ClCompile Include="CmdWeather.cpp" />
-    <ClCompile Include="CmdProfile.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
     <ClCompile Include="CursorTarget.cpp" />

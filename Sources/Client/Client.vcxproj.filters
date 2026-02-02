@@ -109,27 +109,6 @@
     <ClInclude Include="ChatMsg.h">
       <Filter>Chat</Filter>
     </ClInclude>
-    <ClInclude Include="CmdShowFrame.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdShowPing.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdWhisper.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdShout.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdIgnore.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdWeather.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
-    <ClInclude Include="CmdProfile.h">
-      <Filter>Chat\Commands</Filter>
-    </ClInclude>
     <ClInclude Include="XSocket.h">
       <Filter>Network</Filter>
     </ClInclude>
@@ -391,6 +370,8 @@
     <ClInclude Include="Screen_Test.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
+    <ClInclude Include="LocalCacheManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -433,27 +414,6 @@
     </ClCompile>
     <ClCompile Include="ChatCommandManager.cpp">
       <Filter>Chat</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdShowFrame.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdShowPing.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdWhisper.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdShout.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdIgnore.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdWeather.cpp">
-      <Filter>Chat\Commands</Filter>
-    </ClCompile>
-    <ClCompile Include="CmdProfile.cpp">
-      <Filter>Chat\Commands</Filter>
     </ClCompile>
     <ClCompile Include="XSocket.cpp">
       <Filter>Network</Filter>
@@ -761,6 +721,8 @@
     <ClCompile Include="Screen_Test.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" />
+    <ClCompile Include="LocalCacheManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">

@@ -12,11 +12,11 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "CommonTypes.h"
+#include "GlobalDef.h"
 
-// Console layout constants (640x240 top half)
+// Console layout constants (top half of screen)
 static constexpr int CONSOLE_LEFT = 0;
 static constexpr int CONSOLE_TOP = 0;
-static constexpr int CONSOLE_RIGHT = 640;
 static constexpr int CONSOLE_BOTTOM = 240;
 static constexpr float CONSOLE_ALPHA = 0.75f;
 
@@ -76,11 +76,13 @@ void Overlay_DevConsole::on_render()
 	DevConsole& console = DevConsole::Get();
 	IRenderer* pRenderer = m_pGame->m_Renderer;
 
+	const int consoleRight = LOGICAL_WIDTH();
+
 	// Draw 75% opaque black background over top half
-	pRenderer->DrawDarkRect(CONSOLE_LEFT, CONSOLE_TOP, CONSOLE_RIGHT, CONSOLE_BOTTOM, CONSOLE_ALPHA);
+	pRenderer->DrawDarkRect(CONSOLE_LEFT, CONSOLE_TOP, consoleRight, CONSOLE_BOTTOM, CONSOLE_ALPHA);
 
 	// Draw separator line
-	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, CONSOLE_RIGHT - TEXT_MARGIN, SEPARATOR_Y, 16, 32, 16, 0.8f);
+	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, consoleRight - TEXT_MARGIN, SEPARATOR_Y, 16, 32, 16, 0.8f);
 
 	// Begin text rendering
 	pRenderer->BeginTextBatch();

@@ -233,7 +233,7 @@ bool CGame::bInit()
 	m_Renderer = Renderer::Get();
 	if (m_Renderer->Init(G_hWnd) == false)
 	{
-		MessageBox(G_hWnd, "This program requires DirectX7.0a!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
+		MessageBox(G_hWnd, "Failed to init renderer!", "ERROR", MB_ICONEXCLAMATION | MB_OK);
 		return false;
 	}
 
@@ -290,6 +290,10 @@ bool CGame::bInit()
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
 	LocalCacheManager::Get().Initialize();
+
+#ifdef _DEBUG
+	FrameTiming::SetProfilingEnabled(true);
+#endif
 
 	return true;
 }
