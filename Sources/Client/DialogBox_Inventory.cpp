@@ -10,7 +10,7 @@ DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
 {
 	SetCanCloseOnRightClick(true);
-	SetDefaultRect(380 + SCREENX(), 210 + SCREENY(), 225, 185);
+	SetDefaultRect(380 , 210 , 225, 185);
 }
 
 // Helper: Draw a single inventory item with proper coloring and state

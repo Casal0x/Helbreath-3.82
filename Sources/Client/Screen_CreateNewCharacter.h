@@ -35,4 +35,8 @@ private:
     // Focus state (local to screen)
     int m_cCurFocus;
     int m_cMaxFocus;
+
+    // Offset for centering 640x480 content in 800x600 base resolution
+    static constexpr short OX = 80;
+    static constexpr short OY = 60;
 };

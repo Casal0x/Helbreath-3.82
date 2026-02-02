@@ -7,7 +7,7 @@
 DialogBox_CityHallMenu::DialogBox_CityHallMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::CityHallMenu, pGame)
 {
-	SetDefaultRect(337 + SCREENX(), 57 + SCREENY(), 258, 339);
+	SetDefaultRect(337 , 57 , 258, 339);
 }
 
 void DialogBox_CityHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)

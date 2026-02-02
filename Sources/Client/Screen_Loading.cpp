@@ -71,12 +71,13 @@ void Screen_Loading::on_update()
 void Screen_Loading::on_render()
 {
     // Draw loading background
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOADING, 0 + MENUX(), 0 + MENUY(), 0, true);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOADING, 0, 0, 0, true);
     DrawVersion();
 
-    // Draw progress bar - width corresponds to loading stage (0-100)
-    int iBarWidth = m_iLoadingStage;
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->DrawWidth(472 + MENUX(), 442 + MENUY(), 1, iBarWidth);
+    // Draw progress bar - scale loading stage (0-100) to actual sprite frame width
+    int iFrameWidth = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->GetFrameRect(1).width;
+    int iBarWidth = (m_iLoadingStage * iFrameWidth) / 100;
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING]->DrawWidth(626, 552, 1, iBarWidth);
 }
 
 //=============================================================================

@@ -23,7 +23,6 @@ void Screen_Quit::on_initialize()
     GameModeManager::SetCurrentMode(GameMode::Quit);
 
     m_dwStartTime = GameClock::GetTimeMS();
-    m_iFrameCount = 0;
 
     // Close sockets
     if (G_pCalcSocket != nullptr)
@@ -44,10 +43,6 @@ void Screen_Quit::on_uninitialize()
 
 void Screen_Quit::on_update()
 {
-    // Keep frame counter for draw phase animation (capped at 120 for compatibility)
-    m_iFrameCount++;
-    if (m_iFrameCount > 120) m_iFrameCount = 120;
-
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
 
     // After 3 seconds, allow input to skip
@@ -81,15 +76,18 @@ void Screen_Quit::on_update()
 
 void Screen_Quit::on_render()
 {
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0 + MENUX(), 0 + MENUY(), 0, true);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0, 0, 0, true);
 
-    if (m_iFrameCount > 20)
+    // Fade in the quit dialog over 500ms
+    uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
+    if (dwElapsed >= FADE_IN_MS)
     {
-        DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 255 + MENUX(), 123 + MENUY(), 1, true);
+        DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 335, 183, 1, true);
     }
-    else if ((m_iFrameCount >= 15) && (m_iFrameCount <= 20))
+    else
     {
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(255 + MENUX(), 123 + MENUY(), 1, SpriteLib::DrawParams::Alpha(0.25f));
+        float fAlpha = static_cast<float>(dwElapsed) / static_cast<float>(FADE_IN_MS);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(335, 183, 1, SpriteLib::DrawParams::Alpha(fAlpha));
     }
 
     DrawVersion();

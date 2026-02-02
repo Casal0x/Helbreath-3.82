@@ -91,6 +91,9 @@ void Overlay_LogResMsg::on_update()
 {
     uint32_t dwTime = GameClock::GetTimeMS();
 
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+
     // ESC or Enter dismisses the message
     if (Input::IsKeyPressed(VK_ESCAPE) || Input::IsKeyPressed(VK_RETURN))
     {
@@ -101,8 +104,8 @@ void Overlay_LogResMsg::on_update()
     // Check for OK button click
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (Input::IsMouseInRect(370 + SCREENX(), 244 + SCREENY(),
-                                  370 + SCREENX() + DEF_BTNSZX, 244 + SCREENY() + DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119,
+                                  dlgX + 208 + DEF_BTNSZX, dlgY + 119 + DEF_BTNSZY))
         {
             HandleDismiss();
             return;
@@ -128,154 +131,154 @@ void Overlay_LogResMsg::on_update()
     }
 }
 
-void Overlay_LogResMsg::RenderMessage()
+void Overlay_LogResMsg::RenderMessage(int dlgX, int dlgY)
 {
     char cTxt[128];
 
     switch (m_cMsgCode)
     {
     case '1':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 70 + SCREENX(), 165 + SCREENY(), "Password is not correct!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG5);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 80, dlgY + 40, "Password is not correct!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG5);
         break;
 
     case '2':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 70 + SCREENX(), 165 + SCREENY(), "Not existing account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG6);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 215 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG7);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 80, dlgY + 40, "Not existing account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG6);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 90, UPDATE_SCREEN_ON_LOG_MSG7);
         break;
 
     case '3':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX(), 165 + SCREENY(), "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG8);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG9);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 225 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG10);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 40, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG8);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG9);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 100, UPDATE_SCREEN_ON_LOG_MSG10);
         break;
 
     case '4':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX(), 165 + SCREENY(), "New account created.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG11);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG12);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 68, dlgY + 40, "New account created.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG11);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG12);
         break;
 
     case '5':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX(), 165 + SCREENY(), "Can not create new account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG13);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 68, dlgY + 40, "Can not create new account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG13);
         break;
 
     case '6':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX(), 165 + SCREENY(), "Can not create new account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 24 + SCREENX(), 180 + SCREENY(), "Already existing account name.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 205 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG14);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 220 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG15);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 46, dlgY + 40, "Can not create new account!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 34, dlgY + 55, "Already existing account name.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 80, UPDATE_SCREEN_ON_LOG_MSG14);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 95, UPDATE_SCREEN_ON_LOG_MSG15);
         break;
 
     case '7':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX(), 165 + SCREENY(), "New character created.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG16);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 68, dlgY + 40, "New character created.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG16);
         break;
 
     case '8':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 58 + SCREENX(), 165 + SCREENY(), "Can not create new character!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG17);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 68, dlgY + 40, "Can not create new character!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG17);
         break;
 
     case '9':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX(), 165 + SCREENY(), "Can not create new character!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 24 + SCREENX(), 180 + SCREENY(), "Already existing character name.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 205 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG18);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 220 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG19);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 46, dlgY + 40, "Can not create new character!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 34, dlgY + 55, "Already existing character name.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 80, UPDATE_SCREEN_ON_LOG_MSG18);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 95, UPDATE_SCREEN_ON_LOG_MSG19);
         break;
 
     case 'A':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + 45 + SCREENX(), 165 + SCREENY(), "Character deleted.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG20);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 91, dlgY + 40, "Character deleted.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG20);
         break;
 
     case 'B':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + 45 + SCREENX(), 165 + SCREENY(), "Password changed.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG21);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 91, dlgY + 40, "Password changed.", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG21);
         break;
 
     case 'C':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 36 + SCREENX(), 165 + SCREENY(), "Can not change password!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG22);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 46, dlgY + 40, "Can not change password!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG22);
         break;
 
     case 'D':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX(), 165 + SCREENY(), "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG23);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG24);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 40, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG23);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG24);
         break;
 
     case 'E':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX(), 165 + SCREENY(), "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG25);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG26);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 225 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG27);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 40, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG25);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG26);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 100, UPDATE_SCREEN_ON_LOG_MSG27);
         break;
 
     case 'F':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX(), 165 + SCREENY(), "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG28);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG29);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 40, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG28);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG29);
         break;
 
     case 'G':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 10 + 34 + SCREENX(), 165 + SCREENY(), "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG30);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG31);
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 40, "Can not connect to game server!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG30);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG31);
         break;
 
     case 'H':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX(), 165 + SCREENY(), "Connection Rejected!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 78, dlgY + 40, "Connection Rejected!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
         if (m_pGame->m_iBlockYear == 0)
         {
-            PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG32);
-            PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG33);
+            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG32);
+            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG33);
         }
         else
         {
-            PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG34);
+            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG34);
             wsprintf(cTxt, UPDATE_SCREEN_ON_LOG_MSG35,
                      m_pGame->m_iBlockYear, m_pGame->m_iBlockMonth, m_pGame->m_iBlockDay);
-            PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), cTxt);
+            PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, cTxt);
         }
         break;
 
     case 'I':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX(), 165 + SCREENY(), "Not Enough Point!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), "Not enough points to play.");
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 78, dlgY + 40, "Not Enough Point!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, "Not enough points to play.");
         break;
 
     case 'J':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX(), 165 + SCREENY(), "World Server Full", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), "Please ! Try Other World Server");
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 78, dlgY + 40, "World Server Full", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, "Please ! Try Other World Server");
         break;
 
     case 'M':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX(), 165 + SCREENY(), "Your password expired", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), "Please! Change password");
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 78, dlgY + 40, "Your password expired", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, "Please! Change password");
         break;
 
     case 'U':
-        TextLib::DrawText(GameFont::Bitmap1, 172 + 68 + SCREENX(), 165 + SCREENY(), "Keycode input Success!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), "Keycode Registration successed.");
+        TextLib::DrawText(GameFont::Bitmap1, dlgX + 78, dlgY + 40, "Keycode input Success!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, "Keycode Registration successed.");
         break;
 
     case 'X':
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG38);
-        PutAlignedString(198 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG39);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG38);
+        PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG39);
         break;
 
     case 'Y':
-        PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG40);
-        PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG41);
+        PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG40);
+        PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG41);
         break;
 
     case 'Z':
-        PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG42);
-        PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 210 + SCREENY(), UPDATE_SCREEN_ON_LOG_MSG41);
+        PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG42);
+        PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 85, UPDATE_SCREEN_ON_LOG_MSG41);
         break;
     }
 }
@@ -285,14 +288,17 @@ void Overlay_LogResMsg::on_render()
     int msX = Input::GetMouseX();
     int msY = Input::GetMouseY();
 
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX(), 125 + SCREENY(), 2);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Draw OK button with hover effect
-    bool bHover = (msX >= 370 + SCREENX()) && (msX <= 370 + DEF_BTNSZX + SCREENX()) &&
-                  (msY >= 244 + SCREENY()) && (msY <= 244 + DEF_BTNSZY + SCREENY());
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX(), 244 + SCREENY(), bHover ? 1 : 0);
+    bool bHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + DEF_BTNSZX) &&
+                  (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bHover ? 1 : 0);
 
     // Render the appropriate message
-    RenderMessage();
+    RenderMessage(dlgX, dlgY);
 }

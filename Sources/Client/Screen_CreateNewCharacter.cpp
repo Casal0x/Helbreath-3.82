@@ -52,7 +52,7 @@ void Screen_CreateNewCharacter::on_initialize()
     m_pGame->m_cArrowPressed = 0;
     m_dwNewCharMTime = GameClock::GetTimeMS();
     std::memset(m_cNewCharName, 0, sizeof(m_cNewCharName));
-    m_pGame->StartInputString(193 + 4 + MENUX(), 65 + 45 + MENUY(), 11, m_cNewCharName);
+    m_pGame->StartInputString(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
     m_pGame->ClearInputString();
 }
 
@@ -80,7 +80,7 @@ void Screen_CreateNewCharacter::on_update()
         m_pGame->EndInputString();
         switch (m_cCurFocus) {
         case 1:
-            m_pGame->StartInputString(193 + 4 + MENUX(), 65 + 45 + MENUY(), 11, m_cNewCharName);
+            m_pGame->StartInputString(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
             break;
         }
         m_cNewCharPrevFocus = m_cCurFocus;
@@ -129,34 +129,34 @@ void Screen_CreateNewCharacter::on_update()
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;
-        if (Input::IsMouseInRect(69 + MENUX(), 110 + MENUY(), 279 + MENUX(), 127 + MENUY())) iMIbuttonNum = 1;  // Name
-        else if (Input::IsMouseInRect(236 + MENUX(), 156 + MENUY(), 257 + MENUX(), 169 + MENUY())) iMIbuttonNum = 2;  // Gender -
-        else if (Input::IsMouseInRect(259 + MENUX(), 156 + MENUY(), 280 + MENUX(), 169 + MENUY())) iMIbuttonNum = 3;  // Gender +
-        else if (Input::IsMouseInRect(236 + MENUX(), 171 + MENUY(), 257 + MENUX(), 184 + MENUY())) iMIbuttonNum = 4;  // Skin -
-        else if (Input::IsMouseInRect(259 + MENUX(), 171 + MENUY(), 280 + MENUX(), 184 + MENUY())) iMIbuttonNum = 5;  // Skin +
-        else if (Input::IsMouseInRect(236 + MENUX(), 186 + MENUY(), 257 + MENUX(), 199 + MENUY())) iMIbuttonNum = 6;  // Hair style -
-        else if (Input::IsMouseInRect(259 + MENUX(), 186 + MENUY(), 280 + MENUX(), 199 + MENUY())) iMIbuttonNum = 7;  // Hair style +
-        else if (Input::IsMouseInRect(236 + MENUX(), 201 + MENUY(), 257 + MENUX(), 214 + MENUY())) iMIbuttonNum = 8;  // Hair color -
-        else if (Input::IsMouseInRect(259 + MENUX(), 201 + MENUY(), 280 + MENUX(), 214 + MENUY())) iMIbuttonNum = 9;  // Hair color +
-        else if (Input::IsMouseInRect(236 + MENUX(), 216 + MENUY(), 257 + MENUX(), 229 + MENUY())) iMIbuttonNum = 10; // Underwear -
-        else if (Input::IsMouseInRect(259 + MENUX(), 216 + MENUY(), 280 + MENUX(), 229 + MENUY())) iMIbuttonNum = 11; // Underwear +
-        else if (Input::IsMouseInRect(236 + MENUX(), 276 + MENUY(), 257 + MENUX(), 289 + MENUY())) iMIbuttonNum = 12; // Str +
-        else if (Input::IsMouseInRect(259 + MENUX(), 276 + MENUY(), 280 + MENUX(), 289 + MENUY())) iMIbuttonNum = 13; // Str -
-        else if (Input::IsMouseInRect(236 + MENUX(), 291 + MENUY(), 257 + MENUX(), 304 + MENUY())) iMIbuttonNum = 14; // Vit +
-        else if (Input::IsMouseInRect(259 + MENUX(), 291 + MENUY(), 280 + MENUX(), 304 + MENUY())) iMIbuttonNum = 15; // Vit -
-        else if (Input::IsMouseInRect(236 + MENUX(), 306 + MENUY(), 257 + MENUX(), 319 + MENUY())) iMIbuttonNum = 16; // Dex +
-        else if (Input::IsMouseInRect(259 + MENUX(), 306 + MENUY(), 280 + MENUX(), 319 + MENUY())) iMIbuttonNum = 17; // Dex -
-        else if (Input::IsMouseInRect(236 + MENUX(), 321 + MENUY(), 257 + MENUX(), 334 + MENUY())) iMIbuttonNum = 18; // Int +
-        else if (Input::IsMouseInRect(259 + MENUX(), 321 + MENUY(), 280 + MENUX(), 334 + MENUY())) iMIbuttonNum = 19; // Int -
-        else if (Input::IsMouseInRect(236 + MENUX(), 336 + MENUY(), 257 + MENUX(), 349 + MENUY())) iMIbuttonNum = 20; // Mag +
-        else if (Input::IsMouseInRect(259 + MENUX(), 336 + MENUY(), 280 + MENUX(), 349 + MENUY())) iMIbuttonNum = 21; // Mag -
-        else if (Input::IsMouseInRect(236 + MENUX(), 351 + MENUY(), 257 + MENUX(), 364 + MENUY())) iMIbuttonNum = 22; // Chr +
-        else if (Input::IsMouseInRect(259 + MENUX(), 351 + MENUY(), 280 + MENUX(), 364 + MENUY())) iMIbuttonNum = 23; // Chr -
-        else if (Input::IsMouseInRect(384 + MENUX(), 445 + MENUY(), 456 + MENUX(), 460 + MENUY())) iMIbuttonNum = 24; // Create
-        else if (Input::IsMouseInRect(500 + MENUX(), 445 + MENUY(), 572 + MENUX(), 460 + MENUY())) iMIbuttonNum = 25; // Cancel
-        else if (Input::IsMouseInRect(60 + MENUX(), 445 + MENUY(), 132 + MENUX(), 460 + MENUY())) iMIbuttonNum = 26;  // Aresden
-        else if (Input::IsMouseInRect(145 + MENUX(), 445 + MENUY(), 217 + MENUX(), 460 + MENUY())) iMIbuttonNum = 27; // Elvine
-        else if (Input::IsMouseInRect(230 + MENUX(), 445 + MENUY(), 302 + MENUX(), 460 + MENUY())) iMIbuttonNum = 28; // Traveler
+        if (Input::IsMouseInRect(69 + OX, 110 + OY, 279 + OX, 127 + OY)) iMIbuttonNum = 1;  // Name
+        else if (Input::IsMouseInRect(236 + OX, 156 + OY, 257 + OX, 169 + OY)) iMIbuttonNum = 2;  // Gender -
+        else if (Input::IsMouseInRect(259 + OX, 156 + OY, 280 + OX, 169 + OY)) iMIbuttonNum = 3;  // Gender +
+        else if (Input::IsMouseInRect(236 + OX, 171 + OY, 257 + OX, 184 + OY)) iMIbuttonNum = 4;  // Skin -
+        else if (Input::IsMouseInRect(259 + OX, 171 + OY, 280 + OX, 184 + OY)) iMIbuttonNum = 5;  // Skin +
+        else if (Input::IsMouseInRect(236 + OX, 186 + OY, 257 + OX, 199 + OY)) iMIbuttonNum = 6;  // Hair style -
+        else if (Input::IsMouseInRect(259 + OX, 186 + OY, 280 + OX, 199 + OY)) iMIbuttonNum = 7;  // Hair style +
+        else if (Input::IsMouseInRect(236 + OX, 201 + OY, 257 + OX, 214 + OY)) iMIbuttonNum = 8;  // Hair color -
+        else if (Input::IsMouseInRect(259 + OX, 201 + OY, 280 + OX, 214 + OY)) iMIbuttonNum = 9;  // Hair color +
+        else if (Input::IsMouseInRect(236 + OX, 216 + OY, 257 + OX, 229 + OY)) iMIbuttonNum = 10; // Underwear -
+        else if (Input::IsMouseInRect(259 + OX, 216 + OY, 280 + OX, 229 + OY)) iMIbuttonNum = 11; // Underwear +
+        else if (Input::IsMouseInRect(236 + OX, 276 + OY, 257 + OX, 289 + OY)) iMIbuttonNum = 12; // Str +
+        else if (Input::IsMouseInRect(259 + OX, 276 + OY, 280 + OX, 289 + OY)) iMIbuttonNum = 13; // Str -
+        else if (Input::IsMouseInRect(236 + OX, 291 + OY, 257 + OX, 304 + OY)) iMIbuttonNum = 14; // Vit +
+        else if (Input::IsMouseInRect(259 + OX, 291 + OY, 280 + OX, 304 + OY)) iMIbuttonNum = 15; // Vit -
+        else if (Input::IsMouseInRect(236 + OX, 306 + OY, 257 + OX, 319 + OY)) iMIbuttonNum = 16; // Dex +
+        else if (Input::IsMouseInRect(259 + OX, 306 + OY, 280 + OX, 319 + OY)) iMIbuttonNum = 17; // Dex -
+        else if (Input::IsMouseInRect(236 + OX, 321 + OY, 257 + OX, 334 + OY)) iMIbuttonNum = 18; // Int +
+        else if (Input::IsMouseInRect(259 + OX, 321 + OY, 280 + OX, 334 + OY)) iMIbuttonNum = 19; // Int -
+        else if (Input::IsMouseInRect(236 + OX, 336 + OY, 257 + OX, 349 + OY)) iMIbuttonNum = 20; // Mag +
+        else if (Input::IsMouseInRect(259 + OX, 336 + OY, 280 + OX, 349 + OY)) iMIbuttonNum = 21; // Mag -
+        else if (Input::IsMouseInRect(236 + OX, 351 + OY, 257 + OX, 364 + OY)) iMIbuttonNum = 22; // Chr +
+        else if (Input::IsMouseInRect(259 + OX, 351 + OY, 280 + OX, 364 + OY)) iMIbuttonNum = 23; // Chr -
+        else if (Input::IsMouseInRect(384 + OX, 445 + OY, 456 + OX, 460 + OY)) iMIbuttonNum = 24; // Create
+        else if (Input::IsMouseInRect(500 + OX, 445 + OY, 572 + OX, 460 + OY)) iMIbuttonNum = 25; // Cancel
+        else if (Input::IsMouseInRect(60 + OX, 445 + OY, 132 + OX, 460 + OY)) iMIbuttonNum = 26;  // Aresden
+        else if (Input::IsMouseInRect(145 + OX, 445 + OY, 217 + OX, 460 + OY)) iMIbuttonNum = 27; // Elvine
+        else if (Input::IsMouseInRect(230 + OX, 445 + OY, 302 + OX, 460 + OY)) iMIbuttonNum = 28; // Traveler
 
         switch (iMIbuttonNum) {
         case 1:
@@ -373,77 +373,77 @@ void Screen_CreateNewCharacter::on_render()
     uint32_t dwTime = GameClock::GetTimeMS();
 
     // Handle button hover focus FIRST (before drawing)
-    if ((msX >= 384 + MENUX()) && (msX <= 384 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    if ((msX >= 384 + OX) && (msX <= 384 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         m_cCurFocus = 2;
     }
-    else if ((msX >= 500 + MENUX()) && (msX <= 500 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    else if ((msX >= 500 + OX) && (msX <= 500 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         m_cCurFocus = 3;
     }
-    if ((msX >= 60 + MENUX()) && (msX <= 60 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    if ((msX >= 60 + OX) && (msX <= 60 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         m_cCurFocus = 4;
     }
-    if ((msX >= 145 + MENUX()) && (msX <= 145 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    if ((msX >= 145 + OX) && (msX <= 145 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         m_cCurFocus = 5;
     }
-    if ((msX >= 230 + MENUX()) && (msX <= 230 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    if ((msX >= 230 + OX) && (msX <= 230 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         m_cCurFocus = 6;
     }
 
     // ======== Draw character creation UI (inlined from _bDraw_OnCreateNewCharacter) ========
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWCHAR, 0 + MENUX(), 0 + MENUY(), 0, true);
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 0 + MENUX(), 0 + MENUY(), 69, true);
-    TextLib::DrawTextAligned(GameFont::Default, 64 + MENUX(), 90 + MENUY(), (282 + MENUX()) - (64 + MENUX()), 15, _BDRAW_ON_CREATE_NEW_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-    TextLib::DrawTextAligned(GameFont::Default, 57 + MENUX(), 110 + MENUY(), (191 + MENUX()) - (57 + MENUX()), 15, DEF_MSG_CHARACTERNAME, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-    if (m_cCurFocus != 1) TextLib::DrawText(GameFont::Default, 197 + MENUX(), 112 + MENUY(), m_cNewCharName, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawTextAligned(GameFont::Default, 64 + MENUX(), 140 + MENUY(), (282 + MENUX()) - (64 + MENUX()), 15, _BDRAW_ON_CREATE_NEW_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 160 + MENUY(), DEF_MSG_GENDER, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 175 + MENUY(), DEF_MSG_SKINCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 190 + MENUY(), DEF_MSG_HAIRSTYLE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 205 + MENUY(), DEF_MSG_HAIRCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 220 + MENUY(), DEF_MSG_UNDERWEARCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 275 + MENUY(), DEF_MSG_STRENGTH, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 292 + MENUY(), DEF_MSG_VITALITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 309 + MENUY(), DEF_MSG_DEXTERITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 326 + MENUY(), DEF_MSG_INTELLIGENCE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 343 + MENUY(), DEF_MSG_MAGIC, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + MENUX(), 360 + MENUY(), DEF_MSG_CHARISMA, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWCHAR, 0, 0, 0, true);
+    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 69, true);
+    TextLib::DrawTextAligned(GameFont::Default, 64 + OX, 90 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, 57 + OX, 110 + OY, (191) - (57), 15, DEF_MSG_CHARACTERNAME, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    if (m_cCurFocus != 1) TextLib::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawTextAligned(GameFont::Default, 64 + OX, 140 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawText(GameFont::Default, 100 + OX, 160 + OY, DEF_MSG_GENDER, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 175 + OY, DEF_MSG_SKINCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 190 + OY, DEF_MSG_HAIRSTYLE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 205 + OY, DEF_MSG_HAIRCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 220 + OY, DEF_MSG_UNDERWEARCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 275 + OY, DEF_MSG_STRENGTH, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 292 + OY, DEF_MSG_VITALITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 309 + OY, DEF_MSG_DEXTERITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 326 + OY, DEF_MSG_INTELLIGENCE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 343 + OY, DEF_MSG_MAGIC, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 360 + OY, DEF_MSG_CHARISMA, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
 
     // Stat values
     i = 0;
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModStr);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModVit);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModDex);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModInt);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModMag);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModChr);
-    TextLib::DrawText(GameFont::Default, 204 + MENUX(), 277 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
 
     // Button states
     if ((m_bNewCharFlag == true) && (m_cCurFocus == 2))
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + MENUX(), 445 + MENUY(), 25);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + OX, 445 + OY, 25);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + MENUX(), 445 + MENUY(), 24);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + OX, 445 + OY, 24);
     if (m_cCurFocus == 3)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + MENUX(), 445 + MENUY(), 17);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + OX, 445 + OY, 17);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + MENUX(), 445 + MENUY(), 16);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + OX, 445 + OY, 16);
     if (m_cCurFocus == 4)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + MENUX(), 445 + MENUY(), 68);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + OX, 445 + OY, 68);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + MENUX(), 445 + MENUY(), 67);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + OX, 445 + OY, 67);
     if (m_cCurFocus == 5)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + MENUX(), 445 + MENUY(), 66);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + OX, 445 + OY, 66);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + MENUX(), 445 + MENUY(), 65);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + OX, 445 + OY, 65);
     if (m_cCurFocus == 6)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + MENUX(), 445 + MENUY(), 64);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + OX, 445 + OY, 64);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + MENUX(), 445 + MENUY(), 63);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + OX, 445 + OY, 63);
 
     m_pGame->ShowReceivedString();
 
@@ -466,128 +466,128 @@ void Screen_CreateNewCharacter::on_render()
     m_pGame->m_entityState.m_iAction = DEF_OBJECTMOVE;
     m_pGame->m_entityState.m_iFrame = m_pGame->m_cMenuFrame;
 
-    m_pGame->_Draw_CharacterBody(507 + MENUX(), 267 + MENUY(), m_pGame->m_entityState.m_sOwnerType);
-    m_pGame->DrawObject_OnMove_ForMenu(0 + MENUX(), 0 + MENUY(), 500 + MENUX(), 174 + MENUY(), false, dwTime);
+    m_pGame->_Draw_CharacterBody(507 + OX, 267 + OY, m_pGame->m_entityState.m_sOwnerType);
+    m_pGame->DrawObject_OnMove_ForMenu(0, 0, 500 + OX, 174 + OY, false, dwTime);
 
     // Derived stats
     i = 0;
-    TextLib::DrawText(GameFont::Default, 445 + MENUX(), 192 + MENUY(), DEF_MSG_HITPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 192 + OY, DEF_MSG_HITPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModVit * 3 + 2 + m_pGame->m_pPlayer->m_iStatModStr / 2);
-    TextLib::DrawText(GameFont::Default, 550 + MENUX(), 192 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 445 + MENUX(), 208 + MENUY(), DEF_MSG_MANAPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 208 + OY, DEF_MSG_MANAPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModMag * 2 + 2 + m_pGame->m_pPlayer->m_iStatModInt / 2);
-    TextLib::DrawText(GameFont::Default, 550 + MENUX(), 192 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 445 + MENUX(), 224 + MENUY(), DEF_MSG_STAMINARPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 224 + OY, DEF_MSG_STAMINARPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
     wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModStr * 2 + 2);
-    TextLib::DrawText(GameFont::Default, 550 + MENUX(), 192 + 16 * i++ + MENUY(), m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
 
     // ======== End inlined drawing ========
 
     m_pGame->DrawVersion();
 
     // Tooltip drawing based on mouse position
-    if ((msX >= 65 + 4 - 127 + MENUX()) && (msX <= 275 + 4 + MENUX()) && (msY >= 65 + 45 + MENUY()) && (msY <= 82 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    if ((msX >= 65 + 4 - 127 + OX) && (msX <= 275 + 4 + OX) && (msY >= 65 + 45 + OY) && (msY <= 82 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 261 + 4 - 212 + MENUX()) && (msX <= 289 + 4 + MENUX()) && (msY >= 111 + 45 + MENUY()) && (msY <= 124 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 261 + 4 - 212 + OX) && (msX <= 289 + 4 + OX) && (msY >= 111 + 45 + OY) && (msY <= 124 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 261 + 4 - 212 + MENUX()) && (msX <= 289 + 4 + MENUX()) && (msY >= 126 + 45 + MENUY()) && (msY <= 139 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 261 + 4 - 212 + OX) && (msX <= 289 + 4 + OX) && (msY >= 126 + 45 + OY) && (msY <= 139 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 261 + 4 - 212 + MENUX()) && (msX <= 289 + 4 + MENUX()) && (msY >= 141 + 45 + MENUY()) && (msY <= 154 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER4, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 261 + 4 - 212 + OX) && (msX <= 289 + 4 + OX) && (msY >= 141 + 45 + OY) && (msY <= 154 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER4, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 261 + 4 - 212 + MENUX()) && (msX <= 289 + 4 + MENUX()) && (msY >= 156 + 45 + MENUY()) && (msY <= 169 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER5, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 261 + 4 - 212 + OX) && (msX <= 289 + 4 + OX) && (msY >= 156 + 45 + OY) && (msY <= 169 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER5, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 261 + 4 - 212 + MENUX()) && (msX <= 289 + 4 + MENUX()) && (msY >= 171 + 45 + MENUY()) && (msY <= 184 + 45 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER6, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 261 + 4 - 212 + OX) && (msX <= 289 + 4 + OX) && (msY >= 171 + 45 + OY) && (msY <= 184 + 45 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER6, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 231 + 45 + MENUY()) && (msY <= 244 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 231 + 45 + OY) && (msY <= 244 + 45 + OY)) {
         // Str tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER7, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER8, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER9, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER10, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER11, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER7, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER8, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER9, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER10, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER11, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 246 + 45 + MENUY()) && (msY <= 259 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 246 + 45 + OY) && (msY <= 259 + 45 + OY)) {
         // Vit tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER12, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER13, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER14, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER15, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER16, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER12, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER13, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER14, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER15, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER16, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 261 + 45 + MENUY()) && (msY <= 274 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 261 + 45 + OY) && (msY <= 274 + 45 + OY)) {
         // Dex tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER17, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER18, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER19, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER20, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER17, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER18, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER19, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER20, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 276 + 45 + MENUY()) && (msY <= 289 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 276 + 45 + OY) && (msY <= 289 + 45 + OY)) {
         // Int tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER21, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER22, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER23, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER24, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER21, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER22, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER23, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER24, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 291 + 45 + MENUY()) && (msY <= 304 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 291 + 45 + OY) && (msY <= 304 + 45 + OY)) {
         // Mag tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER25, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER26, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER27, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER28, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER25, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER26, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER27, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER28, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 240 + 4 - 175 + MENUX()) && (msX <= 268 + 4 + MENUX()) && (msY >= 306 + 45 + MENUY()) && (msY <= 319 + 45 + MENUY())) {
+    else if ((msX >= 240 + 4 - 175 + OX) && (msX <= 268 + 4 + OX) && (msY >= 306 + 45 + OY) && (msY <= 319 + 45 + OY)) {
         // Charisma tooltip
         i = 0;
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER29, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER30, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER31, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER32, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER29, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER30, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER31, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER32, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 384 + MENUX()) && (msX <= 384 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
+    else if ((msX >= 384 + OX) && (msX <= 384 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
         if (strlen(m_cNewCharName) <= 0) {
             i = 0;
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER35, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER35, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
         }
         else if (m_iNewCharPoint > 0) {
             i = 0;
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER36, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER36, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
         }
         else if (CMisc::bCheckValidName(m_cNewCharName) == false) {
             i = 0;
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER39, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER40, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER41, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER39, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER40, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER41, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
         }
         else {
             i = 0;
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER44, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER45, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER46, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER47, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + 16 * i++ + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER48, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER44, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER45, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER46, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER47, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY + 16 * i++, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER48, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
         }
     }
-    else if ((msX >= 500 + MENUX()) && (msX <= 500 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER49, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 500 + OX) && (msX <= 500 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER49, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 60 + MENUX()) && (msX <= 60 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER50, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 60 + OX) && (msX <= 60 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER50, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 145 + MENUX()) && (msX <= 145 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER51, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 145 + OX) && (msX <= 145 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER51, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
-    else if ((msX >= 230 + MENUX()) && (msX <= 230 + 72 + MENUX()) && (msY >= 445 + MENUY()) && (msY <= 445 + 15 + MENUY())) {
-        TextLib::DrawTextAligned(GameFont::Default, 370 + MENUX(), 345 + MENUY(), (580 + MENUX()) - (370 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER52, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    else if ((msX >= 230 + OX) && (msX <= 230 + 72 + OX) && (msY >= 445 + OY) && (msY <= 445 + 15 + OY)) {
+        TextLib::DrawTextAligned(GameFont::Default, 370 + OX, 345 + OY, (580) - (370), 15, UPDATE_SCREEN_ON_CREATE_NEW_CHARACTER52, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 }

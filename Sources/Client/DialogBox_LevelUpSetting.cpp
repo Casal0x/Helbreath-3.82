@@ -5,7 +5,7 @@
 DialogBox_LevelUpSetting::DialogBox_LevelUpSetting(CGame* pGame)
 	: IDialogBox(DialogBoxId::LevelUpSetting, pGame)
 {
-	SetDefaultRect(0 + SCREENX(), 0 + SCREENY(), 258, 339);
+	SetDefaultRect(0 , 0 , 258, 339);
 }
 
 void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, const char* pLabel,

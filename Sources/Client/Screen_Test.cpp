@@ -167,8 +167,8 @@ void Screen_Test::on_render()
 	else
 	{
 		// Show placeholder if fonts not loaded
-		int y = HEADER_HEIGHT + (row++ - m_scrollOffset) * ROW_HEIGHT + MENUY();
-		TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X + MENUX(), y, "Bitmap fonts not loaded - run through Loading screen first", TextLib::TextStyle::Color(255, 100, 100));
+		int y = HEADER_HEIGHT + (row++ - m_scrollOffset) * ROW_HEIGHT;
+		TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Bitmap fonts not loaded - run through Loading screen first", TextLib::TextStyle::Color(255, 100, 100));
 	}
 
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap2))
@@ -200,8 +200,8 @@ void Screen_Test::on_render()
 		int displayRow = row - m_scrollOffset;
 		if (displayRow >= 0 && displayRow <= 10)
 		{
-			int y = HEADER_HEIGHT + displayRow * ROW_HEIGHT + MENUY();
-			TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X + MENUX(), y, "Scroll down for Alignment Showcase...", TextLib::TextStyle::Color(100, 200, 255));
+			int y = HEADER_HEIGHT + displayRow * ROW_HEIGHT;
+			TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Scroll down for Alignment Showcase...", TextLib::TextStyle::Color(100, 200, 255));
 		}
 	}
 
@@ -211,20 +211,20 @@ void Screen_Test::on_render()
 void Screen_Test::RenderHeader()
 {
 	// Title
-	TextLib::DrawText(GameFont::Default, MENUX() + 220, MENUY() + 5, "TEXTLIB TEST SCREEN", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
+	TextLib::DrawText(GameFont::Default, 220, 5, "TEXTLIB TEST SCREEN", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
 
 	// Instructions
-	TextLib::DrawText(GameFont::Default, MENUX() + 10, MENUY() + 25, "ESC=Quit | UP/DOWN=Scroll", TextLib::TextStyle::Color(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+	TextLib::DrawText(GameFont::Default, 10, 25, "ESC=Quit | UP/DOWN=Scroll", TextLib::TextStyle::Color(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 
 	// Column headers
-	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X + MENUX(), MENUY() + 45, "LEGACY (PutString*)", TextLib::TextStyle::Color(255, 150, 150));
-	TextLib::DrawText(GameFont::Default, RIGHT_COLUMN_X + MENUX(), MENUY() + 45, "NEW (TextLib::DrawText)", TextLib::TextStyle::Color(150, 255, 150));
+	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, 45, "LEGACY (PutString*)", TextLib::TextStyle::Color(255, 150, 150));
+	TextLib::DrawText(GameFont::Default, RIGHT_COLUMN_X, 45, "NEW (TextLib::DrawText)", TextLib::TextStyle::Color(150, 255, 150));
 
 	// Divider line (visual separator)
-	int midX = MENUX() + 320;
+	int midX = 320;
 	for (int y = HEADER_HEIGHT; y < 480; y += 2)
 	{
-		m_pGame->m_Renderer->PutPixel(midX, MENUY() + y, 80, 80, 80);
+		m_pGame->m_Renderer->PutPixel(midX, y, 80, 80, 80);
 	}
 }
 
@@ -236,16 +236,16 @@ void Screen_Test::RenderTestRow(int row, const char* testName,
 	if (displayRow < 0 || displayRow > 10)
 		return;  // Off screen
 
-	int baseY = HEADER_HEIGHT + displayRow * ROW_HEIGHT + MENUY();
+	int baseY = HEADER_HEIGHT + displayRow * ROW_HEIGHT;
 
 	// Test name label (small, gray)
-	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X + MENUX(), baseY, testName, TextLib::TextStyle::Color(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, baseY, testName, TextLib::TextStyle::Color(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 
 	// Render legacy version on left
-	(this->*legacyFunc)(LEFT_COLUMN_X + MENUX(), baseY + 16);
+	(this->*legacyFunc)(LEFT_COLUMN_X, baseY + 16);
 
 	// Render new version on right
-	(this->*newFunc)(RIGHT_COLUMN_X + MENUX(), baseY + 16);
+	(this->*newFunc)(RIGHT_COLUMN_X, baseY + 16);
 }
 
 // ============== Legacy Test Functions ==============
@@ -392,13 +392,13 @@ void Screen_Test::DrawRectOutline(int x, int y, int width, int height, uint8_t r
 void Screen_Test::RenderAlignmentShowcase()
 {
 	// Title
-	TextLib::DrawText(GameFont::Default, MENUX() + 180, MENUY() + 70, "DrawTextAligned with GameRectangle", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
+	TextLib::DrawText(GameFont::Default, 180, 70, "DrawTextAligned with GameRectangle", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
 
 	// Grid layout: 3 columns (Left, Center, Right) x 3 rows (Top, Middle, Bottom)
 	constexpr int CELL_WIDTH = 180;
 	constexpr int CELL_HEIGHT = 50;
-	const int GRID_X = MENUX() + 50;
-	const int GRID_Y = MENUY() + 100;
+	const int GRID_X = 50;
+	const int GRID_Y = 100;
 	constexpr int CELL_SPACING = 10;
 
 	// Column labels

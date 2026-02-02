@@ -39,102 +39,81 @@ extern void PutPvPLogFileList(char* cStr);
 extern FILE* pLogFile;
 extern HWND	G_hWnd;
 
-// Move lock para 640 x 480
-int _tmp_iMoveLocX[9][38] = {
-	// 0
-	{0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,-1},
-	 // 1
-	 {0,1,2,3,4,5,6,7,8,9,
-	  10,11,12,13,14,15,16,17,18,19,
-	  20,-1,0,0,0,0,0,0,0,0,
-	  0,0,0,0,0,0,0,0},
-	  // 2
-	  {0,1,2,3,4,5,6,7,8,9,
-	   10,11,12,13,14,15,16,17,18,19,
-	   20,20,20,20,20,20,20,20,20,20,
-	   20,20,20,20,20,20,-1,0},
-	   // 3
-	   {20,20,20,20,20,20,20,20,20,20,
-		20,20,20,20,20,20,-1,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0},
-		// 4
-		{20,20,20,20,20,20,20,20,20,20,
-		 20,20,20,20,20,20,19,18,17,16,
-		 15,14,13,12,11,10,9,8,7,6,
-		 5,4,3,2,1,0,-1,0},
-		 // 5
-		 {0,1,2,3,4,5,6,7,8,9,
-		  10,11,12,13,14,15,16,17,18,19,
-		  20,-1,0,0,0,0,0,0,0,0,
-		  0,0,0,0,0,0,0,0},
-		  // 6
-		  {0,0,0,0,0,0,0,0,0,0,
-		   0,0,0,0,0,0,1,2,3,4,
-		   5,6,7,8,9,10,11,12,13,14,
-		   15,16,17,18,19,20,-1,0},
-		   // 7
-		   {0,0,0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,-1,0,0,0,
-			0,0,0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,0,0},
-			// 8
-			{0,1,2,3,4,5,6,7,8,9,
-			 10,11,12,13,14,15,16,17,18,19,
-			 20,0,0,0,0,0,0,0,0,0,
-			 0,0,0,0,0,0,-1,0}
-};
+// Move location tables — auto-calculated from DEF_INITDATA_TILES_X/Y.
+// Each direction lists the (X,Y) tile offsets revealed when the player
+// moves one step in that direction, terminated by -1.
+int _tmp_iMoveLocX[9][DEF_MOVELOC_MAX_ENTRIES];
+int _tmp_iMoveLocY[9][DEF_MOVELOC_MAX_ENTRIES];
 
-int _tmp_iMoveLocY[9][38] = {
-	// 0
-	{0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,0,0,0,
-	 0,0,0,0,0,0,0,-1},
-	 // 1
-	 {0,0,0,0,0,0,0,0,0,0,
-	  0,0,0,0,0,0,0,0,0,0,
-	  0,-1,0,0,0,0,0,0,0,0,
-	  0,0,0,0,0,0,0,0},
-	  // 2
-	  {0,0,0,0,0,0,0,0,0,0,
-	   0,0,0,0,0,0,0,0,0,0,
-	   0,1,2,3,4,5,6,7,8,9,
-	   10,11,12,13,14,15,-1,0},
-	   // 3
-	   {0,1,2,3,4,5,6,7,8,9,
-		10,11,12,13,14,15,-1,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0},
-		// 4
-		{0,1,2,3,4,5,6,7,8,9,
-		 10,11,12,13,14,15,15,15,15,15,
-		 15,15,15,15,15,15,15,15,15,15,
-		 15,15,15,15,15,15,-1,0},
-		 // 5
-		 {15,15,15,15,15,15,15,15,15,15,
-		  15,15,15,15,15,15,15,15,15,15,
-		  15,-1,0,0,0,0,0,0,0,0,
-		  0,0,0,0,0,0,0,0},
-		  // 6
-		  {0,1,2,3,4,5,6,7,8,9,
-		   10,11,12,13,14,15,15,15,15,15,
-		   15,15,15,15,15,15,15,15,15,15,
-		   15,15,15,15,15,15,-1,0},
-		   // 7
-		   {0,1,2,3,4,5,6,7,8,9,
-			10,11,12,13,14,15,-1,0,0,0,
-			0,0,0,0,0,0,0,0,0,0,
-			0,0,0,0,0,0,0,0},
-			// 8
-			{0,0,0,0,0,0,0,0,0,0,
-			 0,0,0,0,0,0,0,0,0,0,
-			 0,1,2,3,4,5,6,7,8,9,
-			 10,11,12,13,14,15,-1,0}
-};
+static void BuildMoveLocTables()
+{
+	const int MAX_X = DEF_INITDATA_TILES_X - 1; // 24
+	const int MAX_Y = DEF_INITDATA_TILES_Y - 1; // 18
+
+	// Zero-fill everything first
+	memset(_tmp_iMoveLocX, 0, sizeof(_tmp_iMoveLocX));
+	memset(_tmp_iMoveLocY, 0, sizeof(_tmp_iMoveLocY));
+
+	// Helper: write an entry pair and advance the index
+	auto put = [](int dir, int& idx, int x, int y) {
+		_tmp_iMoveLocX[dir][idx] = x;
+		_tmp_iMoveLocY[dir][idx] = y;
+		idx++;
+	};
+	auto sentinel = [](int dir, int idx) {
+		_tmp_iMoveLocX[dir][idx] = -1;
+		_tmp_iMoveLocY[dir][idx] = -1;
+	};
+
+	int n;
+
+	// Direction 0: unused
+	sentinel(0, 0);
+
+	// Direction 1 (North): top row, sweep X 0..MAX_X, Y=0
+	n = 0;
+	for (int x = 0; x <= MAX_X; x++) put(1, n, x, 0);
+	sentinel(1, n);
+
+	// Direction 2 (NE): top row X 0..MAX_X at Y=0, then right column Y=1..MAX_Y at X=MAX_X
+	n = 0;
+	for (int x = 0; x <= MAX_X; x++) put(2, n, x, 0);
+	for (int y = 1; y <= MAX_Y; y++) put(2, n, MAX_X, y);
+	sentinel(2, n);
+
+	// Direction 3 (East): right column, sweep Y 0..MAX_Y, X=MAX_X
+	n = 0;
+	for (int y = 0; y <= MAX_Y; y++) put(3, n, MAX_X, y);
+	sentinel(3, n);
+
+	// Direction 4 (SE): right column Y 0..MAX_Y at X=MAX_X, then bottom row X=MAX_X-1..0 at Y=MAX_Y
+	n = 0;
+	for (int y = 0; y <= MAX_Y; y++) put(4, n, MAX_X, y);
+	for (int x = MAX_X - 1; x >= 0; x--) put(4, n, x, MAX_Y);
+	sentinel(4, n);
+
+	// Direction 5 (South): bottom row, sweep X 0..MAX_X, Y=MAX_Y
+	n = 0;
+	for (int x = 0; x <= MAX_X; x++) put(5, n, x, MAX_Y);
+	sentinel(5, n);
+
+	// Direction 6 (SW): left column Y 0..MAX_Y at X=0, then bottom row X=1..MAX_X at Y=MAX_Y
+	n = 0;
+	for (int y = 0; y <= MAX_Y; y++) put(6, n, 0, y);
+	for (int x = 1; x <= MAX_X; x++) put(6, n, x, MAX_Y);
+	sentinel(6, n);
+
+	// Direction 7 (West): left column, sweep Y 0..MAX_Y, X=0
+	n = 0;
+	for (int y = 0; y <= MAX_Y; y++) put(7, n, 0, y);
+	sentinel(7, n);
+
+	// Direction 8 (NW): top row X 0..MAX_X at Y=0, then left column Y=1..MAX_Y at X=0
+	n = 0;
+	for (int x = 0; x <= MAX_X; x++) put(8, n, x, 0);
+	for (int y = 1; y <= MAX_Y; y++) put(8, n, 0, y);
+	sentinel(8, n);
+}
 
 
 char _tmp_cTmpDirX[9] = { 0,0,1,1,1,0,-1,-1,-1 };
@@ -150,6 +129,8 @@ extern void ThreadProc(void* ch);
 CGame::CGame(HWND hWnd)
 {
 	int i, x;
+
+	BuildMoveLocTables();
 
 	m_bIsGameStarted = false;
 	m_hWnd = hWnd;
@@ -1454,8 +1435,8 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 		auto* pkt = writer.Append<hb::net::PacketResponseMotionMoveConfirm>();
 		pkt->header.msg_id = MSGID_RESPONSE_MOTION;
 		pkt->header.msg_type = DEF_OBJECTMOVE_CONFIRM;
-		pkt->x = static_cast<std::int16_t>(dX - 12);
-		pkt->y = static_cast<std::int16_t>(dY - 9);
+		pkt->x = static_cast<std::int16_t>(dX - DEF_VIEWCENTER_X);
+		pkt->y = static_cast<std::int16_t>(dY - DEF_VIEWCENTER_Y);
 		pkt->dir = static_cast<std::uint8_t>(cDir);
 		pkt->stamina_cost = 0;
 		if (cMoveType == 1) {
@@ -1471,7 +1452,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 		pkt->occupy_status = static_cast<std::uint8_t>(pTile->m_iOccupyStatus);
 		pkt->hp = m_pClientList[iClientH]->m_iHP;
 
-		iSize = iComposeMoveMapData((short)(dX - 12), (short)(dY - 9), iClientH, cDir, moveMapData);
+		iSize = iComposeMoveMapData((short)(dX - DEF_VIEWCENTER_X), (short)(dY - DEF_VIEWCENTER_Y), iClientH, cDir, moveMapData);
 		writer.AppendBytes(moveMapData, static_cast<std::size_t>(iSize));
 
 		iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
@@ -1828,8 +1809,8 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, uint32_
 	else GetMapInitialPoint(m_pClientList[iClientH]->m_cMapIndex, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY);
 
 	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
-	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - 14 - 5);
-	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - 12 - 5);
+	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - DEF_PLAYER_PIVOT_OFFSET_X);
+	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - DEF_PLAYER_PIVOT_OFFSET_Y);
 	init_header->player_type = m_pClientList[iClientH]->m_sType;
 	init_header->appr1 = m_pClientList[iClientH]->m_sAppr1;
 	init_header->appr2 = m_pClientList[iClientH]->m_sAppr2;
@@ -1862,7 +1843,7 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, uint32_
 	init_header->hp = m_pClientList[iClientH]->m_iHP;
 	init_header->discount = 0;
 
-	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - 12, m_pClientList[iClientH]->m_sY - 9, iClientH, initMapData);
+	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - DEF_VIEWCENTER_X, m_pClientList[iClientH]->m_sY - DEF_VIEWCENTER_Y, iClientH, initMapData);
 	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
 
 	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
@@ -2629,8 +2610,8 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 	iSize = 2;
 	iTileExists = 0;
 
-	for (iy = 0; iy < 19; iy++)
-		for (ix = 0; ix < 25; ix++) {
+	for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++) {
 
 			if (((sX + ix) == 100) && ((sY + iy) == 100))
 				sX = sX;
@@ -3334,10 +3315,10 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 						return m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), cKey);
 						};
 
-					const bool is_near = (m_pClientList[i]->m_sX >= m_pClientList[sOwnerH]->m_sX - 11) &&
-						(m_pClientList[i]->m_sX <= m_pClientList[sOwnerH]->m_sX + 11) &&
-						(m_pClientList[i]->m_sY >= m_pClientList[sOwnerH]->m_sY - 9) &&
-						(m_pClientList[i]->m_sY <= m_pClientList[sOwnerH]->m_sY + 9);
+					const bool is_near = (m_pClientList[i]->m_sX >= m_pClientList[sOwnerH]->m_sX - (DEF_VIEWCENTER_X - 1)) &&
+						(m_pClientList[i]->m_sX <= m_pClientList[sOwnerH]->m_sX + (DEF_VIEWCENTER_X - 1)) &&
+						(m_pClientList[i]->m_sY >= m_pClientList[sOwnerH]->m_sY - DEF_VIEWCENTER_Y) &&
+						(m_pClientList[i]->m_sY <= m_pClientList[sOwnerH]->m_sY + DEF_VIEWCENTER_Y);
 
 					if (is_near) {
 						switch (wMsgType) {
@@ -3526,10 +3507,10 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 						return m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(const_cast<void*>(packet)), static_cast<int>(size), cKey);
 						};
 
-					const bool is_near = (m_pClientList[i]->m_sX >= m_pNpcList[sOwnerH]->m_sX - 11) &&
-						(m_pClientList[i]->m_sX <= m_pNpcList[sOwnerH]->m_sX + 11) &&
-						(m_pClientList[i]->m_sY >= m_pNpcList[sOwnerH]->m_sY - 9) &&
-						(m_pClientList[i]->m_sY <= m_pNpcList[sOwnerH]->m_sY + 9);
+					const bool is_near = (m_pClientList[i]->m_sX >= m_pNpcList[sOwnerH]->m_sX - (DEF_VIEWCENTER_X - 1)) &&
+						(m_pClientList[i]->m_sX <= m_pNpcList[sOwnerH]->m_sX + (DEF_VIEWCENTER_X - 1)) &&
+						(m_pClientList[i]->m_sY >= m_pNpcList[sOwnerH]->m_sY - DEF_VIEWCENTER_Y) &&
+						(m_pClientList[i]->m_sY <= m_pNpcList[sOwnerH]->m_sY + DEF_VIEWCENTER_Y);
 
 					if (is_near) {
 						switch (wMsgType) {
@@ -5487,10 +5468,10 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 					if (m_pClientList[i]->m_bIsInitComplete == false) break;
 
 					if ((m_pClientList[i]->m_cMapIndex == m_pClientList[iClientH]->m_cMapIndex) &&
-						(m_pClientList[i]->m_sX > m_pClientList[iClientH]->m_sX - 12) &&
-						(m_pClientList[i]->m_sX < m_pClientList[iClientH]->m_sX + 12) &&
-						(m_pClientList[i]->m_sY > m_pClientList[iClientH]->m_sY - 9) &&
-						(m_pClientList[i]->m_sY < m_pClientList[iClientH]->m_sY + 9)) {
+						(m_pClientList[i]->m_sX > m_pClientList[iClientH]->m_sX - DEF_VIEWCENTER_X) &&
+						(m_pClientList[i]->m_sX < m_pClientList[iClientH]->m_sX + DEF_VIEWCENTER_X) &&
+						(m_pClientList[i]->m_sY > m_pClientList[iClientH]->m_sY - DEF_VIEWCENTER_Y) &&
+						(m_pClientList[i]->m_sY < m_pClientList[iClientH]->m_sY + DEF_VIEWCENTER_Y)) {
 
 						// Crusade
 						if (m_bIsCrusadeMode) {
@@ -7496,10 +7477,10 @@ void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, cha
 		i = m_iClientShortCut[iShortCutIndex];
 		if ((m_pClientList[i] != 0) &&
 			(m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-			(m_pClientList[i]->m_sX >= sX - 12) &&
-			(m_pClientList[i]->m_sX <= sX + 12) &&
-			(m_pClientList[i]->m_sY >= sY - 10) &&
-			(m_pClientList[i]->m_sY <= sY + 10)) {
+			(m_pClientList[i]->m_sX >= sX - DEF_VIEWCENTER_X) &&
+			(m_pClientList[i]->m_sX <= sX + DEF_VIEWCENTER_X) &&
+			(m_pClientList[i]->m_sY >= sY - (DEF_VIEWCENTER_Y + 1)) &&
+			(m_pClientList[i]->m_sY <= sY + (DEF_VIEWCENTER_Y + 1))) {
 			bHasNearbyClients = true;
 			break;
 		}
@@ -7530,10 +7511,10 @@ void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, cha
 
 		if ((bFlag) && (m_pClientList[i] != 0)) {
 			if ((m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-				(m_pClientList[i]->m_sX >= sX - 12) &&
-				(m_pClientList[i]->m_sX <= sX + 12) &&
-				(m_pClientList[i]->m_sY >= sY - 10) &&
-				(m_pClientList[i]->m_sY <= sY + 10)) {
+				(m_pClientList[i]->m_sX >= sX - DEF_VIEWCENTER_X) &&
+				(m_pClientList[i]->m_sX <= sX + DEF_VIEWCENTER_X) &&
+				(m_pClientList[i]->m_sY >= sY - (DEF_VIEWCENTER_Y + 1)) &&
+				(m_pClientList[i]->m_sY <= sY + (DEF_VIEWCENTER_Y + 1))) {
 
 				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
@@ -7567,10 +7548,10 @@ void CGame::SendEventToNearClient_TypeB(uint32_t dwMsgID, uint16_t wMsgType, cha
 
 		if ((bFlag) && (m_pClientList[i] != 0)) {
 			if ((m_pClientList[i]->m_cMapIndex == cMapIndex) &&
-				(m_pClientList[i]->m_sX >= sX - 12) &&
-				(m_pClientList[i]->m_sX <= sX + 12) &&
-				(m_pClientList[i]->m_sY >= sY - 10) &&
-				(m_pClientList[i]->m_sY <= sY + 10)) {
+				(m_pClientList[i]->m_sX >= sX - DEF_VIEWCENTER_X) &&
+				(m_pClientList[i]->m_sX <= sX + DEF_VIEWCENTER_X) &&
+				(m_pClientList[i]->m_sY >= sY - (DEF_VIEWCENTER_Y + 1)) &&
+				(m_pClientList[i]->m_sY <= sY + (DEF_VIEWCENTER_Y + 1))) {
 
 				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
@@ -14330,8 +14311,8 @@ RTH_NEXTSTEP:
 	else GetMapInitialPoint(m_pClientList[iClientH]->m_cMapIndex, &m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY);
 
 	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
-	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - 14 - 5);
-	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - 12 - 5);
+	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - DEF_PLAYER_PIVOT_OFFSET_X);
+	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - DEF_PLAYER_PIVOT_OFFSET_Y);
 	init_header->player_type = m_pClientList[iClientH]->m_sType;
 	init_header->appr1 = m_pClientList[iClientH]->m_sAppr1;
 	init_header->appr2 = m_pClientList[iClientH]->m_sAppr2;
@@ -14364,7 +14345,7 @@ RTH_NEXTSTEP:
 	init_header->hp = m_pClientList[iClientH]->m_iHP;
 	init_header->discount = 0;
 
-	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - 12, m_pClientList[iClientH]->m_sY - 9, iClientH, initMapData);
+	iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - DEF_VIEWCENTER_X, m_pClientList[iClientH]->m_sY - DEF_VIEWCENTER_Y, iClientH, initMapData);
 	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
 
 	iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
@@ -28625,7 +28606,7 @@ int CGame::iRequestPanningMapDataRequest(int iClientH, char* pData)
 	m_pClientList[iClientH]->m_sY = dY;
 	m_pClientList[iClientH]->m_cDir = cDir;
 
-	iSize = iComposeMoveMapData((short)(dX - 12), (short)(dY - 9), iClientH, cDir, mapData);
+	iSize = iComposeMoveMapData((short)(dX - DEF_VIEWCENTER_X), (short)(dY - DEF_VIEWCENTER_Y), iClientH, cDir, mapData);
 
 	hb::net::PacketWriter writer;
 	writer.Reserve(sizeof(hb::net::PacketResponsePanningHeader) + iSize);
@@ -28633,8 +28614,8 @@ int CGame::iRequestPanningMapDataRequest(int iClientH, char* pData)
 	auto* pkt = writer.Append<hb::net::PacketResponsePanningHeader>();
 	pkt->header.msg_id = MSGID_RESPONSE_PANNING;
 	pkt->header.msg_type = DEF_OBJECTMOVE_CONFIRM;
-	pkt->x = static_cast<int16_t>(dX - 12);
-	pkt->y = static_cast<int16_t>(dY - 9);
+	pkt->x = static_cast<int16_t>(dX - DEF_VIEWCENTER_X);
+	pkt->y = static_cast<int16_t>(dY - DEF_VIEWCENTER_Y);
 	pkt->dir = static_cast<uint8_t>(cDir);
 
 	writer.AppendBytes(mapData, iSize);

@@ -50,7 +50,9 @@ void Overlay_ChangePassword::on_initialize()
     strcpy(m_cAccountName, m_pGame->m_pPlayer->m_cAccountName);
 
     // Start input on old password field
-    StartInputString(314 + SCREENX(), 179 + SCREENY(), 11, m_cOldPassword);
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+    StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword);
     ClearInputString();
 }
 
@@ -63,20 +65,23 @@ void Overlay_ChangePassword::UpdateFocusedInput()
 {
     if (m_iPrevFocus != m_iCurFocus)
     {
+        int dlgX, dlgY;
+        GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+
         EndInputString();
         switch (m_iCurFocus)
         {
         case 1:
-            StartInputString(314 + SCREENX(), 155 + SCREENY(), 11, m_cAccountName);
+            StartInputString(dlgX + 161, dlgY + 43, 11, m_cAccountName);
             break;
         case 2:
-            StartInputString(314 + SCREENX(), 179 + SCREENY(), 11, m_cOldPassword);
+            StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword);
             break;
         case 3:
-            StartInputString(314 + SCREENX(), 203 + SCREENY(), 11, m_cNewPassword);
+            StartInputString(dlgX + 161, dlgY + 91, 11, m_cNewPassword);
             break;
         case 4:
-            StartInputString(314 + SCREENX(), 227 + SCREENY(), 11, m_cConfirmPassword);
+            StartInputString(dlgX + 161, dlgY + 115, 11, m_cConfirmPassword);
             break;
         }
         m_iPrevFocus = m_iCurFocus;
@@ -228,17 +233,20 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse click detection
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         PlaySound('E', 14, 5);
 
         int iClickedField = 0;
-        if (Input::IsMouseInRect(300 + SCREENX(), 148 + SCREENY(), 425 + SCREENX(), 170 + SCREENY())) iClickedField = 1;
-        else if (Input::IsMouseInRect(300 + SCREENX(), 172 + SCREENY(), 425 + SCREENX(), 194 + SCREENY())) iClickedField = 2;
-        else if (Input::IsMouseInRect(300 + SCREENX(), 196 + SCREENY(), 425 + SCREENX(), 218 + SCREENY())) iClickedField = 3;
-        else if (Input::IsMouseInRect(300 + SCREENX(), 220 + SCREENY(), 425 + SCREENX(), 242 + SCREENY())) iClickedField = 4;
-        else if (Input::IsMouseInRect(197 + SCREENX(), 320 + SCREENY(), 197 + DEF_BTNSZX + SCREENX(), 320 + DEF_BTNSZY + SCREENY())) iClickedField = 5;
-        else if (Input::IsMouseInRect(370 + SCREENX(), 320 + SCREENY(), 370 + DEF_BTNSZX + SCREENX(), 320 + DEF_BTNSZY + SCREENY())) iClickedField = 6;
+        if (Input::IsMouseInRect(dlgX + 147, dlgY + 36, dlgX + 272, dlgY + 58)) iClickedField = 1;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 60, dlgX + 272, dlgY + 82)) iClickedField = 2;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 84, dlgX + 272, dlgY + 106)) iClickedField = 3;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 108, dlgX + 272, dlgY + 130)) iClickedField = 4;
+        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, dlgX + 44 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY)) iClickedField = 5;
+        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, dlgX + 217 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY)) iClickedField = 6;
 
         switch (iClickedField)
         {
@@ -258,9 +266,9 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse hover for buttons
-    if (Input::IsMouseInRect(197 + SCREENX(), 320 + SCREENY(), 197 + DEF_BTNSZX + SCREENX(), 320 + DEF_BTNSZY + SCREENY()))
+    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, dlgX + 44 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY))
         m_iCurFocus = 5;
-    if (Input::IsMouseInRect(370 + SCREENX(), 320 + SCREENY(), 370 + DEF_BTNSZX + SCREENX(), 320 + DEF_BTNSZY + SCREENY()))
+    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, dlgX + 217 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY))
         m_iCurFocus = 6;
 
     // Update input field focus
@@ -271,43 +279,46 @@ void Overlay_ChangePassword::on_render()
 {
     bool bValidInputs = ValidateInputs();
 
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+
     // Draw dialog boxes
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + SCREENX(), 112 + SCREENY(), 0);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, 153 + SCREENX(), 112 + SCREENY(), 13);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 153 + 157 + SCREENX(), 112 + 109 + SCREENY(), 7);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 0);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, dlgX, dlgY, 13);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX + 157, dlgY + 109, 7);
 
     // Draw labels
-    PutString(206 + SCREENX(), 155 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel.ToColorRef());
-    PutString(206 + SCREENX(), 179 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD2, GameColors::UILabel.ToColorRef());
-    PutString(206 + SCREENX(), 203 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD3, GameColors::UILabel.ToColorRef());
-    PutString(206 + SCREENX(), 227 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel.ToColorRef());
+    PutString(dlgX + 53, dlgY + 43, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel.ToColorRef());
+    PutString(dlgX + 53, dlgY + 67, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, GameColors::UILabel.ToColorRef());
+    PutString(dlgX + 53, dlgY + 91, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, GameColors::UILabel.ToColorRef());
+    PutString(dlgX + 53, dlgY + 115, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel.ToColorRef());
 
     // Draw input field values (when not focused)
     if (m_iCurFocus != 1)
     {
         uint32_t color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
-        PutString(314 + SCREENX(), 155 + SCREENY(), m_cAccountName, color);
+        PutString(dlgX + 161, dlgY + 43, m_cAccountName, color);
     }
 
     if (m_iCurFocus != 2)
     {
         uint32_t color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedOld(strlen(m_cOldPassword), '*');
-        TextLib::DrawText(GameFont::Default, 314 + SCREENX(), 179 + SCREENY(), maskedOld.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 3)
     {
         uint32_t color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedNew(strlen(m_cNewPassword), '*');
-        TextLib::DrawText(GameFont::Default, 314 + SCREENX(), 203 + SCREENY(), maskedNew.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     if (m_iCurFocus != 4)
     {
         uint32_t color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
         std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
-        TextLib::DrawText(GameFont::Default, 314 + SCREENX(), 227 + SCREENY(), maskedConfirm.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::FromColorRef(color));
     }
 
     // Show active input string (with masking for password fields)
@@ -317,17 +328,17 @@ void Overlay_ChangePassword::on_render()
         ShowReceivedString(true);  // Hide (mask) password
 
     // Help text
-    PutAlignedString(153 + SCREENX(), 487 + SCREENX(), 258 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD5);
-    PutAlignedString(153 + SCREENX(), 487 + SCREENX(), 273 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD6);
-    PutAlignedString(153 + SCREENX(), 487 + SCREENX(), 288 + SCREENY(), UPDATE_SCREEN_ON_CHANGE_PASSWORD7);
+    PutAlignedString(dlgX, dlgX + 334, dlgY + 146, UPDATE_SCREEN_ON_CHANGE_PASSWORD5);
+    PutAlignedString(dlgX, dlgX + 334, dlgY + 161, UPDATE_SCREEN_ON_CHANGE_PASSWORD6);
+    PutAlignedString(dlgX, dlgX + 334, dlgY + 176, UPDATE_SCREEN_ON_CHANGE_PASSWORD7);
 
     // OK button (enabled only when inputs are valid)
     int okFrame = (bValidInputs && m_iCurFocus == 5) ? 21 : 20;
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(197 + SCREENX(), 320 + SCREENY(), okFrame);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(dlgX + 44, dlgY + 208, okFrame);
 
     // Cancel button
     int cancelFrame = (m_iCurFocus == 6) ? 17 : 16;
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(370 + SCREENX(), 320 + SCREENY(), cancelFrame);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(dlgX + 217, dlgY + 208, cancelFrame);
 
     DrawVersion();
 }

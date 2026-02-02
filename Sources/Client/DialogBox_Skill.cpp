@@ -7,7 +7,7 @@
 DialogBox_Skill::DialogBox_Skill(CGame* pGame)
 	: IDialogBox(DialogBoxId::Skill, pGame)
 {
-	SetDefaultRect(337 + SCREENX(), 57 + SCREENY(), 258, 339);
+	SetDefaultRect(337 , 57 , 258, 339);
 }
 
 void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)

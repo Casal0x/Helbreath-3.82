@@ -54,7 +54,6 @@ DXC_ddraw::DXC_ddraw()
 {
 	m_lpFrontB4		= 0;
 	m_lpDD4			= 0;
-	m_lpPDBGS		= 0;
 	m_lpBackB4		= 0;
 	m_lpBackB4flip	= 0;
 	m_pBackB4Addr	= 0;
@@ -100,6 +99,9 @@ bool DXC_ddraw::bInit(HWND hWnd)
 	 res_y = LOGICAL_HEIGHT();
 	 res_x_mid = LOGICAL_WIDTH() / 2;
 	 res_y_mid = LOGICAL_HEIGHT() / 2;
+
+	printf("[DDraw] bInit: LOGICAL=%dx%d, res=%dx%d, window=%dx%d\n",
+		LOGICAL_WIDTH(), LOGICAL_HEIGHT(), res_x, res_y, windowWidth, windowHeight);
 
 	SetRect(&m_rcClipArea, 0,0, res_x, res_y);
 
@@ -158,10 +160,6 @@ bool DXC_ddraw::bInit(HWND hWnd)
 	InitFlipToGDI(hWnd);
 	m_lpBackB4 = pCreateOffScreenSurface(res_x, res_y);
 	if (m_lpBackB4 == 0) return false;
-
-	// Pre-draw background surface
-	m_lpPDBGS = pCreateOffScreenSurface(res_x +32, res_y +32);
-	if (m_lpPDBGS == 0) return false;
 
 	ddsd.dwSize = sizeof(ddsd);
 	if (m_lpBackB4->Lock(0, &ddsd, DDLOCK_WAIT, 0) != DD_OK) return false;
@@ -419,10 +417,6 @@ void DXC_ddraw::ChangeDisplayMode(HWND hWnd)
 	InitFlipToGDI(hWnd);
 	m_lpBackB4 = pCreateOffScreenSurface(res_x, res_y);
 	if (m_lpBackB4 == 0) return;
-
-	// Pre-draw background surface
-	m_lpPDBGS = pCreateOffScreenSurface(res_x +32, res_y +32);
-	if (m_lpPDBGS == 0) return;
 
 	ddsd.dwSize = sizeof(ddsd);
 	if (m_lpBackB4->Lock(0, &ddsd, DDLOCK_WAIT, 0) != DD_OK) return;

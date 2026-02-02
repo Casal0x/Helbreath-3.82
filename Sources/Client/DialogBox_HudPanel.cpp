@@ -202,19 +202,9 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
 {
 	short panelY = Info().sY;
-	int xOffset = HudXOffset();
-
-	// At higher resolutions, fill the sides with black and center the HUD
-	if (xOffset > 0)
-	{
-		// Fill left side (0 to xOffset) with dark
-		m_pGame->m_Renderer->DrawDarkRect(0, panelY, xOffset, panelY + ICON_PANEL_HEIGHT(), 1.0f);
-		// Fill right side (xOffset + 640 to end) with dark
-		m_pGame->m_Renderer->DrawDarkRect(xOffset + 640, panelY, LOGICAL_WIDTH(), panelY + ICON_PANEL_HEIGHT(), 1.0f);
-	}
 
 	// Draw main HUD background centered (at xOffset, which is 0 for 640x480, 80 for 800x600)
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(xOffset, panelY, 14);
+	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(0, panelY, 14);
 
 	DrawGaugeBars();
 	DrawStatusIcons(msX, msY);

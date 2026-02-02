@@ -35,6 +35,9 @@ void Overlay_QueryDeleteCharacter::on_update()
 {
     uint32_t dwTime = GameClock::GetTimeMS();
 
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+
     // ESC cancels - base screen (SelectCharacter) will be revealed
     if (Input::IsKeyPressed(VK_ESCAPE))
     {
@@ -48,8 +51,8 @@ void Overlay_QueryDeleteCharacter::on_update()
         PlaySound('E', 14, 5);
 
         // Yes button - confirm deletion
-        if (Input::IsMouseInRect(200 + SCREENX(), 244 + SCREENY(),
-                                  200 + DEF_BTNSZX + SCREENX(), 244 + DEF_BTNSZY + SCREENY()))
+        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119,
+                                  dlgX + 38 + DEF_BTNSZX, dlgY + 119 + DEF_BTNSZY))
         {
             // Create login socket and initiate delete request
             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
@@ -66,8 +69,8 @@ void Overlay_QueryDeleteCharacter::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(370 + SCREENX(), 244 + SCREENY(),
-                                  370 + DEF_BTNSZX + SCREENX(), 244 + DEF_BTNSZY + SCREENY()))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119,
+                                  dlgX + 208 + DEF_BTNSZX, dlgY + 119 + DEF_BTNSZY))
         {
             clear_overlay();
             return;
@@ -99,6 +102,9 @@ void Overlay_QueryDeleteCharacter::on_render()
     int msY = Input::GetMouseY();
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
 
+    int dlgX, dlgY;
+    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+
     // Double shadow effect after initial animation period (600ms)
     if (dwElapsed >= 600)
     {
@@ -106,34 +112,34 @@ void Overlay_QueryDeleteCharacter::on_render()
     }
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX(), 125 + SCREENY(), 2);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Title
-    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX(), 160 + SCREENY(), "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Character name display
-    PutString(215 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack.ToColorRef());
-    PutString(335 + SCREENX(), 199 + SCREENY(), "__________", GameColors::UIBlack.ToColorRef());
+    PutString(dlgX + 53, dlgY + 70, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack.ToColorRef());
+    PutString(dlgX + 173, dlgY + 74, "__________", GameColors::UIBlack.ToColorRef());
 
     // Get character name from the selected character slot
     if (m_pGame->m_wEnterGameType > 0 && m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1] != nullptr)
     {
-        PutString(335 + SCREENX(), 195 + SCREENY(),
+        PutString(dlgX + 173, dlgY + 70,
                   m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, GameColors::UILabel.ToColorRef());
     }
 
     // Confirmation text
-    PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 220 + SCREENY(), UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER2);
+    PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 95, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER2);
 
     // Yes button with hover effect
-    bool bYesHover = (msX >= 200 + SCREENX()) && (msX <= 200 + DEF_BTNSZX + SCREENX()) &&
-                     (msY >= 244 + SCREENY()) && (msY <= 244 + DEF_BTNSZY + SCREENY());
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX(), 244 + SCREENY(), bYesHover ? 19 : 18);
+    bool bYesHover = (msX >= dlgX + 38) && (msX <= dlgX + 38 + DEF_BTNSZX) &&
+                     (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 38, dlgY + 119, bYesHover ? 19 : 18);
 
     // No button with hover effect
-    bool bNoHover = (msX >= 370 + SCREENX()) && (msX <= 370 + DEF_BTNSZX + SCREENX()) &&
-                    (msY >= 244 + SCREENY()) && (msY <= 244 + DEF_BTNSZY + SCREENY());
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX(), 244 + SCREENY(), bNoHover ? 3 : 2);
+    bool bNoHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + DEF_BTNSZX) &&
+                    (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bNoHover ? 3 : 2);
 
     DrawVersion();
 }

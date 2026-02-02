@@ -76,9 +76,6 @@ public:
     int GetHeightMid() const override;
     void ResizeBackBuffer(int width, int height) override;
 
-    // Pre-Draw Background Surface
-    ITexture* GetBackgroundSurface() override;
-
     // Color Key Support
     uint32_t GetColorKey(ITexture* texture, uint16_t colorKey) override;
     uint32_t GetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b) override;
@@ -117,9 +114,7 @@ public:
     int GetTextWidth(const char* text) override;
 
     // Surface Operations
-    void BltBackBufferFromPDBGS(RECT* srcRect) override;
     void* GetBackBufferNative() override;
-    void* GetPDBGSNative() override;
 
     // Native Access
     void* GetNativeRenderer() override;
@@ -143,8 +138,6 @@ private:
     sf::RenderWindow* m_pRenderWindow;  // Not owned, set by SFMLWindow
     bool m_texturesCreated;
     sf::RenderTexture m_backBuffer;
-    sf::RenderTexture m_pdbgs;  // Pre-Draw Background Surface
-    SFMLTexture* m_pdbgsWrapper;
 
     // For LockBackBuffer emulation
     sf::Image m_lockedImage;

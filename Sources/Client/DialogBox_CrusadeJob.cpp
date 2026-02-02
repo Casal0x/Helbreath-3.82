@@ -8,7 +8,7 @@
 DialogBox_CrusadeJob::DialogBox_CrusadeJob(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeJob, pGame)
 {
-	SetDefaultRect(360 + SCREENX(), 65 + SCREENY(), 258, 339);
+	SetDefaultRect(360 , 65 , 258, 339);
 }
 
 void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, short msY)

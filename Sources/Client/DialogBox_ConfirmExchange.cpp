@@ -4,7 +4,7 @@
 DialogBox_ConfirmExchange::DialogBox_ConfirmExchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::ConfirmExchange, pGame)
 {
-	SetDefaultRect(285 + SCREENX(), 200 + SCREENY(), 270, 105);
+	SetDefaultRect(285 , 200 , 270, 105);
 }
 
 void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB)

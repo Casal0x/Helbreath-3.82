@@ -68,6 +68,8 @@ protected:
     // Drawing helpers
     void DrawNewDialogBox(char cType, int sX, int sY, int iFrame,
                           bool bIsNoColorKey = false, bool bIsTrans = false);
+    // Computes centered position for a dialog sprite frame within the logical resolution
+    void GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY);
     void PutString(int iX, int iY, const char* pString, uint32_t color);
     void PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB);
     void PutAlignedString(int iX1, int iX2, int iY, const char* pString,

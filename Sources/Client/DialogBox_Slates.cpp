@@ -10,7 +10,7 @@
 DialogBox_Slates::DialogBox_Slates(CGame* pGame)
 	: IDialogBox(DialogBoxId::Slates, pGame)
 {
-	SetDefaultRect(100 + SCREENX(), 60 + SCREENY(), 258, 339);
+	SetDefaultRect(100 , 60 , 258, 339);
 }
 
 void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)

@@ -922,55 +922,55 @@ void CMapData::ShiftMapData(char cDir)
 			m_pTmpData[ix][iy].Clear();
 
 	switch (cDir) {
-	case 1:
-		for (ix = 0; ix < 26; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[4 + 5 - 2 + ix][6 + 5 - 2 + iy], &m_pData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], sizeof(class CTile));
+	case 1: // North
+		for (ix = 0; ix < DEF_INITDATA_TILES_X + 1; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
 		m_sPivotY--;
 		break;
-	case 2:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[4 + 5 - 2 + ix][6 + 5 - 2 + iy], &m_pData[5 + 5 - 2 + ix][5 + 5 - 2 + iy], sizeof(class CTile));
+	case 2: // NE
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
 		m_sPivotX++;
 		m_sPivotY--;
 		break;
-	case 3:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 20; iy++)
-				memcpy(&m_pTmpData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], &m_pData[5 + 5 - 2 + ix][5 + 5 - 2 + iy], sizeof(class CTile));
+	case 3: // East
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y + 1; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
 		m_sPivotX++;
 		break;
-	case 4:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], &m_pData[5 + 5 - 2 + ix][6 + 5 - 2 + iy], sizeof(class CTile));
+	case 4: // SE
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
 		m_sPivotX++;
 		m_sPivotY++;
 		break;
-	case 5:
-		for (ix = 0; ix < 26; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], &m_pData[4 + 5 - 2 + ix][6 + 5 - 2 + iy], sizeof(class CTile));
+	case 5: // South
+		for (ix = 0; ix < DEF_INITDATA_TILES_X + 1; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
 		m_sPivotY++;
 		break;
-	case 6:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[5 + 5 - 2 + ix][5 + 5 - 2 + iy], &m_pData[4 + 5 - 2 + ix][6 + 5 - 2 + iy], sizeof(class CTile));
+	case 6: // SW
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
 		m_sPivotX--;
 		m_sPivotY++;
 		break;
-	case 7:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 20; iy++)
-				memcpy(&m_pTmpData[5 + 5 - 2 + ix][5 + 5 - 2 + iy], &m_pData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], sizeof(class CTile));
+	case 7: // West
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y + 1; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
 		m_sPivotX--;
 		break;
-	case 8:
-		for (ix = 0; ix < 25; ix++)
-			for (iy = 0; iy < 19; iy++)
-				memcpy(&m_pTmpData[5 + 5 - 2 + ix][6 + 5 - 2 + iy], &m_pData[4 + 5 - 2 + ix][5 + 5 - 2 + iy], sizeof(class CTile));
+	case 8: // NW
+		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
+			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
+				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
 		m_sPivotX--;
 		m_sPivotY--;
 		break;

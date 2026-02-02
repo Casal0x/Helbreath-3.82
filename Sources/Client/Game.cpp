@@ -10910,8 +10910,8 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CrusadeJob) == false)
 		{
 			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 + SCREENX();
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 + SCREENY();
+			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 ;
+			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 ;
 			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sV1 = sV1;
 		}
 		break;
@@ -11163,10 +11163,16 @@ void CGame::DisableDialogBox(int iBoxID)
 		break;
 
 	case DialogBoxId::Slates:
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Slates).sV1] = false;
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Slates).sV2] = false;
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Slates).sV3] = false;
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Slates).sV4] = false;
+	{
+		auto& info = m_dialogBoxManager.Info(DialogBoxId::Slates);
+		auto clearSlot = [&](int idx) {
+			if (idx >= 0 && idx < DEF_MAXITEMS) m_bIsItemDisabled[idx] = false;
+		};
+		clearSlot(info.sV1);
+		clearSlot(info.sV2);
+		clearSlot(info.sV3);
+		clearSlot(info.sV4);
+	}
 
 		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr));
 		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr2, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr2));
@@ -13674,7 +13680,7 @@ void CGame::CreateScreenShot()
 		, SysTime.wMonth, SysTime.wDay
 		, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
 		, LongMapName);
-	TextLib::DrawTextAligned(GameFont::Default, 500 + SCREENX(), 30, (650 + SCREENY()) - (500 + SCREENX()), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
+	TextLib::DrawTextAligned(GameFont::Default, 500 , 30, (650 ) - (500 ), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
 
 	for (i = 0; i < 1000; i++)
 	{
@@ -14381,7 +14387,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	TextLib::DrawText(GameFont::Default, 12 + SCREENX(), (LOGICAL_HEIGHT() - 12 - 14) + SCREENY(), G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	TextLib::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -17161,8 +17167,8 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_pMapData->m_sPivotX = sX;
 	m_pMapData->m_sPivotY = sY;
 
-	m_pPlayer->m_sPlayerX = sX + 19;
-	m_pPlayer->m_sPlayerY = sY + 17;
+	m_pPlayer->m_sPlayerX = sX + DEF_PLAYER_PIVOT_OFFSET_X;
+	m_pPlayer->m_sPlayerY = sY + DEF_PLAYER_PIVOT_OFFSET_Y;
 
 	m_pPlayer->m_iPlayerDir = 5;
 
@@ -17177,7 +17183,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X()) * 32 - 16;
 	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y()) * 32 - 16;
 	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
-	_ReadMapData(sX + 7, sY + 8, cp);
+	_ReadMapData(sX + DEF_MAPDATA_BUFFER_X, sY + DEF_MAPDATA_BUFFER_Y, cp);
 	// ------------------------------------------------------------------------+
 	wsprintf(cTxt, INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
 	AddEventList(cTxt, 10);

@@ -27,5 +27,24 @@
 // Default max player level (server may override via GameConfigs.db)
 #define DEF_PLAYERMAXLEVEL  180
 
+// Init map data area (what server sends on map init/move)
+#define DEF_INITDATA_TILES_X    DEF_VIEWTILES_X            // 25
+#define DEF_INITDATA_TILES_Y    (DEF_VIEWTILES_Y + 2)      // 19
+
+// View center (player position relative to init data origin)
+#define DEF_VIEWCENTER_X        DEF_VIEWRANGE_X             // 12
+#define DEF_VIEWCENTER_Y        (DEF_VIEWRANGE_Y + 1)       // 9
+
+// Client buffer offsets (position of init data in client's 60x55 array)
+#define DEF_MAPDATA_BUFFER_X    7
+#define DEF_MAPDATA_BUFFER_Y    8
+
+// Pivot offsets (player world pos to/from pivot)
+#define DEF_PLAYER_PIVOT_OFFSET_X  (DEF_MAPDATA_BUFFER_X + DEF_VIEWCENTER_X)  // 19
+#define DEF_PLAYER_PIVOT_OFFSET_Y  (DEF_MAPDATA_BUFFER_Y + DEF_VIEWCENTER_Y)  // 17
+
+// Move table array size (longest direction: row + column + sentinel)
+#define DEF_MOVELOC_MAX_ENTRIES (DEF_INITDATA_TILES_X + DEF_INITDATA_TILES_Y)  // 44
+
 // Extra tiles beyond screen edge for entity broadcast (prevents pop-in/out)
 #define DEF_VIEWRANGE_BUFFER 3

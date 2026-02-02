@@ -131,44 +131,44 @@ IDialogBox* DialogBoxManager::GetDialogBox(int iBoxID) const
 void DialogBoxManager::InitDefaults()
 {
 	//Character-Info Dialog(F5)
-	m_info[DialogBoxId::CharacterInfo].sX = 30 + SCREENX();
-	m_info[DialogBoxId::CharacterInfo].sY = 30 + SCREENY();
+	m_info[DialogBoxId::CharacterInfo].sX = 30 ;
+	m_info[DialogBoxId::CharacterInfo].sY = 30 ;
 	m_info[DialogBoxId::CharacterInfo].sSizeX = 270;
 	m_info[DialogBoxId::CharacterInfo].sSizeY = 376;
 
 	//Inventory Dialog(F6)
-	m_info[DialogBoxId::Inventory].sX = 380 + SCREENX();
-	m_info[DialogBoxId::Inventory].sY = 210 + SCREENY();
+	m_info[DialogBoxId::Inventory].sX = 380 ;
+	m_info[DialogBoxId::Inventory].sY = 210 ;
 	m_info[DialogBoxId::Inventory].sSizeX = 225;
 	m_info[DialogBoxId::Inventory].sSizeY = 185;
 
 	//Magic Circle Dialog(F7)
-	m_info[DialogBoxId::Magic].sX = 337 + SCREENX();
-	m_info[DialogBoxId::Magic].sY = 57 + SCREENY();
+	m_info[DialogBoxId::Magic].sX = 337 ;
+	m_info[DialogBoxId::Magic].sY = 57 ;
 	m_info[DialogBoxId::Magic].sSizeX = 258;//280;
 	m_info[DialogBoxId::Magic].sSizeY = 328;//346;
 
 	// Item drop confirmation
-	m_info[DialogBoxId::ItemDropConfirm].sX = 0 + SCREENX();
-	m_info[DialogBoxId::ItemDropConfirm].sY = 0 + SCREENY();
+	m_info[DialogBoxId::ItemDropConfirm].sX = 0 ;
+	m_info[DialogBoxId::ItemDropConfirm].sY = 0 ;
 	m_info[DialogBoxId::ItemDropConfirm].sSizeX = 270;
 	m_info[DialogBoxId::ItemDropConfirm].sSizeY = 105;
 
 	// ** This is a battle area **
-	m_info[DialogBoxId::WarningBattleArea].sX = 0 + SCREENX();
-	m_info[DialogBoxId::WarningBattleArea].sY = 0 + SCREENY();
+	m_info[DialogBoxId::WarningBattleArea].sX = 0 ;
+	m_info[DialogBoxId::WarningBattleArea].sY = 0 ;
 	m_info[DialogBoxId::WarningBattleArea].sSizeX = 310;
 	m_info[DialogBoxId::WarningBattleArea].sSizeY = 170;
 
 	//Guild Menu Dialog
-	m_info[DialogBoxId::GuildMenu].sX = 337 + SCREENX();
-	m_info[DialogBoxId::GuildMenu].sY = 57 + SCREENY();
+	m_info[DialogBoxId::GuildMenu].sX = 337 ;
+	m_info[DialogBoxId::GuildMenu].sY = 57 ;
 	m_info[DialogBoxId::GuildMenu].sSizeX = 258;
 	m_info[DialogBoxId::GuildMenu].sSizeY = 339;
 
 	//Guild Operation Dialog
-	m_info[DialogBoxId::GuildOperation].sX = 337 + SCREENX();
-	m_info[DialogBoxId::GuildOperation].sY = 57 + SCREENY();
+	m_info[DialogBoxId::GuildOperation].sX = 337 ;
+	m_info[DialogBoxId::GuildOperation].sY = 57 ;
 	m_info[DialogBoxId::GuildOperation].sSizeX = 295;
 	m_info[DialogBoxId::GuildOperation].sSizeY = 346;
 
@@ -179,117 +179,117 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::GuideMap].sSizeY = 128;
 
 	//Chatting History Dialog(F9)
-	m_info[DialogBoxId::ChatHistory].sX = 135 + SCREENX();
-	m_info[DialogBoxId::ChatHistory].sY = 273 + SCREENY() + SCREENY();
+	m_info[DialogBoxId::ChatHistory].sX = 135 ;
+	m_info[DialogBoxId::ChatHistory].sY = 273  ;
 	m_info[DialogBoxId::ChatHistory].sSizeX = 364;
 	m_info[DialogBoxId::ChatHistory].sSizeY = 162;
 
 	//Sale Menu Dialog
-	m_info[DialogBoxId::SaleMenu].sX = 70 + SCREENX();
-	m_info[DialogBoxId::SaleMenu].sY = 50 + SCREENY();
+	m_info[DialogBoxId::SaleMenu].sX = 70 ;
+	m_info[DialogBoxId::SaleMenu].sY = 50 ;
 	m_info[DialogBoxId::SaleMenu].sSizeX = 258;
 	m_info[DialogBoxId::SaleMenu].sSizeY = 339;
 
 	//Level-Up Setting Dialog
-	m_info[DialogBoxId::LevelUpSetting].sX = 0 + SCREENX();
-	m_info[DialogBoxId::LevelUpSetting].sY = 0 + SCREENY();
+	m_info[DialogBoxId::LevelUpSetting].sX = 0 ;
+	m_info[DialogBoxId::LevelUpSetting].sY = 0 ;
 	m_info[DialogBoxId::LevelUpSetting].sSizeX = 258;
 	m_info[DialogBoxId::LevelUpSetting].sSizeY = 339;
 
 	//City Hall Menu Dialog
-	m_info[DialogBoxId::CityHallMenu].sX = 337 + SCREENX();
-	m_info[DialogBoxId::CityHallMenu].sY = 57 + SCREENY();
+	m_info[DialogBoxId::CityHallMenu].sX = 337 ;
+	m_info[DialogBoxId::CityHallMenu].sY = 57 ;
 	m_info[DialogBoxId::CityHallMenu].sSizeX = 258;
 	m_info[DialogBoxId::CityHallMenu].sSizeY = 339;
 
 	//Bank Dialog
-	m_info[DialogBoxId::Bank].sX = 60 + SCREENX(); //337
-	m_info[DialogBoxId::Bank].sY = 50 + SCREENY();
+	m_info[DialogBoxId::Bank].sX = 60 ; //337
+	m_info[DialogBoxId::Bank].sY = 50 ;
 	m_info[DialogBoxId::Bank].sSizeX = 258;
 	m_info[DialogBoxId::Bank].sSizeY = 339;
 	m_info[DialogBoxId::Bank].sV1 = 13;
 
 	//Skill Menu(F8)
-	m_info[DialogBoxId::Skill].sX = 337 + SCREENX();
-	m_info[DialogBoxId::Skill].sY = 57 + SCREENY();
+	m_info[DialogBoxId::Skill].sX = 337 ;
+	m_info[DialogBoxId::Skill].sY = 57 ;
 	m_info[DialogBoxId::Skill].sSizeX = 258;
 	m_info[DialogBoxId::Skill].sSizeY = 339;
 
 	//Magic Shop Menu
-	m_info[DialogBoxId::MagicShop].sX = 30 + SCREENX();
-	m_info[DialogBoxId::MagicShop].sY = 30 + SCREENY();
+	m_info[DialogBoxId::MagicShop].sX = 30 ;
+	m_info[DialogBoxId::MagicShop].sY = 30 ;
 	m_info[DialogBoxId::MagicShop].sSizeX = 304;
 	m_info[DialogBoxId::MagicShop].sSizeY = 328;
 
 	//Dialog items drop external screen
-	m_info[DialogBoxId::ItemDropExternal].sX = 0 + SCREENX();
-	m_info[DialogBoxId::ItemDropExternal].sY = 0 + SCREENY();
+	m_info[DialogBoxId::ItemDropExternal].sX = 0 ;
+	m_info[DialogBoxId::ItemDropExternal].sY = 0 ;
 	m_info[DialogBoxId::ItemDropExternal].sSizeX = 215;
 	m_info[DialogBoxId::ItemDropExternal].sSizeY = 87;
 
 	//Text Dialog
-	m_info[DialogBoxId::Text].sX = 20 + SCREENX();
-	m_info[DialogBoxId::Text].sY = 65 + SCREENY();
+	m_info[DialogBoxId::Text].sX = 20 ;
+	m_info[DialogBoxId::Text].sY = 65 ;
 	m_info[DialogBoxId::Text].sSizeX = 258; // 238
 	m_info[DialogBoxId::Text].sSizeY = 339; // 274
 
 	//System Menu Dialog(F12)
-	m_info[DialogBoxId::SystemMenu].sX = 337 + SCREENX();
-	m_info[DialogBoxId::SystemMenu].sY = 107 + SCREENY();
+	m_info[DialogBoxId::SystemMenu].sX = 337 ;
+	m_info[DialogBoxId::SystemMenu].sY = 107 ;
 	m_info[DialogBoxId::SystemMenu].sSizeX = 258;//270; //v2.18
 	m_info[DialogBoxId::SystemMenu].sSizeY = 268;//346;
 
 	//NpcActionQuery Dialog
-	m_info[DialogBoxId::NpcActionQuery].sX = 237 + SCREENX();
-	m_info[DialogBoxId::NpcActionQuery].sY = 57 + SCREENY();
+	m_info[DialogBoxId::NpcActionQuery].sX = 237 ;
+	m_info[DialogBoxId::NpcActionQuery].sY = 57 ;
 	m_info[DialogBoxId::NpcActionQuery].sSizeX = 252;
 	m_info[DialogBoxId::NpcActionQuery].sSizeY = 87;
 
 	//NpcTalk Dialog
-	m_info[DialogBoxId::NpcTalk].sX = 337 + SCREENX();
-	m_info[DialogBoxId::NpcTalk].sY = 57 + SCREENY();
+	m_info[DialogBoxId::NpcTalk].sX = 337 ;
+	m_info[DialogBoxId::NpcTalk].sY = 57 ;
 	m_info[DialogBoxId::NpcTalk].sSizeX = 258;
 	m_info[DialogBoxId::NpcTalk].sSizeY = 339;
 
 	//Map
-	m_info[DialogBoxId::Map].sX = 336 + SCREENX();
-	m_info[DialogBoxId::Map].sY = 88 + SCREENY();
+	m_info[DialogBoxId::Map].sX = 336 ;
+	m_info[DialogBoxId::Map].sY = 88 ;
 	m_info[DialogBoxId::Map].sSizeX = 270;
 	m_info[DialogBoxId::Map].sSizeY = 346;
 
 	//ItemSellorRepair Dialog
-	m_info[DialogBoxId::SellOrRepair].sX = 337 + SCREENX();
-	m_info[DialogBoxId::SellOrRepair].sY = 57 + SCREENY();
+	m_info[DialogBoxId::SellOrRepair].sX = 337 ;
+	m_info[DialogBoxId::SellOrRepair].sY = 57 ;
 	m_info[DialogBoxId::SellOrRepair].sSizeX = 258;
 	m_info[DialogBoxId::SellOrRepair].sSizeY = 339;
 
 	//Fishing Dialog
-	m_info[DialogBoxId::Fishing].sX = 193 + SCREENX();
-	m_info[DialogBoxId::Fishing].sY = 241 + SCREENY();
+	m_info[DialogBoxId::Fishing].sX = 193 ;
+	m_info[DialogBoxId::Fishing].sY = 241 ;
 	m_info[DialogBoxId::Fishing].sSizeX = 263;
 	m_info[DialogBoxId::Fishing].sSizeY = 100;
 
 	//Noticement Dialog
-	m_info[DialogBoxId::Noticement].sX = 162 + SCREENX();
-	m_info[DialogBoxId::Noticement].sY = 40 + SCREENY();
+	m_info[DialogBoxId::Noticement].sX = 162 ;
+	m_info[DialogBoxId::Noticement].sY = 40 ;
 	m_info[DialogBoxId::Noticement].sSizeX = 315;
 	m_info[DialogBoxId::Noticement].sSizeY = 171;
 
 	//Manufacture Dialog
-	m_info[DialogBoxId::Manufacture].sX = 100 + SCREENX();
-	m_info[DialogBoxId::Manufacture].sY = 60 + SCREENY();
+	m_info[DialogBoxId::Manufacture].sX = 100 ;
+	m_info[DialogBoxId::Manufacture].sY = 60 ;
 	m_info[DialogBoxId::Manufacture].sSizeX = 258;
 	m_info[DialogBoxId::Manufacture].sSizeY = 339;
 
 	//Exchange Dialog
-	m_info[DialogBoxId::Exchange].sX = 100 + SCREENX();
-	m_info[DialogBoxId::Exchange].sY = 30 + SCREENY();
+	m_info[DialogBoxId::Exchange].sX = 100 ;
+	m_info[DialogBoxId::Exchange].sY = 30 ;
 	m_info[DialogBoxId::Exchange].sSizeX = 520;
 	m_info[DialogBoxId::Exchange].sSizeY = 357;
 
 	//Quest Dialog
-	m_info[DialogBoxId::Quest].sX = 0 + SCREENX();
-	m_info[DialogBoxId::Quest].sY = 0 + SCREENY();
+	m_info[DialogBoxId::Quest].sX = 0 ;
+	m_info[DialogBoxId::Quest].sY = 0 ;
 	m_info[DialogBoxId::Quest].sSizeX = 258;
 	m_info[DialogBoxId::Quest].sSizeY = 339;
 
@@ -300,92 +300,92 @@ void DialogBoxManager::InitDefaults()
 	m_info[DialogBoxId::HudPanel].sSizeY = ICON_PANEL_HEIGHT();
 
 	//Sell List Dialog
-	m_info[DialogBoxId::SellList].sX = 170 + SCREENX();
-	m_info[DialogBoxId::SellList].sY = 70 + SCREENY();
+	m_info[DialogBoxId::SellList].sX = 170 ;
+	m_info[DialogBoxId::SellList].sY = 70 ;
 	m_info[DialogBoxId::SellList].sSizeX = 258;
 	m_info[DialogBoxId::SellList].sSizeY = 339;
 
 	//Party Dialog
-	m_info[DialogBoxId::Party].sX = 0 + SCREENX();
-	m_info[DialogBoxId::Party].sY = 0 + SCREENY();
+	m_info[DialogBoxId::Party].sX = 0 ;
+	m_info[DialogBoxId::Party].sY = 0 ;
 	m_info[DialogBoxId::Party].sSizeX = 258;
 	m_info[DialogBoxId::Party].sSizeY = 339;
 
 	//Crusade Job Dialog
-	m_info[DialogBoxId::CrusadeJob].sX = 360 + SCREENX();
-	m_info[DialogBoxId::CrusadeJob].sY = 65 + SCREENY();
+	m_info[DialogBoxId::CrusadeJob].sX = 360 ;
+	m_info[DialogBoxId::CrusadeJob].sY = 65 ;
 	m_info[DialogBoxId::CrusadeJob].sSizeX = 258;
 	m_info[DialogBoxId::CrusadeJob].sSizeY = 339;
 
 	//Item Upgrade Dialog
-	m_info[DialogBoxId::ItemUpgrade].sX = 60 + SCREENX();
-	m_info[DialogBoxId::ItemUpgrade].sY = 50 + SCREENY();
+	m_info[DialogBoxId::ItemUpgrade].sX = 60 ;
+	m_info[DialogBoxId::ItemUpgrade].sY = 50 ;
 	m_info[DialogBoxId::ItemUpgrade].sSizeX = 258;
 	m_info[DialogBoxId::ItemUpgrade].sSizeY = 339;
 
 	//Help Menu Dialog(F1)
-	m_info[DialogBoxId::Help].sX = 358 + SCREENX();
-	m_info[DialogBoxId::Help].sY = 65 + SCREENY();
+	m_info[DialogBoxId::Help].sX = 358 ;
+	m_info[DialogBoxId::Help].sY = 65 ;
 	m_info[DialogBoxId::Help].sSizeX = 258;
 	m_info[DialogBoxId::Help].sSizeY = 339;
 
 	//Crusade Commander Dialog
-	m_info[DialogBoxId::CrusadeCommander].sX = 20 + SCREENX();
-	m_info[DialogBoxId::CrusadeCommander].sY = 20 + SCREENY();
+	m_info[DialogBoxId::CrusadeCommander].sX = 20 ;
+	m_info[DialogBoxId::CrusadeCommander].sY = 20 ;
 	m_info[DialogBoxId::CrusadeCommander].sSizeX = 310;
 	m_info[DialogBoxId::CrusadeCommander].sSizeY = 386;
 
 	//Crusade Constructor Dialog
-	m_info[DialogBoxId::CrusadeConstructor].sX = 20 + SCREENX();
-	m_info[DialogBoxId::CrusadeConstructor].sY = 20 + SCREENY();
+	m_info[DialogBoxId::CrusadeConstructor].sX = 20 ;
+	m_info[DialogBoxId::CrusadeConstructor].sY = 20 ;
 	m_info[DialogBoxId::CrusadeConstructor].sSizeX = 310;
 	m_info[DialogBoxId::CrusadeConstructor].sSizeY = 386;
 
 	//Crusade Soldier Dialog
-	m_info[DialogBoxId::CrusadeSoldier].sX = 20 + SCREENX();
-	m_info[DialogBoxId::CrusadeSoldier].sY = 20 + SCREENY();
+	m_info[DialogBoxId::CrusadeSoldier].sX = 20 ;
+	m_info[DialogBoxId::CrusadeSoldier].sY = 20 ;
 	m_info[DialogBoxId::CrusadeSoldier].sSizeX = 310;
 	m_info[DialogBoxId::CrusadeSoldier].sSizeY = 386;
 
 	// Give item ???
-	m_info[DialogBoxId::GiveItem].sX = 0 + SCREENX();
-	m_info[DialogBoxId::GiveItem].sY = 0 + SCREENY();
+	m_info[DialogBoxId::GiveItem].sX = 0 ;
+	m_info[DialogBoxId::GiveItem].sY = 0 ;
 	m_info[DialogBoxId::GiveItem].sSizeX = 291;
 	m_info[DialogBoxId::GiveItem].sSizeY = 413;
 
 	// 3.51 Slates Dialog - Diuuude
-	m_info[DialogBoxId::Slates].sX = 100 + SCREENX();
-	m_info[DialogBoxId::Slates].sY = 60 + SCREENY();
+	m_info[DialogBoxId::Slates].sX = 100 ;
+	m_info[DialogBoxId::Slates].sY = 60 ;
 	m_info[DialogBoxId::Slates].sSizeX = 258;
 	m_info[DialogBoxId::Slates].sSizeY = 339;
 
 	// Snoopy: Item exchange confirmation
-	m_info[DialogBoxId::ConfirmExchange].sX = 285 + SCREENX();
-	m_info[DialogBoxId::ConfirmExchange].sY = 200 + SCREENY();
+	m_info[DialogBoxId::ConfirmExchange].sX = 285 ;
+	m_info[DialogBoxId::ConfirmExchange].sY = 200 ;
 	m_info[DialogBoxId::ConfirmExchange].sSizeX = 270;
 	m_info[DialogBoxId::ConfirmExchange].sSizeY = 105;
 
 	// MJ Stats Change DialogBox - Diuuude
-	m_info[DialogBoxId::ChangeStatsMajestic].sX = 0 + SCREENX();
-	m_info[DialogBoxId::ChangeStatsMajestic].sY = 0 + SCREENY();
+	m_info[DialogBoxId::ChangeStatsMajestic].sX = 0 ;
+	m_info[DialogBoxId::ChangeStatsMajestic].sY = 0 ;
 	m_info[DialogBoxId::ChangeStatsMajestic].sSizeX = 258;
 	m_info[DialogBoxId::ChangeStatsMajestic].sSizeY = 339;
 
 	// Snoopy: Resurection
-	m_info[DialogBoxId::Resurrect].sX = 185 + SCREENX();
-	m_info[DialogBoxId::Resurrect].sY = 100 + SCREENY();
+	m_info[DialogBoxId::Resurrect].sX = 185 ;
+	m_info[DialogBoxId::Resurrect].sY = 100 ;
 	m_info[DialogBoxId::Resurrect].sSizeX = 270;
 	m_info[DialogBoxId::Resurrect].sSizeY = 105;
 
 	//Guild Hall Menu Dialog
-	m_info[DialogBoxId::GuildHallMenu].sX = 337 + SCREENX();
-	m_info[DialogBoxId::GuildHallMenu].sY = 57 + SCREENY();
+	m_info[DialogBoxId::GuildHallMenu].sX = 337 ;
+	m_info[DialogBoxId::GuildHallMenu].sY = 57 ;
 	m_info[DialogBoxId::GuildHallMenu].sSizeX = 258;
 	m_info[DialogBoxId::GuildHallMenu].sSizeY = 339;
 
 	//50Cent - Repair All
-	m_info[DialogBoxId::RepairAll].sX = 337 + SCREENX();
-	m_info[DialogBoxId::RepairAll].sY = 57 + SCREENY();
+	m_info[DialogBoxId::RepairAll].sX = 337 ;
+	m_info[DialogBoxId::RepairAll].sY = 57 ;
 	m_info[DialogBoxId::RepairAll].sSizeX = 258;
 	m_info[DialogBoxId::RepairAll].sSizeY = 339;
 

@@ -8,7 +8,6 @@
 // The base resolution determines:
 // - Logical render target size
 // - Number of visible tiles
-// - PDBGS (pre-draw background surface) size
 //
 // Window resolution (display size) is separate and can scale the base resolution.
 
@@ -56,25 +55,20 @@ public:
 	// This gives symmetric view: 800x600 = 8 up/8 down, 640x480 = 6 up/6 down
 	int ViewCenterTileY() const { return ViewTileHeight() / 2 + 1; }
 
-	// PDBGS (Pre-Draw Background Surface) size
-	// Extra 32 pixels in each direction for smooth tile scrolling
-	int PdbgsWidth() const { return m_width + 32; }
-	int PdbgsHeight() const { return m_height + 32; }
-
 	// HUD panel dimensions
 	int IconPanelWidth() const { return m_width; }
 	int IconPanelHeight() const { return 53; }
-	int IconPanelOffsetX() const { return m_screenX; }
+	int IconPanelOffsetX() const { return 0; }
 
 	// Chat input position
-	int ChatInputX() const { return m_screenX + 10; }
-	int ChatInputY() const { return m_screenY + m_height - IconPanelHeight() - 16; }
+	int ChatInputX() const { return 10; }
+	int ChatInputY() const { return m_height - IconPanelHeight() - 16; }
 
 	// Event list base Y position
 	int EventList2BaseY() const { return ChatInputY() - (6 * 15) - 4; }
 
 	// Level up text position
-	int LevelUpTextX() const { return m_screenX + m_width - 90; }
+	int LevelUpTextX() const { return m_width - 90; }
 	int LevelUpTextY() const { return EventList2BaseY() + (5 * 15); }
 
 	// Check if using high resolution mode
@@ -83,8 +77,8 @@ public:
 	// Menu offset - for centering 640x480 menu backgrounds in larger resolutions
 	// At 800x600: MenuOffsetX = (800-640)/2 = 80, MenuOffsetY = (600-480)/2 = 60
 	// At 640x480: MenuOffsetX = 0, MenuOffsetY = 0
-	int MenuOffsetX() const { return (m_width - 640) / 2; }
-	int MenuOffsetY() const { return (m_height - 480) / 2; }
+	int MenuOffsetX() const { return 0; } //{ return (m_width - 640) / 2; }
+	int MenuOffsetY() const { return 0; } //{ return (m_height - 480) / 2; }
 
 private:
 	ResolutionConfig() = default;

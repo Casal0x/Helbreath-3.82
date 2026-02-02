@@ -11,7 +11,7 @@ static constexpr int MIN_STAT_VALUE = 10;
 DialogBox_ChangeStatsMajestic::DialogBox_ChangeStatsMajestic(CGame* pGame)
 	: IDialogBox(DialogBoxId::ChangeStatsMajestic, pGame)
 {
-	SetDefaultRect(0 + SCREENX(), 0 + SCREENY(), 258, 339);
+	SetDefaultRect(0 , 0 , 258, 339);
 }
 
 static int GetPendingMajesticCost(CGame* pGame)

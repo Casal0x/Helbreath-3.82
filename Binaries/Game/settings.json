@@ -14,7 +14,7 @@
     "display": {
         "borderless": false,
         "captureMouse": false,
-        "detailLevel": 0,
+        "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
         "runningMode": true,
@@ -42,7 +42,7 @@
         ]
     },
     "window": {
-        "height": 600,
-        "width": 800
+        "height": 1080,
+        "width": 1440
     }
 }

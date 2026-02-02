@@ -30,7 +30,7 @@ public:
 
 private:
     void HandleDismiss();
-    void RenderMessage();
+    void RenderMessage(int dlgX, int dlgY);
 
     char m_cReturnDest;
     char m_cMsgCode;

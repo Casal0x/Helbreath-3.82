@@ -7,6 +7,8 @@
 #include "GameModeManager.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include "GlobalDef.h"
+#include "SpriteID.h"
 
 IGameScreen::IGameScreen(CGame* pGame)
     : m_pGame(pGame)
@@ -19,6 +21,13 @@ void IGameScreen::DrawNewDialogBox(char cType, int sX, int sY, int iFrame,
                                     bool bIsNoColorKey, bool bIsTrans)
 {
     m_pGame->DrawNewDialogBox(cType, sX, sY, iFrame, bIsNoColorKey, bIsTrans);
+}
+
+void IGameScreen::GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY)
+{
+    auto rect = m_pGame->m_pSprite[cType]->GetFrameRect(iFrame);
+    outX = (LOGICAL_WIDTH() - rect.width) / 2;
+    outY = (LOGICAL_HEIGHT() - rect.height) / 2;
 }
 
 void IGameScreen::PutString(int iX, int iY, const char* pString, uint32_t color)

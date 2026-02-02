@@ -17,18 +17,8 @@
 inline int RENDER_LOGICAL_WIDTH()  { return ResolutionConfig::Get().LogicalWidth(); }
 inline int RENDER_LOGICAL_HEIGHT() { return ResolutionConfig::Get().LogicalHeight(); }
 
-// PDBGS (Pre-Draw Background Surface) size
-// This surface holds tiles for smooth scrolling and needs to be larger than
-// the visible area by 32 pixels in each direction (one tile width/height)
-//
-// NOTE: GlobalDef.h defines PDBGS_WIDTH/HEIGHT for client code.
-// If GlobalDef.h is NOT included (i.e., in renderer engine code), we define them here.
-// We use a define guard to prevent redefinition.
-#ifndef GLOBALDEF_H_RESOLUTION_FUNCTIONS
-inline int PDBGS_WIDTH()  { return ResolutionConfig::Get().PdbgsWidth(); }
-inline int PDBGS_HEIGHT() { return ResolutionConfig::Get().PdbgsHeight(); }
-
 // These are also defined in GlobalDef.h for client code
+#ifndef GLOBALDEF_H_RESOLUTION_FUNCTIONS
 inline int LOGICAL_WIDTH()  { return ResolutionConfig::Get().LogicalWidth(); }
 inline int LOGICAL_HEIGHT() { return ResolutionConfig::Get().LogicalHeight(); }
 inline int LOGICAL_MAX_X()  { return ResolutionConfig::Get().LogicalMaxX(); }

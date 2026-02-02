@@ -12,7 +12,7 @@
 DialogBox_Manufacture::DialogBox_Manufacture(CGame* pGame)
 	: IDialogBox(DialogBoxId::Manufacture, pGame)
 {
-	SetDefaultRect(100 + SCREENX(), 60 + SCREENY(), 258, 339);
+	SetDefaultRect(100 , 60 , 258, 339);
 }
 
 void DialogBox_Manufacture::OnDraw(short msX, short msY, short msZ, char cLB)

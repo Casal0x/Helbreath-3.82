@@ -92,9 +92,6 @@ public:
     virtual int GetHeightMid() const = 0;
     virtual void ResizeBackBuffer(int width, int height) = 0;  // Resize back buffer for resolution change
 
-    // ============== Pre-Draw Background Surface (PDBGS) ==============
-    virtual ITexture* GetBackgroundSurface() = 0;
-
     // ============== Color Key Support ==============
     virtual uint32_t GetColorKey(ITexture* texture, uint16_t colorKey) = 0;
     virtual uint32_t GetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b) = 0;
@@ -134,9 +131,7 @@ public:
     virtual int GetTextWidth(const char* text) = 0;  // Get pixel width of text string
 
     // ============== Surface Operations ==============
-    virtual void BltBackBufferFromPDBGS(RECT* srcRect) = 0;  // Copy from PDBGS to back buffer
     virtual void* GetBackBufferNative() = 0;   // Returns native back buffer handle (LPDIRECTDRAWSURFACE7 for DDraw)
-    virtual void* GetPDBGSNative() = 0;        // Returns native PDBGS handle
 
     // ============== Native Access (for legacy sprite code) ==============
     // Returns platform-specific renderer handle for code that can't use the interface yet

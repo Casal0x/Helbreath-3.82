@@ -11,7 +11,7 @@
 DialogBox_Commander::DialogBox_Commander(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeCommander, pGame)
 {
-	SetDefaultRect(20 + SCREENX(), 20 + SCREENY(), 310, 386);
+	SetDefaultRect(20 , 20 , 310, 386);
 }
 
 void DialogBox_Commander::OnUpdate()

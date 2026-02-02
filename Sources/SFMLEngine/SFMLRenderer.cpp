@@ -28,7 +28,6 @@ int SFMLRenderer::s_dummyAddTransTable[510][64] = {};
 SFMLRenderer::SFMLRenderer()
     : m_pRenderWindow(nullptr)
     , m_texturesCreated(false)
-    , m_pdbgsWrapper(nullptr)
     , m_backBufferLocked(false)
     , m_width(640)  // Default, updated in CreateRenderTextures
     , m_height(480) // Default, updated in CreateRenderTextures
@@ -157,38 +156,21 @@ bool SFMLRenderer::CreateRenderTextures()
         return false;
     }
 
-    // Create PDBGS (Pre-Draw Background Surface)
-    // PDBGS must be larger than visible area for smooth tile scrolling
-    // Game draws tiles with 32-pixel buffer zone and copies with offset
-    if (!m_pdbgs.resize({static_cast<unsigned int>(PDBGS_WIDTH()), static_cast<unsigned int>(PDBGS_HEIGHT())}))
-    {
-        printf("[ERROR] SFMLRenderer::CreateRenderTextures - Failed to create PDBGS\n");
-        return false;
-    }
-
     // Disable texture smoothing for pixel-perfect scaling (matches DDraw sharpness)
     // This uses nearest-neighbor filtering instead of bilinear
     m_backBuffer.setSmooth(false);
-    m_pdbgs.setSmooth(false);
 
     // Disable texture repeating to prevent edge artifacts
     m_backBuffer.setRepeated(false);
-    m_pdbgs.setRepeated(false);
 
     // Set explicit views to ensure 1:1 pixel mapping and prevent edge artifacts
     // The view must match exactly the surface dimensions
     sf::View backBufferView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(m_width), static_cast<float>(m_height)}));
     m_backBuffer.setView(backBufferView);
 
-    // PDBGS has its own larger view
-    sf::View pdbgsView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(PDBGS_WIDTH()), static_cast<float>(PDBGS_HEIGHT())}));
-    m_pdbgs.setView(pdbgsView);
-
-    // Clear both buffers - use transparent for proper alpha compositing
+    // Clear buffer - use transparent for proper alpha compositing
     m_backBuffer.clear(sf::Color::Transparent);
     m_backBuffer.display();
-    m_pdbgs.clear(sf::Color::Transparent);
-    m_pdbgs.display();
 
     m_texturesCreated = true;
     return true;
@@ -207,11 +189,6 @@ void SFMLRenderer::SetRenderWindow(sf::RenderWindow* window)
 
 void SFMLRenderer::Shutdown()
 {
-    if (m_pdbgsWrapper)
-    {
-        delete m_pdbgsWrapper;
-        m_pdbgsWrapper = nullptr;
-    }
 }
 
 void SFMLRenderer::SetFullscreen(bool fullscreen)
@@ -644,16 +621,6 @@ void SFMLRenderer::ResizeBackBuffer(int width, int height)
     // This is intentionally a no-op for SFML
 }
 
-ITexture* SFMLRenderer::GetBackgroundSurface()
-{
-    if (!m_pdbgsWrapper)
-    {
-        // PDBGS is larger than visible area for smooth tile scrolling
-        m_pdbgsWrapper = new SFMLTexture(static_cast<uint16_t>(PDBGS_WIDTH()), static_cast<uint16_t>(PDBGS_HEIGHT()));
-    }
-    return m_pdbgsWrapper;
-}
-
 uint32_t SFMLRenderer::GetColorKey(ITexture* texture, uint16_t colorKey)
 {
     // For SFML, just return the color key as-is
@@ -749,53 +716,9 @@ int SFMLRenderer::GetTextWidth(const char* text)
     return 0;
 }
 
-void SFMLRenderer::BltBackBufferFromPDBGS(RECT* srcRect)
-{
-    if (!srcRect)
-        return;
-
-    // Must call display() before using a RenderTexture as a texture source
-    m_pdbgs.display();
-
-    // Clamp source rect to valid PDBGS bounds (672x512) to prevent sampling outside texture
-    int srcLeft = srcRect->left;
-    int srcTop = srcRect->top;
-    int srcRight = srcRect->right;
-    int srcBottom = srcRect->bottom;
-
-    // Clamp to PDBGS bounds
-    if (srcLeft < 0) srcLeft = 0;
-    if (srcTop < 0) srcTop = 0;
-    if (srcRight > PDBGS_WIDTH()) srcRight = PDBGS_WIDTH();
-    if (srcBottom > PDBGS_HEIGHT()) srcBottom = PDBGS_HEIGHT();
-
-    // Calculate clamped dimensions
-    int width = srcRight - srcLeft;
-    int height = srcBottom - srcTop;
-
-    // Skip if nothing to copy
-    if (width <= 0 || height <= 0)
-        return;
-
-    // Copy from PDBGS to back buffer at (0, 0)
-    sf::IntRect intRect(
-        {srcLeft, srcTop},
-        {width, height}
-    );
-
-    sf::Sprite sprite(m_pdbgs.getTexture(), intRect);
-    sprite.setPosition({0.0f, 0.0f});
-    m_backBuffer.draw(sprite);
-}
-
 void* SFMLRenderer::GetBackBufferNative()
 {
     return &m_backBuffer;
-}
-
-void* SFMLRenderer::GetPDBGSNative()
-{
-    return &m_pdbgs;
 }
 
 void* SFMLRenderer::GetNativeRenderer()

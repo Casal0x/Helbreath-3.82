@@ -17,8 +17,7 @@ extern int G_iAddTransTable31[510][64], G_iAddTransTable63[510][64];
 extern char G_cSpriteAlphaDegree;
 
 DDrawRenderer::DDrawRenderer()
-    : m_pdbgsWrapper(nullptr)
-    , m_backBufferLocked(false)
+    : m_backBufferLocked(false)
 {
 }
 
@@ -34,12 +33,6 @@ bool DDrawRenderer::Init(HWND hWnd)
 
 void DDrawRenderer::Shutdown()
 {
-    if (m_pdbgsWrapper)
-    {
-        // Don't delete the wrapper's surface - it's owned by m_ddraw
-        delete m_pdbgsWrapper;
-        m_pdbgsWrapper = nullptr;
-    }
     // DXC_ddraw destructor handles cleanup
 }
 
@@ -465,20 +458,6 @@ void DDrawRenderer::ResizeBackBuffer(int width, int height)
     // This is a no-op for DDraw - the back buffer is recreated via ChangeDisplayMode
 }
 
-ITexture* DDrawRenderer::GetBackgroundSurface()
-{
-    if (!m_pdbgsWrapper && m_ddraw.m_lpPDBGS)
-    {
-        // Create a wrapper that doesn't own the surface
-        // Note: This is a bit of a hack - the wrapper won't release the surface
-        // because PDBGS is owned by DXC_ddraw
-        m_pdbgsWrapper = new DDrawTexture(m_ddraw.m_lpPDBGS,
-                                           static_cast<uint16_t>(m_ddraw.res_x),
-                                           static_cast<uint16_t>(m_ddraw.res_y));
-    }
-    return m_pdbgsWrapper;
-}
-
 uint32_t DDrawRenderer::GetColorKey(ITexture* texture, uint16_t colorKey)
 {
     if (!texture)
@@ -648,23 +627,9 @@ int DDrawRenderer::GetTextWidth(const char* text)
     return 0;
 }
 
-void DDrawRenderer::BltBackBufferFromPDBGS(RECT* srcRect)
-{
-    if (!m_ddraw.m_lpBackB4 || !m_ddraw.m_lpPDBGS)
-        return;
-
-    // Blit from srcRect in PDBGS to (0, 0) in back buffer
-    m_ddraw.m_lpBackB4->BltFast(0, 0, m_ddraw.m_lpPDBGS, srcRect, DDBLTFAST_NOCOLORKEY | DDBLTFAST_WAIT);
-}
-
 void* DDrawRenderer::GetBackBufferNative()
 {
     return m_ddraw.m_lpBackB4;
-}
-
-void* DDrawRenderer::GetPDBGSNative()
-{
-    return m_ddraw.m_lpPDBGS;
 }
 
 void* DDrawRenderer::GetNativeRenderer()

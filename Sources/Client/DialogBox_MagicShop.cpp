@@ -9,7 +9,7 @@
 DialogBox_MagicShop::DialogBox_MagicShop(CGame* pGame)
 	: IDialogBox(DialogBoxId::MagicShop, pGame)
 {
-	SetDefaultRect(30 + SCREENX(), 30 + SCREENY(), 304, 328);
+	SetDefaultRect(30 , 30 , 304, 328);
 }
 
 void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)

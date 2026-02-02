@@ -8,7 +8,7 @@
 DialogBox_Exchange::DialogBox_Exchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::Exchange, pGame)
 {
-	SetDefaultRect(100 + SCREENX(), 30 + SCREENY(), 520, 357);
+	SetDefaultRect(100 , 30 , 520, 357);
 }
 
 void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)

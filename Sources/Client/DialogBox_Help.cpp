@@ -5,7 +5,7 @@
 DialogBox_Help::DialogBox_Help(CGame* pGame)
 	: IDialogBox(DialogBoxId::Help, pGame)
 {
-	SetDefaultRect(358 + SCREENX(), 65 + SCREENY(), 258, 339);
+	SetDefaultRect(358 , 65 , 258, 339);
 }
 
 bool DialogBox_Help::IsMouseOverItem(short msX, short msY, short sX, short sY, int iItem)

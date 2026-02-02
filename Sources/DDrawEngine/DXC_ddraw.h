@@ -68,7 +68,6 @@ public:
 
 	LPDIRECTDRAW7		 m_lpDD4;
 	LPDIRECTDRAWSURFACE7 m_lpFrontB4, m_lpBackB4, m_lpBackB4flip;
-	LPDIRECTDRAWSURFACE7 m_lpPDBGS;// Pre-Draw Background Surface
 	uint16_t * m_pBackB4Addr;
 	RECT  m_rcClipArea, m_rcFlipping;
 	short  m_sBackB4Pitch;

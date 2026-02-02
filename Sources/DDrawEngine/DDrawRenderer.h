@@ -73,9 +73,6 @@ public:
     virtual int GetHeightMid() const override;
     virtual void ResizeBackBuffer(int width, int height) override;
 
-    // Pre-Draw Background Surface
-    virtual ITexture* GetBackgroundSurface() override;
-
     // Color Key Support
     virtual uint32_t GetColorKey(ITexture* texture, uint16_t colorKey) override;
     virtual uint32_t GetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b) override;
@@ -114,9 +111,7 @@ public:
     virtual int GetTextWidth(const char* text) override;
 
     // Surface Operations
-    virtual void BltBackBufferFromPDBGS(RECT* srcRect) override;
     virtual void* GetBackBufferNative() override;
-    virtual void* GetPDBGSNative() override;
 
     // Native Access
     virtual void* GetNativeRenderer() override;
@@ -128,6 +123,5 @@ public:
 
 private:
     DXC_ddraw m_ddraw;
-    DDrawTexture* m_pdbgsWrapper;  // Wrapper for PDBGS surface
     bool m_backBufferLocked;
 };

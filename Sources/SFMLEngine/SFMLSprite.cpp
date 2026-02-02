@@ -233,7 +233,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     m_boundRect.bottom = drawY + frameRect.height;
 
     // Clip to render target bounds - SFML doesn't auto-clip like DDraw
-    // Get actual target size (may be 640x480 for back buffer or 672x512 for PDBGS)
+    // Get actual target size
     sf::Vector2u targetSize = target->getSize();
     int targetWidth = static_cast<int>(targetSize.x);
     int targetHeight = static_cast<int>(targetSize.y);

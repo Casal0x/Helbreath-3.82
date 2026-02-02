@@ -24,9 +24,9 @@ public:
 
 private:
     uint32_t m_dwStartTime = 0;
-    int m_iFrameCount = 0;
 
     // Timing constants (milliseconds)
+    static constexpr uint32_t FADE_IN_MS = 500;         // Fade in duration
     static constexpr uint32_t INPUT_ACTIVE_MS = 3000;   // 3 seconds before input is active
     static constexpr uint32_t AUTO_QUIT_MS = 10000;     // 10 seconds total
 };

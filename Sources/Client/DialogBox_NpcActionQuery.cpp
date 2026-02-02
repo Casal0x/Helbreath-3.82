@@ -6,7 +6,7 @@
 DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcActionQuery, pGame)
 {
-	SetDefaultRect(237 + SCREENX(), 57 + SCREENY(), 252, 87);
+	SetDefaultRect(237 , 57 , 252, 87);
 }
 
 void DialogBox_NpcActionQuery::DrawHighlightedText(short sX, short sY, const char* text, short msX, short msY, short hitX1, short hitX2, short hitY1, short hitY2)
