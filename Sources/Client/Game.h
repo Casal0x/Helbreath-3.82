@@ -34,6 +34,7 @@
 #include <array>
 
 #include "GlobalDef.h"
+#include "GameGeometry.h"
 #include "IRenderer.h"
 #include "RendererFactory.h"
 #include "ISprite.h"
@@ -53,7 +54,6 @@
 #include "ActionID_Client.h"
 #include "NetMessages.h"
 #include "ClientMessages.h"
-#include "MouseInterface.h"
 #include "CharInfo.h"
 #include "Item/Item.h"
 #include "Magic.h"
@@ -627,7 +627,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 
 	short m_sItemDropID[25];
 
-	RECT m_rcPlayerRect, m_rcBodyRect;
+	GameRectangle m_rcPlayerRect, m_rcBodyRect;
 
 	bool m_bWhisper;
 	bool m_bShout;

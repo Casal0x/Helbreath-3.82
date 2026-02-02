@@ -105,7 +105,7 @@ int CEntityManager::CreateEntity(
     char* pNpcName, char* pName, char* pMapName,
     short sClass, char cSA, char cMoveType,
     int* poX, int* poY,
-    char* pWaypointList, RECT* pArea,
+    char* pWaypointList, GameRectangle* pArea,
     int iSpotMobIndex, char cChangeSide,
     bool bHideGenMode, bool bIsSummoned,
     bool bFirmBerserk, bool bIsMaster,
@@ -120,7 +120,7 @@ int CEntityManager::CreateEntity(
 
     int i, t, j, k, iMapIndex;
     char cTmpName[11], cTxt[120];
-    short sX, sY, sRange;
+    short sX, sY;
     bool bFlag;
     SYSTEMTIME SysTime;
 
@@ -176,11 +176,11 @@ int CEntityManager::CreateEntity(
 
                         bFlag = true;
                         for (k = 0; k < DEF_MAXMGAR; k++)
-                            if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].left != -1) {
-                                if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].left) &&
-                                    (sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].right) &&
-                                    (sY >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].top) &&
-                                    (sY <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].bottom)) {
+                            if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].x != -1) {
+                                if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Left()) &&
+                                    (sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Right()) &&
+                                    (sY >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Top()) &&
+                                    (sY <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Bottom())) {
                                     // Avoid Rect
                                     bFlag = false;
                                 }
@@ -198,10 +198,8 @@ int CEntityManager::CreateEntity(
 
             case DEF_MOVETYPE_RANDOMAREA:
                 // Spawn in random area
-                sRange = (short)(pArea->right - pArea->left);
-                sX = (short)((rand() % sRange) + pArea->left);
-                sRange = (short)(pArea->bottom - pArea->top);
-                sY = (short)((rand() % sRange) + pArea->top);
+                sX = (short)((rand() % pArea->width) + pArea->x);
+                sY = (short)((rand() % pArea->height) + pArea->y);
                 break;
 
             case DEF_MOVETYPE_RANDOMWAYPOINT:
@@ -259,7 +257,7 @@ int CEntityManager::CreateEntity(
 
             // Set random area if provided
             if (pArea != 0) {
-                SetRect(&m_pNpcList[i]->m_rcRandomArea, pArea->left, pArea->top, pArea->right, pArea->bottom);
+                m_pNpcList[i]->m_rcRandomArea = *pArea;
             }
 
             // Set destination based on move type
@@ -283,10 +281,8 @@ int CEntityManager::CreateEntity(
 
             case DEF_MOVETYPE_RANDOMAREA:
                 m_pNpcList[i]->m_cCurWaypoint = 0;
-                sRange = (short)(m_pNpcList[i]->m_rcRandomArea.right - m_pNpcList[i]->m_rcRandomArea.left);
-                m_pNpcList[i]->m_dX = (short)((rand() % sRange) + m_pNpcList[i]->m_rcRandomArea.left);
-                sRange = (short)(m_pNpcList[i]->m_rcRandomArea.bottom - m_pNpcList[i]->m_rcRandomArea.top);
-                m_pNpcList[i]->m_dY = (short)((rand() % sRange) + m_pNpcList[i]->m_rcRandomArea.top);
+                m_pNpcList[i]->m_dX = (short)((rand() % m_pNpcList[i]->m_rcRandomArea.width) + m_pNpcList[i]->m_rcRandomArea.x);
+                m_pNpcList[i]->m_dY = (short)((rand() % m_pNpcList[i]->m_rcRandomArea.height) + m_pNpcList[i]->m_rcRandomArea.y);
                 break;
 
             case DEF_MOVETYPE_RANDOM:
@@ -1730,7 +1726,7 @@ void CEntityManager::NpcBehavior_Dead(int iNpcH)
 
 void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 {
-	short sRange, sX, sY;
+	short sX, sY;
 	int i, j, iMapIndex;
 	bool bFlag;
 
@@ -1757,10 +1753,8 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 
 	case DEF_MOVETYPE_RANDOMAREA:
 
-		sRange = (short)(m_pNpcList[iNpcH]->m_rcRandomArea.right - m_pNpcList[iNpcH]->m_rcRandomArea.left);
-		m_pNpcList[iNpcH]->m_dX = (short)((rand() % sRange) + m_pNpcList[iNpcH]->m_rcRandomArea.left);
-		sRange = (short)(m_pNpcList[iNpcH]->m_rcRandomArea.bottom - m_pNpcList[iNpcH]->m_rcRandomArea.top);
-		m_pNpcList[iNpcH]->m_dY = (short)((rand() % sRange) + m_pNpcList[iNpcH]->m_rcRandomArea.top);
+		m_pNpcList[iNpcH]->m_dX = (short)((rand() % m_pNpcList[iNpcH]->m_rcRandomArea.width) + m_pNpcList[iNpcH]->m_rcRandomArea.x);
+		m_pNpcList[iNpcH]->m_dY = (short)((rand() % m_pNpcList[iNpcH]->m_rcRandomArea.height) + m_pNpcList[iNpcH]->m_rcRandomArea.y);
 		break;
 
 	case DEF_MOVETYPE_RANDOM:
@@ -1776,12 +1770,12 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 
 			bFlag = true;
 			for (j = 0; j < DEF_MAXMGAR; j++)
-				if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].left != -1) {
+				if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].x != -1) {
 					// ÇÇÇØ¾ß ÇÒ ÁÂÇ¥°¡ ÀÖ´Ù. 
-					if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].left) &&
-						(sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].right) &&
-						(sY >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].top) &&
-						(sY <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].bottom)) {
+					if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Left()) &&
+						(sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Right()) &&
+						(sY >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Top()) &&
+						(sY <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Bottom())) {
 						// Avoid Rect¾ÈÀÌ¹Ç·Î ÀÌ À§Ä¡¿¡´Â »ý¼º½ÃÅ³ ¼ö ¾ø´Ù.	
 						bFlag = false;
 					}

@@ -5049,7 +5049,7 @@ bool CGame::_bReadMapInfoFiles(int iMapIndex)
 
 
 
-int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, RECT* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID)
+int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, GameRectangle* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID)
 {
 	if (m_pEntityManager == 0)
 		return false;
@@ -15018,7 +15018,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 					}
 					iMGARCfgIndex = atoi(token);
 
-					if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].left != -1) {
+					if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].x != -1) {
 						// ÀÌ¹Ì ÇÒ´çµÇ¾îÀÖ´Â Waypoint ¹øÈ£ÀÌ´Ù.
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 16 - Duplicated Mob Gen Rect Number!");
 						delete[] pContents;
@@ -15035,7 +15035,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].left = atoi(token);
+					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].x = atoi(token);
 					cReadModeB = 3;
 					break;
 
@@ -15046,7 +15046,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].top = atoi(token);
+					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].y = atoi(token);
 					cReadModeB = 4;
 					break;
 
@@ -15057,7 +15057,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].right = atoi(token);
+					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].width = atoi(token) - m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].x;
 					cReadModeB = 5;
 					break;
 
@@ -15068,7 +15068,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].bottom = atoi(token);
+					m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].height = atoi(token) - m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[iMGARCfgIndex].y;
 					cReadModeA = 0;
 					cReadModeB = 0;
 					break;
@@ -15112,46 +15112,46 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 					break;
 
 				case 3:
-					// left
+					// x (was left)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 23 - Wrong Data format(SMGAR num).");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.left = atoi(token);
+					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.x = atoi(token);
 					cReadModeB = 4;
 					break;
 
 				case 4:
-					// top
+					// y (was top)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 24 - Wrong Data format.");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.top = atoi(token);
+					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.y = atoi(token);
 					cReadModeB = 5;
 					break;
 
 				case 5:
-					// right
+					// width (file stores right edge, convert: width = right - x)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 25 - Wrong Data format.");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.right = atoi(token);
+					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.width = atoi(token) - m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.x;
 					cReadModeB = 6;
 					break;
 
 				case 6:
-					// bottom
+					// height (file stores bottom edge, convert: height = bottom - y)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 26 - Wrong Data format.");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.bottom = atoi(token);
+					m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.height = atoi(token) - m_pMapList[iMapIndex]->m_stSpotMobGenerator[iSMGRCfgIndex].rcRect.y;
 					cReadModeB = 7;
 					break;
 
@@ -15278,7 +15278,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 					}
 					iNMRCfgIndex = atoi(token);
 
-					if (m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].top != -1) {
+					if (m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].y != -1) {
 						// ÀÌ¹Ì ÇÒ´çµÇ¾îÀÖ´Â No-Magic-Rect ¹øÈ£ÀÌ´Ù.
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 35 - Duplicate No-Magic-Rect number");
 						delete[] pContents;
@@ -15293,7 +15293,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].left = atoi(token);
+					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].x = atoi(token);
 					cReadModeB = 3;
 					break;
 
@@ -15303,27 +15303,29 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].top = atoi(token);
+					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].y = atoi(token);
 					cReadModeB = 4;
 					break;
 
 				case 4:
+					// width (file stores right edge, convert: width = right - x)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 38 - Wrong Data format.");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].right = atoi(token);
+					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].width = atoi(token) - m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].x;
 					cReadModeB = 5;
 					break;
 
 				case 5:
+					// height (file stores bottom edge, convert: height = bottom - y)
 					if (_bGetIsStringIsNumber(token) == false) {
 						PutLogList("(!!!) CRITICAL ERROR! Map Info file error 39 - Wrong Data format.");
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].bottom = atoi(token);
+					m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].height = atoi(token) - m_pMapList[iMapIndex]->m_rcNoAttackRect[iNMRCfgIndex].y;
 					cReadModeA = 0;
 					cReadModeB = 0;
 					break;
@@ -16008,7 +16010,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sApocalypseBossMobRectX1 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcApocalypseBossMob.x = atoi(token);
 					cReadModeB = 3;
 					break;
 				case 3: // 3CB74h m_pMapList[]->ApocalypseBossMobRectY1
@@ -16017,7 +16019,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sApocalypseBossMobRectY1 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcApocalypseBossMob.y = atoi(token);
 					cReadModeB = 4;
 					break;
 				case 4: // 3CB78h m_pMapList[]->ApocalypseBossMobRectX2
@@ -16026,7 +16028,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sApocalypseBossMobRectX2 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcApocalypseBossMob.width = atoi(token) - m_pMapList[iMapIndex]->m_rcApocalypseBossMob.x;
 					cReadModeB = 5;
 					break;
 				case 5: // 3CB7Ch m_pMapList[]->ApocalypseBossMobRectY2
@@ -16035,7 +16037,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sApocalypseBossMobRectY2 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcApocalypseBossMob.height = atoi(token) - m_pMapList[iMapIndex]->m_rcApocalypseBossMob.y;
 					cReadModeA = 0;
 					cReadModeB = 0;
 					break;
@@ -16062,7 +16064,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sDynamicGateCoordRectX1 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcDynamicGateCoord.x = atoi(token);
 					cReadModeB = 2;
 					break;
 
@@ -16072,7 +16074,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sDynamicGateCoordRectY1 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcDynamicGateCoord.y = atoi(token);
 					cReadModeB = 3;
 					break;
 
@@ -16082,7 +16084,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sDynamicGateCoordRectX2 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcDynamicGateCoord.width = atoi(token) - m_pMapList[iMapIndex]->m_rcDynamicGateCoord.x;
 					cReadModeB = 4;
 					break;
 
@@ -16092,7 +16094,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 						delete[] pContents;
 						return false;
 					}
-					m_pMapList[iMapIndex]->m_sDynamicGateCoordRectY2 = atoi(token);
+					m_pMapList[iMapIndex]->m_rcDynamicGateCoord.height = atoi(token) - m_pMapList[iMapIndex]->m_rcDynamicGateCoord.y;
 					cReadModeB = 5;
 					break;
 
@@ -27527,7 +27529,7 @@ int CGame::iGetMaxSP(int iClientH)
 void CGame::GetMapInitialPoint(int iMapIndex, short* pX, short* pY, char* pPlayerLocation)
 {
 	int i, iTotalPoint;
-	POINT  pList[DEF_MAXINITIALPOINT];
+	GamePoint  pList[DEF_MAXINITIALPOINT];
 
 	if (m_pMapList[iMapIndex] == 0) return;
 

@@ -10,6 +10,7 @@
 #include <windows.h>
 #include "CommonTypes.h"
 #include "Magic.h"
+#include "GameGeometry.h"
 
 #define DEF_MAXWAYPOINTS			10
 
@@ -45,7 +46,7 @@ public:
 	short m_dX, m_dY;
 	short m_vX, m_vY;
 	int   m_tmp_iError;
-	RECT  m_rcRandomArea;	// MOVETYPE_RANDOMAREA�϶� ������ǥ
+	GameRectangle  m_rcRandomArea;	// MOVETYPE_RANDOMAREA�϶� ������ǥ
 
 	char  m_cDir;
 	char  m_cAction;

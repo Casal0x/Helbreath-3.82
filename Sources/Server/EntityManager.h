@@ -55,7 +55,7 @@ public:
         char* pNpcName, char* pName, char* pMapName,
         short sClass, char cSA, char cMoveType,
         int* poX, int* poY,
-        char* pWaypointList, RECT* pArea,
+        char* pWaypointList, GameRectangle* pArea,
         int iSpotMobIndex, char cChangeSide,
         bool bHideGenMode, bool bIsSummoned,
         bool bFirmBerserk, bool bIsMaster,

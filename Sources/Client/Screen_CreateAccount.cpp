@@ -100,20 +100,20 @@ void Screen_CreateAccount::on_update()
     // Direct mouse click focus selection
     if (cLB != 0 && m_cNewAcctPrevLB == 0)
     {
-        if (Input::IsMouseInRect(427, 84, 427 + 100, 84 + 18)) m_cCurFocus = 1;
-        if (Input::IsMouseInRect(427, 106, 427 + 100, 106 + 18)) m_cCurFocus = 2;
-        if (Input::IsMouseInRect(427, 129, 427 + 100, 129 + 18)) m_cCurFocus = 3;
-        if (Input::IsMouseInRect(311, 215, 311 + 250, 215 + 18)) m_cCurFocus = 4;
+        if (Input::IsMouseInRect(427, 84, 100, 18)) m_cCurFocus = 1;
+        if (Input::IsMouseInRect(427, 106, 100, 18)) m_cCurFocus = 2;
+        if (Input::IsMouseInRect(427, 129, 100, 18)) m_cCurFocus = 3;
+        if (Input::IsMouseInRect(311, 215, 250, 18)) m_cCurFocus = 4;
 
         // Button 5: Create
-        if (Input::IsMouseInRect(297, 398, 297 + 72, 398 + 20))
+        if (Input::IsMouseInRect(297, 398, 72, 20))
         {
             m_cCurFocus = 5;
             m_pGame->PlaySound('E', 14, 5);
             _submit_create_account();
         }
         // Button 6: Clear
-        if (Input::IsMouseInRect(392, 398, 392 + 72, 398 + 20))
+        if (Input::IsMouseInRect(392, 398, 72, 20))
         {
             m_cCurFocus = 6;
             m_pGame->PlaySound('E', 14, 5);
@@ -122,7 +122,7 @@ void Screen_CreateAccount::on_update()
             m_cNewAcctPrevFocus = 0; // Trigger reset
         }
         // Button 7: Cancel
-        if (Input::IsMouseInRect(488, 398, 488 + 72, 398 + 20))
+        if (Input::IsMouseInRect(488, 398, 72, 20))
         {
             m_cCurFocus = 7;
             m_pGame->PlaySound('E', 14, 5);

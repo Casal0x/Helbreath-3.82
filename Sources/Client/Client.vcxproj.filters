@@ -355,9 +355,6 @@
     <ClInclude Include="Overlay_DevConsole.h">
       <Filter>Screens\Overlays</Filter>
     </ClInclude>
-    <ClInclude Include="MouseInterface.h">
-      <Filter>Input</Filter>
-    </ClInclude>
     <ClInclude Include="CursorTarget.h">
       <Filter>Input</Filter>
     </ClInclude>
@@ -376,6 +373,7 @@
     <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\GameGeometry.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -706,9 +704,6 @@
     </ClCompile>
     <ClCompile Include="Overlay_DevConsole.cpp">
       <Filter>Screens\Overlays</Filter>
-    </ClCompile>
-    <ClCompile Include="MouseInterface.cpp">
-      <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="CursorTarget.cpp">
       <Filter>Input</Filter>

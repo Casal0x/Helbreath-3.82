@@ -21,6 +21,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include "GameGeometry.h"
 using namespace std;
 
 #define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
@@ -154,7 +155,7 @@ public:
 	char m_cAttackBonus_L;		// ���� ���ʽ�
 
 	class CItem * m_pItemList[DEF_MAXITEMS];
-	POINT m_ItemPosList[DEF_MAXITEMS];
+	GamePoint m_ItemPosList[DEF_MAXITEMS];
 	class CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
 	
 	bool  m_bIsItemEquipped[DEF_MAXITEMS];

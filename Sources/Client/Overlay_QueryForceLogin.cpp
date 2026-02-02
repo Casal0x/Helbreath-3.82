@@ -51,8 +51,7 @@ void Overlay_QueryForceLogin::on_update()
         PlaySound('E', 14, 5);
 
         // Yes button - force disconnect existing session
-        if (Input::IsMouseInRect(dlgX + 38, dlgY + 114,
-                                  dlgX + 38 + DEF_BTNSZX, dlgY + 114 + DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 38, dlgY + 114, DEF_BTNSZX, DEF_BTNSZY))
         {
             // Create login socket and initiate force disconnect
             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
@@ -70,8 +69,7 @@ void Overlay_QueryForceLogin::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(dlgX + 208, dlgY + 114,
-                                  dlgX + 208 + DEF_BTNSZX, dlgY + 114 + DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 114, DEF_BTNSZX, DEF_BTNSZY))
         {
             clear_overlay();
             return;

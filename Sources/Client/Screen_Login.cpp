@@ -154,17 +154,17 @@ void Screen_Login::on_update()
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
         // Name field click
-        if (Input::IsMouseInRect(234, 221, 234+147, 221+17)) {
+        if (Input::IsMouseInRect(234, 221, 147, 17)) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 1;
         }
         // Password field click
-        else if (Input::IsMouseInRect(234, 244, 234+147, 244+17)) {
+        else if (Input::IsMouseInRect(234, 244, 147, 17)) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 2;
         }
         // Login button click
-        else if (Input::IsMouseInRect(140, 343, 140+84, 343+20)) {
+        else if (Input::IsMouseInRect(140, 343, 84, 20)) {
             m_pGame->PlaySound('E', 14, 5);
             if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
                 m_pGame->EndInputString();
@@ -185,15 +185,15 @@ void Screen_Login::on_update()
             }
         }
         // Cancel button click
-        else if (Input::IsMouseInRect(316, 343, 316+76, 343+20)) {
+        else if (Input::IsMouseInRect(316, 343, 76, 20)) {
             m_pGame->PlaySound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }
 
-    if (Input::IsMouseInRect(140, 343, 140+84, 343+20)) m_cCurFocus = 3;
-    if (Input::IsMouseInRect(316, 343, 316+76, 343+20)) m_cCurFocus = 4;
+    if (Input::IsMouseInRect(140, 343, 84, 20)) m_cCurFocus = 3;
+    if (Input::IsMouseInRect(316, 343, 76, 20)) m_cCurFocus = 4;
 }
 
 void Screen_Login::on_render()

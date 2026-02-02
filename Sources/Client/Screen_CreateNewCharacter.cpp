@@ -129,34 +129,34 @@ void Screen_CreateNewCharacter::on_update()
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;
-        if (Input::IsMouseInRect(69 + OX, 110 + OY, 279 + OX, 127 + OY)) iMIbuttonNum = 1;  // Name
-        else if (Input::IsMouseInRect(236 + OX, 156 + OY, 257 + OX, 169 + OY)) iMIbuttonNum = 2;  // Gender -
-        else if (Input::IsMouseInRect(259 + OX, 156 + OY, 280 + OX, 169 + OY)) iMIbuttonNum = 3;  // Gender +
-        else if (Input::IsMouseInRect(236 + OX, 171 + OY, 257 + OX, 184 + OY)) iMIbuttonNum = 4;  // Skin -
-        else if (Input::IsMouseInRect(259 + OX, 171 + OY, 280 + OX, 184 + OY)) iMIbuttonNum = 5;  // Skin +
-        else if (Input::IsMouseInRect(236 + OX, 186 + OY, 257 + OX, 199 + OY)) iMIbuttonNum = 6;  // Hair style -
-        else if (Input::IsMouseInRect(259 + OX, 186 + OY, 280 + OX, 199 + OY)) iMIbuttonNum = 7;  // Hair style +
-        else if (Input::IsMouseInRect(236 + OX, 201 + OY, 257 + OX, 214 + OY)) iMIbuttonNum = 8;  // Hair color -
-        else if (Input::IsMouseInRect(259 + OX, 201 + OY, 280 + OX, 214 + OY)) iMIbuttonNum = 9;  // Hair color +
-        else if (Input::IsMouseInRect(236 + OX, 216 + OY, 257 + OX, 229 + OY)) iMIbuttonNum = 10; // Underwear -
-        else if (Input::IsMouseInRect(259 + OX, 216 + OY, 280 + OX, 229 + OY)) iMIbuttonNum = 11; // Underwear +
-        else if (Input::IsMouseInRect(236 + OX, 276 + OY, 257 + OX, 289 + OY)) iMIbuttonNum = 12; // Str +
-        else if (Input::IsMouseInRect(259 + OX, 276 + OY, 280 + OX, 289 + OY)) iMIbuttonNum = 13; // Str -
-        else if (Input::IsMouseInRect(236 + OX, 291 + OY, 257 + OX, 304 + OY)) iMIbuttonNum = 14; // Vit +
-        else if (Input::IsMouseInRect(259 + OX, 291 + OY, 280 + OX, 304 + OY)) iMIbuttonNum = 15; // Vit -
-        else if (Input::IsMouseInRect(236 + OX, 306 + OY, 257 + OX, 319 + OY)) iMIbuttonNum = 16; // Dex +
-        else if (Input::IsMouseInRect(259 + OX, 306 + OY, 280 + OX, 319 + OY)) iMIbuttonNum = 17; // Dex -
-        else if (Input::IsMouseInRect(236 + OX, 321 + OY, 257 + OX, 334 + OY)) iMIbuttonNum = 18; // Int +
-        else if (Input::IsMouseInRect(259 + OX, 321 + OY, 280 + OX, 334 + OY)) iMIbuttonNum = 19; // Int -
-        else if (Input::IsMouseInRect(236 + OX, 336 + OY, 257 + OX, 349 + OY)) iMIbuttonNum = 20; // Mag +
-        else if (Input::IsMouseInRect(259 + OX, 336 + OY, 280 + OX, 349 + OY)) iMIbuttonNum = 21; // Mag -
-        else if (Input::IsMouseInRect(236 + OX, 351 + OY, 257 + OX, 364 + OY)) iMIbuttonNum = 22; // Chr +
-        else if (Input::IsMouseInRect(259 + OX, 351 + OY, 280 + OX, 364 + OY)) iMIbuttonNum = 23; // Chr -
-        else if (Input::IsMouseInRect(384 + OX, 445 + OY, 456 + OX, 460 + OY)) iMIbuttonNum = 24; // Create
-        else if (Input::IsMouseInRect(500 + OX, 445 + OY, 572 + OX, 460 + OY)) iMIbuttonNum = 25; // Cancel
-        else if (Input::IsMouseInRect(60 + OX, 445 + OY, 132 + OX, 460 + OY)) iMIbuttonNum = 26;  // Aresden
-        else if (Input::IsMouseInRect(145 + OX, 445 + OY, 217 + OX, 460 + OY)) iMIbuttonNum = 27; // Elvine
-        else if (Input::IsMouseInRect(230 + OX, 445 + OY, 302 + OX, 460 + OY)) iMIbuttonNum = 28; // Traveler
+        if (Input::IsMouseInRect(69 + OX, 110 + OY, 210, 17)) iMIbuttonNum = 1;  // Name
+        else if (Input::IsMouseInRect(236 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 2;  // Gender -
+        else if (Input::IsMouseInRect(259 + OX, 156 + OY, 21, 13)) iMIbuttonNum = 3;  // Gender +
+        else if (Input::IsMouseInRect(236 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 4;  // Skin -
+        else if (Input::IsMouseInRect(259 + OX, 171 + OY, 21, 13)) iMIbuttonNum = 5;  // Skin +
+        else if (Input::IsMouseInRect(236 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 6;  // Hair style -
+        else if (Input::IsMouseInRect(259 + OX, 186 + OY, 21, 13)) iMIbuttonNum = 7;  // Hair style +
+        else if (Input::IsMouseInRect(236 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 8;  // Hair color -
+        else if (Input::IsMouseInRect(259 + OX, 201 + OY, 21, 13)) iMIbuttonNum = 9;  // Hair color +
+        else if (Input::IsMouseInRect(236 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 10; // Underwear -
+        else if (Input::IsMouseInRect(259 + OX, 216 + OY, 21, 13)) iMIbuttonNum = 11; // Underwear +
+        else if (Input::IsMouseInRect(236 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 12; // Str +
+        else if (Input::IsMouseInRect(259 + OX, 276 + OY, 21, 13)) iMIbuttonNum = 13; // Str -
+        else if (Input::IsMouseInRect(236 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 14; // Vit +
+        else if (Input::IsMouseInRect(259 + OX, 291 + OY, 21, 13)) iMIbuttonNum = 15; // Vit -
+        else if (Input::IsMouseInRect(236 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 16; // Dex +
+        else if (Input::IsMouseInRect(259 + OX, 306 + OY, 21, 13)) iMIbuttonNum = 17; // Dex -
+        else if (Input::IsMouseInRect(236 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 18; // Int +
+        else if (Input::IsMouseInRect(259 + OX, 321 + OY, 21, 13)) iMIbuttonNum = 19; // Int -
+        else if (Input::IsMouseInRect(236 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 20; // Mag +
+        else if (Input::IsMouseInRect(259 + OX, 336 + OY, 21, 13)) iMIbuttonNum = 21; // Mag -
+        else if (Input::IsMouseInRect(236 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 22; // Chr +
+        else if (Input::IsMouseInRect(259 + OX, 351 + OY, 21, 13)) iMIbuttonNum = 23; // Chr -
+        else if (Input::IsMouseInRect(384 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 24; // Create
+        else if (Input::IsMouseInRect(500 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 25; // Cancel
+        else if (Input::IsMouseInRect(60 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 26;  // Aresden
+        else if (Input::IsMouseInRect(145 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 27; // Elvine
+        else if (Input::IsMouseInRect(230 + OX, 445 + OY, 72, 15)) iMIbuttonNum = 28; // Traveler
 
         switch (iMIbuttonNum) {
         case 1:

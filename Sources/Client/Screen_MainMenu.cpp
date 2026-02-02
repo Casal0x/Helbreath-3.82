@@ -109,21 +109,21 @@ void Screen_MainMenu::on_update()
     // Mouse click detection
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         // Game button
-        if (Input::IsMouseInRect(465, 238, 465+164, 238+22)) {
+        if (Input::IsMouseInRect(465, 238, 164, 22)) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 1;
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         }
         // Account button
-        else if (Input::IsMouseInRect(465, 276, 465+164, 276+22)) {
+        else if (Input::IsMouseInRect(465, 276, 164, 22)) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 2;
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         }
         // Quit button
-        else if (Input::IsMouseInRect(465, 315, 465+164, 315 +22)) {
+        else if (Input::IsMouseInRect(465, 315, 164, 22)) {
             m_pGame->PlaySound('E', 14, 5);
             m_cCurFocus = 3;
             m_pGame->ChangeGameMode(GameMode::Quit);

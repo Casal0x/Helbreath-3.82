@@ -51,8 +51,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         PlaySound('E', 14, 5);
 
         // Yes button - confirm deletion
-        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119,
-                                  dlgX + 38 + DEF_BTNSZX, dlgY + 119 + DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
         {
             // Create login socket and initiate delete request
             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
@@ -69,8 +68,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119,
-                                  dlgX + 208 + DEF_BTNSZX, dlgY + 119 + DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
         {
             clear_overlay();
             return;

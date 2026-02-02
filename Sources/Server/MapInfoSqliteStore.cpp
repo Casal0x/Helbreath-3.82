@@ -118,7 +118,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" key TEXT PRIMARY KEY,"
 		" value TEXT NOT NULL"
 		");"
-		"INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','1');"
+		"INSERT OR REPLACE INTO meta(key, value) VALUES('schema_version','2');"
 
 		// Core map settings
 		"CREATE TABLE IF NOT EXISTS maps ("
@@ -185,10 +185,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_no_attack_areas ("
 		" map_name TEXT NOT NULL,"
 		" area_index INTEGER NOT NULL CHECK(area_index >= 0 AND area_index < 50),"
-		" rect_left INTEGER NOT NULL,"
-		" rect_top INTEGER NOT NULL,"
-		" rect_right INTEGER NOT NULL,"
-		" rect_bottom INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" PRIMARY KEY (map_name, area_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -197,10 +197,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_npc_avoid_rects ("
 		" map_name TEXT NOT NULL,"
 		" rect_index INTEGER NOT NULL CHECK(rect_index >= 0 AND rect_index < 50),"
-		" rect_left INTEGER NOT NULL,"
-		" rect_top INTEGER NOT NULL,"
-		" rect_right INTEGER NOT NULL,"
-		" rect_bottom INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" PRIMARY KEY (map_name, rect_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -210,10 +210,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" map_name TEXT NOT NULL,"
 		" generator_index INTEGER NOT NULL CHECK(generator_index >= 0 AND generator_index < 100),"
 		" generator_type INTEGER NOT NULL CHECK(generator_type IN (1, 2)),"
-		" rect_left INTEGER NOT NULL DEFAULT 0,"
-		" rect_top INTEGER NOT NULL DEFAULT 0,"
-		" rect_right INTEGER NOT NULL DEFAULT 0,"
-		" rect_bottom INTEGER NOT NULL DEFAULT 0,"
+		" tile_x INTEGER NOT NULL DEFAULT 0,"
+		" tile_y INTEGER NOT NULL DEFAULT 0,"
+		" tile_w INTEGER NOT NULL DEFAULT 0,"
+		" tile_h INTEGER NOT NULL DEFAULT 0,"
 		" waypoints TEXT NOT NULL DEFAULT '',"
 		" mob_type INTEGER NOT NULL,"
 		" max_mobs INTEGER NOT NULL,"
@@ -352,10 +352,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_apocalypse_boss ("
 		" map_name TEXT PRIMARY KEY,"
 		" npc_id INTEGER NOT NULL,"
-		" rect_x1 INTEGER NOT NULL,"
-		" rect_y1 INTEGER NOT NULL,"
-		" rect_x2 INTEGER NOT NULL,"
-		" rect_y2 INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
 
@@ -363,10 +363,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_dynamic_gate ("
 		" map_name TEXT PRIMARY KEY,"
 		" gate_type INTEGER NOT NULL,"
-		" rect_x1 INTEGER NOT NULL,"
-		" rect_y1 INTEGER NOT NULL,"
-		" rect_x2 INTEGER NOT NULL,"
-		" rect_y2 INTEGER NOT NULL,"
+		" tile_x INTEGER NOT NULL,"
+		" tile_y INTEGER NOT NULL,"
+		" tile_w INTEGER NOT NULL,"
+		" tile_h INTEGER NOT NULL,"
 		" dest_map TEXT NOT NULL CHECK(length(dest_map) <= 10),"
 		" dest_x INTEGER NOT NULL,"
 		" dest_y INTEGER NOT NULL,"
@@ -592,7 +592,7 @@ bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
 	}
 
 	const char* sql =
-		"SELECT area_index, rect_left, rect_top, rect_right, rect_bottom"
+		"SELECT area_index, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_no_attack_areas WHERE map_name = ? COLLATE NOCASE ORDER BY area_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -606,10 +606,11 @@ bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
 		int idx = sqlite3_column_int(stmt, 0);
 		if (idx < 0 || idx >= DEF_MAXNMR) continue;
 
-		pMap->m_rcNoAttackRect[idx].left = sqlite3_column_int(stmt, 1);
-		pMap->m_rcNoAttackRect[idx].top = sqlite3_column_int(stmt, 2);
-		pMap->m_rcNoAttackRect[idx].right = sqlite3_column_int(stmt, 3);
-		pMap->m_rcNoAttackRect[idx].bottom = sqlite3_column_int(stmt, 4);
+		pMap->m_rcNoAttackRect[idx] = GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
@@ -623,7 +624,7 @@ bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
 	}
 
 	const char* sql =
-		"SELECT rect_index, rect_left, rect_top, rect_right, rect_bottom"
+		"SELECT rect_index, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_npc_avoid_rects WHERE map_name = ? COLLATE NOCASE ORDER BY rect_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -637,10 +638,11 @@ bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
 		int idx = sqlite3_column_int(stmt, 0);
 		if (idx < 0 || idx >= DEF_MAXMGAR) continue;
 
-		pMap->m_rcMobGenAvoidRect[idx].left = sqlite3_column_int(stmt, 1);
-		pMap->m_rcMobGenAvoidRect[idx].top = sqlite3_column_int(stmt, 2);
-		pMap->m_rcMobGenAvoidRect[idx].right = sqlite3_column_int(stmt, 3);
-		pMap->m_rcMobGenAvoidRect[idx].bottom = sqlite3_column_int(stmt, 4);
+		pMap->m_rcMobGenAvoidRect[idx] = GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
@@ -654,7 +656,7 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 	}
 
 	const char* sql =
-		"SELECT generator_index, generator_type, rect_left, rect_top, rect_right, rect_bottom,"
+		"SELECT generator_index, generator_type, tile_x, tile_y, tile_w, tile_h,"
 		" waypoints, mob_type, max_mobs"
 		" FROM map_spot_mob_generators WHERE map_name = ? COLLATE NOCASE ORDER BY generator_index;";
 
@@ -671,10 +673,11 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 
 		pMap->m_stSpotMobGenerator[idx].bDefined = true;
 		pMap->m_stSpotMobGenerator[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stSpotMobGenerator[idx].rcRect.left = sqlite3_column_int(stmt, 2);
-		pMap->m_stSpotMobGenerator[idx].rcRect.top = sqlite3_column_int(stmt, 3);
-		pMap->m_stSpotMobGenerator[idx].rcRect.right = sqlite3_column_int(stmt, 4);
-		pMap->m_stSpotMobGenerator[idx].rcRect.bottom = sqlite3_column_int(stmt, 5);
+		pMap->m_stSpotMobGenerator[idx].rcRect = GameRectangle(
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4),
+			sqlite3_column_int(stmt, 5));
 
 		// Parse waypoints for type 2
 		char waypointStr[256] = {};
@@ -1003,7 +1006,7 @@ bool LoadMapApocalypseBoss(sqlite3* db, const char* mapName, CMap* pMap)
 	}
 
 	const char* sql =
-		"SELECT npc_id, rect_x1, rect_y1, rect_x2, rect_y2"
+		"SELECT npc_id, tile_x, tile_y, tile_w, tile_h"
 		" FROM map_apocalypse_boss WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -1015,10 +1018,11 @@ bool LoadMapApocalypseBoss(sqlite3* db, const char* mapName, CMap* pMap)
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		pMap->m_iApocalypseBossMobNpcID = sqlite3_column_int(stmt, 0);
-		pMap->m_sApocalypseBossMobRectX1 = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pMap->m_sApocalypseBossMobRectY1 = static_cast<short>(sqlite3_column_int(stmt, 2));
-		pMap->m_sApocalypseBossMobRectX2 = static_cast<short>(sqlite3_column_int(stmt, 3));
-		pMap->m_sApocalypseBossMobRectY2 = static_cast<short>(sqlite3_column_int(stmt, 4));
+		pMap->m_rcApocalypseBossMob = GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 	}
 
 	sqlite3_finalize(stmt);
@@ -1032,7 +1036,7 @@ bool LoadMapDynamicGate(sqlite3* db, const char* mapName, CMap* pMap)
 	}
 
 	const char* sql =
-		"SELECT gate_type, rect_x1, rect_y1, rect_x2, rect_y2, dest_map, dest_x, dest_y"
+		"SELECT gate_type, tile_x, tile_y, tile_w, tile_h, dest_map, dest_x, dest_y"
 		" FROM map_dynamic_gate WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -1044,10 +1048,11 @@ bool LoadMapDynamicGate(sqlite3* db, const char* mapName, CMap* pMap)
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		pMap->m_cDynamicGateType = static_cast<char>(sqlite3_column_int(stmt, 0));
-		pMap->m_sDynamicGateCoordRectX1 = static_cast<short>(sqlite3_column_int(stmt, 1));
-		pMap->m_sDynamicGateCoordRectY1 = static_cast<short>(sqlite3_column_int(stmt, 2));
-		pMap->m_sDynamicGateCoordRectX2 = static_cast<short>(sqlite3_column_int(stmt, 3));
-		pMap->m_sDynamicGateCoordRectY2 = static_cast<short>(sqlite3_column_int(stmt, 4));
+		pMap->m_rcDynamicGateCoord = GameRectangle(
+			sqlite3_column_int(stmt, 1),
+			sqlite3_column_int(stmt, 2),
+			sqlite3_column_int(stmt, 3),
+			sqlite3_column_int(stmt, 4));
 		CopyColumnText(stmt, 5, pMap->m_cDynamicGateCoordDestMap,
 			sizeof(pMap->m_cDynamicGateCoordDestMap));
 		pMap->m_sDynamicGateCoordTgtX = static_cast<short>(sqlite3_column_int(stmt, 6));

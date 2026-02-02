@@ -33,6 +33,8 @@
     // HWND, HANDLE, HRESULT, HINSTANCE, RECT are provided by windows.h
 #endif
 
+#include "GameGeometry.h"
+
 // ============================================================================
 // Memory Operations
 // ============================================================================
@@ -83,40 +85,6 @@ public:
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - s_startTime);
         return static_cast<uint32_t>(elapsed.count());
     }
-};
-
-// ============================================================================
-// Geometry Types
-// ============================================================================
-
-// Renderer-agnostic rectangle for game use
-// Can be converted to platform-specific types (RECT, sf::IntRect) as needed
-struct GameRectangle
-{
-    int x = 0;
-    int y = 0;
-    int width = 0;
-    int height = 0;
-
-    constexpr GameRectangle() = default;
-    constexpr GameRectangle(int x_, int y_, int w, int h)
-        : x(x_), y(y_), width(w), height(h) {}
-
-    // Edge accessors for compatibility
-    constexpr int Left() const { return x; }
-    constexpr int Top() const { return y; }
-    constexpr int Right() const { return x + width; }
-    constexpr int Bottom() const { return y + height; }
-
-#ifdef _WIN32
-    // Convert to Windows RECT
-    RECT ToRECT() const { return RECT{ x, y, x + width, y + height }; }
-
-    // Construct from Windows RECT
-    static GameRectangle FromRECT(const RECT& r) {
-        return GameRectangle(r.left, r.top, r.right - r.left, r.bottom - r.top);
-    }
-#endif
 };
 
 // ============================================================================

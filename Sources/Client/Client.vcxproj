@@ -166,7 +166,7 @@
     </ClCompile>
     <Link>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <SetChecksum>false</SetChecksum>
       <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
@@ -315,7 +315,6 @@
     <ClInclude Include="Magic.h" />
     <ClInclude Include="MapData.h" />
     <ClInclude Include="Misc.h" />
-    <ClInclude Include="MouseInterface.h" />
     <ClInclude Include="ChatMsg.h" />
     <ClInclude Include="ClientMessages.h" />
     <ClInclude Include="resource.h" />
@@ -326,6 +325,7 @@
     <ClInclude Include="XSocket.h" />
     <ClInclude Include="ConfigManager.h" />
     <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
+    <ClInclude Include="..\Dependencies\Shared\GameGeometry.h" />
     <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
@@ -469,7 +469,6 @@
     <ClCompile Include="NetworkMessages_Stats.cpp" />
     <ClCompile Include="NetworkMessages_System.cpp" />
     <ClCompile Include="MapData.cpp" />
-    <ClCompile Include="MouseInterface.cpp" />
     <ClCompile Include="Wmain.cpp" />
     <ClCompile Include="GameWindowHandler.cpp" />
     <ClCompile Include="XSocket.cpp" />

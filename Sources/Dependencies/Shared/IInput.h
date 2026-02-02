@@ -191,23 +191,23 @@ namespace Input {
 
     // ============== Hit-Testing Helpers (replaces CMouseInterface) ==============
 
-    // Check if point is inside rectangle (exclusive right/bottom)
-    inline bool PointInRect(int x, int y, int left, int top, int right, int bottom) {
-        return x >= left && x < right && y >= top && y < bottom;
+    // Check if point is inside rectangle (x, y, width, height)
+    inline bool PointInRect(int px, int py, int x, int y, int w, int h) {
+        return px >= x && px < x + w && py >= y && py < y + h;
     }
 
-    // Check if mouse is inside rectangle
-    inline bool IsMouseInRect(int left, int top, int right, int bottom) {
-        return PointInRect(GetMouseX(), GetMouseY(), left, top, right, bottom);
+    // Check if mouse is inside rectangle (x, y, width, height)
+    inline bool IsMouseInRect(int x, int y, int w, int h) {
+        return PointInRect(GetMouseX(), GetMouseY(), x, y, w, h);
     }
 
-    // Check if left click occurred inside rectangle this frame
-    inline bool IsClickInRect(int left, int top, int right, int bottom) {
-        return IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && IsMouseInRect(left, top, right, bottom);
+    // Check if left click occurred inside rectangle this frame (x, y, width, height)
+    inline bool IsClickInRect(int x, int y, int w, int h) {
+        return IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && IsMouseInRect(x, y, w, h);
     }
 
-    // Check if right click occurred inside rectangle this frame
-    inline bool IsRightClickInRect(int left, int top, int right, int bottom) {
-        return IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && IsMouseInRect(left, top, right, bottom);
+    // Check if right click occurred inside rectangle this frame (x, y, width, height)
+    inline bool IsRightClickInRect(int x, int y, int w, int h) {
+        return IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && IsMouseInRect(x, y, w, h);
     }
 }

@@ -12,7 +12,7 @@
         "uiVolume": 22
     },
     "display": {
-        "borderless": true,
+        "borderless": false,
         "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,

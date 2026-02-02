@@ -25,13 +25,13 @@ CMap::CMap(class CGame* pGame)
 	}
 
 	for (i = 0; i < DEF_MAXMGAR; i++) {
-		m_rcMobGenAvoidRect[i].top = -1;
-		m_rcMobGenAvoidRect[i].left = -1;
+		m_rcMobGenAvoidRect[i].y = -1;
+		m_rcMobGenAvoidRect[i].x = -1;
 	}
 
 	for (i = 0; i < DEF_MAXNMR; i++) {
-		m_rcNoAttackRect[i].top = -1;
-		m_rcNoAttackRect[i].left = -1;
+		m_rcNoAttackRect[i].y = -1;
+		m_rcNoAttackRect[i].x = -1;
 	}
 
 	for (i = 0; i < DEF_MAXSPOTMOBGENERATOR; i++) {
@@ -766,15 +766,14 @@ void CMap::_SetupNoAttackArea()
 	class CTile* pTile;
 
 	for (i = 0; i < DEF_MAXNMR; i++) {
-		if ((m_rcNoAttackRect[i].top > 0)) {
-			// No-Magic-Area�� ���ǵǾ� �ִ�.
-			for (ix = m_rcNoAttackRect[i].left; ix <= m_rcNoAttackRect[i].right; ix++)
-				for (iy = m_rcNoAttackRect[i].top; iy <= m_rcNoAttackRect[i].bottom; iy++) {
+		if ((m_rcNoAttackRect[i].y > 0)) {
+			for (ix = m_rcNoAttackRect[i].Left(); ix <= m_rcNoAttackRect[i].Right(); ix++)
+				for (iy = m_rcNoAttackRect[i].Top(); iy <= m_rcNoAttackRect[i].Bottom(); iy++) {
 					pTile = (class CTile*)(m_pTile + ix + iy * m_sSizeX);
-					pTile->m_iAttribute = pTile->m_iAttribute | 0x00000004;		// 3��° ��Ʈ�� �����Ѵ�. �������� 
+					pTile->m_iAttribute = pTile->m_iAttribute | 0x00000004;
 				}
 		}
-		else if (m_rcNoAttackRect[i].top == -10) {
+		else if (m_rcNoAttackRect[i].y == -10) {
 			// �� ���� ���� ������.	
 			for (ix = 0; ix < m_sSizeX; ix++)
 				for (iy = 0; iy < m_sSizeY; iy++) {

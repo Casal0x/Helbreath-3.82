@@ -13,6 +13,7 @@
 #include "OccupyFlag.h"
 #include "Tile.h"
 #include "StrategicPoint.h"
+#include "GameGeometry.h"
 
 
 #define DEF_OWNERTYPE_PLAYER			1
@@ -108,7 +109,7 @@ public:
 	class CTeleportLoc * m_pTeleportLoc[DEF_MAXTELEPORTLOC];
 	
 	//short m_sInitialPointX, m_sInitialPointY;
-	POINT m_pInitialPoint[DEF_MAXINITIALPOINT];
+	GamePoint m_pInitialPoint[DEF_MAXINITIALPOINT];
 
 	bool  m_bNamingValueUsingStatus[1000]; // 0~999
 	bool  m_bRandomMobGenerator;
@@ -126,7 +127,7 @@ public:
 		char cType;				// 1:RANDOMAREA   2:RANDOMWAYPOINT
 		
 		char cWaypoint[10];     // RANDOMWAYPOINT ��
-		RECT rcRect;			// RANDOMAREA�߻��� ��� 
+		GameRectangle rcRect;			// RANDOMAREA�߻��� ���
 		
 		int  iTotalActiveMob;
 		int  iMobType;
@@ -135,17 +136,17 @@ public:
 		
 	} m_stSpotMobGenerator[DEF_MAXSPOTMOBGENERATOR];
 
-	POINT m_WaypointList[DEF_MAXWAYPOINTCFG];
-	RECT  m_rcMobGenAvoidRect[DEF_MAXMGAR];
-	RECT  m_rcNoAttackRect[DEF_MAXNMR];
+	GamePoint m_WaypointList[DEF_MAXWAYPOINTCFG];
+	GameRectangle  m_rcMobGenAvoidRect[DEF_MAXMGAR];
+	GameRectangle  m_rcNoAttackRect[DEF_MAXNMR];
 
-	POINT m_FishPointList[DEF_MAXFISHPOINT];
+	GamePoint m_FishPointList[DEF_MAXFISHPOINT];
 	int   m_iTotalFishPoint, m_iMaxFish, m_iCurFish;
 	
 	int	  m_iApocalypseMobGenType, m_iApocalypseBossMobNpcID;
-	short m_sApocalypseBossMobRectX1, m_sApocalypseBossMobRectY1, m_sApocalypseBossMobRectX2, m_sApocalypseBossMobRectY2;
+	GameRectangle m_rcApocalypseBossMob;
 	char  m_cDynamicGateType;
-	short m_sDynamicGateCoordRectX1, m_sDynamicGateCoordRectY1, m_sDynamicGateCoordRectX2, m_sDynamicGateCoordRectY2;
+	GameRectangle m_rcDynamicGateCoord;
 	char  m_cDynamicGateCoordDestMap[11];
 	short m_sDynamicGateCoordTgtX, m_sDynamicGateCoordTgtY;
 	bool  m_bIsCitizenLimit;
@@ -155,7 +156,7 @@ public:
 
 	bool  m_bMineralGenerator;
 	char  m_cMineralGeneratorLevel;
-	POINT m_MineralPointList[DEF_MAXMINERALPOINT];
+	GamePoint m_MineralPointList[DEF_MAXMINERALPOINT];
 	int   m_iTotalMineralPoint, m_iMaxMineral, m_iCurMineral;
 
 	char  m_cWhetherStatus;		// ��� ����. 0�̸� ����. 1~3 �� 4~6 �� 7~9 ��ǳ 

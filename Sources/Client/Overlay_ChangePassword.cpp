@@ -241,12 +241,12 @@ void Overlay_ChangePassword::on_update()
         PlaySound('E', 14, 5);
 
         int iClickedField = 0;
-        if (Input::IsMouseInRect(dlgX + 147, dlgY + 36, dlgX + 272, dlgY + 58)) iClickedField = 1;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 60, dlgX + 272, dlgY + 82)) iClickedField = 2;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 84, dlgX + 272, dlgY + 106)) iClickedField = 3;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 108, dlgX + 272, dlgY + 130)) iClickedField = 4;
-        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, dlgX + 44 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY)) iClickedField = 5;
-        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, dlgX + 217 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY)) iClickedField = 6;
+        if (Input::IsMouseInRect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
+        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
+        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY)) iClickedField = 5;
+        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY)) iClickedField = 6;
 
         switch (iClickedField)
         {
@@ -266,9 +266,9 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse hover for buttons
-    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, dlgX + 44 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY))
+    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY))
         m_iCurFocus = 5;
-    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, dlgX + 217 + DEF_BTNSZX, dlgY + 208 + DEF_BTNSZY))
+    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY))
         m_iCurFocus = 6;
 
     // Update input field focus

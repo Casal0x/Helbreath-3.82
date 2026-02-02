@@ -1457,7 +1457,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 							int camY = (indexY - VIEW_CENTER_TILE_Y()) * 32 + static_cast<int>(m_pMapData->m_pData[dX][dY].m_motion.fCurrentOffsetY) - 16;
 							m_Camera.SetDestination(camX, camY);
 						}
-						SetRect(&m_rcPlayerRect, m_rcBodyRect.left, m_rcBodyRect.top, m_rcBodyRect.right, m_rcBodyRect.bottom);
+						m_rcPlayerRect = m_rcBodyRect;
 						bIsPlayerDrawed = true;
 					}
 				}
@@ -1608,8 +1608,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					}
 					else
 					{
-						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.top) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.bottom) &&
-							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.left) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.right))
+						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.Top()) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.Bottom()) &&
+							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.Left()) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.Right()))
 						{
 							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Fade());
 							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Average());
@@ -3634,8 +3634,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -3766,8 +3765,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -4270,8 +4268,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
@@ -4380,8 +4377,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (iMantleColor == 0)
@@ -4668,8 +4664,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+		{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame);
 
@@ -4905,8 +4900,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+		{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 		if (iUndiesIndex != -1)
 		{
@@ -5338,8 +5332,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+				{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
@@ -5463,8 +5456,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+				{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
@@ -5624,8 +5616,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+				{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
@@ -5747,8 +5738,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
 
-				SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+				{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 				if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 				{
@@ -6221,8 +6211,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 		}
 
-		SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+		{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 		if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame);
 
@@ -6516,8 +6505,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame);
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
@@ -6968,8 +6956,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -7139,8 +7126,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -7579,8 +7565,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -7703,8 +7688,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -8329,8 +8313,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0)) {
 				if (bInv) m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
@@ -8499,8 +8482,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrder[m_entityState.m_iDir] == 0))
 			{
@@ -9888,8 +9870,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 0))
 			{
@@ -10053,8 +10034,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
 
-			SetRect(&m_rcBodyRect, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().left, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().top,
-				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().right, m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect().bottom);
+			{ auto& br = m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect(); m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 			if ((iMantleIndex != -1) && (_cMantleDrawingOrderOnRun[m_entityState.m_iDir] == 0))
 			{

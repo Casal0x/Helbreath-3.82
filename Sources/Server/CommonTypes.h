@@ -13,6 +13,7 @@
 #include <cstring>
 #include <chrono>
 #include <cstdio>
+#include "GameGeometry.h"
 
 // ============================================================================
 // Windows API types (platform-specific)
