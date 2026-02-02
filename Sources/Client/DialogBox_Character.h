@@ -25,8 +25,8 @@ public:
 private:
 	// Helper methods
 	void DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus);
-	char DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY, short msX, short msY,
-		const char* cEquipPoiStatus, bool useWeaponColors, int spriteOffset = 0);
+	void DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY,
+		const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset = 0);
 	void DrawHoverButton(int sX, int sY, int btnX, int btnY,
 		short msX, short msY, int hoverFrame, int normalFrame);
 	void DrawMaleCharacter(short sX, short sY, short msX, short msY,

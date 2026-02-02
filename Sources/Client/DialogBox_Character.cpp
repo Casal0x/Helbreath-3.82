@@ -63,16 +63,39 @@ void DialogBox_Character::DrawStat(int x1, int x2, int y, int baseStat, int ange
 	}
 }
 
-// Helper: Render equipped item and check collision
-char DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY, short msX, short msY,
-	const char* cEquipPoiStatus, bool useWeaponColors, int spriteOffset)
+// Find the topmost equipped slot colliding with the mouse, using the given table.
+// Returns the EquipPos of the topmost hit, or EquipPos::None if nothing collides.
+static EquipPos FindHoverSlot(CGame* pGame, const EquipSlotLayout* slots, int slotCount,
+	short sX, short sY, short msX, short msY, const char* cEquipPoiStatus, int spriteOffset)
+{
+	for (int i = slotCount - 1; i >= 0; i--)
+	{
+		int ep = static_cast<int>(slots[i].equipPos);
+		int itemIdx = cEquipPoiStatus[ep];
+		if (itemIdx == -1) continue;
+
+		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[itemIdx]->m_sIDnum);
+		if (pCfg == nullptr) continue;
+
+		if (pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + pCfg->m_sSprite + spriteOffset]->CheckCollision(
+			sX + slots[i].offsetX, sY + slots[i].offsetY, pCfg->m_sSpriteFrame, msX, msY))
+		{
+			return slots[i].equipPos;
+		}
+	}
+	return EquipPos::None;
+}
+
+// Helper: Render equipped item with optional hover highlight
+void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY,
+	const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset)
 {
 	int itemIdx = cEquipPoiStatus[static_cast<int>(equipPos)];
-	if (itemIdx == -1) return -1;
+	if (itemIdx == -1) return;
 
 	CItem* pItem = m_pGame->m_pItemList[itemIdx].get();
 	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
-	if (pCfg == nullptr) return -1;
+	if (pCfg == nullptr) return;
 
 	short sSprH = pCfg->m_sSprite;
 	short sFrame = pCfg->m_sSpriteFrame;
@@ -81,8 +104,6 @@ char DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 
 	// Select color array based on item type (weapons use different colors)
 	const GameColor* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
-	// (wG/wB merged into GameColor array above)
-	
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 
@@ -101,10 +122,8 @@ char DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(colors[cItemColor].r - GameColors::Base.r, colors[cItemColor].g - GameColors::Base.g, colors[cItemColor].b - GameColors::Base.b, 0.7f));
 	}
 
-	if (pSprite->CheckCollision(drawX, drawY, sFrame, msX, msY))
-		return static_cast<char>(equipPos);
-
-	return -1;
+	if (bHighlight)
+		pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Additive(0.35f));
 }
 
 // Helper: Draw hover button
@@ -304,12 +323,17 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	// Underwear
 	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x000F));
 
+	// Find topmost hovered slot (reverse scan) before drawing
+	EquipPos hoverSlot = FindHoverSlot(m_pGame, MaleEquipSlots, static_cast<int>(std::size(MaleEquipSlots)),
+		sX, sY, msX, msY, cEquipPoiStatus, 0);
+	if (hoverSlot != EquipPos::None)
+		cCollison = static_cast<char>(hoverSlot);
+
 	// Equipment slots (draw order from table)
 	for (const auto& slot : MaleEquipSlots)
 	{
-		char result = DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
-			msX, msY, cEquipPoiStatus, slot.useWeaponColors);
-		if (result != -1) cCollison = result;
+		DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
+			cEquipPoiStatus, slot.useWeaponColors, slot.equipPos == hoverSlot);
 	}
 
 	// Angel staff special case
@@ -358,20 +382,22 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 			bSkirt = true;
 	}
 
+	// Find topmost hovered slot (reverse scan) before drawing
+	EquipPos hoverSlot = FindHoverSlot(m_pGame, FemaleEquipSlots, static_cast<int>(std::size(FemaleEquipSlots)),
+		sX, sY, msX, msY, cEquipPoiStatus, 40);
+	if (hoverSlot != EquipPos::None)
+		cCollison = static_cast<char>(hoverSlot);
+
 	// If wearing skirt, pre-draw boots under the skirt
 	if (bSkirt)
-	{
-		char result = DrawEquippedItem(EquipPos::Leggings, sX + 171, sY + 290, msX, msY, cEquipPoiStatus, false, 40);
-		if (result != -1) cCollison = result;
-	}
+		DrawEquippedItem(EquipPos::Leggings, sX + 171, sY + 290, cEquipPoiStatus, false, hoverSlot == EquipPos::Leggings, 40);
 
 	// Equipment slots (draw order from table)
 	for (const auto& slot : FemaleEquipSlots)
 	{
 		if (bSkirt && slot.equipPos == EquipPos::Leggings) continue; // already drawn
-		char result = DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
-			msX, msY, cEquipPoiStatus, slot.useWeaponColors, 40);
-		if (result != -1) cCollison = result;
+		DrawEquippedItem(slot.equipPos, sX + slot.offsetX, sY + slot.offsetY,
+			cEquipPoiStatus, slot.useWeaponColors, slot.equipPos == hoverSlot, 40);
 	}
 
 	// Angel staff special case
