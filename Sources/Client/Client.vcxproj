@@ -17,6 +17,14 @@
       <Configuration>Release-SFML</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-SFML|x64">
+      <Configuration>Debug-SFML</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-SFML|x64">
+      <Configuration>Release-SFML</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>Game</ProjectName>
@@ -52,6 +60,18 @@
     <UseOfMfc>false</UseOfMfc>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-SFML|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseOfMfc>false</UseOfMfc>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -71,6 +91,12 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-SFML|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <!-- Paths for DDraw configurations -->
@@ -115,6 +141,27 @@
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <!-- x64 SFML paths -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-SFML|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs\x64;$(SolutionDir)Dependencies\SFML\lib_x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
+    <IntDir>$(Configuration)_x64\</IntDir>
+    <TargetName>Game_SFML_x64</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>$(SolutionDir)Dependencies\Client\Libs\x64;$(SolutionDir)Dependencies\SFML\lib_x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <OutDir>$(SolutionDir)Release\</OutDir>
+    <IntDir>$(Configuration)_x64\</IntDir>
+    <TargetName>Game_SFML_x64</TargetName>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <!-- Debug-DDraw Build Settings -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DDraw|Win32'">
     <ClCompile>
@@ -136,7 +183,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>DDrawEngine.lib;DDRAW.LIB;Ws2_32.lib;DXGUID.LIB;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DDrawEngine.lib;DDRAW.LIB;Ws2_32.lib;DXGUID.LIB;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -168,7 +215,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>false</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
@@ -200,7 +247,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>DDrawEngine.lib;ddraw.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DDrawEngine.lib;ddraw.lib;Ws2_32.lib;DINPUT.LIB;DSOUND.LIB;DXGUID.LIB;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
@@ -236,8 +283,74 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <SubSystem>Windows</SubSystem>
       <SetChecksum>true</SetChecksum>
-      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;Cint.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;DXGUID.LIB;dxgi.lib;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <ResourceCompile>
+      <Culture>0x0809</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <!-- Debug-SFML x64 Build Settings -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-SFML|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>Disabled</Optimization>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Windows</SubSystem>
+      <SetChecksum>false</SetChecksum>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s-d.lib;sfml-window-s-d.lib;sfml-system-s-d.lib;freetyped.lib;opengl32.lib;Ws2_32.lib;dxgi.lib;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
+    </Link>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <!-- Release-SFML x64 Build Settings -->
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|x64'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <StringPooling>true</StringPooling>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_VC80_UPGRADE=0x0600;SFML_STATIC;SFML_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <SubSystem>Windows</SubSystem>
+      <SetChecksum>true</SetChecksum>
+      <AdditionalDependencies>SFMLEngine.lib;sfml-graphics-s.lib;sfml-window-s.lib;sfml-system-s.lib;freetype.lib;opengl32.lib;Ws2_32.lib;dxgi.lib;winmm.lib;gdi32.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <AdditionalOptions> /FORCE:UNRESOLVED</AdditionalOptions>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>

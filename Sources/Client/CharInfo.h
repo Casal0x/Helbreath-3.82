@@ -5,7 +5,6 @@
 #pragma once
 
 #include <windows.h>
-#include "Cint.h"	//20030220 mando..
 
 class CCharInfo
 {
