@@ -240,7 +240,7 @@ public:
 	void DrawVersion();
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
-	bool _bCheckItemByType(char cType);
+	bool _bCheckItemByType(hb::item::ItemType type);
 	void DrawNpcName(   short sX, short sY, short sOwnerType, int iStatus);
 	void DrawObjectName(short sX, short sY, char * pName, int iStatus);
 	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
@@ -566,7 +566,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	int m_iGizonItemUpgradeLeft;
 	//int m_iFeedBackCardIndex; // removed by Snoopy
 
-	std::array<short, DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
+	std::array<short, hb::item::DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
 	short m_sMCX, m_sMCY;
 	int   m_iCastingMagicType;
 	short m_sVDL_X, m_sVDL_Y;

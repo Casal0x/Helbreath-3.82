@@ -4,6 +4,8 @@
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
+using namespace hb::item;
+
 DialogBox_SellList::DialogBox_SellList(CGame* pGame)
 	: IDialogBox(DialogBoxId::SellList, pGame)
 {
@@ -257,8 +259,8 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 
 	// Stackable items - open quantity dialog
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-	if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-		(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+	if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) ||
+		(pCfg->GetItemType() == ItemType::Arrow)) &&
 		(m_pGame->m_pItemList[cItemID]->m_dwCount > 1))
 	{
 		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);

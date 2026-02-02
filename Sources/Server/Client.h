@@ -115,7 +115,7 @@ public:
 	//int  m_iHitRatio_ItemEffect_SM; // ������ �������� ���� HitRatio ���氪
 	//int  m_iHitRatio_ItemEffect_L;
 
-	int  m_iDamageAbsorption_Armor[DEF_MAXITEMEQUIPPOS];		// ���� �������� ���� Damage ���� ȿ��
+	int  m_iDamageAbsorption_Armor[hb::item::DEF_MAXITEMEQUIPPOS];		// ���� �������� ���� Damage ���� ȿ��
 	int  m_iDamageAbsorption_Shield;	// Parrying ���? �������� Damage ���� ȿ�� 
 
 	int  m_iLevel;
@@ -158,7 +158,7 @@ public:
 	class CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
 	
 	bool  m_bIsItemEquipped[DEF_MAXITEMS];
-	short m_sItemEquipmentStatus[DEF_MAXITEMEQUIPPOS];
+	short m_sItemEquipmentStatus[hb::item::DEF_MAXITEMEQUIPPOS];
 	char  m_cArrowIndex;		// �÷��̾ Ȱ�� ����Ҷ�? ȭ�� ������ �ε���. �ʱⰪ�� -1(�Ҵ� �ȵ�)
 
 	char           m_cMagicMastery[DEF_MAXMAGICTYPE];

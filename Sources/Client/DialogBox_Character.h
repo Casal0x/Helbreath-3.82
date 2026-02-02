@@ -35,7 +35,7 @@ private:
 		const char* cEquipPoiStatus, char& cCollison);
 
 	// Shared helpers
-	void BuildEquipStatusArray(char (&cEquipPoiStatus)[DEF_MAXITEMEQUIPPOS]) const;
+	void BuildEquipStatusArray(char (&cEquipPoiStatus)[hb::item::DEF_MAXITEMEQUIPPOS]) const;
 	char FindEquipItemAtPoint(short msX, short msY, short sX, short sY,
 		const char* cEquipPoiStatus) const;
 };

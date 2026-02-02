@@ -7,6 +7,8 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
+using namespace hb::item;
+
 DialogBox_Magic::DialogBox_Magic(CGame* pGame)
 	: IDialogBox(DialogBoxId::Magic, pGame)
 {
@@ -249,7 +251,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 			{
 				if (m_pGame->m_pItemList[i] == 0) continue;
 				CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[i]->m_sIDnum);
-				if (pCfg && (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
+				if (pCfg && (pCfg->GetItemType() == ItemType::UseSkillEnableDialogBox) &&
 					(pCfg->m_sSpriteFrame == 55))
 				{
 					EnableDialogBox(DialogBoxId::Manufacture, 1, 0, 0, 0);

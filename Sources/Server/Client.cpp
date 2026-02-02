@@ -8,6 +8,8 @@
 #include <direct.h>
 #endif
 
+using namespace hb::item;
+
 extern char G_cTxt[512];
 
 //////////////////////////////////////////////////////////////////////

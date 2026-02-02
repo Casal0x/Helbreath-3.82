@@ -5,6 +5,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::item;
+
 DialogBox_Shop::DialogBox_Shop(CGame* pGame)
     : IDialogBox(DialogBoxId::SaleMenu, pGame)
 {
@@ -162,25 +164,25 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     wsprintf(cTemp, DRAW_DIALOGBOX_SHOP8, iWeight); //": %d Stone"
     TextLib::DrawText(GameFont::Default, sX + 140, sY + 113, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
 
-    switch (m_pGame->m_pItemForSaleList[iItemIndex]->m_cEquipPos) {
-    case DEF_EQUIPPOS_RHAND:
-    case DEF_EQUIPPOS_TWOHAND:
+    switch (m_pGame->m_pItemForSaleList[iItemIndex]->GetEquipPos()) {
+    case EquipPos::RightHand:
+    case EquipPos::TwoHand:
         DrawWeaponStats(sX, sY, iItemIndex, bFlagRedShown);
         break;
 
-    case DEF_EQUIPPOS_LHAND:
+    case EquipPos::LeftHand:
         DrawShieldStats(sX, sY, iItemIndex, bFlagRedShown);
         break;
 
-    case DEF_EQUIPPOS_HEAD:
-    case DEF_EQUIPPOS_BODY:
-    case DEF_EQUIPPOS_BOOTS:
-    case DEF_EQUIPPOS_ARMS:
-    case DEF_EQUIPPOS_PANTS:
+    case EquipPos::Head:
+    case EquipPos::Body:
+    case EquipPos::Leggings:
+    case EquipPos::Arms:
+    case EquipPos::Pants:
         DrawArmorStats(sX, sY, iItemIndex, bFlagStatLow, bFlagRedShown);
         break;
 
-    case DEF_EQUIPPOS_NONE:
+    case EquipPos::None:
         break;
     }
 

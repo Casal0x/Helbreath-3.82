@@ -5,6 +5,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::item;
+
 DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* pGame)
 	: IDialogBox(DialogBoxId::ItemUpgrade, pGame)
 {
@@ -61,7 +63,7 @@ int DialogBox_ItemUpgrade::CalculateUpgradeCost(int iItemIndex)
     // Special handling for Angelic Pendants
     CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
     if (pCfg && (pCfg->m_cEquipPos >= 11)
-        && (pCfg->m_cItemType == 1))
+        && (pCfg->GetItemType() == ItemType::Equip))
     {
         short sID = m_pGame->m_pItemList[iItemIndex]->m_sIDnum;
         if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
@@ -92,9 +94,9 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
 
     char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
     CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
-    if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-        || (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-        || (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
+    if (pCfg && ((pCfg->GetEquipPos() == EquipPos::LeftHand)
+        || (pCfg->GetEquipPos() == EquipPos::RightHand)
+        || (pCfg->GetEquipPos() == EquipPos::TwoHand)))
     {
         m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
     }
@@ -174,9 +176,9 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         char cItemColor = m_pGame->m_pItemList[iItemIndex]->m_cItemColor;
         CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[iItemIndex]->m_sIDnum);
 
-        if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-            || (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
-            || (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
+        if (pCfg && ((pCfg->GetEquipPos() == EquipPos::LeftHand)
+            || (pCfg->GetEquipPos() == EquipPos::RightHand)
+            || (pCfg->GetEquipPos() == EquipPos::TwoHand)))
         {
             m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 134, sY + 182, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
         }
@@ -508,7 +510,7 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 	if (m_pGame->m_bIsItemDisabled[cItemID]) return false;
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-	if (!pCfg || pCfg->m_cEquipPos == DEF_EQUIPPOS_NONE) return false;
+	if (!pCfg || pCfg->GetEquipPos() == EquipPos::None) return false;
 
 	switch (Info().cMode) {
 	case 1:

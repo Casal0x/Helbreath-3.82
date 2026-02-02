@@ -9,6 +9,8 @@
 #include "NetMessages.h"
 #include "IInput.h"
 
+using namespace hb::item;
+
 DialogBox_Manufacture::DialogBox_Manufacture(CGame* pGame)
 	: IDialogBox(DialogBoxId::Manufacture, pGame)
 {
@@ -535,7 +537,7 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 		PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 200 - 45, DRAW_DIALOGBOX_SKILLDLG31, GameColors::UILabel.ToColorRef());
 
 		char resultBuf[64];
-		if (Info().sV1 == DEF_ITEMTYPE_MATERIAL) {
+		if (static_cast<ItemType>(Info().sV1) == ItemType::Material) {
 			snprintf(resultBuf, sizeof(resultBuf), DRAW_DIALOGBOX_SKILLDLG32, Info().cStr[3]);
 			PutString(sX + iAdjX + 33 + 11, sY + iAdjY + 215 - 45, resultBuf, GameColors::UILabel.ToColorRef());
 		}
@@ -604,7 +606,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -613,7 +615,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 40 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -622,7 +624,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 90 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -631,7 +633,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -640,7 +642,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 65 + 45 + (1 - (rand() % 3)), sY + iAdjY + 115 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -649,7 +651,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
 		if (pCfg) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + iAdjX + 75 + 90 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame);
-			if ((pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP) && (pCfg->m_cEquipPos == DEF_EQUIPPOS_NECK))
+			if ((pCfg->GetItemType() == ItemType::Equip) && (pCfg->GetEquipPos() == EquipPos::Neck))
 				m_pGame->m_iContributionPrice = 10;
 		}
 	}
@@ -910,7 +912,7 @@ bool DialogBox_Manufacture::TryAddItemToSlot(char cItemID, bool updateBuildStatu
 
 			// Only disable non-stackable items (stackable consumables can be added multiple times)
 			CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-			if (!pCfg || pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME ||
+			if (!pCfg || pCfg->GetItemType() != ItemType::Consume ||
 				m_pGame->m_pItemList[cItemID]->m_dwCount <= 1)
 			{
 				m_pGame->m_bIsItemDisabled[cItemID] = true;
@@ -956,7 +958,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 1: // Alchemy
 	{
 		// Check consumable item count - can't add if all instances are already used
-		if (pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		if (pCfg->GetItemType() == ItemType::Consume)
 		{
 			int iConsumeNum = 0;
 			if (info.sV1 == cItemID) iConsumeNum++;
@@ -969,9 +971,9 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 		}
 
 		// Only allow EAT, CONSUME, or NONE item types for alchemy
-		if (pCfg->m_cItemType != DEF_ITEMTYPE_EAT &&
-			pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME &&
-			pCfg->m_cItemType != DEF_ITEMTYPE_NONE)
+		if (pCfg->GetItemType() != ItemType::Eat &&
+			pCfg->GetItemType() != ItemType::Consume &&
+			pCfg->GetItemType() != ItemType::None)
 		{
 			return false;
 		}
@@ -984,7 +986,7 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 4: // Manufacture
 	{
 		// Check consumable item count
-		if (pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
+		if (pCfg->GetItemType() == ItemType::Consume)
 		{
 			int iConsumeNum = 0;
 			if (info.sV1 == cItemID) iConsumeNum++;
@@ -1004,10 +1006,10 @@ bool DialogBox_Manufacture::OnItemDrop(short msX, short msY)
 	case 7: // Crafting
 	{
 		// Only allow specific item types for crafting
-		if (pCfg->m_cItemType != DEF_ITEMTYPE_NONE &&      // Merien Stone
-			pCfg->m_cItemType != DEF_ITEMTYPE_EQUIP &&     // Necklaces, Rings
-			pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME &&   // Stones
-			pCfg->m_cItemType != DEF_ITEMTYPE_MATERIAL)    // Craftwares
+		if (pCfg->GetItemType() != ItemType::None &&      // Merien Stone
+			pCfg->GetItemType() != ItemType::Equip &&     // Necklaces, Rings
+			pCfg->GetItemType() != ItemType::Consume &&   // Stones
+			pCfg->GetItemType() != ItemType::Material)    // Craftwares
 		{
 			return false;
 		}

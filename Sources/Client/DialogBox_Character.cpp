@@ -5,6 +5,8 @@
 #include "lan_eng.h"
 #include "SharedCalculations.h"
 
+using namespace hb::item;
+
 using hb::item::EquipPos;
 
 // Draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
@@ -313,7 +315,7 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 1);
 
 	// Hair (if no helmet)
-	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
+	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		int iR, iG, iB;
 		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
@@ -337,9 +339,9 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	}
 
 	// Angel staff special case
-	if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
+	if (cEquipPoiStatus[ToInt(EquipPos::TwoHand)] != -1)
 	{
-		int itemIdx = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
+		int itemIdx = cEquipPoiStatus[ToInt(EquipPos::TwoHand)];
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
 		if (pCfg != nullptr)
 		{
@@ -363,7 +365,7 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 4);
 
 	// Hair (if no helmet) - female hair is at +18+40 = +58
-	if (cEquipPoiStatus[DEF_EQUIPPOS_HEAD] == -1)
+	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		int iR, iG, iB;
 		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
@@ -375,9 +377,9 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
 	bool bSkirt = false;
-	if (cEquipPoiStatus[DEF_EQUIPPOS_PANTS] != -1)
+	if (cEquipPoiStatus[ToInt(EquipPos::Pants)] != -1)
 	{
-		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cEquipPoiStatus[DEF_EQUIPPOS_PANTS]]->m_sIDnum);
+		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cEquipPoiStatus[ToInt(EquipPos::Pants)]]->m_sIDnum);
 		if (pCfg != nullptr && pCfg->m_sSprite == 12 && pCfg->m_sSpriteFrame == 0)
 			bSkirt = true;
 	}
@@ -401,9 +403,9 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	}
 
 	// Angel staff special case
-	if (cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND] != -1)
+	if (cEquipPoiStatus[ToInt(EquipPos::TwoHand)] != -1)
 	{
-		int itemIdx = cEquipPoiStatus[DEF_EQUIPPOS_TWOHAND];
+		int itemIdx = cEquipPoiStatus[ToInt(EquipPos::TwoHand)];
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[itemIdx]->m_sIDnum);
 		if (pCfg != nullptr)
 		{
@@ -473,9 +475,9 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 		return false;
 
 	// Skip consumables, arrows, and stacked items
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_EAT ||
-		pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME ||
-		pCfg->m_cItemType == DEF_ITEMTYPE_ARROW ||
+	if (pCfg->GetItemType() == ItemType::Eat ||
+		pCfg->GetItemType() == ItemType::Consume ||
+		pCfg->GetItemType() == ItemType::Arrow ||
 		pItem->m_dwCount > 1)
 		return false;
 
@@ -511,7 +513,7 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 
 			// Remove Angelic Stats
 			if (pCfg->m_cEquipPos >= 11 &&
-				pCfg->m_cItemType == 1)
+				pCfg->GetItemType() == ItemType::Equip)
 			{
 				if (pItem->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 					m_pGame->m_pPlayer->m_iAngelicStr = 0;

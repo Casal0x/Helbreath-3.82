@@ -7,6 +7,8 @@
 #include <fstream>
 #include <ctime>
 
+using namespace hb::item;
+
 extern void PutLogList(char* cMsg);
 
 static const char* const ITEMLOG_DIR = "GameLogs";
@@ -99,11 +101,11 @@ bool ItemLog::IsItemSuspicious(CItem* pItem)
 		return false;
 
 	// If the item has attributes but no server-assigned touch ID, it's suspicious
-	if (pItem->m_dwAttribute != 0 && pItem->m_sTouchEffectType != DEF_ITET_ID)
+	if (pItem->m_dwAttribute != 0 && pItem->GetTouchEffectType() != TouchEffectType::ID)
 		return true;
 
 	// High-value equipment with no touch effect at all is suspicious
-	if (pItem->m_sTouchEffectType == 0 && pItem->m_dwAttribute != 0)
+	if (pItem->GetTouchEffectType() == TouchEffectType::None && pItem->m_dwAttribute != 0)
 		return true;
 
 	return false;

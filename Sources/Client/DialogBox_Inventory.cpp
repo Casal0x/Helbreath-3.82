@@ -6,6 +6,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::item;
+
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
 {
@@ -21,9 +23,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 
 	char cItemColor = pItem->m_cItemColor;
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
-	bool bIsWeapon = (pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-	                 (pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-	                 (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND);
+	bool bIsWeapon = (pCfg->GetEquipPos() == EquipPos::LeftHand) ||
+	                 (pCfg->GetEquipPos() == EquipPos::RightHand) ||
+	                 (pCfg->GetEquipPos() == EquipPos::TwoHand);
 
 	int drawX = baseX + ITEM_OFFSET_X + pItem->m_sX;
 	int drawY = baseY + ITEM_OFFSET_Y + pItem->m_sY;
@@ -57,7 +59,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	}
 
 	// Show item count for consumables and arrows
-	if ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))
+	if ((pCfg->GetItemType() == ItemType::Consume) || (pCfg->GetItemType() == ItemType::Arrow))
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
@@ -149,7 +151,7 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 				if (pItem == nullptr) continue;
 				CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
 				if (pCfg != nullptr &&
-				    pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX &&
+				    pCfg->GetItemType() == ItemType::UseSkillEnableDialogBox &&
 				    pCfg->m_sSpriteFrame == 113 &&
 				    pItem->m_wCurLifeSpan > 0)
 				{
@@ -223,7 +225,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
 	{
-		if (pCfg->m_cEquipPos != DEF_EQUIPPOS_NONE)
+		if (pCfg->GetEquipPos() != EquipPos::None)
 		{
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
@@ -253,10 +255,10 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle consumable/depletable items
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
-		pCfg->m_cItemType == DEF_ITEMTYPE_USE_PERM ||
-		pCfg->m_cItemType == DEF_ITEMTYPE_ARROW ||
-		pCfg->m_cItemType == DEF_ITEMTYPE_EAT)
+	if (pCfg->GetItemType() == ItemType::UseDeplete ||
+		pCfg->GetItemType() == ItemType::UsePerm ||
+		pCfg->GetItemType() == ItemType::Arrow ||
+		pCfg->GetItemType() == ItemType::Eat)
 	{
 		if (!m_pGame->bCheckItemOperationEnabled(cItemID)) return true;
 
@@ -275,8 +277,8 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, cItemID, 0, 0, 0);
 
-		if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE ||
-			pCfg->m_cItemType == DEF_ITEMTYPE_EAT)
+		if (pCfg->GetItemType() == ItemType::UseDeplete ||
+			pCfg->GetItemType() == ItemType::Eat)
 		{
 			m_pGame->m_bIsItemDisabled[cItemID] = true;
 			m_pGame->m_bItemUsingStatus = true;
@@ -284,7 +286,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle skill items (pointing mode)
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
+	if (pCfg->GetItemType() == ItemType::UseSkill)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -311,7 +313,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle deplete-dest items (use on other items)
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
+	if (pCfg->GetItemType() == ItemType::UseDepleteDest)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -338,7 +340,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Handle skill items that enable dialog boxes (alchemy pot, anvil, crafting, slates)
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX)
+	if (pCfg->GetItemType() == ItemType::UseSkillEnableDialogBox)
 	{
 		if (m_pGame->_bIsItemOnHand())
 		{
@@ -402,7 +404,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	}
 
 	// Auto-equip equipment items
-	if (pCfg->m_cItemType == DEF_ITEMTYPE_EQUIP)
+	if (pCfg->GetItemType() == ItemType::Equip)
 	{
 		CursorTarget::SetSelection(SelectedObjectType::Item, (short)cItemID, 0, 0);
 		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
@@ -465,7 +467,7 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 				{
 					CItem* pPointCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_iPointCommandType]->m_sIDnum);
 					if (pPointCfg != nullptr &&
-						pPointCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST)
+						pPointCfg->GetItemType() == ItemType::UseDepleteDest)
 					{
 						m_pGame->PointCommandHandler(0, 0, cItemID);
 						m_pGame->m_bIsGetPointingMode = false;
@@ -562,7 +564,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 
 		// Remove Angelic Stats
 		if (pCfg->m_cEquipPos >= 11 &&
-			pCfg->m_cItemType == 1)
+			pCfg->GetItemType() == ItemType::Equip)
 		{
 			if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 				m_pGame->m_pPlayer->m_iAngelicStr = 0;

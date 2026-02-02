@@ -7,6 +7,8 @@
 #include "TextLibExt.h"
 #include "NetMessages.h"
 
+using namespace hb::item;
+
 DialogBox_Slates::DialogBox_Slates(CGame* pGame)
 	: IDialogBox(DialogBoxId::Slates, pGame)
 {
@@ -134,7 +136,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 	{
 		// Only accept slate items (sprite frame 151-154)
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
-		if (pCfg && (pCfg->m_cItemType == DEF_ITEMTYPE_USE_SKILL_ENABLEDIALOGBOX) &&
+		if (pCfg && (pCfg->GetItemType() == ItemType::UseSkillEnableDialogBox) &&
 			(pCfg->m_sSpriteFrame >= 151) &&
 			(pCfg->m_sSpriteFrame <= 154))
 		{

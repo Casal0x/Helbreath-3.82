@@ -3,6 +3,8 @@
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
+using namespace hb::item;
+
 DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcActionQuery, pGame)
 {
@@ -116,8 +118,8 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY39, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
-	if (pCfg && (pCfg->m_cItemType != DEF_ITEMTYPE_CONSUME) &&
-		(pCfg->m_cItemType != DEF_ITEMTYPE_ARROW))
+	if (pCfg && (pCfg->GetItemType() != ItemType::Consume) &&
+		(pCfg->GetItemType() != ItemType::Arrow))
 	{
 		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY43, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
 	}

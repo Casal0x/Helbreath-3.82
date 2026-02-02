@@ -8,12 +8,15 @@
 #include <cstring>
 #include <cmath>
 
+using namespace hb::item;
+
 namespace NetworkMessageHandlers {
 	void HandleItemPurchased(CGame* pGame, char* pData)
 	{
 		int i, j;
 		uint32_t dwCount;
-		char  cName[DEF_ITEMNAME], cItemType, cEquipPos, cGenderLimit;
+		char  cName[DEF_ITEMNAME], cEquipPos, cGenderLimit;
+		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit;
 		uint16_t wCost, wWeight, wCurLifeSpan, wMaxLifeSpan;
@@ -26,7 +29,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
-		cItemType = static_cast<char>(pkt->item_type);
+		cItemType = static_cast<ItemType>(pkt->item_type);
 		cEquipPos = static_cast<char>(pkt->equip_pos);
 		bIsEquipped = (pkt->is_equipped != 0);
 		sLevelLimit = static_cast<short>(pkt->level_limit);
@@ -48,7 +51,7 @@ namespace NetworkMessageHandlers {
 
 		short sItemID = pkt->item_id;
 
-		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
+		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
@@ -103,7 +106,8 @@ namespace NetworkMessageHandlers {
 	{
 		int i, j;
 		uint32_t dwCount, dwAttribute;
-		char  cName[DEF_ITEMNAME], cItemType, cEquipPos;
+		char  cName[DEF_ITEMNAME], cEquipPos;
+		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
 		char  cTxt[120], cGenderLimit, cItemColor;
@@ -116,7 +120,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		dwCount = pkt->count;
-		cItemType = static_cast<char>(pkt->item_type);
+		cItemType = static_cast<ItemType>(pkt->item_type);
 		cEquipPos = static_cast<char>(pkt->equip_pos);
 		bIsEquipped = (pkt->is_equipped != 0);
 		sLevelLimit = static_cast<short>(pkt->level_limit);
@@ -146,7 +150,7 @@ namespace NetworkMessageHandlers {
 
 		short sItemID = pkt->item_id;
 
-		if ((cItemType == DEF_ITEMTYPE_CONSUME) || (cItemType == DEF_ITEMTYPE_ARROW))
+		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
 			for (i = 0; i < DEF_MAXITEMS; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
@@ -296,17 +300,17 @@ namespace NetworkMessageHandlers {
 		}
 
 		std::memset(cTxt, 0, sizeof(cTxt));
-		if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-			(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))) {
+		if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) ||
+			(pCfg->GetItemType() == ItemType::Arrow))) {
 			wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, cStr1);
 		}
 		else if (pCfg) {
-			if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE) {
+			if (pCfg->GetItemType() == ItemType::UseDeplete) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}
 			}
-			else if (pCfg->m_cItemType == DEF_ITEMTYPE_EAT) {
+			else if (pCfg->GetItemType() == ItemType::Eat) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 1) && (pGame->m_pPlayer->m_sPlayerType <= 3))
@@ -315,7 +319,7 @@ namespace NetworkMessageHandlers {
 						pGame->PlaySound('C', 20, 0);
 				}
 			}
-			else if (pCfg->m_cItemType == DEF_ITEMTYPE_USE_DEPLETE_DEST) {
+			else if (pCfg->GetItemType() == ItemType::UseDepleteDest) {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}

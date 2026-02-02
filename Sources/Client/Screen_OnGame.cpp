@@ -18,6 +18,8 @@
 #include <string>
 #include <memory>
 
+using namespace hb::item;
+
 extern char G_cSpriteAlphaDegree;
 
 Screen_OnGame::Screen_OnGame(CGame* pGame)
@@ -528,7 +530,7 @@ void Screen_OnGame::RenderItemTooltip()
     if (!pCfg) return;
 
     char cItemColor = item->m_cItemColor;
-    bool is_hand_item = pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND || pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND || pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND;
+    bool is_hand_item = pCfg->GetEquipPos() == EquipPos::LeftHand || pCfg->GetEquipPos() == EquipPos::RightHand || pCfg->GetEquipPos() == EquipPos::TwoHand;
     size_t item_sprite_index = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
     SpriteLib::ISprite* sprite = m_pGame->m_pSprite[item_sprite_index].get();
     bool is_equippable = pCfg->IsArmor() || pCfg->IsWeapon() || pCfg->IsAccessory();

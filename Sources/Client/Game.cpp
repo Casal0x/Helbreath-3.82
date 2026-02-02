@@ -62,6 +62,8 @@
 #include "Overlay_Msg.h"
 #include "Overlay_WaitInitData.h"
 
+using namespace hb::item;
+
 extern char G_cSpriteAlphaDegree;
 
 extern class XSocket* G_pCalcSocket;
@@ -93,10 +95,16 @@ void CGame::ReadSettings()
 	m_sShortCut[5] = -1; // 6th slot unused
 
 	// Audio settings loaded into AudioManager
+	AudioManager::Get().SetMasterVolume(ConfigManager::Get().GetMasterVolume());
 	AudioManager::Get().SetSoundVolume(ConfigManager::Get().GetSoundVolume());
 	AudioManager::Get().SetMusicVolume(ConfigManager::Get().GetMusicVolume());
+	AudioManager::Get().SetAmbientVolume(ConfigManager::Get().GetAmbientVolume());
+	AudioManager::Get().SetUIVolume(ConfigManager::Get().GetUIVolume());
+	AudioManager::Get().SetMasterEnabled(ConfigManager::Get().IsMasterEnabled());
 	AudioManager::Get().SetSoundEnabled(ConfigManager::Get().IsSoundEnabled());
 	AudioManager::Get().SetMusicEnabled(ConfigManager::Get().IsMusicEnabled());
+	AudioManager::Get().SetAmbientEnabled(ConfigManager::Get().IsAmbientEnabled());
+	AudioManager::Get().SetUIEnabled(ConfigManager::Get().IsUIEnabled());
 }
 
 void CGame::WriteSettings()
@@ -109,10 +117,16 @@ void CGame::WriteSettings()
 	}
 
 	// Audio settings from AudioManager
+	ConfigManager::Get().SetMasterVolume(AudioManager::Get().GetMasterVolume());
 	ConfigManager::Get().SetSoundVolume(AudioManager::Get().GetSoundVolume());
 	ConfigManager::Get().SetMusicVolume(AudioManager::Get().GetMusicVolume());
+	ConfigManager::Get().SetAmbientVolume(AudioManager::Get().GetAmbientVolume());
+	ConfigManager::Get().SetUIVolume(AudioManager::Get().GetUIVolume());
+	ConfigManager::Get().SetMasterEnabled(AudioManager::Get().IsMasterEnabled());
 	ConfigManager::Get().SetSoundEnabled(AudioManager::Get().IsSoundEnabled());
 	ConfigManager::Get().SetMusicEnabled(AudioManager::Get().IsMusicEnabled());
+	ConfigManager::Get().SetAmbientEnabled(AudioManager::Get().IsAmbientEnabled());
+	ConfigManager::Get().SetUIEnabled(AudioManager::Get().IsUIEnabled());
 
 	// Save to JSON file
 	ConfigManager::Get().Save();
@@ -2455,7 +2469,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 		else
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
-			if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW))
+			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) || (pCfg->GetItemType() == ItemType::Arrow))
 				&& (m_pItemList[cItemID]->m_dwCount > 1))
 			{
 				m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
@@ -2557,7 +2571,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 	else
 	{
 		CItem* pCfg2 = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
-		if (pCfg2 && ((pCfg2->m_cItemType == DEF_ITEMTYPE_CONSUME) || (pCfg2->m_cItemType == DEF_ITEMTYPE_ARROW))
+		if (pCfg2 && ((pCfg2->GetItemType() == ItemType::Consume) || (pCfg2->GetItemType() == ItemType::Arrow))
 			&& (m_pItemList[cItemID]->m_dwCount > 1))
 		{
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX = msX - 140;
@@ -10290,7 +10304,7 @@ void CGame::InitItemList(char* pData)
 		m_pItemList[i]->m_dwAttribute = entry.attribute;
 		m_cItemOrder[i] = i;
 		// Snoopy: Add Angelic Stats
-		if (pCfg && (pCfg->m_cItemType == 1)
+		if (pCfg && (pCfg->GetItemType() == ItemType::Equip)
 			&& (m_bIsItemEquipped[i] == true)
 			&& (pCfg->m_cEquipPos >= 11))
 		{
@@ -12186,14 +12200,14 @@ void CGame::PlaySound(char cType, int iNum, int iDist, long lPan)
 	AudioManager::Get().PlaySound(type, iNum, iDist, static_cast<int>(lPan));
 }
 
-bool CGame::_bCheckItemByType(char cType)
+bool CGame::_bCheckItemByType(ItemType type)
 {
 	int i;
 
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if (m_pItemList[i] != 0) {
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && pCfg->m_cItemType == cType) return true;
+			if (pCfg && pCfg->GetItemType() == type) return true;
 		}
 
 	return false;
@@ -12230,15 +12244,15 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND)
-				|| (pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)))
+			if (pCfg && ((pCfg->GetEquipPos() == EquipPos::LeftHand)
+				|| (pCfg->GetEquipPos() == EquipPos::TwoHand)))
 				return true;
 		}
 	for (i = 0; i < DEF_MAXITEMS; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND)
+			if (pCfg && pCfg->GetEquipPos() == EquipPos::RightHand)
 			{
 				wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
 				// Snoopy 34 for all wands.
@@ -12259,8 +12273,8 @@ int CGame::_iCalcTotalWeight()
 		if (m_pItemList[i] != 0)
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && ((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME)
-				|| (pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)))
+			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume)
+				|| (pCfg->GetItemType() == ItemType::Arrow)))
 			{
 				iTemp = pCfg->m_wWeight * m_pItemList[i]->m_dwCount;
 				if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::Gold) iTemp = iTemp / 20;
@@ -13314,11 +13328,11 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	{
 		m_bIsSpecial = true;
 		strcpy(pStr1, cName);
-		if (pCfg->m_cItemType == DEF_ITEMTYPE_MATERIAL)
+		if (pCfg->GetItemType() == ItemType::Material)
 			wsprintf(pStr2, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
 		else
 		{
-			if (pCfg->m_cEquipPos == DEF_EQUIPPOS_LFINGER)
+			if (pCfg->GetEquipPos() == EquipPos::LeftFinger)
 			{
 				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
 			}
@@ -14026,8 +14040,8 @@ void CGame::RetrieveItemHandler(char* pData)
 			AddEventList(cTxt, 10);
 
 			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
-			if (pCfgBank && ((pCfgBank->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-				(pCfgBank->m_cItemType == DEF_ITEMTYPE_ARROW)))
+			if (pCfgBank && ((pCfgBank->GetItemType() == ItemType::Consume) ||
+				(pCfgBank->GetItemType() == ItemType::Arrow)))
 			{
 				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
 				m_pBankList[cBankItemIndex].reset();
@@ -15184,7 +15198,7 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, m_iPointCommandType, indexX, indexY, cTemp, cItemID); // v1.4
 
 		CItem* pCfgPt = GetItemConfig(m_pItemList[m_iPointCommandType]->m_sIDnum);
-		if (pCfgPt && pCfgPt->m_cItemType == DEF_ITEMTYPE_USE_SKILL)
+		if (pCfgPt && pCfgPt->GetItemType() == ItemType::UseSkill)
 			m_bSkillUsingStatus = true;
 	}
 	else if (m_iPointCommandType == 200) // Normal Hand
@@ -16743,7 +16757,7 @@ MOTION_COMMAND_PROCESS:;
 
 				if ((wType == 2) || (wType == 25))
 				{
-					if (_bCheckItemByType(DEF_ITEMTYPE_ARROW) == false)
+					if (_bCheckItemByType(ItemType::Arrow) == false)
 						wType = 0;
 				}
 				if (wType >= 20)
@@ -17894,7 +17908,7 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 	// Remove Angelic Stats
 	CItem* pCfgEq = GetItemConfig(m_pItemList[m_sItemEquipmentStatus[cEquipPos]]->m_sIDnum);
 	if ((cEquipPos >= 11)
-		&& (pCfgEq && pCfgEq->m_cItemType == 1))
+		&& (pCfgEq && pCfgEq->GetItemType() == ItemType::Equip))
 	{
 		char cItemID = m_sItemEquipmentStatus[cEquipPos];
 		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
@@ -17920,7 +17934,7 @@ void CGame::ItemEquipHandler(char cItemID)
 	if (m_bIsItemEquipped[cItemID] == true) return;
 	CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
 	if (!pCfg) return;
-	if (pCfg->m_cEquipPos == DEF_EQUIPPOS_NONE)
+	if (pCfg->GetEquipPos() == EquipPos::None)
 	{
 		AddEventList(BITEMDROP_CHARACTER3, 10);//"The item is not available."
 		return;
@@ -17972,30 +17986,30 @@ void CGame::ItemEquipHandler(char cItemID)
 	bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EQUIPITEM, 0, cItemID, 0, 0, 0);
 	m_sRecentShortCut = cItemID;
 	ReleaseEquipHandler(pCfg->m_cEquipPos);
-	switch (pCfg->m_cEquipPos) {
-	case DEF_EQUIPPOS_HEAD:
-	case DEF_EQUIPPOS_BODY:
-	case DEF_EQUIPPOS_ARMS:
-	case DEF_EQUIPPOS_PANTS:
-	case DEF_EQUIPPOS_BOOTS:
-	case DEF_EQUIPPOS_BACK:
-		ReleaseEquipHandler(DEF_EQUIPPOS_FULLBODY);
+	switch (pCfg->GetEquipPos()) {
+	case EquipPos::Head:
+	case EquipPos::Body:
+	case EquipPos::Arms:
+	case EquipPos::Pants:
+	case EquipPos::Leggings:
+	case EquipPos::Back:
+		ReleaseEquipHandler(ToInt(EquipPos::FullBody));
 		break;
-	case DEF_EQUIPPOS_FULLBODY:
-		ReleaseEquipHandler(DEF_EQUIPPOS_HEAD);
-		ReleaseEquipHandler(DEF_EQUIPPOS_BODY);
-		ReleaseEquipHandler(DEF_EQUIPPOS_ARMS);
-		ReleaseEquipHandler(DEF_EQUIPPOS_PANTS);
-		ReleaseEquipHandler(DEF_EQUIPPOS_BOOTS);
-		ReleaseEquipHandler(DEF_EQUIPPOS_BACK);
+	case EquipPos::FullBody:
+		ReleaseEquipHandler(ToInt(EquipPos::Head));
+		ReleaseEquipHandler(ToInt(EquipPos::Body));
+		ReleaseEquipHandler(ToInt(EquipPos::Arms));
+		ReleaseEquipHandler(ToInt(EquipPos::Pants));
+		ReleaseEquipHandler(ToInt(EquipPos::Leggings));
+		ReleaseEquipHandler(ToInt(EquipPos::Back));
 		break;
-	case DEF_EQUIPPOS_LHAND:
-	case DEF_EQUIPPOS_RHAND:
-		ReleaseEquipHandler(DEF_EQUIPPOS_TWOHAND);
+	case EquipPos::LeftHand:
+	case EquipPos::RightHand:
+		ReleaseEquipHandler(ToInt(EquipPos::TwoHand));
 		break;
-	case DEF_EQUIPPOS_TWOHAND:
-		ReleaseEquipHandler(DEF_EQUIPPOS_RHAND);
-		ReleaseEquipHandler(DEF_EQUIPPOS_LHAND);
+	case EquipPos::TwoHand:
+		ReleaseEquipHandler(ToInt(EquipPos::RightHand));
+		ReleaseEquipHandler(ToInt(EquipPos::LeftHand));
 		break;
 	}
 
@@ -18003,7 +18017,7 @@ void CGame::ItemEquipHandler(char cItemID)
 	m_bIsItemEquipped[cItemID] = true;
 
 	// Add Angelic Stats
-	if ((pCfg->m_cItemType == 1)
+	if ((pCfg->GetItemType() == ItemType::Equip)
 		&& (pCfg->m_cEquipPos >= 11))
 	{
 		int iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;

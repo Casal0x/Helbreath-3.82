@@ -4,6 +4,8 @@
 #include "IInput.h"
 #include "lan_eng.h"
 
+using namespace hb::item;
+
 DialogBox_Bank::DialogBox_Bank(CGame* pGame)
 	: IDialogBox(DialogBoxId::Bank, pGame)
 {
@@ -112,7 +114,7 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	}
 
 	// Weight for equipment
-	if ((pCfg->m_cEquipPos != DEF_EQUIPPOS_NONE) &&
+	if ((pCfg->GetEquipPos() != EquipPos::None) &&
 		(pCfg->m_wWeight >= 1100)) {
 		iLoc += 15;
 		int _wWeight = 0;
@@ -128,9 +130,9 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame);
 	}
 	else {
-		if ((pCfg->m_cEquipPos == DEF_EQUIPPOS_LHAND) ||
-			(pCfg->m_cEquipPos == DEF_EQUIPPOS_RHAND) ||
-			(pCfg->m_cEquipPos == DEF_EQUIPPOS_TWOHAND)) {
+		if ((pCfg->GetEquipPos() == EquipPos::LeftHand) ||
+			(pCfg->GetEquipPos() == EquipPos::RightHand) ||
+			(pCfg->GetEquipPos() == EquipPos::TwoHand)) {
 			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
 		}
 		else {
@@ -256,8 +258,8 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[giveInfo.sV1]->m_sIDnum);
 	if (pCfg == nullptr) return false;
 
-	if (((pCfg->m_cItemType == DEF_ITEMTYPE_CONSUME) ||
-		(pCfg->m_cItemType == DEF_ITEMTYPE_ARROW)) &&
+	if (((pCfg->GetItemType() == ItemType::Consume) ||
+		(pCfg->GetItemType() == ItemType::Arrow)) &&
 		(m_pGame->m_pItemList[giveInfo.sV1]->m_dwCount > 1))
 	{
 		auto& dropInfo = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal);

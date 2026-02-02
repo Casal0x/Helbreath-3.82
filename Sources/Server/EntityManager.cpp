@@ -7,6 +7,8 @@
 #include "Game.h"
 #include <cstdio>
 
+using namespace hb::item;
+
 extern void PutLogList(char* cMsg);
 
 extern char G_cTxt[512];
@@ -2703,7 +2705,7 @@ bool CEntityManager::SpawnNpcDropItem(int iNpcH, int itemId, int minCount, int m
 	}
 	pItem->m_dwCount = count;
 	m_pGame->GenerateItemAttributes(pItem);
-	pItem->m_sTouchEffectType = DEF_ITET_ID;
+	pItem->SetTouchEffectType(TouchEffectType::ID);
 	pItem->m_sTouchEffectValue1 = static_cast<short>(m_pGame->iDice(1, 100000));
 	pItem->m_sTouchEffectValue2 = static_cast<short>(m_pGame->iDice(1, 100000));
 	pItem->m_sTouchEffectValue3 = (short)GameClock::GetTimeMS();
