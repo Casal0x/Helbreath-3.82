@@ -3293,12 +3293,6 @@ bool CGame::bCheckImportantFile()
 {
 	HANDLE hFile;
 
-#ifndef _DEBUG
-	hFile = CreateFile("CONTENTS\\badword.txt", GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	if (hFile == INVALID_HANDLE_VALUE) return false;
-	CloseHandle(hFile);
-#endif
-
 	// Use the sprite factory's configured path
 	std::string spritePath = SpriteLib::Sprites::GetSpritePath() + "\\TREES1.PAK";
 	hFile = CreateFile(spritePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);

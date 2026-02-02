@@ -9,11 +9,12 @@ using json = nlohmann::json;
 
 // 4:3 resolutions for validation (must match DialogBox_SysMenu)
 static const struct { int w, h; } s_ValidResolutions[] = {
-	{ 640, 480 },
+	//{ 640, 480 },
 	{ 800, 600 },
 	{ 1024, 768 },
 	{ 1280, 960 },
-	{ 1440, 1080 }
+	{ 1440, 1080 },
+	{ 1920, 1440 }
 };
 static const int s_NumValidResolutions = sizeof(s_ValidResolutions) / sizeof(s_ValidResolutions[0]);
 

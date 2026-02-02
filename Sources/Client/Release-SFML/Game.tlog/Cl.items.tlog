@@ -1,5 +1,7 @@
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CommonTypes.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CommonTypes.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\ConfigManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\ConfigManager.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Dependencies\Shared\ResolutionConfig.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\ResolutionConfig.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\LocalCacheManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\LocalCacheManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBoxManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\DialogBoxManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\IDialogBox.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\IDialogBox.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DialogBox_WarningMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\DialogBox_WarningMsg.obj
@@ -60,6 +62,7 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_CreateAcc
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_Quit.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Screen_Quit.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_Loading.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Screen_Loading.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_Splash.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Screen_Splash.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Screen_Test.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Screen_Test.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_Connecting.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_Connecting.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_WaitingResponse.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_WaitingResponse.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_LogResMsg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_LogResMsg.obj
@@ -70,6 +73,8 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_VersionN
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_ConnectionLost.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_ConnectionLost.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_Msg.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_Msg.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_WaitInitData.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_WaitInitData.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\DevConsole.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\DevConsole.obj
+C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Overlay_DevConsole.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Overlay_DevConsole.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EffectManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\EffectManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\EntityMotion.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\EntityMotion.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Effect_Add.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\Effect_Add.obj
@@ -106,13 +111,6 @@ C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\GameWindowHandle
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\XSocket.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\XSocket.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\AudioManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\AudioManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\ChatCommandManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\ChatCommandManager.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdShowFrame.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdShowFrame.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdShowPing.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdShowPing.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdWhisper.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdWhisper.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdShout.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdShout.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdIgnore.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdIgnore.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdWeather.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdWeather.obj
-C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CmdProfile.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CmdProfile.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\miniaudio_impl.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\miniaudio_impl.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\WeatherManager.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\WeatherManager.obj
 C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\CursorTarget.cpp;C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\Client\Release-SFML\CursorTarget.obj

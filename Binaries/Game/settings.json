@@ -12,7 +12,7 @@
         "uiVolume": 100
     },
     "display": {
-        "borderless": false,
+        "borderless": true,
         "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,
@@ -32,7 +32,7 @@
         "port": 2500
     },
     "shortcuts": {
-        "magic": 91,
+        "magic": 96,
         "slots": [
             -1,
             -1,
@@ -42,7 +42,7 @@
         ]
     },
     "window": {
-        "height": 1080,
-        "width": 1440
+        "height": 1440,
+        "width": 1920
     }
 }

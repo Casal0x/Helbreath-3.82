@@ -370,8 +370,12 @@
     <ClInclude Include="Screen_Test.h">
       <Filter>Screens</Filter>
     </ClInclude>
-    <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
-    <ClInclude Include="LocalCacheManager.h" />
+    <ClInclude Include="LocalCacheManager.h">
+      <Filter>Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -721,8 +725,12 @@
     <ClCompile Include="Screen_Test.cpp">
       <Filter>Screens</Filter>
     </ClCompile>
-    <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" />
-    <ClCompile Include="LocalCacheManager.cpp" />
+    <ClCompile Include="LocalCacheManager.cpp">
+      <Filter>Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">

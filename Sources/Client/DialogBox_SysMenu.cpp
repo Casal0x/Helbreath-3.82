@@ -22,13 +22,14 @@ static bool s_bDraggingAmbientSlider = false;
 static bool s_bDraggingUISlider = false;
 static bool s_bDraggingMusicSlider = false;
 
-// 4:3 resolutions from 640x480 to 1440x1080
+// 4:3 resolutions from 640x480 to 1920x1440
 const Resolution DialogBox_SysMenu::s_Resolutions[] = {
-	{ 640, 480 },
+	//{ 640, 480 },
 	{ 800, 600 },
 	{ 1024, 768 },
 	{ 1280, 960 },
-	{ 1440, 1080 }
+	{ 1440, 1080 },
+	{ 1920, 1440 }
 };
 
 const int DialogBox_SysMenu::s_NumResolutions = sizeof(s_Resolutions) / sizeof(s_Resolutions[0]);
