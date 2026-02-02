@@ -81,7 +81,7 @@
     <OutDir>$(SolutionDir)Debug\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <TargetName>Game_DDRAW</TargetName>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-DDraw|Win32'">
@@ -91,7 +91,7 @@
     <OutDir>$(SolutionDir)Release\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <TargetName>Game_DDRAW</TargetName>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <!-- Paths for SFML configurations -->
@@ -102,7 +102,7 @@
     <OutDir>$(SolutionDir)Debug\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <TargetName>Game_SFML</TargetName>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-SFML|Win32'">
@@ -112,7 +112,7 @@
     <OutDir>$(SolutionDir)Release\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
     <TargetName>Game_SFML</TargetName>
-    <LocalDebuggerWorkingDirectory>$(SolutionDir)Binaries\Game</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <!-- Debug-DDraw Build Settings -->
@@ -325,6 +325,7 @@
     <ClInclude Include="TileSpr.h" />
     <ClInclude Include="XSocket.h" />
     <ClInclude Include="ConfigManager.h" />
+    <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
     <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
@@ -370,6 +371,7 @@
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" />
     <ClCompile Include="LocalCacheManager.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />

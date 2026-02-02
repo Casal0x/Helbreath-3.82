@@ -50,7 +50,7 @@ void Screen_CreateAccount::on_initialize()
 
     _clear_fields();
 
-    m_pGame->StartInputString(427 + SCREENX, 84 + SCREENY, 11, m_cNewAcctName);
+    m_pGame->StartInputString(427 + MENUX(), 84 + MENUY(), 11, m_cNewAcctName);
     m_pGame->ClearInputString();
 }
 
@@ -88,10 +88,10 @@ void Screen_CreateAccount::on_update()
     {
         m_pGame->EndInputString();
         switch (m_cCurFocus) {
-        case 1: m_pGame->StartInputString(427 + SCREENX, 84 + SCREENY, 11, m_cNewAcctName); break;
-        case 2: m_pGame->StartInputString(427 + SCREENX, 106 + SCREENY, 11, m_cNewAcctPassword, true); break;
-        case 3: m_pGame->StartInputString(427 + SCREENX, 129 + SCREENY, 11, m_cNewAcctConfirm, true); break;
-        case 4: m_pGame->StartInputString(311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, 49, m_cEmail); break;
+        case 1: m_pGame->StartInputString(427 + MENUX(), 84 + MENUY(), 11, m_cNewAcctName); break;
+        case 2: m_pGame->StartInputString(427 + MENUX(), 106 + MENUY(), 11, m_cNewAcctPassword, true); break;
+        case 3: m_pGame->StartInputString(427 + MENUX(), 129 + MENUY(), 11, m_cNewAcctConfirm, true); break;
+        case 4: m_pGame->StartInputString(311 + MENUX(), 48 + 190 - 25 + 2 + MENUY(), 49, m_cEmail); break;
         }
         m_pGame->EndInputString();
         m_cNewAcctPrevFocus = m_cCurFocus;
@@ -100,20 +100,20 @@ void Screen_CreateAccount::on_update()
     // Direct mouse click focus selection
     if (cLB != 0 && m_cNewAcctPrevLB == 0)
     {
-        if (Input::IsMouseInRect(427 + SCREENX, 84 + SCREENY, 427 + 100 + SCREENX, 84 + 18 + SCREENY)) m_cCurFocus = 1;
-        if (Input::IsMouseInRect(427 + SCREENX, 106 + SCREENY, 427 + 100 + SCREENX, 106 + 18 + SCREENY)) m_cCurFocus = 2;
-        if (Input::IsMouseInRect(427 + SCREENX, 129 + SCREENY, 427 + 100 + SCREENX, 129 + 18 + SCREENY)) m_cCurFocus = 3;
-        if (Input::IsMouseInRect(311 + SCREENX, 215 + SCREENY, 311 + 250 + SCREENX, 215 + 18 + SCREENY)) m_cCurFocus = 4;
+        if (Input::IsMouseInRect(427 + MENUX(), 84 + MENUY(), 427 + 100 + MENUX(), 84 + 18 + MENUY())) m_cCurFocus = 1;
+        if (Input::IsMouseInRect(427 + MENUX(), 106 + MENUY(), 427 + 100 + MENUX(), 106 + 18 + MENUY())) m_cCurFocus = 2;
+        if (Input::IsMouseInRect(427 + MENUX(), 129 + MENUY(), 427 + 100 + MENUX(), 129 + 18 + MENUY())) m_cCurFocus = 3;
+        if (Input::IsMouseInRect(311 + MENUX(), 215 + MENUY(), 311 + 250 + MENUX(), 215 + 18 + MENUY())) m_cCurFocus = 4;
 
         // Button 5: Create
-        if (Input::IsMouseInRect(297 + SCREENX, 398 + SCREENY, 297 + 72 + SCREENX, 398 + 20 + SCREENY))
+        if (Input::IsMouseInRect(297 + MENUX(), 398 + MENUY(), 297 + 72 + MENUX(), 398 + 20 + MENUY()))
         {
             m_cCurFocus = 5;
             m_pGame->PlaySound('E', 14, 5);
             _submit_create_account();
         }
         // Button 6: Clear
-        if (Input::IsMouseInRect(392 + SCREENX, 398 + SCREENY, 392 + 72 + SCREENX, 398 + 20 + SCREENY))
+        if (Input::IsMouseInRect(392 + MENUX(), 398 + MENUY(), 392 + 72 + MENUX(), 398 + 20 + MENUY()))
         {
             m_cCurFocus = 6;
             m_pGame->PlaySound('E', 14, 5);
@@ -122,7 +122,7 @@ void Screen_CreateAccount::on_update()
             m_cNewAcctPrevFocus = 0; // Trigger reset
         }
         // Button 7: Cancel
-        if (Input::IsMouseInRect(488 + SCREENX, 398 + SCREENY, 488 + 72 + SCREENX, 398 + 20 + SCREENY))
+        if (Input::IsMouseInRect(488 + MENUX(), 398 + MENUY(), 488 + 72 + MENUX(), 398 + 20 + MENUY()))
         {
             m_cCurFocus = 7;
             m_pGame->PlaySound('E', 14, 5);
@@ -256,13 +256,13 @@ void Screen_CreateAccount::on_render()
     auto blackStyle = TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
 
     // Draw background
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0 + SCREENX, 0 + SCREENY, 0, true);
+    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0 + MENUX(), 0 + MENUY(), 0, true);
 
     // Draw labels
-    TextLib::DrawText(GameFont::Default, 377 + SCREENX, 84 + SCREENY, "Account:", labelStyle);
-    TextLib::DrawText(GameFont::Default, 372 + SCREENX, 106 + SCREENY, "Password:", labelStyle);
-    TextLib::DrawText(GameFont::Default, 372 + SCREENX, 129 + SCREENY, "(confirm)", labelStyle);
-    TextLib::DrawText(GameFont::Default, 271 + SCREENX, 215 + SCREENY, "eMail:", labelStyle);
+    TextLib::DrawText(GameFont::Default, 377 + MENUX(), 84 + MENUY(), "Account:", labelStyle);
+    TextLib::DrawText(GameFont::Default, 372 + MENUX(), 106 + MENUY(), "Password:", labelStyle);
+    TextLib::DrawText(GameFont::Default, 372 + MENUX(), 129 + MENUY(), "(confirm)", labelStyle);
+    TextLib::DrawText(GameFont::Default, 271 + MENUX(), 215 + MENUY(), "eMail:", labelStyle);
 
     // Show active input string
     if ((m_cCurFocus == 2) || (m_cCurFocus == 3))
@@ -276,101 +276,101 @@ void Screen_CreateAccount::on_render()
 
     if (m_cCurFocus != 1) {
         bool bValid = CMisc::bCheckValidName(m_cNewAcctName) != false;
-        TextLib::DrawText(GameFont::Default, 427 + SCREENX, 84 + SCREENY, m_cNewAcctName, bValid ? validStyle : invalidStyle);
+        TextLib::DrawText(GameFont::Default, 427 + MENUX(), 84 + MENUY(), m_cNewAcctName, bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 2) {
         std::string masked2(password().size(), '*');
         bool bValid = CMisc::bCheckValidName(m_cNewAcctPassword) != false;
-        TextLib::DrawText(GameFont::Default, 427 + SCREENX, 106 + SCREENY, masked2.c_str(), bValid ? validStyle : invalidStyle);
+        TextLib::DrawText(GameFont::Default, 427 + MENUX(), 106 + MENUY(), masked2.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 3) {
         std::string masked3(confirm().size(), '*');
         bool bValid = (password() == confirm());
-        TextLib::DrawText(GameFont::Default, 427 + SCREENX, 129 + SCREENY, masked3.c_str(), bValid ? validStyle : invalidStyle);
+        TextLib::DrawText(GameFont::Default, 427 + MENUX(), 129 + MENUY(), masked3.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 4) {
         bool bValid = CMisc::bIsValidEmail(m_cEmail);
-        TextLib::DrawText(GameFont::Default, 311 + SCREENX, 48 + 190 - 25 + 2 + SCREENY, m_cEmail, bValid ? validStyle : invalidStyle);
+        TextLib::DrawText(GameFont::Default, 311 + MENUX(), 48 + 190 - 25 + 2 + MENUY(), m_cEmail, bValid ? validStyle : invalidStyle);
     }
 
     // Draw help text based on focus
     switch (m_cCurFocus) {
     case 1:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 345 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, blackStyle, TextLib::Align::TopCenter);
         break;
     case 2:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, blackStyle, TextLib::Align::TopCenter);
         break;
     case 3:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, blackStyle, TextLib::Align::TopCenter);
         break;
     case 4:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 360 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 345 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 360 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, blackStyle, TextLib::Align::TopCenter);
         break;
     case 5:
         switch (iFlag) {
         case 0:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, blackStyle, TextLib::Align::TopCenter);
             break;
         case 1:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, blackStyle, TextLib::Align::TopCenter);
             break;
         case 2:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, blackStyle, TextLib::Align::TopCenter);
             break;
         case 3:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, blackStyle, TextLib::Align::TopCenter);
             break;
         case 5:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, blackStyle, TextLib::Align::TopCenter);
             break;
         case 6:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 345 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, blackStyle, TextLib::Align::TopCenter);
             break;
         case 7:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 345 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, blackStyle, TextLib::Align::TopCenter);
             break;
         case 9:
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 345 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 360 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 345 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, blackStyle, TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 360 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, blackStyle, TextLib::Align::TopCenter);
             break;
         }
         break;
     case 6:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, blackStyle, TextLib::Align::TopCenter);
         break;
     case 7:
-        TextLib::DrawTextAligned(GameFont::Default, 290 + SCREENX, 330 + SCREENY, (575 + SCREENX) - (290 + SCREENX), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, blackStyle, TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 290 + MENUX(), 330 + MENUY(), (575 + MENUX()) - (290 + MENUX()), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, blackStyle, TextLib::Align::TopCenter);
         break;
     }
 
     // Draw buttons - highlight on focus OR mouse hover
     // Button 5: Create (at 297, 398 - size 72x20) - LEFT
-    bool bHoverCreate = (m_sNewAcctMsX >= 297 + SCREENX && m_sNewAcctMsX <= 297 + 72 + SCREENX &&
-        m_sNewAcctMsY >= 398 + SCREENY && m_sNewAcctMsY <= 398 + 20 + SCREENY);
+    bool bHoverCreate = (m_sNewAcctMsX >= 297 + MENUX() && m_sNewAcctMsX <= 297 + 72 + MENUX() &&
+        m_sNewAcctMsY >= 398 + MENUY() && m_sNewAcctMsY <= 398 + 20 + MENUY());
     if ((iFlag == 0) && (m_cCurFocus == 5 || bHoverCreate))
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + SCREENX, 398 + SCREENY, 25);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + SCREENX, 398 + SCREENY, 24);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + MENUX(), 398 + MENUY(), 25);
+    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98 + MENUX(), 398 + MENUY(), 24);
 
     // Button 6: Clear (at 392, 398 - size 72x20) - CENTER
-    bool bHoverClear = (m_sNewAcctMsX >= 392 + SCREENX && m_sNewAcctMsX <= 392 + 72 + SCREENX &&
-        m_sNewAcctMsY >= 398 + SCREENY && m_sNewAcctMsY <= 398 + 20 + SCREENY);
+    bool bHoverClear = (m_sNewAcctMsX >= 392 + MENUX() && m_sNewAcctMsX <= 392 + 72 + MENUX() &&
+        m_sNewAcctMsY >= 398 + MENUY() && m_sNewAcctMsY <= 398 + 20 + MENUY());
     if (m_cCurFocus == 6 || bHoverClear)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + SCREENX, 398 + SCREENY, 27);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + SCREENX, 398 + SCREENY, 26);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + MENUX(), 398 + MENUY(), 27);
+    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98 + MENUX(), 398 + MENUY(), 26);
 
     // Button 7: Cancel (at 488, 398 - size 72x20) - RIGHT
-    bool bHoverCancel = (m_sNewAcctMsX >= 488 + SCREENX && m_sNewAcctMsX <= 488 + 72 + SCREENX &&
-        m_sNewAcctMsY >= 398 + SCREENY && m_sNewAcctMsY <= 398 + 20 + SCREENY);
+    bool bHoverCancel = (m_sNewAcctMsX >= 488 + MENUX() && m_sNewAcctMsX <= 488 + 72 + MENUX() &&
+        m_sNewAcctMsY >= 398 + MENUY() && m_sNewAcctMsY <= 398 + 20 + MENUY());
     if (m_cCurFocus == 7 || bHoverCancel)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 17);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + SCREENX, 398 + SCREENY, 16);
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + MENUX(), 398 + MENUY(), 17);
+    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98 + MENUX(), 398 + MENUY(), 16);
 
     m_pGame->DrawVersion();
 }

@@ -11,7 +11,7 @@ DialogBox_Magic::DialogBox_Magic(CGame* pGame)
 	: IDialogBox(DialogBoxId::Magic, pGame)
 {
 	SetCanCloseOnRightClick(true);
-	SetDefaultRect(337 + SCREENX, 57 + SCREENY, 258, 328);
+	SetDefaultRect(337 + SCREENX(), 57 + SCREENY(), 258, 328);
 }
 
 void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)

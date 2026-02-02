@@ -69,10 +69,7 @@
 #define DEF_SUMMONTIME				300000
 #define DEF_AUTOSAVETIME			600000
 #define MAX_HELDENIANTOWER			200
-#define DEF_VIEWTILES_X				20
-#define DEF_VIEWTILES_Y				15
-#define DEF_VIEWRANGE_X				(DEF_VIEWTILES_X / 2)
-#define DEF_VIEWRANGE_Y				(DEF_VIEWTILES_Y / 2)
+// DEF_VIEWTILES_X/Y and DEF_VIEWRANGE_X/Y are now in NetConstants.h (shared with client)
 
 #define DEF_EXPSTOCKTIME		1000*10		// ExpStock�� ����ϴ�? �ð� ���� 
 #define DEF_MSGQUENESIZE		100000		// �޽��� ť ������ 10���� 

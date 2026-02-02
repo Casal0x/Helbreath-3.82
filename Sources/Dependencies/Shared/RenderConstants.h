@@ -4,38 +4,36 @@
 // defined in GlobalDef.h. Moving them here allows the renderer library to
 // be independent of client-specific definitions.
 //
+// Resolution-dependent values are now provided by ResolutionConfig singleton.
+//
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
 
-// Logical rendering resolution (internal coordinate system)
-// The renderer always works in this coordinate space, regardless of window size
-#define RENDER_LOGICAL_WIDTH    640
-#define RENDER_LOGICAL_HEIGHT   480
+#include "ResolutionConfig.h"
 
-// For backward compatibility with existing code that uses LOGICAL_WIDTH/HEIGHT
-#ifndef LOGICAL_WIDTH
-#define LOGICAL_WIDTH   RENDER_LOGICAL_WIDTH
-#endif
-
-#ifndef LOGICAL_HEIGHT
-#define LOGICAL_HEIGHT  RENDER_LOGICAL_HEIGHT
-#endif
-
-// Max coordinates (for bounds checking)
-#ifndef LOGICAL_MAX_X
-#define LOGICAL_MAX_X   (LOGICAL_WIDTH - 1)
-#endif
-
-#ifndef LOGICAL_MAX_Y
-#define LOGICAL_MAX_Y   (LOGICAL_HEIGHT - 1)
-#endif
+// Logical rendering resolution - now dynamic based on settings
+// Use these inline functions instead of the old macros
+inline int RENDER_LOGICAL_WIDTH()  { return ResolutionConfig::Get().LogicalWidth(); }
+inline int RENDER_LOGICAL_HEIGHT() { return ResolutionConfig::Get().LogicalHeight(); }
 
 // PDBGS (Pre-Draw Background Surface) size
 // This surface holds tiles for smooth scrolling and needs to be larger than
 // the visible area by 32 pixels in each direction (one tile width/height)
-#define PDBGS_WIDTH     (RENDER_LOGICAL_WIDTH + 32)    // 672
-#define PDBGS_HEIGHT    (RENDER_LOGICAL_HEIGHT + 32)   // 512
+//
+// NOTE: GlobalDef.h defines PDBGS_WIDTH/HEIGHT for client code.
+// If GlobalDef.h is NOT included (i.e., in renderer engine code), we define them here.
+// We use a define guard to prevent redefinition.
+#ifndef GLOBALDEF_H_RESOLUTION_FUNCTIONS
+inline int PDBGS_WIDTH()  { return ResolutionConfig::Get().PdbgsWidth(); }
+inline int PDBGS_HEIGHT() { return ResolutionConfig::Get().PdbgsHeight(); }
+
+// These are also defined in GlobalDef.h for client code
+inline int LOGICAL_WIDTH()  { return ResolutionConfig::Get().LogicalWidth(); }
+inline int LOGICAL_HEIGHT() { return ResolutionConfig::Get().LogicalHeight(); }
+inline int LOGICAL_MAX_X()  { return ResolutionConfig::Get().LogicalMaxX(); }
+inline int LOGICAL_MAX_Y()  { return ResolutionConfig::Get().LogicalMaxY(); }
+#endif
 
 // Pixel format constants
 #define PIXELFORMAT_RGB565  1   // 5:6:5 format (R=5, G=6, B=5)

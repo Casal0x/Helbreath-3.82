@@ -5,7 +5,7 @@
 DialogBox_GuildOperation::DialogBox_GuildOperation(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildOperation, pGame)
 {
-	SetDefaultRect(337 + SCREENX, 57 + SCREENY, 295, 346);
+	SetDefaultRect(337 + SCREENX(), 57 + SCREENY(), 295, 346);
 }
 
 void DialogBox_GuildOperation::OnDraw(short msX, short msY, short msZ, char cLB)

@@ -81,11 +81,11 @@ float Screen_Splash::GetContributorAlpha(uint32_t elapsedMs, int contributorInde
 
 void Screen_Splash::on_render()
 {
-    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN]->Draw(0 + SCREENX, 0 + SCREENY, 0);
+    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN]->Draw(0 + MENUX(), 0 + MENUY(), 0);
 
     constexpr int lineHeight = 16;
     constexpr int bottomMargin = 20;
-    const int creditY = SCREENY + LOGICAL_HEIGHT - bottomMargin - lineHeight * 2;
+    const int creditY = MENUY() + LOGICAL_HEIGHT() - bottomMargin - lineHeight * 2;
     const uint32_t elapsedMs = get_elapsed_ms();
 
     for (int i = 0; i < NUM_CONTRIBUTORS; i++)
@@ -103,12 +103,12 @@ void Screen_Splash::on_render()
         };
 
         const auto& credit = m_credits[i];
-        TextLib::DrawTextAligned(GameFont::Default, SCREENX, creditY, LOGICAL_WIDTH, lineHeight,
+        TextLib::DrawTextAligned(GameFont::Default, MENUX(), creditY, LOGICAL_WIDTH(), lineHeight,
             credit.displayLine.c_str(), fade(GameColors::UIWhite), TextLib::Align::TopCenter);
 
         if (!credit.url.empty())
         {
-            TextLib::DrawTextAligned(GameFont::Default, SCREENX, creditY + lineHeight, LOGICAL_WIDTH, lineHeight,
+            TextLib::DrawTextAligned(GameFont::Default, MENUX(), creditY + lineHeight, LOGICAL_WIDTH(), lineHeight,
                 credit.url.c_str(), fade(GameColors::UIFactionChat), TextLib::Align::TopCenter);
         }
     }

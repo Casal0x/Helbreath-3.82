@@ -227,8 +227,8 @@ void Win32Input::UpdateLogicalPosition(int clientX, int clientY)
         return;
 
     // Calculate scale maintaining aspect ratio
-    double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH);
-    double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT);
+    double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH());
+    double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT());
     if (scaleY < scale)
     {
         scale = scaleY;
@@ -239,8 +239,8 @@ void Win32Input::UpdateLogicalPosition(int clientX, int clientY)
     }
 
     // Calculate letterbox offset
-    int destW = static_cast<int>(LOGICAL_WIDTH * scale);
-    int destH = static_cast<int>(LOGICAL_HEIGHT * scale);
+    int destW = static_cast<int>(LOGICAL_WIDTH() * scale);
+    int destH = static_cast<int>(LOGICAL_HEIGHT() * scale);
     int offsetX = (winW - destW) / 2;
     int offsetY = (winH - destH) / 2;
 
@@ -251,8 +251,8 @@ void Win32Input::UpdateLogicalPosition(int clientX, int clientY)
     // Clamp to valid range
     if (scaledX < 0) scaledX = 0;
     if (scaledY < 0) scaledY = 0;
-    if (scaledX > LOGICAL_MAX_X) scaledX = LOGICAL_MAX_X;
-    if (scaledY > LOGICAL_MAX_Y) scaledY = LOGICAL_MAX_Y;
+    if (scaledX > LOGICAL_MAX_X()) scaledX = LOGICAL_MAX_X();
+    if (scaledY > LOGICAL_MAX_Y()) scaledY = LOGICAL_MAX_Y();
 
     m_mouseX = static_cast<int>(scaledX);
     m_mouseY = static_cast<int>(scaledY);
@@ -349,8 +349,8 @@ void Win32Input::UpdateCursorClip(bool active)
         int winW = rcClient.right - rcClient.left;
         int winH = rcClient.bottom - rcClient.top;
 
-        double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH);
-        double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT);
+        double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH());
+        double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT());
         if (scaleY < scale)
         {
             scale = scaleY;
@@ -360,8 +360,8 @@ void Win32Input::UpdateCursorClip(bool active)
             scale = 1.0;
         }
 
-        int destW = static_cast<int>(LOGICAL_WIDTH * scale);
-        int destH = static_cast<int>(LOGICAL_HEIGHT * scale);
+        int destW = static_cast<int>(LOGICAL_WIDTH() * scale);
+        int destH = static_cast<int>(LOGICAL_HEIGHT() * scale);
         int offsetX = (winW - destW) / 2;
         int offsetY = (winH - destH) / 2;
 

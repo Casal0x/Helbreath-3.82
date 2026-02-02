@@ -8,7 +8,7 @@
 DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuideMap, pGame)
 {
-	SetDefaultRect(LOGICAL_MAX_X - 128, 0, 128, 128);
+	SetDefaultRect(LOGICAL_MAX_X() - 128, 0, 128, 128);
 }
 
 void DialogBox_GuideMap::OnUpdate()
@@ -201,7 +201,7 @@ void DialogBox_GuideMap::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Clamp position
 	if (sX < 20) sX = 0;
 	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_WIDTH - 128 - 20) sX = LOGICAL_WIDTH - 128;
+	if (sX > LOGICAL_WIDTH() - 128 - 20) sX = LOGICAL_WIDTH() - 128;
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 
 	DrawBorder(sX, sY);
@@ -238,7 +238,7 @@ bool DialogBox_GuideMap::OnClick(short msX, short msY)
 	// Clamp position (same as draw)
 	if (sX < 20) sX = 0;
 	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_WIDTH - 128 - 20) sX = LOGICAL_WIDTH - 128;
+	if (sX > LOGICAL_WIDTH() - 128 - 20) sX = LOGICAL_WIDTH() - 128;
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 
 	if (msX >= sX && msX < sX + szY && msY >= sY && msY < sY + szY)
@@ -266,7 +266,7 @@ bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
 	// Clamp position (same as OnDraw)
 	if (sX < 20) sX = 0;
 	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_MAX_X - 128 - 20) sX = LOGICAL_MAX_X - 128;
+	if (sX > LOGICAL_MAX_X() - 128 - 20) sX = LOGICAL_MAX_X() - 128;
 	if (sY > 547 - 128 - 20) sY = 547 - 128;
 
 	short shX, shY;

@@ -31,15 +31,15 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 		}
 	}
 
-	int x = LOGICAL_WIDTH / 2;
-	int y = LOGICAL_HEIGHT / 2;
-	int fixx = VIEW_CENTER_TILE_X;
-	int fixy = VIEW_CENTER_TILE_Y;
+	int x = LOGICAL_WIDTH() / 2;
+	int y = LOGICAL_HEIGHT() / 2;
+	int fixx = VIEW_CENTER_TILE_X();
+	int fixy = VIEW_CENTER_TILE_Y();
 	sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + fixx) - dX);
 	sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + fixy) - dY);
 	if (sAbsX > sAbsY) sDist = sAbsX; else sDist = sAbsY;
 	short fixdist = sDist;
-	int fixpan = LOGICAL_WIDTH;
+	int fixpan = LOGICAL_WIDTH();
 
 	for (i = 0; i < DEF_MAXEFFECTS; i++)
 		if (m_pEffectList[i] == 0)

@@ -48,8 +48,8 @@ void Overlay_QueryForceLogin::on_update()
         PlaySound('E', 14, 5);
 
         // Yes button - force disconnect existing session
-        if (Input::IsMouseInRect(200 + SCREENX, 244 + SCREENY,
-                                  200 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY))
+        if (Input::IsMouseInRect(200 + SCREENX(), 244 + SCREENY(),
+                                  200 + DEF_BTNSZX + SCREENX(), 244 + DEF_BTNSZY + SCREENY()))
         {
             // Create login socket and initiate force disconnect
             m_pGame->m_pLSock = std::make_unique<XSocket>(DEF_SOCKETBLOCKLIMIT);
@@ -67,8 +67,8 @@ void Overlay_QueryForceLogin::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(370 + SCREENX, 244 + SCREENY,
-                                  370 + DEF_BTNSZX + SCREENX, 244 + DEF_BTNSZY + SCREENY))
+        if (Input::IsMouseInRect(370 + SCREENX(), 244 + SCREENY(),
+                                  370 + DEF_BTNSZX + SCREENX(), 244 + DEF_BTNSZY + SCREENY()))
         {
             clear_overlay();
             return;
@@ -103,28 +103,28 @@ void Overlay_QueryForceLogin::on_render()
     // Double shadow effect after initial animation period (600ms)
     if (dwElapsed >= 600)
     {
-        m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X, LOGICAL_MAX_Y);
+        m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y());
     }
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 130 + SCREENY, 2);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX(), 130 + SCREENY(), 2);
 
     // Title
-    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX, 160 + SCREENY, "Character on Use", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 86 + SCREENX(), 160 + SCREENY(), "Character on Use", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Message text
-    PutAlignedString(178 + SCREENX, 453 + SCREENX, 195 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);
-    PutAlignedString(178 + SCREENX, 453 + SCREENX, 215 + SCREENY, UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN2);
+    PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 195 + SCREENY(), UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN1);
+    PutAlignedString(178 + SCREENX(), 453 + SCREENX(), 215 + SCREENY(), UPDATE_SCREEN_ON_QUERY_FORCE_LOGIN2);
 
     // Yes button with hover effect
-    bool bYesHover = (msX >= 200 + SCREENX) && (msX <= 200 + DEF_BTNSZX + SCREENX) &&
-                     (msY >= 244 + SCREENY) && (msY <= 244 + DEF_BTNSZY + SCREENY);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX, 244 + SCREENY, bYesHover ? 19 : 18);
+    bool bYesHover = (msX >= 200 + SCREENX()) && (msX <= 200 + DEF_BTNSZX + SCREENX()) &&
+                     (msY >= 244 + SCREENY()) && (msY <= 244 + DEF_BTNSZY + SCREENY());
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 200 + SCREENX(), 244 + SCREENY(), bYesHover ? 19 : 18);
 
     // No button with hover effect
-    bool bNoHover = (msX >= 370 + SCREENX) && (msX <= 370 + DEF_BTNSZX + SCREENX) &&
-                    (msY >= 244 + SCREENY) && (msY <= 244 + DEF_BTNSZY + SCREENY);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX, 244 + SCREENY, bNoHover ? 3 : 2);
+    bool bNoHover = (msX >= 370 + SCREENX()) && (msX <= 370 + DEF_BTNSZX + SCREENX()) &&
+                    (msY >= 244 + SCREENY()) && (msY <= 244 + DEF_BTNSZY + SCREENY());
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, 370 + SCREENX(), 244 + SCREENY(), bNoHover ? 3 : 2);
 
     DrawVersion();
 }

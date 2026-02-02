@@ -11,7 +11,7 @@
 DialogBox_Constructor::DialogBox_Constructor(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeConstructor, pGame)
 {
-	SetDefaultRect(20 + SCREENX, 20 + SCREENY, 310, 386);
+	SetDefaultRect(20 + SCREENX(), 20 + SCREENY(), 310, 386);
 }
 
 void DialogBox_Constructor::OnUpdate()

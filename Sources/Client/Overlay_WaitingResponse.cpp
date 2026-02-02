@@ -78,21 +78,21 @@ void Overlay_WaitingResponse::on_render()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX, 125 + SCREENY, 2);
+    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, 162 + SCREENX(), 125 + SCREENY(), 2);
 
     // Draw status text
-    TextLib::DrawText(GameFont::Bitmap1, 172 + 44 - 17 + SCREENX, 190 + SCREENY, "Connected. Waiting for response...", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, 172 + 44 - 17 + SCREENX(), 190 + SCREENY(), "Connected. Waiting for response...", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)
     {
         // Show ESC hint after 7 seconds
-        PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE1);
-        PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 45 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE2);
+        PutAlignedString(180 + SCREENX(), 463 + SCREENX(), 195 + 30 + SCREENY(), UPDATE_SCREEN_ON_WATING_RESPONSE1);
+        PutAlignedString(180 + SCREENX(), 463 + SCREENX(), 195 + 45 + SCREENY(), UPDATE_SCREEN_ON_WATING_RESPONSE2);
     }
     else
     {
-        PutAlignedString(180 + SCREENX, 463 + SCREENX, 195 + 30 + SCREENY, UPDATE_SCREEN_ON_WATING_RESPONSE3);
+        PutAlignedString(180 + SCREENX(), 463 + SCREENX(), 195 + 30 + SCREENY(), UPDATE_SCREEN_ON_WATING_RESPONSE3);
     }
 
     DrawVersion();

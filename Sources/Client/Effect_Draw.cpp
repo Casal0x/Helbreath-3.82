@@ -663,13 +663,13 @@ void EffectManager::DrawEffectsImpl()
 				break;
 
 			case EffectType::LIGHTNING: // Lightning
-				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH,
+				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH(),
 					m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY(),
 					m_pEffectList[i]->m_rX, m_pEffectList[i]->m_rY, 1);
-				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH,
+				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH(),
 					m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY(),
 					m_pEffectList[i]->m_rX + 4, m_pEffectList[i]->m_rY + 2, 2);
-				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH,
+				m_pGame->_DrawThunderEffect(m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY() - LOGICAL_WIDTH(),
 					m_pEffectList[i]->m_dX * 32 - m_pGame->m_Camera.GetX(), m_pEffectList[i]->m_dY * 32 - m_pGame->m_Camera.GetY(),
 					m_pEffectList[i]->m_rX - 2, m_pEffectList[i]->m_rY - 2, 2);
 				break;

@@ -5,7 +5,7 @@
 DialogBox_Party::DialogBox_Party(CGame* pGame)
 	: IDialogBox(DialogBoxId::Party, pGame)
 {
-	SetDefaultRect(0 + SCREENX, 0 + SCREENY, 258, 339);
+	SetDefaultRect(0 + SCREENX(), 0 + SCREENY(), 258, 339);
 }
 
 void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)

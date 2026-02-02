@@ -42,8 +42,8 @@ static void GetDisplayDimensions(bool fullMode, int* outWidth, int* outHeight)
 		*outHeight = ConfigManager::Get().GetWindowHeight();
 	}
 
-	if (*outWidth <= 0) *outWidth = LOGICAL_WIDTH;
-	if (*outHeight <= 0) *outHeight = LOGICAL_HEIGHT;
+	if (*outWidth <= 0) *outWidth = LOGICAL_WIDTH();
+	if (*outHeight <= 0) *outHeight = LOGICAL_HEIGHT();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -96,10 +96,10 @@ bool DXC_ddraw::bInit(HWND hWnd)
 	int windowHeight = 0;
 	GetDisplayDimensions(m_bFullMode, &windowWidth, &windowHeight);
 
-	 res_x = LOGICAL_WIDTH;
-	 res_y = LOGICAL_HEIGHT;
-	 res_x_mid = LOGICAL_WIDTH / 2;
-	 res_y_mid = LOGICAL_HEIGHT / 2;
+	 res_x = LOGICAL_WIDTH();
+	 res_y = LOGICAL_HEIGHT();
+	 res_x_mid = LOGICAL_WIDTH() / 2;
+	 res_y_mid = LOGICAL_HEIGHT() / 2;
 
 	SetRect(&m_rcClipArea, 0,0, res_x, res_y);
 
@@ -271,12 +271,12 @@ HRESULT DXC_ddraw::iFlip()
 		int windowWidth = 0;
 		int windowHeight = 0;
 		GetDisplayDimensions(true, &windowWidth, &windowHeight);
-		double scale = (double)windowWidth / (double)LOGICAL_WIDTH;
-		double scaleY = (double)windowHeight / (double)LOGICAL_HEIGHT;
+		double scale = (double)windowWidth / (double)LOGICAL_WIDTH();
+		double scaleY = (double)windowHeight / (double)LOGICAL_HEIGHT();
 		if (scaleY < scale) scale = scaleY;
 		if (scale <= 0.0) scale = 1.0;
-		int destW = (int)(LOGICAL_WIDTH * scale);
-		int destH = (int)(LOGICAL_HEIGHT * scale);
+		int destW = (int)(LOGICAL_WIDTH() * scale);
+		int destH = (int)(LOGICAL_HEIGHT() * scale);
 		int offsetX = (windowWidth - destW) / 2;
 		int offsetY = (windowHeight - destH) / 2;
 		SetRect(&rcDest, offsetX, offsetY, offsetX + destW, offsetY + destH);
@@ -289,12 +289,12 @@ HRESULT DXC_ddraw::iFlip()
 		GetClientRect(G_hWnd, &rcClient);
 		int winW = rcClient.right - rcClient.left;
 		int winH = rcClient.bottom - rcClient.top;
-		double scale = (double)winW / (double)LOGICAL_WIDTH;
-		double scaleY = (double)winH / (double)LOGICAL_HEIGHT;
+		double scale = (double)winW / (double)LOGICAL_WIDTH();
+		double scaleY = (double)winH / (double)LOGICAL_HEIGHT();
 		if (scaleY < scale) scale = scaleY;
 		if (scale <= 0.0) scale = 1.0;
-		int destW = (int)(LOGICAL_WIDTH * scale);
-		int destH = (int)(LOGICAL_HEIGHT * scale);
+		int destW = (int)(LOGICAL_WIDTH() * scale);
+		int destH = (int)(LOGICAL_HEIGHT() * scale);
 		int offsetX = (winW - destW) / 2;
 		int offsetY = (winH - destH) / 2;
 		POINT ptZero = {0, 0};
@@ -350,10 +350,10 @@ void DXC_ddraw::ChangeDisplayMode(HWND hWnd)
 		m_lpDD4->RestoreDisplayMode();
 	}
 
-	res_x = LOGICAL_WIDTH;
-	res_y = LOGICAL_HEIGHT;
-	res_x_mid = LOGICAL_WIDTH / 2;
-	res_y_mid = LOGICAL_HEIGHT / 2;
+	res_x = LOGICAL_WIDTH();
+	res_y = LOGICAL_HEIGHT();
+	res_x_mid = LOGICAL_WIDTH() / 2;
+	res_y_mid = LOGICAL_HEIGHT() / 2;
 
 	SetRect(&m_rcClipArea, 0, 0, res_x, res_y);
 

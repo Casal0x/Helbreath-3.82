@@ -91,6 +91,11 @@ public:
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
 
+	// Base resolution (640x480 or 800x600) - determines logical render size
+	int GetBaseResolutionWidth() const { return m_baseResolutionWidth; }
+	int GetBaseResolutionHeight() const { return m_baseResolutionHeight; }
+	void SetBaseResolution(int width, int height);
+
 	// Dirty flag - indicates unsaved changes
 	bool IsDirty() const { return m_bDirty; }
 	void MarkClean() { m_bDirty = false; }
@@ -140,6 +145,10 @@ private:
 	bool m_bFullscreen;
 	bool m_bCaptureMouse;
 	bool m_bBorderless;
+
+	// Base resolution (640x480 or 800x600)
+	int m_baseResolutionWidth;
+	int m_baseResolutionHeight;
 
 	// State
 	bool m_bDirty;

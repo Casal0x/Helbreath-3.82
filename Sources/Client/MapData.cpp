@@ -1770,9 +1770,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 		m_dwFrameTime = dwTime;
 
 	sVal = sViewPointX - (m_sPivotX * 32);
-	sCenterX = (sVal / 32) + VIEW_CENTER_TILE_X;
+	sCenterX = (sVal / 32) + VIEW_CENTER_TILE_X();
 	sVal = sViewPointY - (m_sPivotY * 32);
-	sCenterY = (sVal / 32) + VIEW_CENTER_TILE_Y;
+	sCenterY = (sVal / 32) + VIEW_CENTER_TILE_Y();
 	m_sRectX = m_pGame->m_sVDL_X - m_sPivotX;
 	m_sRectY = m_pGame->m_sVDL_Y - m_sPivotY;
 
@@ -1783,8 +1783,8 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 	// Screen is ~LOGICAL_WIDTHxLOGICAL_HEIGHT pixels = ~20x15 tiles, add buffer for effects
 	// OLD: Processed all 60x55 = 3300 tiles every frame
 	// NEW: Process only ~35x30 = 1050 tiles (68% reduction)
-	int halfViewX = VIEW_TILE_WIDTH / 2;
-	int halfViewY = VIEW_TILE_HEIGHT / 2;
+	int halfViewX = VIEW_TILE_WIDTH() / 2;
+	int halfViewY = VIEW_TILE_HEIGHT() / 2;
 	int bufferX = 5;
 	int bufferY = 6;
 	int startX = sCenterX - (halfViewX + bufferX);
@@ -1800,7 +1800,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 		for (dY = startY; dY < endY; dY++)
 		{
 			sDist = (abs(sCenterX - dX) + abs(sCenterY - dY)) / 2;
-			lPan = -(sCenterX - dX) * LOGICAL_WIDTH;
+			lPan = -(sCenterX - dX) * LOGICAL_WIDTH();
 
 			// Dynamic Object
 			if (dynObjsNeedUpdate)//00496B99  JBE 00496F43
@@ -3934,8 +3934,8 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 	m_pData[dX][dY].m_dwItemAttr = dwItemAttr;
 	m_pData[dX][dY].m_cItemColor = cItemColor;
 
-	sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X) - sX);
-	sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + 9) - sY);
+	sAbsX = abs(((m_pGame->m_Camera.GetX() / 32) + VIEW_CENTER_TILE_X()) - sX);
+	sAbsY = abs(((m_pGame->m_Camera.GetY() / 32) + VIEW_CENTER_TILE_Y()) - sY);
 
 	if (sAbsX > sAbsY) sDist = sAbsX;
 	else sDist = sAbsY;

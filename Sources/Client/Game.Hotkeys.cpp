@@ -225,7 +225,7 @@ void CGame::Hotkey_WhisperTarget()
 	{
 		EndInputString();
 		wsprintf(m_cChatMsg, "/to ");
-		StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+		StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 	}
 }
 
@@ -312,7 +312,7 @@ void CGame::Hotkey_Simple_LoadBackupChat()
 	{
 		std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
 		strcpy(m_cChatMsg, m_cBackupChatMsg);
-		StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+		StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 	}
 }
 
@@ -400,7 +400,7 @@ void CGame::Hotkey_Simple_WhisperCycleUp()
 		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
 			EndInputString();
 			wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 		}
 	}
 }
@@ -425,7 +425,7 @@ void CGame::Hotkey_Simple_WhisperCycleDown()
 		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
 			EndInputString();
 			wsprintf(m_cChatMsg, "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X, CHAT_INPUT_Y, sizeof(m_cChatMsg), m_cChatMsg);
+			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 		}
 	}
 }

@@ -317,8 +317,8 @@ void InputManager::UpdateLogicalPosition(int clientX, int clientY)
 		return;
 	}
 
-	double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH);
-	double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT);
+	double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH());
+	double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT());
 	if (scaleY < scale) {
 		scale = scaleY;
 	}
@@ -326,8 +326,8 @@ void InputManager::UpdateLogicalPosition(int clientX, int clientY)
 		scale = 1.0;
 	}
 
-	int destW = static_cast<int>(LOGICAL_WIDTH * scale);
-	int destH = static_cast<int>(LOGICAL_HEIGHT * scale);
+	int destW = static_cast<int>(LOGICAL_WIDTH() * scale);
+	int destH = static_cast<int>(LOGICAL_HEIGHT() * scale);
 	int offsetX = (winW - destW) / 2;
 	int offsetY = (winH - destH) / 2;
 
@@ -336,8 +336,8 @@ void InputManager::UpdateLogicalPosition(int clientX, int clientY)
 
 	if (scaledX < 0) scaledX = 0;
 	if (scaledY < 0) scaledY = 0;
-	if (scaledX > LOGICAL_MAX_X) scaledX = LOGICAL_MAX_X;
-	if (scaledY > LOGICAL_MAX_Y) scaledY = LOGICAL_MAX_Y;
+	if (scaledX > LOGICAL_MAX_X()) scaledX = LOGICAL_MAX_X();
+	if (scaledY > LOGICAL_MAX_Y()) scaledY = LOGICAL_MAX_Y();
 
 	m_mouseX = static_cast<short>(scaledX);
 	m_mouseY = static_cast<short>(scaledY);
@@ -359,16 +359,16 @@ void InputManager::UpdateCursorClip(bool active)
 		GetClientRect(m_hWnd, &rcClient);
 		int winW = rcClient.right - rcClient.left;
 		int winH = rcClient.bottom - rcClient.top;
-		double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH);
-		double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT);
+		double scale = static_cast<double>(winW) / static_cast<double>(LOGICAL_WIDTH());
+		double scaleY = static_cast<double>(winH) / static_cast<double>(LOGICAL_HEIGHT());
 		if (scaleY < scale) {
 			scale = scaleY;
 		}
 		if (scale <= 0.0) {
 			scale = 1.0;
 		}
-		int destW = static_cast<int>(LOGICAL_WIDTH * scale);
-		int destH = static_cast<int>(LOGICAL_HEIGHT * scale);
+		int destW = static_cast<int>(LOGICAL_WIDTH() * scale);
+		int destH = static_cast<int>(LOGICAL_HEIGHT() * scale);
 		int offsetX = (winW - destW) / 2;
 		int offsetY = (winH - destH) / 2;
 
