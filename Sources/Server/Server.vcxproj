@@ -322,6 +322,8 @@
     <ClInclude Include="CmdReload.h" />
     <ClInclude Include="GameChatCommand.h" />
     <ClInclude Include="GameCmdWhisper.h" />
+    <ClInclude Include="GameCmdBlock.h" />
+    <ClInclude Include="GameCmdUnblock.h" />
     <ClInclude Include="PasswordHash.h" />
   </ItemGroup>
   <ItemGroup>
@@ -353,6 +355,8 @@
     <ClCompile Include="CmdReload.cpp" />
     <ClCompile Include="GameChatCommand.cpp" />
     <ClCompile Include="GameCmdWhisper.cpp" />
+    <ClCompile Include="GameCmdBlock.cpp" />
+    <ClCompile Include="GameCmdUnblock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

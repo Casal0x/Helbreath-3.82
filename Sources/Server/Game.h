@@ -540,7 +540,6 @@ public:
 	void _CheckMiningAction(int iClientH, int dX, int dY);
 	int iCreateMineral(char cMapIndex, int tX, int tY, char cLevel);
 	void MineralGenerator();
-	void LocalSavePlayerData(int iClientH);
 	void ReqCreatePortionHandler(int iClientH, char * pData);
 	void ReqCreateCraftingHandler(int iClientH, char* pData);
 	void _CheckAttackType(int iClientH, short * spType);
@@ -697,6 +696,7 @@ public:
 	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMapIndex, char cTurn, int * pError);
 	int  iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, bool bResponse = true, bool bIsDash = false);
 	void ChatMsgHandler(int iClientH, char * pData, uint32_t dwMsgSize);
+	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();
 	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0);
 	//bool bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sX, short sY);

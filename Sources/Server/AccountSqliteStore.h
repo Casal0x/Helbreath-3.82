@@ -209,6 +209,11 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client);
 bool DeleteCharacterData(sqlite3* db, const char* characterName);
 void CloseAccountDatabase(sqlite3* db);
 
+// Block list
+bool LoadBlockList(sqlite3* db, std::vector<std::pair<std::string, std::string>>& outBlocks);
+bool SaveBlockList(sqlite3* db, const std::vector<std::pair<std::string, std::string>>& blocks);
+bool ResolveCharacterToAccount(const char* characterName, char* outAccountName, size_t accountNameSize);
+
 // Global name checks - scan all account databases
 bool CharacterNameExistsGlobally(const char* characterName);
 bool AccountNameExists(const char* accountName);

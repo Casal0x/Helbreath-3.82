@@ -20,6 +20,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <set>
 #include "GameGeometry.h"
 using namespace std;
 
@@ -403,5 +404,15 @@ public:
 
 	uint32_t m_dwLastConfigRequestTime = 0;
 	uint32_t m_dwLastDamageTakenTime = 0;
+
+	// Block list
+	struct CaseInsensitiveLess {
+		bool operator()(const std::string& a, const std::string& b) const {
+			return _stricmp(a.c_str(), b.c_str()) < 0;
+		}
+	};
+	std::set<std::string, CaseInsensitiveLess> m_BlockedAccounts;
+	std::vector<std::pair<std::string, std::string>> m_BlockedAccountsList;
+	bool m_bBlockListDirty = false;
 
 };

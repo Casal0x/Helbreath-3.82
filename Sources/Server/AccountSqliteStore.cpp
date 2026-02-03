@@ -502,6 +502,11 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         " FOREIGN KEY(character_name) REFERENCES characters(character_name) ON DELETE CASCADE"
         ");"
         "CREATE INDEX IF NOT EXISTS idx_characters_account ON characters(account_name);"
+        "CREATE TABLE IF NOT EXISTS block_list ("
+        " blocked_account_name TEXT NOT NULL,"
+        " blocked_character_name TEXT NOT NULL,"
+        " PRIMARY KEY(blocked_account_name)"
+        ");"
         "COMMIT;";
 
     if (!ExecSql(db, schemaSql)) {
@@ -1995,6 +2000,114 @@ bool AccountNameExists(const char* accountName)
         if (found) {
             break;  // No need to check remaining databases
         }
+
+    } while (FindNextFile(hFind, &findData) != 0);
+
+    FindClose(hFind);
+
+    return found;
+}
+
+bool LoadBlockList(sqlite3* db, std::vector<std::pair<std::string, std::string>>& outBlocks)
+{
+    outBlocks.clear();
+    const char* sql = "SELECT blocked_account_name, blocked_character_name FROM block_list";
+    sqlite3_stmt* stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+        return false;
+
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        const char* accountName = (const char*)sqlite3_column_text(stmt, 0);
+        const char* charName = (const char*)sqlite3_column_text(stmt, 1);
+        if (accountName && charName)
+            outBlocks.push_back(std::make_pair(std::string(accountName), std::string(charName)));
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
+}
+
+bool SaveBlockList(sqlite3* db, const std::vector<std::pair<std::string, std::string>>& blocks)
+{
+    if (!ExecSql(db, "DELETE FROM block_list"))
+        return false;
+
+    const char* sql = "INSERT INTO block_list (blocked_account_name, blocked_character_name) VALUES (?, ?)";
+    sqlite3_stmt* stmt = nullptr;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK)
+        return false;
+
+    for (const auto& entry : blocks)
+    {
+        sqlite3_reset(stmt);
+        sqlite3_bind_text(stmt, 1, entry.first.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 2, entry.second.c_str(), -1, SQLITE_TRANSIENT);
+        if (sqlite3_step(stmt) != SQLITE_DONE)
+        {
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
+}
+
+bool ResolveCharacterToAccount(const char* characterName, char* outAccountName, size_t accountNameSize)
+{
+    if (characterName == nullptr || outAccountName == nullptr || accountNameSize == 0)
+        return false;
+
+    WIN32_FIND_DATA findData;
+    HANDLE hFind = FindFirstFile("Accounts\\*.db", &findData);
+
+    if (hFind == INVALID_HANDLE_VALUE)
+        return false;
+
+    bool found = false;
+
+    do {
+        if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            continue;
+
+        char dbPath[MAX_PATH] = {};
+        std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s", findData.cFileName);
+
+        sqlite3* db = nullptr;
+        if (sqlite3_open(dbPath, &db) != SQLITE_OK)
+        {
+            if (db) sqlite3_close(db);
+            continue;
+        }
+
+        const char* sql = "SELECT account_name FROM characters WHERE character_name = ? COLLATE NOCASE LIMIT 1";
+        sqlite3_stmt* stmt = nullptr;
+
+        if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) == SQLITE_OK)
+        {
+            if (sqlite3_bind_text(stmt, 1, characterName, -1, SQLITE_TRANSIENT) == SQLITE_OK)
+            {
+                if (sqlite3_step(stmt) == SQLITE_ROW)
+                {
+                    const char* acctName = (const char*)sqlite3_column_text(stmt, 0);
+                    if (acctName)
+                    {
+                        std::strncpy(outAccountName, acctName, accountNameSize - 1);
+                        outAccountName[accountNameSize - 1] = '\0';
+                        found = true;
+                    }
+                }
+            }
+            sqlite3_finalize(stmt);
+        }
+
+        sqlite3_close(db);
+
+        if (found)
+            break;
 
     } while (FindNextFile(hFind, &findData) != 0);
 

@@ -1,6 +1,8 @@
 #include <windows.h>
 #include "GameChatCommand.h"
 #include "GameCmdWhisper.h"
+#include "GameCmdBlock.h"
+#include "GameCmdUnblock.h"
 #include "Game.h"
 #include "winmain.h"
 #include <cstring>
@@ -83,4 +85,6 @@ void GameChatCommandManager::LogCommand(int iClientH, const char* pCommand)
 void GameChatCommandManager::RegisterBuiltInCommands()
 {
 	RegisterCommand(std::make_unique<GameCmdWhisper>());
+	RegisterCommand(std::make_unique<GameCmdBlock>());
+	RegisterCommand(std::make_unique<GameCmdUnblock>());
 }

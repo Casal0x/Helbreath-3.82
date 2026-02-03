@@ -4865,6 +4865,18 @@ bool CGame::LoadPlayerDataFromDb(int iClientH)
 		m_pClientList[iClientH]->m_bIsNeutral = true;
 	}
 
+	// Load block list
+	m_pClientList[iClientH]->m_BlockedAccounts.clear();
+	m_pClientList[iClientH]->m_BlockedAccountsList.clear();
+	m_pClientList[iClientH]->m_bBlockListDirty = false;
+	std::vector<std::pair<std::string, std::string>> blocks;
+	if (LoadBlockList(db, blocks)) {
+		for (const auto& entry : blocks) {
+			m_pClientList[iClientH]->m_BlockedAccounts.insert(entry.first);
+			m_pClientList[iClientH]->m_BlockedAccountsList.push_back(entry);
+		}
+	}
+
 	CloseAccountDatabase(db);
 	return true;
 }
@@ -5314,6 +5326,14 @@ void CGame::BroadcastServerMessage(const char* pMessage)
 	ChatLog::Get().Write(10, "Server", "", pMessage);
 }
 
+bool CGame::IsBlockedBy(int iSenderH, int iReceiverH) const
+{
+	if (m_pClientList[iSenderH] == nullptr || m_pClientList[iReceiverH] == nullptr)
+		return false;
+	return m_pClientList[iReceiverH]->m_BlockedAccounts.count(
+		m_pClientList[iSenderH]->m_cAccountName) > 0;
+}
+
 // 05/29/2004 - Hypnotoad - GM chat tweak
 void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 {
@@ -5582,6 +5602,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 	if (cSendMode != 20) {
 		for (i = 1; i < DEF_MAXCLIENTS; i++)
 			if (m_pClientList[i] != 0) {
+				if (IsBlockedBy(iClientH, i)) continue;
 				switch (cSendMode) {
 				case 0:
 					if (m_pClientList[i]->m_bIsInitComplete == false) break;
@@ -5679,9 +5700,12 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 			//PutLogList(G_cTxt);
 		}
 		else {
-			if (m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex] != 0 &&
-				_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_cCharName) == 0) {
-				iRet = m_pClientList[m_pClientList[iClientH]->m_iWhisperPlayerIndex]->m_pXSock->iSendMsg(pData, dwMsgSize);
+			int whisperTarget = m_pClientList[iClientH]->m_iWhisperPlayerIndex;
+			if (m_pClientList[whisperTarget] != 0 &&
+				_stricmp(m_pClientList[iClientH]->m_cWhisperPlayerName, m_pClientList[whisperTarget]->m_cCharName) == 0) {
+				if (!IsBlockedBy(iClientH, whisperTarget)) {
+					iRet = m_pClientList[whisperTarget]->m_pXSock->iSendMsg(pData, dwMsgSize);
+				}
 			}
 		}
 
@@ -25430,34 +25454,6 @@ void CGame::ReqCreateCraftingHandler(int iClientH, char* pData)
 			delete pItem;
 			pItem = 0;
 		}
-	}
-}
-
-
-void CGame::LocalSavePlayerData(int iClientH)
-{
-	if (m_pClientList[iClientH] == 0) return;
-
-	sqlite3* db = nullptr;
-	std::string dbPath;
-	if (EnsureAccountDatabase(m_pClientList[iClientH]->m_cAccountName, &db, dbPath)) {
-		if (!SaveCharacterSnapshot(db, m_pClientList[iClientH])) {
-			char logMsg[256] = {};
-			std::snprintf(logMsg, sizeof(logMsg),
-				"(SQLITE) SaveCharacterSnapshot failed: Account(%s) Char(%s) Error(%s)",
-				m_pClientList[iClientH]->m_cAccountName,
-				m_pClientList[iClientH]->m_cCharName,
-				sqlite3_errmsg(db));
-			PutLogList(logMsg);
-		}
-		CloseAccountDatabase(db);
-	}
-	else {
-		char logMsg[256] = {};
-		std::snprintf(logMsg, sizeof(logMsg),
-			"(SQLITE) EnsureAccountDatabase failed: Account(%s)",
-			m_pClientList[iClientH]->m_cAccountName);
-		PutLogList(logMsg);
 	}
 }
 

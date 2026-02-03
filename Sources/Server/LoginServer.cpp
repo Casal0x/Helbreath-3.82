@@ -803,6 +803,11 @@ void LoginServer::LocalSavePlayerData(int h)
 				sqlite3_errmsg(db));
 			PutLogList(logMsg);
 		}
+		if (G_pGame->m_pClientList[h]->m_bBlockListDirty) {
+			if (SaveBlockList(db, G_pGame->m_pClientList[h]->m_BlockedAccountsList)) {
+				G_pGame->m_pClientList[h]->m_bBlockListDirty = false;
+			}
+		}
 		CloseAccountDatabase(db);
 	} else {
 		char logMsg[256] = {};
