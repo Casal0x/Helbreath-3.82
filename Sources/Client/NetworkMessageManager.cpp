@@ -156,6 +156,7 @@ namespace NetworkMessageHandlers {
 	void HandleCannotBanGuildMan(CGame* pGame, char* pData);
 
 	// Combat
+	void HandleSpellInterrupted(CGame* pGame, char* pData);
 	void HandleKilled(CGame* pGame, char* pData);
 	void HandlePKcaptured(CGame* pGame, char* pData);
 	void HandlePKpenalty(CGame* pGame, char* pData);
@@ -343,6 +344,7 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		case DEF_NOTIFY_MAGICEFFECTON: NetworkMessageHandlers::HandleMagicEffectOn(m_pGame, pData); return true;
 		case DEF_NOTIFY_MAGICEFFECTOFF: NetworkMessageHandlers::HandleMagicEffectOff(m_pGame, pData); return true;
 		case DEF_NOTIFY_SPELL_SKILL: NetworkMessageHandlers::HandleSpellSkill(m_pGame, pData); return true;
+		case DEF_NOTIFY_SPELLINTERRUPTED: NetworkMessageHandlers::HandleSpellInterrupted(m_pGame, pData); return true;
 		case DEF_NOTIFY_STATECHANGE_SUCCESS: NetworkMessageHandlers::HandleStateChangeSuccess(m_pGame, pData); return true;
 		case DEF_NOTIFY_STATECHANGE_FAILED: NetworkMessageHandlers::HandleStateChangeFailed(m_pGame, pData); return true;
 		case DEF_NOTIFY_SETTING_FAILED: NetworkMessageHandlers::HandleSettingFailed(m_pGame, pData); return true;

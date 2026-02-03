@@ -12,6 +12,7 @@ DialogBox_Skill::DialogBox_Skill(CGame* pGame)
 
 void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureSkillConfigsLoaded()) return;
 	short sX, sY;
 	int i, iTotalLines, iPointerLoc;
 	char cTemp[255], cTemp2[255];

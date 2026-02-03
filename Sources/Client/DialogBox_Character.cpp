@@ -197,6 +197,7 @@ char DialogBox_Character::FindEquipItemAtPoint(short msX, short msY, short sX, s
 
 void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX = Info().sX;
 	short sY = Info().sY;
 	char cCollison = -1;

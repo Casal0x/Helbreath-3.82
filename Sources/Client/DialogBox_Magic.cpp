@@ -18,6 +18,7 @@ DialogBox_Magic::DialogBox_Magic(CGame* pGame)
 
 void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureMagicConfigsLoaded()) return;
 	short sX, sY;
 	int iCPivot, i, iYloc, iMagicCircle, iManaCost;
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();

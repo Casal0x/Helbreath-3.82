@@ -216,6 +216,7 @@ void DialogBox_NpcActionQuery::DrawMode6_Gail(short sX, short sY, short msX, sho
 
 void DialogBox_NpcActionQuery::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX = Info().sX;
 	short sY = Info().sY;
 

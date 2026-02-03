@@ -6449,6 +6449,19 @@ void CGame::MsgProcess()
 				RequestShopContentsHandler(iClientH, pData);
 				break;
 
+			case MSGID_REQUEST_CONFIGDATA:
+			{
+				const auto* reqPkt = hb::net::PacketCast<hb::net::PacketRequestConfigData>(
+					pData, sizeof(hb::net::PacketRequestConfigData));
+				if (!reqPkt) break;
+				if (dwTime - m_pClientList[iClientH]->m_dwLastConfigRequestTime < 30000) break;
+				m_pClientList[iClientH]->m_dwLastConfigRequestTime = dwTime;
+				if (reqPkt->requestItems)  bSendClientItemConfigs(iClientH);
+				if (reqPkt->requestMagic)  bSendClientMagicConfigs(iClientH);
+				if (reqPkt->requestSkills) bSendClientSkillConfigs(iClientH);
+			}
+			break;
+
 			default:
 				if (m_pClientList[iClientH] != 0)  // Snoopy: Anti-crash check !
 				{
@@ -9022,6 +9035,14 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		pkt.header.msg_id = MSGID_NOTIFY;
 		pkt.header.msg_type = wMsgType;
 		pkt.enabled = static_cast<int16_t>(sV1);
+		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+		break;
+	}
+	case DEF_NOTIFY_SPELLINTERRUPTED:
+	{
+		hb::net::PacketNotifyEmpty pkt{};
+		pkt.header.msg_id = MSGID_NOTIFY;
+		pkt.header.msg_type = wMsgType;
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
@@ -19291,6 +19312,7 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
 			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
 			m_pClientList[sTargetH]->m_iSpellCount = 0;
+			SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
 		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			ClientKilledHandler(sTargetH, sAttackerH, cAttackerType, iDamage);
@@ -19789,6 +19811,7 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
 			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
 			m_pClientList[sTargetH]->m_iSpellCount = 0;
+			SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
 		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			// �÷��̾ ����ߴ�.
@@ -37923,6 +37946,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 				if (iAP_SM > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
 					m_pClientList[sTargetH]->m_bMagicPauseTime = false;
 					m_pClientList[sTargetH]->m_iSpellCount = 0;
+					SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
 				}
 				if (m_pClientList[sTargetH]->m_iHP <= 0) {
 					if (cAttackerType == DEF_OWNERTYPE_PLAYER)

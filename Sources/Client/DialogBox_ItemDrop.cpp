@@ -10,6 +10,7 @@ DialogBox_ItemDrop::DialogBox_ItemDrop(CGame* pGame)
 
 void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX = Info().sX;
 	short sY = Info().sY;
 	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];

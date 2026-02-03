@@ -13,6 +13,7 @@ DialogBox_SellOrRepair::DialogBox_SellOrRepair(CGame* pGame)
 
 void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX, sY;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	char cItemID, cItemColor, cTxt[120], cTemp[120], cStr2[120], cStr3[120];

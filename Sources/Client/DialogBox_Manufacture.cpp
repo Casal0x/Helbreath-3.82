@@ -19,6 +19,7 @@ DialogBox_Manufacture::DialogBox_Manufacture(CGame* pGame)
 
 void DialogBox_Manufacture::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	int iAdjX = 5;
 	int iAdjY = 8;
 	short sX, sY;

@@ -614,6 +614,19 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	bool _bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize);
 	bool _bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize);
 
+	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
+	ConfigRetryLevel m_eConfigRetry[3]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2)
+	uint32_t m_dwConfigRequestTime = 0;
+	static constexpr uint32_t CONFIG_REQUEST_TIMEOUT_MS = 10000;
+
+	bool _EnsureConfigLoaded(int type);
+	bool _TryReplayCacheForConfig(int type);
+	void _RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills);
+
+	bool EnsureItemConfigsLoaded()  { return _EnsureConfigLoaded(0); }
+	bool EnsureMagicConfigsLoaded() { return _EnsureConfigLoaded(1); }
+	bool EnsureSkillConfigsLoaded() { return _EnsureConfigLoaded(2); }
+
 	int iNpcHP, iNpcMaxHP;
 
 	short m_sItemDropID[25];

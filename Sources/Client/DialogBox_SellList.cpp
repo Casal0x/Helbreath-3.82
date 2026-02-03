@@ -14,6 +14,7 @@ DialogBox_SellList::DialogBox_SellList(CGame* pGame)
 
 void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+	if (!m_pGame->EnsureItemConfigsLoaded()) return;
 	short sX = Info().sX;
 	short sY = Info().sY;
 	short szX = Info().sSizeX;

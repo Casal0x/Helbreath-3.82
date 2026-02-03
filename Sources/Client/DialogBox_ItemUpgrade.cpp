@@ -15,6 +15,7 @@ DialogBox_ItemUpgrade::DialogBox_ItemUpgrade(CGame* pGame)
 
 void DialogBox_ItemUpgrade::OnDraw(short msX, short msY, short msZ, char cLB)
 {
+    if (!m_pGame->EnsureItemConfigsLoaded()) return;
     int sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sX;
     int sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sY;
 

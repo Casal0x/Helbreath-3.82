@@ -250,5 +250,13 @@ namespace NetworkMessageHandlers {
 		pGame->iNpcHP = pkt->hp;
 		pGame->iNpcMaxHP = pkt->max_hp;
 	}
+
+	void HandleSpellInterrupted(CGame* pGame, char* pData)
+	{
+		if (pGame->m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMAGIC)
+			pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		pGame->m_bIsGetPointingMode = false;
+		pGame->m_iPointCommandType = -1;
+	}
 }
 

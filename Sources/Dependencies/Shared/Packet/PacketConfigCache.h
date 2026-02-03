@@ -37,6 +37,13 @@ namespace net {
 		uint8_t reloadMagic;
 		uint8_t reloadSkills;
 	};
+
+	struct HB_PACKED PacketRequestConfigData {
+		PacketHeader header;
+		uint8_t requestItems;
+		uint8_t requestMagic;
+		uint8_t requestSkills;
+	};
 	HB_PACK_END
 }
 }

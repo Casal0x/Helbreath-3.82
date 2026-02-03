@@ -401,4 +401,6 @@ public:
 	uint32_t m_dwFightzoneDeadTime;
 	char m_cSaveCount;
 
+	uint32_t m_dwLastConfigRequestTime = 0;
+
 };
