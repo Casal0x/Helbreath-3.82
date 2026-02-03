@@ -1359,6 +1359,7 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 			if (wType >= 20) {
 				m_pClientList[iClientH]->m_iSuperAttackLeft--;
 				if (m_pClientList[iClientH]->m_iSuperAttackLeft < 0) m_pClientList[iClientH]->m_iSuperAttackLeft = 0;
+				SendNotifyMsg(0, iClientH, DEF_NOTIFY_SUPERATTACKLEFT, 0, 0, 0, 0);
 			}
 
 			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTATTACK, dX, dY, wType);
@@ -5867,6 +5868,20 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 				sX, static_cast<char>(sY), cDir, sOwner)))
 				wType = 0;
 		}
+	}
+	else if (wType >= 20) {
+		short sMaxRange;
+		switch (wType) {
+		case 30: sMaxRange = 5; break; // StormBlade critical
+		case 22: sMaxRange = 4; break; // Esterk
+		case 23: sMaxRange = 3; break; // Long Sword
+		case 24: sMaxRange = 2; break; // Axe
+		case 26: sMaxRange = 2; break; // Hammer
+		case 27: sMaxRange = 2; break; // Wand
+		case 25: sMaxRange = 0; break; // Bow - ranged, no melee limit
+		default: sMaxRange = 1; break; // Boxing (20), Dagger/SS (21)
+		}
+		if ((sMaxRange > 0) && ((sAbsX > sMaxRange) || (sAbsY > sMaxRange))) wType = 0;
 	}
 
 	ClearSkillUsingStatus(iClientH);
@@ -37202,14 +37217,14 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 			iAP_L += iTemp;
 
 			switch (m_pClientList[sAttackerH]->m_sUsingWeaponSkill) {
-			case 6:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 30; break;
-
-			case 7:  iAP_SM *= 1; iAP_L *= 1; break;
-
-			case 8:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 30; break;
-			case 10:  iAP_SM += (iAP_SM / 5); iAP_L += (iAP_L / 5);                           break;
-			case 14:  iAP_SM += (iAP_SM / 5); iAP_L += (iAP_L / 5); iAttackerHitRatio += 20; break;
-			case 21:  iAP_SM += (iAP_SM / 5); iAP_L += (iAP_L / 5); iAttackerHitRatio += 50; break;
+			case 5:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 20; break; // Boxing
+			case 6:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 30; break; // Bow
+			case 7:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 40; break; // Dagger/SS
+			case 8:  iAP_SM += (iAP_SM / 10); iAP_L += (iAP_L / 10); iAttackerHitRatio += 30; break; // Long Sword
+			case 9:  iAP_SM += (iAP_SM / 7);  iAP_L += (iAP_L / 7);  iAttackerHitRatio += 30; break; // Fencing
+			case 10: iAP_SM += (iAP_SM / 5);  iAP_L += (iAP_L / 5);                           break; // Axe
+			case 14: iAP_SM += (iAP_SM / 5);  iAP_L += (iAP_L / 5);  iAttackerHitRatio += 20; break; // Hammer
+			case 21: iAP_SM += (iAP_SM / 5);  iAP_L += (iAP_L / 5);  iAttackerHitRatio += 50; break; // Wand
 			default: break;
 			}
 			iAttackerHitRatio += 100;

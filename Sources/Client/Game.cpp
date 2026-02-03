@@ -10528,27 +10528,29 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		if (auto* pDlg = m_dialogBoxManager.GetDialogBox(DialogBoxId::HudPanel))
 			pDlg->OnDraw(msX, msY, msZ, cLB);
 	}
-	int resy = 0;
-	int resx = 0;
-	short iconX = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sX;
-	short iconY = m_dialogBoxManager.Info(DialogBoxId::HudPanel).sY;
-	if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
+	if (m_pPlayer->m_iSuperAttackLeft > 0)
 	{
-		if (m_pPlayer->m_iSuperAttackLeft > 0)
-		{
-			if (Input::IsAltDown())
-				m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX + 368 + resx + 7, iconY + 440 + resy, 3, SpriteLib::DrawParams::Alpha(0.5f));
-			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
-			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255));
-		}
-	}
-	else
-	{
-		if (m_pPlayer->m_iSuperAttackLeft > 0)
-		{
-			wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
-			TextLib::DrawText(GameFont::Bitmap1, iconX + 380 + resx + 10 - 5, iconY + 454 + resy, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b));
-		}
+		int resx = (LOGICAL_WIDTH() - 640) / 2;
+		int resy = LOGICAL_HEIGHT() - 480;
+		// Combat button area: 362-404 x 434-475 (base 640x480)
+		int btnX = 362 + resx;
+		int btnY = 434 + resy;
+		int btnW = 42;
+		int btnH = 41;
+
+		bool bMastered = (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100);
+		bool bAltHeld = Input::IsAltDown();
+
+		// Draw overlay sprite under text (faint normally, brighter when ALT held)
+		float fAlpha = (bAltHeld && bMastered) ? 0.7f : 0.25f;
+		m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(btnX, btnY + btnH - 20, 3, SpriteLib::DrawParams::Alpha(fAlpha));
+
+		// Draw super attack count text aligned to bottom-right of combat button area
+		wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
+		if (bMastered)
+			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255), TextLib::Align::BottomRight);
+		else
+			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b), TextLib::Align::BottomRight);
 	}
 }
 
@@ -11113,6 +11115,11 @@ void CGame::DisableDialogBox(int iBoxID)
 	case DialogBoxId::Exchange: //Snoopy: 7 mar 06 (multiTrade) case rewriten
 		for (i = 0; i < 8; i++)
 		{
+			// Re-enable item before clearing the slot
+			int sItemID = m_stDialogBoxExchangeInfo[i].sItemID;
+			if (sItemID >= 0 && sItemID < DEF_MAXITEMS && m_bIsItemDisabled[sItemID])
+				m_bIsItemDisabled[sItemID] = false;
+
 			std::memset(m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr1));
 			std::memset(m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr2));
 			m_stDialogBoxExchangeInfo[i].sV1 = -1;
@@ -11122,9 +11129,8 @@ void CGame::DisableDialogBox(int iBoxID)
 			m_stDialogBoxExchangeInfo[i].sV5 = -1;
 			m_stDialogBoxExchangeInfo[i].sV6 = -1;
 			m_stDialogBoxExchangeInfo[i].sV7 = -1;
+			m_stDialogBoxExchangeInfo[i].sItemID = -1;
 			m_stDialogBoxExchangeInfo[i].dwV1 = 0;
-			if (m_bIsItemDisabled[m_stDialogBoxExchangeInfo[i].sItemID] == true)
-				m_bIsItemDisabled[m_stDialogBoxExchangeInfo[i].sItemID] = false;
 		}
 		break;
 
@@ -12632,13 +12638,23 @@ int CGame::_iGetAttackType()
 			else return 1;	// LongSwords
 		}
 	}
-	else if ((wWeaponType >= 20) && (wWeaponType < 29))
+	else if ((wWeaponType >= 20) && (wWeaponType <= 29))
 	{
+		if (wWeaponType == 29) {
+			// Type 29 is a Long Sword variant
+			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
+			else return 1;		// LS
+		}
 		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[10] >= 100)) return 24;
-		else return 1;		// Haches
+		else return 1;		// Axes
 	}
-	else if ((wWeaponType >= 30) && (wWeaponType < 33))
+	else if ((wWeaponType >= 30) && (wWeaponType <= 33))
 	{
+		if (wWeaponType == 33) {
+			// Type 33 is a Long Sword variant
+			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
+			else return 1;		// LS
+		}
 		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[14] >= 100)) return 26;
 		else return 1;		// Hammers
 	}
@@ -12651,11 +12667,6 @@ int CGame::_iGetAttackType()
 	{
 		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[6] >= 100)) return 25;
 		else return 2;		// Bows
-	}
-	else if ((wWeaponType == 29) || (wWeaponType == 33))
-	{
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
-		else return 1;		// LS
 	}
 	return 0;
 }
@@ -16754,12 +16765,7 @@ MOTION_COMMAND_PROCESS:;
 					if (_bCheckItemByType(ItemType::Arrow) == false)
 						wType = 0;
 				}
-				if (wType >= 20)
-				{
-					m_pPlayer->m_iSuperAttackLeft--;
-					if (m_pPlayer->m_iSuperAttackLeft < 0) m_pPlayer->m_iSuperAttackLeft = 0;
-				}
-				m_pPlayer->m_iPlayerDir = cDir;
+					m_pPlayer->m_iPlayerDir = cDir;
 				m_wLastAttackTargetID = m_wCommObjectID;
 				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,

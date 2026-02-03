@@ -742,6 +742,21 @@ namespace NetworkMessageHandlers {
 		dwAttribute = pkt->attribute;
 
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Exchange, 1, 0, 0, 0);
+		// Initialize all exchange slots
+		for (int j = 0; j < 8; j++)
+		{
+			std::memset(pGame->m_stDialogBoxExchangeInfo[j].cStr1, 0, sizeof(pGame->m_stDialogBoxExchangeInfo[j].cStr1));
+			std::memset(pGame->m_stDialogBoxExchangeInfo[j].cStr2, 0, sizeof(pGame->m_stDialogBoxExchangeInfo[j].cStr2));
+			pGame->m_stDialogBoxExchangeInfo[j].sV1 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV2 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV3 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV4 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV5 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV6 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sV7 = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].sItemID = -1;
+			pGame->m_stDialogBoxExchangeInfo[j].dwV1 = 0;
+		}
 		int i;
 		if (sDir >= 1000)  // Set the item I want to exchange
 		{
