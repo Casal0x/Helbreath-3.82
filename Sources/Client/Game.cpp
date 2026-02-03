@@ -17009,7 +17009,10 @@ void CGame::ShowEventList(uint32_t dwTime)
 }
 
 void CGame::RequestTeleportAndWaitData()
-{	// Snoopy: removed that, Noob Dungeon is now at farm...
+{
+	if (m_bIsTeleportRequested) return;
+
+	// Snoopy: removed that, Noob Dungeon is now at farm...
 	/*if (strcmp(m_cMapName, "aresden") == 0)
 	{	if ( ((m_pPlayer->m_sPlayerX == 188) && (m_pPlayer->m_sPlayerY == 105))  ||
 			 ((m_pPlayer->m_sPlayerX == 187) && (m_pPlayer->m_sPlayerY == 105))  ||

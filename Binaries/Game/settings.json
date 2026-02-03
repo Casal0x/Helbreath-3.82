@@ -1,15 +1,15 @@
 {
     "audio": {
         "ambientEnabled": true,
-        "ambientVolume": 20,
+        "ambientVolume": 78,
         "masterEnabled": true,
-        "masterVolume": 48,
+        "masterVolume": 40,
         "musicEnabled": false,
         "musicVolume": 16,
         "soundEnabled": true,
-        "soundVolume": 19,
+        "soundVolume": 100,
         "uiEnabled": true,
-        "uiVolume": 22
+        "uiVolume": 51
     },
     "display": {
         "borderless": false,
@@ -32,7 +32,7 @@
         "port": 2500
     },
     "shortcuts": {
-        "magic": 96,
+        "magic": 91,
         "slots": [
             -1,
             -1,
