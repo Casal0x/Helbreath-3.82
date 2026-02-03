@@ -19261,6 +19261,11 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 		}
 
 		m_pClientList[sTargetH]->m_iHP -= iDamage;
+		// Interrupt spell casting on damage
+		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
+			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+			m_pClientList[sTargetH]->m_iSpellCount = 0;
+		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			ClientKilledHandler(sTargetH, sAttackerH, cAttackerType, iDamage);
 		}
@@ -19754,6 +19759,11 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 		}
 
 		m_pClientList[sTargetH]->m_iHP -= iDamage;
+		// Interrupt spell casting on damage
+		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
+			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+			m_pClientList[sTargetH]->m_iSpellCount = 0;
+		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			// �÷��̾ ����ߴ�.
 			ClientKilledHandler(sTargetH, sAttackerH, cAttackerType, iDamage);
@@ -37883,6 +37893,11 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 				}
 
 				m_pClientList[sTargetH]->m_iHP -= iAP_SM;
+				// Interrupt spell casting on damage
+				if (iAP_SM > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
+					m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+					m_pClientList[sTargetH]->m_iSpellCount = 0;
+				}
 				if (m_pClientList[sTargetH]->m_iHP <= 0) {
 					if (cAttackerType == DEF_OWNERTYPE_PLAYER)
 						bAnalyzeCriminalAction(sAttackerH, m_pClientList[sTargetH]->m_sX, m_pClientList[sTargetH]->m_sY);

@@ -143,7 +143,8 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" heldenian_mode_map INTEGER NOT NULL DEFAULT 0,"
 		" mob_event_amount INTEGER NOT NULL DEFAULT 15,"
 		" energy_sphere_auto_creation INTEGER NOT NULL DEFAULT 0,"
-		" pk_mode INTEGER NOT NULL DEFAULT 0"
+		" pk_mode INTEGER NOT NULL DEFAULT 0,"
+		" attack_enabled INTEGER NOT NULL DEFAULT 1"
 		");"
 
 		// Teleport locations
@@ -448,7 +449,8 @@ bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
 		" mineral_generator_enabled, mineral_generator_level,"
 		" max_fish, max_mineral, fixed_day_mode, recall_impossible,"
 		" apocalypse_map, apocalypse_mob_gen_type, citizen_limit, is_fight_zone,"
-		" heldenian_map, heldenian_mode_map, mob_event_amount, energy_sphere_auto_creation, pk_mode"
+		" heldenian_map, heldenian_mode_map, mob_event_amount, energy_sphere_auto_creation, pk_mode,"
+		" attack_enabled"
 		" FROM maps WHERE map_name = ? COLLATE NOCASE;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -482,7 +484,8 @@ bool LoadMapBaseSettings(sqlite3* db, const char* mapName, CMap* pMap)
 		pMap->m_cHeldenianModeMap = static_cast<char>(sqlite3_column_int(stmt, col++));
 		pMap->sMobEventAmount = static_cast<short>(sqlite3_column_int(stmt, col++));
 		pMap->m_bIsEnergySphereAutoCreation = sqlite3_column_int(stmt, col++) != 0;
-		// pk_mode is read but we don't have a direct member for it
+		col++; // pk_mode - read but no direct member
+		pMap->m_bIsAttackEnabled = sqlite3_column_int(stmt, col++) != 0;
 		ok = true;
 	}
 
