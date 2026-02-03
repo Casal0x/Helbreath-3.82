@@ -2097,6 +2097,8 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 		std::strncpy(pSkill->m_cName, entry.name, sizeof(pSkill->m_cName) - 1);
 		pSkill->m_bIsUseable = (entry.isUseable != 0);
 		pSkill->m_cUseMethod = entry.useMethod;
+		// Apply mastery level if already received from InitItemList
+		pSkill->m_iLevel = static_cast<int>(m_pPlayer->m_iSkillMastery[skillId]);
 	}
 
 	// Log total count on last packet
@@ -10532,20 +10534,22 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 	{
 		int resx = (LOGICAL_WIDTH() - 640) / 2;
 		int resy = LOGICAL_HEIGHT() - 480;
-		// Combat button area: 362-404 x 434-475 (base 640x480)
+		// Combat icon position (same as HudPanel's COMBAT_ICON_X/Y)
+		int iconX = 368 + resx;
+		int iconY = 440 + resy;
+		// Combat button area for text alignment
 		int btnX = 362 + resx;
 		int btnY = 434 + resy;
 		int btnW = 42;
 		int btnH = 41;
 
 		bool bMastered = (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100);
-		bool bAltHeld = Input::IsAltDown();
 
-		// Draw overlay sprite under text (faint normally, brighter when ALT held)
-		float fAlpha = (bAltHeld && bMastered) ? 0.7f : 0.25f;
-		m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(btnX, btnY + btnH - 20, 3, SpriteLib::DrawParams::Alpha(fAlpha));
+		// Draw additive overlay sprite at combat icon position only when ALT is held
+		if (Input::IsAltDown() && bMastered)
+			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX, iconY, 3, SpriteLib::DrawParams::Additive(0.7f));
 
-		// Draw super attack count text aligned to bottom-right of combat button area
+		// Draw super attack count text at bottom-right of combat button area
 		wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
 		if (bMastered)
 			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255), TextLib::Align::BottomRight);
