@@ -1,6 +1,4 @@
 // Client.cpp: implementation of the CClient class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #include "CommonTypes.h"
 #include "Client.h"
@@ -12,9 +10,7 @@ using namespace hb::item;
 
 extern char G_cTxt[512];
 
-//////////////////////////////////////////////////////////////////////
 // Construction/Destruction
-//////////////////////////////////////////////////////////////////////
 
 CClient::CClient(asio::io_context& ctx)
 {
@@ -51,7 +47,6 @@ CClient::CClient(asio::io_context& ctx)
 	m_iLU_Pool = 0;
 	m_cAura = 0;
 
-	// v1.432  ʴ´.
 	//m_iHitRatio_ItemEffect_SM = 0;
 	//m_iHitRatio_ItemEffect_L  = 0;
 	m_cVar = 0;
@@ -74,7 +69,6 @@ CClient::CClient(asio::io_context& ctx)
 		m_stRepairAll[i].price = 0;
 	}
 
-	//    ʱȭ  Ѵ.
 	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) 
 		m_sItemEquipmentStatus[i] = -1;
 	
@@ -85,14 +79,14 @@ CClient::CClient(asio::io_context& ctx)
 		m_ItemPosList[i].y   = 30;
 		m_bIsItemEquipped[i] = false;
 	}
-	m_cArrowIndex = -1;	// ȭ  ε Ҵ   
+	m_cArrowIndex = -1;
 
-	// ðܳ Initialize item list.
+	// Initialize item list.
 	for (i = 0; i < DEF_MAXBANKITEMS; i++) {
 		m_pItemInBankList[i] = 0;
 	}
 
-	// Magic - Skill õ Ʈ ʱȭ 
+	// Magic - Skill
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
 		m_cMagicMastery[i] = 0;
 	
@@ -124,14 +118,14 @@ CClient::CClient(asio::io_context& ctx)
 	m_cHairColor  = 0;
 	m_cUnderwear  = 0;
 
-	m_cAttackDiceThrow_SM = 0;	// ġ ֻ  ȸ @@@@@@@@@@@@@
+	m_cAttackDiceThrow_SM = 0;	// @@@@@@@@@@@@@
 	m_cAttackDiceRange_SM = 0;
-	m_cAttackDiceThrow_L = 0;	// ġ ֻ  ȸ @@@@@@@@@@@@@
+	m_cAttackDiceThrow_L = 0;	// @@@@@@@@@@@@@
 	m_cAttackDiceRange_L = 0;
 	m_cAttackBonus_SM    = 0;
 	m_cAttackBonus_L     = 0;
 	
-	// ÷̾ Ҽ   ̵尡 Ǹ ̰  NPC ݿθ  ̴. 
+	// NPC   .
 	m_cSide = 0;
 
 	m_iHitRatio = 0;
@@ -181,7 +175,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_iSuperAttackLeft  = 0;
 	m_iSuperAttackCount = 0;
 
-	m_sUsingWeaponSkill = 5; // ⺻ Ǽհ 
+	m_sUsingWeaponSkill = 5;
 
 	m_iManaSaveRatio   = 0;
 	m_iAddResistMagic  = 0;
@@ -190,7 +184,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_bIsLuckyEffect     = false;
 	m_iSideEffect_MaxHPdown = 0;
 
-	m_iAddAbsAir   = 0;	// Ӽ  
+	m_iAddAbsAir   = 0;
 	m_iAddAbsEarth = 0;
 	m_iAddAbsFire  = 0;
 	m_iAddAbsWater = 0;
@@ -225,13 +219,12 @@ CClient::CClient(asio::io_context& ctx)
 	//hbest
 	isForceSet = false;
 
-	// v1.4311-3 ߰  ʱȭ     
     m_iFightZoneTicketNumber =	m_iFightzoneNumber = m_iReserveTime = 0 ;            
 
 	m_iPenaltyBlockYear = m_iPenaltyBlockMonth = m_iPenaltyBlockDay = 0; // v1.4
 
-	m_iExchangeH = 0;											// ȯ  ε 
-	std::memset(m_cExchangeName, 0, sizeof(m_cExchangeName));			// ȯ  ̸ 
+	m_iExchangeH = 0;
+	std::memset(m_cExchangeName, 0, sizeof(m_cExchangeName));
 	for(i=0; i<4; i++){
 		m_sExchangeItemID[i] = 0;
 		m_cExchangeItemIndex[i]  = -1;
@@ -242,11 +235,11 @@ CClient::CClient(asio::io_context& ctx)
 
 	m_iQuest		 = 0; // Currently assigned Quest 
 	m_iQuestID       = 0; // QuestID
-	m_iAskedQuest	 = 0; //  Ʈ 
-	m_iCurQuestCount = 0; //  Ʈ  
+	m_iAskedQuest	 = 0;
+	m_iCurQuestCount = 0;
 
-	m_iQuestRewardType	 = 0; // Ʈ ذ ǰ  ->  ID̴.
-	m_iQuestRewardAmount = 0; // ǰ  
+	m_iQuestRewardType	 = 0;
+	m_iQuestRewardAmount = 0;
 
 	m_iContribution = 0;			// Contribution 
 	m_bQuestMatchFlag_Loc = false;  // Quest location verification flag.
@@ -257,11 +250,11 @@ CClient::CClient(asio::io_context& ctx)
 	m_bIsNeutral      = false;
 	m_bIsObserverMode = false;
 
-	// 2000.8.1 ̺Ʈ ǰ  Ȯο 
+	// 2000.8.1
 	m_iSpecialEventID = 200081;
 
-	m_iSpecialWeaponEffectType  = 0;	//   ȿ : 0-None 1-ʻ߰ 2-ߵȿ 3- 4-
-	m_iSpecialWeaponEffectValue = 0;	//   ȿ 
+	m_iSpecialWeaponEffectType  = 0;	// : 0-None 1- 2- 3- 4-
+	m_iSpecialWeaponEffectValue = 0;
 
 	m_iAddHP = m_iAddSP = m_iAddMP = 0; 
 	m_iAddAR = m_iAddPR = m_iAddDR = 0;

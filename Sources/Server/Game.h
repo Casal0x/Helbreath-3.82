@@ -1,6 +1,4 @@
 // Game.h: interface for the CGame class.
-//
-//////////////////////////////////////////////////////////////////////
 
 #pragma once
 
@@ -72,37 +70,37 @@
 #define DEF_AUTOSAVETIME			600000
 #define MAX_HELDENIANTOWER			200
 
-#define DEF_EXPSTOCKTIME		1000*10		// ExpStock�� ����ϴ�? �ð� ���� 
-#define DEF_MSGQUENESIZE		100000		// �޽��� ť ������ 10���� 
-#define DEF_AUTOEXPTIME			1000*60*6	// �ڵ����� ����ġ�� �ö󰡴� �ð����� 
-#define DEF_TOTALLEVELUPPOINT	3			// �������� �Ҵ��ϴ� �� ����Ʈ �� 
+#define DEF_EXPSTOCKTIME		1000*10		// ExpStock ?
+#define DEF_MSGQUENESIZE		100000
+#define DEF_AUTOEXPTIME			1000*60*6
+#define DEF_TOTALLEVELUPPOINT	3
 
 
 #define DEF_MAXDYNAMICOBJECTS	60000
 #define DEF_MAXDELAYEVENTS		60000
 #define DEF_GUILDSTARTRANK		12
 
-#define DEF_SSN_LIMIT_MULTIPLY_VALUE	2	// SSN-limit ���ϴ� �� 
+#define DEF_SSN_LIMIT_MULTIPLY_VALUE	2	// SSN-limit
 
-#define DEF_MAXNOTIFYMSGS		300			// �ִ� �������� �޽��� 
-#define DEF_MAXSKILLPOINTS		700			// ��ų ����Ʈ�� ���� 
+#define DEF_MAXNOTIFYMSGS		300
+#define DEF_MAXSKILLPOINTS		700
 #define DEF_NIGHTTIME			30
 
-#define DEF_CHARPOINTLIMIT		1000		// ������ Ư��ġ�� �ִ밪 
-#define DEF_RAGPROTECTIONTIME	7000		// �� �� �̻� ������ ������ ���� ��ȣ�� �޴��� 
-#define DEF_MAXREWARDGOLD		99999999	// �����? �ִ�ġ 
+#define DEF_CHARPOINTLIMIT		1000
+#define DEF_RAGPROTECTIONTIME	7000
+#define DEF_MAXREWARDGOLD		99999999
 
-#define DEF_ATTACKAI_NORMAL				1	// ������ ���� 
-#define DEF_ATTACKAI_EXCHANGEATTACK		2	// ��ȯ ���� - ���� 
-#define DEF_ATTACKAI_TWOBYONEATTACK		3	// 2-1 ����, ���� 
+#define DEF_ATTACKAI_NORMAL				1
+#define DEF_ATTACKAI_EXCHANGEATTACK		2
+#define DEF_ATTACKAI_TWOBYONEATTACK		3
 
 #define DEF_MAXFISHS					200
 #define DEF_MAXMINERALS					200
 #define	DEF_MAXCROPS					200
-#define DEF_MAXENGAGINGFISH				30  // �� �����⿡ ���ø� �õ��� �� �ִ� �ִ� �ο� 
-#define DEF_MAXPORTIONTYPES				500 // �ִ� ���� ���� ���� 
+#define DEF_MAXENGAGINGFISH				30
+#define DEF_MAXPORTIONTYPES				500
 
-#define DEF_SPECIALEVENTTIME			300000 //600000 // 10��
+#define DEF_SPECIALEVENTTIME			300000 // 600000 // 10
 #define DEF_MAXQUESTTYPE				200
 #define DEF_DEF_MAXHELDENIANDOOR			10
 
@@ -128,7 +126,7 @@
 #define DEF_ITEMLOG_MAGICLEARN			16
 #define DEF_ITEMLOG_USE					32
 
-#define DEF_MAXGUILDS					1000 // ���ÿ� ������ �� �ִ� ����
+#define DEF_MAXGUILDS					1000
 
 #define DEF_MAXGATESERVERSTOCKMSGSIZE	10000
 
@@ -137,25 +135,24 @@
 #define DEF_MAXAPOCALYPSE				7
 #define DEF_MAXHELDENIAN				10
 
-//v1.4311-3  �������� �ִ� ����
 #define DEF_MAXFIGHTZONE 10
 
 //============================
-#define DEF_MINIMUMHITRATIO 15				// ���� ���� Ȯ�� 
+#define DEF_MINIMUMHITRATIO 15
 //============================		
 
 //============================
-#define DEF_MAXIMUMHITRATIO	99				// �ִ� ���� Ȯ��
+#define DEF_MAXIMUMHITRATIO	99
 //============================
 
 // DEF_PLAYERMAXLEVEL is defined in NetConstants.h
 
 //============================
 // New Changed 12/05/2004
-#define DEF_GMGMANACONSUMEUNIT	15			// Grand Magic Generator ���� ���� ����.
+#define DEF_GMGMANACONSUMEUNIT	15			// Grand Magic Generator   .
 //============================
 
-#define DEF_MAXCONSTRUCTIONPOINT 30000		// �ִ� ��ȯ ����Ʈ 
+#define DEF_MAXCONSTRUCTIONPOINT 30000
 #define DEF_MAXSUMMONPOINTS		 30000
 #define DEF_MAXWARCONTRIBUTION	 200000
 
@@ -163,7 +160,7 @@
 // MOG Definitions - 3.51
 // Level up MSG
 #define MSGID_LEVELUPSETTINGS				0x11A01000
-// 2003-04-14 ���� ����Ʈ�� ���� ������ ���� �ִ�...
+// 2003-04-14      ...
 // Stat Point Change MSG
 #define MSGID_STATECHANGEPOINT				0x11A01001
 
@@ -632,7 +629,6 @@ public:
 	void RequestCivilRightHandler(int iClientH, char * pData);
 	bool bCheckLimitedUser(int iClientH);
 	void LevelUpSettingsHandler(int iClientH, char * pData, uint32_t dwMsgSize);
-	// v1.4311-3 ���� �Լ�  ������ ���� �Լ� ���� FightzoneReserveHandler
 	void FightzoneReserveHandler(int iClientH, char * pData, uint32_t dwMsgSize);
 	bool bCheckLevelUp(int iClientH);
 	uint32_t iGetLevelExp(int iLevel);
@@ -815,8 +811,8 @@ public:
 
 	// Shop system - server sends shop contents to client by item IDs
 	bool m_bIsShopDataAvailable;
-	std::map<int, int> m_NpcShopMappings;        // npc_type → shop_id
-	std::map<int, ShopData> m_ShopData;          // shop_id → ShopData
+	std::map<int, int> m_NpcShopMappings;        // npc_type  shop_id
+	std::map<int, ShopData> m_ShopData;          // shop_id  ShopData
 	class CItem   * m_pItemConfigList[DEF_MAXITEMTYPES];
 	class CNpc    * m_pNpcConfigList[DEF_MAXNPCTYPES];
 	class CMagic  * m_pMagicConfigList[DEF_MAXMAGICTYPE];
@@ -875,8 +871,8 @@ public:
 	class CMineral * m_pMineral[DEF_MAXMINERALS];
 
 	int   m_iMiddlelandMapIndex; 
-	int   m_iAresdenMapIndex;		// �Ʒ����� �� �ε��� 
-	int	  m_iElvineMapIndex;		// ������ �� �ε���
+	int   m_iAresdenMapIndex;
+	int	  m_iElvineMapIndex;
 	int   m_iBTFieldMapIndex;
 	int   m_iGodHMapIndex;
 	int   m_iAresdenOccupyTiles;
@@ -913,7 +909,7 @@ public:
 	uint32_t  m_dwMapSectorInfoTime;
 	int    m_iMapSectorInfoUpdateCount;
 
-	// Crusade ó����
+	// Crusade
 	int	   m_iCrusadeCount;	
 	bool   m_bIsCrusadeMode;		
 	bool   m_bIsApocalypseMode;
@@ -929,7 +925,6 @@ public:
 	int m_iAresdenMana, m_iElvineMana;
 
 	class CTeleportLoc m_pGuildTeleportLoc[DEF_MAXGUILDS];
-	//
 
 	uint16_t  m_wServerID_GSS;
 	char  m_cGateServerStockMsg[DEF_MAXGATESERVERSTOCKMSGSIZE];
