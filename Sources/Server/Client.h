@@ -402,5 +402,6 @@ public:
 	char m_cSaveCount;
 
 	uint32_t m_dwLastConfigRequestTime = 0;
+	uint32_t m_dwLastDamageTakenTime = 0;
 
 };

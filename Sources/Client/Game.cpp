@@ -2169,6 +2169,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		} else {
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
 		}
+
+		m_bConfigsReady = true;
+		if (m_bInitDataReady) {
+			GameModeManager::set_screen<Screen_OnGame>();
+			m_bInitDataReady = false;
+		}
 	}
 	break;
 
@@ -2703,6 +2709,8 @@ void CGame::InitGameSettings()
 
 	for (int r = 0; r < 3; r++) m_eConfigRetry[r] = ConfigRetryLevel::None;
 	m_dwConfigRequestTime = 0;
+	m_bInitDataReady = false;
+	m_bConfigsReady = false;
 
 	m_pPlayer->m_bIsCombatMode = false;
 
@@ -17349,7 +17357,13 @@ void CGame::InitDataResponseHandler(char* pData)
 		// ------------------------------------------------------------------------+
 
 	m_bIsServerChanging = false;
-	GameModeManager::set_screen<Screen_OnGame>();
+
+	// Wait for configs before entering the game world
+	m_bInitDataReady = true;
+	if (m_bConfigsReady) {
+		GameModeManager::set_screen<Screen_OnGame>();
+		m_bInitDataReady = false;
+	}
 
 	//v1.41
 	if ((m_pPlayer->m_sPlayerAppr2 & 0xF000) != 0)

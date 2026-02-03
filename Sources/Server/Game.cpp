@@ -11671,6 +11671,17 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	if ((m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::LeftHand)] != -1) ||
 		(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)] != -1)) return;
 
+	// Reject spell if the cast was interrupted by damage (sentinel value -1)
+	// or if the player took damage during the cast window (covers network race)
+	if ((bItemEffect == false) && (m_pClientList[iClientH]->m_iSpellCount == -1)) {
+		m_pClientList[iClientH]->m_iSpellCount = 0;
+		return;
+	}
+	if ((bItemEffect == false) && (m_pClientList[iClientH]->m_dwLastDamageTakenTime != 0) &&
+		(dwTime - m_pClientList[iClientH]->m_dwLastDamageTakenTime < 3000)) {
+		return;
+	}
+
 	if ((m_pClientList[iClientH]->m_iSpellCount > 1) && (bItemEffect == false)) {
 		try
 		{
@@ -19309,10 +19320,13 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 
 		m_pClientList[sTargetH]->m_iHP -= iDamage;
 		// Interrupt spell casting on damage
-		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
-			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
-			m_pClientList[sTargetH]->m_iSpellCount = 0;
-			SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+		if (iDamage > 0) {
+			m_pClientList[sTargetH]->m_dwLastDamageTakenTime = GameClock::GetTimeMS();
+			if (m_pClientList[sTargetH]->m_bMagicPauseTime) {
+				m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+				m_pClientList[sTargetH]->m_iSpellCount = -1;
+				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+			}
 		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			ClientKilledHandler(sTargetH, sAttackerH, cAttackerType, iDamage);
@@ -19808,10 +19822,13 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 
 		m_pClientList[sTargetH]->m_iHP -= iDamage;
 		// Interrupt spell casting on damage
-		if (iDamage > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
-			m_pClientList[sTargetH]->m_bMagicPauseTime = false;
-			m_pClientList[sTargetH]->m_iSpellCount = 0;
-			SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+		if (iDamage > 0) {
+			m_pClientList[sTargetH]->m_dwLastDamageTakenTime = GameClock::GetTimeMS();
+			if (m_pClientList[sTargetH]->m_bMagicPauseTime) {
+				m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+				m_pClientList[sTargetH]->m_iSpellCount = -1;
+				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+			}
 		}
 		if (m_pClientList[sTargetH]->m_iHP <= 0) {
 			// �÷��̾ ����ߴ�.
@@ -37943,10 +37960,13 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 
 				m_pClientList[sTargetH]->m_iHP -= iAP_SM;
 				// Interrupt spell casting on damage
-				if (iAP_SM > 0 && m_pClientList[sTargetH]->m_bMagicPauseTime) {
-					m_pClientList[sTargetH]->m_bMagicPauseTime = false;
-					m_pClientList[sTargetH]->m_iSpellCount = 0;
-					SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+				if (iAP_SM > 0) {
+					m_pClientList[sTargetH]->m_dwLastDamageTakenTime = GameClock::GetTimeMS();
+					if (m_pClientList[sTargetH]->m_bMagicPauseTime) {
+						m_pClientList[sTargetH]->m_bMagicPauseTime = false;
+						m_pClientList[sTargetH]->m_iSpellCount = -1;
+						SendNotifyMsg(0, sTargetH, DEF_NOTIFY_SPELLINTERRUPTED, 0, 0, 0, 0);
+					}
 				}
 				if (m_pClientList[sTargetH]->m_iHP <= 0) {
 					if (cAttackerType == DEF_OWNERTYPE_PLAYER)

@@ -619,6 +619,9 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	uint32_t m_dwConfigRequestTime = 0;
 	static constexpr uint32_t CONFIG_REQUEST_TIMEOUT_MS = 10000;
 
+	bool m_bInitDataReady = false;      // RESPONSE_INITDATA received, waiting for configs
+	bool m_bConfigsReady = false;       // All configs loaded, safe to enter game
+
 	bool _EnsureConfigLoaded(int type);
 	bool _TryReplayCacheForConfig(int type);
 	void _RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills);
