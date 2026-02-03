@@ -16866,7 +16866,9 @@ MOTION_COMMAND_PROCESS:;
 				DEF_OBJECTMAGIC, m_iCastingMagicType, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-			m_bIsGetPointingMode = true;
+			// Only enter targeting mode if the cast wasn't interrupted by damage
+			if (m_iPointCommandType >= 100 && m_iPointCommandType < 200)
+				m_bIsGetPointingMode = true;
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			_RemoveChatMsgListByObjectID(m_pPlayer->m_sPlayerObjectID);
 			for (i = 1; i < DEF_MAXCHATMSGS; i++)
@@ -17476,6 +17478,9 @@ void CGame::MotionEventHandler(char* pData)
 	case DEF_OBJECTDAMAGEMOVE:
 		if (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0)
 		{
+			// Cancel spell casting if in the animation phase (DEF_OBJECTMAGIC)
+			if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMAGIC)
+				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			m_bIsGetPointingMode = false;
 			m_iPointCommandType = -1;
 			ClearSkillUsingStatus();

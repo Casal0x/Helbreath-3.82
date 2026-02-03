@@ -11606,7 +11606,33 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 
 	if ((bItemEffect == false) && (m_pClientList[iClientH]->m_cMagicMastery[sType] != 1)) return;
 
-	if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsAttackEnabled == false) && (m_pClientList[iClientH]->m_iAdminUserLevel == 0)) return;
+	// Only block offensive magic in no-attack zones; allow friendly spells (healing, buffs, teleport, create, etc.)
+	if ((m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsAttackEnabled == false) && (m_pClientList[iClientH]->m_iAdminUserLevel == 0)
+		&& sType != 14)
+	{
+
+		switch (m_pMagicConfigList[sType]->m_sType)
+		{
+		case DEF_MAGICTYPE_DAMAGE_SPOT:
+		case DEF_MAGICTYPE_DAMAGE_AREA:
+		case DEF_MAGICTYPE_SPDOWN_SPOT:
+		case DEF_MAGICTYPE_SPDOWN_AREA:
+		case DEF_MAGICTYPE_HOLDOBJECT:
+		case DEF_MAGICTYPE_POSSESSION:
+		case DEF_MAGICTYPE_CONFUSE:
+		case DEF_MAGICTYPE_POISON:
+		case DEF_MAGICTYPE_DAMAGE_LINEAR:
+		case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT:
+		case DEF_MAGICTYPE_TREMOR:
+		case DEF_MAGICTYPE_ICE:
+		case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT_SPDOWN:
+		case DEF_MAGICTYPE_ICE_LINEAR:
+		case DEF_MAGICTYPE_DAMAGE_AREA_ARMOR_BREAK:
+		case DEF_MAGICTYPE_DAMAGE_LINEAR_SPDOWN:
+		case DEF_MAGICTYPE_INHIBITION:
+			return;
+		}
+	}
 	//if ((var_874 ) && (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsHeldenianMap ) && (m_pMagicConfigList[sType]->m_sType != 8)) return;
 
 	if (((m_pClientList[iClientH]->m_iStatus & hb::status::InhibitionCasting) != 0) && (bItemEffect != true)) {
