@@ -137,6 +137,7 @@ void CGame::WriteSettings()
 
 CGame::CGame()
 {
+	m_pIOPool = std::make_unique<IOServicePool>(0);  // 0 threads = manual poll mode
 	m_pInputBuffer = nullptr;
 	m_Renderer = nullptr;
 	m_dialogBoxManager.Initialize(this);
@@ -9235,7 +9236,7 @@ void CGame::LogResponseHandler(char* pData)
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
 
-		m_pGSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
+		m_pGSock = std::make_unique<ASIOSocket>(m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
 		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	}
@@ -17235,6 +17236,7 @@ void CGame::InitDataResponseHandler(char* pData)
 
 		// ------------------------------------------------------------------------+
 
+	m_bIsServerChanging = false;
 	GameModeManager::set_screen<Screen_OnGame>();
 
 	//v1.41

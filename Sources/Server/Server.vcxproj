@@ -341,6 +341,7 @@
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="wmain.cpp" />
     <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
     <ClCompile Include="ServerConsole.cpp" />
     <ClCompile Include="ServerCommand.cpp" />
     <ClCompile Include="CmdHelp.cpp" />

@@ -16,12 +16,12 @@ extern char G_cTxt[512];
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CClient::CClient(HWND hWnd)
+CClient::CClient(asio::io_context& ctx)
 {
  int i;
 
 	m_pXSock = 0;
-	m_pXSock = new class ASIOSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
+	m_pXSock = new class ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
 	m_pXSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
 	std::memset(m_cProfile, 0, sizeof(m_cProfile));

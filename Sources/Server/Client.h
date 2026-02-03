@@ -66,7 +66,7 @@ public:
 	uint32_t m_dwLastFullObjectId;
 	uint32_t m_dwLastFullObjectTime;
 
-	CClient(HWND hWnd);
+	CClient(asio::io_context& ctx);
 	virtual ~CClient();
 
 	char m_cCharName[DEF_ACCOUNT_NAME];

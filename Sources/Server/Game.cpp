@@ -209,9 +209,6 @@ CGame::CGame(HWND hWnd)
 	m_pEntityManager->SetMapList(m_pMapList, DEF_MAXMAPS);
 	m_pEntityManager->SetGame(this);
 
-	for (i = 0; i < DEF_MSGQUENESIZE; i++)
-		m_pMsgQuene[i] = 0;
-
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
 		m_pMagicConfigList[i] = 0;
 
@@ -259,9 +256,6 @@ CGame::CGame(HWND hWnd)
 		for (x = 0; x < DEF_MAXPARTYMEMBERS; x++)
 			m_stPartyInfo[i].iIndex[x] = 0;
 	}
-
-	m_iQueneHead = 0;
-	m_iQueneTail = 0;
 
 	m_iTotalClients = 0;
 	m_iMaxClients = 0;
@@ -358,7 +352,7 @@ bool CGame::bAcceptLogin(ASIOSocket* sock)
 		auto& p = _lclients[i];
 		if (!p)
 		{
-			p = new LoginClient(m_hWnd);
+			p = new LoginClient(G_pIOPool->GetContext());
 			sock->bAccept(p->_sock);  // MODERNIZED: Removed WM_USER_BOT_ACCEPT message ID
 			std::memset(p->_ip, 0, sizeof(p->_ip));
 			p->_sock->iGetPeerAddress(p->_ip);
@@ -369,7 +363,7 @@ bool CGame::bAcceptLogin(ASIOSocket* sock)
 CLOSE_ANYWAY:
 
 	// MODERNIZED: Removed m_hWnd parameter
-	auto pTmpSock = new ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	auto pTmpSock = new ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	sock->bAccept(pTmpSock);
 	delete pTmpSock;
 
@@ -389,7 +383,7 @@ bool CGame::bAccept(class ASIOSocket* pXSock)
 	for (i = 1; i < DEF_MAXCLIENTS; i++)
 		if (m_pClientList[i] == 0) {
 
-			m_pClientList[i] = new class CClient(m_hWnd);
+			m_pClientList[i] = new class CClient(G_pIOPool->GetContext());
 			bAddClientShortCut(i);
 			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
 				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
@@ -455,7 +449,7 @@ bool CGame::bAccept(class ASIOSocket* pXSock)
 
 CLOSE_ANYWAY:
 
-	pTmpSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	pTmpSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	pXSock->bAccept(pTmpSock);
 	delete pTmpSock;
 
@@ -468,6 +462,130 @@ CLOSE_CONN:
 	return false;
 }
 
+bool CGame::bAcceptLoginFromAsync(asio::ip::tcp::socket&& peer)
+{
+	if (m_bIsGameStarted == false) return false;
+
+	for (int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++)
+	{
+		auto& p = _lclients[i];
+		if (!p)
+		{
+			p = new LoginClient(G_pIOPool->GetContext());
+			p->_sock->bAcceptFromSocket(std::move(peer));
+			std::memset(p->_ip, 0, sizeof(p->_ip));
+			p->_sock->iGetPeerAddress(p->_ip);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
+{
+	int i, iTotalip = 0, a;
+	char cIPtoBan[21];
+	FILE* pFile;
+
+	if (m_bIsGameStarted == false) return false;
+
+	for (i = 1; i < DEF_MAXCLIENTS; i++)
+		if (m_pClientList[i] == 0) {
+
+			m_pClientList[i] = new class CClient(G_pIOPool->GetContext());
+			bAddClientShortCut(i);
+			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
+				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
+				m_pClientList[i]->m_dwTime = m_pClientList[i]->m_dwHungerTime = m_pClientList[i]->m_dwExpStockTime =
+				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime = GameClock::GetTimeMS();
+
+			m_pClientList[i]->m_pXSock->bAcceptFromSocket(std::move(peer));
+
+			std::memset(m_pClientList[i]->m_cIPaddress, 0, sizeof(m_pClientList[i]->m_cIPaddress));
+			m_pClientList[i]->m_pXSock->iGetPeerAddress(m_pClientList[i]->m_cIPaddress);
+
+			a = i;
+
+			for (int v = 0; v < DEF_MAXBANNED; v++)
+			{
+				if (strcmp(m_stBannedList[v].m_cBannedIPaddress, m_pClientList[i]->m_cIPaddress) == 0)
+				{
+					goto CLOSE_CONN_ASYNC;
+				}
+			}
+
+			for (int j = 0; j < DEF_MAXCLIENTS; j++) {
+				if (m_pClientList[j] != 0) {
+					if (strcmp(m_pClientList[j]->m_cIPaddress, m_pClientList[i]->m_cIPaddress) == 0) iTotalip++;
+				}
+			}
+			if (iTotalip > 9) {
+				std::memset(cIPtoBan, 0, sizeof(cIPtoBan));
+				strcpy(cIPtoBan, m_pClientList[i]->m_cIPaddress);
+				pFile = fopen("GameConfigs\\BannedList.cfg", "a");
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> IP Banned: (%s)", i, cIPtoBan);
+				PutLogList(G_cTxt);
+				fprintf(pFile, "banned-ip = %s", cIPtoBan);
+				fprintf(pFile, "\n");
+				fclose(pFile);
+
+				for (int x = 0; x < DEF_MAXBANNED; x++)
+					if (strlen(m_stBannedList[x].m_cBannedIPaddress) == 0)
+						strcpy(m_stBannedList[x].m_cBannedIPaddress, cIPtoBan);
+
+				goto CLOSE_CONN_ASYNC;
+			}
+
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Client Connected: (%s)", i, m_pClientList[i]->m_cIPaddress);
+			PutLogList(G_cTxt);
+
+			m_iTotalClients++;
+
+			if (m_iTotalClients > m_iMaxClients) {
+				m_iMaxClients = m_iTotalClients;
+			}
+
+			// Set up async callbacks and start async read
+			m_pClientList[i]->m_pXSock->SetSocketIndex(i);
+			{
+				ASIOSocket* pSock = m_pClientList[i]->m_pXSock;
+				m_pClientList[i]->m_pXSock->SetCallbacks(
+					[this, pSock](int idx, const char* data, uint32_t size, char key) {
+						// Fast-track ping: respond immediately from I/O thread for accurate latency
+						if (size >= sizeof(hb::net::PacketCommandCheckConnection)) {
+							const auto* hdr = reinterpret_cast<const hb::net::PacketHeader*>(data);
+							if (hdr->msg_id == MSGID_COMMAND_CHECKCONNECTION) {
+								const auto* ping = reinterpret_cast<const hb::net::PacketCommandCheckConnection*>(data);
+								hb::net::PacketCommandCheckConnection resp{};
+								resp.header.msg_id = MSGID_COMMAND_CHECKCONNECTION;
+								resp.header.msg_type = DEF_MSGTYPE_CONFIRM;
+								resp.time_ms = ping->time_ms;
+								pSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
+								// Still queue it so MsgProcess updates m_dwTime and timeout tracking
+							}
+						}
+						bPutMsgQuene(DEF_MSGFROM_CLIENT, (char*)data, size, idx, key);
+					},
+					[](int idx, int err) {
+						extern ConcurrentQueue<SocketErrorEvent> G_errorQueue;
+						G_errorQueue.Push(SocketErrorEvent{idx, err});
+					}
+				);
+			}
+			m_pClientList[i]->m_pXSock->StartAsyncRead();
+
+			return true;
+		}
+
+	return false;
+
+CLOSE_CONN_ASYNC:
+	delete m_pClientList[a];
+	m_pClientList[a] = 0;
+	RemoveClientShortCut(a);
+	return false;
+}
 
 // MODERNIZED: No longer uses window messages, directly polls socket
 void CGame::OnClientSocketEvent(int iClientH)
@@ -706,9 +824,6 @@ bool CGame::bInit()
 	for (i = 0; i < DEF_MAXNPCS; i++)
 		m_pNpcList[i] = 0;
 
-	for (i = 0; i < DEF_MSGQUENESIZE; i++)
-		m_pMsgQuene[i] = 0;
-
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
 		m_pMagicConfigList[i] = 0;
 
@@ -773,9 +888,6 @@ bool CGame::bInit()
 	m_iTotalMiddleCrusadeStructures = 0;
 
 	m_pNoticementData = 0;
-
-	m_iQueneHead = 0;
-	m_iQueneTail = 0;
 
 	m_iTotalClients = 0;
 	m_iMaxClients = 0;
@@ -912,7 +1024,7 @@ bool CGame::bInit()
 	//std::snprintf(cTxt, sizeof(cTxt), "(!) Try to Connect Gate Server... Addr:%s  Port:%d", m_cGateServerAddr, m_iGateServerPort);
 	//PutLogList(cTxt);
 
-	_lsock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
+	_lsock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	_lsock->bConnect(m_cLoginListenIP, m_iLoginListenPort);  // MODERNIZED: Removed WM_ONLOGSOCKETEVENT
 	_lsock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -3180,6 +3292,10 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 
 
 	m_iTotalClients--;
+
+	// Cancel async operations before freeing the socket
+	if (m_pClientList[iClientH]->m_pXSock != 0)
+		m_pClientList[iClientH]->m_pXSock->CancelAsync();
 
 	delete m_pClientList[iClientH];
 	m_pClientList[iClientH] = 0;
@@ -6156,18 +6272,20 @@ void CGame::MsgProcess()
 			//	break;
 
 		case DEF_MSGFROM_CLIENT: {
-			/*m_pClientList[iClientH]->m_cConnectionCheck++;
-			if (m_pClientList[iClientH]->m_cConnectionCheck > 3) {
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Client Hex Edit: (%s) Player: (%s) - has removed 3203203 (check connection handler).", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-				PutHackLogFileList(G_cTxt);
-				DeleteClient(iClientH, true, true);
-				break;
-			}*/
+			if (m_pClientList[iClientH] == nullptr) break;
+
+			// Update activity tracking (async reads bypass OnClientSocketEvent)
+			m_pClientList[iClientH]->m_dwTime = dwTime;
 
 			const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
 				pData, sizeof(hb::net::PacketHeader));
 			if (!header) break;
-			switch (header->msg_id) { // 84148741
+
+			m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
+			m_pClientList[iClientH]->m_dwLastMsgTime = dwTime;
+			m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+
+			switch (header->msg_id) {
 
 			case DEF_REQUEST_ANGEL: // Angels by Snoopy...
 				GetAngelHandler(iClientH, pData, dwMsgSize);
@@ -6269,7 +6387,9 @@ void CGame::MsgProcess()
 				break;
 
 			case MSGID_COMMAND_CHECKCONNECTION:
-				CheckConnectionHandler(iClientH, pData);
+				// Ping response already sent from I/O thread for accurate latency.
+				// Still run handler for speedhack detection (skip duplicate send).
+				CheckConnectionHandler(iClientH, pData, true);
 				break;
 
 			case MSGID_COMMAND_CHATMSG:
@@ -6475,53 +6595,13 @@ void CGame::MsgProcess()
 
 bool CGame::bPutMsgQuene(char cFrom, char* pData, uint32_t dwMsgSize, int iIndex, char cKey)
 {
-	/*
-	HANDLE hMutex;
-
-	hMutex = OpenMutex(MUTEX_ALL_ACCESS, false, m_cRealmName);
-	if (hMutex != 0) return false; // ¹ÂÅØ½º°¡ »ý¼ºµÇ¾î ÀÖ´Ù. ¾îµð¼±°¡ Å¥¸¦ Á¶ÀÛÁßÀÌ´Ù. ±×³É ¸®ÅÏ
-
-	hMutex = CreateMutex(0, false, m_cRealmName);
-	*/
-	if (m_pMsgQuene[m_iQueneTail] != 0) return false;
-
-	m_pMsgQuene[m_iQueneTail] = new class CMsg;
-	if (m_pMsgQuene[m_iQueneTail] == 0) return false;
-
-	if (m_pMsgQuene[m_iQueneTail]->bPut(cFrom, pData, dwMsgSize, iIndex, cKey) == false) return false;
-
-	m_iQueneTail++;
-	if (m_iQueneTail >= DEF_MSGQUENESIZE) m_iQueneTail = 0;
-
-	//ReleaseMutex(hMutex);
-
-	return true;
+	return m_msgQueue.Push(cFrom, pData, dwMsgSize, iIndex, cKey);
 }
 
 
 bool CGame::bGetMsgQuene(char* pFrom, char* pData, uint32_t* pMsgSize, int* pIndex, char* pKey)
 {
-	/*
-	HANDLE hMutex;
-
-	hMutex = OpenMutex(MUTEX_ALL_ACCESS, false, m_cRealmName);
-	if (hMutex != 0) return false;
-
-	hMutex = CreateMutex(0, false, m_cRealmName);
-	*/
-	if (m_pMsgQuene[m_iQueneHead] == 0) return false;
-
-	m_pMsgQuene[m_iQueneHead]->Get(pFrom, pData, pMsgSize, pIndex, pKey);
-
-	delete m_pMsgQuene[m_iQueneHead];
-	m_pMsgQuene[m_iQueneHead] = 0;
-
-	m_iQueneHead++;
-	if (m_iQueneHead >= DEF_MSGQUENESIZE) m_iQueneHead = 0;
-
-	//ReleaseMutex(hMutex);
-
-	return true;
+	return m_msgQueue.Pop(pFrom, pData, pMsgSize, pIndex, pKey);
 }
 
 
@@ -27654,7 +27734,7 @@ void CGame::OnSubLogSocketEvent(UINT message, WPARAM wParam, LPARAM lParam)
 		PutLogList(G_cTxt);
 		PutLogFileList(G_cTxt);
 
-		m_pSubLogSock[iLogSockH] = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);  // MODERNIZED: Removed m_hWnd
+		m_pSubLogSock[iLogSockH] = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 		m_pSubLogSock[iLogSockH]->bConnect(m_cLogServerAddr, m_iLogServerPort);  // MODERNIZED: Removed WM_ONLOGSOCKETEVENT
 		m_pSubLogSock[iLogSockH]->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -29943,12 +30023,11 @@ void CGame::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char cType
 	}
 }
 
-void CGame::CheckConnectionHandler(int iClientH, char* pData)
+void CGame::CheckConnectionHandler(int iClientH, char* pData, bool bAlreadyResponded)
 {
 	uint32_t dwTimeRcv, dwTime, dwTimeGapClient, dwTimeGapServer;
 
 	if (m_pClientList[iClientH] == 0) return;
-	//m_pClientList[iClientH]->m_cConnectionCheck = 0;
 
 	dwTime = GameClock::GetTimeMS();
 	const auto* req = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(pData, sizeof(hb::net::PacketCommandCheckConnection));
@@ -29970,11 +30049,13 @@ void CGame::CheckConnectionHandler(int iClientH, char* pData)
 		}
 	}
 
-	hb::net::PacketCommandCheckConnection resp{};
-	resp.header.msg_id = MSGID_COMMAND_CHECKCONNECTION;
-	resp.header.msg_type = DEF_MSGTYPE_CONFIRM;
-	resp.time_ms = dwTimeRcv;
-	m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
+	if (!bAlreadyResponded) {
+		hb::net::PacketCommandCheckConnection resp{};
+		resp.header.msg_id = MSGID_COMMAND_CHECKCONNECTION;
+		resp.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		resp.time_ms = dwTimeRcv;
+		m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&resp), sizeof(resp));
+	}
 }
 
 void CGame::SelectCrusadeDutyHandler(int iClientH, int iDuty)

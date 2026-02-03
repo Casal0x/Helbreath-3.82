@@ -89,12 +89,16 @@ void HandleSettingSuccess(CGame* pGame, char* pData)
 
 void HandleServerChange(CGame* pGame, char* pData)
 {
+	if (pGame->m_bIsServerChanging) return;
+
 	char cWorldServerAddr[16];
 	int iWorldServerPort;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyServerChange>(
 		pData, sizeof(hb::net::PacketNotifyServerChange));
 	if (!pkt) return;
+
+	pGame->m_bIsServerChanging = true;
 
 	std::memset(pGame->m_cMapName, 0, sizeof(pGame->m_cMapName));
 	std::memset(pGame->m_cMapMessage, 0, sizeof(pGame->m_cMapMessage));
@@ -106,14 +110,12 @@ void HandleServerChange(CGame* pGame, char* pData)
 	if (pGame->m_pGSock != 0)
 	{
 		pGame->m_pGSock.reset();
-		pGame->m_pGSock.reset();
 	}
 	if (pGame->m_pLSock != 0)
 	{
 		pGame->m_pLSock.reset();
-		pGame->m_pLSock.reset();
 	}
-	pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
+	pGame->m_pLSock = std::make_unique<ASIOSocket>(pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
 	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr, iWorldServerPort);
 	pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

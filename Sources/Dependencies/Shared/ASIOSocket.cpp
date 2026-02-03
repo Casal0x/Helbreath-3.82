@@ -3,6 +3,8 @@
 // Replaces the legacy XSocket (Winsock2/WSAEventSelect) with ASIO.
 // Shared between Client and Server.
 //
+// Supports both polling mode (client) and async mode (server).
+//
 //////////////////////////////////////////////////////////////////////
 
 #include "ASIOSocket.h"
@@ -15,16 +17,18 @@ using asio::ip::tcp;
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-ASIOSocket::ASIOSocket(int iBlockLimit)
-	: m_ioContext()
-	, m_socket(m_ioContext)
-	, m_acceptor(m_ioContext)
+ASIOSocket::ASIOSocket(asio::io_context& ctx, int iBlockLimit)
+	: m_ioContext(ctx)
+	, m_socket(ctx)
+	, m_acceptor(ctx)
+	, m_strand(ctx)
 	, m_iBlockLimit(iBlockLimit)
 {
 }
 
 ASIOSocket::~ASIOSocket()
 {
+	CancelAsync();
 	CloseConnection();
 }
 
@@ -33,11 +37,14 @@ bool ASIOSocket::bInitBufferSize(uint32_t dwBufferSize)
 	m_rcvBuffer.assign(dwBufferSize + 8, 0);
 	m_sndBuffer.assign(dwBufferSize + 8, 0);
 	m_dwBufferSize = dwBufferSize;
+	// Async read buffer: header (3 bytes) + max body
+	m_asyncRcvBuffer.assign(dwBufferSize + 8, 0);
 	return true;
 }
 
 //////////////////////////////////////////////////////////////////////
 // Poll - non-blocking event check (replaces WSAEventSelect + iOnSocketEvent)
+// Still used by client (manual poll mode) and for connect completion
 //////////////////////////////////////////////////////////////////////
 
 int ASIOSocket::Poll()
@@ -265,7 +272,7 @@ bool ASIOSocket::bListen(char* pAddr, int iPort)
 }
 
 //////////////////////////////////////////////////////////////////////
-// Accept - accept pending connection into target socket
+// Accept - accept pending connection into target socket (polling mode)
 //////////////////////////////////////////////////////////////////////
 
 bool ASIOSocket::bAccept(ASIOSocket* pSock)
@@ -307,7 +314,35 @@ bool ASIOSocket::bAccept(ASIOSocket* pSock)
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iOnRead - read state machine (header then body)
+// bAcceptFromSocket - accept a pre-connected socket (async accept path)
+//////////////////////////////////////////////////////////////////////
+
+bool ASIOSocket::bAcceptFromSocket(asio::ip::tcp::socket&& peer)
+{
+	asio::error_code ec;
+
+	if (m_socket.is_open()) {
+		m_socket.close(ec);
+	}
+
+	m_socket = std::move(peer);
+
+	// Configure accepted socket
+	m_socket.non_blocking(true, ec);
+
+	uint32_t bufSize = DEF_MSGBUFFERSIZE * 2;
+	m_socket.set_option(asio::socket_base::receive_buffer_size(bufSize), ec);
+	m_socket.set_option(asio::socket_base::send_buffer_size(bufSize), ec);
+	m_socket.set_option(tcp::no_delay(true), ec);
+
+	m_cType = DEF_XSOCK_NORMALSOCK;
+	m_bIsWriteEnabled = true;
+	m_bIsAvailable = true;
+	return true;
+}
+
+//////////////////////////////////////////////////////////////////////
+// _iOnRead - read state machine (header then body) - polling mode
 //////////////////////////////////////////////////////////////////////
 
 int ASIOSocket::_iOnRead()
@@ -382,7 +417,7 @@ int ASIOSocket::_iOnRead()
 }
 
 //////////////////////////////////////////////////////////////////////
-// _iSend - send with unsent queue fallback
+// _iSend - send with unsent queue fallback (polling mode)
 //////////////////////////////////////////////////////////////////////
 
 int ASIOSocket::_iSend(const char* cData, int iSize, bool bSaveFlag)
@@ -496,6 +531,7 @@ int ASIOSocket::_iSendUnsentData()
 
 //////////////////////////////////////////////////////////////////////
 // iSendMsg - send message with protocol header and optional encryption
+// (synchronous polling mode - used by client and polling server path)
 //////////////////////////////////////////////////////////////////////
 
 int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
@@ -503,6 +539,11 @@ int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
 	if (dwSize > m_dwBufferSize) return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
 	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
 	if (m_cType == 0) return DEF_XSOCKEVENT_NOTINITIALIZED;
+
+	// If async mode is active, delegate to async path
+	if (m_bAsyncMode.load(std::memory_order_relaxed)) {
+		return iSendMsgAsync(cData, dwSize, cKey);
+	}
 
 	// Build protocol message: [key:1][size:2][payload:N]
 	m_sndBuffer[0] = cKey;
@@ -536,6 +577,82 @@ int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
 }
 
 //////////////////////////////////////////////////////////////////////
+// iSendMsgAsync - async send (posts to strand, builds frame per-message)
+// Called from game thread. Errors come via error callback.
+//////////////////////////////////////////////////////////////////////
+
+int ASIOSocket::iSendMsgAsync(char* cData, uint32_t dwSize, char cKey)
+{
+	if (dwSize > m_dwBufferSize) return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
+	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
+
+	// Build frame into a per-message vector
+	std::vector<char> frame(dwSize + 3);
+	frame[0] = cKey;
+
+	uint16_t* wp = reinterpret_cast<uint16_t*>(frame.data() + 1);
+	*wp = static_cast<uint16_t>(dwSize + 3);
+
+	std::memcpy(frame.data() + 3, cData, dwSize);
+
+	// Encrypt payload if key is set
+	if (cKey != 0) {
+		for (uint32_t i = 0; i < dwSize; i++) {
+			frame[3 + i] += static_cast<char>(i ^ cKey);
+			frame[3 + i] = static_cast<char>(frame[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
+		}
+	}
+
+	// Post to strand to serialize with other writes
+	asio::post(m_strand, [this, buf = std::move(frame)]() mutable {
+		bool wasEmpty = m_asyncWriteQueue.empty();
+		if (m_asyncWriteQueue.size() >= MAX_ASYNC_WRITE_QUEUE) {
+			// Queue full - invoke error callback
+			if (m_onError) {
+				m_onError(m_iSocketIndex, DEF_XSOCKEVENT_QUENEFULL);
+			}
+			return;
+		}
+		m_asyncWriteQueue.push_back(std::move(buf));
+		if (wasEmpty && !m_bAsyncWriteInProgress) {
+			_DoAsyncWrite();
+		}
+	});
+
+	// Return optimistic success
+	return static_cast<int>(dwSize);
+}
+
+//////////////////////////////////////////////////////////////////////
+// _DoAsyncWrite - drain async write queue (runs on strand)
+//////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::_DoAsyncWrite()
+{
+	if (m_asyncWriteQueue.empty()) {
+		m_bAsyncWriteInProgress = false;
+		return;
+	}
+
+	m_bAsyncWriteInProgress = true;
+	auto& front = m_asyncWriteQueue.front();
+
+	asio::async_write(m_socket, asio::buffer(front.data(), front.size()),
+		asio::bind_executor(m_strand,
+			[this](const asio::error_code& ec, std::size_t /*bytesWritten*/) {
+				if (ec) {
+					m_bAsyncWriteInProgress = false;
+					if (m_onError) {
+						m_onError(m_iSocketIndex, DEF_XSOCKEVENT_SOCKETERROR);
+					}
+					return;
+				}
+				m_asyncWriteQueue.pop_front();
+				_DoAsyncWrite();
+			}));
+}
+
+//////////////////////////////////////////////////////////////////////
 // iSendMsgBlockingMode - blocking send for shutdown phase
 //////////////////////////////////////////////////////////////////////
 
@@ -558,7 +675,7 @@ int ASIOSocket::iSendMsgBlockingMode(char* buf, int nbytes)
 }
 
 //////////////////////////////////////////////////////////////////////
-// pGetRcvDataPointer - get received message with decryption
+// pGetRcvDataPointer - get received message with decryption (polling mode)
 //////////////////////////////////////////////////////////////////////
 
 char* ASIOSocket::pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey)
@@ -671,6 +788,10 @@ void ASIOSocket::CloseConnection()
 {
 	asio::error_code ec;
 
+	if (m_acceptor.is_open()) {
+		m_acceptor.close(ec);
+	}
+
 	if (!m_socket.is_open()) return;
 
 	// Shutdown send side
@@ -688,5 +809,153 @@ void ASIOSocket::CloseConnection()
 }
 
 //////////////////////////////////////////////////////////////////////
-// bListen / bAccept already defined above
+// CancelAsync - cancel all pending async operations
 //////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::CancelAsync()
+{
+	m_bAsyncMode.store(false, std::memory_order_relaxed);
+
+	asio::error_code ec;
+	if (m_socket.is_open()) {
+		m_socket.cancel(ec);
+	}
+	if (m_acceptor.is_open()) {
+		m_acceptor.cancel(ec);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// SetCallbacks - set async message and error callbacks
+//////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::SetCallbacks(MessageCallback onMessage, ErrorCallback onError)
+{
+	m_onMessage = std::move(onMessage);
+	m_onError = std::move(onError);
+}
+
+//////////////////////////////////////////////////////////////////////
+// StartAsyncRead - begin async read chain (header -> body -> callback -> repeat)
+//////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::StartAsyncRead()
+{
+	m_bAsyncMode.store(true, std::memory_order_relaxed);
+	_DoAsyncReadHeader();
+}
+
+void ASIOSocket::_DoAsyncReadHeader()
+{
+	// Read exactly 3 bytes: [key:1][size:2]
+	asio::async_read(m_socket, asio::buffer(m_asyncRcvBuffer.data(), 3),
+		asio::bind_executor(m_strand,
+			[this](const asio::error_code& ec, std::size_t /*bytesRead*/) {
+				if (ec) {
+					if (m_onError) {
+						int errCode = DEF_XSOCKEVENT_SOCKETERROR;
+						if (ec == asio::error::eof || ec == asio::error::connection_reset ||
+							ec == asio::error::connection_aborted || ec == asio::error::operation_aborted) {
+							errCode = DEF_XSOCKEVENT_SOCKETCLOSED;
+						}
+						m_onError(m_iSocketIndex, errCode);
+					}
+					return;
+				}
+
+				// Parse header: byte 0 = key, bytes 1-2 = total size (including header)
+				uint16_t* wp = reinterpret_cast<uint16_t*>(m_asyncRcvBuffer.data() + 1);
+				uint32_t totalSize = static_cast<uint32_t>(*wp);
+
+				if (totalSize <= 3) {
+					// Header-only message (no body)
+					char cKey = m_asyncRcvBuffer[0];
+					if (m_onMessage) {
+						m_onMessage(m_iSocketIndex, nullptr, 0, cKey);
+					}
+					_DoAsyncReadHeader();
+					return;
+				}
+
+				uint32_t bodySize = totalSize - 3;
+				if (bodySize > m_dwBufferSize) {
+					// Message too large
+					if (m_onError) {
+						m_onError(m_iSocketIndex, DEF_XSOCKEVENT_MSGSIZETOOLARGE);
+					}
+					return;
+				}
+
+				_DoAsyncReadBody(bodySize);
+			}));
+}
+
+void ASIOSocket::_DoAsyncReadBody(uint32_t bodySize)
+{
+	// Read body into buffer starting at offset 3 (after header)
+	asio::async_read(m_socket, asio::buffer(m_asyncRcvBuffer.data() + 3, bodySize),
+		asio::bind_executor(m_strand,
+			[this, bodySize](const asio::error_code& ec, std::size_t /*bytesRead*/) {
+				if (ec) {
+					if (m_onError) {
+						int errCode = DEF_XSOCKEVENT_SOCKETERROR;
+						if (ec == asio::error::eof || ec == asio::error::connection_reset ||
+							ec == asio::error::connection_aborted || ec == asio::error::operation_aborted) {
+							errCode = DEF_XSOCKEVENT_SOCKETCLOSED;
+						}
+						m_onError(m_iSocketIndex, errCode);
+					}
+					return;
+				}
+
+				// Decrypt payload
+				char cKey = m_asyncRcvBuffer[0];
+				if (cKey != 0) {
+					for (uint32_t i = 0; i < bodySize; i++) {
+						m_asyncRcvBuffer[3 + i] = static_cast<char>(
+							m_asyncRcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(bodySize - i)));
+						m_asyncRcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
+					}
+				}
+
+				// Deliver message via callback
+				if (m_onMessage) {
+					m_onMessage(m_iSocketIndex, m_asyncRcvBuffer.data() + 3, bodySize, cKey);
+				}
+
+				// Chain to next header read
+				_DoAsyncReadHeader();
+			}));
+}
+
+//////////////////////////////////////////////////////////////////////
+// StartAsyncAccept - begin async accept loop on listen socket
+//////////////////////////////////////////////////////////////////////
+
+void ASIOSocket::StartAsyncAccept(AcceptCallback callback)
+{
+	if (m_cType != DEF_XSOCK_LISTENSOCK) return;
+
+	m_onAccept = std::move(callback);
+	m_bAsyncMode.store(true, std::memory_order_relaxed);
+
+	// Start the accept loop
+	auto doAccept = [this]() {
+		m_acceptor.async_accept(
+			[this](const asio::error_code& ec, tcp::socket peer) {
+				if (!ec) {
+					if (m_onAccept) {
+						m_onAccept(std::move(peer));
+					}
+				}
+				else if (ec == asio::error::operation_aborted) {
+					return; // Shutting down
+				}
+				// Continue accepting (even after errors like too many open files)
+				if (m_bAsyncMode.load(std::memory_order_relaxed)) {
+					StartAsyncAccept(m_onAccept);
+				}
+			});
+	};
+	doAccept();
+}

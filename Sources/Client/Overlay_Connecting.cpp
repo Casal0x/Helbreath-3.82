@@ -47,6 +47,8 @@ void Overlay_Connecting::on_update()
                 m_pGame->m_pGSock.reset();
             }
 
+            m_pGame->m_bIsServerChanging = false;
+
             // Clear overlay - base screen (Login, SelectCharacter, etc.) will be revealed
             clear_overlay();
             return;

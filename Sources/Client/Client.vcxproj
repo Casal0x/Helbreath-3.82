@@ -585,6 +585,7 @@
     <ClCompile Include="Wmain.cpp" />
     <ClCompile Include="GameWindowHandler.cpp" />
     <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" />
+    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />

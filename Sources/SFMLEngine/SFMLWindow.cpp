@@ -109,8 +109,9 @@ bool SFMLWindow::IsOpen() const
 
 void SFMLWindow::Close()
 {
-    if (m_pEventHandler)
-        m_pEventHandler->OnClose();
+    // Don't call m_pEventHandler->OnClose() here — that creates infinite recursion
+    // since OnClose() may call Window::Close(). OnClose() is only called from the
+    // SFML event loop when the user clicks the close button.
     m_open = false;
     m_renderWindow.close();
 }

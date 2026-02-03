@@ -30,6 +30,7 @@
 #include "BitmapFontFactory.h"
 #include "IInput.h"
 #include "ASIOSocket.h"
+#include "IOServicePool.h"
 #include "SpriteID.h"
 #include "Misc.h"
 #include "ChatMsg.h"
@@ -448,6 +449,7 @@ void _LoadShopMenuContents(char cType);
 
 	std::unique_ptr<CPlayer> m_pPlayer;  // Main player data
 	std::unique_ptr<class CMapData> m_pMapData;
+	std::unique_ptr<IOServicePool> m_pIOPool;  // 0 threads = manual poll mode for client
 	std::unique_ptr<class ASIOSocket> m_pGSock;
 	std::unique_ptr<class ASIOSocket> m_pLSock;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATMSGS> m_pChatMsgList;
@@ -504,6 +506,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	bool m_bIsWhetherEffect;
 	bool m_bIsObserverMode, m_bIsObserverCommanded;
 		bool m_bIsFirstConn;
+	bool m_bIsServerChanging = false;
 	bool m_bIsCrusadeMode;
 		bool m_bInputStatus;
 	bool m_bIsSpecial;

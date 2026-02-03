@@ -36,6 +36,8 @@
 #include "ChatLog.h"
 #include "ItemLog.h"
 #include "GameChatCommand.h"
+#include "IOServicePool.h"
+#include "ConcurrentMsgQueue.h"
 
 void PutAdminLogFileList(char* cStr);
 void PutHackLogFileList(char* cStr);
@@ -59,6 +61,16 @@ class ASIOSocket* G_pLogSock = 0;
 class CGame* G_pGame = 0;
 class ASIOSocket* G_pLoginSock = 0;
 class LoginServer* g_login;
+
+// Shared I/O service pool: 4 threads for async networking
+IOServicePool* G_pIOPool = nullptr;
+
+// Thread-safe queues for async accept
+ConcurrentQueue<asio::ip::tcp::socket> G_gameAcceptQueue;
+ConcurrentQueue<asio::ip::tcp::socket> G_loginAcceptQueue;
+
+// Thread-safe error queue from I/O threads
+ConcurrentQueue<SocketErrorEvent> G_errorQueue;
 
 int             G_iQuitProgramCount = 0;
 bool			G_bIsThread = true;
@@ -236,49 +248,74 @@ bool InitInstance(HINSTANCE hInstance, int nCmdShow)
 	return (true);
 }
 
-// MODERNIZED: Poll all sockets for network events
-// This function can be called from anywhere to keep sockets responsive during long operations
-void PollAllSockets()
+// Drain async accept queues (called from game thread in EventLoop)
+void DrainAcceptQueues()
 {
 	if (G_pGame == nullptr) return;
 
-	// Poll listen sockets for new connections
-	if (G_pListenSock != nullptr) {
-		int iRet = G_pListenSock->Poll();
-		if (iRet == DEF_XSOCKEVENT_CONNECTIONESTABLISH) {
-			G_pGame->bAccept(G_pListenSock);
-		}
-		else if (iRet < 0 && iRet != DEF_XSOCKEVENT_QUENEFULL) {
-			// Log errors only (negative values except queue full)
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "[ERROR] ListenSock Poll() error: %d", iRet);
-			PutLogList(G_cTxt);
-		}
-	}
-	if (G_pLoginSock != nullptr) {
-		int iRet = G_pLoginSock->Poll();
-		if (iRet == DEF_XSOCKEVENT_CONNECTIONESTABLISH) {
-			G_pGame->bAcceptLogin(G_pLoginSock);
-		}
-		else if (iRet < 0 && iRet != DEF_XSOCKEVENT_QUENEFULL) {
-			// Log errors only (negative values except queue full)
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "[ERROR] LoginSock Poll() error: %d", iRet);
-			PutLogList(G_cTxt);
-		}
+	// Drain game client accepts
+	asio::ip::tcp::socket peer(G_pIOPool->GetContext());
+	while (G_gameAcceptQueue.Pop(peer)) {
+		G_pGame->bAcceptFromAsync(std::move(peer));
 	}
 
-	// Poll all game client sockets
-	for (int i = 1; i < DEF_MAXCLIENTS; i++) {
-		if (G_pGame->m_pClientList[i] != nullptr && G_pGame->m_pClientList[i]->m_pXSock != nullptr) {
-			G_pGame->OnClientSocketEvent(i);
+	// Drain login client accepts
+	asio::ip::tcp::socket loginPeer(G_pIOPool->GetContext());
+	while (G_loginAcceptQueue.Pop(loginPeer)) {
+		G_pGame->bAcceptLoginFromAsync(std::move(loginPeer));
+	}
+}
+
+// Drain error queue from I/O threads (called from game thread in EventLoop)
+void DrainErrorQueue()
+{
+	if (G_pGame == nullptr) return;
+
+	SocketErrorEvent evt;
+	while (G_errorQueue.Pop(evt)) {
+		// Determine if this is a game client or login client
+		// Game clients have positive indices 1..DEF_MAXCLIENTS-1
+		// Login clients have negative indices (-1 to -DEF_MAXCLIENTLOGINSOCK)
+		if (evt.iSocketIndex > 0 && evt.iSocketIndex < DEF_MAXCLIENTS) {
+			if (G_pGame->m_pClientList[evt.iSocketIndex] != nullptr) {
+				std::snprintf(G_cTxt, sizeof(G_cTxt),
+					"<%d> Client Disconnected! Async error=%d (%s) CharName=%s",
+					evt.iSocketIndex, evt.iErrorCode,
+					G_pGame->m_pClientList[evt.iSocketIndex]->m_cIPaddress,
+					G_pGame->m_pClientList[evt.iSocketIndex]->m_cCharName);
+				PutLogList(G_cTxt);
+				G_pGame->DeleteClient(evt.iSocketIndex, true, true);
+			}
+		}
+		else if (evt.iSocketIndex < 0) {
+			// Login client: index is -(loginClientH + 1)
+			int loginH = -(evt.iSocketIndex + 1);
+			if (loginH >= 0 && loginH < DEF_MAXCLIENTLOGINSOCK) {
+				G_pGame->DeleteLoginClient(loginH);
+			}
 		}
 	}
+}
 
-	// Poll all login client sockets
+// Poll login client sockets (still uses polling for login clients)
+void PollLoginClients()
+{
+	if (G_pGame == nullptr) return;
+
 	for (int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
 		if (G_pGame->_lclients[i] != nullptr && G_pGame->_lclients[i]->_sock != nullptr) {
 			G_pGame->OnLoginClientSocketEvent(i);
 		}
 	}
+}
+
+// Legacy PollAllSockets - called from EntityManager during NPC processing
+// With async I/O, this drains queues and polls login clients
+void PollAllSockets()
+{
+	DrainAcceptQueues();
+	DrainErrorQueue();
+	PollLoginClients();
 }
 
 int EventLoop()
@@ -308,8 +345,12 @@ int EventLoop()
 					dwLastGameProcess = dwNow;
 				}
 
-				// Poll all sockets for network events
-				PollAllSockets();
+				// Drain async accept and error queues from I/O threads
+				DrainAcceptQueues();
+				DrainErrorQueue();
+
+				// Poll login client sockets (still use polling for login protocol)
+				PollLoginClients();
 
 				// Poll console for command input
 				char szCmd[256];
@@ -341,6 +382,9 @@ int EventLoop()
 void Initialize()
 {
 
+	// Create shared I/O service pool before anything that creates sockets
+	G_pIOPool = new IOServicePool(4);
+
 	G_pGame = new class CGame(G_hWnd);
 	if (G_pGame->bInit() == false) {
 		PutLogList("(!!!) STOPPED!");
@@ -356,12 +400,22 @@ void Initialize()
 	// ���� ����� Ÿ�̸�
 	G_mmTimer = _StartTimer(300);
 
-	// MODERNIZED: Removed G_hWnd parameter, using WSAEventSelect
-	G_pListenSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pListenSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
 
-	G_pLoginSock = new class ASIOSocket(DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pLoginSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
+
+	// Start async accept on both listen sockets
+	G_pListenSock->StartAsyncAccept([](asio::ip::tcp::socket peer) {
+		G_gameAcceptQueue.Push(std::move(peer));
+	});
+	G_pLoginSock->StartAsyncAccept([](asio::ip::tcp::socket peer) {
+		G_loginAcceptQueue.Push(std::move(peer));
+	});
+
+	// Start the I/O thread pool
+	G_pIOPool->Start();
 
 	pLogFile = 0;
 	//pLogFile = fopen("test.log","wt+");
@@ -369,6 +423,11 @@ void Initialize()
 
 void OnDestroy()
 {
+	// Stop I/O pool first (cancels async ops, joins threads)
+	if (G_pIOPool != nullptr) {
+		G_pIOPool->Stop();
+	}
+
 	if (G_pListenSock != 0) delete G_pListenSock;
 	if (G_pLogSock != 0) delete G_pLogSock;
 	if (G_pLoginSock) delete G_pLoginSock;
@@ -387,6 +446,11 @@ void OnDestroy()
 	if (G_mmTimer != 0) _StopTimer(G_mmTimer);
 
 	if (pLogFile != 0) fclose(pLogFile);
+
+	if (G_pIOPool != nullptr) {
+		delete G_pIOPool;
+		G_pIOPool = nullptr;
+	}
 
 	PostQuitMessage(0);
 }

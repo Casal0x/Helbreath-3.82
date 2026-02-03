@@ -47,6 +47,8 @@
 #include "StatusFlags.h"
 #include "TempNpcItem.h"
 #include "PartyManager.h"
+#include "IOServicePool.h"
+#include "ConcurrentMsgQueue.h"
 
 #define DEF_MAXMAPS					100
 #define DEF_MAXAGRICULTURE			200
@@ -293,11 +295,10 @@ static void Pop(char*& src, string& str) {
 
 struct LoginClient
 {
-	// MODERNIZED: Removed HWND parameter
-	LoginClient(HWND hWnd)
+	LoginClient(asio::io_context& ctx)
 	{
 		_sock = 0;
-		_sock = new class ASIOSocket(DEF_CLIENTSOCKETBLOCKLIMIT);
+		_sock = new class ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
 		_sock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 		_timeout_tm = 0;
 	}
@@ -323,6 +324,8 @@ public:
 	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
 
 	bool bAcceptLogin(ASIOSocket* sock);
+	bool bAcceptFromAsync(asio::ip::tcp::socket&& peer);
+	bool bAcceptLoginFromAsync(asio::ip::tcp::socket&& peer);
 
 	void PartyOperation(char* pData);
 
@@ -467,7 +470,7 @@ public:
 	bool bStockMsgToGateServer(char * pData, uint32_t dwSize);
 	void RequestHelpHandler(int iClientH);
 	
-	void CheckConnectionHandler(int iClientH, char *pData);
+	void CheckConnectionHandler(int iClientH, char *pData, bool bAlreadyResponded = false);
 
 	void AgingMapSectorInfo();
 	void UpdateMapSectorInfo();
@@ -799,8 +802,7 @@ public:
 
 	class CEntityManager * m_pEntityManager;  // Entity spawn/despawn manager
 
-	class CMsg    * m_pMsgQuene[DEF_MSGQUENESIZE];
-	int             m_iQueneHead, m_iQueneTail;
+	ConcurrentMsgQueue m_msgQueue;
 	int             m_iTotalMaps;
 	//class ASIOSocket * m_pMainLogSock, * m_pGateSock;
 	//int				m_iGateSockConnRetryTimes;

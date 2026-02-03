@@ -3,6 +3,10 @@
 // Replaces the legacy XSocket (Winsock2/WSAEventSelect) with ASIO.
 // Shared between Client and Server.
 //
+// Supports both polling mode (client) and async mode (server).
+// When using async mode, a shared io_context with background threads
+// drives async_read/async_write with per-socket strands.
+//
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -23,6 +27,9 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <functional>
+#include <mutex>
+#include <atomic>
 
 // Socket type constants
 #define DEF_XSOCK_LISTENSOCK			1
@@ -86,13 +93,19 @@ struct UnsentBlock {
 	int remainingSize() const { return static_cast<int>(data.size()) - offset; }
 };
 
+// Async callback types
+using MessageCallback = std::function<void(int socketIndex, const char* pData, uint32_t dwSize, char cKey)>;
+using ErrorCallback = std::function<void(int socketIndex, int errorCode)>;
+using AcceptCallback = std::function<void(asio::ip::tcp::socket peer)>;
+
 class ASIOSocket
 {
 public:
-	explicit ASIOSocket(int iBlockLimit);
+	// Constructor takes a reference to an external io_context (from IOServicePool)
+	ASIOSocket(asio::io_context& ctx, int iBlockLimit);
 	virtual ~ASIOSocket();
 
-	// Non-copyable, movable
+	// Non-copyable
 	ASIOSocket(const ASIOSocket&) = delete;
 	ASIOSocket& operator=(const ASIOSocket&) = delete;
 
@@ -105,17 +118,23 @@ public:
 	bool bListen(char* pAddr, int iPort);
 	bool bAccept(ASIOSocket* pSock);
 
-	// Polling (replaces WSAEventSelect + iOnSocketEvent)
+	// Accept a pre-connected socket (for async accept path)
+	bool bAcceptFromSocket(asio::ip::tcp::socket&& peer);
+
+	// Polling (replaces WSAEventSelect + iOnSocketEvent) - still works for client
 	int Poll();
 
-	// Sending
+	// Sending (synchronous path for polling mode)
 	int iSendMsg(char* cData, uint32_t dwSize, char cKey = 0);
 	int iSendMsgBlockingMode(char* buf, int nbytes);
 
-	// Receiving
+	// Async sending (posts to strand, builds frame, chains async_write)
+	int iSendMsgAsync(char* cData, uint32_t dwSize, char cKey = 0);
+
+	// Receiving (synchronous path for polling mode)
 	char* pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey = 0);
 
-	// v4 Networking API (packet queue)
+	// v4 Networking API (packet queue) - polling mode only
 	int DrainToQueue();
 	bool PeekPacket(NetworkPacket& outPacket) const;
 	bool PopPacket();
@@ -130,6 +149,13 @@ public:
 	// Close
 	void CloseConnection();
 
+	// --- Async mode (server) ---
+	void SetSocketIndex(int idx) { m_iSocketIndex = idx; }
+	void SetCallbacks(MessageCallback onMessage, ErrorCallback onError);
+	void StartAsyncRead();
+	void StartAsyncAccept(AcceptCallback callback);
+	void CancelAsync();
+
 	// Public state
 	int  m_WSAErr = 0;
 	bool m_bIsAvailable = false;
@@ -137,17 +163,25 @@ public:
 	char m_cType = 0;
 
 private:
-	// Internal read/send helpers
+	// Internal read/send helpers (synchronous polling path)
 	int _iOnRead();
 	int _iSend(const char* cData, int iSize, bool bSaveFlag);
 	int _iSend_ForInternalUse(const char* cData, int iSize);
 	int _iSendUnsentData();
 	bool _iRegisterUnsentData(const char* cData, int iSize);
 
-	// ASIO internals
-	asio::io_context m_ioContext;
+	// Async read chain
+	void _DoAsyncReadHeader();
+	void _DoAsyncReadBody(uint32_t bodySize);
+
+	// Async write chain
+	void _DoAsyncWrite();
+
+	// ASIO internals - reference to external io_context
+	asio::io_context& m_ioContext;
 	asio::ip::tcp::socket m_socket;
 	asio::ip::tcp::acceptor m_acceptor;
+	asio::io_context::strand m_strand;
 
 	// Async connect state
 	bool m_connectPending = false;
@@ -162,7 +196,7 @@ private:
 	std::vector<char> m_sndBuffer;
 	uint32_t m_dwBufferSize = 0;
 
-	// Read state machine
+	// Read state machine (polling mode)
 	char     m_cStatus = DEF_XSOCKSTATUS_READINGHEADER;
 	uint32_t m_dwReadSize = 3;
 	uint32_t m_dwTotalReadSize = 0;
@@ -171,12 +205,30 @@ private:
 	char m_pAddr[30] = {};
 	int  m_iPortNum = 0;
 
-	// Unsent data queue (replaces raw pointer circular buffer)
+	// Unsent data queue (replaces raw pointer circular buffer) - polling mode
 	std::deque<UnsentBlock> m_unsentQueue;
 	int m_iBlockLimit;
 
-	// Packet receive queue
+	// Packet receive queue - polling mode
 	std::deque<NetworkPacket> m_RecvQueue;
 	static constexpr size_t MAX_QUEUE_SIZE = 2000;
-};
 
+	// --- Async mode members ---
+	int m_iSocketIndex = -1;
+	MessageCallback m_onMessage;
+	ErrorCallback m_onError;
+	AcceptCallback m_onAccept;
+
+	// Async read buffer (separate from polling m_rcvBuffer)
+	std::vector<char> m_asyncRcvBuffer;
+
+	// Async write queue (strand-serialized)
+	std::deque<std::vector<char>> m_asyncWriteQueue;
+	bool m_bAsyncWriteInProgress = false;
+
+	// Async write queue size limit
+	static constexpr size_t MAX_ASYNC_WRITE_QUEUE = 5000;
+
+	// Flag to indicate async mode is active
+	std::atomic<bool> m_bAsyncMode{false};
+};

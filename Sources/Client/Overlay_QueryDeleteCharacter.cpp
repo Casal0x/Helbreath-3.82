@@ -54,7 +54,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
         {
             // Create login socket and initiate delete request
-            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(DEF_SOCKETBLOCKLIMIT);
+            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

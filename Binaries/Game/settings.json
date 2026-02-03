@@ -20,7 +20,7 @@
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
-        "zoomMap": false
+        "zoomMap": true
     },
     "resolution": {
         "height": 600,
@@ -42,7 +42,7 @@
         ]
     },
     "window": {
-        "height": 600,
-        "width": 800
+        "height": 1080,
+        "width": 1440
     }
 }
