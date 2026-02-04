@@ -23,7 +23,7 @@ public:
 	void RegisterCommand(std::unique_ptr<GameChatCommand> command);
 
 	// Process a chat message starting with '/'. Returns true if consumed.
-	bool ProcessCommand(int iClientH, const char* pMessage, uint32_t dwMsgSize);
+	bool ProcessCommand(int iClientH, const char* pMessage, size_t dwMsgSize);
 
 private:
 	GameChatCommandManager() = default;

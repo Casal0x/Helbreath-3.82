@@ -17,12 +17,12 @@
 struct QueuedMsg {
 	char cFrom;
 	std::vector<char> data;
-	uint32_t dwSize;
+	size_t dwSize;
 	int iIndex;
 	char cKey;
 
 	QueuedMsg() : cFrom(0), dwSize(0), iIndex(0), cKey(0) {}
-	QueuedMsg(char from, const char* pData, uint32_t size, int index, char key)
+	QueuedMsg(char from, const char* pData, size_t size, int index, char key)
 		: cFrom(from), dwSize(size), iIndex(index), cKey(key)
 	{
 		if (pData && size > 0) {
@@ -33,7 +33,7 @@ struct QueuedMsg {
 
 class ConcurrentMsgQueue {
 public:
-	bool Push(char cFrom, const char* pData, uint32_t dwSize, int iIndex, char cKey)
+	bool Push(char cFrom, const char* pData, size_t dwSize, int iIndex, char cKey)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		if (m_queue.size() >= MAX_QUEUE_SIZE) return false;
@@ -41,7 +41,7 @@ public:
 		return true;
 	}
 
-	bool Pop(char* pFrom, char* pData, uint32_t* pSize, int* pIndex, char* pKey)
+	bool Pop(char* pFrom, char* pData, size_t* pSize, int* pIndex, char* pKey)
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		if (m_queue.empty()) return false;

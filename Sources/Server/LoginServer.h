@@ -31,7 +31,7 @@ public:
 	void ChangePassword(int h, char* pData);
 	void RequestEnterGame(int h, char* pData);
 	void CreateNewAccount(int h, char* pData);
-	void SendLoginMsg(uint32_t msgid, uint16_t msgtype, char* data, int sz, int h);
+	void SendLoginMsg(uint32_t msgid, uint16_t msgtype, char* data, size_t sz, int h);
 	void LocalSavePlayerData(int h);
 	void Activated();
 };

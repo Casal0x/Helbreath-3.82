@@ -527,7 +527,7 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 			{
 				ASIOSocket* pSock = m_pClientList[i]->m_pXSock;
 				m_pClientList[i]->m_pXSock->SetCallbacks(
-					[this, pSock](int idx, const char* data, uint32_t size, char key) {
+					[this, pSock](int idx, const char* data, size_t size, char key) {
 						// Fast-track ping: respond immediately from I/O thread for accurate latency
 						if (size >= sizeof(hb::net::PacketCommandCheckConnection)) {
 							const auto* hdr = reinterpret_cast<const hb::net::PacketHeader*>(data);
@@ -600,7 +600,7 @@ void CGame::OnClientSocketEvent(int iClientH)
 
 	case DEF_XSOCKEVENT_SOCKETERROR:
 		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! SOCKETERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			"<%d> Client Disconnected! SOCKETERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
 			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
 			m_pClientList[iClientH]->m_dwLastMsgId,
 			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
@@ -612,7 +612,7 @@ void CGame::OnClientSocketEvent(int iClientH)
 
 	case DEF_XSOCKEVENT_SOCKETCLOSED:
 		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! SOCKETCLOSED (%s) WSA=%d TimeSinceLastPacket=%dms LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			"<%d> Client Disconnected! SOCKETCLOSED (%s) WSA=%d TimeSinceLastPacket=%dms LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
 			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
 			dwTime - m_pClientList[iClientH]->m_dwTime,
 			m_pClientList[iClientH]->m_dwLastMsgId,
@@ -636,7 +636,7 @@ void CGame::OnClientSocketEvent(int iClientH)
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
 		std::snprintf(G_cTxt, sizeof(G_cTxt),
-			"<%d> Client Disconnected! CRITICALERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%u CharName=%s",
+			"<%d> Client Disconnected! CRITICALERROR (%s) WSA=%d LastMsg=0x%08X LastMsgAge=%dms LastMsgSize=%zu CharName=%s",
 			iClientH, m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_pXSock->m_WSAErr,
 			m_pClientList[iClientH]->m_dwLastMsgId,
 			dwTime - m_pClientList[iClientH]->m_dwLastMsgTime,
@@ -1135,7 +1135,7 @@ bool CGame::bInit()
 void CGame::OnClientRead(int iClientH)
 {
 	char* pData, cKey;
-	uint32_t  dwMsgSize;
+	size_t  dwMsgSize;
 
 	if (m_pClientList[iClientH] == 0) return;
 
@@ -1642,7 +1642,7 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 }
 
 // 05/22/2004 - Hypnotoad - sends client to proper location after dieing
-void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, uint32_t dwMsgSize)
+void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t dwMsgSize)
 {
 	char cPlayerName[11], cTxt[120];
 	int sSummonPoints;
@@ -3989,7 +3989,7 @@ void CGame::CheckClientResponseTime()
 				if (dwIdle > 5000 && (dwTime - m_pClientList[i]->m_dwLastMsgTime) > 5000 &&
 					(dwTime - s_dwLastIdleLog) > 5000) {
 					std::snprintf(G_cTxt, sizeof(G_cTxt),
-						"[NET] IDLE slot=%d idle=%ums lastmsg=0x%08X lastage=%ums size=%u char=%s ip=%s",
+						"[NET] IDLE slot=%d idle=%ums lastmsg=0x%08X lastage=%ums size=%zu char=%s ip=%s",
 						i, dwIdle, m_pClientList[i]->m_dwLastMsgId,
 						dwTime - m_pClientList[i]->m_dwLastMsgTime,
 						m_pClientList[i]->m_dwLastMsgSize,
@@ -5135,7 +5135,7 @@ bool CGame::IsBlockedBy(int iSenderH, int iReceiverH) const
 }
 
 // 05/29/2004 - Hypnotoad - GM chat tweak
-void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	int iRet;
 	char* cp;
@@ -5399,7 +5399,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, uint32_t dwMsgSize)
 }
 
 
-void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, uint32_t dwMsgSize)
+void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, size_t dwMsgSize)
 {
 	int iRet;
 	short* sp;
@@ -5845,7 +5845,7 @@ int CGame::iGetDangerValue(int iNpcH, short dX, short dY)
 void CGame::MsgProcess()
 {
 	char* pData, cFrom, cKey;
-	uint32_t    dwMsgSize;
+	size_t    dwMsgSize;
 	int      iClientH;
 	uint32_t dwTime = GameClock::GetTimeMS();
 
@@ -6094,13 +6094,13 @@ void CGame::MsgProcess()
 	}
 }
 
-bool CGame::bPutMsgQuene(char cFrom, char* pData, uint32_t dwMsgSize, int iIndex, char cKey)
+bool CGame::bPutMsgQuene(char cFrom, char* pData, size_t dwMsgSize, int iIndex, char cKey)
 {
 	return m_msgQueue.Push(cFrom, pData, dwMsgSize, iIndex, cKey);
 }
 
 
-bool CGame::bGetMsgQuene(char* pFrom, char* pData, uint32_t* pMsgSize, int* pIndex, char* pKey)
+bool CGame::bGetMsgQuene(char* pFrom, char* pData, size_t* pMsgSize, int* pIndex, char* pKey)
 {
 	return m_msgQueue.Pop(pFrom, pData, pMsgSize, pIndex, pKey);
 }
@@ -7255,7 +7255,7 @@ void CGame::ResponseCreateNewGuildHandler(char* pData, int iType)
 	PutLogList(cTxt);
 }
 
-void CGame::RequestCreateNewGuildHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::RequestCreateNewGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char* cp;
 	char cGuildName[21], cTxt[120], cData[100];
@@ -7333,7 +7333,7 @@ void CGame::RequestCreateNewGuildHandler(int iClientH, char* pData, uint32_t dwM
 }
 
 
-void CGame::RequestDisbandGuildHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::RequestDisbandGuildHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char* cp;
 	char cGuildName[21], cTxt[120];
@@ -10494,7 +10494,7 @@ void CGame::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short
 }
 
 
-void CGame::GuildNotifyHandler(char* pData, uint32_t dwMsgSize)
+void CGame::GuildNotifyHandler(char* pData, size_t dwMsgSize)
 {
 	char* cp, cCharName[11], cGuildName[21];
 
@@ -15480,7 +15480,7 @@ bool CGame::bCheckLevelUp(int iClientH)
 	return false;
 }
 // 2003-04-14      ...
-void CGame::StateChangeHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::StateChangeHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -15633,7 +15633,7 @@ bool CGame::bChangeState(char cStateChange, char* cStr, char* cVit, char* cDex, 
 	return cStateChange;
 }
 
-void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::LevelUpSettingsHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	int iTotalSetting = 0;
 
@@ -15717,7 +15717,7 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, uint32_t dwMsgSize
 }
 
 
-void CGame::FightzoneReserveHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::FightzoneReserveHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	int iFightzoneNum, iEnableReserveTime;
 	uint32_t dwGoldCount;
@@ -20417,7 +20417,7 @@ void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dw
 }
 
 
-void CGame::ToggleWhisperPlayer(int iClientH, char* pMsg, uint32_t dwMsgSize)
+void CGame::ToggleWhisperPlayer(int iClientH, char* pMsg, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* token, cName[11], cBuff[256];
@@ -20470,7 +20470,7 @@ void CGame::ToggleWhisperPlayer(int iClientH, char* pMsg, uint32_t dwMsgSize)
 }
 
 
-void CGame::SetPlayerProfile(int iClientH, char* pMsg, uint32_t dwMsgSize)
+void CGame::SetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 {
 	char cTemp[256];
 	
@@ -20491,7 +20491,7 @@ void CGame::SetPlayerProfile(int iClientH, char* pMsg, uint32_t dwMsgSize)
 	strcpy(m_pClientList[iClientH]->m_cProfile, cTemp);
 }
 
-void CGame::GetPlayerProfile(int iClientH, char* pMsg, uint32_t dwMsgSize)
+void CGame::GetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* token, cName[11], cBuff[256], cBuff2[500];
@@ -21610,7 +21610,7 @@ void CGame::CheckDayOrNightMode()
 }
 
 
-void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, uint32_t dwMsgSize)
+void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* token, cName[11], cBuff[256];
@@ -21754,7 +21754,7 @@ void CGame::NoticeHandler()
 }
 
 
-void CGame::ResponseSavePlayerDataReplyHandler(char* pData, uint32_t dwMsgSize)
+void CGame::ResponseSavePlayerDataReplyHandler(char* pData, size_t dwMsgSize)
 {
 	char* cp, cCharName[11];
 	
@@ -21840,7 +21840,7 @@ int CGame::iGetExpLevel(uint32_t iExp)
 }
 
 
-void CGame::UserCommand_BanGuildsman(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::UserCommand_BanGuildsman(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* token, cTargetName[11], cBuff[256];
@@ -21898,7 +21898,7 @@ void CGame::UserCommand_BanGuildsman(int iClientH, char* pData, uint32_t dwMsgSi
 }
 
 
-void CGame::UserCommand_DissmissGuild(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::UserCommand_DissmissGuild(int iClientH, char* pData, size_t dwMsgSize)
 {
 
 }
@@ -24061,7 +24061,7 @@ bool CGame::__bSetOccupyFlag(char cMapIndex, int dX, int dY, int iSide, int iEKN
 	return true;
 }
 
-void CGame::SetSummonMobAction(int iClientH, int iMode, uint32_t dwMsgSize, char* pData)
+void CGame::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, char* pData)
 {
 	int iTargetIndex;
 	char   seps[] = "= \t\r\n";
@@ -24302,7 +24302,7 @@ void CGame::GetFightzoneTicketHandler(int iClientH)
 	}
 }
 
-int CGame::_iComposeFlagStatusContents(char* pData)
+size_t CGame::_iComposeFlagStatusContents(char* pData)
 {
 	SYSTEMTIME SysTime;
 	char cTxt[120];
@@ -25515,7 +25515,7 @@ LoginClient::~LoginClient()
 void CGame::OnClientLoginRead(int h)
 {
 	char* pData, cKey;
-	uint32_t  dwMsgSize;
+	size_t  dwMsgSize;
 
 	if (_lclients[h] == 0) return;
 
@@ -26204,7 +26204,7 @@ void CGame::RequestNoticementHandler(int iClientH)
 }
 
 
-void CGame::RequestCheckAccountPasswordHandler(char* pData, uint32_t dwMsgSize)
+void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
 {
 	int* ip, iLevel;
 	char* cp, cAccountName[11], cAccountPassword[11];
@@ -30398,7 +30398,7 @@ bool CGame::bCheckIsItemUpgradeSuccess(int iClientH, int iItemIndex, int iSomH, 
 void CGame::ShowClientMsg(int iClientH, char* pMsg)
 {
 	char* cp, cTemp[256];
-	uint32_t dwMsgSize;
+	size_t dwMsgSize;
 	short* sp;
 
 	std::memset(cTemp, 0, sizeof(cTemp));
@@ -30432,7 +30432,7 @@ void CGame::ShowClientMsg(int iClientH, char* pMsg)
 	m_pClientList[iClientH]->m_pXSock->iSendMsg(cTemp, dwMsgSize + 22);
 }
 
-void CGame::Command_YellowBall(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* token, cBuff[256], cPlayerName[11], cMapName[32];
@@ -30485,7 +30485,7 @@ void CGame::Command_YellowBall(int iClientH, char* pData, uint32_t dwMsgSize)
 	}
 }
 
-void CGame::Command_RedBall(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::Command_RedBall(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char seps[] = "= \t\r\n", cName[21], cNpcName[21], cNpcWaypoint[11];
 	int iNamingValue, tX, tY, x, iNpcID;
@@ -30546,7 +30546,7 @@ void CGame::Command_RedBall(int iClientH, char* pData, uint32_t dwMsgSize)
 	}
 }
 
-void CGame::Command_BlueBall(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 
 {
 	char seps[] = "= \t\r\n";
@@ -31518,7 +31518,7 @@ void CGame::PartyOperationResult_Delete(int iPartyID)
 }
 
 
-void CGame::RequestJoinPartyHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
 	char* cp, * token, cBuff[256], cData[120], cName[12];
@@ -35046,7 +35046,7 @@ bool CGame::bCheckHeldenianMap(int sAttackerH, int iMapIndex, char cType)
 	return iRet;
 }
 
-void CGame::RequestHeldenianTeleport(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::RequestHeldenianTeleport(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char cTmpName[21], * cp, cTxt[512], cMapName[11];
 	short tX, tY, cLoc, * sp;
@@ -35284,7 +35284,7 @@ void CGame::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHeldenianGU
 	m_dwHeldenianStartTime = static_cast<uint32_t>(time(0));
 }
 
-void CGame::ManualStartHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::ManualStartHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char cHeldenianType, cBuff[256], * token, seps[] = "= \t\r\n";
 	SYSTEMTIME SysTime;
@@ -35320,7 +35320,7 @@ void CGame::ManualStartHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSi
 	PutLogFileList(G_cTxt);
 }
 
-void CGame::ManualEndHeldenianMode(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::ManualEndHeldenianMode(int iClientH, char* pData, size_t dwMsgSize)
 {
 	if (m_bIsHeldenianMode) {
 		GlobalEndHeldenianMode();
@@ -35639,7 +35639,7 @@ void CGame::LoteryHandler(int iClientH)
 
 }
 
-void CGame::SetSkillAll(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::SetSkillAll(int iClientH, char* pData, size_t dwMsgSize)
 //SetSkillAll Acidx Command,  Added July 04, 2005 INDEPENDENCE BABY Fuck YEA
 {
 	if (m_pClientList[iClientH] == 0) return;
@@ -36067,10 +36067,10 @@ void CGame::SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp)
 }
 
 /*********************************************************************************************************************
-**  bool CGame::GetAngelHandler(int iClientH, char * pData, uint32_t dwMsgSize)										**
+**  bool CGame::GetAngelHandler(int iClientH, char * pData, size_t dwMsgSize)										**
 ** description	  :: Reversed and coded by Snoopy																	**
 *********************************************************************************************************************/
-void CGame::GetAngelHandler(int iClientH, char* pData, uint32_t dwMsgSize)
+void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	char cTmpName[21];
 	int   iAngel;

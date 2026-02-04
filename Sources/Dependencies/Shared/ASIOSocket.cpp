@@ -32,7 +32,7 @@ ASIOSocket::~ASIOSocket()
 	CloseConnection();
 }
 
-bool ASIOSocket::bInitBufferSize(uint32_t dwBufferSize)
+bool ASIOSocket::bInitBufferSize(size_t dwBufferSize)
 {
 	m_rcvBuffer.assign(dwBufferSize + 8, 0);
 	m_sndBuffer.assign(dwBufferSize + 8, 0);
@@ -420,7 +420,7 @@ int ASIOSocket::_iOnRead()
 // _iSend - send with unsent queue fallback (polling mode)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iSend(const char* cData, int iSize, bool bSaveFlag)
+int ASIOSocket::_iSend(const char* cData, size_t iSize, bool bSaveFlag)
 {
 	// If there's queued data, queue this too to preserve ordering
 	if (!m_unsentQueue.empty()) {
@@ -464,7 +464,7 @@ int ASIOSocket::_iSend(const char* cData, int iSize, bool bSaveFlag)
 // _iSend_ForInternalUse - send without queueing (for draining unsent queue)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::_iSend_ForInternalUse(const char* cData, int iSize)
+int ASIOSocket::_iSend_ForInternalUse(const char* cData, size_t iSize)
 {
 	int iOutLen = 0;
 	while (iOutLen < iSize) {
@@ -488,7 +488,7 @@ int ASIOSocket::_iSend_ForInternalUse(const char* cData, int iSize)
 // _iRegisterUnsentData - queue data for later sending
 //////////////////////////////////////////////////////////////////////
 
-bool ASIOSocket::_iRegisterUnsentData(const char* cData, int iSize)
+bool ASIOSocket::_iRegisterUnsentData(const char* cData, size_t iSize)
 {
 	if (static_cast<int>(m_unsentQueue.size()) >= m_iBlockLimit) {
 		printf("[ASIO] Queue full! Dropped packet. Queue size: %d, limit: %d\n",
@@ -534,7 +534,7 @@ int ASIOSocket::_iSendUnsentData()
 // (synchronous polling mode - used by client and polling server path)
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
+int ASIOSocket::iSendMsg(char* cData, size_t dwSize, char cKey)
 {
 	if (dwSize > m_dwBufferSize) return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
 	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
@@ -581,7 +581,7 @@ int ASIOSocket::iSendMsg(char* cData, uint32_t dwSize, char cKey)
 // Called from game thread. Errors come via error callback.
 //////////////////////////////////////////////////////////////////////
 
-int ASIOSocket::iSendMsgAsync(char* cData, uint32_t dwSize, char cKey)
+int ASIOSocket::iSendMsgAsync(char* cData, size_t dwSize, char cKey)
 {
 	if (dwSize > m_dwBufferSize) return DEF_XSOCKEVENT_MSGSIZETOOLARGE;
 	if (m_cType != DEF_XSOCK_NORMALSOCK) return DEF_XSOCKEVENT_SOCKETMISMATCH;
@@ -678,20 +678,20 @@ int ASIOSocket::iSendMsgBlockingMode(char* buf, int nbytes)
 // pGetRcvDataPointer - get received message with decryption (polling mode)
 //////////////////////////////////////////////////////////////////////
 
-char* ASIOSocket::pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey)
+char* ASIOSocket::pGetRcvDataPointer(size_t* pMsgSize, char* pKey)
 {
 	char cKey = m_rcvBuffer[0];
 	if (pKey != nullptr) *pKey = cKey;
 
 	uint16_t* wp = reinterpret_cast<uint16_t*>(m_rcvBuffer.data() + 1);
 	*pMsgSize = (*wp) - 3;
-	uint32_t dwSize = (*wp) - 3;
+	size_t dwSize = (*wp) - 3;
 
 	if (dwSize > DEF_MSGBUFFERSIZE) dwSize = DEF_MSGBUFFERSIZE;
 
 	// Decrypt payload if key is set
 	if (cKey != 0) {
-		for (uint32_t i = 0; i < dwSize; i++) {
+		for (size_t i = 0; i < dwSize; i++) {
 			m_rcvBuffer[3 + i] = static_cast<char>(m_rcvBuffer[3 + i] ^ (cKey ^ static_cast<char>(dwSize - i)));
 			m_rcvBuffer[3 + i] -= static_cast<char>(i ^ cKey);
 		}
@@ -716,7 +716,7 @@ int ASIOSocket::DrainToQueue()
 		switch (iRet) {
 		case DEF_XSOCKEVENT_READCOMPLETE:
 		{
-			uint32_t dwSize = 0;
+			size_t dwSize = 0;
 			char* pData = pGetRcvDataPointer(&dwSize);
 
 			if (pData != nullptr && dwSize > 0) {
@@ -865,7 +865,7 @@ void ASIOSocket::_DoAsyncReadHeader()
 
 				// Parse header: byte 0 = key, bytes 1-2 = total size (including header)
 				uint16_t* wp = reinterpret_cast<uint16_t*>(m_asyncRcvBuffer.data() + 1);
-				uint32_t totalSize = static_cast<uint32_t>(*wp);
+				size_t totalSize = static_cast<size_t>(*wp);
 
 				if (totalSize <= 3) {
 					// Header-only message (no body)
@@ -877,7 +877,7 @@ void ASIOSocket::_DoAsyncReadHeader()
 					return;
 				}
 
-				uint32_t bodySize = totalSize - 3;
+				size_t bodySize = totalSize - 3;
 				if (bodySize > m_dwBufferSize) {
 					// Message too large
 					if (m_onError) {
@@ -890,7 +890,7 @@ void ASIOSocket::_DoAsyncReadHeader()
 			}));
 }
 
-void ASIOSocket::_DoAsyncReadBody(uint32_t bodySize)
+void ASIOSocket::_DoAsyncReadBody(size_t bodySize)
 {
 	// Read body into buffer starting at offset 3 (after header)
 	asio::async_read(m_socket, asio::buffer(m_asyncRcvBuffer.data() + 3, bodySize),

@@ -676,7 +676,7 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED, DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED, 0, 0, h);
 }
 
-void LoginServer::SendLoginMsg(uint32_t msg_id, uint16_t msg_type, char* data, int sz, int h)
+void LoginServer::SendLoginMsg(uint32_t msg_id, uint16_t msg_type, char* data, size_t sz, int h)
 {
 
 	int iRet;

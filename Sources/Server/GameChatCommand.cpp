@@ -29,7 +29,7 @@ void GameChatCommandManager::RegisterCommand(std::unique_ptr<GameChatCommand> co
 	m_commands.push_back(std::move(command));
 }
 
-bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, uint32_t dwMsgSize)
+bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, size_t dwMsgSize)
 {
 	if (m_pGame == nullptr || pMessage == nullptr)
 		return false;

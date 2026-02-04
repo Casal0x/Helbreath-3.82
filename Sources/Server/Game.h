@@ -316,11 +316,11 @@ public:
 	void GlobalStartHeldenianMode();
 	bool UpdateHeldenianStatus();
 	void _CreateHeldenianGUID(uint32_t dwHeldenianGUID, int iWinnerSide);
-	void ManualStartHeldenianMode(int iClientH, char *pData, uint32_t dwMsgSize);
-	void ManualEndHeldenianMode(int iClientH, char *pData, uint32_t dwMsgSize);
+	void ManualStartHeldenianMode(int iClientH, char *pData, size_t dwMsgSize);
+	void ManualEndHeldenianMode(int iClientH, char *pData, size_t dwMsgSize);
 
 	bool _bCheckCharacterData(int iClientH);
-	//bool _bDecodeNpcItemConfigFileContents(char * pData, uint32_t dwMsgSize);
+	//bool _bDecodeNpcItemConfigFileContents(char * pData, size_t dwMsgSize);
 	void GlobalUpdateConfigs(char cConfigType);
 	void LocalUpdateConfigs(char cConfigType);
 
@@ -337,7 +337,7 @@ public:
 	bool bNotifyHeldenianWinner();
 	void RemoveHeldenianNpc(int iNpcH);
 	void RemoveOccupyFlags(int iMapIndex);
-	void RequestHeldenianTeleport(int iClientH, char * pData, uint32_t dwMsgSize);
+	void RequestHeldenianTeleport(int iClientH, char * pData, size_t dwMsgSize);
 	bool bCheckHeldenianMap(int sAttackerH, int iMapIndex, char cType);
 	void SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus);
 	void SetInhibitionCastingFlag(short sOwnerH, char cOwnerType, bool bStatus);
@@ -362,9 +362,9 @@ public:
 	
 	// Lists
 
-	void Command_RedBall(int iClientH, char *pData,uint32_t dwMsgSize);
-	void Command_BlueBall(int iClientH, char *pData,uint32_t dwMsgSize);
-	void Command_YellowBall(int iClientH, char* pData, uint32_t dwMsgSize);
+	void Command_RedBall(int iClientH, char *pData,size_t dwMsgSize);
+	void Command_BlueBall(int iClientH, char *pData,size_t dwMsgSize);
+	void Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize);
 
 	// Crusade
 	void ManualEndCrusadeMode(int iWinnerSide); // 2.17 (x) 2.14 ( )
@@ -429,14 +429,14 @@ public:
 	
 	bool bCheckMagicInt(int iClientH);
 	bool bChangeState(char cStateChange, char* cStr, char *cVit,char *cDex,char *cInt,char *cMag,char *cChar);
-	void StateChangeHandler(int iClientH, char * pData, uint32_t dwMsgSize);
+	void StateChangeHandler(int iClientH, char * pData, size_t dwMsgSize);
 	
 	void SetPoisonFlag(short sOwnerH, char cOwnerType, bool bStatus);
 	
 
 	bool bCopyItemContents(CItem * pOriginal, CItem * pCopy);
 	int  iGetMapLocationSide(char * pMapName);
-	void ChatMsgHandlerGSM(int iMsgType, int iV1, char * pName, char * pData, uint32_t dwMsgSize);
+	void ChatMsgHandlerGSM(int iMsgType, int iV1, char * pName, char * pData, size_t dwMsgSize);
 	void RemoveClientShortCut(int iClientH);
 	bool bAddClientShortCut(int iClientH);
 
@@ -459,7 +459,7 @@ public:
 	void GetMagicAbilityHandler(int iClientH);
 	void Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, short sTargetH, char cTargetType, short sAtkX, short sAtkY, short sV1, short sV2, short sV3, bool bExp, int iAttr);
 	void _TamingHandler(int iClientH, int iSkillNum, char cMapIndex, int dX, int dY);
-	void RequestCheckAccountPasswordHandler(char * pData, uint32_t dwMsgSize);
+	void RequestCheckAccountPasswordHandler(char * pData, size_t dwMsgSize);
 	int _iTalkToNpcResult_Guard(int iClientH, int * pQuestType, int * pMode, int * pRewardType, int * pRewardAmount, int * pContribution, char * pTargetName, int * pTargetType, int * pTargetCount, int * pX, int * pY, int * pRange);
 	void SetIceFlag(short sOwnerH, char cOwnerType, bool bStatus);
 	void RequestNoticementHandler(int iClientH, char * pData);
@@ -494,8 +494,8 @@ public:
 	void _SetItemPos(int iClientH, char * pData);
 	
 	void GetOccupyFlagHandler(int iClientH);
-	int  _iComposeFlagStatusContents(char * pData);
-	void SetSummonMobAction(int iClientH, int iMode, uint32_t dwMsgSize, char * pData = 0);
+	size_t _iComposeFlagStatusContents(char * pData);
+	void SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, char * pData = 0);
 	bool __bSetOccupyFlag(char cMapIndex, int dX, int dY, int iSide, int iEKNum, int iClientH);
 	bool _bDepleteDestTypeItemUseEffect(int iClientH, int dX, int dY, short sItemIndex, short sDestItemID);
 	void SetDownSkillIndexHandler(int iClientH, int iSkillIndex);
@@ -529,15 +529,15 @@ public:
 	int iCheckFish(int iClientH, char cMapIndex, short dX, short dY);
 	bool bDeleteFish(int iHandle, int iDelMode);
 	int  iCreateFish(char cMapIndex, short sX, short sY, short sDifficulty, CItem * pItem, int iDifficulty, uint32_t dwLastTime);
-	void UserCommand_DissmissGuild(int iClientH, char * pData, uint32_t dwMsgSize);
-	void UserCommand_BanGuildsman(int iClientH, char * pData, uint32_t dwMsgSize);
+	void UserCommand_DissmissGuild(int iClientH, char * pData, size_t dwMsgSize);
+	void UserCommand_BanGuildsman(int iClientH, char * pData, size_t dwMsgSize);
 	int iGetExpLevel(uint32_t iExp);
 	void ___RestorePlayerRating(int iClientH);
 	void CalcExpStock(int iClientH);
-	void ResponseSavePlayerDataReplyHandler(char * pData, uint32_t dwMsgSize);
+	void ResponseSavePlayerDataReplyHandler(char * pData, size_t dwMsgSize);
 	void NoticeHandler();
 	bool bReadNotifyMsgListFile(char * cFn);
-	void SetPlayerReputation(int iClientH, char * pMsg, char cValue, uint32_t dwMsgSize);
+	void SetPlayerReputation(int iClientH, char * pMsg, char cValue, size_t dwMsgSize);
 	void CheckDayOrNightMode();
 	bool bCheckResistingPoisonSuccess(short sOwnerH, char cOwnerType);
 	void PoisonEffect(int iClientH, int iV1);
@@ -546,9 +546,9 @@ public:
 	int _iGetPlayerNumberOnSpot(short dX, short dY, char cMapIndex, char cRange);
 	void CalcTotalItemEffect(int iClientH, int iEquipItemID, bool bNotify = true);
 	void ___RestorePlayerCharacteristics(int iClientH);
-	void GetPlayerProfile(int iClientH, char * pMsg, uint32_t dwMsgSize);
-	void SetPlayerProfile(int iClientH, char * pMsg, uint32_t dwMsgSize);
-	void ToggleWhisperPlayer(int iClientH, char * pMsg, uint32_t dwMsgSize);
+	void GetPlayerProfile(int iClientH, char * pMsg, size_t dwMsgSize);
+	void SetPlayerProfile(int iClientH, char * pMsg, size_t dwMsgSize);
+	void ToggleWhisperPlayer(int iClientH, char * pMsg, size_t dwMsgSize);
 	void CheckAndNotifyPlayerConnection(int iClientH, char * pMsg, uint32_t dwSize);
 	int iCalcTotalWeight(int iClientH);
 	void ReqRepairItemCofirmHandler(int iClientH, char cItemID, const char * pString);
@@ -595,8 +595,8 @@ public:
 	void RequestRetrieveItemHandler(int iClientH, char * pData);
 	void RequestCivilRightHandler(int iClientH, char * pData);
 	bool bCheckLimitedUser(int iClientH);
-	void LevelUpSettingsHandler(int iClientH, char * pData, uint32_t dwMsgSize);
-	void FightzoneReserveHandler(int iClientH, char * pData, uint32_t dwMsgSize);
+	void LevelUpSettingsHandler(int iClientH, char * pData, size_t dwMsgSize);
+	void FightzoneReserveHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool bCheckLevelUp(int iClientH);
 	uint32_t iGetLevelExp(int iLevel);
 	void TimeManaPointsUp(int iClientH);
@@ -611,7 +611,7 @@ public:
 	void PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect = false, int iV1 = 0);
 	int  iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cDir);
 	void ToggleCombatModeHandler(int iClientH);
-	void GuildNotifyHandler(char * pData, uint32_t dwMsgSize);
+	void GuildNotifyHandler(char * pData, size_t dwMsgSize);
 	void SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short sV2, char * pString);
 	void DelayEventProcess();
 	void TimeHitPointsUp(int iClientH);
@@ -632,8 +632,8 @@ public:
 	void GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short dX, short dY, uint16_t wObjectID, const char * pItemName);
 	void RequestPurchaseItemHandler(int iClientH, const char * pItemName, int iNum, int iItemId = 0);
 	void ResponseDisbandGuildHandler(char * pData, int iType);
-	void RequestDisbandGuildHandler(int iClientH, char * pData, uint32_t dwMsgSize);
-	void RequestCreateNewGuildHandler(int iClientH, char * pData, uint32_t dwMsgSize);
+	void RequestDisbandGuildHandler(int iClientH, char * pData, size_t dwMsgSize);
+	void RequestCreateNewGuildHandler(int iClientH, char * pData, size_t dwMsgSize);
 	void ResponseCreateNewGuildHandler(char * pData, int iType);
 	int  iClientMotion_Stop_Handler(int iClientH, short sX, short sY, char cDir);
 
@@ -645,9 +645,9 @@ public:
 	int  iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char cDir);
 	void DropItemHandler(int iClientH, short sItemIndex, int iAmount, const char * pItemName, bool bByPlayer = true);
 	void ClientCommonHandler(int iClientH, char * pData);
-	bool __fastcall bGetMsgQuene(char * pFrom, char * pData, uint32_t * pMsgSize, int * pIndex, char * pKey);
+	bool __fastcall bGetMsgQuene(char * pFrom, char * pData, size_t* pMsgSize, int * pIndex, char * pKey);
 	void MsgProcess();
-	bool __fastcall bPutMsgQuene(char cFrom, char * pData, uint32_t dwMsgSize, int iIndex, char cKey);
+	bool __fastcall bPutMsgQuene(char cFrom, char * pData, size_t dwMsgSize, int iIndex, char cKey);
 	int iGetDangerValue(int iNpcH, short dX, short dY);
 	//int  iCalculateAttackEffect(short sTargetH, char cTargetType, short sAttackerH, char cAttackerType, int tdX, int tdY, int iAttackMode, bool bNearAttack = false);
 	uint32_t iCalculateAttackEffect(short sTargetH, char cTargetType, short sAttackerH, char cAttackerType, int tdX, int tdY, int iAttackMode, bool bNearAttack = false, bool bIsDash = false, bool bArrowUse = false);
@@ -655,7 +655,7 @@ public:
 	bool bGetEmptyPosition(short * pX, short * pY, char cMapIndex);
 	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMapIndex, char cTurn, int * pError);
 	int  iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, bool bResponse = true, bool bIsDash = false);
-	void ChatMsgHandler(int iClientH, char * pData, uint32_t dwMsgSize);
+	void ChatMsgHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();
 	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0);
@@ -676,7 +676,7 @@ public:
 	void SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t dwMsgID, uint16_t wMsgType, short sV1, short sV2, short sV3);
 	void DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogout = true, bool bForceCloseConn = false);
 	int  iComposeInitMapData(short sX, short sY, int iClientH, char * pData);
-	void RequestInitDataHandler(int iClientH, char * pData, char cKey, uint32_t dwMsgSize = 0);
+	void RequestInitDataHandler(int iClientH, char * pData, char cKey, size_t dwMsgSize = 0);
 	void RequestInitPlayerHandler(int iClientH, char * pData, char cKey);
 	int iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDir, char cMoveType);
 	void ClientMotionHandler(int iClientH, char * pData);
@@ -701,7 +701,7 @@ public:
 	void PartyOperationResult_Join(int iClientH, char *pName, int iResult, int iPartyID);
 	void PartyOperationResult_Dismiss(int iClientH, char *pName, int iResult, int iPartyID);
 	void PartyOperationResult_Delete(int iPartyID);
-	void RequestJoinPartyHandler(int iClientH, char *pData, uint32_t dwMsgSize);
+	void RequestJoinPartyHandler(int iClientH, char *pData, size_t dwMsgSize);
 	void RequestDismissPartyHandler(int iClientH);
 	void GetPartyInfoHandler(int iClientH);
 	void PartyOperationResult_Info(int iClientH, char * pName, int iTotal, char *pNameList);
@@ -1044,14 +1044,14 @@ public:
 	void ShowClientMsg(int iClientH, char* pMsg);
 	void RequestResurrectPlayer(int iClientH, bool bResurrect);
 	void LoteryHandler(int iClientH);
-	void SetSkillAll(int iClientH,char * pData, uint32_t dwMsgSize);
+	void SetSkillAll(int iClientH,char * pData, size_t dwMsgSize);
 	
 	/*void GetAngelMantleHandler(int iClientH,int iItemID,char * pString);
 	void CheckAngelUnequip(int iClientH, int iAngelID);
 	int iAngelEquip(int iClientH);*/
 
 	void SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp);
-	void GetAngelHandler(int iClientH, char* pData, uint32_t dwMsgSize);
+	void GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize);
 
 	void RequestEnchantUpgradeHandler(int client, uint32_t type, uint32_t lvl, int iType);
 	int GetRequiredLevelForUpgrade(uint32_t value);

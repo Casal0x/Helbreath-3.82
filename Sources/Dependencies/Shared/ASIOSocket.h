@@ -63,10 +63,10 @@ using NativeSocketHandle = asio::ip::tcp::socket::native_handle_type;
 
 struct NetworkPacket {
 	std::vector<uint8_t> data;
-	uint32_t reportedSize;
+	size_t reportedSize;
 
 	NetworkPacket() : reportedSize(0) {}
-	NetworkPacket(const char* pData, uint32_t dwSize)
+	NetworkPacket(const char* pData, size_t dwSize)
 		: reportedSize(dwSize)
 	{
 		data.reserve(dwSize + 1024);
@@ -94,7 +94,7 @@ struct UnsentBlock {
 };
 
 // Async callback types
-using MessageCallback = std::function<void(int socketIndex, const char* pData, uint32_t dwSize, char cKey)>;
+using MessageCallback = std::function<void(int socketIndex, const char* pData, size_t dwSize, char cKey)>;
 using ErrorCallback = std::function<void(int socketIndex, int errorCode)>;
 using AcceptCallback = std::function<void(asio::ip::tcp::socket peer)>;
 
@@ -110,7 +110,7 @@ public:
 	ASIOSocket& operator=(const ASIOSocket&) = delete;
 
 	// Buffer initialization
-	bool bInitBufferSize(uint32_t dwBufferSize);
+	bool bInitBufferSize(size_t dwBufferSize);
 
 	// Connection management
 	bool bConnect(char* pAddr, int iPort);
@@ -125,14 +125,14 @@ public:
 	int Poll();
 
 	// Sending (synchronous path for polling mode)
-	int iSendMsg(char* cData, uint32_t dwSize, char cKey = 0);
+	int iSendMsg(char* cData, size_t dwSize, char cKey = 0);
 	int iSendMsgBlockingMode(char* buf, int nbytes);
 
 	// Async sending (posts to strand, builds frame, chains async_write)
-	int iSendMsgAsync(char* cData, uint32_t dwSize, char cKey = 0);
+	int iSendMsgAsync(char* cData, size_t dwSize, char cKey = 0);
 
 	// Receiving (synchronous path for polling mode)
-	char* pGetRcvDataPointer(uint32_t* pMsgSize, char* pKey = 0);
+	char* pGetRcvDataPointer(size_t* pMsgSize, char* pKey = 0);
 
 	// v4 Networking API (packet queue) - polling mode only
 	int DrainToQueue();
@@ -165,14 +165,14 @@ public:
 private:
 	// Internal read/send helpers (synchronous polling path)
 	int _iOnRead();
-	int _iSend(const char* cData, int iSize, bool bSaveFlag);
-	int _iSend_ForInternalUse(const char* cData, int iSize);
+	int _iSend(const char* cData, size_t iSize, bool bSaveFlag);
+	int _iSend_ForInternalUse(const char* cData, size_t iSize);
 	int _iSendUnsentData();
-	bool _iRegisterUnsentData(const char* cData, int iSize);
+	bool _iRegisterUnsentData(const char* cData, size_t iSize);
 
 	// Async read chain
 	void _DoAsyncReadHeader();
-	void _DoAsyncReadBody(uint32_t bodySize);
+	void _DoAsyncReadBody(size_t bodySize);
 
 	// Async write chain
 	void _DoAsyncWrite();
@@ -194,12 +194,12 @@ private:
 	// Receive/send buffers (RAII vectors replace raw char*)
 	std::vector<char> m_rcvBuffer;
 	std::vector<char> m_sndBuffer;
-	uint32_t m_dwBufferSize = 0;
+	size_t m_dwBufferSize = 0;
 
 	// Read state machine (polling mode)
 	char     m_cStatus = DEF_XSOCKSTATUS_READINGHEADER;
-	uint32_t m_dwReadSize = 3;
-	uint32_t m_dwTotalReadSize = 0;
+	size_t m_dwReadSize = 3;
+	size_t m_dwTotalReadSize = 0;
 
 	// Stored connection info (for reconnect)
 	char m_pAddr[30] = {};
