@@ -45,3 +45,19 @@ void PlayerAppearance::Clear()
 {
 	std::memset(this, 0, sizeof(*this));
 }
+
+void EntityAppearance::Unpack(short sAppr2)
+{
+	sRawAppr2       = sAppr2;
+	iSubType        = (sAppr2 & 0xFF00) >> 8;
+	iSpecialFrame   = (sAppr2 & 0x00FF);
+	bHasSpecialState = sAppr2 != 0;
+}
+
+void EntityAppearance::Clear()
+{
+	sRawAppr2       = 0;
+	iSubType        = 0;
+	iSpecialFrame   = 0;
+	bHasSpecialState = false;
+}

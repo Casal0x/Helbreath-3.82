@@ -231,7 +231,7 @@ public:
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(hb::item::ItemType type);
 	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status);
-	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status);
+	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
 	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _RemoveChatMsgListByObjectID(int iObjectID);
 	void _LoadTextDlgContents(int cType);

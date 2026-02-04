@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "ObjectIDRange.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -69,7 +70,7 @@ void HandleBuildItemSuccess(CGame* pGame, char* pData)
 		sV1 = pkt->item_id;
 		sV2 = pkt->item_count;
 	}
-	if (sV1 < 10000)
+	if (hb::objectid::IsPlayerID(sV1))
 	{
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 6, 1, sV1, 0);
 		pGame->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = sV2;

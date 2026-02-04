@@ -323,8 +323,8 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
         {
             cTotalChar++;
             switch (pGame->m_pCharList[i]->m_sSex) {
-            case 1:	pGame->m_entityState.m_sOwnerType = 1; break;
-            case 2:	pGame->m_entityState.m_sOwnerType = 4; break;
+            case 1:	pGame->m_entityState.m_sOwnerType = hb::owner::MaleFirst; break;
+            case 2:	pGame->m_entityState.m_sOwnerType = hb::owner::FemaleFirst; break;
             }
             pGame->m_entityState.m_sOwnerType += pGame->m_pCharList[i]->m_sSkinCol - 1;
             pGame->m_entityState.m_iDir = pGame->m_cMenuDir;

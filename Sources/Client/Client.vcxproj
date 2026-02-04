@@ -448,6 +448,8 @@
     <ClInclude Include="PlayerController.h" />
     <ClInclude Include="AppearanceData.h" />
     <ClInclude Include="EntityRenderState.h" />
+    <ClInclude Include="OwnerType.h" />
+    <ClInclude Include="ObjectIDRange.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameModeManager.h" />
     <ClInclude Include="GameFonts.h" />

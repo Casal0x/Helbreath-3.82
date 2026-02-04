@@ -13,6 +13,7 @@
 
 #include "AppearanceData.h"
 #include "PlayerStatusData.h"
+#include "OwnerType.h"
 
 // Maximum length for entity names
 constexpr int ENTITY_NAME_LENGTH = 12;
@@ -66,11 +67,10 @@ public:
     // Entity Type Helpers
     //------------------------------------------------------------------
 
-    // Player types are 1-6 (male/female for each class)
-    bool IsPlayer() const { return m_sOwnerType >= 1 && m_sOwnerType <= 6; }
-
-    // NPC/Monster types are 7+
-    bool IsNPC() const { return m_sOwnerType >= 7; }
+    bool IsPlayer() const { return hb::owner::IsPlayer(m_sOwnerType); }
+    bool IsNPC() const { return hb::owner::IsNPC(m_sOwnerType); }
+    bool IsMale() const { return hb::owner::IsMale(m_sOwnerType); }
+    bool IsFemale() const { return hb::owner::IsFemale(m_sOwnerType); }
 
     //------------------------------------------------------------------
     // Member Variables

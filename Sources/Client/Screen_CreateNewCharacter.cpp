@@ -449,8 +449,8 @@ void Screen_CreateNewCharacter::on_render()
 
     // Character preview
     switch (m_pGame->m_pPlayer->m_iGender) {
-    case 1: m_pGame->m_entityState.m_sOwnerType = 1; break;
-    case 2: m_pGame->m_entityState.m_sOwnerType = 4; break;
+    case 1: m_pGame->m_entityState.m_sOwnerType = hb::owner::MaleFirst; break;
+    case 2: m_pGame->m_entityState.m_sOwnerType = hb::owner::FemaleFirst; break;
     }
     m_pGame->m_entityState.m_sOwnerType += m_pGame->m_pPlayer->m_iSkinCol - 1;
     m_pGame->m_entityState.m_iDir = m_pGame->m_cMenuDir;

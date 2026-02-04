@@ -1,11 +1,20 @@
 #pragma once
 #include <cstdint>
 
+// Base appearance type marker. Player and NPC appearances are fundamentally
+// different: players are composite (body + equipment), NPCs are monolithic
+// (sprite set by type ID). The base exists for polymorphic function signatures.
+// Value-type inheritance (same pattern as EntityStatus/PlayerStatus) — no vtable.
+struct AppearanceData
+{
+	void Clear() {}
+};
+
 // Unpacked player appearance - extracted from sAppr1-4 bit fields.
 // Network packets still use the packed format; this struct is populated
 // client-side immediately after reception so rendering code can use
 // named fields instead of inline bit masking.
-struct PlayerAppearance
+struct PlayerAppearance : AppearanceData
 {
 	// From sAppr1
 	int iUnderwearType;    // sAppr1 & 0x000F
@@ -47,5 +56,18 @@ struct PlayerAppearance
 	short sRawAppr2;
 
 	void Unpack(short sAppr1, short sAppr2, short sAppr3, short sAppr4, int iApprColor);
+	void Clear();
+};
+
+// NPC/Entity appearance - unpacks the single sAppr2 value that NPCs use.
+// NPCs don't have equipment slots; sAppr2 encodes sub-type and special frame.
+struct EntityAppearance : AppearanceData
+{
+	short sRawAppr2;       // Raw packed sAppr2 from server
+	int iSubType;          // (sAppr2 & 0xFF00) >> 8  (crop type, crusade ownership)
+	int iSpecialFrame;     // (sAppr2 & 0x00FF)        (NPC special animation frame)
+	bool bHasSpecialState; // sAppr2 != 0
+
+	void Unpack(short sAppr2);
 	void Clear();
 };

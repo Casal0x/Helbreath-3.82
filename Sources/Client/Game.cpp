@@ -4,6 +4,7 @@
 
 
 #include "Game.h"
+#include "ObjectIDRange.h"
 #include "CommonTypes.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -1291,7 +1292,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 1: // Swds
 						case 2: // Bows
 						case 3: // Shields
-						case 15: // Axes hammers
+						case hb::owner::ShopKeeper: // Axes hammers
 							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
 							break;
 						default:
@@ -1367,7 +1368,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 					if (m_iIlusionOwnerH != 0)
 					{
-						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (m_entityState.m_sOwnerType < 10))
+						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (!hb::owner::IsNPC(m_entityState.m_sOwnerType)))
 						{
 							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
 							m_entityState.m_status = m_pPlayer->m_illusionStatus;
@@ -1440,11 +1441,11 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.appearance = m_entityState.m_appearance;
 					info.status = m_entityState.m_status;
 					// Determine type based on owner type
-					info.type = (m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6) ?
+					info.type = (m_entityState.IsPlayer()) ?
 						FocusedObjectType::Player : FocusedObjectType::NPC;
 					CursorTarget::TestObject(bounds, info, iy, res_msy);
 
-					if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
+					if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID)
 					{
 						if (m_bIsObserverMode == false)
 						{
@@ -1483,12 +1484,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 					case 224:
 						switch (sObjSprFrame) {
-						case 24:
-						case 34:
-						case 35:
-						case 36:
-						case 37:
-						case 38:
+						case hb::owner::Tom:
+						case hb::owner::Dummy:
+						case hb::owner::EnergySphere:
+						case hb::owner::ArrowGuardTower:
+						case hb::owner::CannonGuardTower:
+						case hb::owner::ManaCollector:
 							break;
 						default:
 							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Shadow());
@@ -1777,56 +1778,56 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					case 5:
 					case 6: // Human F
 
-					case 28: // Troll.
-					case 29: // Ogre
-					case 30: // Liche
-					case 31: // DD
-					case 32: // Uni
-					case 33: // WW
-					case 43: // LWB
-					case 44: // GHK
-					case 45: // GHKABS
-					case 46: // TK
-					case 47: // BG
-					case 48: // SK
-					case 49: // HC
-					case 50: // TW
-					case 51: // CP
-					case 52: // GG
-					case 53: // BB
-					case 54: // DE
-					case 55: // Rabbit
-					case 56: // Cat
-					case 57: // Frog
-					case 58: // MG
-					case 59: // Ettin
-					case 60: // Plant
-					case 61: // Rudolph
-					case 62: // DireBoar
-					case 63: // Frost
-					case 65: // Ice-Golem
-					case 66: // Wyvern
-					case 70: // Dragon..........Ajouts par Snoopy
-					case 71: // Centaur
-					case 72: // ClawTurtle
-					case 73: // FireWyvern
-					case 74: // GiantCrayfish
-					case 75: // Gi Lizard
-					case 76: // Gi Tree
-					case 77: // Master Orc
-					case 78: // Minaus
-					case 79: // Nizie
-					case 80: // Tentocle
-					case 81: // Abaddon
-					case 82: // Sorceress
-					case 83: // ATK
-					case 84: // MasterElf
-					case 85: // DSK
-					case 86: // HBT
-					case 87: // CT
-					case 88: // Barbarian
-					case 89: // AGC
-					case 91: // Gate
+					case hb::owner::Troll: // Troll.
+					case hb::owner::Ogre: // Ogre
+					case hb::owner::Liche: // Liche
+					case hb::owner::Demon: // DD
+					case hb::owner::Unicorn: // Uni
+					case hb::owner::WereWolf: // WW
+					case hb::owner::LightWarBeetle: // LWB
+					case hb::owner::GodsHandKnight: // GHK
+					case hb::owner::GodsHandKnightCK: // GHKABS
+					case hb::owner::TempleKnight: // TK
+					case hb::owner::BattleGolem: // BG
+					case hb::owner::Stalker: // SK
+					case hb::owner::HellClaw: // HC
+					case hb::owner::TigerWorm: // TW
+					case hb::owner::Catapult: // CP
+					case hb::owner::Gargoyle: // GG
+					case hb::owner::Beholder: // BB
+					case hb::owner::DarkElf: // DE
+					case hb::owner::Bunny: // Rabbit
+					case hb::owner::Cat: // Cat
+					case hb::owner::GiantFrog: // Frog
+					case hb::owner::MountainGiant: // MG
+					case hb::owner::Ettin: // Ettin
+					case hb::owner::CannibalPlant: // Plant
+					case hb::owner::Rudolph: // Rudolph
+					case hb::owner::DireBoar: // DireBoar
+					case hb::owner::Frost: // Frost
+					case hb::owner::IceGolem: // Ice-Golem
+					case hb::owner::Wyvern: // Wyvern
+					case hb::owner::Dragon: // Dragon..........Ajouts par Snoopy
+					case hb::owner::Centaur: // Centaur
+					case hb::owner::ClawTurtle: // ClawTurtle
+					case hb::owner::FireWyvern: // FireWyvern
+					case hb::owner::GiantCrayfish: // GiantCrayfish
+					case hb::owner::GiLizard: // Gi Lizard
+					case hb::owner::GiTree: // Gi Tree
+					case hb::owner::MasterOrc: // Master Orc
+					case hb::owner::Minaus: // Minaus
+					case hb::owner::Nizie: // Nizie
+					case hb::owner::Tentocle: // Tentocle
+					case hb::owner::Abaddon: // Abaddon
+					case hb::owner::Sorceress: // Sorceress
+					case hb::owner::ATK: // ATK
+					case hb::owner::MasterElf: // MasterElf
+					case hb::owner::DSK: // DSK
+					case hb::owner::HBT: // HBT
+					case hb::owner::CT: // CT
+					case hb::owner::Barbarian: // Barbarian
+					case hb::owner::AGC: // AGC
+					case hb::owner::Gate: // Gate
 						break;
 
 					default: // 10..27
@@ -2593,7 +2594,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
 					break;
 
-				case 20: // Howard
+				case hb::owner::Howard: // Howard
 					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, cItemID, sType);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
@@ -2614,8 +2615,8 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
 					break;
 
-				case 15: // ShopKeeper-W
-				case 24: // Tom
+				case hb::owner::ShopKeeper: // ShopKeeper-W
+				case hb::owner::Tom: // Tom
 					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, cItemID, sType);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
@@ -2995,17 +2996,17 @@ void CGame::_GetHairColorRGB(int iColorType, int* pR, int* pG, int* pB)
 		*pR = 10; *pG = 3; *pB = 10; break;
 	case 9:
 		*pR = 10; *pG = 3; *pB = -10; break;
-	case 10:
+	case hb::owner::Slime:
 		*pR = -10; *pG = 3; *pB = 10; break;
-	case 11:
+	case hb::owner::Skeleton:
 		*pR = 10; *pG = 3; *pB = 20; break;
-	case 12:
+	case hb::owner::StoneGolem:
 		*pR = 21; *pG = 3; *pB = 3; break;
-	case 13:
+	case hb::owner::Cyclops:
 		*pR = 3; *pG = 3; *pB = 25; break;
-	case 14:
+	case hb::owner::OrcMage:
 		*pR = 3; *pG = 11; *pB = 3; break;
-	case 15:
+	case hb::owner::ShopKeeper:
 		*pR = 6; *pG = 8; *pB = 0; break;
 	}
 }
@@ -3447,7 +3448,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType) /*|| m_entityState.m_sOwnerType == hb::owner::FireWyvern || m_entityState.m_sOwnerType == hb::owner::Wyvern*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -3475,7 +3476,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -3628,11 +3629,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			m_entityState.m_iFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 		}
-		else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
-		else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
@@ -3680,16 +3681,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX, sY, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // FireWyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -3700,10 +3701,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -3810,16 +3811,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -3830,10 +3831,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -3956,7 +3957,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -3973,7 +3974,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 
 	// Snoopy: Abaddon effects
-	if (m_entityState.m_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 	{
 		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
@@ -4018,7 +4019,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		}
 	}
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -4037,7 +4038,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType) /*|| m_entityState.m_sOwnerType == hb::owner::FireWyvern || m_entityState.m_sOwnerType == hb::owner::Wyvern*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -4065,7 +4066,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -4077,9 +4078,9 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	case 7:  m_entityState.m_iFrame = 4; break;
 	case 8:  m_entityState.m_iFrame = 4; break;
 	case 9:  m_entityState.m_iFrame = 4; break;
-	case 10: m_entityState.m_iFrame = 5; break;
-	case 11: m_entityState.m_iFrame = 6; break;
-	case 12: m_entityState.m_iFrame = 7; break;
+	case hb::owner::Slime: m_entityState.m_iFrame = 5; break;
+	case hb::owner::Skeleton: m_entityState.m_iFrame = 6; break;
+	case hb::owner::StoneGolem: m_entityState.m_iFrame = 7; break;
 	}
 
 	switch (m_entityState.m_sOwnerType) {
@@ -4326,16 +4327,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 				if (m_entityState.m_iFrame == 3) m_pSprite[iWeaponIndex]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame - 1, SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -4435,16 +4436,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 
 			default:
@@ -4572,7 +4573,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX + dx, sY + dy, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX + dx, sY + dy, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX + dx, sY + dy, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
@@ -4590,7 +4591,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(sX + dx - 13, sY + dy - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -4606,7 +4607,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType)) bInv = true;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -4633,7 +4634,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID)
 			bInv = true;
 		else
 		{
@@ -4728,16 +4729,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	{
 		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-		case 10: // Slime
-		case 35: // Energy Sphere
-		case 50: // TW
-		case 51: // CP
-		case 60: // Plant
-		case 65: // IceGolem
+		case hb::owner::Slime: // Slime
+		case hb::owner::EnergySphere: // Energy Sphere
+		case hb::owner::TigerWorm: // TW
+		case hb::owner::Catapult: // CP
+		case hb::owner::CannibalPlant: // Plant
+		case hb::owner::IceGolem: // IceGolem
 			//case 66: // Wyvern
 			//case 73: // Fire Wyvern
-		case 81: // Abaddon
-		case 91: // Gate
+		case hb::owner::Abaddon: // Abaddon
+		case hb::owner::Gate: // Gate
 			break;
 		default:
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
@@ -4822,7 +4823,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -4848,7 +4849,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType)) bInv = true;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -4875,7 +4876,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -4963,16 +4964,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	{
 		CheckActiveAura(sX, sY, dwTime, m_entityState.m_sOwnerType);
 		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-		case 10: // Slime
-		case 35: // Energy Sphere
-		case 50: // TW
-		case 51: // CP
-		case 60: // Plant
-		case 65: // IceGolem
+		case hb::owner::Slime: // Slime
+		case hb::owner::EnergySphere: // Energy Sphere
+		case hb::owner::TigerWorm: // TW
+		case hb::owner::Catapult: // CP
+		case hb::owner::CannibalPlant: // Plant
+		case hb::owner::IceGolem: // IceGolem
 			//case 66: // Wyvern
 			//case 73: // Fire Wyvern
-		case 81: // Abaddon
-		case 91: // Gate
+		case hb::owner::Abaddon: // Abaddon
+		case hb::owner::Gate: // Gate
 			break;
 		default:
 			if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -5090,7 +5091,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -5119,7 +5120,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	int iWeaponColor, iShieldColor, iArmorColor, iMantleColor, iArmColor, iPantsColor, iBootsColor, iHelmColor;
 	int iSkirtDraw = 0;
 
-	if (m_entityState.m_sOwnerType == 35 || m_entityState.m_sOwnerType == 81 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType) /*|| m_entityState.m_sOwnerType == hb::owner::FireWyvern || m_entityState.m_sOwnerType == hb::owner::Wyvern*/) bInv = true; //Energy-Ball,Wyvern
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -5147,7 +5148,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -5313,16 +5314,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
-			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::McGaffin) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Perry) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Devlin) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Abaddon) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Gate) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		}
 		else
@@ -5333,16 +5334,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
-			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 68) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 69) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::McGaffin) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Perry) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Devlin) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Abaddon) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Gate) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 		}
 		iUndiesIndex = -1;
@@ -5389,16 +5390,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 				}
 				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-				case 10: // Slime
-				case 35: // Energy Sphere
-				case 50: // TW
-				case 51: // CP
-				case 60: // Plant
-				case 65: // IceGolem
+				case hb::owner::Slime: // Slime
+				case hb::owner::EnergySphere: // Energy Sphere
+				case hb::owner::TigerWorm: // TW
+				case hb::owner::Catapult: // CP
+				case hb::owner::CannibalPlant: // Plant
+				case hb::owner::IceGolem: // IceGolem
 					//case 66: // Wyvern
 					//case 73: // Fire Wyvern
-				case 81: // Abaddon
-				case 91: // Gate
+				case hb::owner::Abaddon: // Abaddon
+				case hb::owner::Gate: // Gate
 					break;
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
@@ -5408,10 +5409,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 					break;
 				}
-				if (m_entityState.m_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (m_entityState.m_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 				{
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
@@ -5513,16 +5514,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			else
 			{
 				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-				case 10: // Slime
-				case 35: // Energy Sphere
-				case 50: // TW
-				case 51: // CP
-				case 60: // Plant
-				case 65: // IceGolem
+				case hb::owner::Slime: // Slime
+				case hb::owner::EnergySphere: // Energy Sphere
+				case hb::owner::TigerWorm: // TW
+				case hb::owner::Catapult: // CP
+				case hb::owner::CannibalPlant: // Plant
+				case hb::owner::IceGolem: // IceGolem
 					//case 66: // Wyvern
 					//case 73: // Fire Wyvern
-				case 81: // Abaddon
-				case 91: // Gate
+				case hb::owner::Abaddon: // Abaddon
+				case hb::owner::Gate: // Gate
 					break;
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
@@ -5532,10 +5533,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 					break;
 				}
-				if (m_entityState.m_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (m_entityState.m_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 				{
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
@@ -5673,16 +5674,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 				}
 				switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-				case 10: // Slime
-				case 35: // Energy Sphere
-				case 50: // TW
-				case 51: // CP
-				case 60: // Plant
-				case 65: // IceGolem
+				case hb::owner::Slime: // Slime
+				case hb::owner::EnergySphere: // Energy Sphere
+				case hb::owner::TigerWorm: // TW
+				case hb::owner::Catapult: // CP
+				case hb::owner::CannibalPlant: // Plant
+				case hb::owner::IceGolem: // IceGolem
 					//case 66: // Wyvern
 					//case 73: // Fire Wyvern
-				case 81: // Abaddon
-				case 91: // Gate
+				case hb::owner::Abaddon: // Abaddon
+				case hb::owner::Gate: // Gate
 					break;
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -5693,10 +5694,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 					break;
 				}
-				if (m_entityState.m_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (m_entityState.m_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 				{
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
@@ -5795,16 +5796,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			else
 			{
 				switch (m_entityState.m_sOwnerType) {
-				case 10: // Slime
-				case 35: // Energy Sphere
-				case 50: // TW
-				case 51: // CP
-				case 60: // Plant
-				case 65: // IceGolem
+				case hb::owner::Slime: // Slime
+				case hb::owner::EnergySphere: // Energy Sphere
+				case hb::owner::TigerWorm: // TW
+				case hb::owner::Catapult: // CP
+				case hb::owner::CannibalPlant: // Plant
+				case hb::owner::IceGolem: // IceGolem
 					//case 66: // Wyvern
 					//case 73: // Fire Wyvern
-				case 81: // Abaddon
-				case 91: // Gate
+				case hb::owner::Abaddon: // Abaddon
+				case hb::owner::Gate: // Gate
 					break;
 				default:
 					if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
@@ -5814,10 +5815,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					}
 					break;
 				}
-				if (m_entityState.m_sOwnerType == 35)
+				if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 					m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-				if (m_entityState.m_sOwnerType == 81) // Abaddon
+				if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 				{
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				}
@@ -5939,7 +5940,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -5955,7 +5956,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (m_entityState.m_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 	{
 		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
@@ -6000,7 +6001,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		}
 	}
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -6170,13 +6171,13 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
-			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Abaddon) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Gate) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 			iUndiesIndex = -1;
 			iHairIndex = -1;
@@ -6187,22 +6188,22 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			iMantleIndex = -1;
 			iHelmIndex = -1;
 			switch (m_entityState.m_sOwnerType) {
-			case 36: // AGT
-			case 37: // CGT
-			case 38: // MS
-			case 39: // DT
-			case 40: // ESG
-			case 41: // GMG
-			case 42: // ManaStone
+			case hb::owner::ArrowGuardTower: // AGT
+			case hb::owner::CannonGuardTower: // CGT
+			case hb::owner::ManaCollector: // MS
+			case hb::owner::Detector: // DT
+			case hb::owner::EnergyShield: // ESG
+			case hb::owner::GrandMagicGenerator: // GMG
+			case hb::owner::ManaStone: // ManaStone
 				if (m_entityState.m_appearance.sRawAppr2 == 0) cFrame = 0;
 				break;
-			case 51: cFrame = 0; break;
+			case hb::owner::Catapult: cFrame = 0; break;
 			}
 		}
 		else
 		{
 			switch (m_entityState.m_sOwnerType) {
-			case 51: cFrame = 0; break;
+			case hb::owner::Catapult: cFrame = 0; break;
 			default: cFrame -= 4; break;
 			}
 			if (m_entityState.m_appearance.sRawAppr2 != 0)
@@ -6210,13 +6211,13 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
-			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-			else if (m_entityState.m_sOwnerType == 81) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
-			else if (m_entityState.m_sOwnerType == 91) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Abaddon) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Gate) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			iUndiesIndex = -1;
 			iHairIndex = -1;
@@ -6242,16 +6243,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	if (bTrans == false)
 	{
 		switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-		case 10: // Slime
-		case 35: // Energy Sphere
-		case 50: // TW
-		case 51: // CP
-		case 60: // Plant
-		case 65: // IceGolem
-		case 66: // Wyvern
-		case 73: // Fire Wyvern
-		case 81: // Abaddon
-		case 91: // Gate
+		case hb::owner::Slime: // Slime
+		case hb::owner::EnergySphere: // Energy Sphere
+		case hb::owner::TigerWorm: // TW
+		case hb::owner::Catapult: // CP
+		case hb::owner::CannibalPlant: // Plant
+		case hb::owner::IceGolem: // IceGolem
+		case hb::owner::Wyvern: // Wyvern
+		case hb::owner::FireWyvern: // Fire Wyvern
+		case hb::owner::Abaddon: // Abaddon
+		case hb::owner::Gate: // Gate
 			break;
 		default:
 			if (ConfigManager::Get().GetDetailLevel() != 0)
@@ -6262,7 +6263,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			}
 			break;
 		}
-		if (m_entityState.m_sOwnerType == 81)
+		if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 		{
 			m_pEffectSpr[152]->Draw(sX - 80, sY - 15, m_entityState.m_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f)); // Explosion Abaddon
 			m_pEffectSpr[152]->Draw(sX, sY - 15, m_entityState.m_iEffectFrame % 27, SpriteLib::DrawParams::Alpha(0.7f));
@@ -6285,8 +6286,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			case 8: m_pEffectSpr[147]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
 			}
 		}
-		else if (m_entityState.m_sOwnerType == 66) m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
-		else if (m_entityState.m_sOwnerType == 73)
+		else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern)
 		{	//m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			m_pSprite[33]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			switch (m_entityState.m_iDir) {
@@ -6375,7 +6376,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -6401,7 +6402,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (m_entityState.m_sOwnerType == 66) return invalidRect;
+	if (m_entityState.m_sOwnerType == hb::owner::Wyvern) return invalidRect;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -6489,91 +6490,91 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		break;
 	default:
 		switch (m_entityState.m_sOwnerType) {
-		case 28: // Troll
-		case 29: // Ogre
-		case 30: // Liche
-		case 31: // DD		// les 2 dernieres sont pas bonnes pour un mort !
-		case 63: // Frost	// les 2 dernieres sont pas bonnes pour un mort !
+		case hb::owner::Troll: // Troll
+		case hb::owner::Ogre: // Ogre
+		case hb::owner::Liche: // Liche
+		case hb::owner::Demon: // DD		// les 2 dernieres sont pas bonnes pour un mort !
+		case hb::owner::Frost: // Frost	// les 2 dernieres sont pas bonnes pour un mort !
 			iFrame = 5;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
-		case 32: // Uni
-		case 33: // WW
-		case 43: // LWB
-		case 44: // GHK
-		case 45: // GHKABS
-		case 46: // TK
-		case 47: // BG
-		case 48: // SK
-		case 49: // HC
-		case 50: // TW
-		case 53: // BB
-		case 54: // DE
-		case 55: // Rabbit
-		case 56: // Cat
-		case 57: // Frog
-		case 58: // MG
-		case 59: // Ettin
-		case 60: // Plant
-		case 61: // Rudolph
-		case 62: // Direboar
-		case 64: // Crops  ----------- Crop ici! etonant, pourtant !
-		case 65: // IceGolem
-		case 70: // Dragon..........Ajouts par Snoopy
-		case 71: // Centaur
-		case 72: // ClawTurtle
-		case 74: // GiantCrayfish
-		case 75: // Gi Lizard
-		case 76: // Gi Tree
-		case 77: // Master Orc
-		case 78: // Minaus
-		case 79: // Nizie
-		case 80: // Tentocle
-		case 82: // Sorceress
-		case 83: // ATK
-		case 84: // MasterElf
-		case 85: // DSK
-		case 88: // Barbarian
+		case hb::owner::Unicorn: // Uni
+		case hb::owner::WereWolf: // WW
+		case hb::owner::LightWarBeetle: // LWB
+		case hb::owner::GodsHandKnight: // GHK
+		case hb::owner::GodsHandKnightCK: // GHKABS
+		case hb::owner::TempleKnight: // TK
+		case hb::owner::BattleGolem: // BG
+		case hb::owner::Stalker: // SK
+		case hb::owner::HellClaw: // HC
+		case hb::owner::TigerWorm: // TW
+		case hb::owner::Beholder: // BB
+		case hb::owner::DarkElf: // DE
+		case hb::owner::Bunny: // Rabbit
+		case hb::owner::Cat: // Cat
+		case hb::owner::GiantFrog: // Frog
+		case hb::owner::MountainGiant: // MG
+		case hb::owner::Ettin: // Ettin
+		case hb::owner::CannibalPlant: // Plant
+		case hb::owner::Rudolph: // Rudolph
+		case hb::owner::DireBoar: // Direboar
+		case hb::owner::Crops: // Crops  ----------- Crop ici! etonant, pourtant !
+		case hb::owner::IceGolem: // IceGolem
+		case hb::owner::Dragon: // Dragon..........Ajouts par Snoopy
+		case hb::owner::Centaur: // Centaur
+		case hb::owner::ClawTurtle: // ClawTurtle
+		case hb::owner::GiantCrayfish: // GiantCrayfish
+		case hb::owner::GiLizard: // Gi Lizard
+		case hb::owner::GiTree: // Gi Tree
+		case hb::owner::MasterOrc: // Master Orc
+		case hb::owner::Minaus: // Minaus
+		case hb::owner::Nizie: // Nizie
+		case hb::owner::Tentocle: // Tentocle
+		case hb::owner::Sorceress: // Sorceress
+		case hb::owner::ATK: // ATK
+		case hb::owner::MasterElf: // MasterElf
+		case hb::owner::DSK: // DSK
+		case hb::owner::Barbarian: // Barbarian
 			iFrame = 7;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
-		case 86: // HBT
-		case 87: // CT
-		case 89: // AGC
+		case hb::owner::HBT: // HBT
+		case hb::owner::CT: // CT
+		case hb::owner::AGC: // AGC
 			iFrame = 7;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 			break;
 
-		case 66: // Wyvern
+		case hb::owner::Wyvern: // Wyvern
 			iFrame = 15;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			break;
 
-		case 73: // FireWyvern
+		case hb::owner::FireWyvern: // FireWyvern
 			iFrame = 7;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			bTrans = true; // Prevents showing hugly corpse
 			break;
 
-		case 81: // Abaddon
+		case hb::owner::Abaddon: // Abaddon
 			iFrame = 0;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 			bTrans = true; // Prevents showing hugly corpse
 			break;
 
-		case 51: // CP
+		case hb::owner::Catapult: // CP
 			iFrame = 0;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
-		case 52: // GG
+		case hb::owner::Gargoyle: // GG
 			iFrame = 11;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			break;
 
-		case 91: // Gate
+		case hb::owner::Gate: // Gate
 			iFrame = 5;
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			break;
@@ -6668,7 +6669,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
@@ -6685,11 +6686,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (m_entityState.m_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 	{
 		Abaddon_corpse(sX, sY); // By Snoopy....
 	}
-	else if (m_entityState.m_sOwnerType == 73)
+	else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern)
 	{	//m_pEffectSpr[35]->Draw(sX+120, sY+120, rand(), SpriteLib::DrawParams::Alpha(0.7f));
 		m_pEffectSpr[35]->Draw(sX + 20, sY - 15, rand() % 10, SpriteLib::DrawParams::Alpha(0.7f));
 	}
@@ -6707,7 +6708,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (m_entityState.m_sOwnerType == 35 /* || m_entityState.m_sOwnerType == 66 || m_entityState.m_sOwnerType == 73*/)	bInv = true; //Energy-Ball, Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType))	bInv = true;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -6735,7 +6736,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -6887,7 +6888,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		break;
 
 	default:
-		if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
@@ -6917,59 +6918,59 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	case 5:
 	case 6:
 
-	case 28: // Troll.
-	case 29: // Orge.
-	case 30: // Liche
-	case 31: // DD
-	case 32: // Uni
-	case 33: // ww
+	case hb::owner::Troll: // Troll.
+	case hb::owner::Ogre: // Orge.
+	case hb::owner::Liche: // Liche
+	case hb::owner::Demon: // DD
+	case hb::owner::Unicorn: // Uni
+	case hb::owner::WereWolf: // ww
 
-	case 43: // LWB
-	case 44: // GHK
-	case 45: // GHKABS
-	case 46: // TK
-	case 47: // BG
-	case 48: // SK
-	case 49: // HC
-	case 50: // TW
+	case hb::owner::LightWarBeetle: // LWB
+	case hb::owner::GodsHandKnight: // GHK
+	case hb::owner::GodsHandKnightCK: // GHKABS
+	case hb::owner::TempleKnight: // TK
+	case hb::owner::BattleGolem: // BG
+	case hb::owner::Stalker: // SK
+	case hb::owner::HellClaw: // HC
+	case hb::owner::TigerWorm: // TW
 
-	case 52: // GG
-	case 53: // BB
-	case 54: // DE
-	case 55: // Rabbit
-	case 56: // Cat
-	case 57: // Frog
-	case 58: // MG
-	case 59: // Ettin
-	case 60: // Plant
-	case 61: // Rudolph
-	case 62: // DireBoar
-	case 63: // Frost
+	case hb::owner::Gargoyle: // GG
+	case hb::owner::Beholder: // BB
+	case hb::owner::DarkElf: // DE
+	case hb::owner::Bunny: // Rabbit
+	case hb::owner::Cat: // Cat
+	case hb::owner::GiantFrog: // Frog
+	case hb::owner::MountainGiant: // MG
+	case hb::owner::Ettin: // Ettin
+	case hb::owner::CannibalPlant: // Plant
+	case hb::owner::Rudolph: // Rudolph
+	case hb::owner::DireBoar: // DireBoar
+	case hb::owner::Frost: // Frost
 
-	case 65: // Ice-Golem
-	case 66: // Wyvern
+	case hb::owner::IceGolem: // Ice-Golem
+	case hb::owner::Wyvern: // Wyvern
 
-	case 70: // Dragon..........Ajouts par Snoopy
-	case 71: // Centaur
-	case 72: // ClawTurtle
-	case 73: // FireWyvern
-	case 74: // GiantCrayfish
-	case 75: // Gi Lizard
-	case 76: // Gi Tree
-	case 77: // Master Orc
-	case 78: // Minaus
-	case 79: // Nizie
-	case 80: // Tentocle
-	case 81: // Abaddon
-	case 82: // Sorceress
-	case 83: // ATK
-	case 84: // MasterElf
-	case 85: // DSK
-	case 86: // HBT
-	case 87: // CT
-	case 88: // Barbarian
-	case 89: // AGC
-	case 90: // Gail
+	case hb::owner::Dragon: // Dragon..........Ajouts par Snoopy
+	case hb::owner::Centaur: // Centaur
+	case hb::owner::ClawTurtle: // ClawTurtle
+	case hb::owner::FireWyvern: // FireWyvern
+	case hb::owner::GiantCrayfish: // GiantCrayfish
+	case hb::owner::GiLizard: // Gi Lizard
+	case hb::owner::GiTree: // Gi Tree
+	case hb::owner::MasterOrc: // Master Orc
+	case hb::owner::Minaus: // Minaus
+	case hb::owner::Nizie: // Nizie
+	case hb::owner::Tentocle: // Tentocle
+	case hb::owner::Abaddon: // Abaddon
+	case hb::owner::Sorceress: // Sorceress
+	case hb::owner::ATK: // ATK
+	case hb::owner::MasterElf: // MasterElf
+	case hb::owner::DSK: // DSK
+	case hb::owner::HBT: // HBT
+	case hb::owner::CT: // CT
+	case hb::owner::Barbarian: // Barbarian
+	case hb::owner::AGC: // AGC
+	case hb::owner::Gail: // Gail
 		break;
 
 	default:
@@ -6986,7 +6987,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		}
 	}
 
-	if (m_entityState.m_sOwnerType == 65) // IceGolem
+	if (m_entityState.m_sOwnerType == hb::owner::IceGolem) // IceGolem
 	{	/*m_pEffectSpr[77]->Draw(sX+dx, sY+dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f));*/
 		switch (rand() % 3) {
 		case 0:	m_pEffectSpr[76]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f)); break;
@@ -7017,16 +7018,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				}
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv) {
@@ -7036,10 +7037,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -7187,16 +7188,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -7207,10 +7208,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(fix_x, fix_y, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.7f));
 			}
@@ -7382,7 +7383,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
@@ -7401,7 +7402,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 	// Snoopy: Abaddon effects
-	if (m_entityState.m_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 	{
 		int randFrame = m_entityState.m_iEffectFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
@@ -7446,7 +7447,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		}
 	}
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -7466,8 +7467,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (m_entityState.m_sOwnerType == 67 || m_entityState.m_sOwnerType == 68 || m_entityState.m_sOwnerType == 69 || m_entityState.m_sOwnerType == 81) return invalidRect;
-	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (m_entityState.m_sOwnerType == hb::owner::McGaffin || m_entityState.m_sOwnerType == hb::owner::Perry || m_entityState.m_sOwnerType == hb::owner::Devlin || m_entityState.m_sOwnerType == hb::owner::Abaddon) return invalidRect;
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType)) bInv = true;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -7495,7 +7496,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -7582,11 +7583,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 10;
 		break;
 	default:
-		if (m_entityState.m_sOwnerType == 66)      iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
-		else if (m_entityState.m_sOwnerType == 86) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
-		else if (m_entityState.m_sOwnerType == 87) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
-		else if (m_entityState.m_sOwnerType == 89) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
+		if (m_entityState.m_sOwnerType == hb::owner::Wyvern)      iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::HBT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
+		else if (m_entityState.m_sOwnerType == hb::owner::CT) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
+		else if (m_entityState.m_sOwnerType == hb::owner::AGC) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);// Ne devrait pas arriver!
 		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (3 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
@@ -7637,16 +7638,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				}
 			}
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -7658,7 +7659,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				break;
 			}
 
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
@@ -7761,16 +7762,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -7781,7 +7782,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
 			if (bInv == true)
@@ -7904,7 +7905,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
@@ -7922,7 +7923,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -8049,7 +8050,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	// Check if mob type should skip shadow
 	auto shouldSkipShadow = [&]() {
 		switch (m_entityState.m_sOwnerType) {
-		case 10: case 35: case 50: case 51: case 60: case 65: case 81: case 91:
+		case hb::owner::Slime: case hb::owner::EnergySphere: case hb::owner::TigerWorm: case hb::owner::Catapult: case hb::owner::CannibalPlant: case hb::owner::IceGolem: case hb::owner::Abaddon: case hb::owner::Gate:
 			return true;
 		default:
 			return false;
@@ -8130,7 +8131,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	sX += static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetX);
 	sY += static_cast<int>(m_pMapData->m_pData[m_entityState.m_iDataX][m_entityState.m_iDataY].m_motion.fCurrentOffsetY);
 
-	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/ || m_entityState.m_sOwnerType == 81) bInv = true; //Energy-Ball, Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType)) bInv = true; //Energy-Ball, Wyvern
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
 		iWeaponColor = 0;
@@ -8158,17 +8159,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
 	// CLEROTH - Single-direction monsters
 	switch (m_entityState.m_sOwnerType) {
-	case 110: // Air Elemental
+	case hb::owner::AirElemental: // Air Elemental
 		m_entityState.m_iDir = 1; // North
 		break;
-	case 91: // Snoopy: Gate
+	case hb::owner::Gate: // Snoopy: Gate
 		if (m_entityState.m_iDir <= 3) m_entityState.m_iDir = 3;
 		else  m_entityState.m_iDir = 5;
 		break;
@@ -8325,9 +8326,9 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 			m_entityState.m_iFrame = (m_entityState.m_appearance.sRawAppr2 & 0x00FF) - 1;
 		}
-		/*	else if (m_entityState.m_sOwnerType == 66) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 73) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
-			else if (m_entityState.m_sOwnerType == 81) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);*/
+		/*	else if (m_entityState.m_sOwnerType == hb::owner::Wyvern) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::FireWyvern) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
+			else if (m_entityState.m_sOwnerType == hb::owner::Abaddon) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);*/
 		else iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		iUndiesIndex = -1;
 		iHairIndex = -1;
@@ -8343,15 +8344,15 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	}
 	if (m_bIsCrusadeMode) DrawObjectFOE(sX, sY, m_entityState.m_iFrame);
 	switch (m_entityState.m_sOwnerType) { // hum? la lumiere en dessous ?
-	case 15: // ShopKeeper
-	case 19: // Gandalf
-	case 20: // Howard
-	case 24: // Tom
-	case 25: // William
-	case 26: // Kenedy
-	case 51: // CP
-	case 86: // HBT
-	case 90: // Gail
+	case hb::owner::ShopKeeper: // ShopKeeper
+	case hb::owner::Gandalf: // Gandalf
+	case hb::owner::Howard: // Howard
+	case hb::owner::Tom: // Tom
+	case hb::owner::William: // William
+	case hb::owner::Kennedy: // Kenedy
+	case hb::owner::Catapult: // CP
+	case hb::owner::HBT: // HBT
+	case hb::owner::Gail: // Gail
 		m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 		break;
 	}
@@ -8386,16 +8387,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -8406,10 +8407,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 
@@ -8556,16 +8557,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -8576,9 +8577,9 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				}
 				break;
 			}
-			if (m_entityState.m_sOwnerType == 35)
+			if (m_entityState.m_sOwnerType == hb::owner::EnergySphere)
 				m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
-			if (m_entityState.m_sOwnerType == 81) // Abaddon
+			if (m_entityState.m_sOwnerType == hb::owner::Abaddon) // Abaddon
 			{
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -8741,7 +8742,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				}
 			}
 		}
-		if (m_entityState.m_sOwnerType == 64) // crop
+		if (m_entityState.m_sOwnerType == hb::owner::Crops) // crop
 		{
 			switch (m_entityState.m_iFrame) {
 			case 0: // color effect for crop
@@ -8764,7 +8765,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
@@ -8780,7 +8781,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 	}
 	// Snoopy: Abaddon effects
-	if (m_entityState.m_sOwnerType == 81)
+	if (m_entityState.m_sOwnerType == hb::owner::Abaddon)
 	{
 		int randFrame = m_entityState.m_iFrame % 12;
 		m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
@@ -8825,7 +8826,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 	}
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -8866,7 +8867,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (objBase->object_id < 10000)
+			if (hb::objectid::IsPlayerID(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -8904,7 +8905,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (objBase->object_id < 10000)
+			if (hb::objectid::IsPlayerID(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -8977,7 +8978,7 @@ void CGame::LogEventHandler(char* pData)
 	sType = base->type;
 	cDir = static_cast<char>(base->dir);
 	std::memset(cName, 0, sizeof(cName));
-	if (wObjectID < 10000)
+	if (hb::objectid::IsPlayerID(wObjectID))
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
@@ -9003,11 +9004,11 @@ void CGame::LogEventHandler(char* pData)
 	case DEF_MSGTYPE_CONFIRM:
 		{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		switch (sType) {
-		case 43: // LWB
-		case 44: // GHK
-		case 45: // GHKABS
-		case 46: // TK
-		case 47: // BG
+		case hb::owner::LightWarBeetle: // LWB
+		case hb::owner::GodsHandKnight: // GHK
+		case hb::owner::GodsHandKnightCK: // GHKABS
+		case hb::owner::TempleKnight: // TK
+		case hb::owner::BattleGolem: // BG
 			m_pEffectManager->AddEffect(EffectType::WHITE_HALO, (sX) * 32, (sY) * 32, 0, 0, 0);
 			break;
 		}
@@ -9792,7 +9793,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	int iSkirtDraw = 0;
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 
-	if (m_entityState.m_sOwnerType == 35 /*|| m_entityState.m_sOwnerType == 73 || m_entityState.m_sOwnerType == 66*/) bInv = true; //Energy-Ball,Wyvern
+	if (hb::owner::IsAlwaysInvisible(m_entityState.m_sOwnerType)) bInv = true;
 
 	if (ConfigManager::Get().GetDetailLevel() == 0)
 	{
@@ -9820,7 +9821,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if (m_entityState.m_status.bInvisibility)
 	{
-		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
+		if (m_entityState.m_wObjectID == m_pPlayer->m_sPlayerObjectID) bInv = true;
 		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
@@ -9956,16 +9957,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			}
 
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -10120,16 +10121,16 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		else
 		{
 			switch (m_entityState.m_sOwnerType) { // Pas d'ombre pour ces mobs
-			case 10: // Slime
-			case 35: // Energy Sphere
-			case 50: // TW
-			case 51: // CP
-			case 60: // Plant
-			case 65: // IceGolem
+			case hb::owner::Slime: // Slime
+			case hb::owner::EnergySphere: // Energy Sphere
+			case hb::owner::TigerWorm: // TW
+			case hb::owner::Catapult: // CP
+			case hb::owner::CannibalPlant: // Plant
+			case hb::owner::IceGolem: // IceGolem
 				//case 66: // Wyvern
 				//case 73: // Fire Wyvern
-			case 81: // Abaddon
-			case 91: // Gate
+			case hb::owner::Abaddon: // Abaddon
+			case hb::owner::Gate: // Gate
 				break;
 			default:
 				if (ConfigManager::Get().GetDetailLevel() != 0 && !bInv)
@@ -10325,7 +10326,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		if (m_entityState.IsPlayer()) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status, m_entityState.m_wObjectID);
 		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
@@ -10344,7 +10345,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.IsPlayer())
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -11360,11 +11361,11 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 				(m_pChatMsgList[i]->m_sY >= sY) && (m_pChatMsgList[i]->m_sY <= dY)) {
 
 				switch (m_pChatMsgList[i]->m_cType) {
-				case 41:
-				case 42:
-				case 21:
-				case 22:
-				case 23:
+				case hb::owner::GrandMagicGenerator:
+				case hb::owner::ManaStone:
+				case hb::owner::Guard:
+				case hb::owner::Amphis:
+				case hb::owner::ClayGolem:
 					DrawChatMsgBox(m_pChatMsgList[i]->m_sX, m_pChatMsgList[i]->m_sY, i, false);
 					break;
 				}
@@ -11377,14 +11378,14 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 				(m_pChatMsgList[i]->m_sY >= sY) && (m_pChatMsgList[i]->m_sY <= dY)) {
 
 				switch (m_pChatMsgList[i]->m_cType) {
-				case 41:
-				case 42:
-				case 21:
-				case 22:
-				case 23:
+				case hb::owner::GrandMagicGenerator:
+				case hb::owner::ManaStone:
+				case hb::owner::Guard:
+				case hb::owner::Amphis:
+				case hb::owner::ClayGolem:
 					break;
 
-				case 20:
+				case hb::owner::Howard:
 				default:
 					DrawChatMsgBox(m_pChatMsgList[i]->m_sX, m_pChatMsgList[i]->m_sY, i, true);
 					break;
@@ -12069,17 +12070,17 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	case 1:
 		rgb = GameColors::UIWhite.ToColorRef();
 		break;
-	case 20:
+	case hb::owner::Howard:
 		rgb = GameColors::UIDmgYellow.ToColorRef();
 		// �޽��� ǥ�ÿ� �����̰� �ɸ���.
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
 		break;
-	case 41:
+	case hb::owner::GrandMagicGenerator:
 		rgb = GameColors::UIDmgRed.ToColorRef();
 		break;
 
-	case 42:
+	case hb::owner::ManaStone:
 		rgb = GameColors::UIDmgRed.ToColorRef();
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
@@ -12134,9 +12135,9 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 	iLoc = m_dwCurTime - dwTime;
 	switch (m_pChatMsgList[iChatIndex]->m_cType) {
-	case 21:
-	case 22:
-	case 23://...
+	case hb::owner::Guard:
+	case hb::owner::Amphis:
+	case hb::owner::ClayGolem://...
 		if (iLoc > 80) iLoc = 10;
 		else iLoc = iLoc >> 3;
 		break;
@@ -12152,8 +12153,8 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	else bIsTrans = true;
 
 	switch (m_pChatMsgList[iChatIndex]->m_cType) {
-	case 41:
-	case 42:
+	case hb::owner::GrandMagicGenerator:
+	case hb::owner::ManaStone:
 		iSize2 = 0;
 		for (i = 0; i < 100; i++)
 			if (cMsg[i] != 0)
@@ -12165,9 +12166,9 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b).WithAdditive());
 		break;
 
-	case 21:
-	case 22:
-	case 23:
+	case hb::owner::Guard:
+	case hb::owner::Amphis:
+	case hb::owner::ClayGolem:
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
@@ -12185,7 +12186,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		}
 		break;
 
-	case 20:
+	case hb::owner::Howard:
 	default:
 		if (bIsPreDC == false)
 			m_Renderer->BeginTextBatch();
@@ -13190,40 +13191,40 @@ bool CGame::__bDecodeBuildItemContents(char* pBuffer)
 					memcpy(m_pBuildItemList[iIndex]->m_cElementName4, token, strlen(token));
 					cReadModeB = 10;
 					break;
-				case 10: // m_iElementCount4
+				case hb::owner::Slime: // m_iElementCount4
 					m_pBuildItemList[iIndex]->m_iElementCount[4] = atoi(token);
 					cReadModeB = 11;
 					break;
-				case 11: // m_cElementName5
+				case hb::owner::Skeleton: // m_cElementName5
 					std::memset(m_pBuildItemList[iIndex]->m_cElementName5, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName5));
 					memcpy(m_pBuildItemList[iIndex]->m_cElementName5, token, strlen(token));
 					cReadModeB = 12;
 					break;
-				case 12: // m_iElementCount5
+				case hb::owner::StoneGolem: // m_iElementCount5
 					m_pBuildItemList[iIndex]->m_iElementCount[5] = atoi(token);
 					cReadModeB = 13;
 					break;
-				case 13: // m_cElementName6
+				case hb::owner::Cyclops: // m_cElementName6
 					std::memset(m_pBuildItemList[iIndex]->m_cElementName6, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName6));
 					memcpy(m_pBuildItemList[iIndex]->m_cElementName6, token, strlen(token));
 					cReadModeB = 14;
 					break;
-				case 14: // m_iElementCount6
+				case hb::owner::OrcMage: // m_iElementCount6
 					m_pBuildItemList[iIndex]->m_iElementCount[6] = atoi(token);
 					cReadModeB = 15;
 					break;
 
-				case 15:
+				case hb::owner::ShopKeeper:
 					m_pBuildItemList[iIndex]->m_iSprH = atoi(token);
 					cReadModeB = 16;
 					break;
 
-				case 16:
+				case hb::owner::GiantAnt:
 					m_pBuildItemList[iIndex]->m_iSprFrame = atoi(token);
 					cReadModeB = 17;
 					break;
 
-				case 17:
+				case hb::owner::Scorpion:
 					m_pBuildItemList[iIndex]->m_iMaxSkill = atoi(token);
 
 					cReadModeA = 0;
@@ -13504,9 +13505,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 			case 7: strcpy(cTxt, GET_ITEM_NAME8);   break;
 			case 8: strcpy(cTxt, GET_ITEM_NAME9);   break;
 			case 9: strcpy(cTxt, GET_ITEM_NAME10);  break;
-			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
+			case hb::owner::Slime: strcpy(cTxt, GET_ITEM_NAME11); break;
+			case hb::owner::Skeleton: strcpy(cTxt, GET_ITEM_NAME12); break;
+			case hb::owner::StoneGolem: strcpy(cTxt, GET_ITEM_NAME13); break;
 			}
 			strcat(cTxt, pStr1);
 			std::memset(pStr1, 0, 64);
@@ -13523,9 +13524,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
 			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
 			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
+			case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
 			}
 			strcat(pStr2, cTxt);
 
@@ -13541,9 +13542,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7); break;
 				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3); break;
 				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3); break;
-				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);   break;
-				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);   break;
+				case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
 				strcpy(pStr3, cTxt);
 			}
@@ -13639,9 +13640,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			case 7: strcpy(cTxt, GET_ITEM_NAME8); break;
 			case 8: strcpy(cTxt, GET_ITEM_NAME9); break;
 			case 9: strcpy(cTxt, GET_ITEM_NAME10); break;
-			case 10: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case 11: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case 12: strcpy(cTxt, GET_ITEM_NAME13); break;
+			case hb::owner::Slime: strcpy(cTxt, GET_ITEM_NAME11); break;
+			case hb::owner::Skeleton: strcpy(cTxt, GET_ITEM_NAME12); break;
+			case hb::owner::StoneGolem: strcpy(cTxt, GET_ITEM_NAME13); break;
 			}
 			strcat(cTxt, pStr1);
 			std::memset(pStr1, 0, 64);
@@ -13658,9 +13659,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
 			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
 			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case 10: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case 11: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case 12: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
+			case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
 			}
 			strcat(pStr2, cTxt);
 
@@ -13677,9 +13678,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7);  break;
 				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3);  break;
 				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case 10: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);    break;
-				case 11: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case 12: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);    break;
+				case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
 				strcpy(pStr3, cTxt);
 			}
@@ -14420,19 +14421,19 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
-	case 15:
-	case 19:
-	case 20:
-	case 24:
-	case 25:
-	case 26:
-	case 42:
-	case 55:
-	case 56:
-	case 67:
-	case 68:
-	case 69:
-	case 64:
+	case hb::owner::ShopKeeper:
+	case hb::owner::Gandalf:
+	case hb::owner::Howard:
+	case hb::owner::Tom:
+	case hb::owner::William:
+	case hb::owner::Kennedy:
+	case hb::owner::ManaStone:
+	case hb::owner::Bunny:
+	case hb::owner::Cat:
+	case hb::owner::McGaffin:
+	case hb::owner::Perry:
+	case hb::owner::Devlin:
+	case hb::owner::Crops:
 	{
 		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
 		case 1:
@@ -14444,16 +14445,16 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 		case 7:
 		case 8:
 		case 9:
-		case 10:
-		case 11:
-		case 12:
-		case 13:
-		case 14:
+		case hb::owner::Slime:
+		case hb::owner::Skeleton:
+		case hb::owner::StoneGolem:
+		case hb::owner::Cyclops:
+		case hb::owner::OrcMage:
 		default:
 			break;
 		}
 	}
-	case 90:
+	case hb::owner::Gail:
 		break;
 	default:
 		if (iNpcHP > 0)
@@ -14468,7 +14469,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	}
 }
 
-void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& status)
+void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& status, uint16_t wObjectID)
 {
 	char cTxt[64], cTxt2[64];
 	short sR, sG, sB;
@@ -14495,7 +14496,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		if (m_bIsCrusadeMode == false) wsprintf(cTxt, "%s", pName);
 		else
 		{
-			if (m_entityState.m_wObjectID >= 10000) strcpy(cTxt, NPC_NAME_MERCENARY); //"Mercenary"
+			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) strcpy(cTxt, NPC_NAME_MERCENARY); //"Mercenary"
 			else
 			{
 				if (iFOE == -1) wsprintf(cTxt, "%d", m_entityState.m_wObjectID);
@@ -14522,7 +14523,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	std::memset(cTxt, 0, sizeof(cTxt));
 
-	if (memcmp(m_pPlayer->m_cPlayerName, pName, 10) == 0)
+	if (wObjectID == m_pPlayer->m_sPlayerObjectID)
 	{
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
@@ -15211,7 +15212,7 @@ void CGame::NpcTalkHandler(char* pData)
 			iQuestionType = 1;
 			break;
 
-		case 10: // Crusade
+		case hb::owner::Slime: // Crusade
 			std::memset(cTxt, 0, sizeof(cTxt));
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
 			iIndex++;
@@ -15288,73 +15289,73 @@ void CGame::GetNpcName(short sType, char* pName)
 {
 	switch (sType)
 	{
-	case 10: strcpy(pName, NPC_NAME_SLIME); break;
-	case 11: strcpy(pName, NPC_NAME_SKELETON); break;
-	case 12: strcpy(pName, NPC_NAME_STONEGOLEM); break;
-	case 13: strcpy(pName, NPC_NAME_CYCLOPS); break;
-	case 14: strcpy(pName, NPC_NAME_ORC); break;
-	case 15: strcpy(pName, NPC_NAME_SHOP_KEEPER); break;
-	case 16: strcpy(pName, NPC_NAME_GIANTANT); break;
-	case 17: strcpy(pName, NPC_NAME_GIANTSCORPION); break;
-	case 18: strcpy(pName, NPC_NAME_ZOMBIE); break;
-	case 19: strcpy(pName, NPC_NAME_MAGICIAN); break;
-	case 20: strcpy(pName, NPC_NAME_WAREHOUSE_KEEPER); break;
-	case 21: strcpy(pName, NPC_NAME_GUARD); break;
-	case 22: strcpy(pName, NPC_NAME_SNAKE); break;
-	case 23: strcpy(pName, NPC_NAME_CLAYGOLEM); break;
-	case 24: strcpy(pName, NPC_NAME_BLACKSMITH_KEEPER); break;
-	case 25: strcpy(pName, NPC_NAME_CITYHALL_OFFICER); break;
-	case 26: strcpy(pName, NPC_NAME_GUILDHALL_OFFICER); break;
-	case 27: strcpy(pName, NPC_NAME_HELHOUND); break;
-	case 28: strcpy(pName, NPC_NAME_TROLL); break;
-	case 29: strcpy(pName, NPC_NAME_OGRE); break;
-	case 30: strcpy(pName, NPC_NAME_LICHE); break;
-	case 31: strcpy(pName, NPC_NAME_DEMON); break;
-	case 32: strcpy(pName, NPC_NAME_UNICORN); break;
-	case 33: strcpy(pName, NPC_NAME_WEREWOLF); break;
-	case 34: strcpy(pName, NPC_NAME_DUMMY); break;
-	case 35: strcpy(pName, NPC_NAME_ENERGYSPHERE); break;
-	case 36:
+	case hb::owner::Slime: strcpy(pName, NPC_NAME_SLIME); break;
+	case hb::owner::Skeleton: strcpy(pName, NPC_NAME_SKELETON); break;
+	case hb::owner::StoneGolem: strcpy(pName, NPC_NAME_STONEGOLEM); break;
+	case hb::owner::Cyclops: strcpy(pName, NPC_NAME_CYCLOPS); break;
+	case hb::owner::OrcMage: strcpy(pName, NPC_NAME_ORC); break;
+	case hb::owner::ShopKeeper: strcpy(pName, NPC_NAME_SHOP_KEEPER); break;
+	case hb::owner::GiantAnt: strcpy(pName, NPC_NAME_GIANTANT); break;
+	case hb::owner::Scorpion: strcpy(pName, NPC_NAME_GIANTSCORPION); break;
+	case hb::owner::Zombie: strcpy(pName, NPC_NAME_ZOMBIE); break;
+	case hb::owner::Gandalf: strcpy(pName, NPC_NAME_MAGICIAN); break;
+	case hb::owner::Howard: strcpy(pName, NPC_NAME_WAREHOUSE_KEEPER); break;
+	case hb::owner::Guard: strcpy(pName, NPC_NAME_GUARD); break;
+	case hb::owner::Amphis: strcpy(pName, NPC_NAME_SNAKE); break;
+	case hb::owner::ClayGolem: strcpy(pName, NPC_NAME_CLAYGOLEM); break;
+	case hb::owner::Tom: strcpy(pName, NPC_NAME_BLACKSMITH_KEEPER); break;
+	case hb::owner::William: strcpy(pName, NPC_NAME_CITYHALL_OFFICER); break;
+	case hb::owner::Kennedy: strcpy(pName, NPC_NAME_GUILDHALL_OFFICER); break;
+	case hb::owner::Hellhound: strcpy(pName, NPC_NAME_HELHOUND); break;
+	case hb::owner::Troll: strcpy(pName, NPC_NAME_TROLL); break;
+	case hb::owner::Ogre: strcpy(pName, NPC_NAME_OGRE); break;
+	case hb::owner::Liche: strcpy(pName, NPC_NAME_LICHE); break;
+	case hb::owner::Demon: strcpy(pName, NPC_NAME_DEMON); break;
+	case hb::owner::Unicorn: strcpy(pName, NPC_NAME_UNICORN); break;
+	case hb::owner::WereWolf: strcpy(pName, NPC_NAME_WEREWOLF); break;
+	case hb::owner::Dummy: strcpy(pName, NPC_NAME_DUMMY); break;
+	case hb::owner::EnergySphere: strcpy(pName, NPC_NAME_ENERGYSPHERE); break;
+	case hb::owner::ArrowGuardTower:
 		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_ARROWGUARDTOWER);
 		break;
-	case 37:
+	case hb::owner::CannonGuardTower:
 		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_CANNONGUARDTOWER);
 		break;
-	case 38:
+	case hb::owner::ManaCollector:
 		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
 		else strcpy(pName, NPC_NAME_MANACOLLECTOR);
 		break;
-	case 39:
+	case hb::owner::Detector:
 		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
 		else strcpy(pName, NPC_NAME_DETECTOR);
 		break;
-	case 40: strcpy(pName, NPC_NAME_ENERGYSHIELD); break;
-	case 41: strcpy(pName, NPC_NAME_GRANDMAGICGENERATOR); break;
-	case 42: strcpy(pName, NPC_NAME_MANASTONE); break;
-	case 43: strcpy(pName, NPC_NAME_LIGHTWARBEETLE); break;
-	case 44: strcpy(pName, NPC_NAME_GODSHANDKNIGHT); break;
-	case 45: strcpy(pName, NPC_NAME_GODSHANDKNIGHT_CK); break;
-	case 46: strcpy(pName, NPC_NAME_TEMPLEKNIGHT); break;
-	case 47: strcpy(pName, NPC_NAME_BATTLEGOLEM); break;
-	case 48: strcpy(pName, NPC_NAME_STALKER); break;
-	case 49: strcpy(pName, NPC_NAME_HELLCLAW); break;
-	case 50: strcpy(pName, NPC_NAME_TIGERWORM); break;
-	case 51: strcpy(pName, NPC_NAME_CATAPULT); break;
-	case 52: strcpy(pName, NPC_NAME_GARGOYLE); break;
-	case 53: strcpy(pName, NPC_NAME_BEHOLDER); break;
-	case 54: strcpy(pName, NPC_NAME_DARKELF); break;
-	case 55: strcpy(pName, NPC_NAME_RABBIT); break;
-	case 56: strcpy(pName, NPC_NAME_CAT); break;
-	case 57: strcpy(pName, NPC_NAME_FROG); break;
-	case 58: strcpy(pName, NPC_NAME_MOUNTAIN_GIANT); break;
-	case 59: strcpy(pName, NPC_NAME_ETTIN); break;
-	case 60: strcpy(pName, NPC_NAME_CANNIBAL); break;
-	case 61: strcpy(pName, NPC_NAME_RUDOLPH); break;
-	case 62: strcpy(pName, NPC_NAME_DIREBOAR); break;
-	case 63: strcpy(pName, NPC_NAME_FROST); break;
-	case 64:
+	case hb::owner::EnergyShield: strcpy(pName, NPC_NAME_ENERGYSHIELD); break;
+	case hb::owner::GrandMagicGenerator: strcpy(pName, NPC_NAME_GRANDMAGICGENERATOR); break;
+	case hb::owner::ManaStone: strcpy(pName, NPC_NAME_MANASTONE); break;
+	case hb::owner::LightWarBeetle: strcpy(pName, NPC_NAME_LIGHTWARBEETLE); break;
+	case hb::owner::GodsHandKnight: strcpy(pName, NPC_NAME_GODSHANDKNIGHT); break;
+	case hb::owner::GodsHandKnightCK: strcpy(pName, NPC_NAME_GODSHANDKNIGHT_CK); break;
+	case hb::owner::TempleKnight: strcpy(pName, NPC_NAME_TEMPLEKNIGHT); break;
+	case hb::owner::BattleGolem: strcpy(pName, NPC_NAME_BATTLEGOLEM); break;
+	case hb::owner::Stalker: strcpy(pName, NPC_NAME_STALKER); break;
+	case hb::owner::HellClaw: strcpy(pName, NPC_NAME_HELLCLAW); break;
+	case hb::owner::TigerWorm: strcpy(pName, NPC_NAME_TIGERWORM); break;
+	case hb::owner::Catapult: strcpy(pName, NPC_NAME_CATAPULT); break;
+	case hb::owner::Gargoyle: strcpy(pName, NPC_NAME_GARGOYLE); break;
+	case hb::owner::Beholder: strcpy(pName, NPC_NAME_BEHOLDER); break;
+	case hb::owner::DarkElf: strcpy(pName, NPC_NAME_DARKELF); break;
+	case hb::owner::Bunny: strcpy(pName, NPC_NAME_RABBIT); break;
+	case hb::owner::Cat: strcpy(pName, NPC_NAME_CAT); break;
+	case hb::owner::GiantFrog: strcpy(pName, NPC_NAME_FROG); break;
+	case hb::owner::MountainGiant: strcpy(pName, NPC_NAME_MOUNTAIN_GIANT); break;
+	case hb::owner::Ettin: strcpy(pName, NPC_NAME_ETTIN); break;
+	case hb::owner::CannibalPlant: strcpy(pName, NPC_NAME_CANNIBAL); break;
+	case hb::owner::Rudolph: strcpy(pName, NPC_NAME_RUDOLPH); break;
+	case hb::owner::DireBoar: strcpy(pName, NPC_NAME_DIREBOAR); break;
+	case hb::owner::Frost: strcpy(pName, NPC_NAME_FROST); break;
+	case hb::owner::Crops:
 	{
 		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
 		case 1:	strcpy(pName, NPC_NAME_WATERMELON);	break;
@@ -15366,47 +15367,47 @@ void CGame::GetNpcName(short sType, char* pName)
 		case 7: strcpy(pName, NPC_NAME_CORN); break;
 		case 8: strcpy(pName, NPC_NAME_BFLOWER); break;
 		case 9: strcpy(pName, NPC_NAME_MELON); break;
-		case 10: strcpy(pName, NPC_NAME_TOMATO); break;
-		case 11: strcpy(pName, NPC_NAME_GRAPPE); break;
-		case 12: strcpy(pName, NPC_NAME_BLUEGRAPPE); break;
-		case 13: strcpy(pName, NPC_NAME_MUSHROM); break;
-		case 14: strcpy(pName, NPC_NAME_GINSENG); break;
+		case hb::owner::Slime: strcpy(pName, NPC_NAME_TOMATO); break;
+		case hb::owner::Skeleton: strcpy(pName, NPC_NAME_GRAPPE); break;
+		case hb::owner::StoneGolem: strcpy(pName, NPC_NAME_BLUEGRAPPE); break;
+		case hb::owner::Cyclops: strcpy(pName, NPC_NAME_MUSHROM); break;
+		case hb::owner::OrcMage: strcpy(pName, NPC_NAME_GINSENG); break;
 		default: strcpy(pName, NPC_NAME_CROP); break;
 		}
 	}
 	break;
-	case 65: strcpy(pName, NPC_NAME_ICEGOLEM); break;
-	case 66: strcpy(pName, NPC_NAME_WYVERN); break;
-	case 67: strcpy(pName, NPC_NAME_MCGAFFIN); break;
-	case 68: strcpy(pName, NPC_NAME_PERRY); break;
-	case 69: strcpy(pName, NPC_NAME_DEVLIN); break;
+	case hb::owner::IceGolem: strcpy(pName, NPC_NAME_ICEGOLEM); break;
+	case hb::owner::Wyvern: strcpy(pName, NPC_NAME_WYVERN); break;
+	case hb::owner::McGaffin: strcpy(pName, NPC_NAME_MCGAFFIN); break;
+	case hb::owner::Perry: strcpy(pName, NPC_NAME_PERRY); break;
+	case hb::owner::Devlin: strcpy(pName, NPC_NAME_DEVLIN); break;
 
-	case 70: strcpy(pName, NPC_NAME_DRAGON); break;
-	case 71: strcpy(pName, NPC_NAME_CENTAUR); break;
-	case 72: strcpy(pName, NPC_NAME_CLAWTUR); break;
-	case 73: strcpy(pName, NPC_NAME_FIREWYV); break;
-	case 74: strcpy(pName, NPC_NAME_GICRAYF); break;
-	case 75: strcpy(pName, NPC_NAME_GILIZAR); break;
-	case 76: strcpy(pName, NPC_NAME_GITREE); break;
-	case 77: strcpy(pName, NPC_NAME_MASTORC); break;
-	case 78: strcpy(pName, NPC_NAME_MINAUS); break;
-	case 79: strcpy(pName, NPC_NAME_NIZIE); break;
+	case hb::owner::Dragon: strcpy(pName, NPC_NAME_DRAGON); break;
+	case hb::owner::Centaur: strcpy(pName, NPC_NAME_CENTAUR); break;
+	case hb::owner::ClawTurtle: strcpy(pName, NPC_NAME_CLAWTUR); break;
+	case hb::owner::FireWyvern: strcpy(pName, NPC_NAME_FIREWYV); break;
+	case hb::owner::GiantCrayfish: strcpy(pName, NPC_NAME_GICRAYF); break;
+	case hb::owner::GiLizard: strcpy(pName, NPC_NAME_GILIZAR); break;
+	case hb::owner::GiTree: strcpy(pName, NPC_NAME_GITREE); break;
+	case hb::owner::MasterOrc: strcpy(pName, NPC_NAME_MASTORC); break;
+	case hb::owner::Minaus: strcpy(pName, NPC_NAME_MINAUS); break;
+	case hb::owner::Nizie: strcpy(pName, NPC_NAME_NIZIE); break;
 
-	case 80: strcpy(pName, NPC_NAME_TENTOCL); break;
-	case 81: strcpy(pName, NPC_NAME_ABADDON); break;
-	case 82: strcpy(pName, NPC_NAME_SORCERS); break;
-	case 83: strcpy(pName, NPC_NAME_ATK); break;
-	case 84: strcpy(pName, NPC_NAME_MASTELF); break;
-	case 85: strcpy(pName, NPC_NAME_DSK); break;
-	case 86: strcpy(pName, NPC_NAME_HBT); break;
-	case 87: strcpy(pName, NPC_NAME_CT); break;
-	case 88: strcpy(pName, NPC_NAME_BARBAR); break;
-	case 89: strcpy(pName, NPC_NAME_AGC); break;
-	case 90: strcpy(pName, NPC_NAME_GAIL); break;
-	case 91: strcpy(pName, NPC_NAME_GATE); break;
+	case hb::owner::Tentocle: strcpy(pName, NPC_NAME_TENTOCL); break;
+	case hb::owner::Abaddon: strcpy(pName, NPC_NAME_ABADDON); break;
+	case hb::owner::Sorceress: strcpy(pName, NPC_NAME_SORCERS); break;
+	case hb::owner::ATK: strcpy(pName, NPC_NAME_ATK); break;
+	case hb::owner::MasterElf: strcpy(pName, NPC_NAME_MASTELF); break;
+	case hb::owner::DSK: strcpy(pName, NPC_NAME_DSK); break;
+	case hb::owner::HBT: strcpy(pName, NPC_NAME_HBT); break;
+	case hb::owner::CT: strcpy(pName, NPC_NAME_CT); break;
+	case hb::owner::Barbarian: strcpy(pName, NPC_NAME_BARBAR); break;
+	case hb::owner::AGC: strcpy(pName, NPC_NAME_AGC); break;
+	case hb::owner::Gail: strcpy(pName, NPC_NAME_GAIL); break;
+	case hb::owner::Gate: strcpy(pName, NPC_NAME_GATE); break;
 
 		// CLEROTH - NEW MONSTERS
-	case 110: strcpy(pName, NPC_NAME_AIRLEMENTAL); break;
+	case hb::owner::AirElemental: strcpy(pName, NPC_NAME_AIRLEMENTAL); break;
 	}
 }
 
@@ -15534,7 +15535,7 @@ void CGame::MotionResponseHandler(char* pData)
 
 	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
 		m_pPlayer->m_Controller.DecrementCommandCount();
-		if ((m_wLastAttackTargetID >= 10000) && (m_wLastAttackTargetID < 30000)) {
+		if (hb::objectid::IsNpcID(m_wLastAttackTargetID)) {
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETNPCHP, 0, m_wLastAttackTargetID, 0, 0, 0);
 		}
 		break;
@@ -16117,7 +16118,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 
-						case 10: // Axe
+						case hb::owner::Slime: // Axe
 							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
 							{
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
@@ -16160,7 +16161,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 							}
 							break;
-						case 14: // Hammer
+						case hb::owner::OrcMage: // Hammer
 							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -16195,7 +16196,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 							}
 							break;
-						case 21: // Wand
+						case hb::owner::Guard: // Wand
 							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -16239,7 +16240,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6)))
 					{
 						switch (sObjectType) { 	// CLEROTH - NPC TALK
-						case 15: // ShopKeeper-W�
+						case hb::owner::ShopKeeper: // ShopKeeper-W�
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 1);
@@ -16256,7 +16257,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 19: // Gandlf
+						case hb::owner::Gandalf: // Gandlf
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 16, 0);
@@ -16273,7 +16274,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 20: // Howard
+						case hb::owner::Howard: // Howard
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 14, 0);
@@ -16294,7 +16295,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 24: // Tom
+						case hb::owner::Tom: // Tom
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 2);
@@ -16315,7 +16316,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 25: // William
+						case hb::owner::William: // William
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 13, 0);
@@ -16332,7 +16333,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 26: // Kennedy
+						case hb::owner::Kennedy: // Kennedy
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 7, 0);
@@ -16349,7 +16350,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}*/
 							break;
 
-						case 21: // Guard
+						case hb::owner::Guard: // Guard
 							if ((_iGetFOE(iObjectStatus) >= 0) && (!m_pPlayer->m_bIsCombatMode))
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -16364,9 +16365,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 21;
 							}
 							break;
-						case 67: // McGaffin
-						case 68: // Perry
-						case 69: // Devlin
+						case hb::owner::McGaffin: // McGaffin
+						case hb::owner::Perry: // Perry
+						case hb::owner::Devlin: // Devlin
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -16382,7 +16383,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 
-						case 32: // Unicorn
+						case hb::owner::Unicorn: // Unicorn
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -16398,7 +16399,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 
-						case 90: // Snoopy: Gail
+						case hb::owner::Gail: // Snoopy: Gail
 							/*switch (cName[0]) {
 							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 6, 0, 0);
@@ -16509,7 +16510,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									break;
 
-								case 10: //
+								case hb::owner::Slime: //
 									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
@@ -16526,7 +16527,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
-								case 14: //
+								case hb::owner::OrcMage: //
 									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
@@ -16543,7 +16544,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
-								case 21: //
+								case hb::owner::Guard: //
 									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
@@ -16667,7 +16668,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 						break;
 
-					case 10: //
+					case hb::owner::Slime: //
 						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -16675,14 +16676,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 						break;
 
-					case 14: //
+					case hb::owner::OrcMage: //
 						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
-					case 21: //
+					case hb::owner::Guard: //
 						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -16699,12 +16700,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6))) {
 					switch (sObjectType) {
-					case 15:
-					case 19:
-					case 20:
-					case 24:
-					case 25:
-					case 26: // npcs
+					case hb::owner::ShopKeeper:
+					case hb::owner::Gandalf:
+					case hb::owner::Howard:
+					case hb::owner::Tom:
+					case hb::owner::William:
+					case hb::owner::Kennedy: // npcs
 						break;
 
 					default: // All "normal mobs"
@@ -16768,21 +16769,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								}
 								break;
 
-							case 10: //
+							case hb::owner::Slime: //
 								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
-							case 14: // hammer
+							case hb::owner::OrcMage: // hammer
 								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
-							case 21: // wand
+							case hb::owner::Guard: // wand
 								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -17202,10 +17203,10 @@ void CGame::ShowEventList(uint32_t dwTime)
 			case 4:
 				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
 				break;
-			case 10:
+			case hb::owner::Slime:
 				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
 				break;
-			case 20:
+			case hb::owner::Howard:
 				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
 				break;
 			}
@@ -17230,10 +17231,10 @@ void CGame::ShowEventList(uint32_t dwTime)
 			case 4:
 				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
 				break;
-			case 10:
+			case hb::owner::Slime:
 				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
 				break;
-			case 20:
+			case hb::owner::Howard:
 				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
 				break;
 			}
@@ -17533,13 +17534,13 @@ void CGame::MotionEventHandler(char* pData)
 	if (!baseId) return;
 	wObjectID = baseId->object_id;
 
-	if (wObjectID >= 10000 && wObjectID < 30000) {
+	if (hb::objectid::IsNpcID(wObjectID)) {
 		m_dwLastNpcEventTime = GameClock::GetTimeMS();
 	}
 
-	if (wObjectID < 30000)
+	if (!hb::objectid::IsNearbyOffset(wObjectID))
 	{
-		if (wObjectID < 10000) 	// Player
+		if (hb::objectid::IsPlayerID(wObjectID)) 	// Player
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(pData, sizeof(hb::net::PacketEventMotionPlayer));
 			if (!pkt) return;
@@ -17662,7 +17663,7 @@ void CGame::MotionEventHandler(char* pData)
 
 	switch (wEventType) {
 	case DEF_OBJECTMAGIC: // Casting
-		_RemoveChatMsgListByObjectID(static_cast<uint16_t>(wObjectID - 30000));
+		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
 
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
@@ -17670,8 +17671,8 @@ void CGame::MotionEventHandler(char* pData)
 				std::memset(cTxt, 0, sizeof(cTxt));
 				wsprintf(cTxt, "%s!", m_pMagicCfgList[sV1]->m_cName);
 				m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, m_dwCurTime);
-				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
-				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
+				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
+				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
 				{
 					m_pChatMsgList[i].reset();
 				}
@@ -17680,7 +17681,7 @@ void CGame::MotionEventHandler(char* pData)
 		break;
 
 	case DEF_OBJECTDYING:
-		_RemoveChatMsgListByObjectID(static_cast<uint16_t>(wObjectID - 30000));
+		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
 			{
@@ -17693,8 +17694,8 @@ void CGame::MotionEventHandler(char* pData)
 				else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
 				else if ((sV1 >= 40) || (sV1 < 0))	iFontType = 23;
 				m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
-				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
-				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
+				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
+				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
 				{
 					m_pChatMsgList[i].reset();
 				}
@@ -17713,7 +17714,7 @@ void CGame::MotionEventHandler(char* pData)
 			m_iPointCommandType = -1;
 			ClearSkillUsingStatus();
 		}
-		_RemoveChatMsgListByObjectID(static_cast<uint16_t>(wObjectID - 30000));
+		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
 
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
@@ -17737,8 +17738,8 @@ void CGame::MotionEventHandler(char* pData)
 					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
 					PlaySound('C', 17, 0);
 				}
-				m_pChatMsgList[i]->m_iObjectID = static_cast<uint16_t>(wObjectID - 30000);
-				if (m_pMapData->bSetChatMsgOwner(static_cast<uint16_t>(wObjectID - 30000), -10, -10, i) == false)
+				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
+				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
 				{
 					m_pChatMsgList[i].reset();
 				}
@@ -17748,7 +17749,7 @@ void CGame::MotionEventHandler(char* pData)
 
 	case DEF_OBJECTATTACK:
 	case DEF_OBJECTATTACKMOVE:
-		if (wObjectID == m_pPlayer->m_sPlayerObjectID + 30000)
+		if (wObjectID == m_pPlayer->m_sPlayerObjectID + hb::objectid::NearbyOffset)
 		{
 			if (m_pMagicCfgList[sV3] != 0)
 			{

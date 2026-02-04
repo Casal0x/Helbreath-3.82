@@ -217,7 +217,7 @@ void CGame::Hotkey_WhisperTarget()
 		wsprintf(tempid, "/to %s", token);
 		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
 	}
-	else if (m_entityState.m_sOwnerType < 7 && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
+	else if (m_entityState.IsPlayer() && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
 		&& ((m_bIsCrusadeMode == false) || _iGetFOE(m_entityState.m_status) >= 0))
 	{
 		wsprintf(tempid, "/to %s", m_entityState.m_cName.data());

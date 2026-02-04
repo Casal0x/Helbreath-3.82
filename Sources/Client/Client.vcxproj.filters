@@ -379,6 +379,12 @@
     <ClInclude Include="..\Dependencies\Shared\GameGeometry.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="ObjectIDRange.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="OwnerType.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -734,6 +740,7 @@
     <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">
