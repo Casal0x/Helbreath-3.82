@@ -3,7 +3,6 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
-#define DEF_TEXTDLGMAXLINES 300
 
 DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcTalk, pGame)

@@ -16,9 +16,6 @@
 #include <windowsx.h>
 #endif
 
-// Custom message IDs (these should match what's used in the game)
-#define WM_USER_CALCSOCKETEVENT (WM_USER + 600)
-
 GameWindowHandler::GameWindowHandler(CGame* pGame)
     : m_pGame(pGame)
 {
@@ -224,14 +221,9 @@ bool GameWindowHandler::OnCustomMessage(uint32_t message, uintptr_t wParam, intp
 
     switch (message)
     {
-    case WM_USER_CALCSOCKETEVENT:
-        m_pGame->_CalcSocketClosed();
-        return true;
-
     case WM_SETCURSOR:
-#ifdef _WIN32
-        SetCursor(nullptr);
-#endif
+        if (Window::Get())
+            Window::Get()->SetMouseCursorVisible(false);
         return true;
 
     case WM_SETFOCUS:

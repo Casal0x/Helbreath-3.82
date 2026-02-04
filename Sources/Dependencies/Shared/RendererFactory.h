@@ -13,9 +13,7 @@
 // Available renderer backends
 enum class RendererType
 {
-    DirectDraw,     // DirectDraw 7 renderer (DDrawEngine)
-    SFML,           // SFML 3.0 renderer (SFMLEngine)
-    // Future: OpenGL, Direct3D9, Direct3D11, Vulkan, etc.
+    SFML,
 };
 
 // Creates a renderer instance
@@ -53,8 +51,7 @@ public:
     // Destroy the current renderer
     static void Destroy();
 
-    // Get native DXC_ddraw* for legacy code (returns nullptr if not DirectDraw)
-    // Cast result to DXC_ddraw* when using with CSprite
+    // Get the underlying renderer pointer
     static void* GetNative();
 
     // Get the current renderer type
@@ -85,7 +82,7 @@ public:
     // Convenience: Check if window is open and active
     static bool IsActive();
 
-    // Request window close (triggers close event, works for both DDraw and SFML)
+    // Request window close
     static void Close();
 
     // Show an error message box (platform-appropriate)

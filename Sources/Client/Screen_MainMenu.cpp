@@ -7,10 +7,6 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
-#include "ASIOSocket.h"
-
-extern class ASIOSocket* G_pCalcSocket;
-
 Screen_MainMenu::Screen_MainMenu(CGame* pGame)
     : IGameScreen(pGame), m_cCurFocus(1), m_cMaxFocus(3)
 {
@@ -21,13 +17,6 @@ void Screen_MainMenu::on_initialize()
     // Set current mode for code that checks GameModeManager::GetMode()
     GameModeManager::SetCurrentMode(GameMode::MainMenu);
 
-    // Initialization logic from CGame::UpdateScreen_MainMenu
-    if (G_pCalcSocket != 0)
-    {
-        delete G_pCalcSocket;
-        G_pCalcSocket = 0;
-    }
-    
     // Note: Sprite removal logic (m_pSprite.remove) is better handled by resource management,
     // but preserving legacy behavior for now.
     // DEF_SPRID_INTERFACE_ND_LOADING removal was in original code.

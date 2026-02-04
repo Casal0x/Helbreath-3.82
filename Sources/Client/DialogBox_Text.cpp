@@ -4,7 +4,7 @@
 #include "IInput.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
-#define DEF_TEXTDLGMAXLINES 300
+// DEF_TEXTDLGMAXLINES is in GameConstants.h (via Game.h)
 
 DialogBox_Text::DialogBox_Text(CGame* pGame)
 	: IDialogBox(DialogBoxId::Text, pGame)

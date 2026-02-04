@@ -336,6 +336,11 @@ void SFMLWindow::SetTitle(const char* title)
     }
 }
 
+void SFMLWindow::SetMouseCursorVisible(bool visible)
+{
+    m_renderWindow.setMouseCursorVisible(visible);
+}
+
 void SFMLWindow::ShowMessageBox(const char* title, const char* message)
 {
 #ifdef _WIN32

@@ -12,8 +12,6 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
-extern class ASIOSocket* G_pCalcSocket; // Sockets are often externs in this codebase
-
 Screen_Login::Screen_Login(CGame* pGame)
     : IGameScreen(pGame), m_cPrevFocus(0)
 {

@@ -8,9 +8,6 @@
 #include "RendererFactory.h"
 #include "lan_eng.h"
 #include "IInput.h"
-#include "ASIOSocket.h"
-
-extern class ASIOSocket* G_pCalcSocket;
 
 Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* pGame)
     : IGameScreen(pGame)
@@ -21,12 +18,7 @@ void Overlay_VersionNotMatch::on_initialize()
 {
     m_iFrameCount = 0;
 
-    // Close sockets
-    if (G_pCalcSocket != nullptr)
-    {
-        delete G_pCalcSocket;
-        G_pCalcSocket = nullptr;
-    }
+    // Close game socket
     if (m_pGame->m_pGSock != nullptr)
     {
         m_pGame->m_pGSock.reset();

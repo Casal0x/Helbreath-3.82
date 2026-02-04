@@ -15,9 +15,9 @@
 #include "Packet/SharedPackets.h"
 #include "SharedCalculations.h"
 #include <cstdio>
+#include <filesystem>
 #ifdef _WIN32
 #include <windows.h>
-#include <direct.h>
 #endif
 #include <charconv>
 
@@ -70,11 +70,6 @@
 using namespace hb::item;
 
 extern char G_cSpriteAlphaDegree;
-
-extern class ASIOSocket* G_pCalcSocket;
-extern bool G_bIsCalcSocketConnected;
-extern uint32_t G_dwCalcSocketTime, G_dwCalcSocketSendTime;
-
 
 // Drawing order arrays moved to RenderHelpers.cpp (declared extern in RenderHelpers.h)
 
@@ -237,14 +232,8 @@ bool CGame::bInit()
 
 	m_bHideLocalCursor = false;
 
-	// Create and initialize the renderer based on build configuration
-#if defined(SFML_ENGINE)
+	// Create and initialize the renderer
 	if (!Renderer::Set(RendererType::SFML))
-#elif defined(DDRAW_ENGINE)
-	if (!Renderer::Set(RendererType::DirectDraw))
-#else
-#error "No renderer engine defined. Define SFML_ENGINE or DDRAW_ENGINE."
-#endif
 	{
 		Window::ShowError("ERROR", "Failed to create renderer!");
 		return false;
@@ -365,7 +354,6 @@ void CGame::Quit()
 	m_pMapData.reset();
 	m_pGSock.reset();
 	m_pLSock.reset();
-	if (G_pCalcSocket != 0) delete G_pCalcSocket;
 	m_pEffectManager.reset();
 	m_pNetworkMessageManager.reset();
 }
@@ -437,8 +425,7 @@ void CGame::RenderFrame()
 
 	// Process timer and network events (must happen before any update logic)
 	// These were previously in UpdateScreen but need to run regardless of screen system
-	extern std::atomic<bool> G_bTimerSignal;
-	if (G_bTimerSignal.exchange(false)) {
+	if (m_game_timer.check_and_reset()) {
 		OnTimer();
 	}
 	OnGameSocketEvent();
@@ -1151,7 +1138,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		ChangeGameMode(GameMode::ConnectionLost);
 	m_pGSock.reset();
-	m_pGSock.reset();
 	break;
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
@@ -1161,11 +1147,6 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		printf("%s", cDbg);
 	}
 	m_pGSock.reset();
-	m_pGSock.reset();
-	if (G_pCalcSocket != 0) {
-		delete G_pCalcSocket;
-		G_pCalcSocket = 0;
-	}
 	Window::Close();
 	break;
 	}
@@ -1744,33 +1725,10 @@ void CGame::OnTimer()
 					printf("[ERROR] NetLag threshold reached, disconnecting\n");
 					ChangeGameMode(GameMode::ConnectionLost);
 					m_pGSock.reset();
-					m_pGSock.reset();
 					return;
 				}
 			}
 			else m_iNetLagCount = 0;
-		}
-
-		if ((G_bIsCalcSocketConnected == false) && ((dwTime - G_dwCalcSocketTime) > 5000))
-		{
-			m_pGSock.reset();
-			m_pGSock.reset();
-			ChangeGameMode(GameMode::Quit);
-			PlaySound('E', 14, 5);
-			AudioManager::Get().StopSound(SoundType::Effect, 38);
-			AudioManager::Get().StopMusic();
-			return;
-		}
-
-		if ((G_pCalcSocket != 0) && (G_bIsCalcSocketConnected == true)) {
-			if ((dwTime - G_dwCalcSocketSendTime) > 1000 * 5) {
-				hb::net::PacketCalcSocketPing ping{};
-				ping.key = 0;
-				ping.length = static_cast<std::uint16_t>(sizeof(ping));
-				ping.reserved = 0;
-				G_pCalcSocket->iSendMsgBlockingMode(reinterpret_cast<char*>(&ping), sizeof(ping));
-				G_dwCalcSocketSendTime = dwTime;
-			}
 		}
 	}
 }
@@ -2692,19 +2650,11 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 	case DEF_XSOCKEVENT_SOCKETERROR:
 	case DEF_XSOCKEVENT_QUENEFULL:
 		ChangeGameMode(GameMode::ConnectionLost);
-
-		m_pGSock.reset();
 		m_pGSock.reset();
 		break;
 
 	case DEF_XSOCKEVENT_CRITICALERROR:
 		m_pGSock.reset();
-		m_pGSock.reset();
-
-		if (G_pCalcSocket != 0) {
-			delete G_pCalcSocket;
-			G_pCalcSocket = 0;
-		}
 		Window::Close();
 		break;
 	}
@@ -7261,7 +7211,7 @@ void CGame::CreateScreenShot()
 			, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
 			, LongMapName
 			, i);
-		_mkdir("SAVE");
+		std::filesystem::create_directory("SAVE");
 		pFile = fopen(cFn, "rb");
 		if (pFile == 0)
 		{
@@ -8717,18 +8667,6 @@ void CGame::GetNpcName(short sType, char* pName)
 	}
 }
 
-void CGame::_CalcSocketClosed()
-{
-	if (GameModeManager::GetMode() == GameMode::MainGame)
-	{
-		m_pGSock.reset();
-		m_pGSock.reset();
-		PlaySound('E', 14, 5);
-		AudioManager::Get().StopSound(SoundType::Effect, 38);
-		AudioManager::Get().StopMusic();
-		ChangeGameMode(GameMode::Quit);
-	}
-}
 
 void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 {

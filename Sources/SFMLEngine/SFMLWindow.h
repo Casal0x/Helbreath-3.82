@@ -40,6 +40,9 @@ public:
     void Hide() override;
     void SetTitle(const char* title) override;
 
+    // Cursor
+    void SetMouseCursorVisible(bool visible) override;
+
     // Dialogs
     void ShowMessageBox(const char* title, const char* message) override;
 

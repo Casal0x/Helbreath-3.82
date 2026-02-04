@@ -7,19 +7,11 @@
 #include <cstdint>
 #include "SpriteCollection.h"
 #include "EffectType.h"
+#include "GameConstants.h"
 
 // Forward declarations only - avoid including heavy headers
 class CGame;
 class CEffect;
-
-// Effect constants
-#ifndef DEF_MAXEFFECTS
-#define DEF_MAXEFFECTS 300
-#endif
-
-#ifndef DEF_MAXEFFECTSPR
-#define DEF_MAXEFFECTSPR 300
-#endif
 
 class EffectManager
 {

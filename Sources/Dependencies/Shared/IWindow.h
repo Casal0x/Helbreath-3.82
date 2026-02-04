@@ -52,6 +52,9 @@ public:
     virtual void Hide() = 0;
     virtual void SetTitle(const char* title) = 0;
 
+    // ============== Cursor ==============
+    virtual void SetMouseCursorVisible(bool visible) = 0;
+
     // ============== Dialogs ==============
     virtual void ShowMessageBox(const char* title, const char* message) = 0;
 

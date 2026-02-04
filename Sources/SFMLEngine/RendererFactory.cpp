@@ -78,8 +78,6 @@ bool Renderer::Set(RendererType type)
 
     s_type = type;
 
-    // For SFML engine, we only support SFML type
-    // (DDraw type would need the DDrawEngine library linked instead)
     if (type == RendererType::SFML)
     {
         s_pRenderer = CreateRenderer();
@@ -154,8 +152,6 @@ void Renderer::Destroy()
 
 void* Renderer::GetNative()
 {
-    // For SFML, return the renderer itself
-    // Legacy code expecting DXC_ddraw* should check renderer type first
     return s_pRenderer;
 }
 

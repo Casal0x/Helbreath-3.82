@@ -388,6 +388,13 @@
     <ClInclude Include="OwnerType.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Application.h" />
+    <ClInclude Include="GameConstants.h" />
+    <ClInclude Include="GameTimer.h" />
+    <ClInclude Include="EquipmentIndices.h" />
+    <ClInclude Include="RenderHelpers.h" />
+    <ClInclude Include="PlayerRenderer.h" />
+    <ClInclude Include="NpcRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -747,6 +754,12 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Game.DrawObjects.cpp" />
+    <ClCompile Include="EquipmentIndices.cpp" />
+    <ClCompile Include="RenderHelpers.cpp" />
+    <ClCompile Include="PlayerRenderer.cpp" />
+    <ClCompile Include="NpcRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">

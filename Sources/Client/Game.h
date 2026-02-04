@@ -56,62 +56,15 @@
 #include "GameModeManager.h"
 #include "PlayerRenderer.h"
 #include "NpcRenderer.h"
+#include "GameTimer.h"
 
-//v2.18
-#define DEF_BTNSZX				74
-#define DEF_BTNSZY				20
-#define DEF_LBTNPOSX			30
-#define DEF_RBTNPOSX			154
-#define DEF_BTNPOSY				292
-
-#define DEF_INDEX4_MSGID		0
-#define DEF_INDEX2_MSGTYPE		4
-
-#define DEF_SOCKETBLOCKLIMIT	300
-
-#define DEF_MAXSPRITES			25000	// 20000 // Snoopy: Adjusted!
-#define DEF_MAXTILES			1000	// 800 // Snoopy: Adjusted!
-#define DEF_MAXEFFECTSPR		300
-#define DEF_MAXSOUNDEFFECTS		200		// 110   //Snoopy: Adjusted!
-#define DEF_MAXCHATMSGS			500
-#define DEF_MAXWHISPERMSG		5
-#define DEF_MAXCHATSCROLLMSGS	80
-#define DEF_MAXEFFECTS			300	//600 <- original
-#define DEF_CHATTIMEOUT_A		4000
-#define DEF_CHATTIMEOUT_B		500
-#define DEF_CHATTIMEOUT_C		2000
-#define DEF_MAXITEMS			50
-#define DEF_MAXBANKITEMS		1000 // Hard cap - actual soft limit received from server
-#define DEF_MAXGUILDSMAN		32
-#define DEF_MAXMENUITEMS		140  //v2.15  120 ->140
-#define DEF_TEXTDLGMAXLINES		300 //v2.18 3000->300
-
-#define DEF_MAXMAGICTYPE		100
-#define DEF_MAXSKILLTYPE		60
-#define DEF_MAXWHETHEROBJECTS	600
-#define DEF_MAXBUILDITEMS		100
-#define DEF_MAXGAMEMSGS			300
-#define DEF_MAXGUILDNAMES		100
-#define DEF_MAXSELLLIST			12
+#include "GameConstants.h"
 
 #ifndef WM_USER
 #define WM_USER 0x0400
 #endif
 #define WM_USER_GAMESOCKETEVENT	(WM_USER + 2000)
 #define WM_USER_LOGSOCKETEVENT	(WM_USER + 2001)
-
-#define DEF_SERVERTYPE_GAME			1
-#define DEF_SERVERTYPE_LOG			2
-
-#define DEF_CURSORSTATUS_NULL		0
-#define DEF_CURSORSTATUS_PRESSED	1
-#define DEF_CURSORSTATUS_SELECTED	2
-#define DEF_CURSORSTATUS_DRAGGING	3
-
-#define DEF_DOUBLECLICKTIME			300
-#define DEF_DOUBLECLICKTOLERANCE	4
-#define DEF_MAXPARTYMEMBERS			8
-#define DEF_MAXCRUSADESTRUCTURES	300
 
 // Overlay types for popup screens that render over base screens
 enum class OverlayType {
@@ -184,7 +137,6 @@ public:
 	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
 
 	void ResponsePanningHandler(char * pData);
-	void _CalcSocketClosed();
 	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
 	void _SetIlusionEffect(int iOwnerH);
 	int _iGetFOE(const PlayerStatus& status);
@@ -370,6 +322,7 @@ void _LoadShopMenuContents(char cType);
 	CGame();
 	virtual ~CGame();
 
+	GameTimer m_game_timer;
 	DialogBoxManager m_dialogBoxManager;
 //Snoopy=>>>>>>>>>>>>>>>>>>>>>
 	struct {

@@ -13,7 +13,7 @@
     },
     "display": {
         "borderless": false,
-        "captureMouse": false,
+        "captureMouse": true,
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,

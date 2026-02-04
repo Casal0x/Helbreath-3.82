@@ -7,10 +7,7 @@
 #include "GameModeManager.h"
 #include "CommonTypes.h"
 #include "IInput.h"
-#include "ASIOSocket.h"
 #include "SpriteID.h"
-
-extern class ASIOSocket* G_pCalcSocket;
 
 Screen_Quit::Screen_Quit(CGame* pGame)
     : IGameScreen(pGame)
@@ -24,12 +21,7 @@ void Screen_Quit::on_initialize()
 
     m_dwStartTime = GameClock::GetTimeMS();
 
-    // Close sockets
-    if (G_pCalcSocket != nullptr)
-    {
-        delete G_pCalcSocket;
-        G_pCalcSocket = nullptr;
-    }
+    // Close game socket
     if (m_pGame->m_pGSock != nullptr)
     {
         m_pGame->m_pGSock.reset();

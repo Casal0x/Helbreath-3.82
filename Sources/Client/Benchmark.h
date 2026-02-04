@@ -3,35 +3,32 @@
 // Benchmark.h - Lightweight performance profiling macros and debug console
 // Outputs to debug console window when allocated
 
+#include <cstdio>
+#include <cstring>
+#include <chrono>
+
+#ifdef _WIN32
 #include <windows.h>
-#include <stdio.h>
 #include <psapi.h>
+#endif
 
 // ============================================================================
 // Debug Console
 // ============================================================================
-//
-// Call DebugConsole::Allocate() to create a console window for debug output.
-// Call DebugConsole::Deallocate() to close it.
-// All printf/BENCHMARK output will appear in the console when allocated.
-//
-// Example:
-//    DebugConsole::Allocate();
-//    printf("Debug message\n");
-//    DebugConsole::PrintMemory("Checkpoint");
-//    DebugConsole::Deallocate();
-//
 
 class DebugConsole {
 private:
     static bool s_bAllocated;
     static FILE* s_pOut;
     static FILE* s_pErr;
+#ifdef _WIN32
     static SIZE_T s_lastWorkingSet;
+#endif
 
 public:
     static void Allocate()
     {
+#ifdef _WIN32
         if (s_bAllocated) return;
 
         if (AllocConsole())
@@ -51,10 +48,12 @@ public:
             s_lastWorkingSet = 0;
             printf("=== Helbreath Debug Console ===\n\n");
         }
+#endif
     }
 
     static void Deallocate()
     {
+#ifdef _WIN32
         if (!s_bAllocated) return;
 
         if (s_pOut) fclose(s_pOut);
@@ -64,12 +63,14 @@ public:
 
         FreeConsole();
         s_bAllocated = false;
+#endif
     }
 
     static bool IsAllocated() { return s_bAllocated; }
 
     static void PrintMemory(const char* pLabel)
     {
+#ifdef _WIN32
         if (!s_bAllocated) return;
 
         PROCESS_MEMORY_COUNTERS_EX pmc;
@@ -94,11 +95,14 @@ public:
 
             s_lastWorkingSet = pmc.WorkingSetSize;
         }
+#endif
     }
 
     static void ResetMemoryDelta()
     {
+#ifdef _WIN32
         s_lastWorkingSet = 0;
+#endif
     }
 };
 
@@ -106,27 +110,12 @@ public:
 __declspec(selectany) bool DebugConsole::s_bAllocated = false;
 __declspec(selectany) FILE* DebugConsole::s_pOut = nullptr;
 __declspec(selectany) FILE* DebugConsole::s_pErr = nullptr;
+#ifdef _WIN32
 __declspec(selectany) SIZE_T DebugConsole::s_lastWorkingSet = 0;
+#endif
 
 // ============================================================================
-// Usage Examples:
-// ============================================================================
-//
-// 1. Scope-based timing (automatic start/end with 1-second averaging):
-//    {
-//        BENCHMARK_SCOPE("DrawObjects");
-//        DrawObjects(x, y);  // Measured and averaged over 1 second
-//    }
-//    // Output example: [BENCHMARK] DrawObjects: 2.5 ms/call (60 calls, 150 ms total in 1s)
-//
-// 2. Manual timing:
-//    BENCHMARK_START(render);
-//    RenderScene();
-//    BENCHMARK_END(render, "RenderScene");
-//
-// 3. Quick one-liner:
-//    BENCHMARK_STMT("Update", m_pMapData->iObjectFrameCounter());
-//
+// Benchmark Macros
 // ============================================================================
 
 #ifdef _DEBUG
@@ -134,35 +123,34 @@ __declspec(selectany) SIZE_T DebugConsole::s_lastWorkingSet = 0;
 // Internal helper class for scope-based benchmarks with 1-second averaging
 class _BenchmarkScope {
 private:
-    LARGE_INTEGER m_liStart;
-    LARGE_INTEGER m_liFreq;
+    using Clock = std::chrono::high_resolution_clock;
+    using TimePoint = Clock::time_point;
+
+    TimePoint m_start;
     const char* m_pName;
 
-    // Static state for accumulating measurements over 1 second
     struct BenchmarkSlot {
         const char* pName;
-        LONGLONG liAccumTicks;
+        int64_t accumulated_ns;
         int iCallCount;
-        DWORD dwLastOutputTime;
+        TimePoint lastOutputTime;
     };
     static BenchmarkSlot s_slots[64];
     static int s_iSlotCount;
 
     int FindOrCreateSlot(const char* pName) {
-        // Find existing slot
         for (int i = 0; i < s_iSlotCount; i++) {
             if (strcmp(s_slots[i].pName, pName) == 0) {
                 return i;
             }
         }
 
-        // Create new slot
         if (s_iSlotCount < 64) {
             int idx = s_iSlotCount++;
             s_slots[idx].pName = pName;
-            s_slots[idx].liAccumTicks = 0;
+            s_slots[idx].accumulated_ns = 0;
             s_slots[idx].iCallCount = 0;
-            s_slots[idx].dwLastOutputTime = timeGetTime();
+            s_slots[idx].lastOutputTime = Clock::now();
             return idx;
         }
         return -1;
@@ -171,47 +159,38 @@ private:
 public:
     _BenchmarkScope(const char* pName)
         : m_pName(pName)
+        , m_start(Clock::now())
     {
-        QueryPerformanceFrequency(&m_liFreq);
-        QueryPerformanceCounter(&m_liStart);
     }
 
     ~_BenchmarkScope()
     {
-        LARGE_INTEGER liEnd;
-        QueryPerformanceCounter(&liEnd);
-
-        LONGLONG elapsed = liEnd.QuadPart - m_liStart.QuadPart;
+        auto end = Clock::now();
+        int64_t elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - m_start).count();
 
         int slot = FindOrCreateSlot(m_pName);
-        if (slot < 0) return; // Slot table full
+        if (slot < 0) return;
 
-        // Accumulate
-        s_slots[slot].liAccumTicks += elapsed;
+        s_slots[slot].accumulated_ns += elapsed_ns;
         s_slots[slot].iCallCount++;
 
-        // Check if 1 second has passed
-        DWORD dwNow = timeGetTime();
-        if ((dwNow - s_slots[slot].dwLastOutputTime) >= 1000) {
-            // Calculate average
-            double dAvgMs = (s_slots[slot].liAccumTicks * 1000.0) / (m_liFreq.QuadPart * s_slots[slot].iCallCount);
-            double dAvgUs = (s_slots[slot].liAccumTicks * 1000000.0) / (m_liFreq.QuadPart * s_slots[slot].iCallCount);
-            double dTotalMs = (s_slots[slot].liAccumTicks * 1000.0) / m_liFreq.QuadPart;
+        auto since_last = std::chrono::duration_cast<std::chrono::milliseconds>(end - s_slots[slot].lastOutputTime).count();
+        if (since_last >= 1000) {
+            double dAvgMs = (s_slots[slot].accumulated_ns / 1000000.0) / s_slots[slot].iCallCount;
+            double dAvgUs = (s_slots[slot].accumulated_ns / 1000.0) / s_slots[slot].iCallCount;
+            double dTotalMs = s_slots[slot].accumulated_ns / 1000000.0;
 
-            char buffer[256];
             if (dAvgMs >= 1.0) {
-                sprintf_s(buffer, "[BENCHMARK] %s: %.3f ms/call (%d calls, %.1f ms total in 1s)\n",
+                printf("[BENCHMARK] %s: %.3f ms/call (%d calls, %.1f ms total in 1s)\n",
                          m_pName, dAvgMs, s_slots[slot].iCallCount, dTotalMs);
             } else {
-                sprintf_s(buffer, "[BENCHMARK] %s: %.1f μs/call (%d calls, %.3f ms total in 1s)\n",
+                printf("[BENCHMARK] %s: %.1f us/call (%d calls, %.3f ms total in 1s)\n",
                          m_pName, dAvgUs, s_slots[slot].iCallCount, dTotalMs);
             }
-            printf(buffer);
 
-            // Reset for next second
-            s_slots[slot].liAccumTicks = 0;
+            s_slots[slot].accumulated_ns = 0;
             s_slots[slot].iCallCount = 0;
-            s_slots[slot].dwLastOutputTime = dwNow;
+            s_slots[slot].lastOutputTime = end;
         }
     }
 };
@@ -221,30 +200,23 @@ __declspec(selectany) _BenchmarkScope::BenchmarkSlot _BenchmarkScope::s_slots[64
 __declspec(selectany) int _BenchmarkScope::s_iSlotCount = 0;
 
 // Scope-based benchmark (RAII - automatic timing)
-// Automatically accumulates over 1 second and outputs average
 #define BENCHMARK_SCOPE(name) \
     _BenchmarkScope __benchmark_##__LINE__(name)
 
 // Manual start/end benchmarks
 #define BENCHMARK_START(var) \
-    LARGE_INTEGER __bench_start_##var, __bench_freq_##var; \
-    QueryPerformanceFrequency(&__bench_freq_##var); \
-    QueryPerformanceCounter(&__bench_start_##var);
+    auto __bench_start_##var = std::chrono::high_resolution_clock::now();
 
 #define BENCHMARK_END(var, name) \
     { \
-        LARGE_INTEGER __bench_end_##var; \
-        QueryPerformanceCounter(&__bench_end_##var); \
-        LONGLONG __elapsed_##var = __bench_end_##var.QuadPart - __bench_start_##var.QuadPart; \
-        double __ms_##var = (__elapsed_##var * 1000.0) / __bench_freq_##var.QuadPart; \
-        double __us_##var = (__elapsed_##var * 1000000.0) / __bench_freq_##var.QuadPart; \
-        char __buffer_##var[256]; \
+        auto __bench_end_##var = std::chrono::high_resolution_clock::now(); \
+        double __ms_##var = std::chrono::duration<double, std::milli>(__bench_end_##var - __bench_start_##var).count(); \
+        double __us_##var = __ms_##var * 1000.0; \
         if (__ms_##var >= 1.0) { \
-            sprintf_s(__buffer_##var, "[BENCHMARK] %s: %.3f ms\n", name, __ms_##var); \
+            printf("[BENCHMARK] %s: %.3f ms\n", name, __ms_##var); \
         } else { \
-            sprintf_s(__buffer_##var, "[BENCHMARK] %s: %.1f μs\n", name, __us_##var); \
+            printf("[BENCHMARK] %s: %.1f us\n", name, __us_##var); \
         } \
-        printf(__buffer_##var); \
     }
 
 // Quick one-liner for measuring a single statement
