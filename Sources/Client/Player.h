@@ -6,6 +6,7 @@
 #include "PlayerController.h"
 #include "NetConstants.h"
 #include "AppearanceData.h"
+#include "PlayerStatusData.h"
 
 #define DEF_PLAYERNAME_LENGTH      12
 #define DEF_GUILDNAME_LENGTH       22
@@ -52,7 +53,8 @@ public:
     int8_t m_iStatModStr, m_iStatModVit, m_iStatModDex, m_iStatModInt, m_iStatModMag, m_iStatModChr;
 
     // COMBAT
-    int m_iAC, m_iTHAC0, m_iPlayerStatus;
+    int m_iAC, m_iTHAC0;
+    PlayerStatus m_playerStatus;
     int m_iPKCount, m_iEnemyKillCount, m_iRewardGold, m_iContribution;
     int m_iSuperAttackLeft, m_iSpecialAbilityType, m_iSpecialAbilityTimeLeftSec;
 
@@ -60,7 +62,7 @@ public:
     PlayerAppearance m_playerAppearance;
 
     // Illusion Effect appearance
-    int m_iStatus_IE;
+    PlayerStatus m_illusionStatus;
     PlayerAppearance m_illusionAppearance;
     int8_t m_iGender, m_iSkinCol, m_iHairStyle, m_iHairCol, m_iUnderCol;
 

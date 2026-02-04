@@ -11,8 +11,8 @@
 #include <array>
 #include <cstring>
 
-#include "StatusFlags.h"
 #include "AppearanceData.h"
+#include "PlayerStatusData.h"
 
 // Maximum length for entity names
 constexpr int ENTITY_NAME_LENGTH = 12;
@@ -36,7 +36,7 @@ public:
         m_wObjectID = 0;
         m_sOwnerType = 0;
         m_appearance.Clear();
-        m_iStatus = 0;
+        m_status.Clear();
         m_iAction = 0;
         m_iDir = 0;
         m_iFrame = 0;
@@ -63,21 +63,6 @@ public:
     const char* GetName() const { return m_cName.data(); }
 
     //------------------------------------------------------------------
-    // Status Flag Helpers
-    //------------------------------------------------------------------
-
-    bool IsPK() const { return (m_iStatus & hb::status::PK) != 0; }
-    bool IsCitizen() const { return (m_iStatus & hb::status::Citizen) != 0; }
-    bool IsAresden() const { return (m_iStatus & hb::status::Aresden) != 0; }
-    bool IsElvine() const { return IsCitizen() && !IsAresden(); }
-    bool IsHunter() const { return (m_iStatus & hb::status::Hunter) != 0; }
-    bool IsPoisoned() const { return (m_iStatus & hb::status::Poisoned) != 0; }
-    bool IsFrozen() const { return (m_iStatus & hb::status::Frozen) != 0; }
-    bool IsBerserk() const { return (m_iStatus & hb::status::Berserk) != 0; }
-    bool IsHasted() const { return (m_iStatus & hb::status::Haste) != 0; }
-    bool IsInvisible() const { return (m_iStatus & hb::status::Invisibility) != 0; }
-
-    //------------------------------------------------------------------
     // Entity Type Helpers
     //------------------------------------------------------------------
 
@@ -99,7 +84,7 @@ public:
     PlayerAppearance m_appearance;
 
     // State
-    int m_iStatus;              // Status flags (poisoned, invisible, etc.)
+    PlayerStatus m_status;
     int8_t m_iAction;           // Current action (idle, walk, attack, etc.)
     int8_t m_iDir;              // Facing direction (1-8)
     int8_t m_iFrame;            // Current animation frame

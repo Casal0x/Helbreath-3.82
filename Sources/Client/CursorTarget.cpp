@@ -187,7 +187,7 @@ void CursorTarget::TestDynamicObject(const SpriteLib::BoundRect& bounds, short m
         s_focusedObject.mapX = mapX;
         s_focusedObject.mapY = mapY;
         s_focusedObject.type = FocusedObjectType::DynamicObject;
-        s_focusedObject.status = 0;
+        s_focusedObject.status.Clear();
         std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
     }
 }
@@ -236,7 +236,7 @@ bool CursorTarget::IsOverGroundItem()
     return s_overGroundItem;
 }
 
-int CursorTarget::GetFocusStatus()
+const PlayerStatus& CursorTarget::GetFocusStatus()
 {
     return s_focusedObject.status;
 }
@@ -249,7 +249,7 @@ bool CursorTarget::GetFocusHighlightData(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
     short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-    PlayerAppearance& outAppearance, int& outStatus,
+    PlayerAppearance& outAppearance, PlayerStatus& outStatus,
     short& outDataX, short& outDataY)
 {
     if (!s_focusedObject.valid) {

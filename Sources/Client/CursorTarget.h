@@ -9,6 +9,7 @@
 #include <cstdint>
 #include "SpriteTypes.h"
 #include "AppearanceData.h"
+#include "PlayerStatusData.h"
 
 //=============================================================================
 // Cursor Types (replacing magic frame numbers)
@@ -59,12 +60,9 @@ struct FocusedObject {
     // Display info
     char name[12] = {0};
     PlayerAppearance appearance;
-    int status = 0;
+    PlayerStatus status;
 
     // Query helpers
-    bool IsHostile(int (*foeFunc)(int)) const {
-        return foeFunc(status) < 0;
-    }
     bool IsDead() const {
         return type == FocusedObjectType::DeadBody;
     }
@@ -82,7 +80,7 @@ struct TargetObjectInfo {
     char action, direction, frame;
     const char* name;  // Points to existing string, no copy
     PlayerAppearance appearance;
-    int status;
+    PlayerStatus status;
     FocusedObjectType type;
 };
 
@@ -163,12 +161,12 @@ namespace CursorTarget {
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
         short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-        PlayerAppearance& outAppearance, int& outStatus,
+        PlayerAppearance& outAppearance, PlayerStatus& outStatus,
         short& outDataX, short& outDataY
     );
 
     // Get focus status for FOE calculation
-    int GetFocusStatus();
+    const PlayerStatus& GetFocusStatus();
 
     //-------------------------------------------------------------------------
     // Utilities

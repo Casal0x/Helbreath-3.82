@@ -207,13 +207,13 @@ namespace NetworkMessageHandlers {
 			char cName[12];
 			std::memset(cName, 0, sizeof(cName));
 			memcpy(cName, pGame->m_pPlayer->m_cPlayerName, 10);
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, PlayerAppearance{}, 0, cName, 0, 0, 0, 0);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, PlayerAppearance{}, PlayerStatus{}, cName, 0, 0, 0, 0);
 		}
 		else
 		{
 			pGame->AddEventList(NOTIFY_MSG_HANDLER41); // "Observer Mode Off"
 			pGame->m_bIsObserverMode = false;
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_playerAppearance, pGame->m_pPlayer->m_iPlayerStatus, pGame->m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_playerAppearance, pGame->m_pPlayer->m_playerStatus, pGame->m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
 		}
 	}
 

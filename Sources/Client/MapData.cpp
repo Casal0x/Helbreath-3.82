@@ -1043,7 +1043,7 @@ bool CMapData::bIsTeleportLoc(short sX, short sY)
 	return true;
 }
 
-bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, const PlayerAppearance& appearance, int iStatus, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame)
+bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, const PlayerAppearance& appearance, const PlayerStatus& status, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame)
 {
 	int   iX, iY, dX, dY;
 	int   iChatIndex, iAdd;
@@ -1052,6 +1052,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	int   iEffectType, iEffectFrame, iEffectTotalFrame;
 	bool  bUseAbsPos = false;
 	uint16_t wOriginalObjectID = wObjectID;
+	PlayerStatus localStatus = status;
+	PlayerAppearance localAppearance = appearance;
 
 	if ((m_sPivotX == -1) || (m_sPivotY == -1)) return false;
 	std::memset(cTmpName, 0, sizeof(cTmpName));
@@ -1319,8 +1321,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				if (sAction != DEF_OBJECTNULLACTION)
 				{
 					sType = m_pData[iX][iY].m_sOwnerType;
-
-					iStatus = m_pData[iX][iY].m_iStatus;
+					localAppearance = m_pData[iX][iY].m_appearance;
+					localStatus = m_pData[iX][iY].m_status;
 					iEffectType = m_pData[iX][iY].m_iEffectType;
 					iEffectFrame = m_pData[iX][iY].m_iEffectFrame;
 					iEffectTotalFrame = m_pData[iX][iY].m_iEffectTotalFrame;
@@ -1388,8 +1390,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
 				if (sAction != DEF_OBJECTNULLACTION) {
 					sType = m_pData[iX][iY].m_sDeadOwnerType;
-
-					iStatus = m_pData[iX][iY].m_iDeadStatus;
+					localAppearance = m_pData[iX][iY].m_deadAppearance;
+					localStatus = m_pData[iX][iY].m_deadStatus;
 				}
 				std::memset(cTmpName, 0, sizeof(cTmpName));
 				memcpy(cTmpName, m_pData[iX][iY].m_cDeadOwnerName, 10);
@@ -1447,8 +1449,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					iChatIndex = m_pData[iX][iY].m_iChatMsg;
 					if (sAction != DEF_OBJECTNULLACTION) {
 						sType = m_pData[iX][iY].m_sOwnerType;
-
-						iStatus = m_pData[iX][iY].m_iStatus;
+						localAppearance = m_pData[iX][iY].m_appearance;
+						localStatus = m_pData[iX][iY].m_status;
 						iEffectType = m_pData[iX][iY].m_iEffectType;
 						iEffectFrame = m_pData[iX][iY].m_iEffectFrame;
 						iEffectTotalFrame = m_pData[iX][iY].m_iEffectTotalFrame;
@@ -1505,8 +1507,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
 					if (sAction != DEF_OBJECTNULLACTION) {
 						sType = m_pData[iX][iY].m_sDeadOwnerType;
-
-						iStatus = m_pData[iX][iY].m_iDeadStatus;
+						localAppearance = m_pData[iX][iY].m_deadAppearance;
+						localStatus = m_pData[iX][iY].m_deadStatus;
 					}
 					std::memset(cTmpName, 0, sizeof(cTmpName));
 					memcpy(cTmpName, m_pData[iX][iY].m_cDeadOwnerName, 10);
@@ -1544,7 +1546,7 @@ EXIT_SEARCH_LOOP:;
 			m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
 			m_pData[dX][dY].m_cDeadDir = m_pData[dX][dY].m_cDir;
 			m_pData[dX][dY].m_deadAppearance = m_pData[dX][dY].m_appearance;
-			m_pData[dX][dY].m_iDeadStatus = m_pData[dX][dY].m_iStatus;
+			m_pData[dX][dY].m_deadStatus = m_pData[dX][dY].m_status;
 			m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 			m_pData[dX][dY].m_dwDeadOwnerTime = dwTime;
 			memcpy(m_pData[dX][dY].m_cDeadOwnerName, m_pData[dX][dY].m_cOwnerName, 11);
@@ -1585,8 +1587,8 @@ EXIT_SEARCH_LOOP:;
 		m_pData[dX][dY].m_wObjectID = wObjectID;
 		m_pData[dX][dY].m_sOwnerType = sType;
 		m_pData[dX][dY].m_cDir = cDir;
-		m_pData[dX][dY].m_appearance = appearance;
-		m_pData[dX][dY].m_iStatus = iStatus;
+		m_pData[dX][dY].m_appearance = localAppearance;
+		m_pData[dX][dY].m_status = localStatus;
 		m_pData[dX][dY].m_sV1 = sV1;
 		m_pData[dX][dY].m_sV2 = sV2;
 		m_pData[dX][dY].m_sV3 = sV3;
@@ -1604,17 +1606,17 @@ EXIT_SEARCH_LOOP:;
 			if (sAction == DEF_OBJECTMOVE || sAction == DEF_OBJECTRUN ||
 				sAction == DEF_OBJECTDAMAGEMOVE || sAction == DEF_OBJECTATTACKMOVE)
 			{
-				bool hasHaste = (iStatus & 0x40000) != 0;  // Status flag for haste
-				bool isFrozen = (iStatus & 0x40) != 0;     // Status flag for frozen
+				bool hasHaste = localStatus.bHaste;
+				bool isFrozen = localStatus.bFrozen;
 				uint32_t duration = EntityMotion::GetDurationForAction(sAction, hasHaste, isFrozen);
 				m_pData[dX][dY].m_motion.StartMove(cDir, dwTime, duration);
 			}
 		}
 		m_pData[dX][dY].m_dwOwnerTime = dwTime;
 		m_pData[dX][dY].m_iChatMsg = iChatIndex;
-		if (appearance.iEffectType != 0)
+		if (localAppearance.iEffectType != 0)
 		{
-			m_pData[dX][dY].m_iEffectType = appearance.iEffectType;
+			m_pData[dX][dY].m_iEffectType = localAppearance.iEffectType;
 			if (sAction == DEF_OBJECTNULLACTION)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
@@ -1635,15 +1637,15 @@ EXIT_SEARCH_LOOP:;
 		m_pData[dX][dY].m_wDeadObjectID = wObjectID;
 		m_pData[dX][dY].m_sDeadOwnerType = sType;
 		m_pData[dX][dY].m_cDeadDir = cDir;
-		m_pData[dX][dY].m_deadAppearance = appearance;
-		m_pData[dX][dY].m_iDeadStatus = iStatus;
+		m_pData[dX][dY].m_deadAppearance = localAppearance;
+		m_pData[dX][dY].m_deadStatus = localStatus;
 		std::memset(m_pData[dX][dY].m_cDeadOwnerName, 0, sizeof(m_pData[dX][dY].m_cDeadOwnerName));
 		strncpy_s(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), cTmpName, _TRUNCATE);
 		m_pData[dX][dY].m_dwDeadOwnerTime = dwTime;
 		m_pData[dX][dY].m_iDeadChatMsg = iChatIndex;
-		if (appearance.iEffectType != 0)
+		if (localAppearance.iEffectType != 0)
 		{
-			m_pData[dX][dY].m_iEffectType = appearance.iEffectType;
+			m_pData[dX][dY].m_iEffectType = localAppearance.iEffectType;
 			if (sAction == DEF_OBJECTNULLACTION)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
@@ -1887,7 +1889,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 				switch (m_pData[dX][dY].m_cOwnerAction) {
 				case DEF_OBJECTATTACK: // 3
 				case DEF_OBJECTATTACKMOVE:	// 8
-					iDelay = (m_pData[dX][dY].m_iStatus & hb::status::AttackDelayMask) * 12;
+					iDelay = m_pData[dX][dY].m_status.iAttackDelay * 12;
 					break;
 				case DEF_OBJECTMAGIC: // 4
 					if (m_pGame->m_pPlayer->m_iSkillMastery[4] == 100) iDelay = -17;
@@ -1898,10 +1900,10 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 					break;
 				}
 				// v1.42 Frozen
-				if ((m_pData[dX][dY].m_iStatus & hb::status::Frozen) != 0)
+				if (m_pData[dX][dY].m_status.bFrozen)
 					iDelay += (m_stFrame[m_pData[dX][dY].m_sOwnerType][m_pData[dX][dY].m_cOwnerAction].m_sFrameTime) >> 2;
 
-				if ((m_pData[dX][dY].m_iStatus & hb::status::Haste) != 0) // haste
+				if (m_pData[dX][dY].m_status.bHaste) // haste
 					iDelay -= (m_stFrame[m_pData[dX][dY].m_sOwnerType][DEF_OBJECTRUN].m_sFrameTime) / 2.3;
 
 				dwFrameTime = m_stFrame[m_pData[dX][dY].m_sOwnerType][m_pData[dX][dY].m_cOwnerAction].m_sFrameTime + iDelay;
@@ -1945,7 +1947,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
 								m_pData[dX][dY].m_cDeadDir = m_pData[dX][dY].m_cDir;
 								m_pData[dX][dY].m_deadAppearance = m_pData[dX][dY].m_appearance;
-								m_pData[dX][dY].m_iDeadStatus = m_pData[dX][dY].m_iStatus;
+								m_pData[dX][dY].m_deadStatus = m_pData[dX][dY].m_status;
 								m_pData[dX][dY].m_iDeadChatMsg = m_pData[dX][dY].m_iChatMsg; // v1.411
 								m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 								memcpy(m_pData[dX][dY].m_cDeadOwnerName, m_pData[dX][dY].m_cOwnerName, 11);
@@ -1988,14 +1990,14 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6: // glowing armor/weapon
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2046,7 +2048,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
 								m_pGame->PlaySound('C', 8, sDist, lPan);
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									cTotalFrame = 8;
 									cFrameMoveDots = 32 / cTotalFrame;
@@ -2065,9 +2067,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2336,15 +2338,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								else m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								// Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2378,15 +2380,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 7: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								case 8: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); dy = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								}
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels						
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -2510,15 +2512,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									}
 								}
 								// Weapon Glare from appearance
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -3393,15 +3395,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if (m_pData[dX][dY].m_cOwnerFrame == 1)
 							{
 								if (true) m_pGame->PlaySound('C', 16, sDist, lPan);
-								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
 								//Snoopy: Angels
-								if ((((m_pData[dX][dY].m_iStatus & hb::status::AngelPercentMask) >> 8) > rand() % 6) // Angel stars
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::AngelTypeMask) != 0)
-									&& ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if (((m_pData[dX][dY].m_status.iAngelPercent) > rand() % 6) // Angel stars
+									&& (m_pData[dX][dY].m_status.HasAngelType())
+									&& (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
@@ -3876,7 +3878,7 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 	return true;
 }
 
-bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const PlayerAppearance& appearance, int iStatus, char* pName)
+bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const PlayerAppearance& appearance, const PlayerStatus& status, char* pName)
 {
 	int  dX, dY;
 	char pTmpName[12];
@@ -3936,7 +3938,7 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 	m_pData[dX][dY].m_sDeadOwnerType = sType;
 	m_pData[dX][dY].m_cDeadDir = cDir;
 	m_pData[dX][dY].m_deadAppearance = appearance;
-	m_pData[dX][dY].m_iDeadStatus = iStatus;
+	m_pData[dX][dY].m_deadStatus = status;
 	m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 	strncpy_s(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), pTmpName, _TRUNCATE);
 
@@ -4012,7 +4014,7 @@ void CMapData::ClearDeadChatMsg(short sX, short sY)
 	m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iDeadChatMsg = 0;
 }
 
-bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwnerType, int* pOwnerStatus, uint16_t* pObjectID)
+bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwnerType, PlayerStatus* pOwnerStatus, uint16_t* pObjectID)
 {
 	int dX, dY;
 
@@ -4027,7 +4029,7 @@ bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwn
 
 	*pOwnerType = m_pData[dX][dY].m_sOwnerType;
 	strncpy_s(pName, 12, m_pData[dX][dY].m_cOwnerName, _TRUNCATE);
-	*pOwnerStatus = m_pData[dX][dY].m_iStatus;
+	*pOwnerStatus = m_pData[dX][dY].m_status;
 	*pObjectID = m_pData[dX][dY].m_wObjectID;
 
 	return true;
@@ -4101,7 +4103,7 @@ bool CMapData::bSetDynamicObject(short sX, short sY, uint16_t wID, short sType, 
 	return true;
 }
 
-void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, PlayerAppearance* pAppearance, int* pStatus, char* pName)
+void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, PlayerAppearance* pAppearance, PlayerStatus* pStatus, char* pName)
 {
 	int iX, iY;
 	for (iX = 0; iX < MAPDATASIZEX; iX++)
@@ -4111,7 +4113,7 @@ void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, ch
 				*pOwnerType = (char)m_pData[iX][iY].m_sOwnerType;
 				*pDir = m_pData[iX][iY].m_cDir;
 				*pAppearance = m_pData[iX][iY].m_appearance;
-				*pStatus = m_pData[iX][iY].m_iStatus;
+				*pStatus = m_pData[iX][iY].m_status;
 				strncpy_s(pName, 12, m_pData[iX][iY].m_cOwnerName, _TRUNCATE);
 				return;
 			}

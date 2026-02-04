@@ -185,7 +185,7 @@ public:
 	void _CalcSocketClosed();
 	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
 	void _SetIlusionEffect(int iOwnerH);
-	int _iGetFOE(int iStatus);
+	int _iGetFOE(const PlayerStatus& status);
 	void NoticementHandler(char * pData);
 	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
 	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
@@ -230,8 +230,8 @@ public:
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(hb::item::ItemType type);
-	void DrawNpcName(   short sX, short sY, short sOwnerType, int iStatus);
-	void DrawObjectName(short sX, short sY, char * pName, int iStatus);
+	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status);
+	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status);
 	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _RemoveChatMsgListByObjectID(int iObjectID);
 	void _LoadTextDlgContents(int cType);

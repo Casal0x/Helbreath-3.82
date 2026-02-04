@@ -8,6 +8,7 @@
 #include <mmsystem.h>
 #include "EntityMotion.h"
 #include "AppearanceData.h"
+#include "PlayerStatusData.h"
 
 class CTile
 {
@@ -40,8 +41,8 @@ public:
 		m_iChatMsg     = 0;
 		m_iDeadChatMsg = 0;
 
-		m_iStatus      = 0;
-		m_iDeadStatus  = 0;
+		m_status.Clear();
+		m_deadStatus.Clear();
 
 		m_sV1 = 0;
 		m_sV2 = 0;
@@ -100,11 +101,11 @@ public:
 	WORD  m_wObjectID;
 
 	short m_sOwnerType;							// +B2C
-	int m_iStatus;								// +B38
+	PlayerStatus m_status;
 
 	short m_sDeadOwnerType;						// +B3C
-	
-	int m_iDeadStatus;
+
+	PlayerStatus m_deadStatus;
 	short m_sV1;
 	short m_sV2;					
 	short m_sV3;								// +B50

@@ -1243,7 +1243,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			bRet = false;
 			if ((ix >= visMinX) && (ix <= visMaxX) && (iy >= visMinY) && (iy <= visMaxY))
 			{
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_iStatus = 0;
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = 0; m_entityState.m_status.Clear();
 				m_entityState.m_appearance.Clear();
 				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
@@ -1266,7 +1266,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_deadAppearance;
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
-					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iDeadStatus;
+					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_deadStatus;
 					strcpy(m_entityState.m_cName.data(), m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
 					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
 					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
@@ -1330,12 +1330,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.frame = m_entityState.m_iFrame;
 					info.name = m_entityState.m_cName.data();
 					info.appearance = m_entityState.m_appearance;
-					info.status = m_entityState.m_iStatus;
+					info.status = m_entityState.m_status;
 					info.type = FocusedObjectType::DeadBody;
 					CursorTarget::TestObject(bounds, info, iy, res_msy);
 				}
 
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_iStatus = 0;
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = 0; m_entityState.m_status.Clear();
 				m_entityState.m_appearance.Clear();
 				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
@@ -1354,7 +1354,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
 					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
 					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
-					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iStatus;
+					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_status;
 					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDir;
 					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_appearance;
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cOwnerFrame;
@@ -1370,7 +1370,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (m_entityState.m_sOwnerType < 10))
 						{
 							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
-							m_entityState.m_iStatus = m_pPlayer->m_iStatus_IE;
+							m_entityState.m_status = m_pPlayer->m_illusionStatus;
 							m_entityState.m_appearance = m_pPlayer->m_illusionAppearance;
 						}
 					}
@@ -1438,7 +1438,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.frame = m_entityState.m_iFrame;
 					info.name = m_entityState.m_cName.data();
 					info.appearance = m_entityState.m_appearance;
-					info.status = m_entityState.m_iStatus;
+					info.status = m_entityState.m_status;
 					// Determine type based on owner type
 					info.type = (m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6) ?
 						FocusedObjectType::Player : FocusedObjectType::NPC;
@@ -1741,7 +1741,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		short focusOwnerType;
 		char focusAction, focusDir, focusFrame;
 		PlayerAppearance focusAppearance;
-		int focusStatus;
+		PlayerStatus focusStatus;
 		short focusDataX, focusDataY;
 
 		if (CursorTarget::GetFocusHighlightData(focusSX, focusSY, focusObjID, focusOwnerType,
@@ -1755,7 +1755,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			m_entityState.m_iFrame = focusFrame;
 			m_entityState.m_iDir = focusDir;
 			m_entityState.m_appearance = focusAppearance;
-			m_entityState.m_iStatus = focusStatus;
+			m_entityState.m_status = focusStatus;
 			m_entityState.m_iDataX = focusDataX;
 			m_entityState.m_iDataY = focusDataY;
 			std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
@@ -2531,7 +2531,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
 	char  cName[DEF_ITEMNAME];
 	short sType, tX, tY;
-	int iStatus;
+	PlayerStatus iStatus;
 
 	if (bCheckItemOperationEnabled(cItemID) == false) return;
 
@@ -3473,10 +3473,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 	switch (m_entityState.m_sOwnerType) {
@@ -3711,7 +3711,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -3841,7 +3841,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -3948,7 +3948,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 			}
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
+		if (m_entityState.m_status.bBerserk) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel((m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -3956,8 +3956,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -4018,7 +4018,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		}
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -4063,10 +4063,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
@@ -4350,7 +4350,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
@@ -4459,7 +4459,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame);
 			}
@@ -4559,7 +4559,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		}
 
 		// Berserk
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
+		if (m_entityState.m_status.bBerserk)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX + dx, sY + dy, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(8 + (m_entityState.m_iDir - 1), sX + dx + 20, sY + dy - 20, m_entityState.m_iFrame % 8, dwTime);
 		CheckActiveAura2(sX + dx, sY + dy, dwTime, m_entityState.m_sOwnerType);
@@ -4572,8 +4572,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX + dx, sY + dy, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX + dx, sY + dy, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX + dx, sY + dy, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX + dx, sY + dy, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
 	if (m_entityState.m_iChatIndex != 0)
@@ -4590,7 +4590,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(sX + dx - 13, sY + dy - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -4631,7 +4631,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0)
 			bInv = true;
@@ -4751,7 +4751,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		if (bInv == true)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 		else {
-			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+			if (m_entityState.m_status.bFrozen)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
@@ -4814,7 +4814,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
+		if (m_entityState.m_status.bBerserk) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(32 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 16, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -4822,8 +4822,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -4873,10 +4873,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
@@ -4987,7 +4987,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		if (bInv == true)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else {
-			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+			if (m_entityState.m_status.bFrozen)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 		}
@@ -5082,7 +5082,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 			}
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
+		if (m_entityState.m_status.bBerserk) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -5090,8 +5090,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -5145,10 +5145,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 	cFrame = m_entityState.m_iFrame;
@@ -5419,7 +5419,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+					if (m_entityState.m_status.bFrozen)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5543,7 +5543,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else
 				{
-					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+					if (m_entityState.m_status.bFrozen)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5649,7 +5649,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				}
 			}
 
-			if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
+			if (m_entityState.m_status.bBerserk) 	// Berserk
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -5703,7 +5703,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else if (bInv == true)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+					if (m_entityState.m_status.bFrozen)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5824,7 +5824,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				else if (bInv == true)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 				else {
-					if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+					if (m_entityState.m_status.bFrozen)
 						m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 					else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 				}
@@ -5931,7 +5931,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 				}
 			}
 
-			if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)	// Berserk
+			if (m_entityState.m_status.bBerserk)	// Berserk
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 			DrawAngel(16 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, cFrame % 4, dwTime);
 			CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -5939,8 +5939,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -6000,7 +6000,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		}
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -6303,7 +6303,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		}
 		else
 		{
-			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+			if (m_entityState.m_status.bFrozen)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame);
 		}
@@ -6367,7 +6367,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) // Berserk
+		if (m_entityState.m_status.bBerserk) // Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(24 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -6375,8 +6375,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -6598,7 +6598,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 		if (m_entityState.m_iFrame == -1)
 		{
 			m_entityState.m_iFrame = 7;
-			if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+			if (m_entityState.m_status.bFrozen)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 			else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame);
 
@@ -6661,15 +6661,15 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 		}
-		else if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
+		else if (m_entityState.m_status.bBerserk)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame + 5, -2 * m_entityState.m_iFrame - 5, -2 * m_entityState.m_iFrame - 5, 0.7f));
 		else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::TintedAlpha(-2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, -2 * m_entityState.m_iFrame, 0.7f));
 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
 	if (m_entityState.m_iChatIndex != 0)
@@ -6733,10 +6733,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
@@ -7048,7 +7048,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -7218,7 +7218,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -7374,7 +7374,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		}
 
 		// Berserk
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
+		if (m_entityState.m_status.bBerserk)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
@@ -7382,8 +7382,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
 	if (m_entityState.m_iChatIndex != 0)
@@ -7446,7 +7446,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		}
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -7493,10 +7493,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 	cDir = m_entityState.m_iDir;
@@ -7664,7 +7664,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
@@ -7787,7 +7787,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			if (bInv == true)
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else {
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame);
 			}
@@ -7896,7 +7896,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 			}
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
+		if (m_entityState.m_status.bBerserk) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, cFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(16 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, cFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
@@ -7904,8 +7904,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 	if (m_entityState.m_iChatIndex != 0)
 	{
@@ -7922,7 +7922,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -8156,10 +8156,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
@@ -8418,7 +8418,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -8588,7 +8588,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 			}
@@ -8756,7 +8756,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			}
 		}
 		// Berserk
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0)
+		if (m_entityState.m_status.bBerserk)
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), sX + 20, sY - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(sX, sY, dwTime, m_entityState.m_sOwnerType);
@@ -8764,8 +8764,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(sX, sY, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(sX, sY, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
 	if (m_entityState.m_iChatIndex != 0)
@@ -8825,7 +8825,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		}
 	}
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -8839,7 +8839,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 	const char* cp;
 	char ucHeader, cDir, cName[12], cItemColor;
 	short sTotal, sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4, sDynamicObjectType;
-	int iStatus;
+	PlayerStatus iStatus;
 	int iApprColor;
 	uint16_t wObjectID;
 	uint16_t wDynamicObjectID;
@@ -8878,7 +8878,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				sAppr3 = obj->appr3;
 				sAppr4 = obj->appr4;
 				iApprColor = obj->appr_color;
-				iStatus = obj->status;
+				iStatus.Unpack(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
@@ -8893,7 +8893,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				sAppr1 = sAppr3 = sAppr4 = 0;
 				sAppr2 = obj->appr2;
 				iApprColor = 0;
-				iStatus = obj->status;
+				iStatus.Unpack(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
@@ -8916,7 +8916,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				sAppr3 = obj->appr3;
 				sAppr4 = obj->appr4;
 				iApprColor = obj->appr_color;
-				iStatus = obj->status;
+				iStatus.Unpack(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
@@ -8931,7 +8931,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				sAppr1 = sAppr3 = sAppr4 = 0;
 				sAppr2 = obj->appr2;
 				iApprColor = 0;
-				iStatus = obj->status;
+				iStatus.Unpack(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
@@ -8964,7 +8964,7 @@ void CGame::LogEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
 	short sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4;
-	int iStatus;
+	PlayerStatus iStatus;
 	char cDir, cName[12];
 	int iApprColor = 0;
 
@@ -8987,7 +8987,7 @@ void CGame::LogEventHandler(char* pData)
 		sAppr3 = pkt->appr3;
 		sAppr4 = pkt->appr4;
 		iApprColor = pkt->appr_color;
-		iStatus = pkt->status;
+		iStatus.Unpack(pkt->status);
 	}
 	else 	// NPC
 	{
@@ -8996,7 +8996,7 @@ void CGame::LogEventHandler(char* pData)
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		sAppr1 = sAppr3 = sAppr4 = 0;
 		sAppr2 = pkt->appr2;
-		iStatus = pkt->status;
+		iStatus.Unpack(pkt->status);
 	}
 
 	switch (wEventType) {
@@ -9818,10 +9818,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
 	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
-		else if (_iGetFOE(m_entityState.m_iStatus) == 1) bInv = true;
+		else if (_iGetFOE(m_entityState.m_status) == 1) bInv = true;
 		else return invalidRect;
 	}
 
@@ -9982,7 +9982,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -10145,7 +10145,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 				m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.25f));
 			else
 			{
-				if ((m_entityState.m_iStatus & hb::status::Frozen) != 0)
+				if (m_entityState.m_status.bFrozen)
 					m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
 				else m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame);
 			}
@@ -10300,13 +10300,13 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 			}
 		}
 
-		if ((m_entityState.m_iStatus & hb::status::Berserk) != 0) 	// Berserk
+		if (m_entityState.m_status.bBerserk) 	// Berserk
 			m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->Draw(fix_x, fix_y, m_entityState.m_iFrame, SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 		DrawAngel(40 + (m_entityState.m_iDir - 1), fix_x + 20, fix_y - 20, m_entityState.m_iFrame % 4, dwTime);
 		CheckActiveAura2(fix_x, fix_y, dwTime, m_entityState.m_sOwnerType);
 
 		// Centuu : Haste effect
-		if ((m_entityState.m_iStatus & hb::status::Haste) != 0) {
+		if (m_entityState.m_status.bHaste) {
 			for (int i = 1; i <= 5; i++)
 			{
 				switch (m_entityState.m_iDir) {
@@ -10325,8 +10325,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	else if (strlen(m_entityState.m_cName.data()) > 0)
 	{
-		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_iStatus);
-		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_iStatus);
+		if ((m_entityState.m_sOwnerType >= 1) && (m_entityState.m_sOwnerType <= 6)) DrawObjectName(fix_x, fix_y, m_entityState.m_cName.data(), m_entityState.m_status);
+		else DrawNpcName(fix_x, fix_y, m_entityState.m_sOwnerType, m_entityState.m_status);
 	}
 
 	if (m_entityState.m_iChatIndex != 0)
@@ -10344,7 +10344,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
 
-	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	if (m_entityState.m_status.bGMMode && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
 	{
 		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 	}
@@ -11770,7 +11770,7 @@ void CGame::MeteorStrikeComing(int iCode)
 
 void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 {
-	if (_iGetFOE(m_entityState.m_iStatus) < 0) // red crusade circle
+	if (_iGetFOE(m_entityState.m_status) < 0) // red crusade circle
 	{
 		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 	}
@@ -13865,19 +13865,13 @@ void CGame::NoticementHandler(char* pData)
 
 }
 
-int CGame::_iGetFOE(int iStatus)
+int CGame::_iGetFOE(const PlayerStatus& status)
 {
-	bool bPK, bCitizen, bAresden, bHunter;
 	if (m_pPlayer->m_iPKCount != 0) return -1;
-	//	CLEROTH			0x00000000 status is int NOT short ( 3.51 )
-	if (iStatus & hb::status::PK) bPK = true;
-	else bPK = false;
-	if (iStatus & hb::status::Citizen) bCitizen = true;
-	else bCitizen = false;
-	if (iStatus & hb::status::Aresden) bAresden = true;
-	else bAresden = false;
-	if (iStatus & hb::status::Hunter) bHunter = true;
-	else bHunter = false;
+	bool bPK = status.bPK;
+	bool bCitizen = status.bCitizen;
+	bool bAresden = status.bAresden;
+	bool bHunter = status.bHunter;
 	if (bPK == true) return -2;
 	if (bCitizen == false) return 0;
 	if (m_pPlayer->m_bCitizen == false) return 0;
@@ -13898,7 +13892,7 @@ void CGame::_SetIlusionEffect(int iOwnerH)
 	m_iIlusionOwnerH = iOwnerH;
 
 	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
-	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_iStatus_IE, m_cName_IE);
+	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_illusionStatus, m_cName_IE);
 }
 
 void CGame::ResponsePanningHandler(char* pData)
@@ -14380,14 +14374,14 @@ void CGame::EraseItem(char cItemID)
 	m_bIsItemDisabled[cItemID] = false;
 }
 
-void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
+void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus& status)
 {
 	char cTxt[32], cTxt2[64];
 	std::memset(cTxt, 0, sizeof(cTxt));
 	std::memset(cTxt2, 0, sizeof(cTxt2));
 	GetNpcName(sOwnerType, cTxt);
-	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
-	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
+	if (status.bBerserk) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
+	if (status.bFrozen) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
@@ -14398,7 +14392,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	}
 	else
 	{
-		switch (_iGetFOE(iStatus)) {
+		switch (_iGetFOE(status)) {
 		case -2:
 		case -1:
 			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed.r, GameColors::UIRed.g, GameColors::UIRed.b)); // "(Enemy)"
@@ -14411,7 +14405,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 			break;
 		}
 	}
-	switch ((iStatus & 0x0F00) >> 8) {
+	switch (status.iAngelPercent) {
 	case 0: break;
 	case 1: strcpy(cTxt2, DRAW_OBJECT_NAME52); break;//"Clairvoyant"
 	case 2: strcpy(cTxt2, DRAW_OBJECT_NAME53); break;//"Destruction of Magic Protection"
@@ -14474,13 +14468,13 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	}
 }
 
-void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
+void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& status)
 {
 	char cTxt[64], cTxt2[64];
 	short sR, sG, sB;
 	int i, iGuildIndex, iFOE, iAddY = 0;
 	bool bPK, bCitizen, bAresden, bHunter;
-	iFOE = _iGetFOE(iStatus);
+	iFOE = _iGetFOE(status);
 	if (iFOE < 0)
 	{
 		sR = 255; sG = 0; sB = 0;
@@ -14522,8 +14516,8 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	}
 	else strcpy(cTxt, "?????");
 
-	if ((iStatus & 0x20) != 0) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
-	if ((iStatus & 0x40) != 0) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
+	if (status.bBerserk) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
+	if (status.bFrozen) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
 
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	std::memset(cTxt, 0, sizeof(cTxt));
@@ -14558,14 +14552,10 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, int iStatus)
 	}
 	else
 	{	// CLEROTH - CRASH BUG ( STATUS )
-		if (iStatus & hb::status::PK) bPK = true;
-		else bPK = false;
-		if (iStatus & hb::status::Citizen) bCitizen = true;
-		else bCitizen = false;
-		if (iStatus & hb::status::Aresden) bAresden = true;
-		else bAresden = false;
-		if (iStatus & hb::status::Hunter) bHunter = true;
-		else bHunter = false;
+		bPK = status.bPK;
+		bCitizen = status.bCitizen;
+		bAresden = status.bAresden;
+		bHunter = status.bHunter;
 		if (m_bIsCrusadeMode == false || iFOE >= 0)
 		{
 			if (FindGuildName(pName, &iGuildIndex) == true)
@@ -15564,7 +15554,7 @@ void CGame::MotionResponseHandler(char* pData)
 
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance,
-			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
@@ -15624,14 +15614,14 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_sPlayerType = pkt->type;
 			m_pPlayer->m_iPlayerDir = static_cast<char>(pkt->dir);
 			m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
-			m_pPlayer->m_iPlayerStatus = pkt->status;
-			m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
+			m_pPlayer->m_playerStatus.Unpack(pkt->status);
+			m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
 		}
 		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance, // v1.4
-			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0,
 			0, 7);
 		m_pPlayer->m_Controller.ResetCommandCount();
@@ -15659,7 +15649,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 {
 	char   cDir, absX, absY, cName[12];
 	short  sX, sY, sObjectType, tX, tY;
-	int iObjectStatus;
+	PlayerStatus iObjectStatus;
 	int    iRet;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	uint16_t wType = 0;
@@ -15668,7 +15658,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	char  pDstName[21];
 	short sDstOwnerType;
-	int iDstOwnerStatus;
+	PlayerStatus iDstOwnerStatus;
 
 	bool  bGORet;
 	// Fixed by Snoopy
@@ -15968,7 +15958,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if (Input::IsCtrlDown() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-					if ((iObjectStatus & 0x10) != 0) return;
+					if (iObjectStatus.bInvisibility) return;
 					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
 					absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
 					absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
@@ -16616,7 +16606,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			if (Input::IsCtrlDown() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-				if ((iObjectStatus & 0x10) != 0) return;
+				if (iObjectStatus.bInvisibility) return;
 				if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
 
 				if ((absX <= 1) && (absY <= 1))
@@ -16818,7 +16808,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 				m_pPlayer->m_Controller.GetCommand(), 0, 0, 0, 0,
 				10);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -16965,7 +16955,7 @@ MOTION_COMMAND_PROCESS:;
 					}
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 						m_pPlayer->m_playerAppearance, // v1.4
-						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 						m_pPlayer->m_Controller.GetCommand(), 0, 0, 0);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
 					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
@@ -17009,7 +16999,7 @@ MOTION_COMMAND_PROCESS:;
 				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 					m_pPlayer->m_playerAppearance,
-					m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 					DEF_OBJECTATTACK,
 					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 				m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -17059,7 +17049,7 @@ MOTION_COMMAND_PROCESS:;
 
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 						m_pPlayer->m_playerAppearance,
-						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
 					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
@@ -17080,7 +17070,7 @@ MOTION_COMMAND_PROCESS:;
 			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTGETITEM, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTGETITEM, 0, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
@@ -17097,7 +17087,7 @@ MOTION_COMMAND_PROCESS:;
 			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTMAGIC, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
-				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTMAGIC, m_iCastingMagicType, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
@@ -17358,10 +17348,10 @@ void CGame::InitDataResponseHandler(char* pData)
 	sY = pkt->pivot_y;
 	m_pPlayer->m_sPlayerType = pkt->player_type;
 	m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
-	m_pPlayer->m_iPlayerStatus = pkt->status;
+	m_pPlayer->m_playerStatus.Unpack(pkt->status);
 
 	//Snoopy MIM fix
-	if ((m_pPlayer->m_iPlayerStatus & 0x00200000) == 0x00200000)
+	if (m_pPlayer->m_playerStatus.bIllusionMovement)
 	{
 		m_bIllusionMVT = true;
 	}
@@ -17371,7 +17361,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	}
 
 	// GM mode detection
-	m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
+	m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
 	std::memset(m_cMapName, 0, sizeof(m_cMapName));
 	std::memset(m_cMapMessage, 0, sizeof(m_cMapMessage));
 	memcpy(m_cMapName, pkt->map_name, sizeof(pkt->map_name));
@@ -17444,7 +17434,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	{
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance, // v1.4
-			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
+			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 	}
 
@@ -17521,7 +17511,7 @@ void CGame::MotionEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
 	short sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4, sV1, sV2, sV3, sPrevAppr2;
-	int iStatus;
+	PlayerStatus iStatus;
 	char cDir, cName[12];
 	int iApprColor, iLoc;
 	char    cTxt[120];
@@ -17531,7 +17521,7 @@ void CGame::MotionEventHandler(char* pData)
 	sY = -1;
 	sV1 = sV2 = sV3 = 0;
 	iApprColor = 0;
-	iStatus = 0;
+	iStatus.Clear();
 	iLoc = 0;
 	cDir = 0;
 
@@ -17563,7 +17553,7 @@ void CGame::MotionEventHandler(char* pData)
 			sAppr3 = pkt->appr3;
 			sAppr4 = pkt->appr4;
 			iApprColor = pkt->appr_color;
-			iStatus = pkt->status;
+			iStatus.Unpack(pkt->status);
 			iLoc = pkt->loc;
 		}
 		else 	// Npc or mob
@@ -17577,7 +17567,7 @@ void CGame::MotionEventHandler(char* pData)
 			memcpy(cName, pkt->name, sizeof(pkt->name));
 			sAppr1 = sAppr3 = sAppr4 = 0;
 			sAppr2 = pkt->appr2;
-			iStatus = pkt->status;
+			iStatus.Unpack(pkt->status);
 			iLoc = pkt->loc;
 		}
 	}
@@ -17648,8 +17638,8 @@ void CGame::MotionEventHandler(char* pData)
 		m_pPlayer->m_sPlayerType = sType;
 		sPrevAppr2 = m_pPlayer->m_playerAppearance.sRawAppr2;
 		m_pPlayer->m_playerAppearance.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor);
-		m_pPlayer->m_iPlayerStatus = iStatus;
-		m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
+		m_pPlayer->m_playerStatus = iStatus;
+		m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
 		if ((sPrevAppr2 & 0xF000) == 0)
 		{
 			if ((sAppr2 & 0xF000) != 0)
@@ -18298,47 +18288,47 @@ void CGame::ItemEquipHandler(char cItemID)
 void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Used at the beginning of character drawing
 	// DefenseShield
-	if ((m_entityState.m_iStatus & hb::status::DefenseShield) != 0)
+	if (m_entityState.m_status.bDefenseShield)
 		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
-	if ((m_entityState.m_iStatus & hb::status::MagicProtection) != 0)
+	if (m_entityState.m_status.bMagicProtection)
 		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
-	if ((m_entityState.m_iStatus & hb::status::ProtectionFromArrow) != 0)
+	if (m_entityState.m_status.bProtectionFromArrow)
 		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion
-	if ((m_entityState.m_iStatus & hb::status::Illusion) != 0)
+	if (m_entityState.m_status.bIllusion)
 		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
-	if ((m_entityState.m_iStatus & hb::status::IllusionMovement) != 0)
+	if ((m_entityState.m_status.bIllusionMovement) != 0)
 		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
-	if ((m_entityState.m_iStatus & hb::status::SlateInvincible) != 0)
+	if (m_entityState.m_status.bSlateInvincible)
 		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Blue (Mana) Bleu au sol
-	if ((m_entityState.m_iStatus & hb::status::SlateMana) != 0)
+	if (m_entityState.m_status.bSlateMana)
 		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Slate Green (XP) Mauve au sol
-	if ((m_entityState.m_iStatus & hb::status::SlateExp) != 0)
+	if (m_entityState.m_status.bSlateExp)
 		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
 
 	// Hero Flag (Heldenian)  Flameches d'entangle
-	if ((m_entityState.m_iStatus & hb::status::Hero) != 0)
+	if (m_entityState.m_status.bHero)
 		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
 }
@@ -18350,7 +18340,7 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 **********************************************************************************************************************/
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
-	if ((m_entityState.m_iStatus & hb::status::Poisoned) != 0)
+	if (m_entityState.m_status.bPoisoned)
 		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
 		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
 	//	_iAttackerHeight[]
@@ -18367,26 +18357,26 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 		sX -= 30;
 		break;
 	}
-	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
+	if (m_entityState.m_status.bInvisibility)
 	{
-		if ((m_entityState.m_iStatus & hb::status::AngelSTR) != 0)
+		if (m_entityState.m_status.bAngelSTR)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
-		else if ((m_entityState.m_iStatus & hb::status::AngelDEX) != 0)
+		else if (m_entityState.m_status.bAngelDEX)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
-		else if ((m_entityState.m_iStatus & hb::status::AngelINT) != 0)
+		else if (m_entityState.m_status.bAngelINT)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
-		else if ((m_entityState.m_iStatus & hb::status::AngelMAG) != 0)
+		else if (m_entityState.m_status.bAngelMAG)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
-		if ((m_entityState.m_iStatus & hb::status::AngelSTR) != 0)
+		if (m_entityState.m_status.bAngelSTR)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
-		else if ((m_entityState.m_iStatus & hb::status::AngelDEX) != 0)
+		else if (m_entityState.m_status.bAngelDEX)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
-		else if ((m_entityState.m_iStatus & hb::status::AngelINT) != 0)
+		else if (m_entityState.m_status.bAngelINT)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
-		else if ((m_entityState.m_iStatus & hb::status::AngelMAG) != 0)
+		else if (m_entityState.m_status.bAngelMAG)
 			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
 	}
 

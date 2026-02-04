@@ -66,7 +66,7 @@ void CPlayer::Reset()
     // COMBAT
     m_iAC = 0;
     m_iTHAC0 = 0;
-    m_iPlayerStatus = 0;
+    m_playerStatus.Clear();
     m_iPKCount = 0;
     m_iEnemyKillCount = 0;
     m_iRewardGold = 0;
@@ -77,7 +77,7 @@ void CPlayer::Reset()
 
     // APPEARANCE
     m_playerAppearance.Clear();
-    m_iStatus_IE = 0;
+    m_illusionStatus.Clear();
     m_illusionAppearance.Clear();
     m_iGender = 0;
     m_iSkinCol = 0;
