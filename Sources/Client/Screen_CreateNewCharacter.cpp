@@ -454,13 +454,10 @@ void Screen_CreateNewCharacter::on_render()
     }
     m_pGame->m_entityState.m_sOwnerType += m_pGame->m_pPlayer->m_iSkinCol - 1;
     m_pGame->m_entityState.m_iDir = m_pGame->m_cMenuDir;
-    m_pGame->m_entityState.m_sAppr1 = 0;
-    m_pGame->m_entityState.m_sAppr1 = m_pGame->m_entityState.m_sAppr1 | (m_pGame->m_pPlayer->m_iUnderCol);
-    m_pGame->m_entityState.m_sAppr1 = m_pGame->m_entityState.m_sAppr1 | (m_pGame->m_pPlayer->m_iHairStyle << 8);
-    m_pGame->m_entityState.m_sAppr1 = m_pGame->m_entityState.m_sAppr1 | (m_pGame->m_pPlayer->m_iHairCol << 4);
-    m_pGame->m_entityState.m_sAppr2 = 0;
-    m_pGame->m_entityState.m_sAppr3 = 0;
-    m_pGame->m_entityState.m_sAppr4 = 0;
+    m_pGame->m_entityState.m_appearance.Clear();
+    m_pGame->m_entityState.m_appearance.iUnderwearType = m_pGame->m_pPlayer->m_iUnderCol;
+    m_pGame->m_entityState.m_appearance.iHairStyle = m_pGame->m_pPlayer->m_iHairStyle;
+    m_pGame->m_entityState.m_appearance.iHairColor = m_pGame->m_pPlayer->m_iHairCol;
     std::memset(m_pGame->m_entityState.m_cName.data(), 0, m_pGame->m_entityState.m_cName.size());
     memcpy(m_pGame->m_entityState.m_cName.data(), m_pGame->m_pPlayer->m_cPlayerName, 10);
     m_pGame->m_entityState.m_iAction = DEF_OBJECTMOVE;

@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include "SpriteTypes.h"
+#include "AppearanceData.h"
 
 //=============================================================================
 // Cursor Types (replacing magic frame numbers)
@@ -57,8 +58,7 @@ struct FocusedObject {
 
     // Display info
     char name[12] = {0};
-    short appr1 = 0, appr2 = 0, appr3 = 0, appr4 = 0;
-    int apprColor = 0;
+    PlayerAppearance appearance;
     int status = 0;
 
     // Query helpers
@@ -81,8 +81,7 @@ struct TargetObjectInfo {
     short ownerType;
     char action, direction, frame;
     const char* name;  // Points to existing string, no copy
-    short appr1, appr2, appr3, appr4;
-    int apprColor;
+    PlayerAppearance appearance;
     int status;
     FocusedObjectType type;
 };
@@ -164,8 +163,7 @@ namespace CursorTarget {
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
         short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-        short& outAppr1, short& outAppr2, short& outAppr3, short& outAppr4,
-        int& outApprColor, int& outStatus,
+        PlayerAppearance& outAppearance, int& outStatus,
         short& outDataX, short& outDataY
     );
 

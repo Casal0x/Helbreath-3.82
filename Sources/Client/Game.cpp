@@ -1243,7 +1243,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			bRet = false;
 			if ((ix >= visMinX) && (ix <= visMaxX) && (iy >= visMinY) && (iy <= visMaxY))
 			{
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_iStatus = 0;
+				m_entityState.m_appearance.Clear();
 				m_entityState.m_iDir = m_entityState.m_iFrame = 0;
 				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
 				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
@@ -1262,11 +1263,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
 					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
 					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
-					m_entityState.m_sAppr1 = m_pMapData->m_pData[dX][dY].m_sDeadAppr1;
-					m_entityState.m_sAppr2 = m_pMapData->m_pData[dX][dY].m_sDeadAppr2;
-					m_entityState.m_sAppr3 = m_pMapData->m_pData[dX][dY].m_sDeadAppr3;
-					m_entityState.m_sAppr4 = m_pMapData->m_pData[dX][dY].m_sDeadAppr4;
-					m_entityState.m_iApprColor = m_pMapData->m_pData[dX][dY].m_iDeadApprColor;
+					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_deadAppearance;
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
 					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iDeadStatus;
@@ -1332,19 +1329,16 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.direction = m_entityState.m_iDir;
 					info.frame = m_entityState.m_iFrame;
 					info.name = m_entityState.m_cName.data();
-					info.appr1 = m_entityState.m_sAppr1;
-					info.appr2 = m_entityState.m_sAppr2;
-					info.appr3 = m_entityState.m_sAppr3;
-					info.appr4 = m_entityState.m_sAppr4;
-					info.apprColor = m_entityState.m_iApprColor;
+					info.appearance = m_entityState.m_appearance;
 					info.status = m_entityState.m_iStatus;
 					info.type = FocusedObjectType::DeadBody;
 					CursorTarget::TestObject(bounds, info, iy, res_msy);
 				}
 
-				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_sAppr1 = m_entityState.m_sAppr2 = m_entityState.m_sAppr3 = m_entityState.m_sAppr4 = m_entityState.m_iStatus = 0;
+				m_entityState.m_wObjectID = m_entityState.m_sOwnerType = m_entityState.m_iStatus = 0;
+				m_entityState.m_appearance.Clear();
 				m_entityState.m_iFrame = m_entityState.m_iDir = 0;
-				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iApprColor = m_entityState.m_iChatIndex = 0;
+				m_entityState.m_iEffectType = m_entityState.m_iEffectFrame = m_entityState.m_iChatIndex = 0;
 				std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
 
 				if ((indexX < mapMinX) || (indexX > mapMaxX) ||
@@ -1362,11 +1356,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
 					m_entityState.m_iStatus = m_pMapData->m_pData[dX][dY].m_iStatus;
 					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDir;
-					m_entityState.m_sAppr1 = m_pMapData->m_pData[dX][dY].m_sAppr1;
-					m_entityState.m_sAppr2 = m_pMapData->m_pData[dX][dY].m_sAppr2;
-					m_entityState.m_sAppr3 = m_pMapData->m_pData[dX][dY].m_sAppr3;
-					m_entityState.m_sAppr4 = m_pMapData->m_pData[dX][dY].m_sAppr4;
-					m_entityState.m_iApprColor = m_pMapData->m_pData[dX][dY].m_iApprColor; // v1.4
+					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_appearance;
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cOwnerFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iChatMsg;
 					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
@@ -1381,11 +1371,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						{
 							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
 							m_entityState.m_iStatus = m_pPlayer->m_iStatus_IE;
-							m_entityState.m_sAppr1 = m_pPlayer->m_sAppr1_IE;
-							m_entityState.m_sAppr2 = m_pPlayer->m_sAppr2_IE;
-							m_entityState.m_sAppr3 = m_pPlayer->m_sAppr3_IE;
-							m_entityState.m_sAppr4 = m_pPlayer->m_sAppr4_IE;
-							m_entityState.m_iApprColor = m_pPlayer->m_iApprColor_IE;
+							m_entityState.m_appearance = m_pPlayer->m_illusionAppearance;
 						}
 					}
 				}
@@ -1451,11 +1437,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.direction = m_entityState.m_iDir;
 					info.frame = m_entityState.m_iFrame;
 					info.name = m_entityState.m_cName.data();
-					info.appr1 = m_entityState.m_sAppr1;
-					info.appr2 = m_entityState.m_sAppr2;
-					info.appr3 = m_entityState.m_sAppr3;
-					info.appr4 = m_entityState.m_sAppr4;
-					info.apprColor = m_entityState.m_iApprColor;
+					info.appearance = m_entityState.m_appearance;
 					info.status = m_entityState.m_iStatus;
 					// Determine type based on owner type
 					info.type = (m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6) ?
@@ -1758,13 +1740,13 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		uint16_t focusObjID;
 		short focusOwnerType;
 		char focusAction, focusDir, focusFrame;
-		short focusAppr1, focusAppr2, focusAppr3, focusAppr4;
-		int focusApprColor, focusStatus;
+		PlayerAppearance focusAppearance;
+		int focusStatus;
 		short focusDataX, focusDataY;
 
 		if (CursorTarget::GetFocusHighlightData(focusSX, focusSY, focusObjID, focusOwnerType,
-			focusAction, focusDir, focusFrame, focusAppr1, focusAppr2, focusAppr3, focusAppr4,
-			focusApprColor, focusStatus, focusDataX, focusDataY))
+			focusAction, focusDir, focusFrame, focusAppearance,
+			focusStatus, focusDataX, focusDataY))
 		{
 			// Set up temporary vars for drawing
 			m_entityState.m_wObjectID = focusObjID;
@@ -1772,11 +1754,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			m_entityState.m_iAction = focusAction;
 			m_entityState.m_iFrame = focusFrame;
 			m_entityState.m_iDir = focusDir;
-			m_entityState.m_sAppr1 = focusAppr1;
-			m_entityState.m_sAppr2 = focusAppr2;
-			m_entityState.m_sAppr3 = focusAppr3;
-			m_entityState.m_sAppr4 = focusAppr4;
-			m_entityState.m_iApprColor = focusApprColor;
+			m_entityState.m_appearance = focusAppearance;
 			m_entityState.m_iStatus = focusStatus;
 			m_entityState.m_iDataX = focusDataX;
 			m_entityState.m_iDataY = focusDataY;
@@ -3484,17 +3462,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -3505,68 +3483,68 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	case 1:
 	case 2:
 	case 3:
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
+		if (m_entityState.m_appearance.iIsWalking != 0) {
+			iWeapon = m_entityState.m_appearance.iWeaponType;
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 4;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 5;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 5;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 5;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 5;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 5;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 5;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
@@ -3575,80 +3553,80 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iIsWalking != 0)
 		{
-			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
+			iWeapon = m_entityState.m_appearance.iWeaponType;
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 4;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 5;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 5;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 5;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 5;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 5;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 5;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
 		break;
 
 	default:
-		if (m_entityState.m_sAppr2 != 0)
+		if (m_entityState.m_appearance.sRawAppr2 != 0)
 		{
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-			m_entityState.m_iFrame = m_entityState.m_sAppr2 - 1;
+			m_entityState.m_iFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 		}
 		else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 		else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
@@ -3750,7 +3728,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -3803,7 +3781,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 				else m_pSprite[iMantleIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Items[iMantleColor].r - GameColors::Base.r, GameColors::Items[iMantleColor].g - GameColors::Base.g, GameColors::Items[iMantleColor].b - GameColors::Base.b));
 			}
 
-			if (((m_entityState.m_sAppr2 & 0x000F) == 8) && (iShieldGlare == 1))
+			if ((m_entityState.m_appearance.iShieldType == 8) && (iShieldGlare == 1))
 			{
 				m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
 			}
@@ -3881,7 +3859,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -4074,17 +4052,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -4108,68 +4086,68 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	case 1:
 	case 2:
 	case 3:
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
+		if (m_entityState.m_appearance.iIsWalking != 0) {
+			iWeapon = m_entityState.m_appearance.iWeaponType;
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 4;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 5;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 5;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 5;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 5;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 5;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 5;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
@@ -4178,69 +4156,69 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0) {
-			iWeapon = ((m_entityState.m_sAppr2 & 0x0FF0) >> 4);
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iIsWalking != 0) {
+			iWeapon = m_entityState.m_appearance.iWeaponType;
 			if (iWeapon == 0) iAdd = 6;
 			if ((iWeapon >= 1) && (iWeapon <= 39)) iAdd = 6;
 			if ((iWeapon >= 40) && (iWeapon <= 59)) iAdd = 7;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 4 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 4;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 4;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (5 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 5;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 5;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 5;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 5;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 5;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 5;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 5;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 5;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 5;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 5;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 5;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 5;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 5;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 5;
 			iWeaponIndex = -1;
 			iShieldIndex = -1;
 		}
@@ -4387,7 +4365,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -4496,7 +4474,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 			if (iUndiesIndex != -1) m_pSprite[iUndiesIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame);
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1)) {
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX + dx, sY + dy, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -4643,14 +4621,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
@@ -4680,59 +4658,59 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 	case 2:
 	case 3:
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (8 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 8;
-		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 8;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 8;
+		iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 8;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 8;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 8;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 8;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 8;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 8;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 8;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 8;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 8;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 8;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 8;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 8;
+		else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 8;
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (8 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 8;
-		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 8;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 8;
+		iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 8;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 8;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 8;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 8;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 8;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 8;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 8;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 8;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 8;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 8;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 8;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 8;
+		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 8;
 		break;
 	}
 
@@ -4783,7 +4761,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 16 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
@@ -4885,14 +4863,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
@@ -4907,58 +4885,58 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 	case 2:
 	case 3:
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (9 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 9;
-		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 9;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 9;
+		iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 9;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 9;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 9;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 9;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 9;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 9;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 9;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 9;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 9;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 9;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 9;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 9; 		break;
+		else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 9; 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (9 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 9;
-		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 9;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 9;
+		iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 9;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 9;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 9;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 9;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 9;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 9;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 9;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 9;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 9;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 9;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 9;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 9;
+		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 9;
 		break;
 	default:
 		iUndiesIndex = -1;
@@ -5023,7 +5001,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
@@ -5156,17 +5134,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -5180,149 +5158,149 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	case 3:
 		if (cFrame < 4)
 		{
-			if ((m_entityState.m_sAppr2 & 0xF000) != 0) iAdd = 1;
+			if (m_entityState.m_appearance.iIsWalking != 0) iAdd = 1;
 			else iAdd = 0;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 			iDrawMode = 0;
 		}
 		else
 		{
 			cFrame -= 4;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 10;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 10;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 10;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 10;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 10;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 10;
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 5;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 10;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 10;
 			iDrawMode = 1;
 		}
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		if (cFrame < 4)
 		{
-			if ((m_entityState.m_sAppr2 & 0xF000) != 0) iAdd = 1;
+			if (m_entityState.m_appearance.iIsWalking != 0) iAdd = 1;
 			else iAdd = 0;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * iAdd + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 			iDrawMode = 0;
 		}
 		else
 		{
 			cFrame -= 4;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 10;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 10;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 10;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 10;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 10;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 10;
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 5;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 10;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 10;
 			iDrawMode = 1;
 		}
 		break;
@@ -5330,10 +5308,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 	default:
 		if (cFrame < 4)
 		{
-			if (m_entityState.m_sAppr2 != 0)
+			if (m_entityState.m_appearance.sRawAppr2 != 0)
 			{
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = m_entityState.m_sAppr2 - 1;
+				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
 			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
@@ -5350,10 +5328,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		else
 		{
 			cFrame -= 4;
-			if (m_entityState.m_sAppr2 != 0)
+			if (m_entityState.m_appearance.sRawAppr2 != 0)
 			{
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = m_entityState.m_sAppr2 - 1;
+				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
 			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
 			else if (m_entityState.m_sOwnerType == 67) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
@@ -5458,7 +5436,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
@@ -5582,7 +5560,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
@@ -5742,7 +5720,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
@@ -5864,7 +5842,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 
 				if ((iHairIndex != -1) && (iHelmIndex == -1))
 				{
-					_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+					_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 					m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 				}
 
@@ -6051,14 +6029,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 	cFrame = m_entityState.m_iFrame;
 
@@ -6069,128 +6047,128 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		if (cFrame < 6)
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 0;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 0;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 0;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 0;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 0;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 0;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 0;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 0;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 0;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 0;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 0;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 0;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 0;
 		}
 		else
 		{
 			cFrame -= 6;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 11;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 11;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 11;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 11;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 11;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 11;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 11;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 11;
 		}
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		if (cFrame < 6)
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 0;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 0;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 0;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 0;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 0;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 0;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 0;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 0;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 0;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 0;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 0;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 0;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 0;
 		}
 		else
 		{
 			cFrame -= 6;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 11;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 11;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 11;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 11;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 11;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 11;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 11;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 11;
 		}
 		break;
 
 	default:
 		if (cFrame < 4)
 		{
-			if (m_entityState.m_sAppr2 != 0)
+			if (m_entityState.m_appearance.sRawAppr2 != 0)
 			{
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = m_entityState.m_sAppr2 - 1;
+				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
 			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
@@ -6216,7 +6194,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			case 40: // ESG
 			case 41: // GMG
 			case 42: // ManaStone
-				if (m_entityState.m_sAppr2 == 0) cFrame = 0;
+				if (m_entityState.m_appearance.sRawAppr2 == 0) cFrame = 0;
 				break;
 			case 51: cFrame = 0; break;
 			}
@@ -6227,10 +6205,10 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 			case 51: cFrame = 0; break;
 			default: cFrame -= 4; break;
 			}
-			if (m_entityState.m_sAppr2 != 0)
+			if (m_entityState.m_appearance.sRawAppr2 != 0)
 			{
 				iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-				cFrame = m_entityState.m_sAppr2 - 1;
+				cFrame = m_entityState.m_appearance.sRawAppr2 - 1;
 			}
 			else if (m_entityState.m_sOwnerType == 66) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
 			else if (m_entityState.m_sOwnerType == 73) iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (2 * 8);
@@ -6336,7 +6314,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 
 		if ((iHairIndex != -1) && (iHelmIndex == -1))
 		{
-			_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+			_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 			m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 		}
 
@@ -6438,14 +6416,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
 	switch (m_entityState.m_sOwnerType) {
@@ -6454,60 +6432,60 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 	case 3:
 		iFrame = 7;
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
-		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 11;
+		iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 11;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 11;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 11;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 11;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 11;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 11;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+		else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 11;
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		iFrame = 7;
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (11 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 11;
-		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 11;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 11;
+		iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 11;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 11;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 11;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 11;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 11;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 11;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 11;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 11;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 11;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 11;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 11;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 11;
+		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 11;
 		break;
 	default:
 		switch (m_entityState.m_sOwnerType) {
@@ -6630,7 +6608,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, in
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -6744,17 +6722,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -6766,145 +6744,145 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 	case 1:
 	case 2:
 	case 3:
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
+		if (m_entityState.m_appearance.iIsWalking != 0)
 		{
 			iAdd = 3;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 3;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 2;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 2;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 2;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 2;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 2;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else  iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else  iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 2;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 2;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 2;
 		}
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iIsWalking != 0)
 		{
 			iAdd = 3;
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (iAdd * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + iAdd;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + iAdd;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + iAdd;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + iAdd;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + iAdd;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + iAdd;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + iAdd;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + iAdd;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + iAdd;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 3 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 3;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 3;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + iAdd;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + iAdd;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + iAdd;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + iAdd;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (2 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 2;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 2;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 2;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 2;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 2;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 2;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 2;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 2;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 2;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 2;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 2 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 2;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 2;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 2;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 2;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 2;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 2;
 		}
 		break;
 
@@ -7096,7 +7074,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -7266,7 +7244,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -7504,17 +7482,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -7538,70 +7516,70 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	case 2:
 	case 3:
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
-		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 10;
+		iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 10;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 10;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 10;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 10;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
-		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 10;
+		if (m_entityState.m_appearance.iShieldType == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
-		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 5;
+		if (m_entityState.m_appearance.iWeaponType == 0)
 			iWeaponIndex = -1;
-		else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 10;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+		else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 10;
 		break;
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (10 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 10;
-		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 10;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 10;
+		iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 10;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 10;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 10;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 10;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 10;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 10;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 10;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 10;
-		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 10;
+		if (m_entityState.m_appearance.iShieldType == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 5;
-		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 5;
+		if (m_entityState.m_appearance.iWeaponType == 0)
 			iWeaponIndex = -1;
-		else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 5 + (m_entityState.m_iDir - 1);
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 10;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 10;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 10;
+		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 10;
 		break;
 	default:
 		if (m_entityState.m_sOwnerType == 66)      iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (0 * 8);
@@ -7707,7 +7685,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -7830,7 +7808,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 4 + cFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -7974,22 +7952,23 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 	int MANTLE  = isFemale ? DEF_SPRID_MANTLE_W    : DEF_SPRID_MANTLE_M;
 	int HEAD    = isFemale ? DEF_SPRID_HEAD_W      : DEF_SPRID_HEAD_M;
 
-	// Walking (sAppr2 & 0xF000) uses pose 3, standing uses pose 2
-	bool isWalking = (state.m_sAppr2 & 0xF000) != 0;
+	// Walking uses pose 3, standing uses pose 2
+	bool isWalking = state.m_appearance.iIsWalking != 0;
 	int pose = isWalking ? 3 : 2;
 
-	// Extract appearance values
-	int undiesType   = (state.m_sAppr1 & 0x000F);
-	int hairType     = (state.m_sAppr1 & 0x0F00) >> 8;
-	int armorType    = (state.m_sAppr3 & 0xF000) >> 12;
-	int armType      = (state.m_sAppr3 & 0x000F);
-	int pantsType    = (state.m_sAppr3 & 0x0F00) >> 8;
-	int helmType     = (state.m_sAppr3 & 0x00F0) >> 4;
-	int bootsType    = (state.m_sAppr4 & 0xF000) >> 12;
-	int weaponType   = (state.m_sAppr2 & 0x0FF0) >> 4;
-	int shieldType   = (state.m_sAppr2 & 0x000F);
-	int mantleType   = (state.m_sAppr4 & 0x0F00) >> 8;
-	bool hideArmor   = (state.m_sAppr4 & 0x80) != 0;
+	// Read from unpacked appearance
+	const auto& appr = state.m_appearance;
+	int undiesType   = appr.iUnderwearType;
+	int hairType     = appr.iHairStyle;
+	int armorType    = appr.iArmorType;
+	int armType      = appr.iArmArmorType;
+	int pantsType    = appr.iPantsType;
+	int helmType     = appr.iHelmType;
+	int bootsType    = appr.iBootsType;
+	int weaponType   = appr.iWeaponType;
+	int shieldType   = appr.iShieldType;
+	int mantleType   = appr.iMantleType;
+	bool hideArmor   = appr.iHideArmor != 0;
 
 	// Body index
 	eq.body = 500 + (state.m_sOwnerType - 1) * 8 * 15 + (pose * 8);
@@ -8016,14 +7995,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 {
 	// Extract equipment colors from packed appearance color
 	MenuCharEquipment eq = {};
-	eq.weaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-	eq.shieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-	eq.armorColor  = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-	eq.mantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-	eq.armColor    = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-	eq.pantsColor  = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-	eq.bootsColor  = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-	eq.helmColor   = (m_entityState.m_iApprColor & 0x0000000F);
+	eq.weaponColor = m_entityState.m_appearance.iWeaponColor;
+	eq.shieldColor = m_entityState.m_appearance.iShieldColor;
+	eq.armorColor  = m_entityState.m_appearance.iArmorColor;
+	eq.mantleColor = m_entityState.m_appearance.iMantleColor;
+	eq.armColor    = m_entityState.m_appearance.iArmColor;
+	eq.pantsColor  = m_entityState.m_appearance.iPantsColor;
+	eq.bootsColor  = m_entityState.m_appearance.iBootsColor;
+	eq.helmColor   = m_entityState.m_appearance.iHelmColor;
 
 	// Calculate equipment indices based on character type
 	bool isMob = false;
@@ -8043,7 +8022,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	}
 	// Helper lambdas for drawing with optional color tint
 	int dirFrame = (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame;
-	int hairColor = (m_entityState.m_sAppr1 & 0x00F0) >> 4;
+	int hairColor = m_entityState.m_appearance.iHairColor >> 4;
 	int iR, iG, iB;
 
 	auto drawEquipment = [&](int idx, int color) {
@@ -8165,18 +8144,18 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
 
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -8200,71 +8179,71 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	case 2:
 	case 3:
 		m_entityState.m_iFrame = m_entityState.m_iFrame / 2;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
+		if (m_entityState.m_appearance.iIsWalking != 0)
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (1 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 1;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 1;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 1;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 1;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 1;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 1;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 1;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 1;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 1;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 1;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 1;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 1;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 1;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 1;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 1;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 1;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 1;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 1;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15;
+			iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 0;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 0;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 0;
 		}
 		break;
 
@@ -8272,79 +8251,79 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 	case 5:
 	case 6:
 		m_entityState.m_iFrame = m_entityState.m_iFrame / 2;
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
-		if ((m_entityState.m_sAppr2 & 0xF000) != 0)
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iIsWalking != 0)
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (1 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 1;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 1;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 1;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 1;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 1;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 1;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 1;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 1;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 1;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 1;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 1;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 1;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 1 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 1;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 1;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 1;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 1;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 1;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 1;
 		}
 		else
 		{
 			iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (0 * 8);
-			iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15;
-			iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15;
-			if ((m_entityState.m_sAppr4 & 0x80) == 0)
+			iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15;
+			iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15;
+			if (m_entityState.m_appearance.iHideArmor == 0)
 			{
-				if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+				if (m_entityState.m_appearance.iArmorType == 0)
 					iBodyArmorIndex = -1;
-				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15;
+				else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15;
 			}
-			if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+			if (m_entityState.m_appearance.iArmArmorType == 0)
 				iArmArmorIndex = -1;
-			else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15;
-			if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+			else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15;
+			if (m_entityState.m_appearance.iPantsType == 0)
 				iPantsIndex = -1;
-			else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15;
-			if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+			else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15;
+			if (m_entityState.m_appearance.iBootsType == 0)
 				iBootsIndex = -1;
-			else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15;
-			if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+			else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15;
+			if (m_entityState.m_appearance.iWeaponType == 0)
 				iWeaponIndex = -1;
-			else iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
-			if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+			else iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 0 + (m_entityState.m_iDir - 1);
+			if (m_entityState.m_appearance.iShieldType == 0)
 				iShieldIndex = -1;
-			else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 0;
-			if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+			else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 0;
+			if (m_entityState.m_appearance.iMantleType == 0)
 				iMantleIndex = -1;
-			else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15;
-			if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+			else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15;
+			if (m_entityState.m_appearance.iHelmType == 0)
 				iHelmIndex = -1;
-			else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 0;
+			else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 0;
 		}
 		break;
 	default:
-		if (m_entityState.m_sAppr2 != 0)
+		if (m_entityState.m_appearance.sRawAppr2 != 0)
 		{
 			iBodyIndex = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-			m_entityState.m_iFrame = (m_entityState.m_sAppr2 & 0x00FF) - 1;
+			m_entityState.m_iFrame = (m_entityState.m_appearance.sRawAppr2 & 0x00FF) - 1;
 		}
 		/*	else if (m_entityState.m_sOwnerType == 66) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
 			else if (m_entityState.m_sOwnerType == 73) iBodyIndex =  DEF_SPRID_MOB  +  (m_entityState.m_sOwnerType - 10 )*8*7 + (0 * 8);
@@ -8464,7 +8443,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -8634,7 +8613,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(sX, sY, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -8919,7 +8898,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0);
+			{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		}
 		if (ucHeader & 0x02) // object ID
 		{
@@ -8957,7 +8936,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName);
+			{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, _appr, iStatus, cName); }
 		}
 		if (ucHeader & 0x04)
 		{
@@ -9022,7 +9001,7 @@ void CGame::LogEventHandler(char* pData)
 
 	switch (wEventType) {
 	case DEF_MSGTYPE_CONFIRM:
-		m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0);
+		{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		switch (sType) {
 		case 43: // LWB
 		case 44: // GHK
@@ -9035,7 +9014,7 @@ void CGame::LogEventHandler(char* pData)
 		break;
 
 	case DEF_MSGTYPE_REJECT:
-		m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0);
+		{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		break;
 	}
 
@@ -9171,15 +9150,12 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_sAppr1 = entry.appr1;
-			m_pCharList[i]->m_sAppr2 = entry.appr2;
-			m_pCharList[i]->m_sAppr3 = entry.appr3;
-			m_pCharList[i]->m_sAppr4 = entry.appr4;
+			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
-			m_pCharList[i]->m_iApprColor = entry.appr_color;
+	
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
@@ -9217,15 +9193,12 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_sAppr1 = entry.appr1;
-			m_pCharList[i]->m_sAppr2 = entry.appr2;
-			m_pCharList[i]->m_sAppr3 = entry.appr3;
-			m_pCharList[i]->m_sAppr4 = entry.appr4;
+			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
-			m_pCharList[i]->m_iApprColor = entry.appr_color;
+	
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
@@ -9331,15 +9304,12 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_sAppr1 = entry.appr1;
-			m_pCharList[i]->m_sAppr2 = entry.appr2;
-			m_pCharList[i]->m_sAppr3 = entry.appr3;
-			m_pCharList[i]->m_sAppr4 = entry.appr4;
+			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
 			m_pCharList[i]->m_iExp = entry.exp;
-			m_pCharList[i]->m_iApprColor = entry.appr_color;
+	
 			std::memset(m_pCharList[i]->m_cMapName, 0, sizeof(m_pCharList[i]->m_cMapName));
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
@@ -9837,17 +9807,17 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	else
 	{
-		iWeaponColor = (m_entityState.m_iApprColor & 0xF0000000) >> 28;
-		iShieldColor = (m_entityState.m_iApprColor & 0x0F000000) >> 24;
-		iArmorColor = (m_entityState.m_iApprColor & 0x00F00000) >> 20;
-		iMantleColor = (m_entityState.m_iApprColor & 0x000F0000) >> 16;
-		iArmColor = (m_entityState.m_iApprColor & 0x0000F000) >> 12;
-		iPantsColor = (m_entityState.m_iApprColor & 0x00000F00) >> 8;
-		iBootsColor = (m_entityState.m_iApprColor & 0x000000F0) >> 4;
-		iHelmColor = (m_entityState.m_iApprColor & 0x0000000F);
+		iWeaponColor = m_entityState.m_appearance.iWeaponColor;
+		iShieldColor = m_entityState.m_appearance.iShieldColor;
+		iArmorColor = m_entityState.m_appearance.iArmorColor;
+		iMantleColor = m_entityState.m_appearance.iMantleColor;
+		iArmColor = m_entityState.m_appearance.iArmColor;
+		iPantsColor = m_entityState.m_appearance.iPantsColor;
+		iBootsColor = m_entityState.m_appearance.iBootsColor;
+		iHelmColor = m_entityState.m_appearance.iHelmColor;
 	}
-	iWeaponGlare = (m_entityState.m_sAppr4 & 0x000C) >> 2;
-	iShieldGlare = (m_entityState.m_sAppr4 & 0x0003);
+	iWeaponGlare = m_entityState.m_appearance.iShieldGlare;
+	iShieldGlare = m_entityState.m_appearance.iWeaponGlare;
 	if ((m_entityState.m_iStatus & hb::status::Invisibility) != 0)
 	{
 		if (memcmp(m_pPlayer->m_cPlayerName, m_entityState.m_cName.data(), 10) == 0) bInv = true;
@@ -9860,77 +9830,77 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	case 2:
 	case 3:
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (4 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_M + (m_entityState.m_sAppr1 & 0x000F) * 15 + 4;
-		iHairIndex = DEF_SPRID_HAIR_M + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 4;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_M + m_entityState.m_appearance.iUnderwearType * 15 + 4;
+		iHairIndex = DEF_SPRID_HAIR_M + m_entityState.m_appearance.iHairStyle * 15 + 4;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 4;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_M + m_entityState.m_appearance.iArmorType * 15 + 4;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_M + (m_entityState.m_sAppr3 & 0x000F) * 15 + 4;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_M + m_entityState.m_appearance.iArmArmorType * 15 + 4;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_M + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 4;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_M + m_entityState.m_appearance.iPantsType * 15 + 4;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_M + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 4;
-		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_M + m_entityState.m_appearance.iBootsType * 15 + 4;
+		if (m_entityState.m_appearance.iWeaponType == 0)
 			iWeaponIndex = -1;
 		else
 		{
-			iWeaponIndex = DEF_SPRID_WEAPON_M + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
+			iWeaponIndex = DEF_SPRID_WEAPON_M + m_entityState.m_appearance.iWeaponType * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
 		}
-		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iShieldType == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_M + (m_entityState.m_sAppr2 & 0x000F) * 8 + 6;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_M + m_entityState.m_appearance.iShieldType * 8 + 6;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_M + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 4;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_M + m_entityState.m_appearance.iMantleType * 15 + 4;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_M + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 4;
+		else iHelmIndex = DEF_SPRID_HEAD_M + m_entityState.m_appearance.iHelmType * 15 + 4;
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		if (((m_entityState.m_sAppr3 & 0x0F00) >> 8) == 1) iSkirtDraw = 1;
+		if (m_entityState.m_appearance.iPantsType == 1) iSkirtDraw = 1;
 		iBodyIndex = 500 + (m_entityState.m_sOwnerType - 1) * 8 * 15 + (4 * 8);
-		iUndiesIndex = DEF_SPRID_UNDIES_W + (m_entityState.m_sAppr1 & 0x000F) * 15 + 4;
-		iHairIndex = DEF_SPRID_HAIR_W + ((m_entityState.m_sAppr1 & 0x0F00) >> 8) * 15 + 4;
-		if ((m_entityState.m_sAppr4 & 0x80) == 0)
+		iUndiesIndex = DEF_SPRID_UNDIES_W + m_entityState.m_appearance.iUnderwearType * 15 + 4;
+		iHairIndex = DEF_SPRID_HAIR_W + m_entityState.m_appearance.iHairStyle * 15 + 4;
+		if (m_entityState.m_appearance.iHideArmor == 0)
 		{
-			if (((m_entityState.m_sAppr3 & 0xF000) >> 12) == 0)
+			if (m_entityState.m_appearance.iArmorType == 0)
 				iBodyArmorIndex = -1;
-			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + ((m_entityState.m_sAppr3 & 0xF000) >> 12) * 15 + 4;
+			else iBodyArmorIndex = DEF_SPRID_BODYARMOR_W + m_entityState.m_appearance.iArmorType * 15 + 4;
 		}
-		if ((m_entityState.m_sAppr3 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iArmArmorType == 0)
 			iArmArmorIndex = -1;
-		else iArmArmorIndex = DEF_SPRID_BERK_W + (m_entityState.m_sAppr3 & 0x000F) * 15 + 4;
-		if ((m_entityState.m_sAppr3 & 0x0F00) == 0)
+		else iArmArmorIndex = DEF_SPRID_BERK_W + m_entityState.m_appearance.iArmArmorType * 15 + 4;
+		if (m_entityState.m_appearance.iPantsType == 0)
 			iPantsIndex = -1;
-		else iPantsIndex = DEF_SPRID_LEGG_W + ((m_entityState.m_sAppr3 & 0x0F00) >> 8) * 15 + 4;
-		if (((m_entityState.m_sAppr4 & 0xF000) >> 12) == 0)
+		else iPantsIndex = DEF_SPRID_LEGG_W + m_entityState.m_appearance.iPantsType * 15 + 4;
+		if (m_entityState.m_appearance.iBootsType == 0)
 			iBootsIndex = -1;
-		else iBootsIndex = DEF_SPRID_BOOT_W + ((m_entityState.m_sAppr4 & 0xF000) >> 12) * 15 + 4;
-		if (((m_entityState.m_sAppr2 & 0x0FF0) >> 4) == 0)
+		else iBootsIndex = DEF_SPRID_BOOT_W + m_entityState.m_appearance.iBootsType * 15 + 4;
+		if (m_entityState.m_appearance.iWeaponType == 0)
 			iWeaponIndex = -1;
 		else
 		{
-			iWeaponIndex = DEF_SPRID_WEAPON_W + ((m_entityState.m_sAppr2 & 0x0FF0) >> 4) * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
+			iWeaponIndex = DEF_SPRID_WEAPON_W + m_entityState.m_appearance.iWeaponType * 64 + 8 * 6 + (m_entityState.m_iDir - 1);
 		}
-		if ((m_entityState.m_sAppr2 & 0x000F) == 0)
+		if (m_entityState.m_appearance.iShieldType == 0)
 			iShieldIndex = -1;
-		else iShieldIndex = DEF_SPRID_SHIELD_W + (m_entityState.m_sAppr2 & 0x000F) * 8 + 6;
-		if ((m_entityState.m_sAppr4 & 0x0F00) == 0)
+		else iShieldIndex = DEF_SPRID_SHIELD_W + m_entityState.m_appearance.iShieldType * 8 + 6;
+		if (m_entityState.m_appearance.iMantleType == 0)
 			iMantleIndex = -1;
-		else iMantleIndex = DEF_SPRID_MANTLE_W + ((m_entityState.m_sAppr4 & 0x0F00) >> 8) * 15 + 4;
-		if ((m_entityState.m_sAppr3 & 0x00F0) == 0)
+		else iMantleIndex = DEF_SPRID_MANTLE_W + m_entityState.m_appearance.iMantleType * 15 + 4;
+		if (m_entityState.m_appearance.iHelmType == 0)
 			iHelmIndex = -1;
-		else iHelmIndex = DEF_SPRID_HEAD_W + ((m_entityState.m_sAppr3 & 0x00F0) >> 4) * 15 + 4;
+		else iHelmIndex = DEF_SPRID_HEAD_W + m_entityState.m_appearance.iHelmType * 15 + 4;
 		break;
 
 	default:
@@ -10037,7 +10007,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -10201,7 +10171,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 
 			if ((iHairIndex != -1) && (iHelmIndex == -1))
 			{
-				_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
+				_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
 				m_pSprite[iHairIndex]->Draw(fix_x, fix_y, (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
 			}
 
@@ -10721,17 +10691,17 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 	if (sType <= 3)
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
-		_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
 
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x000F));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 	else
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
-		_GetHairColorRGB(((m_entityState.m_sAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, (m_entityState.m_sAppr1 & 0x000F));
+		_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 }
 
@@ -12413,7 +12383,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && pCfg->GetEquipPos() == EquipPos::RightHand)
 			{
-				wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
+				wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
 				// Snoopy 34 for all wands.
 				if ((wWeaponType >= 34) && (wWeaponType < 40)) return false;
 				//else if( wWeaponType == 27 ) return false; // Farming's hoe !
@@ -12768,7 +12738,7 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 int CGame::_iGetAttackType()
 {
 	uint16_t wWeaponType;
-	wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
+	wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
 	if (wWeaponType == 0)
 	{
 		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[5] >= 100)) return 20;
@@ -12833,7 +12803,7 @@ int CGame::_iGetAttackType()
 int CGame::_iGetWeaponSkillType()
 {
 	uint16_t wWeaponType;
-	wWeaponType = ((m_pPlayer->m_sPlayerAppr2 & 0x0FF0) >> 4);
+	wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
 	if (wWeaponType == 0)
 	{
 		return 5; // Openhand
@@ -13928,7 +13898,7 @@ void CGame::_SetIlusionEffect(int iOwnerH)
 	m_iIlusionOwnerH = iOwnerH;
 
 	std::memset(m_cName_IE, 0, sizeof(m_cName_IE));
-	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_sAppr1_IE, &m_pPlayer->m_sAppr2_IE, &m_pPlayer->m_sAppr3_IE, &m_pPlayer->m_sAppr4_IE, &m_pPlayer->m_iStatus_IE, &m_pPlayer->m_iApprColor_IE, m_cName_IE);
+	m_pMapData->GetOwnerStatusByObjectID(iOwnerH, &m_cIlusionOwnerType, &cDir, &m_pPlayer->m_illusionAppearance, &m_pPlayer->m_iStatus_IE, m_cName_IE);
 }
 
 void CGame::ResponsePanningHandler(char* pData)
@@ -14470,7 +14440,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, int iStatus)
 	case 69:
 	case 64:
 	{
-		switch ((m_entityState.m_sAppr2 & 0xFF00) >> 8) {
+		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
 		case 1:
 		case 2:
 		case 3:
@@ -15139,7 +15109,7 @@ void CGame::ClearSkillUsingStatus()
 		AddEventList(CLEAR_SKILL_USING_STATUS1, 10);//"
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0)*/) {
+		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (m_pPlayer->m_playerAppearance.iIsWalking == 0)*/) {
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		}
@@ -15355,19 +15325,19 @@ void CGame::GetNpcName(short sType, char* pName)
 	case 34: strcpy(pName, NPC_NAME_DUMMY); break;
 	case 35: strcpy(pName, NPC_NAME_ENERGYSPHERE); break;
 	case 36:
-		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_ARROWGUARDTOWER);
 		break;
 	case 37:
-		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
 		else strcpy(pName, NPC_NAME_CANNONGUARDTOWER);
 		break;
 	case 38:
-		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
 		else strcpy(pName, NPC_NAME_MANACOLLECTOR);
 		break;
 	case 39:
-		if (m_entityState.m_sAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
 		else strcpy(pName, NPC_NAME_DETECTOR);
 		break;
 	case 40: strcpy(pName, NPC_NAME_ENERGYSHIELD); break;
@@ -15396,7 +15366,7 @@ void CGame::GetNpcName(short sType, char* pName)
 	case 63: strcpy(pName, NPC_NAME_FROST); break;
 	case 64:
 	{
-		switch ((m_entityState.m_sAppr2 & 0xFF00) >> 8) {
+		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
 		case 1:	strcpy(pName, NPC_NAME_WATERMELON);	break;
 		case 2: strcpy(pName, NPC_NAME_PUMPKIN); break;
 		case 3: strcpy(pName, NPC_NAME_GARLIC); break;
@@ -15593,7 +15563,7 @@ void CGame::MotionResponseHandler(char* pData)
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+			m_pPlayer->m_playerAppearance,
 			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 		m_pPlayer->m_Controller.ResetCommandCount();
@@ -15653,18 +15623,14 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_sPlayerY = pkt->y;
 			m_pPlayer->m_sPlayerType = pkt->type;
 			m_pPlayer->m_iPlayerDir = static_cast<char>(pkt->dir);
-			m_pPlayer->m_sPlayerAppr1 = pkt->appr1;
-			m_pPlayer->m_sPlayerAppr2 = pkt->appr2;
-			m_pPlayer->m_sPlayerAppr3 = pkt->appr3;
-			m_pPlayer->m_sPlayerAppr4 = pkt->appr4;
-			m_pPlayer->m_iPlayerApprColor = pkt->appr_color;
+			m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
 			m_pPlayer->m_iPlayerStatus = pkt->status;
 			m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
 		}
 		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+			m_pPlayer->m_playerAppearance, // v1.4
 			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0,
 			0, 7);
@@ -15988,7 +15954,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
 		{//if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
 		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
-			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0)*/)
+			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (m_pPlayer->m_playerAppearance.iIsWalking == 0)*/)
 			{
 				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
 				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
@@ -16851,7 +16817,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_playerAppearance,
 				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 				m_pPlayer->m_Controller.GetCommand(), 0, 0, 0, 0,
 				10);
@@ -16998,7 +16964,7 @@ MOTION_COMMAND_PROCESS:;
 					case 8:	m_pPlayer->m_sPlayerX--; m_pPlayer->m_sPlayerY--;	break;
 					}
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-						m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+						m_pPlayer->m_playerAppearance, // v1.4
 						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 						m_pPlayer->m_Controller.GetCommand(), 0, 0, 0);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -17042,7 +17008,7 @@ MOTION_COMMAND_PROCESS:;
 				m_wLastAttackTargetID = m_wCommObjectID;
 				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-					m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+					m_pPlayer->m_playerAppearance,
 					m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 					DEF_OBJECTATTACK,
 					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
@@ -17092,7 +17058,7 @@ MOTION_COMMAND_PROCESS:;
 					}
 
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-						m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+						m_pPlayer->m_playerAppearance,
 						m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -17113,7 +17079,7 @@ MOTION_COMMAND_PROCESS:;
 
 			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTGETITEM, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_playerAppearance,
 				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTGETITEM, 0, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -17130,7 +17096,7 @@ MOTION_COMMAND_PROCESS:;
 
 			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTMAGIC, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-				m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor,
+				m_pPlayer->m_playerAppearance,
 				m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 				DEF_OBJECTMAGIC, m_iCastingMagicType, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
@@ -17391,11 +17357,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	sX = pkt->pivot_x;
 	sY = pkt->pivot_y;
 	m_pPlayer->m_sPlayerType = pkt->player_type;
-	m_pPlayer->m_sPlayerAppr1 = pkt->appr1;
-	m_pPlayer->m_sPlayerAppr2 = pkt->appr2;
-	m_pPlayer->m_sPlayerAppr3 = pkt->appr3;
-	m_pPlayer->m_sPlayerAppr4 = pkt->appr4;
-	m_pPlayer->m_iPlayerApprColor = pkt->appr_color;
+	m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
 	m_pPlayer->m_iPlayerStatus = pkt->status;
 
 	//Snoopy MIM fix
@@ -17481,7 +17443,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	if (bIsObserverMode == false)
 	{
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
-			m_pPlayer->m_sPlayerAppr1, m_pPlayer->m_sPlayerAppr2, m_pPlayer->m_sPlayerAppr3, m_pPlayer->m_sPlayerAppr4, m_pPlayer->m_iPlayerApprColor, // v1.4
+			m_pPlayer->m_playerAppearance, // v1.4
 			m_pPlayer->m_iPlayerStatus, m_pPlayer->m_cPlayerName,
 			DEF_OBJECTSTOP, 0, 0, 0);
 	}
@@ -17534,7 +17496,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	}
 
 	//v1.41
-	if ((m_pPlayer->m_sPlayerAppr2 & 0xF000) != 0)
+	if (m_pPlayer->m_playerAppearance.iIsWalking != 0)
 		m_pPlayer->m_bIsCombatMode = true;
 	else m_pPlayer->m_bIsCombatMode = false;
 
@@ -17684,12 +17646,8 @@ void CGame::MotionEventHandler(char* pData)
 	if ((wEventType == DEF_OBJECTNULLACTION) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
 	{
 		m_pPlayer->m_sPlayerType = sType;
-		m_pPlayer->m_sPlayerAppr1 = sAppr1;
-		sPrevAppr2 = m_pPlayer->m_sPlayerAppr2;
-		m_pPlayer->m_sPlayerAppr2 = sAppr2;
-		m_pPlayer->m_sPlayerAppr3 = sAppr3;
-		m_pPlayer->m_sPlayerAppr4 = sAppr4;
-		m_pPlayer->m_iPlayerApprColor = iApprColor;
+		sPrevAppr2 = m_pPlayer->m_playerAppearance.sRawAppr2;
+		m_pPlayer->m_playerAppearance.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor);
 		m_pPlayer->m_iPlayerStatus = iStatus;
 		m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
 		if ((sPrevAppr2 & 0xF000) == 0)
@@ -17708,9 +17666,9 @@ void CGame::MotionEventHandler(char* pData)
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
+		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
 	}
-	else m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, sAppr1, sAppr2, sAppr3, sAppr4, iApprColor, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc);
+	else { PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
 
 	switch (wEventType) {
 	case DEF_OBJECTMAGIC: // Casting
@@ -18185,7 +18143,7 @@ void CGame::UseMagic(int iMagicNo)
 		AddEventList(DLGBOX_CLICK_MAGIC2, 10);
 		return;
 	}
-	if ((m_pPlayer->m_sPlayerAppr2 & 0xF000) == 0) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
+	if (m_pPlayer->m_playerAppearance.iIsWalking == 0) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
 	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMAGIC);
 	m_iCastingMagicType = iMagicNo;
 	m_sMagicShortCut = iMagicNo;
@@ -18437,13 +18395,13 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 **  int CGame::bHasHeroSet( short m_sAppr3, short m_sAppr3, char OwnerType)		( Snoopy )							**
 **  description			:: check weather the object (is character) is using a hero set (1:war, 2:mage)				**
 **********************************************************************************************************************/
-int CGame::bHasHeroSet(short Appr3, short Appr4, char OwnerType)
+int CGame::bHasHeroSet(const PlayerAppearance& appr, char OwnerType)
 {
 	char cArmor, cLeg, cBerk, cHat;
-	cArmor = (Appr3 & 0xF000) >> 12;
-	cLeg = (Appr3 & 0x0F00) >> 8;
-	cHat = (Appr3 & 0x00F0) >> 4;
-	cBerk = Appr3 & 0x000F;
+	cArmor = appr.iArmorType;
+	cLeg = appr.iPantsType;
+	cHat = appr.iHelmType;
+	cBerk = appr.iArmArmorType;
 	switch (OwnerType) {
 	case 1:
 	case 2:

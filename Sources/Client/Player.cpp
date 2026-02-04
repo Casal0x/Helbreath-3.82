@@ -76,17 +76,9 @@ void CPlayer::Reset()
     m_iSpecialAbilityTimeLeftSec = 0;
 
     // APPEARANCE
-    m_sPlayerAppr1 = 0;
-    m_sPlayerAppr2 = 0;
-    m_sPlayerAppr3 = 0;
-    m_sPlayerAppr4 = 0;
-    m_iPlayerApprColor = 0;
-    m_sAppr1_IE = 0;
-    m_sAppr2_IE = 0;
-    m_sAppr3_IE = 0;
-    m_sAppr4_IE = 0;
-    m_iApprColor_IE = 0;
+    m_playerAppearance.Clear();
     m_iStatus_IE = 0;
+    m_illusionAppearance.Clear();
     m_iGender = 0;
     m_iSkinCol = 0;
     m_iHairStyle = 0;

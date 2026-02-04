@@ -533,7 +533,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 	else {
 		if (m_pPlayer->m_iSpecialAbilityType == 0) AddEventList(ON_KEY_UP26, 10);
 		else {
-			if ((m_pPlayer->m_sPlayerAppr4 & 0x00F0) != 0) {
+			if (m_pPlayer->m_playerAppearance.iEffectType != 0) {
 				AddEventList(ON_KEY_UP28, 10);
 				return;
 			}

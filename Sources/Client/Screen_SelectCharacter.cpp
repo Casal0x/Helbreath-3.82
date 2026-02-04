@@ -328,11 +328,7 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
             }
             pGame->m_entityState.m_sOwnerType += pGame->m_pCharList[i]->m_sSkinCol - 1;
             pGame->m_entityState.m_iDir = pGame->m_cMenuDir;
-            pGame->m_entityState.m_sAppr1 = pGame->m_pCharList[i]->m_sAppr1;
-            pGame->m_entityState.m_sAppr2 = pGame->m_pCharList[i]->m_sAppr2;
-            pGame->m_entityState.m_sAppr3 = pGame->m_pCharList[i]->m_sAppr3;
-            pGame->m_entityState.m_sAppr4 = pGame->m_pCharList[i]->m_sAppr4;
-            pGame->m_entityState.m_iApprColor = pGame->m_pCharList[i]->m_iApprColor; 
+            pGame->m_entityState.m_appearance = pGame->m_pCharList[i]->m_appearance;
 
             std::memset(pGame->m_entityState.m_cName.data(), 0, sizeof(pGame->m_entityState.m_cName.data()));
             memcpy(pGame->m_entityState.m_cName.data(), pGame->m_pCharList[i]->m_cName, 10);

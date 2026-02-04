@@ -319,12 +319,12 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		int iR, iG, iB;
-		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pGame->_GetHairColorRGB(m_pGame->m_pPlayer->m_playerAppearance.iHairColor, &iR, &iG, &iB);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x000F));
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
 
 	// Find topmost hovered slot (reverse scan) before drawing
 	EquipPos hoverSlot = FindHoverSlot(m_pGame, MaleEquipSlots, static_cast<int>(std::size(MaleEquipSlots)),
@@ -369,12 +369,12 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		int iR, iG, iB;
-		m_pGame->_GetHairColorRGB(((m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x00F0) >> 4), &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x0F00) >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		m_pGame->_GetHairColorRGB(m_pGame->m_pPlayer->m_playerAppearance.iHairColor, &iR, &iG, &iB);
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(iR, iG, iB));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, (m_pGame->m_pPlayer->m_sPlayerAppr1 & 0x000F));
+	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
 	bool bSkirt = false;

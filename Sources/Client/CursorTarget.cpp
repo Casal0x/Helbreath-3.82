@@ -148,11 +148,7 @@ void CursorTarget::TestObject(const SpriteLib::BoundRect& bounds, const TargetOb
         s_focusedObject.action = info.action;
         s_focusedObject.direction = info.direction;
         s_focusedObject.frame = info.frame;
-        s_focusedObject.appr1 = info.appr1;
-        s_focusedObject.appr2 = info.appr2;
-        s_focusedObject.appr3 = info.appr3;
-        s_focusedObject.appr4 = info.appr4;
-        s_focusedObject.apprColor = info.apprColor;
+        s_focusedObject.appearance = info.appearance;
         s_focusedObject.status = info.status;
 
         // Copy name
@@ -253,8 +249,7 @@ bool CursorTarget::GetFocusHighlightData(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
     short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-    short& outAppr1, short& outAppr2, short& outAppr3, short& outAppr4,
-    int& outApprColor, int& outStatus,
+    PlayerAppearance& outAppearance, int& outStatus,
     short& outDataX, short& outDataY)
 {
     if (!s_focusedObject.valid) {
@@ -268,11 +263,7 @@ bool CursorTarget::GetFocusHighlightData(
     outAction = s_focusedObject.action;
     outDir = s_focusedObject.direction;
     outFrame = s_focusedObject.frame;
-    outAppr1 = s_focusedObject.appr1;
-    outAppr2 = s_focusedObject.appr2;
-    outAppr3 = s_focusedObject.appr3;
-    outAppr4 = s_focusedObject.appr4;
-    outApprColor = s_focusedObject.apprColor;
+    outAppearance = s_focusedObject.appearance;
     outStatus = s_focusedObject.status;
     outDataX = s_focusedObject.dataX;
     outDataY = s_focusedObject.dataY;

@@ -12,6 +12,7 @@
 #include <cstring>
 
 #include "StatusFlags.h"
+#include "AppearanceData.h"
 
 // Maximum length for entity names
 constexpr int ENTITY_NAME_LENGTH = 12;
@@ -34,11 +35,7 @@ public:
     {
         m_wObjectID = 0;
         m_sOwnerType = 0;
-        m_sAppr1 = 0;
-        m_sAppr2 = 0;
-        m_sAppr3 = 0;
-        m_sAppr4 = 0;
-        m_iApprColor = 0;
+        m_appearance.Clear();
         m_iStatus = 0;
         m_iAction = 0;
         m_iDir = 0;
@@ -98,12 +95,8 @@ public:
     uint16_t m_wObjectID;       // Entity's unique object ID
     short m_sOwnerType;         // Entity type (player/mob/NPC type ID)
 
-    // Appearance
-    short m_sAppr1;             // Appearance data 1 (gender, hair, etc.)
-    short m_sAppr2;             // Appearance data 2 (weapon, shield)
-    short m_sAppr3;             // Appearance data 3 (armor, helm)
-    short m_sAppr4;             // Appearance data 4 (mantle, etc.)
-    int m_iApprColor;           // Appearance color tint
+    // Unpacked appearance (named fields extracted from sAppr1-4 at packet reception)
+    PlayerAppearance m_appearance;
 
     // State
     int m_iStatus;              // Status flags (poisoned, invisible, etc.)

@@ -5,6 +5,7 @@
 #include <array>
 #include "PlayerController.h"
 #include "NetConstants.h"
+#include "AppearanceData.h"
 
 #define DEF_PLAYERNAME_LENGTH      12
 #define DEF_GUILDNAME_LENGTH       22
@@ -56,10 +57,11 @@ public:
     int m_iSuperAttackLeft, m_iSpecialAbilityType, m_iSpecialAbilityTimeLeftSec;
 
     // APPEARANCE
-    short m_sPlayerAppr1, m_sPlayerAppr2, m_sPlayerAppr3, m_sPlayerAppr4;
-    int m_iPlayerApprColor;
-    short m_sAppr1_IE, m_sAppr2_IE, m_sAppr3_IE, m_sAppr4_IE;
-    int m_iApprColor_IE, m_iStatus_IE;
+    PlayerAppearance m_playerAppearance;
+
+    // Illusion Effect appearance
+    int m_iStatus_IE;
+    PlayerAppearance m_illusionAppearance;
     int8_t m_iGender, m_iSkinCol, m_iHairStyle, m_iHairCol, m_iUnderCol;
 
     // SKILLS & MAGIC

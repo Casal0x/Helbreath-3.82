@@ -348,7 +348,7 @@ void _LoadShopMenuContents(char cType);
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	//Snoopy: added function:
-	int bHasHeroSet( short Appr3, short Appr4, char OwnerType);
+	int bHasHeroSet(const PlayerAppearance& appr, char OwnerType);
 	void ShowHeldenianVictory(short sSide);
 	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);

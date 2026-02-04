@@ -1043,7 +1043,7 @@ bool CMapData::bIsTeleportLoc(short sX, short sY)
 	return true;
 }
 
-bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, short sAppr1, short sAppr2, short sAppr3, short sAppr4, int iApprColor, int iStatus, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame)
+bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, const PlayerAppearance& appearance, int iStatus, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame)
 {
 	int   iX, iY, dX, dY;
 	int   iChatIndex, iAdd;
@@ -1319,11 +1319,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				if (sAction != DEF_OBJECTNULLACTION)
 				{
 					sType = m_pData[iX][iY].m_sOwnerType;
-					sAppr1 = m_pData[iX][iY].m_sAppr1;
-					sAppr2 = m_pData[iX][iY].m_sAppr2;
-					sAppr3 = m_pData[iX][iY].m_sAppr3;
-					sAppr4 = m_pData[iX][iY].m_sAppr4;
-					iApprColor = m_pData[iX][iY].m_iApprColor;
+
 					iStatus = m_pData[iX][iY].m_iStatus;
 					iEffectType = m_pData[iX][iY].m_iEffectType;
 					iEffectFrame = m_pData[iX][iY].m_iEffectFrame;
@@ -1392,11 +1388,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
 				if (sAction != DEF_OBJECTNULLACTION) {
 					sType = m_pData[iX][iY].m_sDeadOwnerType;
-					sAppr1 = m_pData[iX][iY].m_sDeadAppr1;
-					sAppr2 = m_pData[iX][iY].m_sDeadAppr2;
-					sAppr3 = m_pData[iX][iY].m_sDeadAppr3;
-					sAppr4 = m_pData[iX][iY].m_sDeadAppr4;
-					iApprColor = m_pData[iX][iY].m_iDeadApprColor;
+
 					iStatus = m_pData[iX][iY].m_iDeadStatus;
 				}
 				std::memset(cTmpName, 0, sizeof(cTmpName));
@@ -1455,11 +1447,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					iChatIndex = m_pData[iX][iY].m_iChatMsg;
 					if (sAction != DEF_OBJECTNULLACTION) {
 						sType = m_pData[iX][iY].m_sOwnerType;
-						sAppr1 = m_pData[iX][iY].m_sAppr1;
-						sAppr2 = m_pData[iX][iY].m_sAppr2;
-						sAppr3 = m_pData[iX][iY].m_sAppr3;
-						sAppr4 = m_pData[iX][iY].m_sAppr4;
-						iApprColor = m_pData[iX][iY].m_iApprColor; // v1.4
+
 						iStatus = m_pData[iX][iY].m_iStatus;
 						iEffectType = m_pData[iX][iY].m_iEffectType;
 						iEffectFrame = m_pData[iX][iY].m_iEffectFrame;
@@ -1517,11 +1505,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
 					if (sAction != DEF_OBJECTNULLACTION) {
 						sType = m_pData[iX][iY].m_sDeadOwnerType;
-						sAppr1 = m_pData[iX][iY].m_sDeadAppr1;
-						sAppr2 = m_pData[iX][iY].m_sDeadAppr2;
-						sAppr3 = m_pData[iX][iY].m_sDeadAppr3;
-						sAppr4 = m_pData[iX][iY].m_sDeadAppr4;
-						iApprColor = m_pData[iX][iY].m_iDeadApprColor; // v1.4
+
 						iStatus = m_pData[iX][iY].m_iDeadStatus;
 					}
 					std::memset(cTmpName, 0, sizeof(cTmpName));
@@ -1559,11 +1543,7 @@ EXIT_SEARCH_LOOP:;
 			m_pData[dX][dY].m_wDeadObjectID = m_pData[dX][dY].m_wObjectID;
 			m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
 			m_pData[dX][dY].m_cDeadDir = m_pData[dX][dY].m_cDir;
-			m_pData[dX][dY].m_sDeadAppr1 = m_pData[dX][dY].m_sAppr1;
-			m_pData[dX][dY].m_sDeadAppr2 = m_pData[dX][dY].m_sAppr2;
-			m_pData[dX][dY].m_sDeadAppr3 = m_pData[dX][dY].m_sAppr3;
-			m_pData[dX][dY].m_sDeadAppr4 = m_pData[dX][dY].m_sAppr4;
-			m_pData[dX][dY].m_iDeadApprColor = m_pData[dX][dY].m_iApprColor; // v1.4
+			m_pData[dX][dY].m_deadAppearance = m_pData[dX][dY].m_appearance;
 			m_pData[dX][dY].m_iDeadStatus = m_pData[dX][dY].m_iStatus;
 			m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 			m_pData[dX][dY].m_dwDeadOwnerTime = dwTime;
@@ -1605,11 +1585,7 @@ EXIT_SEARCH_LOOP:;
 		m_pData[dX][dY].m_wObjectID = wObjectID;
 		m_pData[dX][dY].m_sOwnerType = sType;
 		m_pData[dX][dY].m_cDir = cDir;
-		m_pData[dX][dY].m_sAppr1 = sAppr1;
-		m_pData[dX][dY].m_sAppr2 = sAppr2;
-		m_pData[dX][dY].m_sAppr3 = sAppr3;
-		m_pData[dX][dY].m_sAppr4 = sAppr4;
-		m_pData[dX][dY].m_iApprColor = iApprColor; // v1.4
+		m_pData[dX][dY].m_appearance = appearance;
 		m_pData[dX][dY].m_iStatus = iStatus;
 		m_pData[dX][dY].m_sV1 = sV1;
 		m_pData[dX][dY].m_sV2 = sV2;
@@ -1636,9 +1612,9 @@ EXIT_SEARCH_LOOP:;
 		}
 		m_pData[dX][dY].m_dwOwnerTime = dwTime;
 		m_pData[dX][dY].m_iChatMsg = iChatIndex;
-		if ((sAppr4 & 0x00F0) != 0)
+		if (appearance.iEffectType != 0)
 		{
-			m_pData[dX][dY].m_iEffectType = (sAppr4 & 0x00F0) >> 4;
+			m_pData[dX][dY].m_iEffectType = appearance.iEffectType;
 			if (sAction == DEF_OBJECTNULLACTION)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
@@ -1659,19 +1635,15 @@ EXIT_SEARCH_LOOP:;
 		m_pData[dX][dY].m_wDeadObjectID = wObjectID;
 		m_pData[dX][dY].m_sDeadOwnerType = sType;
 		m_pData[dX][dY].m_cDeadDir = cDir;
-		m_pData[dX][dY].m_sDeadAppr1 = sAppr1;
-		m_pData[dX][dY].m_sDeadAppr2 = sAppr2;
-		m_pData[dX][dY].m_sDeadAppr3 = sAppr3;
-		m_pData[dX][dY].m_sDeadAppr4 = sAppr4;
-		m_pData[dX][dY].m_iDeadApprColor = iApprColor; // v1.4
+		m_pData[dX][dY].m_deadAppearance = appearance;
 		m_pData[dX][dY].m_iDeadStatus = iStatus;
 		std::memset(m_pData[dX][dY].m_cDeadOwnerName, 0, sizeof(m_pData[dX][dY].m_cDeadOwnerName));
 		strncpy_s(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), cTmpName, _TRUNCATE);
 		m_pData[dX][dY].m_dwDeadOwnerTime = dwTime;
 		m_pData[dX][dY].m_iDeadChatMsg = iChatIndex;
-		if ((sAppr4 & 0x00F0) != 0)
+		if (appearance.iEffectType != 0)
 		{
-			m_pData[dX][dY].m_iEffectType = (sAppr4 & 0x00F0) >> 4;
+			m_pData[dX][dY].m_iEffectType = appearance.iEffectType;
 			if (sAction == DEF_OBJECTNULLACTION)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
@@ -1691,67 +1663,9 @@ EXIT_SEARCH_LOOP:;
 }
 
 
-bool __fastcall CMapData::bGetOwner(short sX, short sY, short* pOwnerType, char* pDir, short* pAppr1, short* pAppr2, short* pAppr3, short* pAppr4, int* pApprColor, int* pStatus, char* pName, char* pAction, char* pFrame, int* pChatIndex, short* pV1, short* pV2)
-{
-	int dX, dY;
 
-	if ((sX < m_sPivotX) || (sX > m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY > m_sPivotY + MAPDATASIZEY)) {
-		std::memset(pName, 0, sizeof(pName));
-		return false;
-	}
 
-	dX = sX - m_sPivotX;
-	dY = sY - m_sPivotY;
 
-	*pOwnerType = m_pData[dX][dY].m_sOwnerType;
-	*pAction = m_pData[dX][dY].m_cOwnerAction;
-	*pDir = m_pData[dX][dY].m_cDir;
-	*pFrame = m_pData[dX][dY].m_cOwnerFrame;
-	*pAppr1 = m_pData[dX][dY].m_sAppr1;
-	*pAppr2 = m_pData[dX][dY].m_sAppr2;
-	*pAppr3 = m_pData[dX][dY].m_sAppr3;
-	*pAppr4 = m_pData[dX][dY].m_sAppr4;
-	*pApprColor = m_pData[dX][dY].m_iApprColor; // v1.4
-	*pStatus = m_pData[dX][dY].m_iStatus;
-	*pChatIndex = m_pData[dX][dY].m_iChatMsg;
-	*pV1 = m_pData[dX][dY].m_sV1;
-	*pV2 = m_pData[dX][dY].m_sV2;
-
-	strncpy_s(pName, 12, m_pData[dX][dY].m_cOwnerName, _TRUNCATE);
-
-	return true;
-}
-
-bool __fastcall CMapData::bGetDeadOwner(short sX, short sY, short* pOwnerType, char* pDir, short* pAppr1, short* pAppr2, short* pAppr3, short* pAppr4, int* pApprColor, char* pFrame, char* pName, short* pItemSprite, short* pItemSpriteFrame, int* pChatIndex)
-{
-	int dX, dY;
-
-	if ((sX < m_sPivotX) || (sX > m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY > m_sPivotY + MAPDATASIZEY)) {
-
-		std::memset(pName, 0, sizeof(pName));
-		*pItemSprite = 0;
-		return false;
-	}
-
-	dX = sX - m_sPivotX;
-	dY = sY - m_sPivotY;
-
-	*pOwnerType = m_pData[dX][dY].m_sDeadOwnerType;
-	*pDir = m_pData[dX][dY].m_cDeadDir;
-	*pAppr1 = m_pData[dX][dY].m_sDeadAppr1;
-	*pAppr2 = m_pData[dX][dY].m_sDeadAppr2;
-	*pAppr3 = m_pData[dX][dY].m_sDeadAppr3;
-	*pAppr4 = m_pData[dX][dY].m_sDeadAppr4;
-	*pApprColor = m_pData[dX][dY].m_iDeadApprColor; // v1.4
-	*pFrame = m_pData[dX][dY].m_cDeadOwnerFrame;
-	*pChatIndex = m_pData[dX][dY].m_iDeadChatMsg;
-
-	strncpy_s(pName, 12, m_pData[dX][dY].m_cDeadOwnerName, _TRUNCATE);
-
-	return true;
-}
 
 int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sViewPointY)
 {
@@ -2030,11 +1944,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pData[dX][dY].m_wDeadObjectID = m_pData[dX][dY].m_wObjectID;
 								m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
 								m_pData[dX][dY].m_cDeadDir = m_pData[dX][dY].m_cDir;
-								m_pData[dX][dY].m_sDeadAppr1 = m_pData[dX][dY].m_sAppr1;
-								m_pData[dX][dY].m_sDeadAppr2 = m_pData[dX][dY].m_sAppr2;
-								m_pData[dX][dY].m_sDeadAppr3 = m_pData[dX][dY].m_sAppr3;
-								m_pData[dX][dY].m_sDeadAppr4 = m_pData[dX][dY].m_sAppr4;
-								m_pData[dX][dY].m_iDeadApprColor = m_pData[dX][dY].m_iApprColor; // v1.4
+								m_pData[dX][dY].m_deadAppearance = m_pData[dX][dY].m_appearance;
 								m_pData[dX][dY].m_iDeadStatus = m_pData[dX][dY].m_iStatus;
 								m_pData[dX][dY].m_iDeadChatMsg = m_pData[dX][dY].m_iChatMsg; // v1.411
 								m_pData[dX][dY].m_cDeadOwnerFrame = -1;
@@ -2078,7 +1988,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6: // glowing armor/weapon
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
@@ -2136,7 +2046,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
 								m_pGame->PlaySound('C', 8, sDist, lPan);
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									cTotalFrame = 8;
 									cFrameMoveDots = 32 / cTotalFrame;
@@ -2426,7 +2336,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								else m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -2468,7 +2378,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 7: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								case 8: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); dy = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								}
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -2503,7 +2413,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							else if (m_pData[dX][dY].m_cOwnerFrame == 5) // vu comme case 5
 							{
-								sWeaponType = ((m_pData[dX][dY].m_sAppr2 & 0x0FF0) >> 4);
+								sWeaponType = m_pData[dX][dY].m_appearance.iWeaponType;
 								if ((sWeaponType >= 1) && (sWeaponType <= 2))
 								{
 									m_pGame->PlaySound('C', 1, sDist, lPan);
@@ -2557,7 +2467,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6: // Humans
 							if ((m_pData[dX][dY].m_sV3 >= 20) && (m_pData[dX][dY].m_cOwnerFrame == 2))
 							{
-								if (m_pGame->bHasHeroSet(m_pData[dX][dY].m_sAppr3, m_pData[dX][dY].m_sAppr4, m_pData[dX][dY].m_sOwnerType) == 1) // Warr hero set
+								if (m_pGame->bHasHeroSet(m_pData[dX][dY].m_appearance, m_pData[dX][dY].m_sOwnerType) == 1) // Warr hero set
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::WAR_HERO_SET, m_sPivotX + dX, m_sPivotY + dY
 										, m_sPivotX + dX, m_sPivotY + dY, 0, 1);
@@ -2577,7 +2487,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							if (m_pData[dX][dY].m_cOwnerFrame == 5)
 							{
-								if ((m_pData[dX][dY].m_sAppr2 & 0xF000) != 0) // not Peace mode
+								if (m_pData[dX][dY].m_appearance.iIsWalking != 0) // not Peace mode
 								{
 									if (m_pData[dX][dY].m_sV3 != 1) // autre que corp � corp
 									{
@@ -2586,7 +2496,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 											, 0, m_pData[dX][dY].m_sOwnerType);
 										if (m_pData[dX][dY].m_sV3 >= 20) m_pGame->PlaySound('E', 43, sDist, lPan); // Son "loup�"
 									}
-									if (((m_pData[dX][dY].m_sAppr2 & 0x0FF0) >> 4) == 15) // StormBlade
+									if (m_pData[dX][dY].m_appearance.iWeaponType == 15) // StormBlade
 									{
 										m_pGame->m_pEffectManager->AddEffect(EffectType::STORM_BLADE, m_sPivotX + dX, m_sPivotY + dY
 											, m_sPivotX + dX + m_pData[dX][dY].m_sV1, m_sPivotY + dY + m_pData[dX][dY].m_sV2
@@ -2599,8 +2509,8 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 											, 0, m_pData[dX][dY].m_sOwnerType);
 									}
 								}
-								// Weapon Glare = m_sAppr4 & 0x000F
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								// Weapon Glare from appearance
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -2636,9 +2546,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 4:
 						case 5:
 						case 6:
-							if ((m_pData[dX][dY].m_sAppr2 & 0xF000) != 0)
+							if (m_pData[dX][dY].m_appearance.iIsWalking != 0)
 							{
-								sWeaponType = ((m_pData[dX][dY].m_sAppr2 & 0x0FF0) >> 4);
+								sWeaponType = m_pData[dX][dY].m_appearance.iWeaponType;
 								if ((sWeaponType >= 1) && (sWeaponType <= 2))
 								{
 									if (m_pData[dX][dY].m_cOwnerFrame == 5)
@@ -3483,7 +3393,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if (m_pData[dX][dY].m_cOwnerFrame == 1)
 							{
 								if (true) m_pGame->PlaySound('C', 16, sDist, lPan);
-								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -3495,7 +3405,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
-								if (m_pGame->bHasHeroSet(m_pData[dX][dY].m_sAppr3, m_pData[dX][dY].m_sAppr4, m_pData[dX][dY].m_sOwnerType) == 2) // Mage hero set
+								if (m_pGame->bHasHeroSet(m_pData[dX][dY].m_appearance, m_pData[dX][dY].m_sOwnerType) == 2) // Mage hero set
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MAGE_HERO_SET, m_sPivotX + dX, m_sPivotY + dY
 										, m_sPivotX + dX, m_sPivotY + dY, 0, 1);
@@ -3966,7 +3876,7 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 	return true;
 }
 
-bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, short sAppr1, short sAppr2, short sAppr3, short sAppr4, int iApprColor, int iStatus, char* pName)
+bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const PlayerAppearance& appearance, int iStatus, char* pName)
 {
 	int  dX, dY;
 	char pTmpName[12];
@@ -4025,11 +3935,7 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 	m_pData[dX][dY].m_wDeadObjectID = wObjectID;
 	m_pData[dX][dY].m_sDeadOwnerType = sType;
 	m_pData[dX][dY].m_cDeadDir = cDir;
-	m_pData[dX][dY].m_sDeadAppr1 = sAppr1;
-	m_pData[dX][dY].m_sDeadAppr2 = sAppr2;
-	m_pData[dX][dY].m_sDeadAppr3 = sAppr3;
-	m_pData[dX][dY].m_sDeadAppr4 = sAppr4;
-	m_pData[dX][dY].m_iDeadApprColor = iApprColor;
+	m_pData[dX][dY].m_deadAppearance = appearance;
 	m_pData[dX][dY].m_iDeadStatus = iStatus;
 	m_pData[dX][dY].m_cDeadOwnerFrame = -1;
 	strncpy_s(m_pData[dX][dY].m_cDeadOwnerName, sizeof(m_pData[dX][dY].m_cDeadOwnerName), pTmpName, _TRUNCATE);
@@ -4195,7 +4101,7 @@ bool CMapData::bSetDynamicObject(short sX, short sY, uint16_t wID, short sType, 
 	return true;
 }
 
-void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, short* pAppr1, short* pAppr2, short* pAppr3, short* pAppr4, int* pStatus, int* pColor, char* pName)
+void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, PlayerAppearance* pAppearance, int* pStatus, char* pName)
 {
 	int iX, iY;
 	for (iX = 0; iX < MAPDATASIZEX; iX++)
@@ -4204,12 +4110,8 @@ void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, ch
 			{
 				*pOwnerType = (char)m_pData[iX][iY].m_sOwnerType;
 				*pDir = m_pData[iX][iY].m_cDir;
-				*pAppr1 = m_pData[iX][iY].m_sAppr1;
-				*pAppr2 = m_pData[iX][iY].m_sAppr2;
-				*pAppr3 = m_pData[iX][iY].m_sAppr3;
-				*pAppr4 = m_pData[iX][iY].m_sAppr4;
+				*pAppearance = m_pData[iX][iY].m_appearance;
 				*pStatus = m_pData[iX][iY].m_iStatus;
-				*pColor = m_pData[iX][iY].m_iApprColor;
 				strncpy_s(pName, 12, m_pData[iX][iY].m_cOwnerName, _TRUNCATE);
 				return;
 			}
