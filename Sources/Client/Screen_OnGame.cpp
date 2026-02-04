@@ -234,7 +234,12 @@ void Screen_OnGame::on_update()
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
                     if (strlen(m_pGame->G_cTxt) > 0) {
-                        m_pGame->bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, m_pGame->G_cTxt);
+                        if (!m_pGame->m_bShout && m_pGame->G_cTxt[0] == '!') {
+                            m_pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
+                        }
+                        else {
+                            m_pGame->bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, m_pGame->G_cTxt);
+                        }
                     }
                 }
             }

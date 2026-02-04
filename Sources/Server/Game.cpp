@@ -8839,19 +8839,18 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 
 	case DEF_NOTIFY_NOTICEMSG:
 	{
-		hb::net::PacketNotifyNoticeMsg pkt{};
-		pkt.header.msg_id = MSGID_NOTIFY;
-		pkt.header.msg_type = wMsgType;
+		char buf[sizeof(hb::net::PacketHeader) + 256]{};
+		auto* pkt = reinterpret_cast<hb::net::PacketNotifyNoticeMsg*>(buf);
+		pkt->header.msg_id = MSGID_NOTIFY;
+		pkt->header.msg_type = wMsgType;
 		std::size_t msg_len = 0;
 		if (pString != 0) {
 			msg_len = std::strlen(pString);
-			if (msg_len >= sizeof(pkt.text)) {
-				msg_len = sizeof(pkt.text) - 1;
-			}
-			memcpy(pkt.text, pString, msg_len);
+			if (msg_len > 255) msg_len = 255;
+			memcpy(pkt->text, pString, msg_len);
 		}
-		pkt.text[msg_len] = '\0';
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt),
+		pkt->text[msg_len] = '\0';
+		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(buf,
 			static_cast<int>(sizeof(hb::net::PacketHeader) + msg_len + 1));
 		break;
 	}
