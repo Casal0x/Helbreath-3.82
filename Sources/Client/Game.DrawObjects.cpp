@@ -475,11 +475,11 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iDataY = dY = indexY - mapMinY;
 					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
 					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
-					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_cOwnerAction;
+					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_animation.cAction;
 					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_status;
-					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDir;
+					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_animation.cDir;
 					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_appearance;
-					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cOwnerFrame;
+					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_animation.cCurrentFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iChatMsg;
 					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
 					m_entityState.m_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;

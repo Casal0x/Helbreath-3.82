@@ -17,7 +17,7 @@
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
-        "runningMode": true,
+        "runningMode": false,
         "showFps": true,
         "showLatency": true,
         "zoomMap": true

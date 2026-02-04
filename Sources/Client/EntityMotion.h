@@ -60,6 +60,13 @@ struct EntityMotion {
     float fCurrentOffsetY = 0.0f;
 
     //-------------------------------------------------------------------------
+    // Pending next movement (2-slot queue for seamless chaining)
+    //-------------------------------------------------------------------------
+    bool bHasPending = false;
+    int8_t cPendingDirection = 0;
+    uint32_t dwPendingDuration = 0;
+
+    //-------------------------------------------------------------------------
     // Methods
     //-------------------------------------------------------------------------
 
@@ -68,6 +75,9 @@ struct EntityMotion {
     // currentTime: current game time in milliseconds
     // duration: time to complete movement in milliseconds
     void StartMove(int8_t direction, uint32_t currentTime, uint32_t duration);
+
+    // Queue a follow-up move (called when move arrives while still interpolating)
+    void QueueMove(int8_t direction, uint32_t duration);
 
     // Update interpolation - call every frame
     // currentTime: current game time in milliseconds
@@ -88,6 +98,7 @@ struct EntityMotion {
     //-------------------------------------------------------------------------
     bool IsComplete() const { return !bIsMoving && fProgress >= 1.0f; }
     bool IsMoving() const { return bIsMoving; }
+    bool HasPending() const { return bHasPending; }
 
     //-------------------------------------------------------------------------
     // Static Helpers

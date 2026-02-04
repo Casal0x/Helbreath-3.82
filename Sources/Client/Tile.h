@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 #include "EntityMotion.h"
+#include "AnimationState.h"
 #include "AppearanceData.h"
 #include "PlayerStatusData.h"
 
@@ -26,10 +27,6 @@ public:
 
 		m_cDeadOwnerFrame = -1;
 		m_dwDeadOwnerTime = 0;
-
-		m_cOwnerAction = 0;
-		m_cDir         = 0;
-		m_cOwnerFrame  = 0;
 
 		m_sItemID = 0;
 		m_dwItemAttr = 0;
@@ -53,11 +50,10 @@ public:
 		m_iEffectTotalFrame = 0;
 		m_dwEffectTime = 0;
 
-		m_dwOwnerTime        = 0;
-
 		m_appearance.Clear();
 		m_deadAppearance.Clear();
 
+		m_animation.Reset();
 		m_motion.Reset();
 	}
 
@@ -85,12 +81,11 @@ public:
 
 	inline virtual ~CTile()
 	{
-	}	
-	DWORD m_dwOwnerTime;
+	}
 	DWORD m_dwEffectTime;
 	DWORD m_dwDeadOwnerTime;
 	DWORD m_dwDynamicObjectTime;
-	
+
 	int   m_iChatMsg;
 	int   m_cItemColor; // v1.4
 	int   m_iEffectType;
@@ -107,7 +102,7 @@ public:
 
 	PlayerStatus m_deadStatus;
 	short m_sV1;
-	short m_sV2;					
+	short m_sV2;
 	short m_sV3;								// +B50
 	short m_sDynamicObjectType;
 
@@ -115,11 +110,8 @@ public:
 	DWORD m_dwItemAttr;
 
 	char  m_cDeadOwnerFrame;
-	char  m_cOwnerAction;						// +B59
-	char  m_cOwnerFrame;						// +B5A
-	char  m_cDir;
 	char  m_cDeadDir;
-	
+
 	char  m_cDynamicObjectFrame;
 	char  m_cDynamicObjectData1, m_cDynamicObjectData2, m_cDynamicObjectData3, m_cDynamicObjectData4;
 	char  m_cOwnerName[12];
@@ -128,6 +120,9 @@ public:
 	// Unpacked appearance data (extracted from m_sAppr1-4 at reception)
 	PlayerAppearance m_appearance;
 	PlayerAppearance m_deadAppearance;
+
+	// Animation state (replaces m_cOwnerAction, m_cOwnerFrame, m_cDir, m_dwOwnerTime)
+	AnimationState m_animation;
 
 	// Smooth movement interpolation
 	EntityMotion m_motion;

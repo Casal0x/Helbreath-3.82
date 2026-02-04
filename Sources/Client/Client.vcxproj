@@ -418,6 +418,7 @@
     <ClInclude Include="DialogBox_GuildHallMenu.h" />
     <ClInclude Include="DialogBox_SellOrRepair.h" />
     <ClInclude Include="DialogBox_Manufacture.h" />
+    <ClInclude Include="AnimationState.h" />
     <ClInclude Include="EffectManager.h" />
     <ClInclude Include="EntityMotion.h" />
     <ClInclude Include="NetworkMessageManager.h" />
@@ -565,6 +566,7 @@
     <ClCompile Include="Overlay_WaitInitData.cpp" />
     <ClCompile Include="DevConsole.cpp" />
     <ClCompile Include="Overlay_DevConsole.cpp" />
+    <ClCompile Include="AnimationState.cpp" />
     <ClCompile Include="EffectManager.cpp" />
     <ClCompile Include="EntityMotion.cpp" />
     <ClCompile Include="Effect_Add.cpp" />

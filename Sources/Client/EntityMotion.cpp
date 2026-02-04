@@ -26,6 +26,16 @@ void EntityMotion::StartMove(int8_t direction, uint32_t currentTime, uint32_t du
 }
 
 //=============================================================================
+// QueueMove - Queue a follow-up movement for seamless chaining
+//=============================================================================
+void EntityMotion::QueueMove(int8_t direction, uint32_t duration)
+{
+    bHasPending = true;
+    cPendingDirection = direction;
+    dwPendingDuration = duration;
+}
+
+//=============================================================================
 // Update - Update interpolation each frame
 //=============================================================================
 void EntityMotion::Update(uint32_t currentTime)
@@ -45,11 +55,26 @@ void EntityMotion::Update(uint32_t currentTime)
 
     // Check for completion
     if (fProgress >= 1.0f) {
-        fProgress = 1.0f;
-        bIsMoving = false;
-        fCurrentOffsetX = 0.0f;
-        fCurrentOffsetY = 0.0f;
-        return;
+        if (bHasPending) {
+            // Chain into next movement seamlessly
+            // Overshoot time carries into next movement
+            uint32_t overshoot = elapsed - dwDuration;
+            int8_t pendDir = cPendingDirection;
+            uint32_t pendDur = dwPendingDuration;
+            bHasPending = false;
+            StartMove(pendDir, currentTime - overshoot, pendDur);
+            // Recursively update with remaining time
+            Update(currentTime);
+            return;
+        }
+        else {
+            // No pending: snap to tile center
+            fProgress = 1.0f;
+            bIsMoving = false;
+            fCurrentOffsetX = 0.0f;
+            fCurrentOffsetY = 0.0f;
+            return;
+        }
     }
 
     // Linear interpolation from start offset to (0, 0)
@@ -81,6 +106,7 @@ void EntityMotion::Bump()
     fCurrentOffsetY = 0.0f;
     sStartOffsetX = 0;
     sStartOffsetY = 0;
+    bHasPending = false;
 }
 
 //=============================================================================
@@ -97,6 +123,9 @@ void EntityMotion::Reset()
     sStartOffsetY = 0;
     fCurrentOffsetX = 0.0f;
     fCurrentOffsetY = 0.0f;
+    bHasPending = false;
+    cPendingDirection = 0;
+    dwPendingDuration = 0;
 }
 
 //=============================================================================

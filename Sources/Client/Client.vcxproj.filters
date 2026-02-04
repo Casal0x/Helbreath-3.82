@@ -154,6 +154,9 @@
     <ClInclude Include="EntityRenderState.h">
       <Filter>Entities</Filter>
     </ClInclude>
+    <ClInclude Include="AnimationState.h">
+      <Filter>Entities</Filter>
+    </ClInclude>
     <ClInclude Include="EntityMotion.h">
       <Filter>Entities</Filter>
     </ClInclude>
@@ -516,6 +519,9 @@
       <Filter>Entities</Filter>
     </ClCompile>
     <ClCompile Include="PlayerController.cpp">
+      <Filter>Entities</Filter>
+    </ClCompile>
+    <ClCompile Include="AnimationState.cpp">
       <Filter>Entities</Filter>
     </ClCompile>
     <ClCompile Include="EntityMotion.cpp">
