@@ -568,6 +568,13 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         return false;
     }
 
+    // Migrate account_name to lowercase (accounts created before lowercase enforcement)
+    // Must disable FK checks temporarily since accounts is referenced by characters
+    ExecSql(db, "PRAGMA foreign_keys = OFF;");
+    ExecSql(db, "UPDATE accounts SET account_name = LOWER(account_name) WHERE account_name != LOWER(account_name);");
+    ExecSql(db, "UPDATE characters SET account_name = LOWER(account_name) WHERE account_name != LOWER(account_name);");
+    ExecSql(db, "PRAGMA foreign_keys = ON;");
+
     *outDb = db;
     return true;
 }
@@ -1510,10 +1517,22 @@ void CloseAccountDatabase(sqlite3* db)
 bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 {
     if (db == nullptr || client == nullptr) {
+        PutLogList("(SQLITE) SaveCharacterSnapshot: null db or client");
         return false;
     }
 
+    // Helper: capture the real SQLite error before ROLLBACK clears it
+    auto FailAndRollback = [&](const char* stage) {
+        char logMsg[512] = {};
+        std::snprintf(logMsg, sizeof(logMsg),
+            "(SQLITE) SaveCharacterSnapshot failed at [%s]: %s",
+            stage, sqlite3_errmsg(db));
+        PutLogList(logMsg);
+        ExecSql(db, "ROLLBACK;");
+    };
+
     if (!ExecSql(db, "BEGIN;")) {
+        PutLogList("(SQLITE) SaveCharacterSnapshot: BEGIN failed");
         return false;
     }
 
@@ -1539,6 +1558,9 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, upsertSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        char logMsg[512] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert prepare failed: %s", sqlite3_errmsg(db));
+        PutLogList(logMsg);
         ExecSql(db, "ROLLBACK;");
         return false;
     }
@@ -1617,14 +1639,25 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_sAppr4) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iApprColor) == SQLITE_OK);
 
-    if (ok) {
-        ok = sqlite3_step(stmt) == SQLITE_DONE;
-    }
-    sqlite3_finalize(stmt);
     if (!ok) {
+        char logMsg[512] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert bind failed at idx %d: %s", idx - 1, sqlite3_errmsg(db));
+        PutLogList(logMsg);
+        sqlite3_finalize(stmt);
         ExecSql(db, "ROLLBACK;");
         return false;
     }
+
+    int stepRc = sqlite3_step(stmt);
+    if (stepRc != SQLITE_DONE) {
+        char logMsg[512] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: upsert step failed (rc=%d): %s", stepRc, sqlite3_errmsg(db));
+        PutLogList(logMsg);
+        sqlite3_finalize(stmt);
+        ExecSql(db, "ROLLBACK;");
+        return false;
+    }
+    sqlite3_finalize(stmt);
 
     const char* deleteItemsSql = "DELETE FROM character_items WHERE character_name = ? COLLATE NOCASE;";
     const char* deleteBankSql = "DELETE FROM character_bank_items WHERE character_name = ? COLLATE NOCASE;";
@@ -1640,13 +1673,19 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
 
     for (const char* deleteSql : deleteStatements) {
         if (sqlite3_prepare_v2(db, deleteSql, -1, &stmt, nullptr) != SQLITE_OK) {
+            char logMsg[512] = {};
+            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: delete prepare failed: %s | SQL: %.100s", sqlite3_errmsg(db), deleteSql);
+            PutLogList(logMsg);
             ExecSql(db, "ROLLBACK;");
             return false;
         }
         PrepareAndBindText(stmt, 1, client->m_cCharName);
-        ok = sqlite3_step(stmt) == SQLITE_DONE;
+        int rc = sqlite3_step(stmt);
         sqlite3_finalize(stmt);
-        if (!ok) {
+        if (rc != SQLITE_DONE) {
+            char logMsg[512] = {};
+            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: delete step failed (rc=%d): %s | SQL: %.100s", rc, sqlite3_errmsg(db), deleteSql);
+            PutLogList(logMsg);
             ExecSql(db, "ROLLBACK;");
             return false;
         }
@@ -1660,6 +1699,9 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     if (sqlite3_prepare_v2(db, insertItemSql, -1, &stmt, nullptr) != SQLITE_OK) {
+        char logMsg[512] = {};
+        std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert items prepare failed: %s", sqlite3_errmsg(db));
+        PutLogList(logMsg);
         ExecSql(db, "ROLLBACK;");
         return false;
     }
@@ -1691,7 +1733,17 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ok &= (sqlite3_bind_int(stmt, col++, client->m_bIsItemEquipped[i] ? 1 : 0) == SQLITE_OK);
 
         if (ok) {
-            ok = sqlite3_step(stmt) == SQLITE_DONE;
+            int rc = sqlite3_step(stmt);
+            ok = rc == SQLITE_DONE;
+            if (!ok) {
+                char logMsg[512] = {};
+                std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert item[%d] step failed (rc=%d): %s", i, rc, sqlite3_errmsg(db));
+                PutLogList(logMsg);
+            }
+        } else {
+            char logMsg[256] = {};
+            std::snprintf(logMsg, sizeof(logMsg), "(SQLITE) SaveCharacterSnapshot: insert item[%d] bind failed", i);
+            PutLogList(logMsg);
         }
         if (!ok) {
             sqlite3_finalize(stmt);
@@ -1709,7 +1761,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     if (sqlite3_prepare_v2(db, insertBankSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("bank_items prepare");
         return false;
     }
 
@@ -1741,7 +1793,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("bank_items step/bind");
             return false;
         }
     }
@@ -1751,7 +1803,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         "INSERT INTO character_item_positions(character_name, slot, pos_x, pos_y)"
         " VALUES(?,?,?,?);";
     if (sqlite3_prepare_v2(db, insertPosSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("item_positions prepare");
         return false;
     }
     for(int i = 0; i < DEF_MAXITEMS; i++) {
@@ -1767,7 +1819,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("item_positions step/bind");
             return false;
         }
     }
@@ -1777,7 +1829,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         "INSERT INTO character_item_equips(character_name, slot, is_equipped)"
         " VALUES(?,?,?);";
     if (sqlite3_prepare_v2(db, insertEquipSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("item_equips prepare");
         return false;
     }
     for(int i = 0; i < DEF_MAXITEMS; i++) {
@@ -1792,7 +1844,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("item_equips step/bind");
             return false;
         }
     }
@@ -1802,7 +1854,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         "INSERT INTO character_magic_mastery(character_name, magic_index, mastery_value)"
         " VALUES(?,?,?);";
     if (sqlite3_prepare_v2(db, insertMagicSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("magic_mastery prepare");
         return false;
     }
     for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
@@ -1817,7 +1869,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("magic_mastery step/bind");
             return false;
         }
     }
@@ -1827,7 +1879,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         "INSERT INTO character_skill_mastery(character_name, skill_index, mastery_value)"
         " VALUES(?,?,?);";
     if (sqlite3_prepare_v2(db, insertSkillSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("skill_mastery prepare");
         return false;
     }
     for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
@@ -1842,7 +1894,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("skill_mastery step/bind");
             return false;
         }
     }
@@ -1852,7 +1904,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         "INSERT INTO character_skill_ssn(character_name, skill_index, ssn_value)"
         " VALUES(?,?,?);";
     if (sqlite3_prepare_v2(db, insertSsnSql, -1, &stmt, nullptr) != SQLITE_OK) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("skill_ssn prepare");
         return false;
     }
     for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
@@ -1867,14 +1919,14 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         }
         if (!ok) {
             sqlite3_finalize(stmt);
-            ExecSql(db, "ROLLBACK;");
+            FailAndRollback("skill_ssn step/bind");
             return false;
         }
     }
     sqlite3_finalize(stmt);
 
     if (!ExecSql(db, "COMMIT;")) {
-        ExecSql(db, "ROLLBACK;");
+        FailAndRollback("COMMIT");
         return false;
     }
     return true;

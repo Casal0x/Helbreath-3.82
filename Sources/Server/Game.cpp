@@ -1573,6 +1573,10 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 	ZeroMemory(cAccountName, sizeof(cAccountName));
 	memcpy(cAccountName, cTxt, 10);
 
+	// Lowercase account name to match how it was stored during account creation
+	for (int ci = 0; ci < 10 && cAccountName[ci] != '\0'; ci++)
+		cAccountName[ci] = static_cast<char>(::tolower(static_cast<unsigned char>(cAccountName[ci])));
+
 	memcpy(cAccountPassword, req->password, 10);
 
 	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
@@ -1658,6 +1662,36 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		return;
 	}
 
+	// Send configs FIRST so the client has item/magic/skill definitions
+	// before receiving player data that references them.
+	uint32_t clientItemHash = 0, clientMagicHash = 0, clientSkillHash = 0;
+	if (dwMsgSize >= sizeof(hb::net::PacketRequestInitDataEx)) {
+		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(pData);
+		clientItemHash = exReq->itemConfigHash;
+		clientMagicHash = exReq->magicConfigHash;
+		clientSkillHash = exReq->skillConfigHash;
+	}
+
+	bool bItemCacheValid  = (clientItemHash != 0 && clientItemHash == m_dwConfigHash[0]);
+	bool bMagicCacheValid = (clientMagicHash != 0 && clientMagicHash == m_dwConfigHash[1]);
+	bool bSkillCacheValid = (clientSkillHash != 0 && clientSkillHash == m_dwConfigHash[2]);
+
+	{
+		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
+		cacheStatus.header.msg_id = MSGID_RESPONSE_CONFIGCACHESTATUS;
+		cacheStatus.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		cacheStatus.itemCacheValid = bItemCacheValid ? 1 : 0;
+		cacheStatus.magicCacheValid = bMagicCacheValid ? 1 : 0;
+		cacheStatus.skillCacheValid = bSkillCacheValid ? 1 : 0;
+		m_pClientList[iClientH]->m_pXSock->iSendMsg(
+			reinterpret_cast<char*>(&cacheStatus), sizeof(cacheStatus));
+	}
+
+	if (!bItemCacheValid)  bSendClientItemConfigs(iClientH);
+	if (!bMagicCacheValid) bSendClientMagicConfigs(iClientH);
+	if (!bSkillCacheValid) bSendClientSkillConfigs(iClientH);
+
+	// Now send player data (configs are guaranteed loaded on client)
 	writer.Reset();
 	auto* char_pkt = writer.Append<hb::net::PacketResponsePlayerCharacterContents>();
 	char_pkt->header.msg_id = MSGID_PLAYERCHARACTERCONTENTS;
@@ -1801,6 +1835,10 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 		DeleteClient(iClientH, true, true);
 		return;
 	}
+
+	// Send item positions right after item list so positions are applied
+	// while items are still freshly initialized
+	SendNotifyMsg(0, iClientH, DEF_NOTIFY_ITEMPOSLIST, 0, 0, 0, 0);
 
 	writer.Reset();
 	auto* init_header = writer.Append<hb::net::PacketResponseInitDataHeader>();
@@ -1972,7 +2010,6 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_SAFEATTACKMODE, 0, 0, 0, 0);
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_DOWNSKILLINDEXSET, m_pClientList[iClientH]->m_iDownSkillIndex, 0, 0, 0);
-	SendNotifyMsg(0, iClientH, DEF_NOTIFY_ITEMPOSLIST, 0, 0, 0, 0);
 
 	_SendQuestContents(iClientH);
 	_CheckQuestEnvironment(iClientH);
@@ -2067,36 +2104,6 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_SUPERATTACKLEFT, 0, 0, 0, 0);
 
 	RequestNoticementHandler(iClientH); // send noticement when log in
-
-	// Check for extended init packet with cache hashes
-	uint32_t clientItemHash = 0, clientMagicHash = 0, clientSkillHash = 0;
-	if (dwMsgSize >= sizeof(hb::net::PacketRequestInitDataEx)) {
-		const auto* exReq = reinterpret_cast<const hb::net::PacketRequestInitDataEx*>(pData);
-		clientItemHash = exReq->itemConfigHash;
-		clientMagicHash = exReq->magicConfigHash;
-		clientSkillHash = exReq->skillConfigHash;
-	}
-
-	bool bItemCacheValid  = (clientItemHash != 0 && clientItemHash == m_dwConfigHash[0]);
-	bool bMagicCacheValid = (clientMagicHash != 0 && clientMagicHash == m_dwConfigHash[1]);
-	bool bSkillCacheValid = (clientSkillHash != 0 && clientSkillHash == m_dwConfigHash[2]);
-
-	// Send cache status to client
-	{
-		hb::net::PacketResponseConfigCacheStatus cacheStatus{};
-		cacheStatus.header.msg_id = MSGID_RESPONSE_CONFIGCACHESTATUS;
-		cacheStatus.header.msg_type = DEF_MSGTYPE_CONFIRM;
-		cacheStatus.itemCacheValid = bItemCacheValid ? 1 : 0;
-		cacheStatus.magicCacheValid = bMagicCacheValid ? 1 : 0;
-		cacheStatus.skillCacheValid = bSkillCacheValid ? 1 : 0;
-		m_pClientList[iClientH]->m_pXSock->iSendMsg(
-			reinterpret_cast<char*>(&cacheStatus), sizeof(cacheStatus));
-	}
-
-	if (!bItemCacheValid)  bSendClientItemConfigs(iClientH);
-	if (!bMagicCacheValid) bSendClientMagicConfigs(iClientH);
-	if (!bSkillCacheValid) bSendClientSkillConfigs(iClientH);
-
 }
 
 bool CGame::bSendClientItemConfigs(int iClientH)
@@ -10610,6 +10617,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 
 	dwTime = GameClock::GetTimeMS();
 	m_pClientList[iClientH]->m_bMagicConfirm = true;
+	m_pClientList[iClientH]->m_bMagicPauseTime = false;
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
@@ -29386,8 +29394,9 @@ bool CGame::bCheckClientMagicFrequency(int iClientH, uint32_t dwClientTime)
 		}
 
 		m_pClientList[iClientH]->m_iSpellCount--;
+		if (m_pClientList[iClientH]->m_iSpellCount < 0)
+			m_pClientList[iClientH]->m_iSpellCount = 0;
 		m_pClientList[iClientH]->m_bMagicConfirm = false;
-		m_pClientList[iClientH]->m_bMagicPauseTime = false;
 
 		//testcode
 		//std::snprintf(G_cTxt, sizeof(G_cTxt), "Magic: %d", dwTimeGap);

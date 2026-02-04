@@ -114,7 +114,11 @@ int ASIOSocket::Poll()
 		return DEF_XSOCKEVENT_SOCKETERROR;
 	}
 
-	// Read available data
+	// Read available data.
+	// NOTE: If _iOnRead() completes a packet (READCOMPLETE), the data sits
+	// in m_rcvBuffer. Callers that also use DrainToQueue() MUST check for
+	// READCOMPLETE and queue the packet themselves before calling DrainToQueue(),
+	// otherwise DrainToQueue() will overwrite m_rcvBuffer and lose the packet.
 	if (avail > 0) {
 		int readResult = _iOnRead();
 		if (readResult != DEF_XSOCKEVENT_ONREAD) {

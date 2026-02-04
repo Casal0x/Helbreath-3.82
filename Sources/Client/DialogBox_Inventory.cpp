@@ -81,6 +81,9 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 		int itemIdx = m_pGame->m_cItemOrder[i];
 		if (itemIdx == -1) continue;
 
+		if (m_pGame->m_pItemList[itemIdx] == nullptr)
+			continue;
+
 		CItem* pItem = m_pGame->m_pItemList[itemIdx].get();
 		if (pItem == nullptr) continue;
 

@@ -625,6 +625,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	bool _EnsureConfigLoaded(int type);
 	bool _TryReplayCacheForConfig(int type);
 	void _RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills);
+	void _CheckConfigsReadyAndEnterGame();
 
 	bool EnsureItemConfigsLoaded()  { return _EnsureConfigLoaded(0); }
 	bool EnsureMagicConfigsLoaded() { return _EnsureConfigLoaded(1); }

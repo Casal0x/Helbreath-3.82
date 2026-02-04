@@ -141,6 +141,7 @@ public:
 	bool HasPendingPackets() const { return !m_RecvQueue.empty(); }
 	size_t GetQueueSize() const { return m_RecvQueue.size(); }
 	void ClearQueue() { m_RecvQueue.clear(); }
+	void QueueCompletedPacket(const char* pData, size_t dwSize) { m_RecvQueue.emplace_back(pData, dwSize); }
 
 	// Connection info
 	int iGetPeerAddress(char* pAddrString);

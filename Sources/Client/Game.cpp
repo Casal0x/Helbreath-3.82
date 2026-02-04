@@ -520,6 +520,15 @@ void CGame::OnGameSocketEvent()
         return; // Still connecting, don't try to read yet
     }
 
+    // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
+    if (iRet == DEF_XSOCKEVENT_READCOMPLETE) {
+        size_t dwSize = 0;
+        char* pData = m_pGSock->pGetRcvDataPointer(&dwSize);
+        if (pData != nullptr && dwSize > 0) {
+            m_pGSock->QueueCompletedPacket(pData, dwSize);
+        }
+    }
+
     int iDrained = m_pGSock->DrainToQueue();
 
     if (iDrained < 0) {
@@ -1922,6 +1931,7 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketItemConfigEntry);
 
 	if (dwMsgSize < headerSize) {
+		DevConsole::Get().Printf("[ITEMCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -1930,6 +1940,8 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalItems = pktHeader->totalItems;
 
 	if (dwMsgSize < headerSize + (itemCount * entrySize)) {
+		DevConsole::Get().Printf("[ITEMCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
+			dwMsgSize, (uint32_t)(headerSize + itemCount * entrySize), itemCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -2005,6 +2017,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketMagicConfigEntry);
 
 	if (dwMsgSize < headerSize) {
+		DevConsole::Get().Printf("[MAGICCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -2013,6 +2026,8 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalMagics = pktHeader->totalMagics;
 
 	if (dwMsgSize < headerSize + (magicCount * entrySize)) {
+		DevConsole::Get().Printf("[MAGICCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
+			dwMsgSize, (uint32_t)(headerSize + magicCount * entrySize), magicCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -2065,6 +2080,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	constexpr size_t entrySize = sizeof(hb::net::PacketSkillConfigEntry);
 
 	if (dwMsgSize < headerSize) {
+		DevConsole::Get().Printf("[SKILLCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
 		return false;
 	}
 
@@ -2073,6 +2089,8 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	uint16_t totalSkills = pktHeader->totalSkills;
 
 	if (dwMsgSize < headerSize + (skillCount * entrySize)) {
+		DevConsole::Get().Printf("[SKILLCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
+			dwMsgSize, (uint32_t)(headerSize + skillCount * entrySize), skillCount, (uint32_t)entrySize);
 		return false;
 	}
 
@@ -2133,47 +2151,103 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 
 		struct ReplayCtx { CGame* game; };
 		ReplayCtx ctx{ this };
+		bool bNeedItems = false, bNeedMagic = false, bNeedSkills = false;
+
+		// Clear config arrays before replay so verification is accurate
+		// (stale entries from previous login would cause false positives)
+		for (auto& item : m_pItemConfigList) item.reset();
+		for (auto& magic : m_pMagicCfgList) magic.reset();
+		for (auto& skill : m_pSkillCfgList) skill.reset();
 
 		if (cachePkt->itemCacheValid) {
-			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
+			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
 				[](char* p, uint32_t s, void* c) -> bool {
-					static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
-					return true;
+					return static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
 				}, &ctx);
-			m_eConfigRetry[0] = ConfigRetryLevel::None;
-			DevConsole::Get().Printf("[ITEMCFG] Loaded from cache");
+			// Verify items actually loaded
+			bool bHasItems = false;
+			if (bReplayOk) {
+				for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
+			}
+			if (bReplayOk && bHasItems) {
+				m_eConfigRetry[0] = ConfigRetryLevel::None;
+				DevConsole::Get().Printf("[ITEMCFG] Loaded from cache");
+			} else {
+				DevConsole::Get().Printf("[ITEMCFG] Cache replay %s, requesting from server",
+					bReplayOk ? "decoded 0 items" : "failed");
+				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
+				m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
+				bNeedItems = true;
+			}
 		} else {
+			DevConsole::Get().Printf("[ITEMCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Items);
+			m_eConfigRetry[0] = ConfigRetryLevel::ServerRequested;
+			bNeedItems = true;
 		}
 
 		if (cachePkt->magicCacheValid) {
-			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Magic,
+			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Magic,
 				[](char* p, uint32_t s, void* c) -> bool {
-					static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
-					return true;
+					return static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
 				}, &ctx);
-			m_eConfigRetry[1] = ConfigRetryLevel::None;
-			DevConsole::Get().Printf("[MAGICCFG] Loaded from cache");
+			bool bHasMagic = false;
+			if (bReplayOk) {
+				for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
+			}
+			if (bReplayOk && bHasMagic) {
+				m_eConfigRetry[1] = ConfigRetryLevel::None;
+				DevConsole::Get().Printf("[MAGICCFG] Loaded from cache");
+			} else {
+				DevConsole::Get().Printf("[MAGICCFG] Cache replay %s, requesting from server",
+					bReplayOk ? "decoded 0 entries" : "failed");
+				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
+				m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
+				bNeedMagic = true;
+			}
 		} else {
+			DevConsole::Get().Printf("[MAGICCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
+			m_eConfigRetry[1] = ConfigRetryLevel::ServerRequested;
+			bNeedMagic = true;
 		}
 
 		if (cachePkt->skillCacheValid) {
-			LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Skills,
+			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Skills,
 				[](char* p, uint32_t s, void* c) -> bool {
-					static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
-					return true;
+					return static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
 				}, &ctx);
-			m_eConfigRetry[2] = ConfigRetryLevel::None;
-			DevConsole::Get().Printf("[SKILLCFG] Loaded from cache");
+			bool bHasSkills = false;
+			if (bReplayOk) {
+				for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+			}
+			if (bReplayOk && bHasSkills) {
+				m_eConfigRetry[2] = ConfigRetryLevel::None;
+				DevConsole::Get().Printf("[SKILLCFG] Loaded from cache");
+			} else {
+				DevConsole::Get().Printf("[SKILLCFG] Cache replay %s, requesting from server",
+					bReplayOk ? "decoded 0 entries" : "failed");
+				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+				m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
+				bNeedSkills = true;
+			}
 		} else {
+			DevConsole::Get().Printf("[SKILLCFG] Cache outdated, requesting from server");
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+			m_eConfigRetry[2] = ConfigRetryLevel::ServerRequested;
+			bNeedSkills = true;
 		}
 
-		m_bConfigsReady = true;
-		if (m_bInitDataReady) {
-			GameModeManager::set_screen<Screen_OnGame>();
-			m_bInitDataReady = false;
+		if (bNeedItems || bNeedMagic || bNeedSkills) {
+			_RequestConfigsFromServer(bNeedItems, bNeedMagic, bNeedSkills);
+			m_dwConfigRequestTime = GameClock::GetTimeMS();
+		} else {
+			m_bConfigsReady = true;
+			if (m_bInitDataReady) {
+				DevConsole::Get().Printf("[INIT] Entering game (configs triggered)");
+				GameModeManager::set_screen<Screen_OnGame>();
+				m_bInitDataReady = false;
+			}
 		}
 	}
 	break;
@@ -2198,14 +2272,17 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	case MSGID_ITEMCONFIGURATIONCONTENTS:
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[0] = ConfigRetryLevel::None;
+		_CheckConfigsReadyAndEnterGame();
 		break;
 	case MSGID_MAGICCONFIGURATIONCONTENTS:
 		_bDecodeMagicConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[1] = ConfigRetryLevel::None;
+		_CheckConfigsReadyAndEnterGame();
 		break;
 	case MSGID_SKILLCONFIGURATIONCONTENTS:
 		_bDecodeSkillConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[2] = ConfigRetryLevel::None;
+		_CheckConfigsReadyAndEnterGame();
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
 		ResponseChargedTeleport(pData);
@@ -2232,6 +2309,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MSGID_RESPONSE_INITDATA:
+		DevConsole::Get().Printf("[INIT] INITDATA received");
 		InitDataResponseHandler(pData);
 		break;
 
@@ -2256,6 +2334,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MSGID_PLAYERITEMLISTCONTENTS:
+		DevConsole::Get().Printf("[INIT] PLAYERITEMLISTCONTENTS received (size=%u)", dwMsgSize);
 		InitItemList(pData);
 		break;
 
@@ -2275,6 +2354,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MSGID_PLAYERCHARACTERCONTENTS:
+		DevConsole::Get().Printf("[INIT] PLAYERCHARACTERCONTENTS received");
 		InitPlayerCharacteristics(pData);
 		break;
 
@@ -8961,6 +9041,15 @@ void CGame::OnLogSocketEvent()
         return; // Still connecting, don't try to read yet
     }
 
+    // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
+    if (iRet == DEF_XSOCKEVENT_READCOMPLETE) {
+        size_t dwSize = 0;
+        char* pData = m_pLSock->pGetRcvDataPointer(&dwSize);
+        if (pData != nullptr && dwSize > 0) {
+            m_pLSock->QueueCompletedPacket(pData, dwSize);
+        }
+    }
+
     int iDrained = m_pLSock->DrainToQueue();
 
     if (iDrained < 0) {
@@ -10358,6 +10447,15 @@ void CGame::InitItemList(char* pData)
 		if (m_pSkillCfgList[i] != 0)
 			m_pSkillCfgList[i]->m_iLevel = static_cast<int>(mastery->skill_mastery[i]);
 	}
+
+	// Diagnostic: count what was loaded
+	int nItems = 0, nBank = 0, nMagic = 0, nSkills = 0;
+	for (i = 0; i < DEF_MAXITEMS; i++) if (m_pItemList[i]) nItems++;
+	for (i = 0; i < DEF_MAXBANKITEMS; i++) if (m_pBankList[i]) nBank++;
+	for (i = 0; i < DEF_MAXMAGICTYPE; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
+	for (i = 0; i < DEF_MAXSKILLTYPE; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
+	DevConsole::Get().Printf("[INIT] InitItemList: %d items, %d bank, %d magic, %d skills",
+		nItems, nBank, nMagic, nSkills);
 }
 
 void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
@@ -13627,13 +13725,20 @@ bool CGame::_EnsureConfigLoaded(int type)
 		return true;
 	}
 
+	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG" };
+
 	switch (m_eConfigRetry[type]) {
 	case ConfigRetryLevel::None:
-		if (_TryReplayCacheForConfig(type)) return true;
+		if (_TryReplayCacheForConfig(type)) {
+			DevConsole::Get().Printf("[%s] Retry: loaded from cache", configNames[type]);
+			return true;
+		}
+		DevConsole::Get().Printf("[%s] Retry: cache failed, will request from server", configNames[type]);
 		m_eConfigRetry[type] = ConfigRetryLevel::CacheTried;
 		return false;
 
 	case ConfigRetryLevel::CacheTried:
+		DevConsole::Get().Printf("[%s] Retry: requesting from server", configNames[type]);
 		_RequestConfigsFromServer(type == 0, type == 1, type == 2);
 		m_eConfigRetry[type] = ConfigRetryLevel::ServerRequested;
 		m_dwConfigRequestTime = GameClock::GetTimeMS();
@@ -13641,6 +13746,7 @@ bool CGame::_EnsureConfigLoaded(int type)
 
 	case ConfigRetryLevel::ServerRequested:
 		if (GameClock::GetTimeMS() - m_dwConfigRequestTime > CONFIG_REQUEST_TIMEOUT_MS) {
+			DevConsole::Get().Printf("[%s] Retry: server request timed out", configNames[type]);
 			m_eConfigRetry[type] = ConfigRetryLevel::Failed;
 			ChangeGameMode(GameMode::ConnectionLost);
 		}
@@ -13663,20 +13769,17 @@ bool CGame::_TryReplayCacheForConfig(int type)
 	case 0:
 		return LocalCacheManager::Get().ReplayFromCache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
-				return true;
+				return static_cast<ReplayCtx*>(c)->game->_bDecodeItemConfigFileContents(p, s);
 			}, &ctx);
 	case 1:
 		return LocalCacheManager::Get().ReplayFromCache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
-				return true;
+				return static_cast<ReplayCtx*>(c)->game->_bDecodeMagicConfigFileContents(p, s);
 			}, &ctx);
 	case 2:
 		return LocalCacheManager::Get().ReplayFromCache(cacheType,
 			[](char* p, uint32_t s, void* c) -> bool {
-				static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
-				return true;
+				return static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
 			}, &ctx);
 	}
 	return false;
@@ -13692,6 +13795,26 @@ void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills)
 	pkt.requestMagic = bMagic ? 1 : 0;
 	pkt.requestSkills = bSkills ? 1 : 0;
 	m_pGSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+}
+
+void CGame::_CheckConfigsReadyAndEnterGame()
+{
+	if (m_bConfigsReady) return;
+
+	// Check if all three config types have at least one entry loaded
+	bool bHasItems = false, bHasMagic = false, bHasSkills = false;
+	for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
+	for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
+	for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+
+	if (bHasItems && bHasMagic && bHasSkills) {
+		DevConsole::Get().Printf("[CONFIG] All configs loaded from server, entering game");
+		m_bConfigsReady = true;
+		if (m_bInitDataReady) {
+			GameModeManager::set_screen<Screen_OnGame>();
+			m_bInitDataReady = false;
+		}
+	}
 }
 
 short CGame::FindItemIdByName(const char* cItemName)
@@ -17361,6 +17484,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	// Wait for configs before entering the game world
 	m_bInitDataReady = true;
 	if (m_bConfigsReady) {
+		DevConsole::Get().Printf("[INIT] Entering game (initdata triggered)");
 		GameModeManager::set_screen<Screen_OnGame>();
 		m_bInitDataReady = false;
 	}
