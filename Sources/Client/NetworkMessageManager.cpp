@@ -119,14 +119,11 @@ namespace NetworkMessageHandlers {
 	void HandleHeldenianCount(CGame* pGame, char* pData);
 	void HandleHeldenianRecall(CGame* pGame, char* pData);
 
-	// Admin
-	void HandleAdminInfo(CGame* pGame, char* pData);
+
 	void HandleCrashHandler(CGame* pGame, char* pData);
 	void HandleIpAccountInfo(CGame* pGame, char* pData);
 	void HandleRewardGold(CGame* pGame, char* pData);
 	void HandleServerShutdown(CGame* pGame, char* pData);
-	void HandleAdminUserLevelLow(CGame* pGame, char* pData);
-
 	// Crafting
 	void HandleCraftingSuccess(CGame* pGame, char* pData);
 	void HandleCraftingFail(CGame* pGame, char* pData);
@@ -452,13 +449,10 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		case DEF_NOTIFY_ANGEL_RECEIVED: NetworkMessageHandlers::HandleAngelReceived(m_pGame, pData); return true;
 		case DEF_NOTIFY_ANGELIC_STATS: NetworkMessageHandlers::HandleAngelicStats(m_pGame, pData); return true;
 
-		// Admin
-		case DEF_NOTIFY_ADMINIFO: NetworkMessageHandlers::HandleAdminInfo(m_pGame, pData); return true;
 		case DEF_NOTIFY_0BEF: NetworkMessageHandlers::HandleCrashHandler(m_pGame, pData); return true;
 		case DEF_NOTIFY_IPACCOUNTINFO: NetworkMessageHandlers::HandleIpAccountInfo(m_pGame, pData); return true;
 		case DEF_NOTIFY_REWARDGOLD: NetworkMessageHandlers::HandleRewardGold(m_pGame, pData); return true;
 		case DEF_NOTIFY_SERVERSHUTDOWN: NetworkMessageHandlers::HandleServerShutdown(m_pGame, pData); return true;
-		case DEF_NOTIFY_ADMINUSERLEVELLOW: NetworkMessageHandlers::HandleAdminUserLevelLow(m_pGame, pData); return true;
 
 		// System (Generic)
 		case DEF_NOTIFY_WHETHERCHANGE: NetworkMessageHandlers::HandleWhetherChange(m_pGame, pData); return true;

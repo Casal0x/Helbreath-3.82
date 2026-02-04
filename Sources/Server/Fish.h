@@ -11,7 +11,7 @@
 class CFish  
 {
 public:
-	inline CFish(char cMapIndex, short sX, short sY, short sType, class CItem * pItem, int iDifficulty)
+	inline CFish(char cMapIndex, short sX, short sY, short sType, CItem * pItem, int iDifficulty)
 	{
 		m_cMapIndex		= cMapIndex;
 		m_sX			= sX;
@@ -35,7 +35,7 @@ public:
 	short m_sX, m_sY;
 
 	short m_sType;
-	class CItem * m_pItem;
+	CItem * m_pItem;
 
 	short m_sDynamicObjectHandle;
 

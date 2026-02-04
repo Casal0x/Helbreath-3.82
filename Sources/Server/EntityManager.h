@@ -191,7 +191,7 @@ public:
      * Example:
      *   int* pActiveList = m_pEntityManager->GetActiveEntityList();
      *   int iCount = m_pEntityManager->GetActiveEntityCount();
-     *   for (int i = 0; i < iCount; i++) {
+     *   for(int i = 0; i < iCount; i++) {
      *       int iHandle = pActiveList[i];
      *       NpcProcess(iHandle);
      *   }

@@ -39,9 +39,8 @@ LoginServer::~LoginServer()
 
 bool IsValidName(char* pStr)
 {
-	int i, iLen;
-	iLen = strlen(pStr);
-	for (i = 0; i < iLen; i++)
+	size_t iLen = strlen(pStr);
+	for(size_t i = 0; i < iLen; i++)
 	{
 		//if (pStr[i] < 0)	return false;
 		if ((pStr[i] == ',') || (pStr[i] == '=') || (pStr[i] == ' ') || (pStr[i] == '\n') ||
@@ -49,8 +48,8 @@ bool IsValidName(char* pStr)
 			(pStr[i] == ':') || (pStr[i] == '*') || (pStr[i] == '?') || (pStr[i] == '<') ||
 			(pStr[i] == '>') || (pStr[i] == '|') || (pStr[i] == '"') || (pStr[i] == '`') ||
 			(pStr[i] == ';') || (pStr[i] == '=') || (pStr[i] == '@') || (pStr[i] == '[') ||
-			(pStr[i] == ']') || (pStr[i] == '^') || (pStr[i] == '_') || (pStr[i] == '\'')) return false;
-		//if ((pStr[i] < '0') || (pStr[i] > 'z')) return false;
+			(pStr[i] == ']') || (pStr[i] == '^') || (pStr[i] == '_') || (pStr[i] == '\''))
+			return false;
 	}
 	return true;
 }
@@ -317,11 +316,9 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	state.hairColor = haircolor;
 	state.underwear = under;
 	state.hungerStatus = 100;
-	state.timeleftShutup = 0;
 	state.timeleftRating = 0;
 	state.timeleftForceRecall = 0;
 	state.timeleftFirmStaminar = 0;
-	state.adminUserLevel = 0;
 	state.penaltyBlockYear = 0;
 	state.penaltyBlockMonth = 0;
 	state.penaltyBlockDay = 0;
@@ -410,7 +407,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	std::vector<AccountDbIndexedValue> positionsX;
 	std::vector<AccountDbIndexedValue> positionsY;
 	std::vector<AccountDbIndexedValue> equips;
-	for (int i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < DEF_MAXITEMS; i++) {
 		AccountDbIndexedValue posX = {};
 		AccountDbIndexedValue posY = {};
 		AccountDbIndexedValue equip = {};
@@ -426,7 +423,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	}
 
 	std::vector<AccountDbIndexedValue> magicMastery;
-	for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+	for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
 		AccountDbIndexedValue entry = {};
 		entry.index = i;
 		entry.value = 0;
@@ -454,7 +451,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 		entry.value = 0;
 		skillMastery.push_back(entry);
 	}
-	for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+	for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
 		AccountDbIndexedValue entry = {};
 		entry.index = i;
 		entry.value = 0;
@@ -757,7 +754,7 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	if (status != LogIn::Ok)
 		return;
 
-	for (int i = 0; i < DEF_MAXCLIENTS; i++)
+	for(int i = 0; i < DEF_MAXCLIENTS; i++)
 	{
 		if (!G_pGame->m_pClientList[i])
 			continue;

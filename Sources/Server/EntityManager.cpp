@@ -20,7 +20,7 @@ CEntityManager::CEntityManager()
 {
     // Allocate entity array (EntityManager OWNS this)
     m_pNpcList = new CNpc*[DEF_MAXNPCS];
-    for (int i = 0; i < DEF_MAXNPCS; i++) {
+    for(int i = 0; i < DEF_MAXNPCS; i++) {
         m_pNpcList[i] = NULL;
         m_dwEntityGUID[i] = 0;
     }
@@ -41,7 +41,7 @@ CEntityManager::~CEntityManager()
 {
     // Delete all entities (EntityManager owns them)
     if (m_pNpcList != NULL) {
-        for (int i = 0; i < DEF_MAXNPCS; i++) {
+        for(int i = 0; i < DEF_MAXNPCS; i++) {
             if (m_pNpcList[i] != NULL) {
                 delete m_pNpcList[i];
                 m_pNpcList[i] = NULL;
@@ -90,7 +90,7 @@ void CEntityManager::ProcessSpawns()
     ProcessRandomSpawns(0);
 
     // Loop through all maps and process their spot spawn generators
-    for (int i = 0; i < m_iMaxMaps; i++) {
+    for(int i = 0; i < m_iMaxMaps; i++) {
         if (m_pMapList[i] != NULL) {
             ProcessSpotSpawns(i);
         }
@@ -114,7 +114,7 @@ int CEntityManager::CreateEntity(
     if (strlen(pName) == 0) return -1;
     if (strlen(pNpcName) == 0) return -1;
 
-    int i, t, j, k, iMapIndex;
+    int t, j, k, iMapIndex;
     char cTmpName[11], cTxt[120];
     short sX, sY;
     bool bFlag;
@@ -126,7 +126,7 @@ int CEntityManager::CreateEntity(
     iMapIndex = -1;
 
     // Find map index
-    for (i = 0; i < m_iMaxMaps; i++)
+    for(int i = 0; i < m_iMaxMaps; i++)
         if (m_pMapList[i] != 0) {
             if (memcmp(m_pMapList[i]->m_cName, cTmpName, 10) == 0)
                 iMapIndex = i;
@@ -135,7 +135,7 @@ int CEntityManager::CreateEntity(
     if (iMapIndex == -1) return -1;
 
     // Find free entity slot
-    for (i = 1; i < DEF_MAXNPCS; i++)
+    for(int i = 1; i < DEF_MAXNPCS; i++)
         if (m_pNpcList[i] == 0) {
             m_pNpcList[i] = new CNpc(pName);
 
@@ -409,7 +409,7 @@ int CEntityManager::CreateEntity(
 
     // No free slots - log diagnostic info
     int iUsedSlots = 0;
-    for (int idx = 1; idx < DEF_MAXNPCS; idx++) {
+    for(int idx = 1; idx < DEF_MAXNPCS; idx++) {
         if (m_pNpcList[idx] != 0) iUsedSlots++;
     }
     std::snprintf(G_cTxt, sizeof(G_cTxt),
@@ -539,7 +539,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         }
 
         if (sType == 81) {
-            for (int i = 1; i < DEF_MAXCLIENTS; i++) {
+            for(int i = 1; i < DEF_MAXCLIENTS; i++) {
                 if (m_pGame->m_pClientList[i] != NULL) {
                     m_pGame->SendNotifyMsg(sAttackerH, i, DEF_NOTIFY_ABADDONKILLED,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -653,7 +653,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         case DEF_OWNERTYPE_NPC:
             if (m_pGame->m_pNpcList[sAttackerH]->m_iGuildGUID != 0) {
                 if (m_pGame->m_pNpcList[sAttackerH]->m_cSide != pEntity->m_cSide) {
-                    for (int i = 1; i < DEF_MAXCLIENTS; i++) {
+                    for(int i = 1; i < DEF_MAXCLIENTS; i++) {
                         if ((m_pGame->m_pClientList[i] != NULL) &&
                             (m_pGame->m_pClientList[i]->m_iGuildGUID == m_pGame->m_pNpcList[sAttackerH]->m_iGuildGUID) &&
                             (m_pGame->m_pClientList[i]->m_iCrusadeDuty == 3)) {
@@ -731,12 +731,12 @@ void CEntityManager::ProcessEntities()
     if (m_pGame->m_bOnExitProcess)
         return;
 
-    int i, iMaxHP;
+    int iMaxHP;
     uint32_t dwTime, dwActionTime;
 
     dwTime = GameClock::GetTimeMS();
 
-    for (i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] == 0)
             continue;
 
@@ -996,7 +996,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 
 void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 {
-	int ix, iy, iPKCount;
+	int iPKCount;
 	short sX, sY, rX, rY, dX, dY;
 	short sOwner, sTargetOwner, sDistance, sTempDistance;
 	char  cOwnerType, cTargetType, cTargetSide;
@@ -1012,8 +1012,8 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 	rX = m_pNpcList[iNpcH]->m_sX - m_pNpcList[iNpcH]->m_cTargetSearchRange;
 	rY = m_pNpcList[iNpcH]->m_sY - m_pNpcList[iNpcH]->m_cTargetSearchRange;
 
-	for (ix = rX; ix < rX + m_pNpcList[iNpcH]->m_cTargetSearchRange * 2 + 1; ix++)
-		for (iy = rY; iy < rY + m_pNpcList[iNpcH]->m_cTargetSearchRange * 2 + 1; iy++) {
+	for(int ix = rX; ix < rX + m_pNpcList[iNpcH]->m_cTargetSearchRange * 2 + 1; ix++)
+		for(int iy = rY; iy < rY + m_pNpcList[iNpcH]->m_cTargetSearchRange * 2 + 1; iy++) {
 
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, ix, iy);
 			if (sOwner != 0) {
@@ -1026,8 +1026,6 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 						m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->ClearOwner(5, sOwner, DEF_OWNERTYPE_PLAYER, ix, iy);
 					}
 					else {
-						if (m_pGame->m_pClientList[sOwner]->m_iAdminUserLevel > 0) goto SKIP_SEARCH;
-
 						dX = m_pGame->m_pClientList[sOwner]->m_sX;
 						dY = m_pGame->m_pClientList[sOwner]->m_sY;
 						cTargetSide = m_pGame->m_pClientList[sOwner]->m_cSide;
@@ -1719,7 +1717,7 @@ void CEntityManager::NpcBehavior_Dead(int iNpcH)
 void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 {
 	short sX, sY;
-	int i, j, iMapIndex;
+	int j, iMapIndex;
 	bool bFlag;
 
 	switch (m_pNpcList[iNpcH]->m_cMoveType) {
@@ -1753,7 +1751,7 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 		//m_pNpcList[iNpcH]->m_dY = (rand() % (m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_sSizeY - 50)) + 15;
 		iMapIndex = m_pNpcList[iNpcH]->m_cMapIndex;
 
-		for (i = 0; i <= 30; i++) {
+		for(int i = 0; i <= 30; i++) {
 			sX = (rand() % (m_pMapList[iMapIndex]->m_sSizeX - 50)) + 15;
 			sY = (rand() % (m_pMapList[iMapIndex]->m_sSizeY - 50)) + 15;
 
@@ -1787,7 +1785,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 {
 	short  sOwnerH;
 	char   cOwnerType;
-	int i, iErr, ix, iy, sX, sY, tX, tY, iResult, iWhetherBonus, iMagicAttr;
+	int iErr, sX, sY, tX, tY, iResult, iWhetherBonus, iMagicAttr;
 	uint32_t  dwTime = GameClock::GetTimeMS();
 
 	if (m_pNpcList[iNpcH] == 0) return;
@@ -1840,8 +1838,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 
 			case 2:
 				// dX, dY  8  Invisibility  Object   .
-				for (ix = dX - 8; ix <= dX + 8; ix++)
-					for (iy = dY - 8; iy <= dY + 8; iy++) {
+				for(int ix = dX - 8; ix <= dX + 8; ix++)
+					for(int iy = dY - 8; iy <= dY + 8; iy++) {
 						m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 						if (sOwnerH != 0) {
 							switch (cOwnerType) {
@@ -1906,7 +1904,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			sX = m_pNpcList[iNpcH]->m_sX;
 			sY = m_pNpcList[iNpcH]->m_sY;
 
-			for (i = 2; i < 10; i++) {
+			for(int i = 2; i < 10; i++) {
 				iErr = 0;
 				CMisc::GetPoint2(sX, sY, dX, dY, &tX, &tY, &iErr, i);
 
@@ -1973,8 +1971,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 				if ((abs(tX - dX) <= 1) && (abs(tY - dY) <= 1)) break;
 			}
 
-			for (iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
-				for (ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
+			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
+				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 					if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 						m_pGame->Effect_Damage_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue7, m_pGame->m_pMagicConfigList[sType]->m_sValue8, m_pGame->m_pMagicConfigList[sType]->m_sValue9 + iWhetherBonus, false, iMagicAttr);
@@ -2030,8 +2028,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 					m_pGame->Effect_Damage_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6 + iWhetherBonus, true, iMagicAttr);
 			}
 
-			for (iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
-				for (ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
+			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
+				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 					if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 						m_pGame->Effect_Damage_Spot_DamageMove(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, dX, dY, m_pGame->m_pMagicConfigList[sType]->m_sValue7, m_pGame->m_pMagicConfigList[sType]->m_sValue8, m_pGame->m_pMagicConfigList[sType]->m_sValue9 + iWhetherBonus, false, iMagicAttr);
@@ -2046,8 +2044,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			break;
 
 		case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT:
-			for (iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
-				for (ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
+			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
+				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 					if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 						m_pGame->Effect_Damage_Spot_DamageMove(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, dX, dY, m_pGame->m_pMagicConfigList[sType]->m_sValue7, m_pGame->m_pMagicConfigList[sType]->m_sValue8, m_pGame->m_pMagicConfigList[sType]->m_sValue9 + iWhetherBonus, false, iMagicAttr);
@@ -2065,8 +2063,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 				m_pGame->Effect_SpDown_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6);
-			for (iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
-				for (ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
+			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
+				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 					if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 						m_pGame->Effect_SpDown_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue7, m_pGame->m_pMagicConfigList[sType]->m_sValue8, m_pGame->m_pMagicConfigList[sType]->m_sValue9);
@@ -2076,8 +2074,8 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 		case DEF_MAGICTYPE_SPUP_AREA:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			m_pGame->Effect_SpUp_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6);
-			for (iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
-				for (ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
+			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
+				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 					m_pGame->Effect_SpUp_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue7, m_pGame->m_pMagicConfigList[sType]->m_sValue8, m_pGame->m_pMagicConfigList[sType]->m_sValue9);
 				}
@@ -2156,7 +2154,7 @@ int CEntityManager::iGetNpcRelationship_SendEvent(int iNpcH, int iOpponentH)
 
 void CEntityManager::NpcRequestAssistance(int iNpcH)
 {
-	int ix, iy, sX, sY;
+	int sX, sY;
 	short sOwnerH;
 	char  cOwnerType;
 
@@ -2166,8 +2164,8 @@ void CEntityManager::NpcRequestAssistance(int iNpcH)
 	sX = m_pNpcList[iNpcH]->m_sX;
 	sY = m_pNpcList[iNpcH]->m_sY;
 
-	for (ix = sX - 8; ix <= sX + 8; ix++)
-		for (iy = sY - 8; iy <= sY + 8; iy++) {
+	for(int ix = sX - 8; ix <= sX + 8; ix++)
+		for(int iy = sY - 8; iy <= sY + 8; iy++) {
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 			if ((sOwnerH != 0) && (m_pNpcList[sOwnerH] != 0) && (cOwnerType == DEF_OWNERTYPE_NPC) &&
 				(iNpcH != sOwnerH) && (m_pNpcList[sOwnerH]->m_cSide == m_pNpcList[iNpcH]->m_cSide) &&
@@ -2337,14 +2335,14 @@ bool CEntityManager::_bNpcBehavior_Detector(int iNpcH)
 
 bool CEntityManager::bSetNpcFollowMode(char* pName, char* pFollowName, char cFollowOwnerType)
 {
-	int i, iIndex, iMapIndex, iFollowIndex;
+	int iIndex, iMapIndex, iFollowIndex;
 	char cTmpName[11], cFollowSide;
 
 	std::memset(cTmpName, 0, sizeof(cTmpName));
 	iMapIndex = -1;
 	iFollowIndex = -1;
 
-	for (i = 1; i < DEF_MAXNPCS; i++)
+	for(int i = 1; i < DEF_MAXNPCS; i++)
 		if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, pName, 5) == 0)) {
 			iIndex = i;
 			iMapIndex = m_pNpcList[i]->m_cMapIndex;
@@ -2355,7 +2353,7 @@ NEXT_STEP_SNFM1:
 
 	switch (cFollowOwnerType) {
 	case DEF_OWNERTYPE_NPC:
-		for (i = 1; i < DEF_MAXNPCS; i++)
+		for(int i = 1; i < DEF_MAXNPCS; i++)
 			if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, pFollowName, 5) == 0)) {
 				if (m_pNpcList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
@@ -2365,7 +2363,7 @@ NEXT_STEP_SNFM1:
 		break;
 
 	case DEF_OWNERTYPE_PLAYER:
-		for (i = 1; i < DEF_MAXCLIENTS; i++)
+		for(int i = 1; i < DEF_MAXCLIENTS; i++)
 			if ((m_pGame->m_pClientList[i] != 0) && (memcmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, 10) == 0)) {
 				if (m_pGame->m_pClientList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
@@ -2390,9 +2388,9 @@ NEXT_STEP_SNFM2:
 
 void CEntityManager::bSetNpcAttackMode(char* cName, int iTargetH, char cTargetType, bool bIsPermAttack)
 {
-	int i, iIndex;
+	int iIndex;
 
-	for (i = 1; i < DEF_MAXNPCS; i++)
+	for(int i = 1; i < DEF_MAXNPCS; i++)
 		if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, cName, 5) == 0)) {
 			iIndex = i;
 			goto NEXT_STEP_SNAM1;
@@ -2428,7 +2426,7 @@ NEXT_STEP_SNAM1:
 
 void CEntityManager::DeleteNpcInternal(int iNpcH)
 {
-	int  i, iNamingValue;
+	int iNamingValue;
 	char cTmp[21];
 	uint32_t dwTime;
 	if (m_pNpcList[iNpcH] == 0) return;
@@ -2464,7 +2462,7 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 	case 39:
 	case 42:
 		m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->bRemoveCrusadeStructureInfo(m_pNpcList[iNpcH]->m_sX, m_pNpcList[iNpcH]->m_sY);
-		for (i = 0; i < DEF_MAXGUILDS; i++)
+		for(int i = 0; i < DEF_MAXGUILDS; i++)
 			if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == m_pNpcList[iNpcH]->m_iGuildGUID) {
 				m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
 				m_pGame->m_pGuildTeleportLoc[i].m_iV2--;
@@ -2614,7 +2612,7 @@ bool CEntityManager::SpawnNpcDropItem(int iNpcH, int itemId, int minCount, int m
 	if (minCount < 0) minCount = 0;
 	if (maxCount < minCount) maxCount = minCount;
 
-	class CItem* pItem = new class CItem;
+	CItem* pItem = new CItem;
 	if (m_pGame->_bInitItemAttr(pItem, itemId) == false) {
 		delete pItem;
 		return false;
@@ -2659,7 +2657,7 @@ int CEntityManager::GetEntityHandleByGUID(uint32_t dwGUID) const
     if (dwGUID == 0)
         return -1;
 
-    for (int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_dwEntityGUID[i] == dwGUID && m_pNpcList[i] != NULL)
             return i;
     }
@@ -2696,7 +2694,7 @@ int CEntityManager::FindEntityByName(const char* pName) const
     if (pName == NULL)
         return -1;
 
-    for (int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] != NULL) {
             if (memcmp(m_pNpcList[i]->m_cName, pName, 6) == 0)
                 return i;
@@ -2720,7 +2718,7 @@ bool CEntityManager::InitEntityAttributes(CNpc* pNpc, const char* pNpcName, shor
 
 int CEntityManager::GetFreeEntitySlot() const
 {
-    for (int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < DEF_MAXNPCS; i++) {
         if (m_pNpcList[i] == NULL)
             return i;
     }
@@ -2757,7 +2755,7 @@ void CEntityManager::AddToActiveList(int iEntityHandle)
     }
 
     // Check if already in list (shouldn't happen, but safety check)
-    for (int i = 0; i < m_iActiveEntityCount; i++) {
+    for(int i = 0; i < m_iActiveEntityCount; i++) {
         if (m_pActiveEntityList[i] == iEntityHandle) {
             return; // Already in list
         }
@@ -2779,7 +2777,7 @@ void CEntityManager::RemoveFromActiveList(int iEntityHandle)
     }
 
     // Find entity in list
-    for (int i = 0; i < m_iActiveEntityCount; i++) {
+    for(int i = 0; i < m_iActiveEntityCount; i++) {
         if (m_pActiveEntityList[i] == iEntityHandle) {
             // Swap with last element and decrement count (O(1) removal)
             m_pActiveEntityList[i] = m_pActiveEntityList[m_iActiveEntityCount - 1];
@@ -2797,7 +2795,7 @@ void CEntityManager::RemoveFromActiveList(int iEntityHandle)
 
 void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 {
-	int i, x, j, iNamingValue, iResult, iTotalMob;
+	int x, j, iNamingValue, iResult, iTotalMob;
 	char cNpcName[21], cName_Master[11], cName_Slave[11], cWaypoint[11];
 	char cSA;
 	int  pX, pY, iMapLevel, iProbSA, iKindSA, iResultNum, iNpcID;
@@ -2805,7 +2803,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 
 	if (m_pGame == NULL || m_pGame->m_bOnExitProcess) return;
 
-	for (i = 0; i < m_iMaxMaps; i++) {
+	for(int i = 0; i < m_iMaxMaps; i++) {
 		// Random Mob Generator
 
 		//if ( (m_pMapList[i] != 0) && (m_pMapList[i]->m_bRandomMobGenerator ) && 
@@ -3740,7 +3738,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
     bool bFirmBerserk;
 
     // Loop through all spot mob generators
-    for (int j = 1; j < DEF_MAXSPOTMOBGENERATOR; j++) {
+    for(int j = 1; j < DEF_MAXSPOTMOBGENERATOR; j++) {
         // Check if generator is defined and has room for more mobs
         if (!m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].bDefined) {
             continue;  // Generator not defined
@@ -3861,7 +3859,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
 
                 case 2: // Waypoint-based spawn (RANDOMWAYPOINT)
                     // Convert waypoint array to string
-                    for (int k = 0; k < 10; k++) {
+                    for(int k = 0; k < 10; k++) {
                         cWaypoint[k] = (char)m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].cWaypoint[k];
                     }
                     iResult = CreateEntity(

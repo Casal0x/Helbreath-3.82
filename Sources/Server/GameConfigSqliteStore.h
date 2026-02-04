@@ -15,8 +15,6 @@ bool SaveSettingsConfig(sqlite3* db, const CGame* game);
 bool LoadSettingsConfig(sqlite3* db, CGame* game);
 bool SaveBannedListConfig(sqlite3* db, const CGame* game);
 bool LoadBannedListConfig(sqlite3* db, CGame* game);
-bool SaveAdminSettingsConfig(sqlite3* db, const CGame* game);
-bool LoadAdminSettingsConfig(sqlite3* db, CGame* game);
 bool SaveNpcConfigs(sqlite3* db, const CGame* game);
 bool LoadNpcConfigs(sqlite3* db, CGame* game);
 bool LoadDropTables(sqlite3* db, CGame* game);

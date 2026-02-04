@@ -217,40 +217,11 @@ namespace CMisc
 
 	}
 
-	static inline bool bEncode(char cKey, char *pStr)
-	{
-		int i, iLen;
-
-		return true;
-
-		iLen = strlen(pStr);
-		for (i = 0; i <= iLen-1; i++) {
-			pStr[i]  = pStr[i] ^ (cKey);
-		}
-
-		return true;
-	}
-
-	static inline bool bDecode(char cKey, char *pStr)
-	{
-		int i, iLen;
-
-		return true;
-
-		iLen = strlen(pStr);
-		for (i = 0; i <= iLen-1; i++) {
-			pStr[i]  = pStr[i] ^ (cKey);
-		}
-
-		return true;
-	}
-
 	static inline bool bCheckValidName(char *pStr)
 	{
-		int i, iLen;
-
-		iLen = strlen(pStr);
-		for (i = 0; i < iLen; i++) {
+		size_t iLen = strlen(pStr);
+		for(int i = 0; i < iLen; i++)
+		{
 			if ( (pStr[i] == ',')  || (pStr[i] == '=')  || (pStr[i] == ' ') ||
 				 (pStr[i] == '\n') || (pStr[i] == '\t') || /*(pStr[i] == '.') ||*/
 				 (pStr[i] == '\\') || (pStr[i] == '/')  || (pStr[i] == ':') ||
@@ -278,7 +249,7 @@ namespace CMisc
 	static inline void Temp()
 	{
 		FILE * pSrcFile, * pDestFile, * pSrcFileA, * pSrcFileB;
-		int i;
+		
 		char cTemp[100000];
 
 		pSrcFile = fopen("middleland.amd", "rb");
@@ -290,7 +261,7 @@ namespace CMisc
 		fread(cTemp, 1, 256, pSrcFile);
 		fread(cTemp, 1, 256, pSrcFileA);
 		fread(cTemp, 1, 256, pSrcFileB);
-		for (i = 1; i <= 444; i++)
+		for(int i = 1; i <= 444; i++)
 			fread(cTemp, 1, 5240, pSrcFileB);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
@@ -298,42 +269,42 @@ namespace CMisc
 
 		fwrite(cTemp, 1, 256, pDestFile);
 
-		for (i = 1; i <= 80; i++) {
+		for(int i = 1; i <= 80; i++) {
 			std::memset(cTemp, 0, sizeof(cTemp));
 			fread((cTemp + 1500), 1, 5240, pSrcFileA);
 			fwrite(cTemp, 1, 824*10, pDestFile);
 		}
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		for (i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		for(int i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
 
 		//148
 		/*
 		std::memset(cTemp, 0, sizeof(cTemp));
-		for (i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		for(int i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
 		*/
 
-		for (i = 1; i <= 524; i++) {
+		for(int i = 1; i <= 524; i++) {
 			std::memset(cTemp, 0, sizeof(cTemp));
 			fread((cTemp + 1500), 1, 5240, pSrcFile);
 			fwrite(cTemp, 1, 824*10, pDestFile);
 		}
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		for (i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		for(int i = 1; i <= 68; i++) fwrite(cTemp, 1, 824*10, pDestFile);
 
-		for (i = 1; i <= 80; i++) {
+		for(int i = 1; i <= 80; i++) {
 			std::memset(cTemp, 0, sizeof(cTemp));
 			fread((cTemp + 1500), 1, 5240, pSrcFileB);
 			fwrite(cTemp, 1, 824*10, pDestFile);
 		}
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		for (i = 1; i <= 2; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		for(int i = 1; i <= 2; i++) fwrite(cTemp, 1, 824*10, pDestFile);
 
 		/*
 		std::memset(cTemp, 0, sizeof(cTemp));
-		for (i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
+		for(int i = 1; i <= 150; i++) fwrite(cTemp, 1, 824*10, pDestFile);
 		*/
 
 		fclose(pSrcFile);

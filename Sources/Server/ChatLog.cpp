@@ -63,7 +63,7 @@ void ChatLog::Write(int chatType, const char* playerName, const char* mapName, c
 	case 2:  label = "Global"; break;
 	case 3:  label = "Alliance"; break;
 	case 4:  label = "Party"; break;
-	case 10: label = "GM"; break;
+	case 10: label = "Broadcast"; break;
 	case 20: label = "Whisper"; break;
 	default: label = "Unknown"; break;
 	}

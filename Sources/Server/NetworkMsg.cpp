@@ -20,7 +20,7 @@ CMsg::~CMsg()
 	if (m_pData != 0) delete m_pData;
 }
 
-bool CMsg::bPut(char cFrom, char * pData, uint32_t dwSize, int iIndex, char cKey)
+bool CMsg::bPut(char cFrom, char * pData, size_t dwSize, int iIndex, char cKey)
 {
 	m_pData = new char [dwSize + 1];
 	if (m_pData == 0) return false;
@@ -35,7 +35,7 @@ bool CMsg::bPut(char cFrom, char * pData, uint32_t dwSize, int iIndex, char cKey
 	return true;
 }
 
-void CMsg::Get(char * pFrom, char * pData, uint32_t * pSize, int * pIndex, char * pKey)
+void CMsg::Get(char * pFrom, char * pData, size_t* pSize, int * pIndex, char * pKey)
 {
 	*pFrom  = m_cFrom;
 	memcpy(pData, m_pData, m_dwSize);

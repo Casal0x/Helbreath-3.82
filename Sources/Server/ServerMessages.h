@@ -8,7 +8,6 @@
 // - Server infrastructure messages (database, inter-server communication)
 // - Configuration loading messages
 // - Logging and monitoring messages
-// - Gate Server Messages (GSM_*)
 // - Internal tracking constants
 //
 // For shared protocol messages, see Dependencies/Shared/NetMessages.h
@@ -111,7 +110,6 @@
 // ============================================================================
 
 #define MSGID_GAMESERVERALIVE						0x12A01002
-#define MSGID_ADMINUSER								0x12A01003
 #define MSGID_GAMESERVERDOWN						0x12A01004
 #define MSGID_TOTALGAMESERVERCLIENTS				0x12A01005
 #define MSGID_ENTERGAMECONFIRM						0x12A01006
@@ -147,15 +145,8 @@
 #define MSGID_ELVINEOCCUPYFLAGSAVEFILECONTENTS		0x17081035
 
 // ============================================================================
-// Bad Word Manager and Logging
-// ============================================================================
-
-#define MSGID_BWM_INIT								0x19CC0F82  // Bad Word Manager
-#define MSGID_BWM_COMMAND_SHUTUP					0x19CC0F84
-
 #define MSGID_SENDSERVERSHUTDOWNMSG					0x20000000
 #define MSGID_ITEMLOG								0x210A914D
-#define MSGID_GAMEMASTERLOG							0x210A914E
 #define MSGID_GAMEITEMLOG							0x210A914F
 
 // ============================================================================
@@ -213,37 +204,6 @@
 #define DEF_PARTYSTATUS_PROCESSING					1
 #define DEF_PARTYSTATUS_NULL						0
 #define DEF_PARTYSTATUS_CONFIRM						2
-
-// ============================================================================
-// Gate Server Messages (GSM_*) - Inter-Server Communication
-// All gate server messages are server-only for coordinating multiple game servers
-// ============================================================================
-
-#define GSM_REQUEST_FINDCHARACTER					0x01
-#define GSM_RESPONSE_FINDCHARACTER					0x02
-#define GSM_GRANDMAGICRESULT						0x03
-#define GSM_GRANDMAGICLAUNCH						0x04
-#define GSM_COLLECTEDMANA							0x05
-#define GSM_BEGINCRUSADE							0x06
-#define GSM_ENDCRUSADE								0x07
-#define GSM_MIDDLEMAPSTATUS							0x08
-#define GSM_SETGUILDTELEPORTLOC						0x09
-#define GSM_CONSTRUCTIONPOINT						0x0A
-#define GSM_SETGUILDCONSTRUCTLOC					0x0B
-#define GSM_CHATMSG									0x0C
-#define GSM_WHISFERMSG								0x0D
-#define GSM_DISCONNECT								0x0E
-#define GSM_REQUEST_SUMMONPLAYER					0x0F
-#define GSM_REQUEST_SHUTUPPLAYER					0x10
-#define GSM_RESPONSE_SHUTUPPLAYER					0x11
-#define GSM_REQUEST_SETFORCERECALLTIME				0x12
-#define GSM_BEGINAPOCALYPSE							0x13
-#define GSM_ENDAPOCALYPSE							0x14
-#define GSM_REQUEST_SUMMONGUILD						0x15
-#define GSM_REQUEST_SUMMONALL						0x16
-#define GSM_ENDHELDENIAN							0x17
-#define GSM_UPDATECONFIGS							0x18
-#define GSM_STARTHELDENIAN							0x19
 
 // ============================================================================
 // Crusade Logging

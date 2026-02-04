@@ -101,11 +101,9 @@ struct AccountDbCharacterState
     int hairColor;
     int underwear;
     int hungerStatus;
-    int timeleftShutup;
     int timeleftRating;
     int timeleftForceRecall;
     int timeleftFirmStaminar;
-    int adminUserLevel;
     int penaltyBlockYear;
     int penaltyBlockMonth;
     int penaltyBlockDay;

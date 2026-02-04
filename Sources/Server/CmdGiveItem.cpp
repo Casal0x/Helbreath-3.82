@@ -55,7 +55,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	// Find player by name
 	int iClientH = 0;
-	for (int j = 1; j < DEF_MAXCLIENTS; j++)
+	for(int j = 1; j < DEF_MAXCLIENTS; j++)
 	{
 		if (pGame->m_pClientList[j] != nullptr &&
 			_stricmp(pGame->m_pClientList[j]->m_cCharName, cPlayerName) == 0)

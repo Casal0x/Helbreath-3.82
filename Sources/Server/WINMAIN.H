@@ -25,7 +25,7 @@ void PutLogList(char* cMsg);
 void PutLogListLevel(int level, const char* cMsg);
 void OnKeyUp(WPARAM wParam, LPARAM lParam);
 void UpdateScreen();
-int  EventLoop();
+WPARAM  EventLoop();
 void OnPaint();
 void OnDestroy();
 void Initialize();

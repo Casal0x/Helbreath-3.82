@@ -30,7 +30,7 @@ using namespace std;
 
 // DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h
 
-#define DEF_MAXPARTYMEMBERS	100
+#define DEF_MAXPARTYMEMBERS	9
 
 #define DEF_SPECABLTYTIMESEC	1200
 
@@ -151,9 +151,9 @@ public:
 	char m_cAttackBonus_SM;
 	char m_cAttackBonus_L;
 
-	class CItem * m_pItemList[DEF_MAXITEMS];
+	CItem * m_pItemList[DEF_MAXITEMS];
 	GamePoint m_ItemPosList[DEF_MAXITEMS];
-	class CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
+	CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
 	
 	bool  m_bIsItemEquipped[DEF_MAXITEMS];
 	short m_sItemEquipmentStatus[hb::item::DEF_MAXITEMEQUIPPOS];
@@ -186,10 +186,8 @@ public:
 
 	class ASIOSocket * m_pXSock;
 
-	int   m_iAdminUserLevel;
 	int   m_iRating;
 
-	int   m_iTimeLeft_ShutUp;
 	int   m_iTimeLeft_Rating;
 	int   m_iTimeLeft_ForceRecall;
 	int   m_iTimeLeft_FirmStaminar;
@@ -234,8 +232,6 @@ public:
 
 	int   m_iAbuseCount;
 	
-	bool  m_bIsBWMonitor;		// BadWord ??
-
 	// bool  m_bIsExchangeMode;		//    ??
 	// int   m_iExchangeH;				//  ?
 	// char  m_cExchangeName[11];		//  ?
@@ -313,10 +309,7 @@ public:
 	int   m_iSpecialAbilityLastSec;
 
 	int   m_iSpecialAbilityType;
-												// 0:   1:  HP 50%   2:   3:    4:    5: ?  HP ?.
-												// 50:   0 . 51:  ?   52: 5  ?
 	int   m_iSpecialAbilityEquipPos;
-	bool  m_bIsAdminCommandEnabled;
 	int   m_iAlterItemDropIndex;
 
 	int   m_iWarContribution;
@@ -376,7 +369,6 @@ public:
 
 	// New 16/05/2004
 	char m_cWhisperPlayerName[11];
-	bool m_bIsAdminOrderGoto;
 	bool m_bIsInsideWarehouse;
 	bool m_bIsInsideWizardTower;
 	bool m_bIsInsideOwnTown;

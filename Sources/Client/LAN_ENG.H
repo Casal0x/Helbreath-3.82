@@ -366,7 +366,6 @@
 #define	NOTIFY_MSG_HANDLER54	"You can't fish anymore. The fish left!"
 #define	NOTIFY_MSG_HANDLER55	"You were successful on fishing!!! "
 #define	NOTIFY_MSG_HANDLER56	"You failed to fish..."
-#define	NOTIFY_MSG_HANDLER58	"You can't use the administrative command."
 #define	NOTIFY_MSG_HANDLER59	"You don't have rights to use guildmaster command."
 #define	NOTIFY_MSG_HANDLER60	"You succeeded in banishing guildsman."
 #define	NOTIFY_MSG_HANDLER61	"He is not your guild member."

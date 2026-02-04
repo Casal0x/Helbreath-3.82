@@ -11,14 +11,14 @@
 
 CNpc::CNpc(char * pName5)
 {
- int i;
+ 
 	std::memset(m_cName, 0, sizeof(m_cName));
 	memcpy(m_cName, pName5, 5);
 	
-	for (i = 0; i < DEF_MAXWAYPOINTS; i++)			  
+	for(int i = 0; i < DEF_MAXWAYPOINTS; i++)			  
 		m_iWayPointIndex[i] = -1;
 	
-	for (i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
+	for(int i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
 		m_cMagicEffectStatus[i]	= 0;
 
 	m_bIsSummoned       = false;

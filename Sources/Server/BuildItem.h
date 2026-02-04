@@ -13,14 +13,14 @@ class CBuildItem
 public:
 	inline CBuildItem()
 	{
-		int i;
+		
 
 		std::memset(m_cName, 0, sizeof(m_cName));
 		m_sItemID = -1;
 
 		m_iSkillLimit = 0;
 
-		for (i = 0; i < 6; i++) {
+		for(int i = 0; i < 6; i++) {
 			m_iMaterialItemID[i]    = 0;
 			m_iMaterialItemCount[i] = 0;
 			m_iMaterialItemValue[i] = 0;

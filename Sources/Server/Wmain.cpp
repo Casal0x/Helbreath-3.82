@@ -39,7 +39,6 @@
 #include "IOServicePool.h"
 #include "ConcurrentMsgQueue.h"
 
-void PutAdminLogFileList(char* cStr);
 void PutHackLogFileList(char* cStr);
 void PutPvPLogFileList(char* cStr);
 
@@ -87,13 +86,13 @@ unsigned __stdcall ThreadProc(void* ch)
 	{
 		Sleep(1000);
 
-		for (int a = 0; a < DEF_MAXMAPS; a++)
+		for(int a = 0; a < DEF_MAXMAPS; a++)
 		{
 			if (G_pGame->m_pMapList[a] != 0)
 			{
-				for (int iy = 0; iy < G_pGame->m_pMapList[a]->m_sSizeY; iy++)
+				for(int iy = 0; iy < G_pGame->m_pMapList[a]->m_sSizeY; iy++)
 				{
-					for (int ix = 0; ix < G_pGame->m_pMapList[a]->m_sSizeX; ix++)
+					for(int ix = 0; ix < G_pGame->m_pMapList[a]->m_sSizeX; ix++)
 					{
 						pTile = (class CTile*)(G_pGame->m_pMapList[a]->m_pTile + ix + iy * G_pGame->m_pMapList[a]->m_sSizeY);
 						if ((pTile != 0) && (pTile->m_sOwner != 0) && (pTile->m_cOwnerClass == 0))
@@ -141,21 +140,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			return (DefWindowProc(hWnd, message, wParam, lParam));
 		break;
 
-	case WM_ONGATESOCKETEVENT:
-		G_pGame->OnGateSocketEvent(message, wParam, lParam);
-		break;
-
-	case WM_ONLOGSOCKETEVENT:
-		G_pGame->OnMainLogSocketEvent(message, wParam, lParam);
-		break;
-
 	default:
 		// Handle sub log socket events
 		if ((message >= WM_USER_BOT_ACCEPT + 1) && (message <= WM_USER_BOT_ACCEPT + DEF_MAXCLIENTLOGINSOCK))
 			G_pGame->OnSubLogSocketEvent(message, wParam, lParam);
-
-		// MODERNIZED: Removed WM_ONCLIENTSOCKETEVENT handler
-		// Client sockets are now polled directly in GameProcess() instead of using window messages
 
 		return (DefWindowProc(hWnd, message, wParam, lParam));
 	}
@@ -302,7 +290,7 @@ void PollLoginClients()
 {
 	if (G_pGame == nullptr) return;
 
-	for (int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
+	for(int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
 		if (G_pGame->_lclients[i] != nullptr && G_pGame->_lclients[i]->_sock != nullptr) {
 			G_pGame->OnLoginClientSocketEvent(i);
 		}
@@ -318,7 +306,7 @@ void PollAllSockets()
 	PollLoginClients();
 }
 
-int EventLoop()
+WPARAM EventLoop()
 {
 	static unsigned short _usCnt = 0;
 	static uint32_t dwLastDebug = 0;
@@ -362,10 +350,10 @@ int EventLoop()
 				if (dwNow - dwLastDebug > 60000) {
 					int activeClients = 0;
 					int activeLoginClients = 0;
-					for (int i = 1; i < DEF_MAXCLIENTS; i++) {
+					for(int i = 1; i < DEF_MAXCLIENTS; i++) {
 						if (G_pGame->m_pClientList[i] != nullptr) activeClients++;
 					}
-					for (int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
+					for(int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
 						if (G_pGame->_lclients[i] != nullptr) activeLoginClients++;
 					}
 					dwLastDebug = dwNow;
@@ -696,26 +684,6 @@ void PutLogFileList(char* cStr)
 	std::snprintf(cBuffer, sizeof(cBuffer), "(%4d:%2d:%2d:%2d:%2d) - ", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
 	strcat(cBuffer, cStr);
 	strcat(cBuffer, "\n");
-	fwrite(cBuffer, 1, strlen(cBuffer), pFile);
-	fclose(pFile);
-}
-
-void PutAdminLogFileList(char* cStr)
-{
-	FILE* pFile;
-	char cBuffer[512];
-	SYSTEMTIME SysTime;
-
-	pFile = fopen("GameLogs\\AdminEvents.log", "at");
-	if (pFile == 0) return;
-
-	std::memset(cBuffer, 0, sizeof(cBuffer));
-
-	GetLocalTime(&SysTime);
-	std::snprintf(cBuffer, sizeof(cBuffer), "(%4d:%2d:%2d:%2d:%2d) - ", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute);
-	strcat(cBuffer, cStr);
-	strcat(cBuffer, "\n");
-
 	fwrite(cBuffer, 1, strlen(cBuffer), pFile);
 	fclose(pFile);
 }

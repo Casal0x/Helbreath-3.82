@@ -11,7 +11,7 @@
 
 CTile::CTile()
 { 
- int i;
+ 
 
 	m_bIsMoveAllowed = true;
 	m_bIsTeleport    = false;
@@ -24,7 +24,7 @@ CTile::CTile()
 	m_sDeadOwner      = 0;
 	m_cDeadOwnerClass = 0;
 	
-	for (i = 0; i < DEF_TILE_PER_ITEMS; i++) 
+	for(int i = 0; i < DEF_TILE_PER_ITEMS; i++) 
 		m_pItem[i] = 0;
 	m_cTotalItem = 0;
 
@@ -41,7 +41,7 @@ CTile::CTile()
 
 CTile::~CTile()
 {
- int i;
-	for (i = 0; i < DEF_TILE_PER_ITEMS; i++) 
+ 
+	for(int i = 0; i < DEF_TILE_PER_ITEMS; i++) 
 	if (m_pItem[i] != 0) delete m_pItem[i];
 }

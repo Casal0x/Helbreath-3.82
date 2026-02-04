@@ -14,9 +14,9 @@ extern void PutLogList(char* cMsg);
 
 PartyManager::PartyManager(class CGame* pGame)
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXPARTY; i++) {
+	for(int i = 0; i < DEF_MAXPARTY; i++) {
 		m_iMemberNumList[i] = 0;
 		m_stMemberNameList[i].m_iPartyID = 0;
 		m_stMemberNameList[i].m_iIndex = 0;
@@ -35,14 +35,14 @@ PartyManager::~PartyManager()
 
 int PartyManager::iCreateNewParty(char* pMasterName)
 {
-	int i, iPartyID;
+	int iPartyID;
 
 	// ??? PartyMaster? ????? ?? 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID != 0) && (_stricmp(m_stMemberNameList[i].m_cName, pMasterName) == 0)) return 0;
 
 	iPartyID = 0;
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if (m_iMemberNumList[i] == 0) {
 			// Party ID? i, ??? ??
 			iPartyID = i;
@@ -54,7 +54,7 @@ int PartyManager::iCreateNewParty(char* pMasterName)
 
 CNP_BREAKLOOP:;
 	// ?? ??? ????.
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if (m_stMemberNameList[i].m_iPartyID == 0) {
 			m_stMemberNameList[i].m_iPartyID = iPartyID;
 			std::memset(m_stMemberNameList[i].m_cName, 0, sizeof(m_stMemberNameList[i].m_cName));
@@ -73,7 +73,7 @@ CNP_BREAKLOOP:;
 
 bool PartyManager::bDeleteParty(int iPartyID)
 {
-	int i;
+	
 	bool bFlag;
 	char* cp, cData[120];
 	uint16_t* wp;
@@ -81,7 +81,7 @@ bool PartyManager::bDeleteParty(int iPartyID)
 	bFlag = false;
 	m_iMemberNumList[iPartyID] = 0;
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if (m_stMemberNameList[i].m_iPartyID == iPartyID) {
 			m_stMemberNameList[i].m_iPartyID = 0;
 			m_stMemberNameList[i].m_iIndex = 0;
@@ -111,13 +111,13 @@ bool PartyManager::bDeleteParty(int iPartyID)
 
 bool PartyManager::bAddMember(int iPartyID, char* pMemberName)
 {
-	int i;
+	
 
 
 	if (m_iMemberNumList[iPartyID] >= DEF_MAXPARTYMEMBER) return false;
 
 	// ?? ??? ?? ???? ??
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID != 0) && (_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0))
 		{
 			m_stMemberNameList[i].m_iPartyID = 0;
@@ -131,7 +131,7 @@ bool PartyManager::bAddMember(int iPartyID, char* pMemberName)
 	//		return false;
 
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if (m_stMemberNameList[i].m_iPartyID == 0) {
 			m_stMemberNameList[i].m_iPartyID = iPartyID;
 			m_stMemberNameList[i].m_iIndex = 1;
@@ -151,9 +151,9 @@ bool PartyManager::bAddMember(int iPartyID, char* pMemberName)
 
 bool PartyManager::bRemoveMember(int iPartyID, char* pMemberName)
 {
-	int i;
+	
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pMemberName) == 0)) {
 
 			m_stMemberNameList[i].m_iPartyID = 0;
@@ -176,11 +176,11 @@ bool PartyManager::bRemoveMember(int iPartyID, char* pMemberName)
 
 bool PartyManager::bCheckPartyMember(int iGSCH, int iPartyID, char* pName)
 {
-	int i;
+	
 	char* cp, cData[120];
 	uint16_t* wp;
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
 			// ?? ?? ?? ???
 			m_stMemberNameList[i].m_dwServerChangeTime = 0;
@@ -206,7 +206,7 @@ bool PartyManager::bCheckPartyMember(int iGSCH, int iPartyID, char* pName)
 
 bool PartyManager::bGetPartyInfo(int iGSCH, char* pName, int iPartyID)
 {
-	int i, iTotal;
+	int iTotal;
 	char* cp, cData[1024];
 	uint16_t* wp, * wpTotal;
 
@@ -226,7 +226,7 @@ bool PartyManager::bGetPartyInfo(int iGSCH, char* pName, int iPartyID)
 	cp += 2;
 
 	iTotal = 0;
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (m_stMemberNameList[i].m_iPartyID != 0)) {
 			memcpy(cp, m_stMemberNameList[i].m_cName, 10);
 			cp += 11;
@@ -241,9 +241,9 @@ bool PartyManager::bGetPartyInfo(int iGSCH, char* pName, int iPartyID)
 
 void PartyManager::GameServerDown()
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXPARTY; i++)
+	for(int i = 0; i < DEF_MAXPARTY; i++)
 		if (m_stMemberNameList[i].m_iIndex == 1) {
 			//testcode
 			std::snprintf(G_cTxt, sizeof(G_cTxt), "Removing Party member(%s) by Server down", m_stMemberNameList[i].m_cName);
@@ -259,9 +259,9 @@ void PartyManager::GameServerDown()
 
 void PartyManager::SetServerChangeStatus(char* pName, int iPartyID)
 {
-	int i;
+	
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (_stricmp(m_stMemberNameList[i].m_cName, pName) == 0)) {
 			m_stMemberNameList[i].m_dwServerChangeTime = GameClock::GetTimeMS();
 			return;
@@ -270,7 +270,7 @@ void PartyManager::SetServerChangeStatus(char* pName, int iPartyID)
 
 void PartyManager::CheckMemberActivity()
 {
-	int i;
+	
 	uint32_t dwTime = GameClock::GetTimeMS();
 	char* cp, cData[120];
 	uint16_t* wp;
@@ -280,7 +280,7 @@ void PartyManager::CheckMemberActivity()
 	}
 	else return;
 
-	for (i = 1; i < DEF_MAXPARTY; i++)
+	for(int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_dwServerChangeTime != 0) && ((dwTime - m_stMemberNameList[i].m_dwServerChangeTime) > 1000 * 20)) {
 			// ?? ??. 
 			std::memset(cData, 0, sizeof(cData));

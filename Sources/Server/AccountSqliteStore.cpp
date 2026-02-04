@@ -229,7 +229,7 @@ static bool MigrateItemNamesToIds(sqlite3* db)
         sqlite3_bind_text(writeStmt, col++, charName, -1, SQLITE_TRANSIENT);
         sqlite3_bind_int(writeStmt, col++, slot);
         sqlite3_bind_int(writeStmt, col++, itemId);
-        for (int i = 3; i <= 16; i++) {
+        for(int i = 3; i <= 16; i++) {
             sqlite3_bind_int(writeStmt, col++, sqlite3_column_int(readStmt, i));
         }
 
@@ -311,7 +311,7 @@ static bool MigrateItemNamesToIds(sqlite3* db)
         sqlite3_bind_text(writeStmt, col++, charName, -1, SQLITE_TRANSIENT);
         sqlite3_bind_int(writeStmt, col++, slot);
         sqlite3_bind_int(writeStmt, col++, itemId);
-        for (int i = 3; i <= 13; i++) {
+        for(int i = 3; i <= 13; i++) {
             sqlite3_bind_int(writeStmt, col++, sqlite3_column_int(readStmt, i));
         }
 
@@ -530,11 +530,9 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         !AddColumnIfMissing(db, "characters", "idnum2", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "idnum3", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "hunger_status", "INTEGER NOT NULL DEFAULT 100") ||
-        !AddColumnIfMissing(db, "characters", "timeleft_shutup", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "timeleft_rating", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "timeleft_force_recall", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "timeleft_firm_staminar", "INTEGER NOT NULL DEFAULT 0") ||
-        !AddColumnIfMissing(db, "characters", "admin_user_level", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "penalty_block_year", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "penalty_block_month", "INTEGER NOT NULL DEFAULT 0") ||
         !AddColumnIfMissing(db, "characters", "penalty_block_day", "INTEGER NOT NULL DEFAULT 0") ||
@@ -687,8 +685,8 @@ bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharact
         "SELECT account_name, character_name, profile, location, guild_name, guild_guid, guild_rank, "
         "map_name, map_x, map_y, hp, mp, sp, level, rating, str, intl, vit, dex, mag, chr, luck, exp, "
         "lu_pool, enemy_kill_count, pk_count, reward_gold, downskill_index, idnum1, idnum2, idnum3, "
-        "gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_shutup, timeleft_rating, "
-        "timeleft_force_recall, timeleft_firm_staminar, admin_user_level, penalty_block_year, "
+        "gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_rating, "
+        "timeleft_force_recall, timeleft_firm_staminar, penalty_block_year, "
         "penalty_block_month, penalty_block_day, quest_number, quest_id, current_quest_count, "
         "quest_reward_type, quest_reward_amount, contribution, war_contribution, quest_completed, "
         "special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number, "
@@ -744,11 +742,9 @@ bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharact
         outState.hairColor = sqlite3_column_int(stmt, col++);
         outState.underwear = sqlite3_column_int(stmt, col++);
         outState.hungerStatus = sqlite3_column_int(stmt, col++);
-        outState.timeleftShutup = sqlite3_column_int(stmt, col++);
         outState.timeleftRating = sqlite3_column_int(stmt, col++);
         outState.timeleftForceRecall = sqlite3_column_int(stmt, col++);
         outState.timeleftFirmStaminar = sqlite3_column_int(stmt, col++);
-        outState.adminUserLevel = sqlite3_column_int(stmt, col++);
         outState.penaltyBlockYear = sqlite3_column_int(stmt, col++);
         outState.penaltyBlockMonth = sqlite3_column_int(stmt, col++);
         outState.penaltyBlockDay = sqlite3_column_int(stmt, col++);
@@ -1029,15 +1025,15 @@ bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state)
         " account_name, character_name, created_at, profile, location, guild_name, guild_guid, guild_rank, "
         " map_name, map_x, map_y, hp, mp, sp, level, rating, str, intl, vit, dex, mag, chr, luck, exp, "
         " lu_pool, enemy_kill_count, pk_count, reward_gold, downskill_index, idnum1, idnum2, idnum3, "
-        " gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_shutup, timeleft_rating, "
-        " timeleft_force_recall, timeleft_firm_staminar, admin_user_level, penalty_block_year, "
+        " gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_rating, "
+        " timeleft_force_recall, timeleft_firm_staminar, penalty_block_year, "
         " penalty_block_month, penalty_block_day, quest_number, quest_id, current_quest_count, "
         " quest_reward_type, quest_reward_amount, contribution, war_contribution, quest_completed, "
         " special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number, "
         " special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid, "
         " construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left, "
         " appr1, appr2, appr3, appr4, appr_color"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1084,11 +1080,9 @@ bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state)
     ok &= (sqlite3_bind_int(stmt, col++, state.hairColor) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.underwear) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.hungerStatus) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.timeleftShutup) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.timeleftRating) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.timeleftForceRecall) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.timeleftFirmStaminar) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.adminUserLevel) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.penaltyBlockYear) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.penaltyBlockMonth) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.penaltyBlockDay) == SQLITE_OK);
@@ -1533,15 +1527,15 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         " account_name, character_name, created_at, profile, location, guild_name, guild_guid, guild_rank,"
         " map_name, map_x, map_y, hp, mp, sp, level, rating, str, intl, vit, dex, mag, chr, luck, exp,"
         " lu_pool, enemy_kill_count, pk_count, reward_gold, downskill_index, idnum1, idnum2, idnum3,"
-        " gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_shutup, timeleft_rating,"
-        " timeleft_force_recall, timeleft_firm_staminar, admin_user_level, penalty_block_year,"
+        " gender, skin, hairstyle, haircolor, underwear, hunger_status, timeleft_rating,"
+        " timeleft_force_recall, timeleft_firm_staminar, penalty_block_year,"
         " penalty_block_month, penalty_block_day, quest_number, quest_id, current_quest_count,"
         " quest_reward_type, quest_reward_amount, contribution, war_contribution, quest_completed,"
         " special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number,"
         " special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid,"
         " construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left,"
         " appr1, appr2, appr3, appr4, appr_color"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, upsertSql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1589,11 +1583,9 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_cHairColor) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_cUnderwear) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iHungerStatus) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_iTimeLeft_ShutUp) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iTimeLeft_Rating) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iTimeLeft_ForceRecall) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iTimeLeft_FirmStaminar) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_iAdminUserLevel) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iPenaltyBlockYear) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iPenaltyBlockMonth) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iPenaltyBlockDay) == SQLITE_OK);
@@ -1672,7 +1664,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXITEMS; i++) {
+    for(int i = 0; i < DEF_MAXITEMS; i++) {
         if (client->m_pItemList[i] == nullptr) {
             continue;
         }
@@ -1721,7 +1713,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBANKITEMS; i++) {
+    for(int i = 0; i < DEF_MAXBANKITEMS; i++) {
         if (client->m_pItemInBankList[i] == nullptr) {
             continue;
         }
@@ -1762,7 +1754,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ExecSql(db, "ROLLBACK;");
         return false;
     }
-    for (int i = 0; i < DEF_MAXITEMS; i++) {
+    for(int i = 0; i < DEF_MAXITEMS; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1788,7 +1780,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ExecSql(db, "ROLLBACK;");
         return false;
     }
-    for (int i = 0; i < DEF_MAXITEMS; i++) {
+    for(int i = 0; i < DEF_MAXITEMS; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1813,7 +1805,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ExecSql(db, "ROLLBACK;");
         return false;
     }
-    for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1838,7 +1830,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ExecSql(db, "ROLLBACK;");
         return false;
     }
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1863,7 +1855,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         ExecSql(db, "ROLLBACK;");
         return false;
     }
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;

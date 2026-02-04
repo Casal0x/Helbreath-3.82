@@ -24,7 +24,7 @@ void IOServicePool::Start()
 
 	printf("[IOServicePool] Starting %d I/O threads\n", m_threadCount);
 
-	for (int i = 0; i < m_threadCount; i++) {
+	for(int i = 0; i < m_threadCount; i++) {
 		m_threads.emplace_back([this, i]() {
 			printf("[IOServicePool] I/O thread %d started\n", i);
 			m_ioContext.run();

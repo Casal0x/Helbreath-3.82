@@ -14,7 +14,7 @@ extern char G_cTxt[512];
 
 CClient::CClient(asio::io_context& ctx)
 {
- int i;
+ 
 
 	m_pXSock = 0;
 	m_pXSock = new class ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
@@ -64,16 +64,16 @@ CClient::CClient(asio::io_context& ctx)
 
 	//50Cent - Repair All
 	totalItemRepair = 0;
-	for (i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < DEF_MAXITEMS; i++) {
 		m_stRepairAll[i].index = 0;
 		m_stRepairAll[i].price = 0;
 	}
 
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) 
+	for(int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) 
 		m_sItemEquipmentStatus[i] = -1;
 	
 	// Initialize item list 
-	for (i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < DEF_MAXITEMS; i++) {
 		m_pItemList[i]       = 0;
 		m_ItemPosList[i].x   = 40;
 		m_ItemPosList[i].y   = 30;
@@ -82,18 +82,18 @@ CClient::CClient(asio::io_context& ctx)
 	m_cArrowIndex = -1;
 
 	// Initialize item list.
-	for (i = 0; i < DEF_MAXBANKITEMS; i++) {
+	for(int i = 0; i < DEF_MAXBANKITEMS; i++) {
 		m_pItemInBankList[i] = 0;
 	}
 
 	// Magic - Skill
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
+	for(int i = 0; i < DEF_MAXMAGICTYPE; i++)
 		m_cMagicMastery[i] = 0;
 	
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
+	for(int i = 0; i < DEF_MAXSKILLTYPE; i++)
 		m_cSkillMastery[i] = 0;
 
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
+	for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
 		m_bSkillUsingStatus[i] = false;
 		m_iSkillUsingTimeID[i] = 0;
 	}
@@ -131,13 +131,13 @@ CClient::CClient(asio::io_context& ctx)
 	m_iHitRatio = 0;
 	m_iDefenseRatio = 0;
 	
-	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++) m_iDamageAbsorption_Armor[i]  = 0;
+	for(int i = 0; i < DEF_MAXITEMEQUIPPOS; i++) m_iDamageAbsorption_Armor[i]  = 0;
 	m_iDamageAbsorption_Shield = 0;
 
 	m_iHPstock = 0;
 	m_bIsKilled = false;
 
-	for (i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
+	for(int i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
 		m_cMagicEffectStatus[i]	= 0;
 
 	m_iWhisperPlayerIndex = -1;
@@ -150,9 +150,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_bIsPoisoned    = false;
 	m_iPoisonLevel   = 0;
 
-	m_iAdminUserLevel  = 0;
 	m_iRating          = 0;
-	m_iTimeLeft_ShutUp = 0;
 	m_iTimeLeft_Rating = 0;
 	m_iTimeLeft_ForceRecall  = 0;
 	m_iTimeLeft_FirmStaminar = 0;
@@ -207,13 +205,12 @@ CClient::CClient(asio::io_context& ctx)
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID        = 0;
 
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
+	for(int i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}*/
 
 	m_iAbuseCount     = 0;
-	m_bIsBWMonitor    = false;
 	m_bIsExchangeMode = false;
 
 	//hbest
@@ -225,7 +222,7 @@ CClient::CClient(asio::io_context& ctx)
 
 	m_iExchangeH = 0;
 	std::memset(m_cExchangeName, 0, sizeof(m_cExchangeName));
-	for(i=0; i<4; i++){
+	for(int i = 0; i<4; i++){
 		m_sExchangeItemID[i] = 0;
 		m_cExchangeItemIndex[i]  = -1;
 		m_iExchangeItemAmount[i] = 0;
@@ -273,7 +270,6 @@ CClient::CClient(asio::io_context& ctx)
 	m_iRunMsgRecvCount    = 0;
 	m_iSkillMsgRecvCount  = 0;
 
-	m_bIsAdminCommandEnabled = false;
 	m_iAlterItemDropIndex = -1;
 
 	m_iAutoExpAmount = 0;
@@ -292,7 +288,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_dwCrusadeGUID = 0;
 	m_dwHeldenianGUID = 0;
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
 		m_stCrusadeStructureInfo[i].sX = 0;
@@ -309,7 +305,6 @@ CClient::CClient(asio::io_context& ctx)
 	std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
 	m_iConstructLocX = m_iConstructLocY = -1;
 
-	m_bIsAdminOrderGoto = false;
 	m_bIsInsideWarehouse = false;
 	m_bIsInsideWizardTower = false;
 	m_bIsInsideOwnTown = false;
@@ -329,25 +324,29 @@ CClient::CClient(asio::io_context& ctx)
 
 CClient::~CClient()
 {
- int i;
-	
-	if (m_pXSock != 0) delete m_pXSock;
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	if (m_pXSock != 0)
+		delete m_pXSock;
+
+	for(int i = 0; i < DEF_MAXITEMS; i++)
+	{
 		if (m_pItemList[i] != 0) {
 			delete m_pItemList[i];
 			m_pItemList[i] = 0;
 		}
-	for(i = 0; i < DEF_MAXBANKITEMS; i++)
+	}
+
+	for(int i = 0; i < DEF_MAXBANKITEMS; i++)
+	{
 		if (m_pItemInBankList[i] != 0) {
 			delete m_pItemInBankList[i];
-			m_pItemInBankList[i]=0;
+			m_pItemInBankList[i] = 0;
 		}
-
+	}
 }
 
 bool CClient::bCreateNewParty()
 {
- int i;
+ 
 
 	if (m_iPartyRank != -1) return false;
 
@@ -355,7 +354,7 @@ bool CClient::bCreateNewParty()
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID = (rand() % 999999) + GameClock::GetTimeMS();
 
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
+	for(int i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}

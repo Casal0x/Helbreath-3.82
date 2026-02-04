@@ -10,56 +10,54 @@ extern void PutLogFileList(char* cStr);
 CMap::CMap(class CGame* pGame)
 	: m_bIsSnowEnabled(false)
 {
-	int i, ix, iy;
-
-	for (i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
 		m_pTeleportLoc[i] = 0;
 
-	for (i = 0; i < DEF_MAXWAYPOINTCFG; i++) {
+	for(int i = 0; i < DEF_MAXWAYPOINTCFG; i++) {
 		m_WaypointList[i].x = -1;
 		m_WaypointList[i].y = -1;
 	}
 
-	for (i = 0; i < DEF_MAXMGAR; i++) {
+	for(int i = 0; i < DEF_MAXMGAR; i++) {
 		m_rcMobGenAvoidRect[i].y = -1;
 		m_rcMobGenAvoidRect[i].x = -1;
 	}
 
-	for (i = 0; i < DEF_MAXNMR; i++) {
+	for(int i = 0; i < DEF_MAXNMR; i++) {
 		m_rcNoAttackRect[i].y = -1;
 		m_rcNoAttackRect[i].x = -1;
 	}
 
-	for (i = 0; i < DEF_MAXSPOTMOBGENERATOR; i++) {
+	for(int i = 0; i < DEF_MAXSPOTMOBGENERATOR; i++) {
 		m_stSpotMobGenerator[i].bDefined = false;
 		m_stSpotMobGenerator[i].iTotalActiveMob = 0;
 	}
 
-	for (i = 0; i < DEF_MAXFISHPOINT; i++) {
+	for(int i = 0; i < DEF_MAXFISHPOINT; i++) {
 		m_FishPointList[i].x = -1;
 		m_FishPointList[i].y = -1;
 	}
 
-	for (i = 0; i < DEF_MAXMINERALPOINT; i++) {
+	for(int i = 0; i < DEF_MAXMINERALPOINT; i++) {
 		m_MineralPointList[i].x = -1;
 		m_MineralPointList[i].y = -1;
 	}
 
-	for (i = 0; i < DEF_MAXINITIALPOINT; i++) {
+	for(int i = 0; i < DEF_MAXINITIALPOINT; i++) {
 		m_pInitialPoint[i].x = -1;
 		m_pInitialPoint[i].y = -1;
 	}
 
-	for (i = 0; i < 1000; i++)
+	for(int i = 0; i < 1000; i++)
 		m_bNamingValueUsingStatus[i] = false;
 
-	for (i = 0; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 0; i < DEF_MAXOCCUPYFLAG; i++)
 		m_pOccupyFlag[i] = 0;
 
-	for (i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
+	for(int i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
 		m_pStrategicPointList[i] = 0;
 
-	for (i = 0; i < DEF_MAXENERGYSPHERES; i++) {
+	for(int i = 0; i < DEF_MAXENERGYSPHERES; i++) {
 		m_stEnergySphereCreationList[i].cType = 0;
 		m_stEnergySphereGoalList[i].cResult = 0;
 	}
@@ -107,8 +105,8 @@ CMap::CMap(class CGame* pGame)
 	m_bIsEnergySphereGoalEnabled = false;
 	m_iCurEnergySphereGoalPointIndex = -1;
 
-	for (ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for (iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
+		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
 			m_stSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stSectorInfo[ix][iy].iElvineActivity = 0;
@@ -124,20 +122,20 @@ CMap::CMap(class CGame* pGame)
 
 	m_iMaxNx = m_iMaxNy = m_iMaxAx = m_iMaxAy = m_iMaxEx = m_iMaxEy = m_iMaxMx = m_iMaxMy = m_iMaxPx = m_iMaxPy = 0;
 
-	for (i = 0; i < DEF_MAXHELDENIANDOOR; i++) {
+	for(int i = 0; i < DEF_MAXHELDENIANDOOR; i++) {
 		m_stHeldenianGateDoor[i].cDir = 0;
 		m_stHeldenianGateDoor[i].dX = 0;
 		m_stHeldenianGateDoor[i].dY = 0;
 	}
 
-	for (i = 0; i < DEF_MAXHELDENIANTOWER; i++) {
+	for(int i = 0; i < DEF_MAXHELDENIANTOWER; i++) {
 		m_stHeldenianTower[i].sTypeID = 0;
 		m_stHeldenianTower[i].dX = 0;
 		m_stHeldenianTower[i].dY = 0;
 		m_stHeldenianTower[i].cSide = 0;
 	}
 
-	for (i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
+	for(int i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
 		m_stStrikePoint[i].dX = 0;
 		m_stStrikePoint[i].dY = 0;
 		m_stStrikePoint[i].iHP = 0;
@@ -147,7 +145,7 @@ CMap::CMap(class CGame* pGame)
 	m_iTotalStrikePoints = 0;
 	m_bIsDisabled = false;
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
 		m_stCrusadeStructureInfo[i].sX = 0;
@@ -163,7 +161,7 @@ CMap::CMap(class CGame* pGame)
 	m_bIsRecallImpossible = false;
 	m_bIsApocalypseMap = false;
 
-	for (i = 0; i < DEF_MAXDYNAMICGATES; i++) {
+	for(int i = 0; i < DEF_MAXDYNAMICGATES; i++) {
 		m_stDynamicGateCoords[i].m_bIsGateMap = false;
 		m_stDynamicGateCoords[i].m_iDynamicGateX = 0;
 		m_stDynamicGateCoords[i].m_iDynamicGateY = 0;
@@ -174,18 +172,18 @@ CMap::CMap(class CGame* pGame)
 CMap::~CMap()
 {
 
-	int i;
+	
 
 	if (m_pTile != 0)
 		delete[]m_pTile;
 
-	for (i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
 		if (m_pTeleportLoc[i] != 0) delete m_pTeleportLoc[i];
 
-	for (i = 0; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 0; i < DEF_MAXOCCUPYFLAG; i++)
 		if (m_pOccupyFlag[i] != 0) delete m_pOccupyFlag[i];
 
-	for (i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
+	for(int i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
 		if (m_pStrategicPointList[i] != 0) delete m_pStrategicPointList[i];
 }
 
@@ -367,10 +365,10 @@ void CMap::ClearDeadOwner(short sX, short sY)
 	pTile->m_cDeadOwnerClass = 0;
 }
 
-bool CMap::bSetItem(short sX, short sY, class CItem* pItem)
+bool CMap::bSetItem(short sX, short sY, CItem* pItem)
 {
 	class CTile* pTile;
-	int i;
+	
 
 	if ((sX < 0) || (sX >= m_sSizeX) || (sY < 0) || (sY >= m_sSizeY)) return 0;
 
@@ -380,7 +378,7 @@ bool CMap::bSetItem(short sX, short sY, class CItem* pItem)
 		delete pTile->m_pItem[DEF_TILE_PER_ITEMS - 1];
 	else pTile->m_cTotalItem++;
 
-	for (i = DEF_TILE_PER_ITEMS - 2; i >= 0; i--)
+	for(int i = DEF_TILE_PER_ITEMS - 2; i >= 0; i--)
 		pTile->m_pItem[i + 1] = pTile->m_pItem[i];
 
 	pTile->m_pItem[0] = pItem;
@@ -389,11 +387,11 @@ bool CMap::bSetItem(short sX, short sY, class CItem* pItem)
 }
 
 
-class CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRemainItemColor, uint32_t* pRemainItemAttr) //v1.4 color
+CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRemainItemColor, uint32_t* pRemainItemAttr) //v1.4 color
 {
 	class CTile* pTile;
-	class CItem* pItem;
-	int i;
+	CItem* pItem;
+	
 
 	if ((sX < 0) || (sX >= m_sSizeX) || (sY < 0) || (sY >= m_sSizeY)) return 0;
 
@@ -401,7 +399,7 @@ class CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRem
 	pItem = pTile->m_pItem[0];
 	if (pTile->m_cTotalItem == 0) return 0;
 
-	for (i = 0; i <= DEF_TILE_PER_ITEMS - 2; i++)
+	for(int i = 0; i <= DEF_TILE_PER_ITEMS - 2; i++)
 		pTile->m_pItem[i] = pTile->m_pItem[i + 1];
 	pTile->m_cTotalItem--;
 	pTile->m_pItem[pTile->m_cTotalItem] = 0;
@@ -425,7 +423,7 @@ class CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRem
 int CMap::iCheckItem(short sX, short sY)
 {
 	class CTile* pTile;
-	class CItem* pItem;
+	CItem* pItem;
 
 	if ((sX < 0) || (sX >= m_sSizeX) || (sY < 0) || (sY >= m_sSizeY)) return 0;
 
@@ -445,7 +443,7 @@ bool CMap::bIsValidLoc(short sX, short sY)
 
 bool CMap::bInit(char* pName)
 {
-	int i;
+	
 	std::memset(m_cName, 0, sizeof(m_cName));
 	strcpy(m_cName, pName);
 
@@ -454,7 +452,7 @@ bool CMap::bInit(char* pName)
 	if (_bDecodeMapDataFileContents() == false)
 		return false;
 
-	for (i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
 		m_pTeleportLoc[i] = 0;
 
 	return true;
@@ -465,7 +463,6 @@ bool CMap::_bDecodeMapDataFileContents()
 	HANDLE hFile;
 	char  cMapFileName[256], cHeader[260], cTemp[100];
 	DWORD dwFileSize, nRead;
-	int i, ix, iy;
 	char* token, * context, cReadMode;
 	char seps[] = "= \t\r\n";
 	class CTile* pTile;
@@ -484,7 +481,7 @@ bool CMap::_bDecodeMapDataFileContents()
 	ReadFile(hFile, (char*)cHeader, 256, &nRead, 0);
 
 
-	for (i = 0; i < 256; i++)
+	for(int i = 0; i < 256; i++)
 		if (cHeader[i] == 0) cHeader[i] = ' ';
 
 	cReadMode = 0;
@@ -519,8 +516,8 @@ bool CMap::_bDecodeMapDataFileContents()
 
 	m_pTile = (class CTile*)new class CTile[m_sSizeX * m_sSizeY];
 
-	for (iy = 0; iy < m_sSizeY; iy++)
-		for (ix = 0; ix < m_sSizeX; ix++) {
+	for(int iy = 0; iy < m_sSizeY; iy++)
+		for(int ix = 0; ix < m_sSizeX; ix++) {
 			ReadFile(hFile, (char*)cTemp, m_sTileDataSize, &nRead, 0);
 			pTile = (class CTile*)(m_pTile + ix + iy * m_sSizeX);
 			if ((cTemp[8] & 0x80) != 0) {
@@ -555,9 +552,9 @@ bool CMap::_bDecodeMapDataFileContents()
 
 bool CMap::bSearchTeleportDest(int sX, int sY, char* pMapName, int* pDx, int* pDy, char* pDir)
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
 		if ((m_pTeleportLoc[i] != 0) && (m_pTeleportLoc[i]->m_sSrcX == sX) && (m_pTeleportLoc[i]->m_sSrcY == sY)) {
 			memcpy(pMapName, m_pTeleportLoc[i]->m_cDestMapName, 10);
 			*pDx = m_pTeleportLoc[i]->m_sDestX;
@@ -601,9 +598,9 @@ bool CMap::bGetDynamicObject(short sX, short sY, short* pType, uint32_t* pRegist
 
 int CMap::iGetEmptyNamingValue()
 {
-	int i;
+	
 
-	for (i = 0; i < 1000; i++)
+	for(int i = 0; i < 1000; i++)
 		if (m_bNamingValueUsingStatus[i] == false) {
 
 			m_bNamingValueUsingStatus[i] = true;
@@ -695,11 +692,11 @@ void CMap::SetTempMoveAllowedFlag(int dX, int dY, bool bFlag)
 
 int CMap::iRegisterOccupyFlag(int dX, int dY, int iSide, int iEKNum, int iDOI)
 {
-	int i;
+	
 
 	if ((dX < 20) || (dX >= m_sSizeX - 20) || (dY < 20) || (dY >= m_sSizeY - 20)) return -1;
 
-	for (i = 1; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 1; i < DEF_MAXOCCUPYFLAG; i++)
 		if (m_pOccupyFlag[i] == 0) {
 			m_pOccupyFlag[i] = new class COccupyFlag(dX, dY, iSide, iEKNum, iDOI);
 			if (m_pOccupyFlag == 0) return -1;
@@ -713,10 +710,8 @@ int CMap::iRegisterOccupyFlag(int dX, int dY, int iSide, int iEKNum, int iDOI)
 
 void CMap::ClearSectorInfo()
 {
-	int ix, iy;
-
-	for (ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for (iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
+		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
 			m_stSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stSectorInfo[ix][iy].iElvineActivity = 0;
@@ -727,10 +722,8 @@ void CMap::ClearSectorInfo()
 
 void CMap::ClearTempSectorInfo()
 {
-	int ix, iy;
-
-	for (ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for (iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
+		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
 			m_stTempSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stTempSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stTempSectorInfo[ix][iy].iElvineActivity = 0;
@@ -741,20 +734,19 @@ void CMap::ClearTempSectorInfo()
 
 void CMap::_SetupNoAttackArea()
 {
-	int i, ix, iy;
 	class CTile* pTile;
 
-	for (i = 0; i < DEF_MAXNMR; i++) {
+	for(int i = 0; i < DEF_MAXNMR; i++) {
 		if ((m_rcNoAttackRect[i].y > 0)) {
-			for (ix = m_rcNoAttackRect[i].Left(); ix <= m_rcNoAttackRect[i].Right(); ix++)
-				for (iy = m_rcNoAttackRect[i].Top(); iy <= m_rcNoAttackRect[i].Bottom(); iy++) {
+			for(int ix = m_rcNoAttackRect[i].Left(); ix <= m_rcNoAttackRect[i].Right(); ix++)
+				for(int iy = m_rcNoAttackRect[i].Top(); iy <= m_rcNoAttackRect[i].Bottom(); iy++) {
 					pTile = (class CTile*)(m_pTile + ix + iy * m_sSizeX);
 					pTile->m_iAttribute = pTile->m_iAttribute | 0x00000004;
 				}
 		}
 		else if (m_rcNoAttackRect[i].y == -10) {
-			for (ix = 0; ix < m_sSizeX; ix++)
-				for (iy = 0; iy < m_sSizeY; iy++) {
+			for(int ix = 0; ix < m_sSizeX; ix++)
+				for(int iy = 0; iy < m_sSizeY; iy++) {
 					pTile = (class CTile*)(m_pTile + ix + iy * m_sSizeX);
 					pTile->m_iAttribute = pTile->m_iAttribute | 0x00000004;
 				}
@@ -780,9 +772,9 @@ int CMap::iGetAttribute(int dX, int dY, int iBitMask)
 
 bool CMap::bAddCrusadeStructureInfo(char cType, short sX, short sY, char cSide)
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
 		if (m_stCrusadeStructureInfo[i].cType == 0) {
 			m_stCrusadeStructureInfo[i].cType = cType;
 			m_stCrusadeStructureInfo[i].cSide = cSide;
@@ -798,9 +790,9 @@ bool CMap::bAddCrusadeStructureInfo(char cType, short sX, short sY, char cSide)
 
 /*bool CMap::bAddHeldenianTowerInfo(char cType, short sX, short sY, char cSide)
 {
- int i;
+ 
 
-	for (i = 0; i < DEF_MAXHELDENIANTOWER; i++)
+	for(int i = 0; i < DEF_MAXHELDENIANTOWER; i++)
 	if (m_stHeldenianTower[i].cType == 0) {
 	if (m_stHeldenianTower[i].cSide == 1) {
 		m_stHeldenianTower[i].sTypeID = sTypeID;
@@ -824,9 +816,9 @@ bool CMap::bAddCrusadeStructureInfo(char cType, short sX, short sY, char cSide)
 
 bool CMap::bRemoveCrusadeStructureInfo(short sX, short sY)
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
 		if ((m_stCrusadeStructureInfo[i].sX == sX) && (m_stCrusadeStructureInfo[i].sY == sY)) {
 			m_stCrusadeStructureInfo[i].cType = 0;
 			m_stCrusadeStructureInfo[i].cSide = 0;
@@ -839,7 +831,7 @@ bool CMap::bRemoveCrusadeStructureInfo(short sX, short sY)
 
 RCSI_REARRANGE:;
 
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES - 1; i++)
+	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES - 1; i++)
 		if ((m_stCrusadeStructureInfo[i].cType == 0) && (m_stCrusadeStructureInfo[i + 1].cType != 0)) {
 			m_stCrusadeStructureInfo[i].cType = m_stCrusadeStructureInfo[i + 1].cType;
 			m_stCrusadeStructureInfo[i].cSide = m_stCrusadeStructureInfo[i + 1].cSide;
@@ -860,9 +852,9 @@ RCSI_REARRANGE:;
 
 void CMap::RestoreStrikePoints()
 {
-	int i;
+	
 
-	for (i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
+	for(int i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
 		m_stStrikePoint[i].iInitHP = m_stStrikePoint[i].iHP;
 	}
 }

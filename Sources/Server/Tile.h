@@ -21,7 +21,7 @@ public:
 	char  m_cDeadOwnerClass;	// DEF_OT_PLAYER / DEF_OT_NPC
 	short m_sDeadOwner;
 
-	class CItem * m_pItem[DEF_TILE_PER_ITEMS];
+	CItem * m_pItem[DEF_TILE_PER_ITEMS];
 	char  m_cTotalItem;
 
 	uint16_t  m_wDynamicObjectID;

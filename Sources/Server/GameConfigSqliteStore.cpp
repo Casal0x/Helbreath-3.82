@@ -236,10 +236,6 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         "CREATE TABLE IF NOT EXISTS banned_list ("
         " ip_address TEXT PRIMARY KEY"
         ");"
-        "CREATE TABLE IF NOT EXISTS admin_level_permissions ("
-        " key TEXT PRIMARY KEY,"
-        " value INTEGER NOT NULL"
-        ");"
         "CREATE TABLE IF NOT EXISTS npc_configs ("
         " npc_id INTEGER PRIMARY KEY,"
         " name TEXT NOT NULL,"
@@ -489,7 +485,7 @@ bool SaveItemConfigs(sqlite3* db, CItem* const* itemList, int maxItems)
         return false;
     }
 
-    for (int i = 0; i < maxItems; i++) {
+    for(int i = 0; i < maxItems; i++) {
         if (itemList[i] == nullptr) {
             continue;
         }
@@ -666,7 +662,7 @@ bool SaveRealmConfig(sqlite3* db, const CGame* game)
     }
 
     int mapIndex = 0;
-    for (int i = 0; i < DEF_MAXMAPS; i++) {
+    for(int i = 0; i < DEF_MAXMAPS; i++) {
         if (game->m_pMapList[i] == nullptr) {
             continue;
         }
@@ -1003,7 +999,7 @@ bool SaveBannedListConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBANNED; i++) {
+    for(int i = 0; i < DEF_MAXBANNED; i++) {
         if (game->m_stBannedList[i].m_cBannedIPaddress[0] == 0) {
             continue;
         }
@@ -1031,7 +1027,7 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBANNED; i++) {
+    for(int i = 0; i < DEF_MAXBANNED; i++) {
         std::memset(game->m_stBannedList[i].m_cBannedIPaddress, 0, sizeof(game->m_stBannedList[i].m_cBannedIPaddress));
     }
 
@@ -1050,24 +1046,6 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
     }
 
     sqlite3_finalize(stmt);
-    return true;
-}
-
-bool SaveAdminSettingsConfig(sqlite3* db, const CGame* game)
-{
-    // Admin level permissions - stub for future implementation
-    // Table renamed from admin_settings to admin_level_permissions
-    (void)db;
-    (void)game;
-    return true;
-}
-
-bool LoadAdminSettingsConfig(sqlite3* db, CGame* game)
-{
-    // Admin level permissions - stub for future implementation
-    // Table renamed from admin_settings to admin_level_permissions
-    (void)db;
-    (void)game;
     return true;
 }
 
@@ -1101,7 +1079,7 @@ bool SaveNpcConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXNPCTYPES; i++) {
+    for(int i = 0; i < DEF_MAXNPCTYPES; i++) {
         if (game->m_pNpcConfigList[i] == nullptr) {
             continue;
         }
@@ -1162,7 +1140,7 @@ bool LoadNpcConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXNPCTYPES; i++) {
+    for(int i = 0; i < DEF_MAXNPCTYPES; i++) {
         delete game->m_pNpcConfigList[i];
         game->m_pNpcConfigList[i] = nullptr;
     }
@@ -1384,7 +1362,7 @@ bool SaveMagicConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
         if (game->m_pMagicConfigList[i] == nullptr) {
             continue;
         }
@@ -1437,7 +1415,7 @@ bool LoadMagicConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
         delete game->m_pMagicConfigList[i];
         game->m_pMagicConfigList[i] = nullptr;
     }
@@ -1516,7 +1494,7 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
         if (game->m_pSkillConfigList[i] == nullptr) {
             continue;
         }
@@ -1559,7 +1537,7 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
         delete game->m_pSkillConfigList[i];
         game->m_pSkillConfigList[i] = nullptr;
     }
@@ -1630,7 +1608,7 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXQUESTTYPE; i++) {
+    for(int i = 0; i < DEF_MAXQUESTTYPE; i++) {
         if (game->m_pQuestConfigList[i] == nullptr) {
             continue;
         }
@@ -1689,7 +1667,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXQUESTTYPE; i++) {
+    for(int i = 0; i < DEF_MAXQUESTTYPE; i++) {
         delete game->m_pQuestConfigList[i];
         game->m_pQuestConfigList[i] = nullptr;
     }
@@ -1785,7 +1763,7 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
+    for(int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
         if (game->m_pPortionConfigList[i] != nullptr) {
             const CPortion* potion = game->m_pPortionConfigList[i];
             sqlite3_reset(potionStmt);
@@ -1794,7 +1772,7 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
             bool ok = true;
             ok &= (sqlite3_bind_int(potionStmt, col++, i) == SQLITE_OK);
             ok &= PrepareAndBindText(potionStmt, col++, potion->m_cName);
-            for (int a = 0; a < 12; a++) {
+            for(int a = 0; a < 12; a++) {
                 ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_sArray[a]) == SQLITE_OK);
             }
             ok &= (sqlite3_bind_int(potionStmt, col++, potion->m_iSkillLimit) == SQLITE_OK);
@@ -1815,7 +1793,7 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
             bool ok = true;
             ok &= (sqlite3_bind_int(craftingStmt, col++, i) == SQLITE_OK);
             ok &= PrepareAndBindText(craftingStmt, col++, crafting->m_cName);
-            for (int a = 0; a < 12; a++) {
+            for(int a = 0; a < 12; a++) {
                 ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_sArray[a]) == SQLITE_OK);
             }
             ok &= (sqlite3_bind_int(craftingStmt, col++, crafting->m_iSkillLimit) == SQLITE_OK);
@@ -1844,7 +1822,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
+    for(int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
         delete game->m_pPortionConfigList[i];
         game->m_pPortionConfigList[i] = nullptr;
         delete game->m_pCraftingConfigList[i];
@@ -1873,7 +1851,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         }
         CPortion* potion = new CPortion();
         CopyColumnText(stmt, col++, potion->m_cName, sizeof(potion->m_cName));
-        for (int a = 0; a < 12; a++) {
+        for(int a = 0; a < 12; a++) {
             potion->m_sArray[a] = (short)sqlite3_column_int(stmt, col++);
         }
         potion->m_iSkillLimit = sqlite3_column_int(stmt, col++);
@@ -1894,7 +1872,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         }
         CPortion* crafting = new CPortion();
         CopyColumnText(stmt, col++, crafting->m_cName, sizeof(crafting->m_cName));
-        for (int a = 0; a < 12; a++) {
+        for(int a = 0; a < 12; a++) {
             crafting->m_sArray[a] = (short)sqlite3_column_int(stmt, col++);
         }
         crafting->m_iSkillLimit = sqlite3_column_int(stmt, col++);
@@ -1935,7 +1913,7 @@ bool SaveBuildItemConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBUILDITEMS; i++) {
+    for(int i = 0; i < DEF_MAXBUILDITEMS; i++) {
         if (game->m_pBuildItemList[i] == nullptr) {
             continue;
         }
@@ -1948,7 +1926,7 @@ bool SaveBuildItemConfigs(sqlite3* db, const CGame* game)
         ok &= (sqlite3_bind_int(stmt, col++, i) == SQLITE_OK);
         ok &= PrepareAndBindText(stmt, col++, build->m_cName);
         ok &= (sqlite3_bind_int(stmt, col++, build->m_iSkillLimit) == SQLITE_OK);
-        for (int a = 0; a < 6; a++) {
+        for(int a = 0; a < 6; a++) {
             ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemID[a]) == SQLITE_OK);
             ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemCount[a]) == SQLITE_OK);
             ok &= (sqlite3_bind_int(stmt, col++, build->m_iMaterialItemValue[a]) == SQLITE_OK);
@@ -1979,7 +1957,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXBUILDITEMS; i++) {
+    for(int i = 0; i < DEF_MAXBUILDITEMS; i++) {
         delete game->m_pBuildItemList[i];
         game->m_pBuildItemList[i] = nullptr;
     }
@@ -2006,7 +1984,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         CBuildItem* build = new CBuildItem();
         CopyColumnText(stmt, col++, build->m_cName, sizeof(build->m_cName));
         build->m_iSkillLimit = sqlite3_column_int(stmt, col++);
-        for (int a = 0; a < 6; a++) {
+        for(int a = 0; a < 6; a++) {
             build->m_iMaterialItemID[a] = sqlite3_column_int(stmt, col++);
             build->m_iMaterialItemCount[a] = sqlite3_column_int(stmt, col++);
             build->m_iMaterialItemValue[a] = sqlite3_column_int(stmt, col++);
@@ -2035,7 +2013,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         }
 
         build->m_iMaxValue = 0;
-        for (int a = 0; a < 6; a++) {
+        for(int a = 0; a < 6; a++) {
             build->m_iMaxValue += (build->m_iMaterialItemValue[a] * 100);
         }
 
@@ -2072,7 +2050,7 @@ bool SaveCrusadeConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+    for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
         const auto& entry = game->m_stCrusadeStructures[i];
         if (entry.cType == 0 || entry.cMapName[0] == 0) {
             continue;
@@ -2106,7 +2084,7 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+    for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
         std::memset(game->m_stCrusadeStructures[i].cMapName, 0, sizeof(game->m_stCrusadeStructures[i].cMapName));
         game->m_stCrusadeStructures[i].cType = 0;
         game->m_stCrusadeStructures[i].dX = 0;
@@ -2165,7 +2143,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     bool success = true;
 
     // Save crusade schedules
-    for (int i = 0; i < DEF_MAXSCHEDULE && success; i++) {
+    for(int i = 0; i < DEF_MAXSCHEDULE && success; i++) {
         if (game->m_stCrusadeWarSchedule[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2183,7 +2161,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save apocalypse schedules (start and end times in one row)
-    for (int i = 0; i < DEF_MAXAPOCALYPSE && success; i++) {
+    for(int i = 0; i < DEF_MAXAPOCALYPSE && success; i++) {
         if (game->m_stApocalypseScheduleStart[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2207,7 +2185,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save heldenian schedules (these have end times)
-    for (int i = 0; i < DEF_MAXHELDENIAN && success; i++) {
+    for(int i = 0; i < DEF_MAXHELDENIAN && success; i++) {
         if (game->m_stHeldenianSchedule[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2245,12 +2223,12 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
     }
 
     // Initialize all schedules to -1
-    for (int i = 0; i < DEF_MAXSCHEDULE; i++) {
+    for(int i = 0; i < DEF_MAXSCHEDULE; i++) {
         game->m_stCrusadeWarSchedule[i].iDay = -1;
         game->m_stCrusadeWarSchedule[i].iHour = -1;
         game->m_stCrusadeWarSchedule[i].iMinute = -1;
     }
-    for (int i = 0; i < DEF_MAXAPOCALYPSE; i++) {
+    for(int i = 0; i < DEF_MAXAPOCALYPSE; i++) {
         game->m_stApocalypseScheduleStart[i].iDay = -1;
         game->m_stApocalypseScheduleStart[i].iHour = -1;
         game->m_stApocalypseScheduleStart[i].iMinute = -1;
@@ -2258,7 +2236,7 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         game->m_stApocalypseScheduleEnd[i].iHour = -1;
         game->m_stApocalypseScheduleEnd[i].iMinute = -1;
     }
-    for (int i = 0; i < DEF_MAXHELDENIAN; i++) {
+    for(int i = 0; i < DEF_MAXHELDENIAN; i++) {
         game->m_stHeldenianSchedule[i].iDay = -1;
         game->m_stHeldenianSchedule[i].StartiHour = -1;
         game->m_stHeldenianSchedule[i].StartiMinute = -1;
