@@ -328,6 +328,9 @@
     <ClInclude Include="GameCmdWhisper.h" />
     <ClInclude Include="GameCmdBlock.h" />
     <ClInclude Include="GameCmdUnblock.h" />
+    <ClInclude Include="GameCmdGM.h" />
+    <ClInclude Include="CmdSetAdmin.h" />
+    <ClInclude Include="CmdSetCmdLevel.h" />
     <ClInclude Include="PasswordHash.h" />
   </ItemGroup>
   <ItemGroup>
@@ -361,6 +364,9 @@
     <ClCompile Include="GameCmdWhisper.cpp" />
     <ClCompile Include="GameCmdBlock.cpp" />
     <ClCompile Include="GameCmdUnblock.cpp" />
+    <ClCompile Include="GameCmdGM.cpp" />
+    <ClCompile Include="CmdSetAdmin.cpp" />
+    <ClCompile Include="CmdSetCmdLevel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />

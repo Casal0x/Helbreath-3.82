@@ -388,6 +388,11 @@ public:
 	uint32_t m_dwLastConfigRequestTime = 0;
 	uint32_t m_dwLastDamageTakenTime = 0;
 
+	// Admin / GM
+	bool m_bIsGMMode = false;
+	int m_iAdminIndex = -1;
+	int m_iAdminLevel = 0;
+
 	// Block list
 	struct CaseInsensitiveLess {
 		bool operator()(const std::string& a, const std::string& b) const {

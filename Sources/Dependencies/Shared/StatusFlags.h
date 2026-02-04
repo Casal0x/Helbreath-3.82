@@ -25,6 +25,7 @@ constexpr int AngelMAG            = 0x00008000;
 constexpr int SlateExp            = 0x00010000;
 constexpr int Hero                = 0x00020000;
 constexpr int Haste               = 0x00040000;
+constexpr int GMMode              = 0x00080000;
 
 constexpr int InhibitionCasting   = 0x00100000;
 constexpr int IllusionMovement    = 0x00200000;

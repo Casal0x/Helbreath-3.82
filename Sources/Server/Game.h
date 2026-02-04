@@ -15,6 +15,8 @@
 #include <memory.h>
 #include <vector>
 #include <map>
+#include <unordered_map>
+#include <string>
 
 #include "winmain.h"
 #include "ASIOSocket.h"
@@ -54,6 +56,7 @@
 #define DEF_MAXBUILDITEMS			300
 #define DEF_SERVERSOCKETBLOCKLIMIT	300
 #define DEF_MAXBANNED				500
+#define DEF_MAXADMINS				50
 #define DEF_MAXNPCITEMS				1000
 #define DEF_MAXCLIENTS				2000
 #define DEF_MAXCLIENTLOGINSOCK		2000
@@ -291,8 +294,19 @@ struct LoginClient
 	char _ip[21];
 };
 
+struct AdminEntry {
+	char m_cAccountName[11];
+	char m_cCharName[11];
+	char m_cApprovedIP[21];
+	int m_iAdminLevel = 1;
+};
 
-class CGame  
+struct CommandPermission {
+	int iAdminLevel = 1000;
+	std::string sDescription;
+};
+
+class CGame
 {
 public:
 
@@ -892,6 +906,16 @@ public:
 	struct {
 		char m_cBannedIPaddress[21];
 	} m_stBannedList[DEF_MAXBANNED];
+
+	AdminEntry m_stAdminList[DEF_MAXADMINS];
+	int m_iAdminCount = 0;
+
+	int FindAdminByAccount(const char* accountName);
+	int FindAdminByCharName(const char* charName);
+	bool IsClientAdmin(int iClientH);
+
+	std::unordered_map<std::string, CommandPermission> m_commandPermissions;
+	int GetCommandRequiredLevel(const char* cmdName) const;
 
 	// Crusade Scheduler
 	struct {

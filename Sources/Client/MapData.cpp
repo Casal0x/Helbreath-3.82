@@ -2078,7 +2078,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6: // glowing armor/weapon
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 								}
@@ -2136,7 +2136,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if ((m_pData[dX][dY].m_cOwnerFrame == 1) || (m_pData[dX][dY].m_cOwnerFrame == 5))
 							{
 								m_pGame->PlaySound('C', 8, sDist, lPan);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									cTotalFrame = 8;
 									cFrameMoveDots = 32 / cTotalFrame;
@@ -2426,7 +2426,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								else m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -2468,7 +2468,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 7: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								case 8: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); dy = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_cOwnerFrame); break;
 								}
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + dx + (rand() % 20 - 10), (m_sPivotY + dY) * 32 + dy - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -2600,7 +2600,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									}
 								}
 								// Weapon Glare = m_sAppr4 & 0x000F
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -3483,7 +3483,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if (m_pData[dX][dY].m_cOwnerFrame == 1)
 							{
 								if (true) m_pGame->PlaySound('C', 16, sDist, lPan);
-								if (((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
+								if ((((m_pData[dX][dY].m_sAppr4 & 0x000F) != 0) || (m_pData[dX][dY].m_iStatus & hb::status::GMMode)) && ((m_pData[dX][dY].m_iStatus & hb::status::Invisibility) == 0))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);

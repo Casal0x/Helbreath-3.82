@@ -4040,6 +4040,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		}
 	}
 
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -4606,6 +4611,11 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 	}
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(sX + dx - 13, sY + dy - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
 
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
@@ -6011,6 +6021,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 			break;
 		}
 	}
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -7451,6 +7467,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 			break;
 		}
 	}
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -7921,6 +7943,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 	}
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -8817,6 +8845,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 			break;
 		}
 	}
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -10339,6 +10373,12 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 	}
 	m_entityState.m_iMoveOffsetX = dx;
 	m_entityState.m_iMoveOffsetY = dy;
+
+	if ((m_entityState.m_iStatus & hb::status::GMMode) && m_entityState.m_sOwnerType >= 1 && m_entityState.m_sOwnerType <= 6)
+	{
+		m_pEffectSpr[45]->Draw(fix_x - 13, fix_y - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+	}
+
 	return m_pSprite[iBodyIndex + (m_entityState.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -15619,6 +15659,7 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_sPlayerAppr4 = pkt->appr4;
 			m_pPlayer->m_iPlayerApprColor = pkt->appr_color;
 			m_pPlayer->m_iPlayerStatus = pkt->status;
+			m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
 		}
 		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
@@ -17366,6 +17407,9 @@ void CGame::InitDataResponseHandler(char* pData)
 	{
 		m_bIllusionMVT = false;
 	}
+
+	// GM mode detection
+	m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
 	std::memset(m_cMapName, 0, sizeof(m_cMapName));
 	std::memset(m_cMapMessage, 0, sizeof(m_cMapMessage));
 	memcpy(m_cMapName, pkt->map_name, sizeof(pkt->map_name));
@@ -17647,6 +17691,7 @@ void CGame::MotionEventHandler(char* pData)
 		m_pPlayer->m_sPlayerAppr4 = sAppr4;
 		m_pPlayer->m_iPlayerApprColor = iApprColor;
 		m_pPlayer->m_iPlayerStatus = iStatus;
+		m_pPlayer->m_bIsGMMode = (m_pPlayer->m_iPlayerStatus & hb::status::GMMode) != 0;
 		if ((sPrevAppr2 & 0xF000) == 0)
 		{
 			if ((sAppr2 & 0xF000) != 0)

@@ -3,7 +3,11 @@
 #include "GameCmdWhisper.h"
 #include "GameCmdBlock.h"
 #include "GameCmdUnblock.h"
+#include "GameCmdGM.h"
 #include "Game.h"
+#include "Client.h"
+#include "AdminLevel.h"
+#include "GameConfigSqliteStore.h"
 #include "winmain.h"
 #include <cstring>
 #include <cstdio>
@@ -21,6 +25,7 @@ void GameChatCommandManager::Initialize(CGame* pGame)
 
 	m_pGame = pGame;
 	RegisterBuiltInCommands();
+	SeedCommandPermissions();
 	m_bInitialized = true;
 }
 
@@ -52,6 +57,17 @@ bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, 
 				const char* pArgs = pCommand + cmdLen;
 				while (*pArgs == ' ' || *pArgs == '\t')
 					pArgs++;
+
+				// Permission check: DB is sole authority, default to Administrator if not configured
+				int iRequiredLevel = m_pGame->GetCommandRequiredLevel(cmd->GetName());
+
+				// Level 0 = no restriction (player commands like /to, /block)
+				if (iRequiredLevel > 0)
+				{
+					int iPlayerLevel = m_pGame->m_pClientList[iClientH]->m_iAdminLevel;
+					if (iPlayerLevel < iRequiredLevel)
+						return false;
+				}
 
 				LogCommand(iClientH, pMessage);
 				return cmd->Execute(m_pGame, iClientH, pArgs);
@@ -87,4 +103,39 @@ void GameChatCommandManager::RegisterBuiltInCommands()
 	RegisterCommand(std::make_unique<GameCmdWhisper>());
 	RegisterCommand(std::make_unique<GameCmdBlock>());
 	RegisterCommand(std::make_unique<GameCmdUnblock>());
+	RegisterCommand(std::make_unique<GameCmdGM>());
+}
+
+void GameChatCommandManager::SeedCommandPermissions()
+{
+	if (m_pGame == nullptr)
+		return;
+
+	bool bChanged = false;
+	for (const auto& cmd : m_commands)
+	{
+		const char* name = cmd->GetName();
+		if (m_pGame->m_commandPermissions.find(name) == m_pGame->m_commandPermissions.end())
+		{
+			CommandPermission perm;
+			perm.iAdminLevel = hb::admin::Administrator;
+			m_pGame->m_commandPermissions[name] = perm;
+			bChanged = true;
+
+			char buf[128];
+			std::snprintf(buf, sizeof(buf), "(!) New command '/%s' added to permissions (default: Administrator level %d)", name, hb::admin::Administrator);
+			PutLogList(buf);
+		}
+	}
+
+	if (bChanged)
+	{
+		sqlite3* configDb = nullptr;
+		std::string dbPath;
+		if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
+		{
+			SaveCommandPermissions(configDb, m_pGame);
+			CloseGameConfigDatabase(configDb);
+		}
+	}
 }

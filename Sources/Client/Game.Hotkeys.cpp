@@ -32,9 +32,9 @@ void CGame::RegisterHotkeys()
 	hotkeys.Register({ 'T', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_WhisperTarget(); });
 
-	// Alt+Tilde: Toggle developer console (works on all screens)
+	// Alt+Tilde: Toggle developer console (GM mode only)
 	hotkeys.Register({ static_cast<int>(KeyCode::Grave), false, false, true }, HotkeyManager::Trigger::KeyUp,
-		[]() {
+		[this]() {
 			DevConsole& console = DevConsole::Get();
 			if (console.IsVisible())
 			{
@@ -43,6 +43,8 @@ void CGame::RegisterHotkeys()
 			}
 			else
 			{
+				if (m_pPlayer == nullptr || !m_pPlayer->m_bIsGMMode)
+					return;
 				console.Show();
 				GameModeManager::set_overlay<Overlay_DevConsole>();
 			}

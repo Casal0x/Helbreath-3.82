@@ -32,6 +32,7 @@ private:
 	GameChatCommandManager& operator=(const GameChatCommandManager&) = delete;
 
 	void RegisterBuiltInCommands();
+	void SeedCommandPermissions();
 	void LogCommand(int iClientH, const char* pCommand);
 
 	CGame* m_pGame = nullptr;

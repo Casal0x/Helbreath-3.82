@@ -143,7 +143,7 @@ void GameWindowHandler::OnKeyUp(int keyCode)
     if (Input::Get())
         Input::Get()->OnKeyUp(keyCode);
 
-    // Alt+Tilde: Toggle developer console (checked before anything else)
+    // Alt+Tilde: Toggle developer console (GM mode only)
     if (keyCode == static_cast<int>(KeyCode::Grave) && Input::IsAltDown())
     {
         DevConsole& console = DevConsole::Get();
@@ -154,8 +154,11 @@ void GameWindowHandler::OnKeyUp(int keyCode)
         }
         else
         {
-            console.Show();
-            GameModeManager::set_overlay<Overlay_DevConsole>();
+            if (m_pGame != nullptr && m_pGame->m_pPlayer != nullptr && m_pGame->m_pPlayer->m_bIsGMMode)
+            {
+                console.Show();
+                GameModeManager::set_overlay<Overlay_DevConsole>();
+            }
         }
         return;
     }

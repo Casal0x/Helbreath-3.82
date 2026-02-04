@@ -5,6 +5,8 @@
 #include "CmdBroadcast.h"
 #include "CmdGiveItem.h"
 #include "CmdReload.h"
+#include "CmdSetAdmin.h"
+#include "CmdSetCmdLevel.h"
 #include "Game.h"
 #include "winmain.h"
 #include <cstring>
@@ -79,4 +81,6 @@ void ServerCommandManager::RegisterBuiltInCommands()
 	RegisterCommand(std::make_unique<CmdBroadcast>());
 	RegisterCommand(std::make_unique<CmdGiveItem>());
 	RegisterCommand(std::make_unique<CmdReload>());
+	RegisterCommand(std::make_unique<CmdSetAdmin>());
+	RegisterCommand(std::make_unique<CmdSetCmdLevel>());
 }

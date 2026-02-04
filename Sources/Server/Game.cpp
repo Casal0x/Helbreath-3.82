@@ -2,6 +2,7 @@
 
 #include "CommonTypes.h"
 #include "Game.h"
+#include "AdminLevel.h"
 #ifdef _WIN32
 #include <direct.h>
 #endif
@@ -946,6 +947,22 @@ bool CGame::bInit()
 		return false;
 	}
 
+	if (!LoadAdminConfig(configDb, this)) {
+		PutLogList("(!) Warning: Could not load admin config from GameConfigs.db. Admin list empty.");
+	}
+	else {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Loaded %d admin(s) from GameConfigs.db.", m_iAdminCount);
+		PutLogList(G_cTxt);
+	}
+
+	if (!LoadCommandPermissions(configDb, this)) {
+		PutLogList("(!) Warning: Could not load command permissions from GameConfigs.db.");
+	}
+	else if (!m_commandPermissions.empty()) {
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Loaded %d command permission override(s) from GameConfigs.db.", (int)m_commandPermissions.size());
+		PutLogList(G_cTxt);
+	}
+
 	srand((unsigned)time(0));
 
 	_lsock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
@@ -1627,6 +1644,46 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 	memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, 10);
 
 	m_pClientList[iClientH]->m_bIsObserverMode = bIsObserverMode;
+
+	// Admin validation
+	m_pClientList[iClientH]->m_iAdminIndex = -1;
+	m_pClientList[iClientH]->m_iAdminLevel = 0;
+	m_pClientList[iClientH]->m_bIsGMMode = false;
+	int iAdminIdx = FindAdminByAccount(cAccountName);
+	if (iAdminIdx != -1 && _stricmp(m_stAdminList[iAdminIdx].m_cCharName, cCharName) == 0)
+	{
+		if (strcmp(m_stAdminList[iAdminIdx].m_cApprovedIP, "0.0.0.0") == 0)
+		{
+			strncpy(m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress, 20);
+			m_stAdminList[iAdminIdx].m_cApprovedIP[20] = '\0';
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Admin IP auto-set for account %s to %s", cAccountName, m_pClientList[iClientH]->m_cIPaddress);
+			PutLogList(G_cTxt);
+
+			sqlite3* configDb = nullptr;
+			std::string dbPath;
+			if (EnsureGameConfigDatabase(&configDb, dbPath, nullptr))
+			{
+				SaveAdminConfig(configDb, this);
+				CloseGameConfigDatabase(configDb);
+			}
+
+			m_pClientList[iClientH]->m_iAdminIndex = iAdminIdx;
+			m_pClientList[iClientH]->m_iAdminLevel = m_stAdminList[iAdminIdx].m_iAdminLevel;
+		}
+		else if (strcmp(m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress) == 0)
+		{
+			m_pClientList[iClientH]->m_iAdminIndex = iAdminIdx;
+			m_pClientList[iClientH]->m_iAdminLevel = m_stAdminList[iAdminIdx].m_iAdminLevel;
+		}
+		else
+		{
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!!!) SECURITY: Admin IP mismatch for account %s (expected %s, got %s)",
+				cAccountName, m_stAdminList[iAdminIdx].m_cApprovedIP, m_pClientList[iClientH]->m_cIPaddress);
+			PutLogList(G_cTxt);
+			DeleteClient(iClientH, false, false, false);
+			return;
+		}
+	}
 
 	InitPlayerData(iClientH, 0, 0); //bSendMsgToLS(MSGID_REQUEST_PLAYERDATA, iClientH);
 }
@@ -28290,6 +28347,42 @@ void CGame::SetIllusionFlag(short sOwnerH, char cOwnerType, bool bStatus)
 **  last updated		:: November 20, 2004; 9:37 PM; Hypnotoad													**
 **	return value		:: void																						**
 *********************************************************************************************************************/
+int CGame::FindAdminByAccount(const char* accountName)
+{
+	if (accountName == nullptr) return -1;
+	for (int i = 0; i < m_iAdminCount; i++) {
+		if (_stricmp(m_stAdminList[i].m_cAccountName, accountName) == 0)
+			return i;
+	}
+	return -1;
+}
+
+int CGame::FindAdminByCharName(const char* charName)
+{
+	if (charName == nullptr) return -1;
+	for (int i = 0; i < m_iAdminCount; i++) {
+		if (_stricmp(m_stAdminList[i].m_cCharName, charName) == 0)
+			return i;
+	}
+	return -1;
+}
+
+bool CGame::IsClientAdmin(int iClientH)
+{
+	if (iClientH <= 0 || iClientH >= DEF_MAXCLIENTS) return false;
+	if (m_pClientList[iClientH] == nullptr) return false;
+	return m_pClientList[iClientH]->m_iAdminIndex != -1;
+}
+
+int CGame::GetCommandRequiredLevel(const char* cmdName) const
+{
+	if (cmdName == nullptr) return hb::admin::Administrator;
+	auto it = m_commandPermissions.find(cmdName);
+	if (it != m_commandPermissions.end())
+		return it->second.iAdminLevel;
+	return hb::admin::Administrator;
+}
+
 void CGame::SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus)
 {
 	switch (cOwnerType) {

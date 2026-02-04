@@ -72,6 +72,9 @@ public:
     bool m_bSuperAttackMode, m_bIsSpecialAbilityEnabled;
     bool m_bHunter, m_bAresden, m_bCitizen;
 
+    // ADMIN / GM
+    bool m_bIsGMMode = false;
+
     // CRUSADE/WAR
     int m_iCrusadeDuty, m_iWarContribution, m_iConstructionPoint;
     int m_iConstructLocX, m_iConstructLocY;

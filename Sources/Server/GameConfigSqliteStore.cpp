@@ -236,6 +236,17 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
         "CREATE TABLE IF NOT EXISTS banned_list ("
         " ip_address TEXT PRIMARY KEY"
         ");"
+        "CREATE TABLE IF NOT EXISTS admins ("
+        " account_name TEXT PRIMARY KEY,"
+        " character_name TEXT NOT NULL,"
+        " approved_ip TEXT NOT NULL DEFAULT '0.0.0.0',"
+        " admin_level INTEGER NOT NULL DEFAULT 1"
+        ");"
+        "CREATE TABLE IF NOT EXISTS admin_command_permissions ("
+        " command TEXT PRIMARY KEY COLLATE NOCASE,"
+        " admin_level INTEGER NOT NULL DEFAULT 1000,"
+        " description TEXT NOT NULL DEFAULT ''"
+        ");"
         "CREATE TABLE IF NOT EXISTS npc_configs ("
         " npc_id INTEGER PRIMARY KEY,"
         " name TEXT NOT NULL,"
@@ -447,6 +458,10 @@ bool EnsureGameConfigDatabase(sqlite3** outDb, std::string& outPath, bool* outCr
 
     if (!HasColumn(db, "npc_configs", "drop_table_id")) {
         ExecSql(db, "ALTER TABLE npc_configs ADD COLUMN drop_table_id INTEGER NOT NULL DEFAULT 0;");
+    }
+
+    if (!HasColumn(db, "admins", "admin_level")) {
+        ExecSql(db, "ALTER TABLE admins ADD COLUMN admin_level INTEGER NOT NULL DEFAULT 1;");
     }
 
     *outDb = db;
@@ -1043,6 +1058,158 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
         }
         CopyColumnText(stmt, 0, game->m_stBannedList[index].m_cBannedIPaddress, sizeof(game->m_stBannedList[index].m_cBannedIPaddress));
         index++;
+    }
+
+    sqlite3_finalize(stmt);
+    return true;
+}
+
+bool SaveAdminConfig(sqlite3* db, const CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    if (!BeginTransaction(db)) {
+        return false;
+    }
+
+    if (!ClearTable(db, "admins")) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "INSERT INTO admins(account_name, character_name, approved_ip, admin_level) VALUES(?,?,?,?);", -1, &stmt, nullptr) != SQLITE_OK) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    for (int i = 0; i < game->m_iAdminCount; i++) {
+        if (game->m_stAdminList[i].m_cAccountName[0] == 0) {
+            continue;
+        }
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        if (!PrepareAndBindText(stmt, 1, game->m_stAdminList[i].m_cAccountName) ||
+            !PrepareAndBindText(stmt, 2, game->m_stAdminList[i].m_cCharName) ||
+            !PrepareAndBindText(stmt, 3, game->m_stAdminList[i].m_cApprovedIP) ||
+            sqlite3_bind_int(stmt, 4, game->m_stAdminList[i].m_iAdminLevel) != SQLITE_OK ||
+            sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            RollbackTransaction(db);
+            return false;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    if (!CommitTransaction(db)) {
+        RollbackTransaction(db);
+        return false;
+    }
+    return true;
+}
+
+bool LoadAdminConfig(sqlite3* db, CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    for (int i = 0; i < DEF_MAXADMINS; i++) {
+        std::memset(&game->m_stAdminList[i], 0, sizeof(AdminEntry));
+    }
+    game->m_iAdminCount = 0;
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT account_name, character_name, approved_ip, admin_level FROM admins ORDER BY account_name;", -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    int index = 0;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        if (index >= DEF_MAXADMINS) {
+            break;
+        }
+        CopyColumnText(stmt, 0, game->m_stAdminList[index].m_cAccountName, sizeof(game->m_stAdminList[index].m_cAccountName));
+        CopyColumnText(stmt, 1, game->m_stAdminList[index].m_cCharName, sizeof(game->m_stAdminList[index].m_cCharName));
+        CopyColumnText(stmt, 2, game->m_stAdminList[index].m_cApprovedIP, sizeof(game->m_stAdminList[index].m_cApprovedIP));
+        game->m_stAdminList[index].m_iAdminLevel = sqlite3_column_int(stmt, 3);
+        if (game->m_stAdminList[index].m_iAdminLevel < 1)
+            game->m_stAdminList[index].m_iAdminLevel = 1;
+        index++;
+    }
+
+    sqlite3_finalize(stmt);
+    game->m_iAdminCount = index;
+    return true;
+}
+
+bool SaveCommandPermissions(sqlite3* db, const CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    if (!BeginTransaction(db)) {
+        return false;
+    }
+
+    if (!ClearTable(db, "admin_command_permissions")) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "INSERT INTO admin_command_permissions(command, admin_level, description) VALUES(?,?,?);", -1, &stmt, nullptr) != SQLITE_OK) {
+        RollbackTransaction(db);
+        return false;
+    }
+
+    for (const auto& pair : game->m_commandPermissions) {
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+        sqlite3_bind_text(stmt, 1, pair.first.c_str(), -1, SQLITE_TRANSIENT);
+        sqlite3_bind_int(stmt, 2, pair.second.iAdminLevel);
+        sqlite3_bind_text(stmt, 3, pair.second.sDescription.c_str(), -1, SQLITE_TRANSIENT);
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            RollbackTransaction(db);
+            return false;
+        }
+    }
+
+    sqlite3_finalize(stmt);
+    if (!CommitTransaction(db)) {
+        RollbackTransaction(db);
+        return false;
+    }
+    return true;
+}
+
+bool LoadCommandPermissions(sqlite3* db, CGame* game)
+{
+    if (db == nullptr || game == nullptr) {
+        return false;
+    }
+
+    game->m_commandPermissions.clear();
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT command, admin_level, description FROM admin_command_permissions;", -1, &stmt, nullptr) != SQLITE_OK) {
+        return false;
+    }
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char* name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+        int level = sqlite3_column_int(stmt, 1);
+        const char* desc = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 2));
+        if (name != nullptr) {
+            CommandPermission perm;
+            perm.iAdminLevel = level;
+            perm.sDescription = (desc != nullptr) ? desc : "";
+            game->m_commandPermissions[name] = perm;
+        }
     }
 
     sqlite3_finalize(stmt);
