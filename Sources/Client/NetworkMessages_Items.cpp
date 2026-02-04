@@ -795,11 +795,17 @@ namespace NetworkMessageHandlers {
 
 	void HandleCurLifeSpan(CGame* pGame, char* pData)
 	{
-		int iItemIndex;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCurLifeSpan>(
 			pData, sizeof(hb::net::PacketNotifyCurLifeSpan));
-		if (!pkt) return;
-		iItemIndex = pkt->item_index;
+
+		if (!pkt)
+			return;
+
+		int iItemIndex = pkt->item_index;
+
+		if (pGame->m_pItemList[iItemIndex] != nullptr)
+			return;
+
 		pGame->m_pItemList[iItemIndex]->m_wCurLifeSpan = static_cast<WORD>(pkt->cur_lifespan);
 	}
 

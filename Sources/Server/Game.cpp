@@ -1286,26 +1286,12 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 
 	case DEF_OBJECTMAGIC:
 		iRet = iClientMotion_Magic_Handler(iClientH, sX, sY, cDir);
-		//client hp recorded here ONLY if its less than
 		if (iRet == 1) {
-			if (m_pClientList[iClientH]->m_bMagicPauseTime == false) {
-				m_pClientList[iClientH]->m_bMagicPauseTime = true;
-				iTemp = 10;
-				SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTMAGIC, dX, iTemp, 0);
-				m_pClientList[iClientH]->m_iSpellCount++;
-				bCheckClientMagicFrequency(iClientH, dwClientTime);
-			}
-			else if (m_pClientList[iClientH]->m_bMagicPauseTime) {
-				try
-				{
-					std::snprintf(G_cTxt, sizeof(G_cTxt), "Cast Delay Hack: (%s) Player: (%s) - player casting too fast.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-					PutHackLogFileList(G_cTxt);
-					DeleteClient(iClientH, true, true);
-				}
-				catch (...)
-				{
-				}
-			}
+			m_pClientList[iClientH]->m_bMagicPauseTime = true;
+			iTemp = 10;
+			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTMAGIC, dX, iTemp, 0);
+			m_pClientList[iClientH]->m_iSpellCount++;
+			bCheckClientMagicFrequency(iClientH, dwClientTime);
 		}
 		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
 		break;
