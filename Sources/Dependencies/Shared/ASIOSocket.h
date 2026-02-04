@@ -83,14 +83,14 @@ struct NetworkPacket {
 // Unsent data block (RAII replacement for raw char* + size pairs)
 struct UnsentBlock {
 	std::vector<char> data;
-	int offset = 0;  // bytes already sent from this block
+	size_t offset = 0;  // bytes already sent from this block
 
 	UnsentBlock() = default;
-	UnsentBlock(const char* pData, int iSize)
+	UnsentBlock(const char* pData, size_t iSize)
 		: data(pData, pData + iSize), offset(0) {}
 
 	const char* remaining() const { return data.data() + offset; }
-	int remainingSize() const { return static_cast<int>(data.size()) - offset; }
+	size_t remainingSize() const { return data.size() - offset; }
 };
 
 // Async callback types
