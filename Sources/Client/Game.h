@@ -54,6 +54,8 @@
 #include "EntityRenderState.h"
 #include "Camera.h"
 #include "GameModeManager.h"
+#include "PlayerRenderer.h"
+#include "NpcRenderer.h"
 
 //v2.18
 #define DEF_BTNSZX				74
@@ -657,6 +659,10 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 
 	// Entity render state (temporary state for currently rendered entity)
 	CEntityRenderState m_entityState;
+
+	// Renderer classes for entity drawing
+	CPlayerRenderer m_playerRenderer;
+	CNpcRenderer m_npcRenderer;
 
 
 	//Snoopy: Crafting

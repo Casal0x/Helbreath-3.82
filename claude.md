@@ -16,13 +16,13 @@ Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (Win32/x86 only
 ## Build Commands
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File "C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\build.ps1" -Target Game -Config Debug -Renderer DDraw
+powershell.exe -ExecutionPolicy Bypass -File "C:\Users\ShadowEvil\source\Repos3\Helbreath-3.82\Sources\build.ps1" -Target Game -Config Debug
 ```
 
 - `-Target`: `Game` | `Server` | `All`
 - `-Config`: `Debug` | `Release`
-- `-Renderer`: `DDraw` | `SFML` (ignored for Server)
-- Outputs: `Debug\Game_DDRAW.exe`, `Debug\Game_SFML.exe`, `Debug\Server.exe`
+- Renderer is SFML, platform is x64 (hardcoded)
+- Outputs: `x64\Debug\Game_SFML.exe`, `x64\Debug\Server.exe`
 - Logs (UTF-8): `build_game.log`, `build_server.log`, `build_all.log` in `Sources/`
 
 ## Project Structure

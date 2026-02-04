@@ -1720,7 +1720,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 		for (dY = startY; dY < endY; dY++)
 		{
 			sDist = (abs(sCenterX - dX) + abs(sCenterY - dY)) / 2;
-			lPan = -(sCenterX - dX) * LOGICAL_WIDTH();
+			lPan = halfViewX > 0 ? ((dX - sCenterX) * 100) / halfViewX : 0;
 
 			// Dynamic Object
 			if (dynObjsNeedUpdate)//00496B99  JBE 00496F43

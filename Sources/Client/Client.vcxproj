@@ -448,6 +448,10 @@
     <ClInclude Include="PlayerController.h" />
     <ClInclude Include="AppearanceData.h" />
     <ClInclude Include="EntityRenderState.h" />
+    <ClInclude Include="EquipmentIndices.h" />
+    <ClInclude Include="RenderHelpers.h" />
+    <ClInclude Include="PlayerRenderer.h" />
+    <ClInclude Include="NpcRenderer.h" />
     <ClInclude Include="OwnerType.h" />
     <ClInclude Include="ObjectIDRange.h" />
     <ClInclude Include="Camera.h" />
@@ -531,6 +535,11 @@
     <ClCompile Include="HotkeyManager.cpp" />
     <ClCompile Include="Version.cpp" />
     <ClCompile Include="Game.Hotkeys.cpp" />
+    <ClCompile Include="Game.DrawObjects.cpp" />
+    <ClCompile Include="EquipmentIndices.cpp" />
+    <ClCompile Include="RenderHelpers.cpp" />
+    <ClCompile Include="PlayerRenderer.cpp" />
+    <ClCompile Include="NpcRenderer.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameModeManager.cpp" />
     <ClCompile Include="IGameScreen.cpp" />
