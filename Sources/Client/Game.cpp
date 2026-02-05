@@ -1994,6 +1994,8 @@ void CGame::InitGameSettings()
 	m_pPlayer->m_Controller.ResetCommandCount();
 
 	m_bIsGetPointingMode = false;
+	m_bWaitForNewClick = false;
+	m_dwMagicCastTime = 0;
 	m_iPointCommandType = -1; //v2.15 0 -> -1
 
 	for (int r = 0; r < 3; r++) m_eConfigRetry[r] = ConfigRetryLevel::None;
@@ -9181,8 +9183,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			m_bIsGetPointingMode = false;
+			m_dwMagicCastTime = dwTime;  // Track when magic was cast
 			return;
 		}
+
+		// Delay after magic cast before allowing held-click actions
+		if (m_dwMagicCastTime > 0 && (dwTime - m_dwMagicCastTime) < 750) return;
 
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
 		//m_pMapData->m_pData[dX][dY].m_sItemSprite

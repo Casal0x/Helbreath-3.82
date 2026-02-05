@@ -53,7 +53,7 @@ CMapData::CMapData(class CGame* pGame)
 		m_stFrame[i][DEF_OBJECTSTOP].m_sMaxFrame = 14;
 		m_stFrame[i][DEF_OBJECTSTOP].m_sFrameTime = 60;
 		m_stFrame[i][DEF_OBJECTMOVE].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTMOVE].m_sFrameTime = 74;
+		m_stFrame[i][DEF_OBJECTMOVE].m_sFrameTime = 70;
 		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sMaxFrame = 3;
 		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sFrameTime = 50;
 		m_stFrame[i][DEF_OBJECTRUN].m_sMaxFrame = 7;

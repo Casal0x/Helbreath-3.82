@@ -456,6 +456,8 @@ void _LoadShopMenuContents(char cType);
 std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	std::array<bool, DEF_MAXITEMS> m_bIsItemDisabled{};
 	bool m_bIsGetPointingMode;
+	bool m_bWaitForNewClick;  // After magic cast, ignore held click until released
+	uint32_t m_dwMagicCastTime;  // Timestamp when magic was cast (for post-cast delay)
 	bool m_bSkillUsingStatus;
 	bool m_bItemUsingStatus;
 	bool m_bIsWhetherEffect;

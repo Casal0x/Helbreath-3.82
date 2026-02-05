@@ -15,7 +15,7 @@ namespace MovementTiming {
     // Duration to cross one tile (milliseconds)
     // Must match animation frame timing: (maxFrame + 1) * frameTime
     // Movement duration = (maxFrame + 1) * frameTime
-    constexpr uint32_t WALK_DURATION_MS = 592;         // 8 frames (0-7) * 74ms
+    constexpr uint32_t WALK_DURATION_MS = 560;         // 8 frames (0-7) * 70ms
     constexpr uint32_t RUN_DURATION_MS = 312;          // 8 frames (0-7) * 39ms
     constexpr uint32_t DAMAGE_MOVE_DURATION_MS = 200;  // 4 frames (0-3) * 50ms
     constexpr uint32_t ATTACK_MOVE_DURATION_MS = 1014; // 13 frames (0-12) * 78ms
