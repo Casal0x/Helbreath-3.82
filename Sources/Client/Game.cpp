@@ -10972,7 +10972,14 @@ void CGame::MotionEventHandler(char* pData)
 			if (m_pChatMsgList[i] == 0)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
-				if (sV1 != 0)
+				if (sV1 == DEF_DAMAGE_IMMUNE)
+				{
+					// GM immunity - show "* Immune *" with failure sound
+					strcpy(cTxt, " * Immune *");
+					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
+					PlaySound('C', 17, 0);
+				}
+				else if (sV1 != 0)
 				{
 					if (sV1 > 0)
 						wsprintf(cTxt, "-%dPts", sV1);

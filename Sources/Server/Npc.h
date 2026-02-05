@@ -96,6 +96,7 @@ public:
 	int   m_iFollowOwnerIndex;
 	char  m_cFollowOwnerType;		// (NPC or Player)
 	bool  m_bIsSummoned;            // NPC? HP  .
+	bool  m_bBypassMobLimit;        // GM-spawned: don't count toward map entity limit
 	uint32_t m_dwSummonedTime;
 
 	int   m_iTargetIndex;

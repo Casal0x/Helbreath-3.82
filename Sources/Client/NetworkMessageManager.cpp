@@ -209,6 +209,7 @@ namespace NetworkMessageHandlers {
 	void HandleWhetherChange(CGame* pGame, char* pData);
 	void HandleTimeChange(CGame* pGame, char* pData);
 	void HandleNoticeMsg(CGame* pGame, char* pData);
+	void HandleStatusText(CGame* pGame, char* pData);
 	void HandleForceDisconn(CGame* pGame, char* pData);
 	void HandleSettingSuccess(CGame* pGame, char* pData);
 	void HandleServerChange(CGame* pGame, char* pData);
@@ -458,6 +459,7 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		case DEF_NOTIFY_WHETHERCHANGE: NetworkMessageHandlers::HandleWhetherChange(m_pGame, pData); return true;
 		case DEF_NOTIFY_TIMECHANGE: NetworkMessageHandlers::HandleTimeChange(m_pGame, pData); return true;
 		case DEF_NOTIFY_NOTICEMSG: NetworkMessageHandlers::HandleNoticeMsg(m_pGame, pData); return true;
+		case DEF_NOTIFY_STATUSTEXT: NetworkMessageHandlers::HandleStatusText(m_pGame, pData); return true;
 		case DEF_NOTIFY_FORCEDISCONN: NetworkMessageHandlers::HandleForceDisconn(m_pGame, pData); return true;
 		case DEF_NOTIFY_SETTING_SUCCESS: NetworkMessageHandlers::HandleSettingSuccess(m_pGame, pData); return true;
 		case DEF_NOTIFY_SERVERCHANGE: NetworkMessageHandlers::HandleServerChange(m_pGame, pData); return true;

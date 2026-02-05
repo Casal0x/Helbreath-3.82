@@ -672,7 +672,7 @@ public:
 	void ChatMsgHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();
-	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0);
+	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0, bool bBypassMobLimit = false);
 	//bool bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sX, short sY);
 	int SpawnMapNpcsFromDatabase(struct sqlite3* db, int iMapIndex);
 	bool _bReadMapInfoFiles(int iMapIndex);

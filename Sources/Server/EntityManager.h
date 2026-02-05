@@ -59,7 +59,8 @@ public:
         int iSpotMobIndex, char cChangeSide,
         bool bHideGenMode, bool bIsSummoned,
         bool bFirmBerserk, bool bIsMaster,
-        int iGuildGUID
+        int iGuildGUID,
+        bool bBypassMobLimit = false
     );
 
     /**

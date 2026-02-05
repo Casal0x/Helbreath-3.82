@@ -105,7 +105,8 @@ int CEntityManager::CreateEntity(
     int iSpotMobIndex, char cChangeSide,
     bool bHideGenMode, bool bIsSummoned,
     bool bFirmBerserk, bool bIsMaster,
-    int iGuildGUID)
+    int iGuildGUID,
+    bool bBypassMobLimit)
 {
     // NOTE: This is copied from CGame::bCreateNewNpc with modifications for EntityManager
 
@@ -244,8 +245,13 @@ int CEntityManager::CreateEntity(
             m_pNpcList[i]->m_vY = sY;
 
             // Set waypoints
-            for (t = 0; t < 10; t++)
-                m_pNpcList[i]->m_iWayPointIndex[t] = pWaypointList[t];
+            if (pWaypointList != nullptr) {
+                for (t = 0; t < 10; t++)
+                    m_pNpcList[i]->m_iWayPointIndex[t] = pWaypointList[t];
+            } else {
+                for (t = 0; t < 10; t++)
+                    m_pNpcList[i]->m_iWayPointIndex[t] = -1;
+            }
 
             m_pNpcList[i]->m_cTotalWaypoint = 0;
             for (t = 0; t < 10; t++)
@@ -360,6 +366,7 @@ int CEntityManager::CreateEntity(
             m_pNpcList[i]->m_dwHPupTime = m_pNpcList[i]->m_dwMPupTime;
             m_pNpcList[i]->m_sBehaviorTurnCount = 0;
             m_pNpcList[i]->m_bIsSummoned = bIsSummoned;
+            m_pNpcList[i]->m_bBypassMobLimit = bBypassMobLimit;
             m_pNpcList[i]->m_bIsMaster = bIsMaster;
             if (bIsSummoned)
                 m_pNpcList[i]->m_dwSummonedTime = GameClock::GetTimeMS();
@@ -381,7 +388,9 @@ int CEntityManager::CreateEntity(
 
             // Register with map
             m_pMapList[iMapIndex]->SetOwner(i, DEF_OWNERTYPE_NPC, sX, sY);
-            m_pMapList[iMapIndex]->m_iTotalActiveObject++;
+            if (!bBypassMobLimit) {
+                m_pMapList[iMapIndex]->m_iTotalActiveObject++;
+            }
             m_pMapList[iMapIndex]->m_iTotalAliveObject++;
             m_iTotalEntities++;
 
@@ -2447,7 +2456,9 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 
 	// NamingValue     .
 	m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->SetNamingValueEmpty(iNamingValue);
-	m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_iTotalActiveObject--;
+	if (!m_pNpcList[iNpcH]->m_bBypassMobLimit) {
+		m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_iTotalActiveObject--;
+	}
 
 	// Spot-mob-generator
 	if (m_pNpcList[iNpcH]->m_iSpotMobIndex != 0) {

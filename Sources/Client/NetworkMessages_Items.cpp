@@ -665,7 +665,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSetExchangeItem(CGame* pGame, char* pData)
 	{
-		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance;
+		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance, sItemID;
 		int iAmount, i;
 		char cColor, cItemName[DEF_ITEMNAME], cCharName[12];
 		DWORD dwAttribute;
@@ -686,6 +686,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cItemName, pkt->item_name, sizeof(pkt->item_name));
 		memcpy(cCharName, pkt->char_name, 10);
 		dwAttribute = pkt->attribute;
+		sItemID = pkt->item_id;
 
 		if (sDir >= 1000)  // Set the item I want to exchange
 		{
@@ -715,11 +716,12 @@ namespace NetworkMessageHandlers {
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, DEF_ITEMNAME - 1);
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
+		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
 	}
 
 	void HandleOpenExchangeWindow(CGame* pGame, char* pData)
 	{
-		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance;
+		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance, sItemID;
 		int iAmount;
 		char cColor, cItemName[DEF_ITEMNAME], cCharName[12];
 		DWORD dwAttribute;
@@ -740,6 +742,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cItemName, pkt->item_name, sizeof(pkt->item_name));
 		memcpy(cCharName, pkt->char_name, 10);
 		dwAttribute = pkt->attribute;
+		sItemID = pkt->item_id;
 
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Exchange, 1, 0, 0, 0);
 		// Initialize all exchange slots
@@ -769,7 +772,6 @@ namespace NetworkMessageHandlers {
 			if ((sDir > 1000) && (i == 0))
 			{
 				pGame->m_bIsItemDisabled[sDir - 1000] = true;
-				pGame->m_stDialogBoxExchangeInfo[0].sItemID = sDir - 1000;
 			}
 		}
 		else // Set the item he proposes me.
@@ -791,6 +793,7 @@ namespace NetworkMessageHandlers {
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, DEF_ITEMNAME - 1);
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
+		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
 	}
 
 	void HandleCurLifeSpan(CGame* pGame, char* pData)

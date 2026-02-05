@@ -5076,7 +5076,7 @@ bool CGame::_bReadMapInfoFiles(int iMapIndex)
 }
 
 
-int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, GameRectangle* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID)
+int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sClass, char cSA, char cMoveType, int* poX, int* poY, char* pWaypointList, GameRectangle* pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned, bool bFirmBerserk, bool bIsMaster, int iGuildGUID, bool bBypassMobLimit)
 {
 	if (m_pEntityManager == 0)
 		return false;
@@ -5084,7 +5084,7 @@ int CGame::bCreateNewNpc(char* pNpcName, char* pName, char* pMapName, short sCla
 	return (m_pEntityManager->CreateEntity(
 		pNpcName, pName, pMapName, sClass, cSA, cMoveType,
 		poX, poY, pWaypointList, pArea, iSpotMobIndex, cChangeSide,
-		bHideGenMode, bIsSummoned, bFirmBerserk, bIsMaster, iGuildGUID) > 0);
+		bHideGenMode, bIsSummoned, bFirmBerserk, bIsMaster, iGuildGUID, bBypassMobLimit) > 0);
 }
 
 int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
@@ -8608,6 +8608,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		}
 		memcpy(pkt.char_name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.char_name));
 		pkt.attribute = static_cast<uint32_t>(sV9);
+		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(pString2));
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -8630,6 +8631,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		}
 		memcpy(pkt.char_name, m_pClientList[iFromH]->m_cCharName, sizeof(pkt.char_name));
 		pkt.attribute = static_cast<uint32_t>(sV9);
+		pkt.item_id = static_cast<int16_t>(reinterpret_cast<intptr_t>(pString2));
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 	}
 	break;
@@ -8964,6 +8966,19 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		pkt->text[msg_len] = '\0';
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(buf,
 			static_cast<int>(sizeof(hb::net::PacketHeader) + msg_len + 1));
+		break;
+	}
+
+	case DEF_NOTIFY_STATUSTEXT:
+	{
+		hb::net::PacketNotifyStatusText pkt{};
+		pkt.header.msg_id = MSGID_NOTIFY;
+		pkt.header.msg_type = wMsgType;
+		if (pString != nullptr) {
+			strncpy(pkt.text, pString, sizeof(pkt.text) - 1);
+			pkt.text[sizeof(pkt.text) - 1] = '\0';
+		}
+		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
 
@@ -17751,7 +17766,7 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 			if (dwNow - m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime > 2000)
 			{
 				m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime = dwNow;
-				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "* Immune *");
+				SendEventToNearClient_TypeA(sTargetH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_DAMAGE_IMMUNE, 0, 0);
 			}
 			return;
 		}
@@ -18239,7 +18254,7 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 			if (dwNow - m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime > 2000)
 			{
 				m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime = dwNow;
-				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "* Immune *");
+				SendEventToNearClient_TypeA(sTargetH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_DAMAGE_IMMUNE, 0, 0);
 			}
 			return;
 		}
@@ -24740,14 +24755,16 @@ void CGame::ExchangeItemHandler(int iClientH, short sItemIndex, int iAmount, sho
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_wCurLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_wMaxLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemSpecEffectValue2 + 100,
-					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute,
+					reinterpret_cast<char*>(static_cast<intptr_t>(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum)));
 
 				SendNotifyMsg(iClientH, sOwnerH, DEF_NOTIFY_OPENEXCHANGEWINDOW, sItemIndex, m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sSprite,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sSpriteFrame, m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cName, iAmount, m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_wCurLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_wMaxLifeSpan,
 					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sItemSpecEffectValue2 + 100,
-					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute);
+					m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_dwAttribute,
+					reinterpret_cast<char*>(static_cast<intptr_t>(m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_sIDnum)));
 			}
 		}
 	}
@@ -24796,14 +24813,16 @@ void CGame::SetExchangeItem(int iClientH, int iItemIndex, int iAmount)
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wMaxLifeSpan,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2 + 100,
-				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+				reinterpret_cast<char*>(static_cast<intptr_t>(m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum)));
 
 			SendNotifyMsg(iClientH, iExH, DEF_NOTIFY_SETEXCHANGEITEM, iItemIndex, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSprite,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sSpriteFrame, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cName, iAmount, m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_cItemColor,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wCurLifeSpan,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_wMaxLifeSpan,
 				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sItemSpecEffectValue2 + 100,
-				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute);
+				m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_dwAttribute,
+				reinterpret_cast<char*>(static_cast<intptr_t>(m_pClientList[iClientH]->m_pItemList[iItemIndex]->m_sIDnum)));
 		}
 	}
 	else {
@@ -33770,6 +33789,19 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 
 		if (m_pClientList[sTargetH] == 0) return 0;
 		if (m_pClientList[sTargetH]->m_bIsKilled) return 0;
+
+		// GM mode damage immunity
+		if (m_pClientList[sTargetH]->m_bIsGMMode)
+		{
+			uint32_t dwNow = GameClock::GetTimeMS();
+			if (dwNow - m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime > 2000)
+			{
+				m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime = dwNow;
+				SendEventToNearClient_TypeA(sTargetH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_DAMAGE_IMMUNE, 0, 0);
+			}
+			return 0;
+		}
+
 		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return 0;
 
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_bIsCrusadeMode == false) &&

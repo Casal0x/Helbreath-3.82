@@ -22,6 +22,7 @@ CNpc::CNpc(char * pName5)
 		m_cMagicEffectStatus[i]	= 0;
 
 	m_bIsSummoned       = false;
+	m_bBypassMobLimit   = false;
 	m_bIsPermAttackMode = false;
 
 	m_dwRegenTime = 0;

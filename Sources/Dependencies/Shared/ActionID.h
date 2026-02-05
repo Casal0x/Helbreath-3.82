@@ -14,6 +14,9 @@
 
 #define DEF_OBJECTNULLACTION	100
 
+// Special damage values for DEF_OBJECTDAMAGE events
+#define DEF_DAMAGE_IMMUNE		-1000	// GM immunity - shows "* Immune *" text
+
 // Motion confirmation codes
 #define DEF_OBJECTMOVE_CONFIRM				1001
 #define DEF_OBJECTMOVE_REJECT				1010

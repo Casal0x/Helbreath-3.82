@@ -5,6 +5,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Server\Server.vcxproj", "{E8966E8D-F08D-4A15-88E4-A482F41B9E33}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Game", "Client\Client.vcxproj", "{F5807AE3-600C-4037-970B-CD2474F5CF9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C} = {C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SFMLEngine", "SFMLEngine\SFMLEngine.vcxproj", "{C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C}"
 EndProject

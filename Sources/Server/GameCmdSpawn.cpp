@@ -38,8 +38,9 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		int tX = pGame->m_pClientList[iClientH]->m_sX;
 		int tY = pGame->m_pClientList[iClientH]->m_sY;
 
+		// bIsSummoned=false so NPCs give EXP/drops, bBypassMobLimit=true so they don't count toward map limit
 		if (pGame->bCreateNewNpc(pNpcName, cUniqueName, pMapName, 0, 0, DEF_MOVETYPE_RANDOM,
-			&tX, &tY, nullptr, nullptr, 0, -1, false, true, false, false, 0))
+			&tX, &tY, nullptr, nullptr, 0, -1, false, false, false, false, 0, true))
 		{
 			iSpawned++;
 		}

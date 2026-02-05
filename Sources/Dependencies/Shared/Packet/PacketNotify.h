@@ -534,6 +534,12 @@ namespace net {
 		char text[1];
 	};
 
+	// Floating status text displayed above the player's head (e.g., "* Immune *")
+	struct HB_PACKED PacketNotifyStatusText {
+		PacketHeader header;
+		char text[32];
+	};
+
 	struct HB_PACKED PacketNotifyQueryDismissGuildPermission {
 		PacketHeader header;
 		char name[10];
@@ -676,6 +682,7 @@ namespace net {
 		char item_name[DEF_ITEMNAME - 1];
 		char char_name[10];
 		uint32_t attribute;
+		int16_t item_id;
 	};
 
 	struct HB_PACKED PacketNotifyRepairAllPricesHeader {
