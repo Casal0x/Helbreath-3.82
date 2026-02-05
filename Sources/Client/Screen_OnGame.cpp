@@ -316,6 +316,24 @@ void Screen_OnGame::on_update()
                 }
             }
         }
+        // Fast rotation unlock: allow quick direction changes without waiting
+        // for the full STOP animation (840ms). Uses a short delay to prevent spam.
+        // BUT only if player is actually in STOP animation (not casting magic, attacking, etc.)
+        else if (cmd == DEF_OBJECTSTOP) {
+            int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
+            int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+            if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
+                int8_t animAction = m_pGame->m_pMapData->m_pData[dX][dY].m_animation.cAction;
+                // Only fast unlock for pure rotation (STOP animation), not after magic/attack
+                if (animAction == DEF_OBJECTSTOP) {
+                    uint32_t cmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
+                    if (cmdTime > 0 && (m_dwTime - cmdTime) >= 100) {
+                        m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
+                        m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+                    }
+                }
+            }
+        }
     }
 
     // Fallback: animation-based unlock still works for non-movement actions
