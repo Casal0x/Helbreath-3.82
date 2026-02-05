@@ -28,7 +28,7 @@ struct AnimDef
 
 namespace PlayerAnim {
 	static constexpr AnimDef Stop       = { 14, 60,  false };
-	static constexpr AnimDef Move       = {  7, 74,  false };
+	static constexpr AnimDef Move       = {  7, 70,  false };
 	static constexpr AnimDef Run        = {  7, 39,  false };
 	static constexpr AnimDef Attack     = {  7, 78,  false };
 	static constexpr AnimDef AttackMove = { 12, 78,  false };
