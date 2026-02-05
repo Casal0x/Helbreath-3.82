@@ -9,13 +9,14 @@ SpriteLib::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int sX, int 
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Apply motion offset if entity is still interpolating
 	sX += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
 	sY += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Single-direction monster override
@@ -148,9 +149,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawMove(int indexX, int indexY, int sX, int 
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// NPC body index: HBT uses pose 0, all others use pose 1
@@ -271,9 +273,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawRun(int indexX, int indexY, int sX, int s
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// NPC default in OnRun: all equipment -1, no specific body index pose override
@@ -331,9 +334,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawAttack(int indexX, int indexY, int sX, in
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// NPC attack pose calculation with per-mob-type overrides
@@ -394,9 +398,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawAttackMove(int indexX, int indexY, int sX
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Frame clamping — same as original
@@ -533,9 +538,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamage(int indexX, int indexY, int sX, in
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Two-state NPC damage: complex per-mob overrides
@@ -630,6 +636,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamageMove(int indexX, int indexY, int sX
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Early return for McGaffin/Perry/Devlin/Abaddon
 	if (state.m_sOwnerType == hb::owner::McGaffin ||
@@ -639,7 +646,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamageMove(int indexX, int indexY, int sX
 		return invalidRect;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Direction inversion (knockback is opposite direction)

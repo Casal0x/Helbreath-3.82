@@ -328,7 +328,7 @@ WPARAM EventLoop()
 
 				// Run game logic every 300ms (same as old timer)
 				// GameProcess calls NpcProcess which now polls sockets during entity processing
-				if (dwNow - dwLastGameProcess >= 300) {
+				if (dwNow - dwLastGameProcess >= (300/ DEF_GAMETICK_MULTIPLER)) {
 					G_pGame->GameProcess();
 					dwLastGameProcess = dwNow;
 				}
@@ -386,7 +386,7 @@ void Initialize()
 	GetServerConsole().Init();
 
 	// ���� ����� Ÿ�̸�
-	G_mmTimer = _StartTimer(300);
+	G_mmTimer = _StartTimer((300 / DEF_GAMETICK_MULTIPLER));
 
 	G_pListenSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);

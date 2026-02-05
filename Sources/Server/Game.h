@@ -917,6 +917,10 @@ public:
 	std::unordered_map<std::string, CommandPermission> m_commandPermissions;
 	int GetCommandRequiredLevel(const char* cmdName) const;
 
+	// GM command helpers
+	int FindClientByName(const char* pName) const;
+	bool GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short sDestY);
+
 	// Crusade Scheduler
 	struct {
 		int iDay;

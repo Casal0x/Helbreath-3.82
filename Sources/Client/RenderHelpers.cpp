@@ -130,11 +130,20 @@ void DrawShadow(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 
 // -----------------------------------------------------------------------
 void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
-              bool bInv, short sOwnerType, bool bFrozen)
+              bool bInv, short sOwnerType, bool bFrozen, bool bAdminInvis)
 {
 	if (sOwnerType == hb::owner::Abaddon)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Alpha(0.5f));
+	}
+	else if (bAdminInvis)
+	{
+		SpriteLib::DrawParams dp;
+		dp.alpha = 0.5f;
+		dp.tintR = GameColors::RedTintHalf.r;
+		dp.tintG = GameColors::RedTintHalf.g;
+		dp.tintB = GameColors::RedTintHalf.b;
+		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, dp);
 	}
 	else if (bInv)
 	{
@@ -216,7 +225,8 @@ static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
 // -----------------------------------------------------------------------
 void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
                       const CEntityRenderState& state, int sX, int sY,
-                      bool bInv, const char* mantleOrder, int equipFrameMul)
+                      bool bInv, const char* mantleOrder, int equipFrameMul,
+                      bool bAdminInvis)
 {
 	int dir = state.m_iDir;
 	int frame = state.m_iFrame;
@@ -232,7 +242,7 @@ void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 		if (state.m_sOwnerType == hb::owner::EnergySphere)
 			game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen);
+		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
 		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
 	}
 	else
@@ -243,7 +253,7 @@ void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 		if (state.m_sOwnerType == hb::owner::EnergySphere)
 			game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
 
-		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen);
+		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
 		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
 		DrawWeapon(game, eq, sX, sY, frame, bInv);
 	}
@@ -267,13 +277,24 @@ void DrawNpcLayers(CGame& game, const EquipmentIndices& eq,
 }
 
 // -----------------------------------------------------------------------
-bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv)
+bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv, bool& bAdminInvis)
 {
+	bAdminInvis = false;
+
 	if (hb::owner::IsAlwaysInvisible(state.m_sOwnerType))
 		bInv = true;
 
 	if (state.m_status.bInvisibility)
 	{
+		// Admin invisibility: bInvisibility + bGMMode combo means admin invis
+		// Always draw with red-tinted transparency for any viewer that receives this packet
+		if (state.m_status.bGMMode)
+		{
+			bInv = true;
+			bAdminInvis = true;
+			return false; // Draw with admin invis transparency
+		}
+
 		if (state.m_wObjectID == game.m_pPlayer->m_sPlayerObjectID)
 			bInv = true;
 		else if (game._iGetFOE(state.m_status) == 1)

@@ -2704,7 +2704,19 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 				ucHeader = 0;
 				if (pTile->m_sOwner != 0) {
 					if (pTile->m_cOwnerClass == DEF_OWNERTYPE_PLAYER) {
-						if (m_pClientList[pTile->m_sOwner] != 0) ucHeader = ucHeader | 0x01;
+						if (m_pClientList[pTile->m_sOwner] != 0) {
+							// Skip admin-invisible players for lower/equal level viewers
+							if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible &&
+								pTile->m_sOwner != iClientH &&
+								m_pClientList[iClientH]->m_iAdminLevel <= m_pClientList[pTile->m_sOwner]->m_iAdminLevel)
+							{
+								// Don't include this player in tile data
+							}
+							else
+							{
+								ucHeader = ucHeader | 0x01;
+							}
+						}
 						else {
 							// ###debugcode
 							std::snprintf(G_cTxt, sizeof(G_cTxt), "Empty player handle: %d", pTile->m_sOwner);
@@ -2785,6 +2797,11 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 						sTemp = 0x0FFFFFFF & sTemp;//Original : sTemp = 0x0FFF & sTemp;
 						sTemp2 = iGetPlayerABSStatus(pTile->m_sOwner, iClientH); //(short)iGetPlayerRelationship(iClientH, pTile->m_sOwner);
 						sTemp = (sTemp | (sTemp2 << 28));//Original : 12
+
+						// For admin-invisible players, add invis+GM flags (including self, so admin sees the effect)
+						if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible)
+							sTemp |= (hb::status::Invisibility | hb::status::GMMode);
+
 						*ip = sTemp;
 						cp += 4;//Original 2
 						iSize += 4;//Original 2
@@ -3348,6 +3365,15 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 					(m_pClientList[i]->m_sY >= m_pClientList[sOwnerH]->m_sY - DEF_VIEWRANGE_Y - sRange) &&
 					(m_pClientList[i]->m_sY <= m_pClientList[sOwnerH]->m_sY + DEF_VIEWRANGE_Y + sRange)) {
 
+					// Admin invisibility filtering: skip clients that shouldn't see this player
+					if (m_pClientList[sOwnerH]->m_bIsAdminInvisible && i != sOwnerH &&
+						m_pClientList[i]->m_iAdminLevel <= m_pClientList[sOwnerH]->m_iAdminLevel)
+					{
+						// Don't send any packet to this client
+					}
+					else
+					{
+
 					iTemp = m_pClientList[sOwnerH]->m_iStatus;
 					if (m_pClientList[sOwnerH]->m_cSide != m_pClientList[i]->m_cSide) {
 						if (i != sOwnerH) {
@@ -3361,6 +3387,10 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 					iTemp = 0x0FFFFFFF & iTemp;
 					iTemp2 = iGetPlayerABSStatus(sOwnerH, i);
 					iTemp = (iTemp | (iTemp2 << 28));
+
+					// For admin invisible owner, add invis+GM flags (including self, so admin sees the effect)
+					if (m_pClientList[sOwnerH]->m_bIsAdminInvisible)
+						iTemp |= (hb::status::Invisibility | hb::status::GMMode);
 
 					auto pkt_all = base_all;
 					pkt_all.status = iTemp;
@@ -3472,6 +3502,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 							}
 						}
 					}
+					} // end admin invis else
 				}
 		}
 	}
@@ -3719,7 +3750,19 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 
 			if (pTile->m_sOwner != 0) {
 				if (pTile->m_cOwnerClass == DEF_OWNERTYPE_PLAYER) {
-					if (m_pClientList[pTile->m_sOwner] != 0) ucHeader = ucHeader | 0x01;
+					if (m_pClientList[pTile->m_sOwner] != 0) {
+						// Skip admin-invisible players for lower/equal level viewers
+						if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible &&
+							pTile->m_sOwner != iClientH &&
+							m_pClientList[iClientH]->m_iAdminLevel <= m_pClientList[pTile->m_sOwner]->m_iAdminLevel)
+						{
+							// Don't include this player in tile data
+						}
+						else
+						{
+							ucHeader = ucHeader | 0x01;
+						}
+					}
 					else pTile->m_sOwner = 0;
 				}
 				if (pTile->m_cOwnerClass == DEF_OWNERTYPE_NPC) {
@@ -3805,6 +3848,11 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 					iTemp = 0x0FFFFFFF & iTemp;
 					iTemp2 = iGetPlayerABSStatus(pTile->m_sOwner, iClientH);
 					iTemp = (iTemp | (iTemp2 << 28));
+
+					// For admin-invisible players, add invis+GM flags (including self, so admin sees the effect)
+					if (m_pClientList[pTile->m_sOwner]->m_bIsAdminInvisible)
+						iTemp |= (hb::status::Invisibility | hb::status::GMMode);
+
 					*ip = iTemp;
 					cp += 4;
 					iSize += 4;
@@ -17696,6 +17744,18 @@ void CGame::Effect_Damage_Spot(short sAttackerH, char cAttackerType, short sTarg
 		if (m_pClientList[sTargetH]->m_bIsInitComplete == false) return;
 		if (m_pClientList[sTargetH]->m_bIsKilled) return;
 
+		// GM mode damage immunity
+		if (m_pClientList[sTargetH]->m_bIsGMMode)
+		{
+			uint32_t dwNow = GameClock::GetTimeMS();
+			if (dwNow - m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime > 2000)
+			{
+				m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime = dwNow;
+				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "* Immune *");
+			}
+			return;
+		}
+
 		if ((m_pClientList[sTargetH]->m_iStatus & hb::status::SlateInvincible) != 0) return;
 
 		if ((cAttackerType == DEF_OWNERTYPE_PLAYER) && (m_bIsCrusadeMode == false) &&
@@ -18171,6 +18231,19 @@ void CGame::Effect_Damage_Spot_DamageMove(short sAttackerH, char cAttackerType, 
 		if (m_pClientList[sTargetH] == 0) return;
 		if (m_pClientList[sTargetH]->m_bIsInitComplete == false) return;
 		if (m_pClientList[sTargetH]->m_bIsKilled) return;
+
+		// GM mode damage immunity
+		if (m_pClientList[sTargetH]->m_bIsGMMode)
+		{
+			uint32_t dwNow = GameClock::GetTimeMS();
+			if (dwNow - m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime > 2000)
+			{
+				m_pClientList[sTargetH]->m_dwLastGMImmuneNotifyTime = dwNow;
+				SendNotifyMsg(0, sTargetH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "* Immune *");
+			}
+			return;
+		}
+
 		if ((dwTime - m_pClientList[sTargetH]->m_dwTime) > (uint32_t)m_iLagProtectionInterval) return;
 		if (m_pClientList[sTargetH]->m_cMapIndex == -1) return;
 		if ((m_pMapList[m_pClientList[sTargetH]->m_cMapIndex]->m_bIsAttackEnabled == false)) return;
@@ -28381,6 +28454,118 @@ int CGame::GetCommandRequiredLevel(const char* cmdName) const
 	if (it != m_commandPermissions.end())
 		return it->second.iAdminLevel;
 	return hb::admin::Administrator;
+}
+
+int CGame::FindClientByName(const char* pName) const
+{
+	if (pName == nullptr) return 0;
+	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	{
+		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
+		{
+			if (_strnicmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)
+				return i;
+		}
+	}
+	return 0;
+}
+
+bool CGame::GMTeleportTo(int iClientH, const char* cDestMap, short sDestX, short sDestY)
+{
+	if (m_pClientList[iClientH] == nullptr) return false;
+	if (cDestMap == nullptr) return false;
+
+	// Find destination map index
+	int iDestMapIndex = -1;
+	for (int i = 0; i < DEF_MAXMAPS; i++)
+	{
+		if (m_pMapList[i] != nullptr && memcmp(m_pMapList[i]->m_cName, cDestMap, 10) == 0)
+		{
+			iDestMapIndex = i;
+			break;
+		}
+	}
+	if (iDestMapIndex == -1) return false;
+
+	// Remove from current location
+	RemoveFromTarget(iClientH, DEF_OWNERTYPE_PLAYER);
+	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(13, iClientH, DEF_OWNERTYPE_PLAYER,
+		m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY);
+	SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_LOG, DEF_MSGTYPE_REJECT, 0, 0, 0);
+
+	// Update position and map
+	m_pClientList[iClientH]->m_sX = sDestX;
+	m_pClientList[iClientH]->m_sY = sDestY;
+	m_pClientList[iClientH]->m_cMapIndex = static_cast<char>(iDestMapIndex);
+	std::memset(m_pClientList[iClientH]->m_cMapName, 0, sizeof(m_pClientList[iClientH]->m_cMapName));
+	memcpy(m_pClientList[iClientH]->m_cMapName, m_pMapList[iDestMapIndex]->m_cName, 10);
+
+	// Always send full INITDATA — same pattern as RequestTeleportHandler RTH_NEXTSTEP.
+	// Even same-map teleports need INITDATA so the client reinitializes its view.
+	SetPlayingStatus(iClientH);
+	int iTemp = m_pClientList[iClientH]->m_iStatus;
+	iTemp = 0x0FFFFFFF & iTemp;
+	int iTemp2 = iGetPlayerABSStatus(iClientH);
+	iTemp = iTemp | (iTemp2 << 28);
+	m_pClientList[iClientH]->m_iStatus = iTemp;
+
+	hb::net::PacketWriter writer;
+	char initMapData[DEF_MSGBUFFERSIZE + 1];
+
+	writer.Reset();
+	auto* init_header = writer.Append<hb::net::PacketResponseInitDataHeader>();
+	init_header->header.msg_id = MSGID_RESPONSE_INITDATA;
+	init_header->header.msg_type = DEF_MSGTYPE_CONFIRM;
+
+	bGetEmptyPosition(&m_pClientList[iClientH]->m_sX, &m_pClientList[iClientH]->m_sY, m_pClientList[iClientH]->m_cMapIndex);
+
+	init_header->player_object_id = static_cast<std::int16_t>(iClientH);
+	init_header->pivot_x = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sX - DEF_PLAYER_PIVOT_OFFSET_X);
+	init_header->pivot_y = static_cast<std::int16_t>(m_pClientList[iClientH]->m_sY - DEF_PLAYER_PIVOT_OFFSET_Y);
+	init_header->player_type = m_pClientList[iClientH]->m_sType;
+	init_header->appr1 = m_pClientList[iClientH]->m_sAppr1;
+	init_header->appr2 = m_pClientList[iClientH]->m_sAppr2;
+	init_header->appr3 = m_pClientList[iClientH]->m_sAppr3;
+	init_header->appr4 = m_pClientList[iClientH]->m_sAppr4;
+	init_header->appr_color = m_pClientList[iClientH]->m_iApprColor;
+	init_header->status = m_pClientList[iClientH]->m_iStatus;
+	std::memcpy(init_header->map_name, m_pClientList[iClientH]->m_cMapName, sizeof(init_header->map_name));
+	std::memcpy(init_header->cur_location, m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cLocationName, sizeof(init_header->cur_location));
+
+	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+		init_header->sprite_alpha = 1;
+	else init_header->sprite_alpha = m_cDayOrNight;
+
+	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsFixedDayMode)
+		init_header->weather_status = 0;
+	else init_header->weather_status = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cWhetherStatus;
+
+	init_header->contribution = m_pClientList[iClientH]->m_iContribution;
+
+	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->SetOwner(iClientH,
+		DEF_OWNERTYPE_PLAYER,
+		m_pClientList[iClientH]->m_sX,
+		m_pClientList[iClientH]->m_sY);
+
+	init_header->observer_mode = static_cast<std::uint8_t>(m_pClientList[iClientH]->m_bIsObserverMode);
+	init_header->rating = m_pClientList[iClientH]->m_iRating;
+	init_header->hp = m_pClientList[iClientH]->m_iHP;
+	init_header->discount = 0;
+
+	int iSize = iComposeInitMapData(m_pClientList[iClientH]->m_sX - DEF_VIEWCENTER_X, m_pClientList[iClientH]->m_sY - DEF_VIEWCENTER_Y, iClientH, initMapData);
+	writer.AppendBytes(initMapData, static_cast<std::size_t>(iSize));
+
+	int iRet = m_pClientList[iClientH]->m_pXSock->iSendMsg(writer.Data(), static_cast<int>(writer.Size()));
+	if (iRet == DEF_XSOCKEVENT_QUENEFULL || iRet == DEF_XSOCKEVENT_SOCKETERROR ||
+		iRet == DEF_XSOCKEVENT_CRITICALERROR || iRet == DEF_XSOCKEVENT_SOCKETCLOSED)
+	{
+		DeleteClient(iClientH, true, true);
+		return false;
+	}
+
+	SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_LOG, DEF_MSGTYPE_CONFIRM, 0, 0, 0);
+
+	return true;
 }
 
 void CGame::SetHeroFlag(short sOwnerH, char cOwnerType, bool bStatus)

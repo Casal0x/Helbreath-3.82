@@ -1,19 +1,19 @@
 {
     "audio": {
         "ambientEnabled": true,
-        "ambientVolume": 100,
+        "ambientVolume": 24,
         "masterEnabled": true,
         "masterVolume": 100,
         "musicEnabled": false,
         "musicVolume": 16,
         "soundEnabled": true,
-        "soundVolume": 100,
+        "soundVolume": 25,
         "uiEnabled": true,
-        "uiVolume": 100
+        "uiVolume": 28
     },
     "display": {
-        "borderless": false,
-        "captureMouse": true,
+        "borderless": true,
+        "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
@@ -32,7 +32,7 @@
         "port": 2500
     },
     "shortcuts": {
-        "magic": 91,
+        "magic": 96,
         "slots": [
             -1,
             -1,

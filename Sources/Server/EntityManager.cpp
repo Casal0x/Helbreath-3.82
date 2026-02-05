@@ -355,7 +355,7 @@ int CEntityManager::CreateEntity(
             // Set entity properties
             m_pNpcList[i]->m_cMapIndex = (char)iMapIndex;
             m_pNpcList[i]->m_dwTime = GameClock::GetTimeMS() + (rand() % 10000);
-            m_pNpcList[i]->m_dwActionTime += (rand() % 300);
+			m_pNpcList[i]->m_dwActionTime += (rand() % (300 * DEF_GAMETICK_MULTIPLER));
             m_pNpcList[i]->m_dwMPupTime = GameClock::GetTimeMS();
             m_pNpcList[i]->m_dwHPupTime = m_pNpcList[i]->m_dwMPupTime;
             m_pNpcList[i]->m_sBehaviorTurnCount = 0;
@@ -748,14 +748,14 @@ void CEntityManager::ProcessEntities()
         if (m_pNpcList[i]->m_cBehavior == DEF_BEHAVIOR_ATTACK) {
             switch (m_pGame->iDice(1, 7)) {
             case 1: dwActionTime = m_pNpcList[i]->m_dwActionTime; break;
-            case 2: dwActionTime = m_pNpcList[i]->m_dwActionTime - 100; break;
-            case 3: dwActionTime = m_pNpcList[i]->m_dwActionTime - 200; break;
-            case 4: dwActionTime = m_pNpcList[i]->m_dwActionTime - 300; break;
-            case 5: dwActionTime = m_pNpcList[i]->m_dwActionTime - 400; break;
-            case 6: dwActionTime = m_pNpcList[i]->m_dwActionTime - 600; break;
-            case 7: dwActionTime = m_pNpcList[i]->m_dwActionTime - 700; break;
+            case 2: dwActionTime = m_pNpcList[i]->m_dwActionTime - (100 * DEF_GAMETICK_MULTIPLER); break;
+            case 3: dwActionTime = m_pNpcList[i]->m_dwActionTime - (150 * DEF_GAMETICK_MULTIPLER); break;
+            case 4: dwActionTime = m_pNpcList[i]->m_dwActionTime - (250 * DEF_GAMETICK_MULTIPLER); break;
+            case 5: dwActionTime = m_pNpcList[i]->m_dwActionTime - (350 * DEF_GAMETICK_MULTIPLER); break;
+            case 6: dwActionTime = m_pNpcList[i]->m_dwActionTime - (450 * DEF_GAMETICK_MULTIPLER); break;
+            case 7: dwActionTime = m_pNpcList[i]->m_dwActionTime - (550 * DEF_GAMETICK_MULTIPLER); break;
             }
-            if (dwActionTime < 600) dwActionTime = 600;
+            if (dwActionTime < (100 * DEF_GAMETICK_MULTIPLER)) dwActionTime = (100 * DEF_GAMETICK_MULTIPLER);
         }
         else {
             dwActionTime = m_pNpcList[i]->m_dwActionTime;
@@ -1026,6 +1026,9 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 						m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->ClearOwner(5, sOwner, DEF_OWNERTYPE_PLAYER, ix, iy);
 					}
 					else {
+						// Skip GM mode and admin invisible players
+						if (m_pGame->m_pClientList[sOwner]->m_bIsGMMode || m_pGame->m_pClientList[sOwner]->m_bIsAdminInvisible)
+							goto SKIP_SEARCH;
 						dX = m_pGame->m_pClientList[sOwner]->m_sX;
 						dY = m_pGame->m_pClientList[sOwner]->m_sY;
 						cTargetSide = m_pGame->m_pClientList[sOwner]->m_cSide;

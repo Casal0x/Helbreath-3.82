@@ -176,6 +176,27 @@
     <ClInclude Include="GameCmdGM.h">
       <Filter>Game Chat\Commands</Filter>
     </ClInclude>
+    <ClInclude Include="GameCmdRegen.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdCreateItem.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdGiveItem.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdSpawn.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdGoto.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdCome.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCmdInvis.h">
+      <Filter>Game Chat\Commands</Filter>
+    </ClInclude>
     <ClInclude Include="CmdSetAdmin.h">
       <Filter>Console\Commands</Filter>
     </ClInclude>
@@ -276,6 +297,27 @@
       <Filter>Game Chat\Commands</Filter>
     </ClCompile>
     <ClCompile Include="GameCmdGM.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdRegen.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdCreateItem.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdGiveItem.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdSpawn.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdGoto.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdCome.cpp">
+      <Filter>Game Chat\Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCmdInvis.cpp">
       <Filter>Game Chat\Commands</Filter>
     </ClCompile>
     <ClCompile Include="CmdSetAdmin.cpp">

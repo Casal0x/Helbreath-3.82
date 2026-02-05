@@ -4403,14 +4403,16 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		}
 		break;
 	}
-	if (iBoxID != 30)
+	// Bounds-check dialog positions, but skip the HudPanel which has a fixed position at the bottom
+	if (iBoxID != DialogBoxId::HudPanel)
 	{
 		if (m_dialogBoxManager.IsEnabled(iBoxID) == false)
 		{
-			int tmpx = 720;
-			int tmpy = 520;
-			if (m_dialogBoxManager.Info(iBoxID).sY > tmpy) m_dialogBoxManager.Info(iBoxID).sY = tmpy + 10;
-			if (m_dialogBoxManager.Info(iBoxID).sX > tmpx) m_dialogBoxManager.Info(iBoxID).sX = tmpx;
+			// Clamp dialog positions to ensure they stay visible on screen
+			int maxX = LOGICAL_WIDTH() - 20;
+			int maxY = LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT() - 20;
+			if (m_dialogBoxManager.Info(iBoxID).sY > maxY) m_dialogBoxManager.Info(iBoxID).sY = maxY;
+			if (m_dialogBoxManager.Info(iBoxID).sX > maxX) m_dialogBoxManager.Info(iBoxID).sX = maxX;
 			if ((m_dialogBoxManager.Info(iBoxID).sX + m_dialogBoxManager.Info(iBoxID).sSizeX) < 10) m_dialogBoxManager.Info(iBoxID).sX += 20;
 			if ((m_dialogBoxManager.Info(iBoxID).sY + m_dialogBoxManager.Info(iBoxID).sSizeY) < 10) m_dialogBoxManager.Info(iBoxID).sY += 20;
 		}

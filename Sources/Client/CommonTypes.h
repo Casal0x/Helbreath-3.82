@@ -160,6 +160,8 @@ namespace GameColors
 	// original: m_wR[10]-m_wR[0]/2, m_wG[10]-m_wG[0]/2, m_wB[10]-m_wB[0]/2
 	// 16bpp values: (-6, -4, +1) -> 8bpp equivalent: (-49, -16, +8)
 	inline constexpr GameColor BlueTintHalf{ -49, -16, 8 };
+	// Admin invisible: red-tinted half alpha
+	inline constexpr GameColor RedTintHalf{ 40, -30, -30 };
 	// original: m_wR[10]-(m_wR[0]/3), m_wG[10]-(m_wG[0]/3), m_wB[10]-(m_wB[0]/3)
 	// 16bpp values: (-4, 0, +3) -> 8bpp equivalent: (-33, 0, +25)
 	inline constexpr GameColor BlueTintThird{ -33, 0, 25 };

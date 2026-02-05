@@ -38,8 +38,9 @@ namespace RenderHelpers
 
 	// Draw body sprite with frozen tint, invisibility alpha, or Abaddon handling.
 	// Also captures the body bounding rect into game.m_rcBodyRect.
+	// bAdminInvis: true = render with red-tinted 50% alpha (admin invisible to higher-level GMs)
 	void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
-	              bool bInv, short sOwnerType, bool bFrozen);
+	              bool bInv, short sOwnerType, bool bFrozen, bool bAdminInvis = false);
 
 	// Draw the full player equipment stack in correct z-order.
 	// This is the main consolidation function that replaces ~200 lines per DrawObject function.
@@ -48,7 +49,8 @@ namespace RenderHelpers
 	// equipFrameMul: frame multiplier for equipment layers (default 8, OnMagic uses 16, OnGetItem/OnDamage use 4)
 	void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 	                      const CEntityRenderState& state, int sX, int sY,
-	                      bool bInv, const char* mantleOrder, int equipFrameMul = 8);
+	                      bool bInv, const char* mantleOrder, int equipFrameMul = 8,
+	                      bool bAdminInvis = false);
 
 	// Draw the full NPC body (just body sprite, no equipment).
 	// Same shadow/body/frozen logic as players but simpler.
@@ -58,7 +60,8 @@ namespace RenderHelpers
 
 	// Check invisibility state. Returns true if entity should NOT be drawn at all.
 	// Sets bInv to true if entity should be drawn with transparency (friendly invisible, always-invisible).
-	bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv);
+	// Sets bAdminInvis to true if entity is admin invisible (red-tinted transparency).
+	bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv, bool& bAdminInvis);
 
 	// Apply single-direction monster overrides (Air Elemental always dir 1, Gate dir 3 or 5).
 	void ApplyDirectionOverride(CEntityRenderState& state);

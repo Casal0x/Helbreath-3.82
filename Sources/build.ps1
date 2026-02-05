@@ -22,8 +22,8 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
 $solutionPath = Join-Path $scriptDir "Helbreath.sln"
 
-# Determine configuration string and log file
-$configString = "$Config-$Renderer"
+# Configuration string matches the solution configs (Debug|x64, Release|x64)
+$configString = $Config
 switch ($Target) {
     "Server" { $logFile = Join-Path $scriptDir "build_server.log" }
     "All"    { $logFile = Join-Path $scriptDir "build_all.log" }

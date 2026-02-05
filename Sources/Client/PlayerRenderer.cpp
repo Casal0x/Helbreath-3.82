@@ -9,13 +9,14 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Apply motion offset if entity is still interpolating
 	sX += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetX);
 	sY += static_cast<int>(m_game.m_pMapData->m_pData[state.m_iDataX][state.m_iDataY].m_motion.fCurrentOffsetY);
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Single-direction monster override
@@ -45,7 +46,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers in correct z-order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
 
 		// Crop effects
 		if (state.m_sOwnerType == hb::owner::Crops)
@@ -87,9 +88,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, i
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Calculate equipment indices — walking uses pose 3, standing uses pose 2
@@ -118,7 +120,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, i
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers in correct z-order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
@@ -150,9 +152,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// bodyPose=4, weaponPose=6, shieldPose=6 for running
@@ -177,7 +180,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — uses OnRun mantle order
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrderOnRun);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrderOnRun, 8, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);
@@ -231,9 +234,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Attack poses depend on walking state and weapon type
@@ -264,7 +268,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
@@ -300,9 +304,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Frame clamping — same as original
@@ -396,7 +401,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 		m_game.CheckActiveAura(sX + dx, sY + dy, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX + dx, sY + dy, bInv, _cMantleDrawingOrder);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX + dx, sY + dy, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
 
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
@@ -446,6 +451,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, 
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Magic has special invisibility handling — updates chat position for invisible enemies
 	if (hb::owner::IsAlwaysInvisible(state.m_sOwnerType)) bInv = true;
@@ -488,7 +494,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, 
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=16 for magic
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 16);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 16, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -513,9 +519,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// bodyPose=9, no weapon/shield
@@ -534,7 +541,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX
 		m_game.CheckActiveAura(sX, sY, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=4 for get item
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 4);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 4, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -559,9 +566,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX,
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Two-state: cFrame<4 = idle, cFrame>=4 = damage recoil
@@ -630,9 +638,10 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int
 	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
+	bool bAdminInvis = false;
 
 	// Invisibility check
-	if (RenderHelpers::CheckInvisibility(m_game, state, bInv))
+	if (RenderHelpers::CheckInvisibility(m_game, state, bInv, bAdminInvis))
 		return invalidRect;
 
 	// Direction inversion (knockback is opposite direction)
@@ -671,7 +680,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int
 		m_game.CheckActiveAura(fix_x, fix_y, dwTime, state.m_sOwnerType);
 
 		// Draw all equipment layers — equipFrameMul=4 for damage move
-		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder, 4);
+		RenderHelpers::DrawPlayerLayers(m_game, eq, state, fix_x, fix_y, bInv, _cMantleDrawingOrder, 4, bAdminInvis);
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, fix_x, fix_y);

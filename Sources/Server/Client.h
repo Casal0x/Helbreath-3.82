@@ -390,6 +390,8 @@ public:
 
 	// Admin / GM
 	bool m_bIsGMMode = false;
+	bool m_bIsAdminInvisible = false;
+	uint32_t m_dwLastGMImmuneNotifyTime = 0;
 	int m_iAdminIndex = -1;
 	int m_iAdminLevel = 0;
 

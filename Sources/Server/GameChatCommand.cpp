@@ -4,6 +4,13 @@
 #include "GameCmdBlock.h"
 #include "GameCmdUnblock.h"
 #include "GameCmdGM.h"
+#include "GameCmdRegen.h"
+#include "GameCmdCreateItem.h"
+#include "GameCmdGiveItem.h"
+#include "GameCmdSpawn.h"
+#include "GameCmdGoto.h"
+#include "GameCmdCome.h"
+#include "GameCmdInvis.h"
 #include "Game.h"
 #include "Client.h"
 #include "AdminLevel.h"
@@ -104,6 +111,13 @@ void GameChatCommandManager::RegisterBuiltInCommands()
 	RegisterCommand(std::make_unique<GameCmdBlock>());
 	RegisterCommand(std::make_unique<GameCmdUnblock>());
 	RegisterCommand(std::make_unique<GameCmdGM>());
+	RegisterCommand(std::make_unique<GameCmdRegen>());
+	RegisterCommand(std::make_unique<GameCmdCreateItem>());
+	RegisterCommand(std::make_unique<GameCmdGiveItem>());
+	RegisterCommand(std::make_unique<GameCmdSpawn>());
+	RegisterCommand(std::make_unique<GameCmdGoto>());
+	RegisterCommand(std::make_unique<GameCmdCome>());
+	RegisterCommand(std::make_unique<GameCmdInvis>());
 }
 
 void GameChatCommandManager::SeedCommandPermissions()
@@ -118,12 +132,12 @@ void GameChatCommandManager::SeedCommandPermissions()
 		if (m_pGame->m_commandPermissions.find(name) == m_pGame->m_commandPermissions.end())
 		{
 			CommandPermission perm;
-			perm.iAdminLevel = hb::admin::Administrator;
+			perm.iAdminLevel = cmd->GetDefaultLevel();
 			m_pGame->m_commandPermissions[name] = perm;
 			bChanged = true;
 
 			char buf[128];
-			std::snprintf(buf, sizeof(buf), "(!) New command '/%s' added to permissions (default: Administrator level %d)", name, hb::admin::Administrator);
+			std::snprintf(buf, sizeof(buf), "(!) New command '/%s' added to permissions (default: level %d)", name, cmd->GetDefaultLevel());
 			PutLogList(buf);
 		}
 	}
