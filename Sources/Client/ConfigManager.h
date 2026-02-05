@@ -87,6 +87,19 @@ public:
 	bool IsMouseCaptureEnabled() const { return m_bCaptureMouse; }
 	void SetMouseCaptureEnabled(bool enabled);
 
+	// Patching mode (movement direction calculation)
+	// 0 = Original (diagonal priority), 1 = New (asymmetric zones), 2 = Shadow (symmetric 2:1)
+	int GetPatchingMode() const { return m_iPatchingMode; }
+	void SetPatchingMode(int mode);
+
+	// Tile grid overlay (simple dark lines)
+	bool IsTileGridEnabled() const { return m_bTileGrid; }
+	void SetTileGridEnabled(bool enabled);
+
+	// Patching grid overlay (debug with zone colors)
+	bool IsPatchingGridEnabled() const { return m_bPatchingGrid; }
+	void SetPatchingGridEnabled(bool enabled);
+
 	// Borderless window
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
@@ -145,6 +158,9 @@ private:
 	bool m_bFullscreen;
 	bool m_bCaptureMouse;
 	bool m_bBorderless;
+	int m_iPatchingMode;  // 0=Original, 1=New, 2=Shadow
+	bool m_bTileGrid;
+	bool m_bPatchingGrid;
 
 	// Base resolution (640x480 or 800x600)
 	int m_baseResolutionWidth;

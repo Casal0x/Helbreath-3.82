@@ -91,6 +91,9 @@ void ConfigManager::SetDefaults()
 #endif
 	m_bCaptureMouse = true;
 	m_bBorderless = true;
+	m_iPatchingMode = 1;     // Default to new patching (0=Original, 1=New, 2=Shadow)
+	m_bTileGrid = false;     // Simple tile grid off by default
+	m_bPatchingGrid = false; // Patching debug grid off by default
 
 	// Base resolution defaults to 640x480
 	m_baseResolutionWidth = 640;
@@ -297,6 +300,23 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bBorderless = display["borderless"].get<bool>();
 			}
+			if (display.contains("patchingMode"))
+			{
+				m_iPatchingMode = Clamp(display["patchingMode"].get<int>(), 0, 2);
+			}
+			else if (display.contains("newPatching"))
+			{
+				// Legacy: convert bool to int
+				m_iPatchingMode = display["newPatching"].get<bool>() ? 1 : 0;
+			}
+			if (display.contains("tileGrid"))
+			{
+				m_bTileGrid = display["tileGrid"].get<bool>();
+			}
+			if (display.contains("patchingGrid"))
+			{
+				m_bPatchingGrid = display["patchingGrid"].get<bool>();
+			}
 		}
 
 		// Validate resolution to nearest 4:3 option
@@ -382,6 +402,9 @@ bool ConfigManager::Save(const char* filename)
 	j["display"]["fullscreen"] = m_bFullscreen;
 	j["display"]["captureMouse"] = m_bCaptureMouse;
 	j["display"]["borderless"] = m_bBorderless;
+	j["display"]["patchingMode"] = m_iPatchingMode;
+	j["display"]["tileGrid"] = m_bTileGrid;
+	j["display"]["patchingGrid"] = m_bPatchingGrid;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -683,6 +706,37 @@ void ConfigManager::SetBaseResolution(int width, int height)
 		// Update ResolutionConfig so all resolution-dependent calculations update
 		ResolutionConfig::Get().SetBaseResolution(newWidth, newHeight);
 
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetPatchingMode(int mode)
+{
+	mode = Clamp(mode, 0, 2);
+	if (m_iPatchingMode != mode)
+	{
+		m_iPatchingMode = mode;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetTileGridEnabled(bool enabled)
+{
+	if (m_bTileGrid != enabled)
+	{
+		m_bTileGrid = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetPatchingGridEnabled(bool enabled)
+{
+	if (m_bPatchingGrid != enabled)
+	{
+		m_bPatchingGrid = enabled;
 		m_bDirty = true;
 		Save();
 	}
