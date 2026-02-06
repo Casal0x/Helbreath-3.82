@@ -176,7 +176,7 @@ void HandleQueryJoinParty(CGame* pGame, char* pData)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQueryJoinParty>(
 		pData, sizeof(hb::net::PacketNotifyQueryJoinParty));
 	if (!pkt) return;
-	strcpy(pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cStr, pkt->name);
+	std::snprintf(pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(pGame->m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", pkt->name);
 }
 
 void HandleResponseCreateNewParty(CGame* pGame, char* pData)

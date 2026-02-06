@@ -207,7 +207,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 				case 8: tx += i * 5; ty += i * 5; break;
 				}
 				m_game.m_pSprite[bodyDirIndex]->Draw(tx, ty, state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+					SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 			}
 		}
 	}
@@ -273,7 +273,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
 			m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, state.m_iFrame - 1,
-				SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -406,7 +406,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
 			m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX + dx, sY + dy, state.m_iFrame - 1,
-				SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX + dx, sY + dy);
@@ -419,13 +419,13 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 		if (bDashDraw)
 		{
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-				SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 			if (eq.iWeaponIndex != -1)
 				m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+					SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 			if (eq.iShieldIndex != -1)
 				m_game.m_pSprite[eq.iShieldIndex]->Draw(sX + dsx, sY + dsy, (state.m_iDir - 1) * 8 + state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+					SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)

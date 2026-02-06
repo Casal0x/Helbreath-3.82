@@ -50,8 +50,9 @@ void DrawEquipLayer(CGame& game, int spriteIndex, int sX, int sY, int frame,
 	}
 	else
 	{
-		auto tint = GameColors::ItemTint(colorIndex);
-		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Tint(tint.r, tint.g, tint.b));
+		auto c = GameColors::Items[colorIndex];
+		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame,
+			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
 	}
 }
 
@@ -71,8 +72,9 @@ void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	}
 	else
 	{
-		auto tint = GameColors::WeaponTint(eq.iWeaponColor);
-		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, SpriteLib::DrawParams::Tint(tint.r, tint.g, tint.b));
+		auto c = GameColors::Weapons[eq.iWeaponColor];
+		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame,
+			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
 	}
 
 	// DK set glare
@@ -102,8 +104,9 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	}
 	else
 	{
-		auto tint = GameColors::ItemTint(eq.iShieldColor);
-		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Tint(tint.r, tint.g, tint.b));
+		auto c = GameColors::Items[eq.iShieldColor];
+		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame,
+			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
 	}
 
 	// Shield glare
@@ -138,12 +141,8 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	}
 	else if (bAdminInvis)
 	{
-		SpriteLib::DrawParams dp;
-		dp.alpha = 0.5f;
-		dp.tintR = GameColors::RedTintHalf.r;
-		dp.tintG = GameColors::RedTintHalf.g;
-		dp.tintB = GameColors::RedTintHalf.b;
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, dp);
+		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
+			SpriteLib::DrawParams::TintedAlpha(40, -30, -30, 0.5f));
 	}
 	else if (bInv)
 	{
@@ -152,7 +151,7 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	else if (bFrozen)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(GameColors::BlueTintHalf.r, GameColors::BlueTintHalf.g, GameColors::BlueTintHalf.b));
+			SpriteLib::DrawParams::Tint(-49, -16, 8));
 	}
 	else
 	{

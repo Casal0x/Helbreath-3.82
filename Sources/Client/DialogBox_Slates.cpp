@@ -67,8 +67,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX, sY, 4);
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX + 22, sY + 14, 3);
-		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink.r, GameColors::UISlatesPink.g, GameColors::UISlatesPink.b);
-		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan.r, GameColors::UISlatesCyan.g, GameColors::UISlatesCyan.b);
+		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink);
+		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan);
 
 		if ((dwTime - Info().dwT1) > 1000)
 		{
@@ -146,7 +146,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 				if (Info().sV1 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV1 = cItemID;
-					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
 					AddEventList(cItemIDText, 10);
 				}
 				break;
@@ -154,7 +154,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 				if (Info().sV2 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV2 = cItemID;
-					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
 					AddEventList(cItemIDText, 10);
 				}
 				break;
@@ -162,7 +162,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 				if (Info().sV3 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV3 = cItemID;
-					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
 					AddEventList(cItemIDText, 10);
 				}
 				break;
@@ -170,7 +170,7 @@ bool DialogBox_Slates::OnItemDrop(short msX, short msY)
 				if (Info().sV4 == -1) {
 					m_pGame->m_bIsItemDisabled[cItemID] = true;
 					Info().sV4 = cItemID;
-					wsprintf(cItemIDText, "Item ID : %d", cItemID);
+					std::snprintf(cItemIDText, sizeof(cItemIDText), "Item ID : %d", cItemID);
 					AddEventList(cItemIDText, 10);
 				}
 				break;

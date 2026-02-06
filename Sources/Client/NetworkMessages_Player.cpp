@@ -21,13 +21,13 @@ namespace NetworkMessageHandlers {
 
 		if (pGame->m_pPlayer->m_iCharisma > iPrevChar)
 		{
-			wsprintf(cTxt, NOTIFYMSG_CHARISMA_UP, pGame->m_pPlayer->m_iCharisma - iPrevChar);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CHARISMA_UP, pGame->m_pPlayer->m_iCharisma - iPrevChar);
 			pGame->AddEventList(cTxt, 10);
 			pGame->PlayGameSound('E', 21, 0);
 		}
 		else
 		{
-			wsprintf(cTxt, NOTIFYMSG_CHARISMA_DOWN, iPrevChar - pGame->m_pPlayer->m_iCharisma);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CHARISMA_DOWN, iPrevChar - pGame->m_pPlayer->m_iCharisma);
 			pGame->AddEventList(cTxt, 10);
 		}
 	}
@@ -56,7 +56,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyPlayerProfile>(
 			pData, sizeof(hb::net::PacketNotifyPlayerProfile));
 		if (!pkt) return;
-		strcpy(cTemp, pkt->text);
+		std::snprintf(cTemp, sizeof(cTemp), "%s", pkt->text);
 		for (i = 0; i < 500; i++)
 			if (cTemp[i] == '_') cTemp[i] = ' ';
 		pGame->AddEventList(cTemp, 10);
@@ -109,7 +109,7 @@ namespace NetworkMessageHandlers {
 			pGame->m_pWhisperMsg[0] = std::make_unique<CMsg>(0, cName, 0);
 			pGame->m_cWhisperIndex = 0;
 		}
-		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE2, cName);
+		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE2);
 
 		pGame->AddEventList(cTxt, 10);
 	}
@@ -148,7 +148,7 @@ namespace NetworkMessageHandlers {
 		{
 			if (cValue == 1)
 			{
-				strcpy(cTxt, NOTIFYMSG_RATING_PLAYER1);
+				std::snprintf(cTxt, sizeof(cTxt), "%s", NOTIFYMSG_RATING_PLAYER1);
 				pGame->PlayGameSound('E', 23, 0);
 			}
 		}
@@ -170,8 +170,8 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		const auto wTime = pkt->time_left;
 
-		if (wTime == 0) wsprintf(cTxt, NOTIFYMSG_CANNOT_RATING1, wTime * 3);
-		else wsprintf(cTxt, NOTIFYMSG_CANNOT_RATING2, wTime * 3);
+		if (wTime == 0) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_RATING1);
+		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_RATING2, wTime * 3);
 		pGame->AddEventList(cTxt, 10);
 	}
 }

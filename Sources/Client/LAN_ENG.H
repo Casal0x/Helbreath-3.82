@@ -224,7 +224,7 @@
 #define	ON_KEY_UP26	"No item with special ability is equipped."
 #define	ON_KEY_UP28	"You are already using a special ability."
 
-#define	ON_KEY_UP29	"Ability that decreases enemy's HP by 50%: Can be used after %d sec"
+#define	ON_KEY_UP29	"Ability that decreases enemy's HP by 50%%: Can be used after %d sec"
 #define	ON_KEY_UP30	"Ability that freezes enemy: Can be used after %d sec"
 #define	ON_KEY_UP31	"Ability that paralyzes enemy: Can be used after %d sec"
 #define	ON_KEY_UP32	"Ability that kills enemy at one time: Can be used after %d sec"
@@ -233,7 +233,7 @@
 #define	ON_KEY_UP35	"Ability that protects from physical attack: Can be used after %d sec"
 #define	ON_KEY_UP36	"Ability that makes character untouchable: Can be used after %d sec"
 
-#define	ON_KEY_UP37	"Ability that decreases enemy's HP by 50%: Can be used after %d minutes"
+#define	ON_KEY_UP37	"Ability that decreases enemy's HP by 50%%: Can be used after %d minutes"
 #define	ON_KEY_UP38	"Ability that freezes enemy: Can be used after %d minutes"
 #define	ON_KEY_UP39	"Ability that paralyzes enemy: Can be used after %d minutes"
 #define	ON_KEY_UP40	"Ability that kills enemy at one time: Can be used after %d minutes"
@@ -309,7 +309,7 @@
 #define	NOTIFY_MSG_HANDLER3	"You can't move to other position for %d seconds except %s"
 #define	NOTIFY_MSG_HANDLER4	"Use special ability!"
 
-#define	NOTIFY_MSG_HANDLER5	"Decrease enemy's HP by 50%! Lasts %d seconds!"
+#define	NOTIFY_MSG_HANDLER5	"Decrease enemy's HP by 50%%! Lasts %d seconds!"
 #define	NOTIFY_MSG_HANDLER6	"Freeze enemy! Lasts %d seconds!"
 #define	NOTIFY_MSG_HANDLER7	"Paralyze enemy! Lasts %d seconds!"
 #define	NOTIFY_MSG_HANDLER8	"Kill enemy at once! Lasts %d seconds!"
@@ -319,7 +319,7 @@
 #define	NOTIFY_MSG_HANDLER12	"You are untouchable for %d seconds!"
 
 #define	NOTIFY_MSG_HANDLER13	"Special ability has been set!"
-#define	NOTIFY_MSG_HANDLER14	"Ability that decreases enemy's HP by 50%: Can use after %dMin"
+#define	NOTIFY_MSG_HANDLER14	"Ability that decreases enemy's HP by 50%%: Can use after %dMin"
 #define	NOTIFY_MSG_HANDLER15	"Ability that freezes enemy: Can use after %dMin"
 #define	NOTIFY_MSG_HANDLER16	"Ability that paralyzes enemy: Can use after %dMin"
 #define	NOTIFY_MSG_HANDLER17	"Ability that kills enemy at one time: Can use after %dMin"
@@ -328,7 +328,7 @@
 #define	NOTIFY_MSG_HANDLER20	"Ability that protects from physical attack: Can use after %dMin"
 #define	NOTIFY_MSG_HANDLER21	"Ability that makes character untouchable: Can use after %dMin"
 
-#define	NOTIFY_MSG_HANDLER22	"Ability that decreases enemy's HP by 50%: Can use after %dSec"
+#define	NOTIFY_MSG_HANDLER22	"Ability that decreases enemy's HP by 50%%: Can use after %dSec"
 #define	NOTIFY_MSG_HANDLER23	"Ability that freezes enemy: Can use after %dSec"
 #define	NOTIFY_MSG_HANDLER24	"Ability that paralyzes enemy: Can use after %dSec"
 #define	NOTIFY_MSG_HANDLER25	"Ability that kills enemy at one time: Can use after %dSec"

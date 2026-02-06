@@ -16,19 +16,19 @@ void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, con
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Stat label
-	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack.ToColorRef());
+	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack);
 
 	// Current value
-	wsprintf(cTxt, "%d", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
+	std::snprintf(cTxt, sizeof(cTxt), "%d", iCurrentStat);
+	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel);
 
 	// New value (with pending changes)
 	int iNewStat = iCurrentStat + iPendingChange;
-	wsprintf(cTxt, "%d", iNewStat);
+	std::snprintf(cTxt, sizeof(cTxt), "%d", iNewStat);
 	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed.ToColorRef());
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed);
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel);
 
 	// + arrow highlight
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanIncrease)
@@ -56,12 +56,12 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING2);
 
 	// Points Left
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, GameColors::UIBlack.ToColorRef());
-	wsprintf(cTxt, "%d", m_pGame->m_pPlayer->m_iLU_Point);
+	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING3, GameColors::UIBlack);
+	std::snprintf(cTxt, sizeof(cTxt), "%d", m_pGame->m_pPlayer->m_iLU_Point);
 	if (m_pGame->m_pPlayer->m_iLU_Point > 0)
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen.ToColorRef());
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen);
 	else
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack.ToColorRef());
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack);
 
 	// Draw stat rows
 	DrawStatRow(sX, sY, 125, DRAW_DIALOGBOX_LEVELUP_SETTING4, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_wLU_Str,

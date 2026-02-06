@@ -51,6 +51,6 @@ void Overlay_ConnectionLost::on_render()
 
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
     TextLib::DrawText(GameFont::Bitmap1, dlgX + 64, dlgY + 55, "Connection Lost!", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
-    PutString(dlgX + 60, dlgY + 85, UPDATE_SCREEN_ON_CONNECTION_LOST, GameColors::UIBlack.ToColorRef());
+    PutString(dlgX + 60, dlgY + 85, UPDATE_SCREEN_ON_CONNECTION_LOST, GameColors::UIBlack);
     DrawVersion();
 }

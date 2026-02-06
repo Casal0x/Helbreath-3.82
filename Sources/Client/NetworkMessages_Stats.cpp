@@ -24,7 +24,7 @@ namespace NetworkMessageHandlers {
 	if (pGame->m_pPlayer->m_iHP > iPrevHP)
 	{
 		if ((pGame->m_pPlayer->m_iHP - iPrevHP) < 10) return;
-		wsprintf(cTxt, NOTIFYMSG_HP_UP, pGame->m_pPlayer->m_iHP - iPrevHP);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_HP_UP, pGame->m_pPlayer->m_iHP - iPrevHP);
 		pGame->AddEventList(cTxt, 10);
 		pGame->PlayGameSound('E', 21, 0);
 	}
@@ -38,7 +38,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_dwDamagedTime = GameClock::GetTimeMS();
 		if (pGame->m_pPlayer->m_iHP < 20) pGame->AddEventList(NOTIFYMSG_HP3, 10);
 		if ((iPrevHP - pGame->m_pPlayer->m_iHP) < 10) return;
-		wsprintf(cTxt, NOTIFYMSG_HP_DOWN, iPrevHP - pGame->m_pPlayer->m_iHP);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_HP_DOWN, iPrevHP - pGame->m_pPlayer->m_iHP);
 		pGame->AddEventList(cTxt, 10);
 	}
 	}
@@ -55,13 +55,13 @@ namespace NetworkMessageHandlers {
 		if (abs(pGame->m_pPlayer->m_iMP - iPrevMP) < 10) return;
 		if (pGame->m_pPlayer->m_iMP > iPrevMP)
 		{
-			wsprintf(cTxt, NOTIFYMSG_MP_UP, pGame->m_pPlayer->m_iMP - iPrevMP);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MP_UP, pGame->m_pPlayer->m_iMP - iPrevMP);
 			pGame->AddEventList(cTxt, 10);
 			pGame->PlayGameSound('E', 21, 0);
 		}
 		else
 		{
-			wsprintf(cTxt, NOTIFYMSG_MP_DOWN, iPrevMP - pGame->m_pPlayer->m_iMP);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_MP_DOWN, iPrevMP - pGame->m_pPlayer->m_iMP);
 			pGame->AddEventList(cTxt, 10);
 		}
 	}
@@ -102,12 +102,12 @@ namespace NetworkMessageHandlers {
 
 		if (pGame->m_pPlayer->m_iExp > iPrevExp)
 		{
-			wsprintf(cTxt, EXP_INCREASED, pGame->m_pPlayer->m_iExp - iPrevExp);
+			std::snprintf(cTxt, sizeof(cTxt), EXP_INCREASED, pGame->m_pPlayer->m_iExp - iPrevExp);
 			pGame->AddEventList(cTxt, 10);
 		}
 		else
 		{
-			wsprintf(cTxt, EXP_DECREASED, iPrevExp - pGame->m_pPlayer->m_iExp);
+			std::snprintf(cTxt, sizeof(cTxt), EXP_DECREASED, iPrevExp - pGame->m_pPlayer->m_iExp);
 			pGame->AddEventList(cTxt, 10);
 		}
 	}
@@ -133,7 +133,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
 		pGame->m_pPlayer->m_wLU_Str = pGame->m_pPlayer->m_wLU_Vit = pGame->m_pPlayer->m_wLU_Dex = pGame->m_pPlayer->m_wLU_Int = pGame->m_pPlayer->m_wLU_Mag = pGame->m_pPlayer->m_wLU_Char = 0;
 
-		wsprintf(cTxt, NOTIFYMSG_LEVELUP1, pGame->m_pPlayer->m_iLevel);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_LEVELUP1, pGame->m_pPlayer->m_iLevel);
 		pGame->AddEventList(cTxt, 10);
 
 		switch (pGame->m_pPlayer->m_sPlayerType) {
@@ -154,7 +154,7 @@ namespace NetworkMessageHandlers {
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (pGame->m_pChatMsgList[i] == 0) {
 				std::memset(cTxt, 0, sizeof(cTxt));
-				strcpy(cTxt, "Level up!");
+				std::snprintf(cTxt, sizeof(cTxt), "%s", "Level up!");
 				pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(23, cTxt, pGame->m_dwCurTime);
 				pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
 

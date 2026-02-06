@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "CommonTypes.h"
 #include <cstdint>
 
 class CGame;
@@ -70,11 +71,10 @@ protected:
                           bool bIsNoColorKey = false, bool bIsTrans = false);
     // Computes centered position for a dialog sprite frame within the logical resolution
     void GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY);
-    void PutString(int iX, int iY, const char* pString, uint32_t color);
-    void PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB);
+    void PutString(int iX, int iY, const char* pString, const GameColor& color);
     void PutAlignedString(int iX1, int iX2, int iY, const char* pString,
-                          short sR = 0, short sG = 0, short sB = 0);
-    void PutString_SprFont(int iX, int iY, const char* pStr, short sR, short sG, short sB);
+                          const GameColor& color = GameColors::UIBlack);
+    void PutString_SprFont(int iX, int iY, const char* pStr, uint8_t r, uint8_t g, uint8_t b);
     void DrawVersion();
 
     // Audio helpers

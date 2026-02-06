@@ -17,9 +17,9 @@ bool DialogBox_Help::IsMouseOverItem(short msX, short msY, short sX, short sY, i
 void DialogBox_Help::DrawHelpItem(short sX, short szX, short sY, int iItem, const char* pText, bool bHighlight)
 {
 	if (bHighlight)
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * iItem, (char*)pText, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		PutAlignedString(sX, sX + szX, sY + 50 + 15 * iItem, (char*)pText, GameColors::UIWhite);
 	else
-		PutAlignedString(sX, sX + szX, sY + 50 + 15 * iItem, (char*)pText, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+		PutAlignedString(sX, sX + szX, sY + 50 + 15 * iItem, (char*)pText, GameColors::UIMagicBlue);
 }
 
 void DialogBox_Help::OnDraw(short msX, short msY, short msZ, char cLB)

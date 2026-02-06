@@ -1,15 +1,15 @@
 {
     "audio": {
         "ambientEnabled": true,
-        "ambientVolume": 24,
+        "ambientVolume": 15,
         "masterEnabled": true,
-        "masterVolume": 100,
+        "masterVolume": 44,
         "musicEnabled": false,
         "musicVolume": 16,
         "soundEnabled": true,
-        "soundVolume": 25,
+        "soundVolume": 14,
         "uiEnabled": true,
-        "uiVolume": 28
+        "uiVolume": 14
     },
     "display": {
         "borderless": false,

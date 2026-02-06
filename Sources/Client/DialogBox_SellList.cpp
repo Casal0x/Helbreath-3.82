@@ -53,14 +53,14 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 			{
 				// Multiple items
 				std::memset(cTxt, 0, sizeof(cTxt));
-				wsprintf(cTxt, DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELL_LIST1, m_pGame->m_stSellItemList[i].iAmount, cStr1);
 
 				if (bHover)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite);
 				else if (m_pGame->m_bIsSpecial)
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
 				else
-					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
 			}
 			else
 			{
@@ -69,7 +69,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				{
 					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
 					{
-						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+						PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite);
 					}
 					else
 					{
@@ -77,19 +77,19 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
 						{
 							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								wsprintf(cTxt, "%s(%s, %s)", cStr1, cStr2, cStr3);
+								std::snprintf(cTxt, sizeof(cTxt), "%s(%s, %s)", cStr1, cStr2, cStr3);
 							else
-								wsprintf(cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+								std::snprintf(cTxt, sizeof(cTxt), "%s(%s%s)", cStr1, cStr2, cStr3);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite);
 						}
 						else
 						{
 							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								wsprintf(cTxt, "(%s, %s)", cStr2, cStr3);
+								std::snprintf(cTxt, sizeof(cTxt), "(%s, %s)", cStr2, cStr3);
 							else
-								wsprintf(cTxt, "(%s%s)", cStr2, cStr3);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
+								std::snprintf(cTxt, sizeof(cTxt), "(%s%s)", cStr2, cStr3);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIWhite);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15 + 15, cTxt, GameColors::UIDisabled);
 							i++;
 						}
 					}
@@ -99,9 +99,9 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
 					{
 						if (m_pGame->m_bIsSpecial)
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
 						else
-							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
 					}
 					else
 					{
@@ -109,21 +109,21 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 						if ((strlen(cStr1) + strlen(cStr2) + strlen(cStr3)) < 36)
 						{
 							if ((strlen(cStr2) > 0) && (strlen(cStr3) > 0))
-								wsprintf(cTxt, "%s(%s, %s)", cStr1, cStr2, cStr3);
+								std::snprintf(cTxt, sizeof(cTxt), "%s(%s, %s)", cStr1, cStr2, cStr3);
 							else
-								wsprintf(cTxt, "%s(%s%s)", cStr1, cStr2, cStr3);
+								std::snprintf(cTxt, sizeof(cTxt), "%s(%s%s)", cStr1, cStr2, cStr3);
 
 							if (m_pGame->m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
 						}
 						else
 						{
 							if (m_pGame->m_bIsSpecial)
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
 							else
-								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
 						}
 					}
 				}
@@ -253,7 +253,7 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
 		char cStr1[64], cStr2[64], cStr3[64];
 		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-		wsprintf(m_pGame->G_cTxt, NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
+		std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
 		AddEventList(m_pGame->G_cTxt, 10);
 		return false;
 	}

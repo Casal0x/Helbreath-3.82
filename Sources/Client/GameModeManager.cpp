@@ -71,7 +71,7 @@ void GameModeManager::UpdateImpl()
     if (m_transitionState == TransitionState::None)
         return;
 
-    float dt = FrameTiming::GetDeltaTime();
+    float dt = static_cast<float>(FrameTiming::GetDeltaTime());
 
     switch (m_transitionState)
     {

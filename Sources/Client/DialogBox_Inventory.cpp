@@ -273,7 +273,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 				(pCfg->m_sSpriteFrame == 9 ||
 				 pCfg->m_sSpriteFrame == 89))
 			{
-				wsprintf(m_pGame->G_cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);
+				std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY3, cStr1);
 				AddEventList(m_pGame->G_cTxt, 10);
 				return true;
 			}
@@ -311,7 +311,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 			m_pGame->m_bIsGetPointingMode = true;
 			m_pGame->m_iPointCommandType = cItemID;
 			char cTxt[120];
-			wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY7, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY7, cStr1);
 			AddEventList(cTxt, 10);
 		}
 	}
@@ -338,7 +338,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 			m_pGame->m_bIsGetPointingMode = true;
 			m_pGame->m_iPointCommandType = cItemID;
 			char cTxt[120];
-			wsprintf(cTxt, BDLBBOX_DOUBLE_CLICK_INVENTORY8, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), BDLBBOX_DOUBLE_CLICK_INVENTORY8, cStr1);
 			AddEventList(cTxt, 10);
 		}
 	}
@@ -554,7 +554,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 		char cStr1[64], cStr2[64], cStr3[64];
 		char cTxt[120];
 		m_pGame->GetItemName(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
-		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+		std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 		AddEventList(cTxt, 10);
 
 		{

@@ -1,10 +1,3 @@
-// --------------------------------------------------------------
-//                      Helbreath Client
-//
-//                      1998.10 by Soph
-//
-// --------------------------------------------------------------
-
 #include "NativeTypes.h"
 #include "Game.h"
 #include "GameWindowHandler.h"

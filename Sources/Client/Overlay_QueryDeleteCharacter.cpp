@@ -60,7 +60,7 @@ void Overlay_QueryDeleteCharacter::on_update()
 
             m_pGame->m_dwConnectMode = MSGID_REQUEST_DELETECHARACTER;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-            strcpy(m_pGame->m_cMsg, "33");
+            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
 
             // set_overlay will clear this overlay automatically
             m_pGame->ChangeGameMode(GameMode::Connecting);
@@ -116,14 +116,13 @@ void Overlay_QueryDeleteCharacter::on_render()
     TextLib::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Character name display
-    PutString(dlgX + 53, dlgY + 70, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack.ToColorRef());
-    PutString(dlgX + 173, dlgY + 74, "__________", GameColors::UIBlack.ToColorRef());
+    PutString(dlgX + 53, dlgY + 70, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack);
+    PutString(dlgX + 173, dlgY + 74, "__________", GameColors::UIBlack);
 
     // Get character name from the selected character slot
     if (m_pGame->m_wEnterGameType > 0 && m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1] != nullptr)
     {
-        PutString(dlgX + 173, dlgY + 70,
-                  m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, GameColors::UILabel.ToColorRef());
+        PutString(dlgX + 173, dlgY + 70, m_pGame->m_pCharList[m_pGame->m_wEnterGameType - 1]->m_cName, GameColors::UILabel);
     }
 
     // Confirmation text

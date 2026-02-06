@@ -48,8 +48,8 @@ public:
     // Text Rendering
     void BeginTextBatch() override;
     void EndTextBatch() override;
-    void DrawText(int x, int y, const char* text, uint32_t color) override;
-    void DrawTextRect(RECT* rect, const char* text, uint32_t color) override;
+    void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) override;
+    void DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b) override;
 
     // Surface/Texture Management
     ITexture* CreateTexture(uint16_t width, uint16_t height) override;
@@ -61,7 +61,7 @@ public:
 
     // Clip Area
     void SetClipArea(int x, int y, int w, int h) override;
-    RECT GetClipArea() const override;
+    GameRectangle GetClipArea() const override;
 
     // Pixel Format Info
     int GetPixelFormat() const override;
@@ -148,7 +148,7 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
-    RECT m_clipArea;
+    GameRectangle m_clipArea;
 
     // Sprite alpha degree
     char m_spriteAlphaDegree;

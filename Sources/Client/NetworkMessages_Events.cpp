@@ -26,7 +26,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyMonsterCount));
 		if (!pkt) return;
 		iCount = pkt->count;
-		wsprintf(cTxt, "Rest Monster :%d", iCount);
+		std::snprintf(cTxt, sizeof(cTxt), "Rest Monster :%d", iCount);
 		pGame->AddEventList(cTxt, 10);
 	}
 

@@ -49,25 +49,25 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		std::memset(cStr3, 0, sizeof(cStr3));
 
 		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
-		if (Info().sV4 == 1) strcpy(cTxt, cTemp);
-		else wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, cTemp);
+		if (Info().sV4 == 1) std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
+		else std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, cTemp);
 
 		if (m_pGame->m_bIsSpecial)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);
 		}
 		else
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel);
 		}
 
-		wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
-		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel.ToColorRef());
-		wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM3, Info().sV3);
-		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM4, GameColors::UILabel.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
+		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel);
+		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM3, Info().sV3);
+		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel);
+		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM4, GameColors::UILabel);
 
 		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 39);
@@ -103,22 +103,22 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
 		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
-		wsprintf(cTxt, "%s", cTemp);
+		std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
 		if (m_pGame->m_bIsSpecial)
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);
 		}
 		else
 		{
-			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UILabel);
+			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UILabel);
 		}
-		wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
-		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel.ToColorRef());
-		wsprintf(cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM6, Info().sV3);
-		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM7, GameColors::UILabel.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM2, Info().sV2);
+		PutString(sX + 95 + 15, sY + 53 + 60, cTxt, GameColors::UILabel);
+		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM6, Info().sV3);
+		PutString(sX + 95 + 15, sY + 53 + 75, cTxt, GameColors::UILabel);
+		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM7, GameColors::UILabel);
 
 		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 43);
@@ -133,18 +133,18 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
 
-		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM8, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 135, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM10, GameColors::UILabel.ToColorRef());
+		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM8, GameColors::UILabel);
+		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel);
+		PutString(sX + 55, sY + 135, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM10, GameColors::UILabel);
 		break;
 
 	case 4:
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 10);
 
-		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM11, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel.ToColorRef());
-		PutString(sX + 55, sY + 135, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM10, GameColors::UILabel.ToColorRef());
+		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM11, GameColors::UILabel);
+		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel);
+		PutString(sX + 55, sY + 135, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM10, GameColors::UILabel);
 		break;
 	}
 }

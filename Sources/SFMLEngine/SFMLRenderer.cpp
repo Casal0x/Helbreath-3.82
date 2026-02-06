@@ -34,7 +34,7 @@ SFMLRenderer::SFMLRenderer()
     , m_fullscreen(false)
     , m_spriteAlphaDegree(1)
 {
-    SetRect(&m_clipArea, 0, 0, m_width, m_height);
+    m_clipArea = GameRectangle(0, 0, m_width, m_height);
     InitDummyTables();
 }
 
@@ -147,7 +147,7 @@ bool SFMLRenderer::CreateRenderTextures()
     // Update dimensions from ResolutionConfig (initialized before renderer creation)
     m_width = RENDER_LOGICAL_WIDTH();
     m_height = RENDER_LOGICAL_HEIGHT();
-    SetRect(&m_clipArea, 0, 0, m_width, m_height);
+    m_clipArea = GameRectangle(0, 0, m_width, m_height);
 
     // Create back buffer render texture
     if (!m_backBuffer.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
@@ -355,8 +355,8 @@ bool SFMLRenderer::EndFrameCheckLostSurface()
 
 void SFMLRenderer::PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (x < m_clipArea.left || x >= m_clipArea.right ||
-        y < m_clipArea.top || y >= m_clipArea.bottom)
+    if (x < m_clipArea.Left() || x >= m_clipArea.Right() ||
+        y < m_clipArea.Top() || y >= m_clipArea.Bottom())
         return;
 
     sf::RectangleShape pixel({1.0f, 1.0f});
@@ -461,7 +461,7 @@ void SFMLRenderer::EndTextBatch()
         pTextRenderer->EndBatch();
 }
 
-void SFMLRenderer::DrawText(int x, int y, const char* text, uint32_t color)
+void SFMLRenderer::DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b)
 {
     if (!text || !m_texturesCreated)
         return;
@@ -469,21 +469,19 @@ void SFMLRenderer::DrawText(int x, int y, const char* text, uint32_t color)
     // Delegate to TextLib - single point of font handling
     TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
     if (pTextRenderer)
-        pTextRenderer->DrawText(x, y, text, color);
+        pTextRenderer->DrawText(x, y, text, r, g, b);
 }
 
-void SFMLRenderer::DrawTextRect(RECT* rect, const char* text, uint32_t color)
+void SFMLRenderer::DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b)
 {
-    if (!rect || !text || !m_texturesCreated)
+    if (!text || !m_texturesCreated)
         return;
 
     // Delegate to TextLib - single point of font handling
     TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
     if (pTextRenderer)
     {
-        int width = rect->right - rect->left;
-        int height = rect->bottom - rect->top;
-        pTextRenderer->DrawTextAligned(rect->left, rect->top, width, height, text, color,
+        pTextRenderer->DrawTextAligned(rect.x, rect.y, rect.width, rect.height, text, r, g, b,
                                         TextLib::Align::TopCenter);
     }
 }
@@ -568,13 +566,13 @@ void SFMLRenderer::UnlockBackBuffer()
 
 void SFMLRenderer::SetClipArea(int x, int y, int w, int h)
 {
-    SetRect(&m_clipArea, x, y, x + w, y + h);
+    m_clipArea = GameRectangle(x, y, w, h);
 
     // Set SFML viewport/scissor
     // Note: SFML doesn't have direct scissor support, but we store it for manual clipping
 }
 
-RECT SFMLRenderer::GetClipArea() const
+GameRectangle SFMLRenderer::GetClipArea() const
 {
     return m_clipArea;
 }

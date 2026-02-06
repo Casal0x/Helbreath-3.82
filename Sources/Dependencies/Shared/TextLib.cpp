@@ -172,32 +172,28 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 		if (style.fontSize > 0)
 			pRenderer->SetFontSize(style.fontSize);
 
-		uint32_t color = style.ToColorRef();
-
 		// Handle shadow styles
 		switch (style.shadow)
 		{
 			case ShadowStyle::ThreePoint:
 			{
 				// 3-point shadow: +1,+1, 0,+1, +1,0 in black
-				uint32_t black = 0x00000000; // RGB(0,0,0)
-				pRenderer->DrawText(x + 1, y + 1, text, black);
-				pRenderer->DrawText(x, y + 1, text, black);
-				pRenderer->DrawText(x + 1, y, text, black);
+				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
+				pRenderer->DrawText(x, y + 1, text, 0, 0, 0);
+				pRenderer->DrawText(x + 1, y, text, 0, 0, 0);
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
 				// Simple drop shadow at +1,+1 in black
-				pRenderer->DrawText(x + 1, y + 1, text, 0x00000000);
+				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
 				break;
 			}
 			case ShadowStyle::TwoPoint:
 			{
 				// 2-point shadow: 0,+1 and +1,+1 in black
-				uint32_t black = 0x00000000;
-				pRenderer->DrawText(x, y + 1, text, black);
-				pRenderer->DrawText(x + 1, y + 1, text, black);
+				pRenderer->DrawText(x, y + 1, text, 0, 0, 0);
+				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
 				break;
 			}
 			case ShadowStyle::Highlight:
@@ -205,10 +201,7 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 				// Highlight at +1,0 with brightened color
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				uint32_t highlightColor = static_cast<uint32_t>(hr) |
-				                          (static_cast<uint32_t>(hg) << 8) |
-				                          (static_cast<uint32_t>(hb) << 16);
-				pRenderer->DrawText(x + 1, y, text, highlightColor);
+				pRenderer->DrawText(x + 1, y, text, hr, hg, hb);
 				break;
 			}
 			default:
@@ -217,7 +210,7 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 		}
 
 		// Draw main text
-		pRenderer->DrawText(x, y, text, color);
+		pRenderer->DrawText(x, y, text, style.r, style.g, style.b);
 	}
 }
 
@@ -296,32 +289,26 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 		if (style.fontSize > 0)
 			pRenderer->SetFontSize(style.fontSize);
 
-		uint32_t color = style.ToColorRef();
-
 		// Handle shadow styles with offset rectangles
 		switch (style.shadow)
 		{
 			case ShadowStyle::ThreePoint:
 			{
-				uint32_t black = 0x00000000;
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, black, alignment);
-				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, black, alignment);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, black, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
+				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, 0, 0, 0, alignment);
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, 0x00000000, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
 				break;
 			}
 			case ShadowStyle::Highlight:
 			{
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				uint32_t highlightColor = static_cast<uint32_t>(hr) |
-				                          (static_cast<uint32_t>(hg) << 8) |
-				                          (static_cast<uint32_t>(hb) << 16);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, highlightColor, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, hr, hg, hb, alignment);
 				break;
 			}
 			default:
@@ -329,7 +316,7 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 		}
 
 		// Draw main aligned text
-		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, color, alignment);
+		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, style.r, style.g, style.b, alignment);
 	}
 }
 

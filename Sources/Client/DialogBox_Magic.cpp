@@ -44,21 +44,15 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	if (Info().sView > 9) Info().sView = 0;
 
 	// Circle title
-	std::memset(cTxt, 0, sizeof(cTxt));
-	switch (Info().sView) {
-	case 0: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC1);  break;
-	case 1: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC2);  break;
-	case 2: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC3);  break;
-	case 3: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC4);  break;
-	case 4: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC5);  break;
-	case 5: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC6);  break;
-	case 6: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC7);  break;
-	case 7: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC8);  break;
-	case 8: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC9);  break;
-	case 9: strcpy(cTxt, DRAW_DIALOGBOX_MAGIC10); break;
-	}
-	PutAlignedString(sX + 3, sX + 256, sY + 50, cTxt);
-	PutAlignedString(sX + 4, sX + 257, sY + 50, cTxt);
+	static constexpr const char* kMagicCircleNames[] = {
+		DRAW_DIALOGBOX_MAGIC1, DRAW_DIALOGBOX_MAGIC2, DRAW_DIALOGBOX_MAGIC3,
+		DRAW_DIALOGBOX_MAGIC4, DRAW_DIALOGBOX_MAGIC5, DRAW_DIALOGBOX_MAGIC6,
+		DRAW_DIALOGBOX_MAGIC7, DRAW_DIALOGBOX_MAGIC8, DRAW_DIALOGBOX_MAGIC9,
+		DRAW_DIALOGBOX_MAGIC10
+	};
+	const char* pCircleName = kMagicCircleNames[Info().sView];
+	PutAlignedString(sX + 3, sX + 256, sY + 50, pCircleName);
+	PutAlignedString(sX + 4, sX + 257, sY + 50, pCircleName);
 
 	iCPivot = Info().sView * 10;
 	iYloc = 0;
@@ -66,7 +60,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		if ((m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0) && (m_pGame->m_pMagicCfgList[iCPivot + i] != 0))
 		{
-			wsprintf(cTxt, "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
+			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
 			iManaCost = m_pGame->iGetManaCost(iCPivot + i);
@@ -74,19 +68,19 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
 				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
-				wsprintf(cMana, "%3d", iManaCost);
+				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
 				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
 			}
 			else if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
 				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
-				wsprintf(cMana, "%3d", iManaCost);
+				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
 				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 			}
 			else
 			{
 				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
-				wsprintf(cMana, "%3d", iManaCost);
+				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
 				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 			}
 
@@ -189,7 +183,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// Display magic probability
 	std::memset(cTxt, 0, sizeof(cTxt));
-	wsprintf(cTxt, DRAW_DIALOGBOX_MAGIC16, iResult);
+	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_MAGIC16, iResult);
 	PutAlignedString(sX, sX + 256, sY + 267, cTxt);
 	PutAlignedString(sX + 1, sX + 257, sY + 267, cTxt);
 

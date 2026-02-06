@@ -13,6 +13,11 @@
 
 namespace TextLib {
 
+// DrawText overload accepting GameColor
+inline void DrawText(int fontId, int x, int y, const char* text, const GameColor& color) {
+	DrawText(fontId, x, y, text, TextStyle::Color(color.r, color.g, color.b));
+}
+
 // DrawTextAligned overload accepting GameRectangle
 inline void DrawTextAligned(int fontId, const GameRectangle& rect, const char* text,
                             const TextStyle& style, Align alignment = Align::TopLeft) {
@@ -23,6 +28,12 @@ inline void DrawTextAligned(int fontId, const GameRectangle& rect, const char* t
 inline void DrawTextAligned(int fontId, const GameRectangle& rect, const char* text,
                             uint8_t r, uint8_t g, uint8_t b, Align alignment = Align::TopLeft) {
 	DrawTextAligned(fontId, rect, text, TextStyle::Color(r, g, b), alignment);
+}
+
+// DrawTextAligned overload accepting GameColor
+inline void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
+                            const GameColor& color, Align alignment = Align::TopLeft) {
+	DrawTextAligned(fontId, x, y, width, height, text, TextStyle::Color(color.r, color.g, color.b), alignment);
 }
 
 } // namespace TextLib

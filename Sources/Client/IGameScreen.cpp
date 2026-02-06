@@ -30,26 +30,21 @@ void IGameScreen::GetCenteredDialogPos(char cType, int iFrame, int& outX, int& o
     outY = (LOGICAL_HEIGHT() - rect.height) / 2;
 }
 
-void IGameScreen::PutString(int iX, int iY, const char* pString, uint32_t color)
+void IGameScreen::PutString(int iX, int iY, const char* pString, const GameColor& color)
 {
-    TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::FromColorRef(color));
-}
-
-void IGameScreen::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
-{
-    TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::WithShadow(sR, sG, sB));
+    TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::Color(color.r, color.g, color.b));
 }
 
 void IGameScreen::PutAlignedString(int iX1, int iX2, int iY, const char* pString,
-                                    short sR, short sG, short sB)
+                                    const GameColor& color)
 {
     TextLib::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
-                             TextLib::TextStyle::Color(sR, sG, sB), TextLib::Align::TopCenter);
+                             TextLib::TextStyle::Color(color.r, color.g, color.b), TextLib::Align::TopCenter);
 }
 
-void IGameScreen::PutString_SprFont(int iX, int iY, const char* pStr, short sR, short sG, short sB)
+void IGameScreen::PutString_SprFont(int iX, int iY, const char* pStr, uint8_t r, uint8_t g, uint8_t b)
 {
-    TextLib::DrawText(GameFont::Bitmap1, iX, iY, pStr, TextLib::TextStyle::WithHighlight(sR, sG, sB));
+    TextLib::DrawText(GameFont::Bitmap1, iX, iY, pStr, TextLib::TextStyle::WithHighlight(r, g, b));
 }
 
 void IGameScreen::DrawVersion()

@@ -30,8 +30,8 @@ public:
     int GetFittingCharCount(const char* text, int maxWidth) const override;
 
     // Drawing
-    void DrawText(int x, int y, const char* text, uint32_t color) override;
-    void DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+    void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) override;
+    void DrawTextAligned(int x, int y, int width, int height, const char* text, uint8_t r, uint8_t g, uint8_t b,
                          Align alignment = Align::TopLeft) override;
 
     // Batching (no-op for SFML, no DC acquisition needed)

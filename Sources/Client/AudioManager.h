@@ -93,7 +93,7 @@ public:
 	int GetListenerY() const { return m_listenerY; }
 
 	// Per-frame update
-	void Update(uint32_t currentTime);
+	void Update();
 
 private:
 	AudioManager() = default;

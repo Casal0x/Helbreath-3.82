@@ -25,8 +25,8 @@ void DialogBox_Bank::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case -1:
-		PutString(sX + 30 + 15, sY + 70, DRAW_DIALOGBOX_BANK1, GameColors::UIBlack.ToColorRef());
-		PutString(sX + 30 + 15, sY + 85, DRAW_DIALOGBOX_BANK2, GameColors::UIBlack.ToColorRef());
+		PutString(sX + 30 + 15, sY + 70, DRAW_DIALOGBOX_BANK1, GameColors::UIBlack);
+		PutString(sX + 30 + 15, sY + 85, DRAW_DIALOGBOX_BANK2, GameColors::UIBlack);
 		break;
 
 	case 0:
@@ -52,14 +52,14 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				bFlag = true;
-				PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+				PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIWhite);
 				DrawItemDetails(sX, sY, szX, itemIndex, iLoc);
 			}
 			else {
 				if (m_pGame->m_bIsSpecial)
-					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIItemName_Special);
 				else
-					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIBlack);
 			}
 		}
 	}
@@ -92,17 +92,17 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	m_pGame->GetItemName(pItem, cStr1, cStr2, cStr3);
 
 	if (m_pGame->m_bIsSpecial)
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIItemName_Special);
 	else
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIWhite);
 
 	if (strlen(cStr2) > 0) {
 		iLoc += 15;
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr2, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr2, GameColors::UIDisabled);
 	}
 	if (strlen(cStr3) > 0) {
 		iLoc += 15;
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr3, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr3, GameColors::UIDisabled);
 	}
 
 	// Level limit
@@ -111,7 +111,7 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		iLoc += 15;
 		char buf[128];
 		snprintf(buf, sizeof(buf), "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled);
 	}
 
 	// Weight for equipment
@@ -122,7 +122,7 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		if (pCfg->m_wWeight % 100) _wWeight = 1;
 		char buf[128];
 		snprintf(buf, sizeof(buf), DRAW_DIALOGBOX_SHOP15, pCfg->m_wWeight / 100 + _wWeight);
-		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b);
+		PutAlignedString(sX + 70, sX + szX, sY + iLoc, buf, GameColors::UIDisabled);
 	}
 
 	// Draw item sprite

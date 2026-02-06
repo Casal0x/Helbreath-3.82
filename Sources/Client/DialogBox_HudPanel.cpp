@@ -139,7 +139,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		const char* tooltip = m_pGame->m_pPlayer->m_bIsCombatMode
 			? (m_pGame->m_pPlayer->m_bIsSafeAttackMode ? "Safe Attack" : "Attack")
 			: "Peace";
-		PutString(msX - 10, msY - 20, tooltip, GameColors::UITooltip.ToColorRef());
+		PutString(msX - 10, msY - 20, tooltip, GameColors::UITooltip);
 	}
 
 	// Crusade icon
@@ -173,8 +173,8 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	{
 		snprintf(infoBuf, sizeof(infoBuf), "%s (%d,%d)", m_pGame->m_cMapMessage, m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 	}
-	PutAlignedString(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf, GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
-	PutAlignedString(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf, GameColors::UIPaleYellow.r, GameColors::UIPaleYellow.g, GameColors::UIPaleYellow.b);
+	PutAlignedString(MAP_MSG_X1() + 1, MAP_MSG_X2() + 1, MAP_MSG_Y() + 1, infoBuf, GameColors::UIBlack);
+	PutAlignedString(MAP_MSG_X1(), MAP_MSG_X2(), MAP_MSG_Y(), infoBuf, GameColors::UIPaleYellow);
 }
 
 void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
@@ -193,7 +193,7 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 		{
 			pSprite->Draw(btn.spriteX + xOffset, BTN_Y1(), btn.spriteFrame);
 			int tooltipOffset = (btn.dialogId == DialogBoxId::SystemMenu) ? -20 : -10;
-			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, GameColors::UITooltip.ToColorRef());
+			PutString(msX + tooltipOffset, msY - 20, btn.tooltip, GameColors::UITooltip);
 			break;
 		}
 	}

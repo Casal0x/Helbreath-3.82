@@ -109,23 +109,7 @@ struct TextStyle
 		return TextStyle(r, g, b, alpha);
 	}
 
-	// From Windows COLORREF (0x00BBGGRR format) - for easy migration
-	static TextStyle FromColorRef(uint32_t colorref) {
-		return TextStyle(
-			static_cast<uint8_t>(colorref & 0xFF),
-			static_cast<uint8_t>((colorref >> 8) & 0xFF),
-			static_cast<uint8_t>((colorref >> 16) & 0xFF)
-		);
-	}
-
-	// ============== Conversion Methods ==============
-
-	// Convert to Windows COLORREF
-	uint32_t ToColorRef() const {
-		return static_cast<uint32_t>(r) |
-		       (static_cast<uint32_t>(g) << 8) |
-		       (static_cast<uint32_t>(b) << 16);
-	}
+	// ============== Modifier Methods ==============
 
 	// Create a copy with different shadow style
 	constexpr TextStyle WithShadowStyle(ShadowStyle s) const {

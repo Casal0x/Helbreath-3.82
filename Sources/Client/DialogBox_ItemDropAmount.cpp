@@ -25,38 +25,38 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 		m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 		if (strlen(Info().cStr) == 0)
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
 		else
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
+			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel.ToColorRef());
+			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel);
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel.ToColorRef());
+		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 
 		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
+			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
-		wsprintf(cTxt, "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
+		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);
 		break;
 
 	case 20:
 		m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 		if (strlen(Info().cStr) == 0)
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
 		else
-			wsprintf(cTxt, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
+			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT2, cStr1, Info().cStr);
 
 		if (Info().sV3 < 1000)
-			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel.ToColorRef());
+			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel);
 
-		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel.ToColorRef());
-		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::FromColorRef(GameColors::UIWhite.ToColorRef()));
+		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
+		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 
-		wsprintf(cTxt, "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
-		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
+		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);
 		break;
 	}
 }

@@ -36,12 +36,12 @@ void DialogBox_GuildOperation::OnDraw(short msX, short msY, short msZ, char cLB)
 void DialogBox_GuildOperation::DrawJoinRequest(short sX, short sY, short msX, short msY)
 {
 	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION1);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION2);
 	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION3);
 	PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION4);
-	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION5, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION5, GameColors::UILabel);
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 33);
@@ -55,12 +55,12 @@ void DialogBox_GuildOperation::DrawJoinRequest(short sX, short sY, short msX, sh
 void DialogBox_GuildOperation::DrawDismissRequest(short sX, short sY, short msX, short msY)
 {
 	PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION6);
-	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+	PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+	PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 	PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION7);
 	PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION8);
 	PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION9);
-	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION10, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
+	PutAlignedString(sX + 24, sX + 248, sY + 160, DRAW_DIALOGBOX_GUILD_OPERATION10, GameColors::UILabel);
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 33);
@@ -76,30 +76,30 @@ void DialogBox_GuildOperation::DrawInfoMessage(short sX, short sY, short msX, sh
 	switch (mode) {
 	case 3:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION11);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION12);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION13);
 		break;
 	case 4:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION14);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION15);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION16);
 		break;
 	case 5:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION17);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION18);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION19);
 		PutAlignedString(sX + 24, sX + 248, sY + 120, DRAW_DIALOGBOX_GUILD_OPERATION20);
 		break;
 	case 6:
 		PutAlignedString(sX + 24, sX + 248, sY + 50, DRAW_DIALOGBOX_GUILD_OPERATION21);
-		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b);
-		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+		PutAlignedString(sX + 24, sX + 248, sY + 65, m_pGame->m_stGuildOpList[0].cName, GameColors::UILabel);
+		PutAlignedString(sX + 24, sX + 248, sY + 69, "____________________", GameColors::UIBlack);
 		PutAlignedString(sX + 24, sX + 248, sY + 90, DRAW_DIALOGBOX_GUILD_OPERATION22);
 		PutAlignedString(sX + 24, sX + 248, sY + 105, DRAW_DIALOGBOX_GUILD_OPERATION23);
 		break;
@@ -145,11 +145,11 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
+			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDAPPROVE, 0, 0, 0, 0, cName20);
 			break;
 		case 2:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
+			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDAPPROVE, 0, 0, 0, 0, cName20);
 			break;
 		}
@@ -165,11 +165,11 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
+			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDREJECT, 0, 0, 0, 0, cName20);
 			break;
 		case 2:
-			strcpy(cName20, m_pGame->m_stGuildOpList[0].cName);
+			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDREJECT, 0, 0, 0, 0, cName20);
 			break;
 		}

@@ -498,7 +498,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawAttackMove(int indexX, int indexY, int sX
 		if (bDashDraw)
 		{
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-				SpriteLib::DrawParams::TintedAlpha(GameColors::BlueTintThird.r, GameColors::BlueTintThird.g, GameColors::BlueTintThird.b, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)

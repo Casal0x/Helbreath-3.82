@@ -29,6 +29,9 @@
 // Windows API types (platform-specific)
 // These are used with DirectX and Windows system calls and must remain Windows-specific
 #ifdef _WIN32
+    #ifndef _WINSOCKAPI_
+        #define _WINSOCKAPI_   // Prevent winsock.h from being included by windows.h
+    #endif
     #include <windows.h>
     // HWND, HANDLE, HRESULT, HINSTANCE, RECT are provided by windows.h
 #endif
@@ -93,13 +96,11 @@ public:
 
 struct GameColor
 {
-	int16_t r, g, b;
-	constexpr GameColor() : r(0), g(0), b(0) {}
-	constexpr GameColor(int16_t r_, int16_t g_, int16_t b_) : r(r_), g(g_), b(b_) {}
-
-	// Convert to Windows COLORREF (for PutString / GDI calls)
-	constexpr uint32_t ToColorRef() const { return ((uint32_t)r) | (((uint32_t)g) << 8) | (((uint32_t)b) << 16); }
+	uint8_t r, g, b, a;
+	constexpr GameColor() : r(0), g(0), b(0), a(255) {}
+	constexpr GameColor(uint8_t r_, uint8_t g_, uint8_t b_, uint8_t a_ = 255) : r(r_), g(g_), b(b_), a(a_) {}
 };
+
 
 namespace GameColors
 {
@@ -157,28 +158,9 @@ namespace GameColors
 	inline constexpr GameColor PoisonText{ 88, 255, 88 };
 	// original: m_wR[5]*8, m_wG[5]*8, m_wB[5]*8
 	inline constexpr GameColor PoisonLabel{ 64, 255, 64 };
-	// original: m_wR[10]-m_wR[0]/2, m_wG[10]-m_wG[0]/2, m_wB[10]-m_wB[0]/2
-	// 16bpp values: (-6, -4, +1) -> 8bpp equivalent: (-49, -16, +8)
-	inline constexpr GameColor BlueTintHalf{ -49, -16, 8 };
-	// Admin invisible: red-tinted half alpha
-	inline constexpr GameColor RedTintHalf{ 40, -30, -30 };
-	// original: m_wR[10]-(m_wR[0]/3), m_wG[10]-(m_wG[0]/3), m_wB[10]-(m_wB[0]/3)
-	// 16bpp values: (-4, 0, +3) -> 8bpp equivalent: (-33, 0, +25)
-	inline constexpr GameColor BlueTintThird{ -33, 0, 25 };
-
 	// Status effect additive colors (for AdditiveColored blend)
 	// Berserk: creates a bright reddish/golden glow when added to destination
 	inline constexpr GameColor BerserkGlow{ 255, 240, 240 };
-
-	// Tint helper: returns color[index] - Base
-	inline constexpr GameColor ItemTint(int index) {
-		return GameColor(Items[index].r - Base.r, Items[index].g - Base.g, Items[index].b - Base.b);
-	}
-
-	// Tint helper: returns weapon color[index] - Base
-	inline constexpr GameColor WeaponTint(int index) {
-		return GameColor(Weapons[index].r - Base.r, Weapons[index].g - Base.g, Weapons[index].b - Base.b);
-	}
 
 	// ====================================================================
 	// UI Text Colors

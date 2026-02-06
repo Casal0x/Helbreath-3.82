@@ -71,11 +71,11 @@ void HandleQuestReward(CGame* pGame, char* pData)
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (memcmp(cRewardName, "ġ", 6) == 0)
 		{
-			if (iAmount > 0) wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD1, iAmount);
+			if (iAmount > 0) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD1, iAmount);
 		}
 		else
 		{
-			wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD2, iAmount, cRewardName);
 		}
 		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 		iIndex++;
@@ -83,8 +83,8 @@ void HandleQuestReward(CGame* pGame, char* pData)
 		iIndex++;
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (iPreCon < pGame->m_pPlayer->m_iContribution)
-			wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD3, pGame->m_pPlayer->m_iContribution - iPreCon);
-		else wsprintf(cTxt, NOTIFYMSG_QUEST_REWARD4, iPreCon - pGame->m_pPlayer->m_iContribution);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD3, pGame->m_pPlayer->m_iContribution - iPreCon);
+		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_QUEST_REWARD4, iPreCon - pGame->m_pPlayer->m_iContribution);
 
 		pGame->m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, "  ", 0);
 		iIndex++;

@@ -773,7 +773,7 @@ int ASIOSocket::iGetPeerAddress(char* pAddrString)
 	auto ep = m_socket.remote_endpoint(ec);
 	if (!ec) {
 		std::string addr = ep.address().to_string();
-		strcpy(pAddrString, addr.c_str());
+		std::snprintf(pAddrString, 46, "%s", addr.c_str()); // 46 = INET6_ADDRSTRLEN
 		return 0;
 	}
 	return -1;

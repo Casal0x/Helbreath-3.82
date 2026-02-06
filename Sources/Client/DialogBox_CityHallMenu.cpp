@@ -185,7 +185,7 @@ void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX,
 	char cTxt[120];
 
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU33, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
-	wsprintf(cTxt, DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
+	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU35, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 
@@ -306,11 +306,11 @@ void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short 
 		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 53, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU58, TextLib::TextStyle::Color(GameColors::UIYellow.r, GameColors::UIYellow.g, GameColors::UIYellow.b), TextLib::Align::TopCenter);
 
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 78, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU59, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
-	TextLib::DrawText(GameFont::Default, sX + 35, sY + 108, DRAW_DIALOGBOX_CITYHALL_MENU60, TextLib::TextStyle::FromColorRef(GameColors::UIOrange.ToColorRef()));
+	TextLib::DrawText(GameFont::Default, sX + 35, sY + 108, DRAW_DIALOGBOX_CITYHALL_MENU60, TextLib::TextStyle::Color(GameColors::UIOrange.r, GameColors::UIOrange.g, GameColors::UIOrange.b));
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU61, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU62, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU63, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
-	TextLib::DrawText(GameFont::Default, sX + 35, sY + 177, DRAW_DIALOGBOX_CITYHALL_MENU64, TextLib::TextStyle::FromColorRef(GameColors::UIOrange.ToColorRef()));
+	TextLib::DrawText(GameFont::Default, sX + 35, sY + 177, DRAW_DIALOGBOX_CITYHALL_MENU64, TextLib::TextStyle::Color(GameColors::UIOrange.r, GameColors::UIOrange.g, GameColors::UIOrange.b));
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 194, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU65, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 209, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU66, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 224, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU67, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);

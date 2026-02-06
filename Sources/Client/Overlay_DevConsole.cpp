@@ -29,9 +29,8 @@ static constexpr int TEXT_AREA_BOTTOM = 209;
 static constexpr int SEPARATOR_Y = 222;
 static constexpr int INPUT_Y = 224;
 
-// Colors (COLORREF: 0x00BBGGRR)
-static constexpr uint32_t COLOR_INPUT = 0x0000FF00;    // Green
-static constexpr uint32_t COLOR_SEPARATOR = 0x00808080; // Gray
+// Colors
+static constexpr GameColor COLOR_INPUT{0, 255, 0};      // Green
 
 Overlay_DevConsole::Overlay_DevConsole(CGame* pGame)
 	: IGameScreen(pGame)
@@ -104,7 +103,7 @@ void Overlay_DevConsole::on_render()
 		int y = TEXT_AREA_BOTTOM - i * LINE_HEIGHT;
 		if (y < TEXT_AREA_TOP) break;
 
-		pRenderer->DrawText(TEXT_MARGIN, y, lines[bufIdx].text, lines[bufIdx].color);
+		pRenderer->DrawText(TEXT_MARGIN, y, lines[bufIdx].text, lines[bufIdx].color.r, lines[bufIdx].color.g, lines[bufIdx].color.b);
 	}
 
 	// Draw input line with prompt
@@ -117,7 +116,7 @@ void Overlay_DevConsole::on_render()
 	else
 		sprintf_s(inputLine, "> %s", console.GetInputBuffer());
 
-	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine, COLOR_INPUT);
+	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine, COLOR_INPUT.r, COLOR_INPUT.g, COLOR_INPUT.b);
 
 	pRenderer->EndTextBatch();
 }

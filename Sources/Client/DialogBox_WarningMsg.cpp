@@ -18,10 +18,10 @@ void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
 
 	TextLib::DrawText(GameFont::Default, sX + 63, sY + 35, DEF_MSG_WARNING1, TextLib::TextStyle::WithShadow(GameColors::UIYellow.r, GameColors::UIYellow.g, GameColors::UIYellow.b));
-	PutString(sX + 30, sY + 57, DEF_MSG_WARNING2, GameColors::UIOrange.ToColorRef());
-	PutString(sX + 30, sY + 74, DEF_MSG_WARNING3, GameColors::UIOrange.ToColorRef());
-	PutString(sX + 30, sY + 92, DEF_MSG_WARNING4, GameColors::UIOrange.ToColorRef());
-	PutString(sX + 30, sY + 110, DEF_MSG_WARNING5, GameColors::UIOrange.ToColorRef());
+	PutString(sX + 30, sY + 57, DEF_MSG_WARNING2, GameColors::UIOrange);
+	PutString(sX + 30, sY + 74, DEF_MSG_WARNING3, GameColors::UIOrange);
+	PutString(sX + 30, sY + 92, DEF_MSG_WARNING4, GameColors::UIOrange);
+	PutString(sX + 30, sY + 110, DEF_MSG_WARNING5, GameColors::UIOrange);
 
 	// OK button
 	if ((msX >= sX + 122) && (msX <= sX + 125 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))

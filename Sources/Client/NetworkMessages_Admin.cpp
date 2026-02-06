@@ -22,7 +22,7 @@ void HandleIpAccountInfo(CGame* pGame, char* pData)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyIpAccountInfo>(
 		pData, sizeof(hb::net::PacketNotifyIpAccountInfo));
 	if (!pkt) return;
-	strcpy(cTemp, pkt->text);
+	std::snprintf(cTemp, sizeof(cTemp), "%s", pkt->text);
 	pGame->AddEventList(cTemp);
 }
 

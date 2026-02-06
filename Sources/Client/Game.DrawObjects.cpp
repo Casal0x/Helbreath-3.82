@@ -298,7 +298,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	char cItemColor;
 	bool bIsPlayerDrawed = false;
 	bool bRet = false;
-	short sItemSprite, sItemSpriteFrame, sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
+	short sObjSpr, sObjSprFrame, sDynamicObject, sDynamicObjectFrame;
 	char cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData3, cDynamicObjectData4;
 	// Xmas
 	static int ix1[100];
@@ -389,7 +389,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
 					m_entityState.m_iChatIndex = m_pMapData->m_pData[dX][dY].m_iDeadChatMsg;
 					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_deadStatus;
-					strcpy(m_entityState.m_cName.data(), m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
+					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cDeadOwnerName);
 					sItemID = m_pMapData->m_pData[dX][dY].m_sItemID;
 					dwItemAttr = m_pMapData->m_pData[dX][dY].m_dwItemAttr;
 					cItemColor = m_pMapData->m_pData[dX][dY].m_cItemColor;
@@ -484,7 +484,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iEffectType = m_pMapData->m_pData[dX][dY].m_iEffectType;
 					m_entityState.m_iEffectFrame = m_pMapData->m_pData[dX][dY].m_iEffectFrame;
 
-					strcpy(m_entityState.m_cName.data(), m_pMapData->m_pData[dX][dY].m_cOwnerName);
+					std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", m_pMapData->m_pData[dX][dY].m_cOwnerName);
 					bRet = true;
 
 					if (m_iIlusionOwnerH != 0)
@@ -629,44 +629,6 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						{
 							if (G_cSpriteAlphaDegree == 2) //nuit
 							{
-								// Configurable ground lighting parameters
-								int baseX = ix;
-								int baseY = iy;
-								constexpr int LIGHT_RADIUS = 4;           // Radius in tiles
-								constexpr float CENTER_INTENSITY = 0.4f;  // Intensity at center (0.0 - 1.0)
-								constexpr float EDGE_INTENSITY = 0.1f;    // Intensity at edge (0.0 - 1.0)
-								constexpr int TILE_SIZE = 32;             // Pixels per tile
-
-								// Draw ground lights in a circular pattern with distance-based falloff
-								for (int ty = -LIGHT_RADIUS; ty <= LIGHT_RADIUS; ty++) {
-									for (int tx = -LIGHT_RADIUS; tx <= LIGHT_RADIUS; tx++) {
-										// Calculate distance from center (in tiles)
-										float distance = sqrtf(static_cast<float>(tx * tx + ty * ty));
-
-										// Skip if outside radius
-										if (distance > LIGHT_RADIUS) continue;
-
-										// Calculate intensity based on distance (linear falloff)
-										float t = distance / LIGHT_RADIUS;  // 0 at center, 1 at edge
-										float intensity = CENTER_INTENSITY * (1.0f - t) + EDGE_INTENSITY * t;
-
-										// Skip very dim lights for performance
-										if (intensity < 0.05f) continue;
-
-										// Calculate screen position (isometric offset)
-										int lightX = baseX + tx * TILE_SIZE;
-										int lightY = baseY + ty * (TILE_SIZE / 2);  // Half for isometric
-
-										// Warm color that gets slightly cooler at edges
-										int r = 255;
-										int g = static_cast<int>(200 + 30 * (1.0f - t));  // 230 at center, 200 at edge
-										int b = static_cast<int>(150 + 30 * (1.0f - t));  // 180 at center, 150 at edge
-
-										m_pEffectSpr[0]->Draw(lightX, lightY, 1,
-											SpriteLib::DrawParams::AdditiveColored(r, g, b, intensity));
-									}
-								}
-
 								// Lamp fixture lights (the actual light sources on the lamp)
 								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
 								m_pEffectSpr[0]->Draw(ix + 16, iy - 94, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
@@ -849,7 +811,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	m_sMCX = CursorTarget::GetFocusedMapX();
 	m_sMCY = CursorTarget::GetFocusedMapY();
 	std::memset(m_cMCName, 0, sizeof(m_cMCName));
-	std::strncpy(m_cMCName, CursorTarget::GetFocusedName(), sizeof(m_cMCName) - 1);
+	std::snprintf(m_cMCName, sizeof(m_cMCName), "%s", CursorTarget::GetFocusedName());
 
 	// Draw focused object with highlight (transparency)
 	if (CursorTarget::HasFocusedObject())
@@ -877,7 +839,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			m_entityState.m_iDataX = focusDataX;
 			m_entityState.m_iDataY = focusDataY;
 			std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
-			std::strncpy(m_entityState.m_cName.data(), CursorTarget::GetFocusedName(), m_entityState.m_cName.size() - 1);
+			std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", CursorTarget::GetFocusedName());
 
 			if ((focusAction != DEF_OBJECTDEAD) && (focusFrame < 0)) {
 				// Skip drawing invalid frame

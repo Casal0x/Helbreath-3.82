@@ -297,14 +297,14 @@ void Screen_CreateNewCharacter::on_update()
             if (m_bNewCharFlag == false) return;
             if (CMisc::bCheckValidName(m_cNewCharName) == false) break;
             std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-            strcpy(m_pGame->m_pPlayer->m_cPlayerName, m_cNewCharName);
+            std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_cNewCharName);
             m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MSGID_REQUEST_CREATENEWCHARACTER;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-            strcpy(m_pGame->m_cMsg, "22");
+            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "22");
             return;
 
         case 25: // Cancel button
@@ -394,34 +394,34 @@ void Screen_CreateNewCharacter::on_render()
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 69, true);
     TextLib::DrawTextAligned(GameFont::Default, 64 + OX, 90 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     TextLib::DrawTextAligned(GameFont::Default, 57 + OX, 110 + OY, (191) - (57), 15, DEF_MSG_CHARACTERNAME, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-    if (m_cCurFocus != 1) TextLib::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    if (m_cCurFocus != 1) TextLib::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
     TextLib::DrawTextAligned(GameFont::Default, 64 + OX, 140 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-    TextLib::DrawText(GameFont::Default, 100 + OX, 160 + OY, DEF_MSG_GENDER, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 175 + OY, DEF_MSG_SKINCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 190 + OY, DEF_MSG_HAIRSTYLE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 205 + OY, DEF_MSG_HAIRCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 220 + OY, DEF_MSG_UNDERWEARCOLOR, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 275 + OY, DEF_MSG_STRENGTH, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 292 + OY, DEF_MSG_VITALITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 309 + OY, DEF_MSG_DEXTERITY, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 326 + OY, DEF_MSG_INTELLIGENCE, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 343 + OY, DEF_MSG_MAGIC, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 100 + OX, 360 + OY, DEF_MSG_CHARISMA, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 160 + OY, DEF_MSG_GENDER, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 175 + OY, DEF_MSG_SKINCOLOR, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 190 + OY, DEF_MSG_HAIRSTYLE, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 205 + OY, DEF_MSG_HAIRCOLOR, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 220 + OY, DEF_MSG_UNDERWEARCOLOR, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 275 + OY, DEF_MSG_STRENGTH, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 292 + OY, DEF_MSG_VITALITY, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 309 + OY, DEF_MSG_DEXTERITY, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 326 + OY, DEF_MSG_INTELLIGENCE, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 343 + OY, DEF_MSG_MAGIC, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    TextLib::DrawText(GameFont::Default, 100 + OX, 360 + OY, DEF_MSG_CHARISMA, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
 
     // Stat values
     i = 0;
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModStr);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModVit);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModDex);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModInt);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModMag);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModChr);
-    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModStr);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModVit);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModDex);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModInt);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModMag);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModChr);
+    TextLib::DrawText(GameFont::Default, 204 + OX, 277 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     // Button states
     if ((m_bNewCharFlag == true) && (m_cCurFocus == 2))
@@ -468,15 +468,15 @@ void Screen_CreateNewCharacter::on_render()
 
     // Derived stats
     i = 0;
-    TextLib::DrawText(GameFont::Default, 445 + OX, 192 + OY, DEF_MSG_HITPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModVit * 3 + 2 + m_pGame->m_pPlayer->m_iStatModStr / 2);
-    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 445 + OX, 208 + OY, DEF_MSG_MANAPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModMag * 2 + 2 + m_pGame->m_pPlayer->m_iStatModInt / 2);
-    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, 445 + OX, 224 + OY, DEF_MSG_STAMINARPOINT, TextLib::TextStyle::FromColorRef(GameColors::UIBlack.ToColorRef()));
-    wsprintf(m_pGame->G_cTxt, "%d", m_pGame->m_pPlayer->m_iStatModStr * 2 + 2);
-    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 192 + OY, DEF_MSG_HITPOINT, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModVit * 3 + 2 + m_pGame->m_pPlayer->m_iStatModStr / 2);
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 208 + OY, DEF_MSG_MANAPOINT, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModMag * 2 + 2 + m_pGame->m_pPlayer->m_iStatModInt / 2);
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, 445 + OX, 224 + OY, DEF_MSG_STAMINARPOINT, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+    std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%d", m_pGame->m_pPlayer->m_iStatModStr * 2 + 2);
+    TextLib::DrawText(GameFont::Default, 550 + OX, 192 + OY + 16 * i++, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     // ======== End inlined drawing ========
 

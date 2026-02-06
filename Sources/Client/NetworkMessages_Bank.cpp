@@ -40,7 +40,7 @@ namespace NetworkMessageHandlers {
 		sItemSpecEffectValue2 = static_cast<short>(pkt->spec_effect_value2);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, cName);
+		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
@@ -54,8 +54,8 @@ namespace NetworkMessageHandlers {
 			pGame->m_pBankList[cIndex]->m_sItemSpecEffectValue2 = sItemSpecEffectValue2;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMTOBANK3, cStr1);
-			else wsprintf(cTxt, NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1);
+			if (dwCount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK3, cStr1);
+			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1);
 
 			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank) == true)
 				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = DEF_MAXBANKITEMS - 12;

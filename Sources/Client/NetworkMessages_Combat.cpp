@@ -41,11 +41,11 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->victim_name, 10);
 		iRewardGold = pkt->reward_gold;
 		iExp = pkt->exp;
-		wsprintf(cTxt, NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_CAPTURED1, iLevel, cName, iPKcount);
 		pGame->AddEventList(cTxt, 10);
-		wsprintf(cTxt, EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
+		std::snprintf(cTxt, sizeof(cTxt), EXP_INCREASED, iExp - pGame->m_pPlayer->m_iExp);
 		pGame->AddEventList(cTxt, 10);
-		wsprintf(cTxt, NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_PK_CAPTURED3, iExp - pGame->m_pPlayer->m_iExp);
 		pGame->AddEventList(cTxt, 10);
 	}
 
@@ -124,12 +124,12 @@ namespace NetworkMessageHandlers {
 
 		if (sGuildRank == -1)
 		{
-			wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD1, cName);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD1, cName);
 			pGame->AddEventList(cTxt, 10);
 		}
 		else
 		{
-			wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD2, cName, cGuildName);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD2, cName, cGuildName);
 			pGame->AddEventList(cTxt, 10);
 		}
 
@@ -137,12 +137,12 @@ namespace NetworkMessageHandlers {
 		{
 			if (pGame->m_pPlayer->m_iEnemyKillCount > iEnemyKillCount)
 			{
-				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD5, pGame->m_pPlayer->m_iEnemyKillCount - iEnemyKillCount);
 				pGame->AddEventList(cTxt, 10);
 			}
 			else
 			{
-				wsprintf(cTxt, NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ENEMYKILL_REWARD6, iEnemyKillCount - pGame->m_pPlayer->m_iEnemyKillCount);
 				pGame->AddEventList(cTxt, 10);
 			}
 		}
@@ -155,7 +155,7 @@ namespace NetworkMessageHandlers {
 		for (int i = 1; i < DEF_MAXCHATMSGS; i++) {
 			if (pGame->m_pChatMsgList[i] == 0) {
 				std::memset(cTxt, 0, sizeof(cTxt));
-				strcpy(cTxt, "Enemy Kill!");
+				std::snprintf(cTxt, sizeof(cTxt), "%s", "Enemy Kill!");
 				pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(23, cTxt, pGame->m_dwCurTime);
 				pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
 				if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {

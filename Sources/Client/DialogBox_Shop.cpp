@@ -105,11 +105,11 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
             iCost = (int)(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
             iCost = iCost - iDiscountCost;
 
-            if (iCost < (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2))
-                iCost = (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2) - 1;
+            if (iCost < static_cast<int>(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2))
+                iCost = static_cast<int>(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2) - 1;
 
             std::memset(cTemp, 0, sizeof(cTemp));
-            wsprintf(cTemp, "%6d", iCost);
+            std::snprintf(cTemp, sizeof(cTemp), "%6d", iCost);
             if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79))
                 TextLib::DrawTextAligned(GameFont::Default, sX + 148, sY + i * 18 + 65, (sX + 260) - (sX + 148), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter);
             else TextLib::DrawTextAligned(GameFont::Default, sX + 148, sY + i * 18 + 65, (sX + 260) - (sX + 148), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b), TextLib::Align::TopCenter);
@@ -127,8 +127,8 @@ int DialogBox_Shop::CalculateDiscountedPrice(int iItemIndex)
     int iCost = (int)(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
     iCost = iCost - iDiscountCost;
 
-    if (iCost < (m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2))
-        iCost = (m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2) - 1;
+    if (iCost < static_cast<int>(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2))
+        iCost = static_cast<int>(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2) - 1;
 
     return iCost;
 }
@@ -149,20 +149,20 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 50, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter);
     TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 50, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter);
 
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP3); //"PRICE"
-    TextLib::DrawText(GameFont::Default, sX + 90, sY + 78 + 30 - 10, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 91, sY + 78 + 30 - 10, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP6); // "Weight"
-    TextLib::DrawText(GameFont::Default, sX + 90, sY + 93 + 30 - 10, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 91, sY + 93 + 30 - 10, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP3); //"PRICE"
+    TextLib::DrawText(GameFont::Default, sX + 90, sY + 78 + 30 - 10, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 91, sY + 78 + 30 - 10, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP6); // "Weight"
+    TextLib::DrawText(GameFont::Default, sX + 90, sY + 93 + 30 - 10, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 91, sY + 93 + 30 - 10, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     int iCost = CalculateDiscountedPrice(iItemIndex);
-    wsprintf(cTemp, DRAW_DIALOGBOX_SHOP7, iCost); //": %d Gold"
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 98, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP7, iCost); //": %d Gold"
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 98, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     int iWeight = m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100;
-    wsprintf(cTemp, DRAW_DIALOGBOX_SHOP8, iWeight); //": %d Stone"
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 113, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP8, iWeight); //": %d Stone"
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 113, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     switch (m_pGame->m_pItemForSaleList[iItemIndex]->GetEquipPos()) {
     case EquipPos::RightHand:
@@ -204,42 +204,42 @@ void DialogBox_Shop::DrawWeaponStats(short sX, short sY, int iItemIndex, bool& b
     char cTemp[255];
     int iTemp;
 
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP9);  // Damage
-    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP10); //"Speed(Min.~Max.)"
-    TextLib::DrawText(GameFont::Default, sX + 40, sY + 175, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 41, sY + 175, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP9);  // Damage
+    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP10); //"Speed(Min.~Max.)"
+    TextLib::DrawText(GameFont::Default, sX + 40, sY + 175, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 41, sY + 175, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue3 != 0) {
-        wsprintf(cTemp, ": %dD%d+%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue2,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue3);
     }
     else {
-        wsprintf(cTemp, ": %dD%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue2);
     }
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue6 != 0) {
-        wsprintf(cTemp, ": %dD%d+%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue6);
     }
     else {
-        wsprintf(cTemp, ": %dD%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
             m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
     }
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 160, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 160, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     iTemp = m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100;
-    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed == 0) wsprintf(cTemp, ": 0(10~10)");
-    else wsprintf(cTemp, ": %d(%d ~ %d)", m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed, iTemp, m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed * 13);
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 175, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed == 0) std::snprintf(cTemp, sizeof(cTemp), ": 0(10~10)");
+    else std::snprintf(cTemp, sizeof(cTemp), ": %d(%d ~ %d)", m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed, iTemp, m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed * 13);
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 175, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter); // *Your STR should be at least %d to use this item."
         bFlagRedShown = true;
@@ -250,14 +250,14 @@ void DialogBox_Shop::DrawShieldStats(short sX, short sY, int iItemIndex, bool& b
 {
     char cTemp[255];
 
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP12); // "Defence"
-    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(cTemp, ": +%d%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP12); // "Defence"
+    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter); // "*Your STR should be at least %d to use this item."
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         bFlagRedShown = true;
@@ -268,16 +268,16 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
 {
     char cTemp[255];
 
-    strcpy(cTemp, DRAW_DIALOGBOX_SHOP12); // "Defence"
-    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-    wsprintf(cTemp, ": +%d%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
-    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP12); // "Defence"
+    TextLib::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    TextLib::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
+    TextLib::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
     bFlagStatLow = false;
 
     switch (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4) {
     case 10://"Available for above Str %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iStr >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -289,7 +289,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 11: // "Available for above Dex %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP16, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP16, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iDex >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -301,7 +301,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 12: // "Available for above Vit %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP17, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP17, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iVit >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -313,7 +313,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 13: // "Available for above Int %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP18, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP18, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iInt >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -325,7 +325,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 14: // "Available for above Mag %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP19, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP19, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iMag >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -337,7 +337,7 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 15: // "Available for above Chr %d"
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP20, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP20, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
         if (m_pGame->m_pPlayer->m_iCharisma >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
             TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
             TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
@@ -353,27 +353,27 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
     }
 
     if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        wsprintf(cTemp, DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 288, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 288, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter); // "*Your STR should be at least %d to use this item."
         bFlagRedShown = true;
     }
     else if (bFlagStatLow == true) {
-        strcpy(cTemp, DRAW_DIALOGBOX_SHOP21); // "(Warning!) Your stat is too low for this item."
+        std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP21); // "(Warning!) Your stat is too low for this item."
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         bFlagRedShown = true;
     }
     else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(M)") != 0)
         && (m_pGame->m_pPlayer->m_sPlayerType > 3)) {
-        strcpy(cTemp, DRAW_DIALOGBOX_SHOP22); // "(Warning!) only for male."
+        std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP22); // "(Warning!) only for male."
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         bFlagRedShown = true;
     }
     else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(W)") != 0)
         && (m_pGame->m_pPlayer->m_sPlayerType <= 3)) {
-        strcpy(cTemp, DRAW_DIALOGBOX_SHOP23); // "(Warning!) only for female."
+        std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP23); // "(Warning!) only for female."
         TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         TextLib::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         bFlagRedShown = true;
@@ -385,20 +385,20 @@ void DialogBox_Shop::DrawLevelRequirement(short sX, short sY, int iItemIndex, bo
     char cTemp[255];
 
     if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit != 0) {
-        strcpy(cTemp, DRAW_DIALOGBOX_SHOP24); // "Level"
+        std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP24); // "Level"
         if (m_pGame->m_pPlayer->m_iLevel >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit) {
-            TextLib::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-            TextLib::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-            wsprintf(cTemp, DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
-            TextLib::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));// ": above %d"
+            TextLib::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+            TextLib::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
+            TextLib::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));// ": above %d"
         }
         else {
-            TextLib::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-            TextLib::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-            wsprintf(cTemp, DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
-            TextLib::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UIWarningRed.ToColorRef()));// ": above %d"
+            TextLib::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+            TextLib::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
+            TextLib::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b));// ": above %d"
             if (bFlagRedShown == false) {
-                strcpy(cTemp, DRAW_DIALOGBOX_SHOP26); // "(Warning!) Your level is too low for this item."
+                std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP26); // "(Warning!) Your level is too low for this item."
                 TextLib::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
                 TextLib::DrawTextAligned(GameFont::Default, sX + 25 + 1, sY + 258, (sX + 240 + 1) - (sX + 25 + 1), 15, cTemp, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
                 bFlagRedShown = true;
@@ -414,8 +414,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
 
     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 219, 19);
     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 219, 19);
-    TextLib::DrawText(GameFont::Default, sX + 123 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef())); // "Quantity:"
-    TextLib::DrawText(GameFont::Default, sX + 124 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+    TextLib::DrawText(GameFont::Default, sX + 123 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b)); // "Quantity:"
+    TextLib::DrawText(GameFont::Default, sX + 124 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
 
     if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SaleMenu && msZ != 0) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 + msZ / 60;
@@ -429,22 +429,22 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
 
     if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= 10) {
         std::memset(cTemp, 0, sizeof(cTemp));
-        _itoa(m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
+        std::snprintf(cTemp, sizeof(cTemp), "%d", m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3);
         cTemp[1] = 0;
-        TextLib::DrawText(GameFont::Default, sX - 35 + 186, sY - 10 + 237, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-        TextLib::DrawText(GameFont::Default, sX - 35 + 187, sY - 10 + 237, cTemp, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 186, sY - 10 + 237, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 187, sY - 10 + 237, cTemp, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
         std::memset(cTemp, 0, sizeof(cTemp));
-        _itoa(m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
-        TextLib::DrawText(GameFont::Default, sX - 35 + 200, sY - 10 + 237, (cTemp + 1), TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-        TextLib::DrawText(GameFont::Default, sX - 35 + 201, sY - 10 + 237, (cTemp + 1), TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+        std::snprintf(cTemp, sizeof(cTemp), "%d", m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3);
+        TextLib::DrawText(GameFont::Default, sX - 35 + 200, sY - 10 + 237, (cTemp + 1), TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 201, sY - 10 + 237, (cTemp + 1), TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
     }
     else {
-        TextLib::DrawText(GameFont::Default, sX - 35 + 186, sY - 10 + 237, "0", TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-        TextLib::DrawText(GameFont::Default, sX - 35 + 187, sY - 10 + 237, "0", TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 186, sY - 10 + 237, "0", TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 187, sY - 10 + 237, "0", TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
         std::memset(cTemp, 0, sizeof(cTemp));
-        _itoa(m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, cTemp, 10);
-        TextLib::DrawText(GameFont::Default, sX - 35 + 200, sY - 10 + 237, (cTemp), TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
-        TextLib::DrawText(GameFont::Default, sX - 35 + 201, sY - 10 + 237, (cTemp), TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef()));
+        std::snprintf(cTemp, sizeof(cTemp), "%d", m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3);
+        TextLib::DrawText(GameFont::Default, sX - 35 + 200, sY - 10 + 237, (cTemp), TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+        TextLib::DrawText(GameFont::Default, sX - 35 + 201, sY - 10 + 237, (cTemp), TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
     }
     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 244, 20);
     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 244, 20);
@@ -525,7 +525,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
         else {
             std::memset(cTemp, 0, sizeof(cTemp));
             CItem* pShopItem = m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1].get();
-            strcpy(cTemp, pShopItem->m_cName);
+            std::snprintf(cTemp, sizeof(cTemp), "%s", pShopItem->m_cName);
             // Send item ID in iV2 for reliable item lookup on server
             int iItemId = pShopItem->m_sIDnum;
             m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3, iItemId, 0, cTemp);

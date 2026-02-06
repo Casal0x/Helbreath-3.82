@@ -47,7 +47,7 @@ void Overlay_ChangePassword::on_initialize()
     std::memset(m_cConfirmPassword, 0, sizeof(m_cConfirmPassword));
 
     // Copy account name from player
-    strcpy(m_cAccountName, m_pGame->m_pPlayer->m_cAccountName);
+    std::snprintf(m_cAccountName, sizeof(m_cAccountName), "%s", m_pGame->m_pPlayer->m_cAccountName);
 
     // Start input on old password field
     int dlgX, dlgY;
@@ -126,8 +126,8 @@ void Overlay_ChangePassword::HandleSubmit()
     // Copy account name/password to player session
     std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
     std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-    strcpy(m_pGame->m_pPlayer->m_cAccountName, m_cAccountName);
-    strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cOldPassword);
+    std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cAccountName);
+    std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cOldPassword);
 
     // Build ChangePasswordRequest packet
     hb::net::ChangePasswordRequest req{};
@@ -149,7 +149,7 @@ void Overlay_ChangePassword::HandleSubmit()
 
     m_pGame->m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
     std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-    strcpy(m_pGame->m_cMsg, "41");
+    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "41");
 
     // set_overlay will clear this overlay automatically
     m_pGame->ChangeGameMode(GameMode::Connecting);
@@ -288,37 +288,39 @@ void Overlay_ChangePassword::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX + 157, dlgY + 109, 7);
 
     // Draw labels
-    PutString(dlgX + 53, dlgY + 43, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel.ToColorRef());
-    PutString(dlgX + 53, dlgY + 67, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, GameColors::UILabel.ToColorRef());
-    PutString(dlgX + 53, dlgY + 91, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, GameColors::UILabel.ToColorRef());
-    PutString(dlgX + 53, dlgY + 115, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel.ToColorRef());
+    PutString(dlgX + 53, dlgY + 43, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel);
+    PutString(dlgX + 53, dlgY + 67, UPDATE_SCREEN_ON_CHANGE_PASSWORD2, GameColors::UILabel);
+    PutString(dlgX + 53, dlgY + 91, UPDATE_SCREEN_ON_CHANGE_PASSWORD3, GameColors::UILabel);
+    PutString(dlgX + 53, dlgY + 115, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel);
 
     // Draw input field values (when not focused)
+    static constexpr GameColor kInvalidInput{55, 18, 13};
+
     if (m_iCurFocus != 1)
     {
-        uint32_t color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
+        const GameColor& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
         PutString(dlgX + 161, dlgY + 43, m_cAccountName, color);
     }
 
     if (m_iCurFocus != 2)
     {
-        uint32_t color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
+        const GameColor& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedOld(strlen(m_cOldPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
     }
 
     if (m_iCurFocus != 3)
     {
-        uint32_t color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
+        const GameColor& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedNew(strlen(m_cNewPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
     }
 
     if (m_iCurFocus != 4)
     {
-        uint32_t color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel.ToColorRef() : RGB(55, 18, 13);
+        const GameColor& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::FromColorRef(color));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
     }
 
     // Show active input string (with masking for password fields)

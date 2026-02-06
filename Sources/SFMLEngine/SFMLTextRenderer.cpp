@@ -147,15 +147,10 @@ int SFMLTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
     return 0;
 }
 
-void SFMLTextRenderer::DrawText(int x, int y, const char* text, uint32_t color)
+void SFMLTextRenderer::DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
         return;
-
-    // Extract RGB from COLORREF (Windows color format: 0x00BBGGRR)
-    uint8_t r = static_cast<uint8_t>(color & 0xFF);
-    uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFF);
 
     sf::Text sfText(m_font, text, m_fontSize);
     sfText.setPosition({static_cast<float>(x), static_cast<float>(y)});
@@ -164,16 +159,11 @@ void SFMLTextRenderer::DrawText(int x, int y, const char* text, uint32_t color)
     m_pBackBuffer->draw(sfText);
 }
 
-void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, uint8_t r, uint8_t g, uint8_t b,
                                         Align alignment)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
         return;
-
-    // Extract RGB from COLORREF (Windows color format: 0x00BBGGRR)
-    uint8_t r = static_cast<uint8_t>(color & 0xFF);
-    uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFF);
-    uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFF);
 
     sf::Text sfText(m_font, text, m_fontSize);
     sf::FloatRect bounds = sfText.getLocalBounds();

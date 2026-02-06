@@ -61,7 +61,7 @@ void Overlay_QueryForceLogin::on_update()
             m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
             m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NOENTER_FORCEDISCONN;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-            strcpy(m_pGame->m_cMsg, "33");
+            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
 
             // set_overlay will clear this overlay automatically
             m_pGame->ChangeGameMode(GameMode::Connecting);

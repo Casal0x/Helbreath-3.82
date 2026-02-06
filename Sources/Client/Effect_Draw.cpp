@@ -14,10 +14,6 @@ void EffectManager::DrawEffectsImpl()
 	int i, dX, dY, iDvalue, tX, tY, rX, rY, rX2, rY2, rX3, rY3, rX4, rY4, rX5, rY5, iErr;
 	char  cTempFrame;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	short sObjectType;
-	char  cName[DEF_ITEMNAME];
-	int iStatus;
-
 	for (i = 0; i < DEF_MAXEFFECTS; i++)
 		if ((m_pEffectList[i] != 0) && (m_pEffectList[i]->m_cFrame >= 0))
 		{

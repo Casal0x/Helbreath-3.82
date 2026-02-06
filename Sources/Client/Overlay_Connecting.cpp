@@ -87,7 +87,7 @@ void Overlay_Connecting::on_render()
 
     // Draw countdown text
     char cTxt[64];
-    wsprintf(cTxt, "Connecting to Server... %3dSec", dwElapsed / 1000);
+    std::snprintf(cTxt, sizeof(cTxt), "Connecting to Server... %3dSec", dwElapsed / 1000);
     TextLib::DrawText(GameFont::Bitmap1, dlgX + 45, dlgY + 65, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
 
     // Show appropriate message based on elapsed time

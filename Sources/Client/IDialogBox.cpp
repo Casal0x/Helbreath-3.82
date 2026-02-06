@@ -29,20 +29,15 @@ void IDialogBox::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool b
 	m_pGame->DrawNewDialogBox(cType, sX, sY, iFrame, bIsNoColorKey, bIsTrans);
 }
 
-void IDialogBox::PutString(int iX, int iY, const char* pString, uint32_t color)
+void IDialogBox::PutString(int iX, int iY, const char* pString, const GameColor& color)
 {
-	TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::FromColorRef(color));
+	TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::Color(color.r, color.g, color.b));
 }
 
-void IDialogBox::PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB)
-{
-	TextLib::DrawText(GameFont::Default, iX, iY, pString, TextLib::TextStyle::WithShadow(sR, sG, sB));
-}
-
-void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR, short sG, short sB)
+void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString, const GameColor& color)
 {
 	TextLib::DrawTextAligned(GameFont::Default, iX1, iY, iX2 - iX1, 15, pString,
-	                         TextLib::TextStyle::Color(sR, sG, sB), TextLib::Align::TopCenter);
+	                         TextLib::TextStyle::Color(color.r, color.g, color.b), TextLib::Align::TopCenter);
 }
 
 void IDialogBox::PlaySoundEffect(char cType, int iNum, int iDist, long lPan)

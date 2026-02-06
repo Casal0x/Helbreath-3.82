@@ -7,6 +7,7 @@
 #pragma once
 
 #include "NativeTypes.h"
+#include "GameGeometry.h"
 #include <cstdint>
 
 // Undefine Windows DrawText macro to avoid naming conflict with IRenderer::DrawText
@@ -59,8 +60,8 @@ public:
     // ============== Text Rendering ==============
     virtual void BeginTextBatch() = 0;      // GetBackBufferDC
     virtual void EndTextBatch() = 0;        // ReleaseBackBufferDC
-    virtual void DrawText(int x, int y, const char* text, uint32_t color) = 0;
-    virtual void DrawTextRect(RECT* rect, const char* text, uint32_t color) = 0;
+    virtual void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
+    virtual void DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
 
     // ============== Surface/Texture Management ==============
     virtual ITexture* CreateTexture(uint16_t width, uint16_t height) = 0;
@@ -77,7 +78,7 @@ public:
 
     // ============== Clip Area ==============
     virtual void SetClipArea(int x, int y, int w, int h) = 0;
-    virtual RECT GetClipArea() const = 0;
+    virtual GameRectangle GetClipArea() const = 0;
 
     // ============== Pixel Format Info ==============
     virtual int GetPixelFormat() const = 0;  // PIXELFORMAT_RGB565, PIXELFORMAT_RGB555, etc.

@@ -17,8 +17,8 @@ void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB
 	switch (Info().cMode)
 	{
 	case 1: // Question
-		PutString(sX + 35, sY + 30, "Do you really want to exchange?", GameColors::UIMagicBlue.ToColorRef());
-		PutString(sX + 36, sY + 30, "Do you really want to exchange?", GameColors::UIMagicBlue.ToColorRef());
+		PutString(sX + 35, sY + 30, "Do you really want to exchange?", GameColors::UIMagicBlue);
+		PutString(sX + 36, sY + 30, "Do you really want to exchange?", GameColors::UIMagicBlue);
 
 		// Yes button
 		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
@@ -34,8 +34,8 @@ void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB
 		break;
 
 	case 2: // Waiting for response
-		PutString(sX + 45, sY + 36, "Waiting for response...", GameColors::UIMagicBlue.ToColorRef());
-		PutString(sX + 46, sY + 36, "Waiting for response...", GameColors::UIMagicBlue.ToColorRef());
+		PutString(sX + 45, sY + 36, "Waiting for response...", GameColors::UIMagicBlue);
+		PutString(sX + 46, sY + 36, "Waiting for response...", GameColors::UIMagicBlue);
 		break;
 	}
 }

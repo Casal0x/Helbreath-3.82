@@ -43,10 +43,10 @@ namespace NetworkMessageHandlers {
 		wCost = pkt->cost;
 		std::memset(cTxt, 0, sizeof(cTxt));
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, cName);
+		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		wsprintf(cTxt, NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMPURCHASED, cStr1, wCost);
 		pGame->AddEventList(cTxt, 10);
 
 		short sItemID = pkt->item_id;
@@ -135,13 +135,13 @@ namespace NetworkMessageHandlers {
 		dwAttribute = pkt->attribute;
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		strcpy(cStr1, cName);
+		std::snprintf(cStr1, sizeof(cStr1), "%s", cName);
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
 		std::memset(cTxt, 0, sizeof(cTxt));
-		if (dwCount == 1) wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED2, cStr1);
-		else wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED1, dwCount, cStr1);
+		if (dwCount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMOBTAINED2, cStr1);
+		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMOBTAINED1, dwCount, cStr1);
 
 		pGame->AddEventList(cTxt, 10);
 		pGame->PlayGameSound('E', 20, 0);
@@ -217,7 +217,7 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
-		wsprintf(cTxt, NOTIFYMSG_ITEMLIFE_SPANEND1, cStr1);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMLIFE_SPANEND1, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
@@ -239,7 +239,7 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
-		wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+		std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
 		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
@@ -292,7 +292,7 @@ namespace NetworkMessageHandlers {
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
 
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 			pGame->AddEventList(cTxt, 10);
 
 			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
@@ -302,17 +302,17 @@ namespace NetworkMessageHandlers {
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (pCfg && ((pCfg->GetItemType() == ItemType::Consume) ||
 			(pCfg->GetItemType() == ItemType::Arrow))) {
-			wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMDEPlETED_ERASEITEM2, cStr1);
 		}
 		else if (pCfg) {
 			if (pCfg->GetItemType() == ItemType::UseDeplete) {
 				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
+					std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}
 			}
 			else if (pCfg->GetItemType() == ItemType::Eat) {
 				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
+					std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 1) && (pGame->m_pPlayer->m_sPlayerType <= 3))
 						pGame->PlayGameSound('C', 19, 0);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 4) && (pGame->m_pPlayer->m_sPlayerType <= 6))
@@ -321,12 +321,12 @@ namespace NetworkMessageHandlers {
 			}
 			else if (pCfg->GetItemType() == ItemType::UseDepleteDest) {
 				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
+					std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMDEPlETED_ERASEITEM3, cStr1);
 				}
 			}
 			else {
 				if (bIsUseItemResult == true) {
-					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM6, cStr1);
+					std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMDEPlETED_ERASEITEM6, cStr1);
 					pGame->PlayGameSound('E', 10, 0);
 				}
 			}
@@ -356,22 +356,22 @@ namespace NetworkMessageHandlers {
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true)
 		{
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
 		if (pGame->m_pPlayer->m_iHP > 0)
 		{
-			wsprintf(cTxt, NOTIFYMSG_THROW_ITEM2, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_THROW_ITEM2, cStr1);
 		}
 		else
 		{
 			if (iAmount < 2)
-				wsprintf(cTxt, NOTIFYMSG_DROPITEMFIN_ERASEITEM3, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_DROPITEMFIN_ERASEITEM3, cStr1);
 			else
 			{
-				wsprintf(cTxt, NOTIFYMSG_DROPITEMFIN_ERASEITEM5, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_DROPITEMFIN_ERASEITEM5, cStr1);
 			}
 		}
 		pGame->AddEventList(cTxt, 10);
@@ -396,28 +396,28 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
-		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
+		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
 
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true) {
-			wsprintf(cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 			pGame->AddEventList(cTxt, 10);
 
 			if (pCfg) pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 			pGame->m_bIsItemEquipped[sItemIndex] = false;
 		}
-		if (cName[0] == 0) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cStr1);
+		if (cName[0] == 0) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM2, iAmount, cStr1);
 		else {
 			if (strcmp(cName, "Howard") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, iAmount, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM3, iAmount, cStr1);
 			else if (strcmp(cName, "William") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, iAmount, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM4, iAmount, cStr1);
 			else if (strcmp(cName, "Kennedy") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, iAmount, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM5, iAmount, cStr1);
 			else if (strcmp(cName, "Tom") == 0)
-				wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, iAmount, cStr1);
-			else wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM7, iAmount, cStr1);
+			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
 		}
 		pGame->AddEventList(cTxt, 10);
 		pGame->EraseItem((char)sItemIndex);
@@ -440,7 +440,7 @@ namespace NetworkMessageHandlers {
 		char cStr1[64], cStr2[64], cStr3[64];
 		pGame->GetItemName(pGame->m_pItemList[dwItemID].get(), cStr1, cStr2, cStr3);
 
-		wsprintf(cTxt, NOTIFYMSG_ITEMREPAIRED1, cStr1);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMREPAIRED1, cStr1);
 
 		pGame->AddEventList(cTxt, 10);
 	}
@@ -521,11 +521,11 @@ namespace NetworkMessageHandlers {
 
 		switch (wV2) {
 		case 1:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_REPAIR_ITEM1, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_REPAIR_ITEM1, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			break;
 		case 2:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_REPAIR_ITEM2, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_REPAIR_ITEM2, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			break;
 		}
@@ -549,17 +549,17 @@ namespace NetworkMessageHandlers {
 
 		switch (wV2) {
 		case 1:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM1, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_SELL_ITEM1, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			break;
 
 		case 2:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			break;
 
 		case 3:
-			wsprintf(cTxt, NOTIFYMSG_CANNOT_SELL_ITEM3, cStr1);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_SELL_ITEM3, cStr1);
 			pGame->AddEventList(cTxt, 10);
 			pGame->AddEventList(NOTIFYMSG_CANNOT_SELL_ITEM4, 10);
 			break;
@@ -586,8 +586,8 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		pGame->GetItemName(pGame->m_pItemList[wItemIndex].get(), cStr1, cStr2, cStr3);
-		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM2, cStr1, cName);
-		else wsprintf(cTxt, NOTIFYMSG_CANNOT_GIVE_ITEM1, iAmount, cStr1, cName);
+		if (iAmount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_GIVE_ITEM2, cStr1, cName);
+		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_GIVE_ITEM1, iAmount, cStr1, cName);
 
 		pGame->AddEventList(cTxt, 10);
 	}
@@ -608,11 +608,11 @@ namespace NetworkMessageHandlers {
 			pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 			if (sItemColor != -1) {
 				pGame->m_pItemList[sItemIndex]->m_cItemColor = (char)sItemColor;
-				wsprintf(cTxt, NOTIFYMSG_ITEMCOLOR_CHANGE1, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMCOLOR_CHANGE1, cStr1);
 				pGame->AddEventList(cTxt, 10);
 			}
 			else {
-				wsprintf(cTxt, NOTIFYMSG_ITEMCOLOR_CHANGE2, cStr1);
+				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMCOLOR_CHANGE2, cStr1);
 				pGame->AddEventList(cTxt, 10);
 			}
 		}
@@ -630,10 +630,10 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
+		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		wsprintf(cTxt, NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_THROW_ITEM1, iAmount, cStr1);
 
 		pGame->AddEventList(cTxt, 10);
 	}
@@ -655,11 +655,11 @@ namespace NetworkMessageHandlers {
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[wItemIndex]->m_sIDnum);
-		strcpy(cStr1, pCfg ? pCfg->m_cName : "Unknown");
+		std::snprintf(cStr1, sizeof(cStr1), "%s", pCfg ? pCfg->m_cName : "Unknown");
 		cStr2[0] = 0;
 		cStr3[0] = 0;
-		if (iAmount == 1) wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
-		wsprintf(cTxt, NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, cStr1, cName);
+		if (iAmount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED1, cStr1, cName);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_COUNTCHANGED2, iAmount, cStr1, cName);
 		pGame->AddEventList(cTxt, 10);
 	}
 

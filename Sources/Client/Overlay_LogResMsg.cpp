@@ -239,7 +239,7 @@ void Overlay_LogResMsg::RenderMessage(int dlgX, int dlgY)
         else
         {
             PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 70, UPDATE_SCREEN_ON_LOG_MSG34);
-            wsprintf(cTxt, UPDATE_SCREEN_ON_LOG_MSG35,
+            std::snprintf(cTxt, sizeof(cTxt), UPDATE_SCREEN_ON_LOG_MSG35,
                      m_pGame->m_iBlockYear, m_pGame->m_iBlockMonth, m_pGame->m_iBlockDay);
             PutAlignedString(dlgX + 36, dlgX + 291, dlgY + 85, cTxt);
         }

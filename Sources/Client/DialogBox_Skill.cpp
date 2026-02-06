@@ -30,22 +30,22 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 			if ((i < DEF_MAXSKILLTYPE) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
 				std::memset(cTemp, 0, sizeof(cTemp));
-				wsprintf(cTemp, "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName);
+				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName);
 				CMisc::ReplaceString(cTemp, '-', ' ');
 				std::memset(cTemp2, 0, sizeof(cTemp2));
-				wsprintf(cTemp2, "%3d%%", m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel);
+				std::snprintf(cTemp2, sizeof(cTemp2), "%3d%%", m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel);
 				if ((msX >= sX + 25) && (msX <= sX + 166) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
 				{
 					if ((m_pGame->m_pSkillCfgList[i + Info().sView]->m_bIsUseable == true)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIWhite.ToColorRef());
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIWhite.ToColorRef());
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIWhite);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIWhite);
 					}
 					else
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack.ToColorRef());
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack.ToColorRef());
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack);
 					}
 				}
 				else
@@ -53,13 +53,13 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 					if ((m_pGame->m_pSkillCfgList[i + Info().sView]->m_bIsUseable == true)
 						&& (m_pGame->m_pSkillCfgList[i + Info().sView]->m_iLevel != 0))
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIMagicBlue.ToColorRef());
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIMagicBlue.ToColorRef());
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIMagicBlue);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIMagicBlue);
 					}
 					else
 					{
-						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack.ToColorRef());
-						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack.ToColorRef());
+						PutString(sX + 30, sY + 45 + i * 15, cTemp, GameColors::UIBlack);
+						PutString(sX + 183, sY + 45 + i * 15, cTemp2, GameColors::UIBlack);
 					}
 				}
 

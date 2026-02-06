@@ -49,7 +49,7 @@ void HandleNoticeMsg(CGame* pGame, char* pData)
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNoticeMsg>(
 		pData, sizeof(hb::net::PacketNotifyNoticeMsg));
 	if (!pkt) return;
-	strcpy(cMsg, pkt->text);
+	std::snprintf(cMsg, sizeof(cMsg), "%s", pkt->text);
 	pGame->AddEventList(cMsg, 10);
 }
 
@@ -102,7 +102,7 @@ void HandleSettingSuccess(CGame* pGame, char* pData)
 	pGame->m_pPlayer->m_iInt = pkt->intel;
 	pGame->m_pPlayer->m_iMag = pkt->mag;
 	pGame->m_pPlayer->m_iCharisma = pkt->chr;
-	wsprintf(cTxt, "Your stat has been changed.");
+	std::snprintf(cTxt, sizeof(cTxt), "Your stat has been changed.");
 	pGame->AddEventList(cTxt, 10);
 	// CLEROTH - LU
 	pGame->m_pPlayer->m_iLU_Point = (pGame->m_pPlayer->m_iLevel - 1) * 3 - ((pGame->m_pPlayer->m_iStr + pGame->m_pPlayer->m_iVit + pGame->m_pPlayer->m_iDex + pGame->m_pPlayer->m_iInt + pGame->m_pPlayer->m_iMag + pGame->m_pPlayer->m_iCharisma) - 70);
@@ -148,7 +148,7 @@ void HandleServerChange(CGame* pGame, char* pData)
 	//m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW; //Gateway
 	pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW_TOWLSBUTMLS;
 	std::memset(pGame->m_cMsg, 0, sizeof(pGame->m_cMsg));
-	strcpy(pGame->m_cMsg, "55");
+	std::snprintf(pGame->m_cMsg, sizeof(pGame->m_cMsg), "%s", "55");
 }
 
 void HandleTotalUsers(CGame* pGame, char* pData)
@@ -256,7 +256,7 @@ void HandleFightZoneReserve(CGame* pGame, char* pData)
 	case 7:
 	case 8:
 	case 9:
-		wsprintf(cTxt, NOTIFY_MSG_HANDLER73, pkt->result);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFY_MSG_HANDLER73, pkt->result);
 		pGame->AddEventList(cTxt, 10);
 		break;
 	}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CommonTypes.h"
 #include <cstdint>
 #include <functional>
 
@@ -18,7 +19,7 @@ public:
 	void Hide();
 
 	// Output
-	void Print(const char* text, uint32_t color = 0x00C0C0C0);
+	void Print(const char* text, const GameColor& color = GameColor{192, 192, 192});
 	void Printf(const char* fmt, ...);
 
 	// Text input (called from Overlay_DevConsole / GameWindowHandler)
@@ -39,7 +40,7 @@ public:
 	struct ConsoleLine
 	{
 		char text[120];
-		uint32_t color;
+		GameColor color;
 	};
 	const ConsoleLine* GetLines() const { return m_lines; }
 
@@ -61,7 +62,7 @@ private:
 	void ExecuteCommand();
 	void HistoryUp();
 	void HistoryDown();
-	void AddLine(const char* text, uint32_t color);
+	void AddLine(const char* text, const GameColor& color);
 	ConsoleLine m_lines[MAX_LINES];
 	int m_iWriteIndex = 0;
 	int m_iLineCount = 0;

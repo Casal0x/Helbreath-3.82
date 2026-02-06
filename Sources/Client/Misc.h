@@ -93,8 +93,8 @@ namespace CMisc
 
 	static inline bool bCheckValidString(char * str)
 	{
-		int len = strlen(str);
-		for (int i = 0; i < len; i++)
+		size_t len = strlen(str);
+		for (size_t i = 0; i < len; i++)
 		{	if(str[i] == ' ') return false;
 		}
 		return true;
@@ -102,8 +102,8 @@ namespace CMisc
 
 	static inline void ReplaceString(char * pStr, char cFrom, char cTo)
 	{
-		int len = strlen(pStr);
-		for (int i = 0; i < len; i++)
+		size_t len = strlen(pStr);
+		for (size_t i = 0; i < len; i++)
 		{	if (pStr[i] == cFrom) pStr[i] = cTo;
 		}
 	}
@@ -152,7 +152,7 @@ namespace CMisc
 
 	static inline bool bCheckValidName(char *pStr)
 	{
-		int i, iLen;
+		size_t i, iLen;
 		iLen = strlen(pStr);
 		for (i = 0; i < iLen; i++)
 		{	if ( pStr[i] < 0 )	return false;
@@ -169,13 +169,13 @@ namespace CMisc
 
 	static inline bool bIsValidEmail(char *pStr)
 	{
-		int len = strlen( pStr );
+		size_t len = strlen( pStr );
 		if( len < 7 ) return false;
 		char cEmail[52];
 		ZeroMemory( cEmail, sizeof(cEmail) );
 		memcpy( cEmail, pStr, len );
 		bool bFlag = false;
-		for( int i=0 ; i<len ; i++ )
+		for( size_t i=0 ; i<len ; i++ )
 		{
 			if( cEmail[i] == '@' ) bFlag = true;
 		}

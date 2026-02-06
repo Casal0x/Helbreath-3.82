@@ -154,7 +154,7 @@ void CursorTarget::TestObject(const SpriteLib::BoundRect& bounds, const TargetOb
         // Copy name
         std::memset(s_focusedObject.name, 0, sizeof(s_focusedObject.name));
         if (info.name) {
-            std::strncpy(s_focusedObject.name, info.name, sizeof(s_focusedObject.name) - 1);
+            std::snprintf(s_focusedObject.name, sizeof(s_focusedObject.name), "%s", info.name);
         }
     }
 }

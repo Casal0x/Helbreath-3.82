@@ -1,6 +1,6 @@
 #include "AudioManager.h"
-#include <cstdio>
 #include <cstdlib>
+#include <format>
 
 AudioManager& AudioManager::Get()
 {
@@ -116,27 +116,25 @@ void AudioManager::LoadSounds()
 	if (!m_bSoundAvailable)
 		return;
 
-	char filename[64];
-
 	// Load Character sounds (C1-C24)
 	for (int i = 1; i < AUDIO_MAX_CHARACTER_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\C%d.wav", i);
-		DecodeFile(filename, m_characterSounds[i]);
+		auto filename = std::format("sounds\\C{}.wav", i);
+		DecodeFile(filename.c_str(), m_characterSounds[i]);
 	}
 
 	// Load Monster/Magic sounds (M1-M156)
 	for (int i = 1; i < AUDIO_MAX_MONSTER_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\M%d.wav", i);
-		DecodeFile(filename, m_monsterSounds[i]);
+		auto filename = std::format("sounds\\M{}.wav", i);
+		DecodeFile(filename.c_str(), m_monsterSounds[i]);
 	}
 
 	// Load Effect sounds (E1-E53)
 	for (int i = 1; i < AUDIO_MAX_EFFECT_SOUNDS; i++)
 	{
-		std::sprintf(filename, "sounds\\E%d.wav", i);
-		DecodeFile(filename, m_effectSounds[i]);
+		auto filename = std::format("sounds\\E{}.wav", i);
+		DecodeFile(filename.c_str(), m_effectSounds[i]);
 	}
 }
 
@@ -648,9 +646,8 @@ void AudioManager::SetListenerPosition(int worldX, int worldY)
 	m_listenerY = worldY;
 }
 
-void AudioManager::Update(uint32_t currentTime)
+void AudioManager::Update()
 {
-	(void)currentTime;
 	// Periodically clean up finished sounds
 	CleanupFinishedSounds();
 }

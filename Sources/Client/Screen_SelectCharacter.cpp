@@ -80,7 +80,7 @@ void Screen_SelectCharacter::on_update()
             if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
             {
                 std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                strcpy(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
                 m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                 if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                 {
@@ -93,7 +93,7 @@ void Screen_SelectCharacter::on_update()
                     m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                     m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
                     std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-                    strcpy(m_pGame->m_cMsg, "33");
+                    std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                     std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
                     memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
                     return;
@@ -197,7 +197,7 @@ void Screen_SelectCharacter::on_update()
                     if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                     {
                         std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                        strcpy(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                        std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
                         m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                         if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                         {
@@ -210,7 +210,7 @@ void Screen_SelectCharacter::on_update()
                             m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                             m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
                             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-                            strcpy(m_pGame->m_cMsg, "33");
+                            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                             std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
                             memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
                             return;
@@ -231,7 +231,7 @@ void Screen_SelectCharacter::on_update()
                 if (m_pGame->m_pCharList[m_cCurFocus - 1]->m_sSex != 0)
                 {
                     std::memset(m_pGame->m_pPlayer->m_cPlayerName, 0, sizeof(m_pGame->m_pPlayer->m_cPlayerName));
-                    strcpy(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
+                    std::snprintf(m_pGame->m_pPlayer->m_cPlayerName, sizeof(m_pGame->m_pPlayer->m_cPlayerName), "%s", m_pGame->m_pCharList[m_cCurFocus - 1]->m_cName);
                     m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
                     if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true) {
@@ -244,7 +244,7 @@ void Screen_SelectCharacter::on_update()
                         m_pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
                         m_pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW;
                         std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-                        strcpy(m_pGame->m_cMsg, "33");
+                        std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
                         std::memset(m_pGame->m_cMapName, 0, sizeof(m_pGame->m_cMapName));
                         memcpy(m_pGame->m_cMapName, m_pGame->m_pCharList[m_cCurFocus - 1]->m_cMapName, 10);
                         return;
@@ -342,14 +342,14 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
                 {
                     pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109, sY + 138, 1, SpriteLib::DrawParams::AdditiveNoColorKey(0.25f));
                     pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109, sY + 138, false, dwTime);
-                    TextLib::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName, TextLib::TextStyle::FromColorRef(GameColors::UISelectPurple.ToColorRef()));
+                    TextLib::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
                     int	_sLevel = pGame->m_pCharList[i]->m_sLevel;
                     char charInfoBuf[32];
                     snprintf(charInfoBuf, sizeof(charInfoBuf), "%d", _sLevel);
-                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf, TextLib::TextStyle::FromColorRef(GameColors::UISelectPurple.ToColorRef()));
+                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
 
                     pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp, charInfoBuf, sizeof(charInfoBuf));
-                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf, TextLib::TextStyle::FromColorRef(GameColors::UISelectPurple.ToColorRef()));
+                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
                 }
                 iTemp2 = (int64_t)pGame->m_pCharList[i]->m_iYear * 1000000 + (int64_t)pGame->m_pCharList[i]->m_iMonth * 60000 + (int64_t)pGame->m_pCharList[i]->m_iDay * 1700 + (int64_t)pGame->m_pCharList[i]->m_iHour * 70 + (int64_t)pGame->m_pCharList[i]->m_iMinute;
                 if (iTemp1 < iTemp2)

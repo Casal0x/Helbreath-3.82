@@ -254,7 +254,7 @@ bool GameWindowHandler::OnTextInput(NativeWindowHandle hWnd, uint32_t message, u
     // Route WM_CHAR text input to DevConsole when visible
     if (message == WM_CHAR && DevConsole::Get().IsVisible())
     {
-        return DevConsole::Get().HandleChar(wParam);
+        return DevConsole::Get().HandleChar(static_cast<unsigned int>(wParam));
     }
 
     if (m_pGame)

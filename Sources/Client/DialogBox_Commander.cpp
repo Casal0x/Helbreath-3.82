@@ -265,12 +265,12 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		switch (Info().sV1) {
 		case 0:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
+			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIWhite);
+			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIMagicBlue);
 			break;
 		case 1:
-			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b);
-			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b);
+			PutAlignedString(sX, sX + 323, sY + 140, DRAW_DIALOGBOX_COMMANDER43, GameColors::UIMagicBlue);
+			PutAlignedString(sX, sX + 323, sY + 160, DRAW_DIALOGBOX_COMMANDER44, GameColors::UIWhite);
 			break;
 		}
 		break;

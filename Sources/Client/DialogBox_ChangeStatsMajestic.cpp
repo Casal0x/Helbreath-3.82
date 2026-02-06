@@ -28,17 +28,17 @@ void DialogBox_ChangeStatsMajestic::DrawStatRow(short sX, short sY, int iYOffset
 {
 	char cTxt[120];
 
-	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack.ToColorRef());
+	PutString(sX + 24, sY + iYOffset, (char*)pLabel, GameColors::UIBlack);
 
-	wsprintf(cTxt, "%d", iCurrentStat);
-	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
+	std::snprintf(cTxt, sizeof(cTxt), "%d", iCurrentStat);
+	PutString(sX + 109, sY + iYOffset, cTxt, GameColors::UILabel);
 
 	int iNewStat = iCurrentStat + iPendingChange;
-	wsprintf(cTxt, "%d", iNewStat);
+	std::snprintf(cTxt, sizeof(cTxt), "%d", iNewStat);
 	if (iNewStat != iCurrentStat)
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed.ToColorRef());
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UIRed);
 	else
-		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel.ToColorRef());
+		PutString(sX + 162, sY + iYOffset, cTxt, GameColors::UILabel);
 
 	// UP arrow highlight (undo reduction)
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanUndo)
@@ -67,12 +67,12 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 	int iPendingCost = GetPendingMajesticCost(m_pGame);
 	int iRemaining = m_pGame->m_iGizonItemUpgradeLeft - iPendingCost;
 
-	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack.ToColorRef());
-	wsprintf(cTxt, "%d", iRemaining);
+	PutString(sX + 20, sY + 85, DRAW_DIALOGBOX_LEVELUP_SETTING16, GameColors::UIBlack);
+	std::snprintf(cTxt, sizeof(cTxt), "%d", iRemaining);
 	if (iRemaining > 0)
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen.ToColorRef());
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIGreen);
 	else
-		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack.ToColorRef());
+		PutString(sX + 73, sY + 102, cTxt, GameColors::UIBlack);
 
 	bool bCanAfford = (iRemaining > 0);
 

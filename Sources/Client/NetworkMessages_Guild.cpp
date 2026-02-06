@@ -105,7 +105,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
-		wsprintf(cTxt, NOTIFYMSG_NEW_GUILDMAN1, cName);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_NEW_GUILDMAN1, cName);
 		pGame->AddEventList(cTxt, 10);
 		pGame->ClearGuildNameList();
 	}
@@ -121,7 +121,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, 10);
 
 		if (memcmp(pGame->m_pPlayer->m_cPlayerName, cName, 10) != 0) {
-			wsprintf(cTxt, NOTIFYMSG_DISMISS_GUILDMAN1, cName);
+			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_DISMISS_GUILDMAN1, cName);
 			pGame->AddEventList(cTxt, 10);
 		}
 		pGame->ClearGuildNameList();
@@ -137,7 +137,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, 10);
 
-		wsprintf(cTxt, NOTIFYMSG_CANNOT_JOIN_MOREGUILDMAN1, cName);
+		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_JOIN_MOREGUILDMAN1, cName);
 		pGame->AddEventList(cTxt, 10);
 		pGame->AddEventList(NOTIFYMSG_CANNOT_JOIN_MOREGUILDMAN2, 10);
 	}
@@ -153,7 +153,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->guild_name, 20);
 		sRank = pkt->rank;
 		std::memset(pGame->m_pPlayer->m_cGuildName, 0, sizeof(pGame->m_pPlayer->m_cGuildName));
-		strcpy(pGame->m_pPlayer->m_cGuildName, cName);
+		std::snprintf(pGame->m_pPlayer->m_cGuildName, sizeof(pGame->m_pPlayer->m_cGuildName), "%s", cName);
 		pGame->m_pPlayer->m_iGuildRank = sRank;
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuildOperation, 0, 0, 0);
 		pGame->_PutGuildOperationList(cName, 3);
@@ -240,7 +240,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cTemp, pkt->guild_name, sizeof(pkt->guild_name));
 
 		std::memset(pGame->m_stGuildName[sV2].cGuildName, 0, sizeof(pGame->m_stGuildName[sV2].cGuildName));
-		strcpy(pGame->m_stGuildName[sV2].cGuildName, cTemp);
+		std::snprintf(pGame->m_stGuildName[sV2].cGuildName, sizeof(pGame->m_stGuildName[sV2].cGuildName), "%s", cTemp);
 		pGame->m_stGuildName[sV2].iGuildRank = sV1;
 		for (i = 0; i < 20; i++) if (pGame->m_stGuildName[sV2].cGuildName[i] == '_') pGame->m_stGuildName[sV2].cGuildName[i] = ' ';
 	}

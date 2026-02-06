@@ -72,8 +72,8 @@ public:
     virtual int GetFittingCharCount(const char* text, int maxWidth) const = 0;
 
     // Drawing
-    virtual void DrawText(int x, int y, const char* text, uint32_t color) = 0;
-    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, uint32_t color,
+    virtual void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
+    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, uint8_t r, uint8_t g, uint8_t b,
                                  Align alignment = Align::TopLeft) = 0;
 
     // Batching for performance (DDraw needs DC acquisition)

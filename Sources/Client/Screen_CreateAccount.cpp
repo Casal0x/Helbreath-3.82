@@ -184,17 +184,17 @@ void Screen_CreateAccount::_submit_create_account()
 
         // Copy account name/password to player session
         std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
-        std::strncpy(m_pGame->m_pPlayer->m_cAccountName, m_cNewAcctName, sizeof(m_pGame->m_pPlayer->m_cAccountName) - 1);
+        std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cNewAcctName);
         std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-        std::strncpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cNewAcctPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword) - 1);
+        std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cNewAcctPassword);
 
         // Build CreateAccountRequest packet
         hb::net::CreateAccountRequest req{};
         req.header.msg_id = MSGID_REQUEST_CREATENEWACCOUNT;
         req.header.msg_type = 0;
-        std::strncpy(req.account_name, m_cNewAcctName, sizeof(req.account_name));
-        std::strncpy(req.password, m_cNewAcctPassword, sizeof(req.password));
-        std::strncpy(req.email, m_cEmail, sizeof(req.email));
+        std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_cNewAcctName);
+        std::snprintf(req.password, sizeof(req.password), "%s", m_cNewAcctPassword);
+        std::snprintf(req.email, sizeof(req.email), "%s", m_cEmail);
 
         // Store packet for sending after connection completes
         auto* p = reinterpret_cast<char*>(&req);
@@ -208,7 +208,7 @@ void Screen_CreateAccount::_submit_create_account()
         m_pGame->ChangeGameMode(GameMode::Connecting);
         m_pGame->m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;
         std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-        std::strncpy(m_pGame->m_cMsg, "01", sizeof(m_pGame->m_cMsg) - 1);
+        std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "01");
     }
 }
 
@@ -218,21 +218,21 @@ bool Screen_CreateAccount::on_net_response(uint16_t wResponseType, char* pData)
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-		std::strncpy(m_pGame->m_cMsg, "54", sizeof(m_pGame->m_cMsg) - 1);
+		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "54");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-		std::strncpy(m_pGame->m_cMsg, "05", sizeof(m_pGame->m_cMsg) - 1);
+		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "05");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-		std::strncpy(m_pGame->m_cMsg, "06", sizeof(m_pGame->m_cMsg) - 1);
+		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "06");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 	}

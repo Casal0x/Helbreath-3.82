@@ -127,7 +127,7 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
     TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 60, (sX + 248) - (sX + 24), 15, DRAW_DIALOGBOX_ITEMUPGRADE3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 46);
 
-    wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
+    std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE11, m_pGame->m_iGizonItemUpgradeLeft);
     TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 100, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
 
     if (iItemIndex != -1)
@@ -135,7 +135,7 @@ void DialogBox_ItemUpgrade::DrawMode1_GizonUpgrade(int sX, int sY, int msX, int 
         m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME3, sX, sY, 3);
         int iValue = CalculateUpgradeCost(iItemIndex);
 
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
+        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE12, iValue);
         if (m_pGame->m_iGizonItemUpgradeLeft < iValue)
             TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 115, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIWarningRed.r, GameColors::UIWarningRed.g, GameColors::UIWarningRed.b), TextLib::Align::TopCenter);
         else
@@ -317,7 +317,7 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     }
     else
     {
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
+        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE34, iSoX);
         TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 80, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 
@@ -327,7 +327,7 @@ void DialogBox_ItemUpgrade::DrawMode6_StoneUpgrade(int sX, int sY, int msX, int 
     }
     else
     {
-        wsprintf(cTxt, DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
+        std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_ITEMUPGRADE35, iSoM);
         TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 20 + 95, (sX + 248) - (sX + 24), 15, cTxt, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
     }
 

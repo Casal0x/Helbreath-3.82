@@ -28,15 +28,15 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	case 0:
 		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
 
-		wsprintf(cTxt, "%s", cStr1);
-		PutString(sX + 98, sY + 14, cTxt, GameColors::UIWhite.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), "%s", cStr1);
+		PutString(sX + 98, sY + 14, cTxt, GameColors::UIWhite);
 
-		wsprintf(cTxt, DRAW_DIALOGBOX_FISHING1, Info().sV2);
-		PutString(sX + 98, sY + 28, cTxt, GameColors::UIBlack.ToColorRef());
+		std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_FISHING1, Info().sV2);
+		PutString(sX + 98, sY + 28, cTxt, GameColors::UIBlack);
 
-		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack.ToColorRef());
+		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack);
 
-		wsprintf(cTxt, "%d %%", Info().sV1);
+		std::snprintf(cTxt, sizeof(cTxt), "%d %%", Info().sV1);
 		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnFishRed.r, GameColors::BmpBtnFishRed.g, GameColors::BmpBtnFishRed.b));
 
 		// "Try Now!" button

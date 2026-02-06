@@ -276,7 +276,7 @@ bool CGame::bInit()
 	}
 
 	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
-	strcpy(m_cLogServerAddr, DEF_SERVER_IP);
+	std::snprintf(m_cLogServerAddr, sizeof(m_cLogServerAddr), "%s", DEF_SERVER_IP);
 	m_iLogServerPort = DEF_SERVER_PORT;
 	m_iGameServerPort = DEF_GSERVER_PORT;
 
@@ -298,7 +298,7 @@ bool CGame::bInit()
 
 	_LoadGameMsgTextContents();
 	std::memset(m_cWorldServerName, 0, sizeof(m_cWorldServerName));
-	strcpy(m_cWorldServerName, NAME_WORLDNAME1);
+	std::snprintf(m_cWorldServerName, sizeof(m_cWorldServerName), "%s", NAME_WORLDNAME1);
 
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
@@ -423,9 +423,7 @@ void CGame::DrawCursor()
 // This centralizes surface operations that were previously scattered across all screen methods
 void CGame::RenderFrame()
 {
-	// Update manager singletons with frame delta time
-	double deltaTime = FrameTiming::GetDeltaTime();
-	AudioManager::Get().Update(deltaTime);
+	AudioManager::Get().Update();
 
 	// Process timer and network events (must happen before any update logic)
 	// These were previously in UpdateScreen but need to run regardless of screen system
@@ -1147,7 +1145,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	case DEF_XSOCKEVENT_CRITICALERROR:
 	{
 		char cDbg[160];
-		wsprintf(cDbg, "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
+		std::snprintf(cDbg, sizeof(cDbg), "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		printf("%s", cDbg);
 	}
 	m_pGSock.reset();
@@ -1201,7 +1199,7 @@ bool CGame::_bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		pItem->m_sIDnum = entry.itemId;
 		std::memset(pItem->m_cName, 0, sizeof(pItem->m_cName));
-		std::strncpy(pItem->m_cName, entry.name, sizeof(pItem->m_cName) - 1);
+		std::snprintf(pItem->m_cName, sizeof(pItem->m_cName), "%s", entry.name);
 		pItem->m_cItemType = entry.itemType;
 		pItem->m_cEquipPos = entry.equipPos;
 		pItem->m_sItemEffectType = entry.effectType;
@@ -1285,7 +1283,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 		CMagic* pMagic = m_pMagicCfgList[magicId].get();
 
 		std::memset(pMagic->m_cName, 0, sizeof(pMagic->m_cName));
-		std::strncpy(pMagic->m_cName, entry.name, sizeof(pMagic->m_cName) - 1);
+		std::snprintf(pMagic->m_cName, sizeof(pMagic->m_cName), "%s", entry.name);
 		pMagic->m_sValue1 = entry.manaCost;
 		pMagic->m_sValue2 = entry.intLimit;
 		pMagic->m_sValue3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
@@ -1348,7 +1346,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 		CSkill* pSkill = m_pSkillCfgList[skillId].get();
 
 		std::memset(pSkill->m_cName, 0, sizeof(pSkill->m_cName));
-		std::strncpy(pSkill->m_cName, entry.name, sizeof(pSkill->m_cName) - 1);
+		std::snprintf(pSkill->m_cName, sizeof(pSkill->m_cName), "%s", entry.name);
 		pSkill->m_bIsUseable = (entry.isUseable != 0);
 		pSkill->m_cUseMethod = entry.useMethod;
 		// Apply mastery level if already received from InitItemList
@@ -1684,7 +1682,7 @@ void CGame::InitPlayerResponseHandler(char* pData)
 
 	case DEF_MSGTYPE_REJECT:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "3J");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 	}
@@ -1824,7 +1822,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					strcpy(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, cName);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", cName);
 					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
 					break;
 
@@ -2398,12 +2396,12 @@ void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 	{
 		for (i = 1; i < 6; i++)
 		{
-			strcpy(m_stEventHistory2[i - 1].cTxt, m_stEventHistory2[i].cTxt);
+			std::snprintf(m_stEventHistory2[i - 1].cTxt, sizeof(m_stEventHistory2[i - 1].cTxt), "%s", m_stEventHistory2[i].cTxt);
 			m_stEventHistory2[i - 1].cColor = m_stEventHistory2[i].cColor;
 			m_stEventHistory2[i - 1].dwTime = m_stEventHistory2[i].dwTime;
 		}
 		std::memset(m_stEventHistory2[5].cTxt, 0, sizeof(m_stEventHistory2[5].cTxt));
-		strcpy(m_stEventHistory2[5].cTxt, pTxt);
+		std::snprintf(m_stEventHistory2[5].cTxt, sizeof(m_stEventHistory2[5].cTxt), "%s", pTxt);
 		m_stEventHistory2[5].cColor = cColor;
 		m_stEventHistory2[5].dwTime = m_dwCurTime;
 	}
@@ -2411,12 +2409,12 @@ void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 	{
 		for (i = 1; i < 6; i++)
 		{
-			strcpy(m_stEventHistory[i - 1].cTxt, m_stEventHistory[i].cTxt);
+			std::snprintf(m_stEventHistory[i - 1].cTxt, sizeof(m_stEventHistory[i - 1].cTxt), "%s", m_stEventHistory[i].cTxt);
 			m_stEventHistory[i - 1].cColor = m_stEventHistory[i].cColor;
 			m_stEventHistory[i - 1].dwTime = m_stEventHistory[i].dwTime;
 		}
 		std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
-		strcpy(m_stEventHistory[5].cTxt, pTxt);
+		std::snprintf(m_stEventHistory[5].cTxt, sizeof(m_stEventHistory[5].cTxt), "%s", pTxt);
 		m_stEventHistory[5].cColor = cColor;
 		m_stEventHistory[5].dwTime = m_dwCurTime;
 	}
@@ -2992,7 +2990,7 @@ void CGame::LogResponseHandler(char* pData)
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "3A");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3A");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
@@ -3047,74 +3045,74 @@ void CGame::LogResponseHandler(char* pData)
 		m_iBlockDay = pkt->block_day;
 
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "7H");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7H");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NOTENOUGHPOINT:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "7I");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7I");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ACCOUNTLOCKED:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "7K");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7K");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_SERVICENOTAVAILABLE:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "7L");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7L");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "6B");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6B");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "6C");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6C");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_PASSWORDMISMATCH:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "11");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "11");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "12");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "12");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "54");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "54");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "05");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "05");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "06");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "06");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGCHARACTER:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "Not existing character!");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "Not existing character!");
 		ChangeGameMode(GameMode::Msg);
 		break;
 
@@ -3146,20 +3144,20 @@ void CGame::LogResponseHandler(char* pData)
 			memcpy(m_pCharList[i]->m_cMapName, entry.map_name, sizeof(entry.map_name));
 		}
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "47");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "47");
 		ChangeGameMode(GameMode::LogResMsg);
 	}
 	break;
 
 	case DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "28");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "28");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGCHARACTER:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "29");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "29");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
@@ -3192,13 +3190,13 @@ void CGame::LogResponseHandler(char* pData)
 		if (!pkt) return;
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
-		case 1:	strcpy(m_cMsg, "3E"); break;
-		case 2:	strcpy(m_cMsg, "3F"); break;
-		case 3:	strcpy(m_cMsg, "33"); break;
-		case 4: strcpy(m_cMsg, "3D"); break;
-		case 5: strcpy(m_cMsg, "3G"); break;
-		case 6: strcpy(m_cMsg, "3Z"); break;
-		case 7: strcpy(m_cMsg, "3J"); break;
+		case 1:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3E"); break;
+		case 2:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3F"); break;
+		case 3:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "33"); break;
+		case 4: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3D"); break;
+		case 5: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3G"); break;
+		case 6: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3Z"); break;
+		case 7: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J"); break;
 		}
 		ChangeGameMode(GameMode::LogResMsg);
 	}
@@ -3206,13 +3204,13 @@ void CGame::LogResponseHandler(char* pData)
 
 	case DEF_ENTERGAMERESTYPE_FORCEDISCONN:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "3X");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3X");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_NOTEXISTINGWORLDSERVER:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "1Y");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1Y");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
@@ -3222,11 +3220,11 @@ void CGame::LogResponseHandler(char* pData)
 		if (!pkt) return;
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		switch (pkt->code) {
-		case 1:	strcpy(m_cMsg, "8U"); break; //MainMenu, Keycode registration success
-		case 2:	strcpy(m_cMsg, "82"); break; //MainMenu, Not existing Account
-		case 3:	strcpy(m_cMsg, "81"); break; //MainMenu, Password wrong
-		case 4: strcpy(m_cMsg, "8V"); break; //MainMenu, Invalid Keycode
-		case 5: strcpy(m_cMsg, "8W"); break; //MainMenu, Already Used Keycode
+		case 1:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8U"); break; //MainMenu, Keycode registration success
+		case 2:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "82"); break; //MainMenu, Not existing Account
+		case 3:	std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "81"); break; //MainMenu, Password wrong
+		case 4: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8V"); break; //MainMenu, Invalid Keycode
+		case 5: std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "8W"); break; //MainMenu, Already Used Keycode
 		}
 		ChangeGameMode(GameMode::LogResMsg);
 	}
@@ -3234,19 +3232,19 @@ void CGame::LogResponseHandler(char* pData)
 
 	case DEF_LOGRESMSGTYPE_FORCECHANGEPASSWORD:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "6M");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6M");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_INVALIDKOREANSSN:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "1a");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1a");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
 	case DEF_LOGRESMSGTYPE_LESSTHENFIFTEEN:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
-		strcpy(m_cMsg, "1b");
+		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1b");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 	}
@@ -3397,7 +3395,7 @@ void CGame::ReleaseUnusedSprites()
 	}
 
 	// Stale sound buffer release is now handled by AudioManager::Update()
-	AudioManager::Get().Update(GameClock::GetTimeMS());
+	AudioManager::Get().Update();
 }
 
 void CGame::PutChatScrollList(char* pMsg, char cType)
@@ -3442,7 +3440,7 @@ void CGame::ChatMsgHandler(char* pData)
 	if (bCheckExID(cName) == true) return;
 
 	std::memset(cTemp, 0, sizeof(cTemp));
-	strcpy(cTemp, pData + sizeof(hb::net::PacketCommandChatMsgHeader));
+	std::snprintf(cTemp, sizeof(cTemp), "%s", pData + sizeof(hb::net::PacketCommandChatMsgHeader));
 
 	if ((cMsgType == 0) || (cMsgType == 2) || (cMsgType == 3))
 	{
@@ -3457,7 +3455,7 @@ void CGame::ChatMsgHandler(char* pData)
 	}
 
 	std::memset(cMsg, 0, sizeof(cMsg));
-	wsprintf(cMsg, "%s: %s", cName, cTemp);
+	std::snprintf(cMsg, sizeof(cMsg), "%s: %s", cName, cTemp);
 	m_Renderer->BeginTextBatch();
 	bFlag = false;
 	short sCheckByte = 0;
@@ -3483,10 +3481,9 @@ void CGame::ChatMsgHandler(char* pData)
 				memcpy(cTemp, cMsg, iLoc);
 				PutChatScrollList(cTemp, cMsgType);
 				std::memset(cTemp, 0, sizeof(cTemp));
-				strcpy(cTemp, cMsg + iLoc);
+				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc);
 				std::memset(cMsg, 0, sizeof(cMsg));
-				strcpy(cMsg, " ");
-				strcat(cMsg, cTemp);
+				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
 			}
 			else
 			{
@@ -3494,10 +3491,9 @@ void CGame::ChatMsgHandler(char* pData)
 				memcpy(cTemp, cMsg, iLoc + 1);
 				PutChatScrollList(cTemp, cMsgType);
 				std::memset(cTemp, 0, sizeof(cTemp));
-				strcpy(cTemp, cMsg + iLoc + 1);
+				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc + 1);
 				std::memset(cMsg, 0, sizeof(cMsg));
-				strcpy(cMsg, " ");
-				strcat(cMsg, cTemp);
+				std::snprintf(cMsg, sizeof(cMsg), " %s", cTemp);
 			}
 		}
 		else
@@ -3524,16 +3520,16 @@ void CGame::ChatMsgHandler(char* pData)
 
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
-				wsprintf(cHeadMsg, "%s:%s", cName, cp);
+				std::snprintf(cHeadMsg, sizeof(cHeadMsg), "%s:%s", cName, cp);
 				if (cMsgType == 10) {
 					// GM broadcast: route to top-left event area instead of bottom status area
 					for (int j = 1; j < 6; j++) {
-						strcpy(m_stEventHistory[j - 1].cTxt, m_stEventHistory[j].cTxt);
+						std::snprintf(m_stEventHistory[j - 1].cTxt, sizeof(m_stEventHistory[j - 1].cTxt), "%s", m_stEventHistory[j].cTxt);
 						m_stEventHistory[j - 1].cColor = m_stEventHistory[j].cColor;
 						m_stEventHistory[j - 1].dwTime = m_stEventHistory[j].dwTime;
 					}
 					std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
-					strcpy(m_stEventHistory[5].cTxt, cHeadMsg);
+					std::snprintf(m_stEventHistory[5].cTxt, sizeof(m_stEventHistory[5].cTxt), "%s", cHeadMsg);
 					m_stEventHistory[5].cColor = cMsgType;
 					m_stEventHistory[5].dwTime = m_dwCurTime;
 				} else {
@@ -3936,7 +3932,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX, iconY, 3, SpriteLib::DrawParams::Additive(0.7f));
 
 		// Draw super attack count text at bottom-right of combat button area
-		wsprintf(G_cTxt, "%d", m_pPlayer->m_iSuperAttackLeft);
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "%d", m_pPlayer->m_iSuperAttackLeft);
 		if (bMastered)
 			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255), TextLib::Align::BottomRight);
 		else
@@ -4040,7 +4036,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView = cType;
 			EndInputString();
 			std::memset(m_cAmountString, 0, sizeof(m_cAmountString));
-			wsprintf(m_cAmountString, "%d", sV1);
+			std::snprintf(m_cAmountString, sizeof(m_cAmountString), "%d", sV1);
 			sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
 			sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
 			StartInputString(sX + 40, sY + 57, 11, m_cAmountString, false);
@@ -4420,7 +4416,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		}
 	}
 	m_dialogBoxManager.SetEnabled(iBoxID, true);
-	if (pString != 0) strcpy(m_dialogBoxManager.Info(iBoxID).cStr, pString);
+	if (pString != 0) std::snprintf(m_dialogBoxManager.Info(iBoxID).cStr, sizeof(m_dialogBoxManager.Info(iBoxID).cStr), "%s", pString);
 	//Snoopy: 39->59
 	for (i = 0; i < 59; i++)
 		if (m_dialogBoxManager.OrderAt(i) == iBoxID) m_dialogBoxManager.SetOrderAt(i, 0);
@@ -4788,52 +4784,21 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 
 bool CGame::GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
 {
-	int len;
+	size_t len;
 	if (m_pInputBuffer == 0) return false;
 
 #ifndef WM_CHAR
 #define WM_CHAR 0x0102
-#define WM_IME_COMPOSITION 0x010F
 #endif
 
 	switch (msg) {
-#ifdef _WIN32
-	case WM_IME_COMPOSITION:
-	{
-		HIMC hIMC = 0;
-		std::memset(m_cEdit, 0, sizeof(m_cEdit));
-		if (lparam & GCS_RESULTSTR)
-		{
-			hIMC = ImmGetContext(hWnd);
-			len = ImmGetCompositionString(hIMC, GCS_RESULTSTR, 0, 0);
-			if (len > 4) len = 4;
-			ImmGetCompositionString(hIMC, GCS_RESULTSTR, m_cEdit, len);
-			ImmReleaseContext(hWnd, hIMC);
-			len = strlen(m_pInputBuffer) + strlen(m_cEdit);
-			if (len < m_cInputMaxLen) strcpy(m_pInputBuffer + strlen(m_pInputBuffer), m_cEdit);
-			std::memset(m_cEdit, 0, sizeof(m_cEdit));
-		}
-		else if (lparam & GCS_COMPSTR)
-		{
-			hIMC = ImmGetContext(hWnd);
-			len = ImmGetCompositionString(hIMC, GCS_COMPSTR, 0, 0);
-			if (len > 4) len = 4;
-			ImmGetCompositionString(hIMC, GCS_COMPSTR, m_cEdit, len);
-			ImmReleaseContext(hWnd, hIMC);
-			len = strlen(m_pInputBuffer) + strlen(m_cEdit);
-			if (len >= m_cInputMaxLen) std::memset(m_cEdit, 0, sizeof(m_cEdit));
-		}
-		return true;
-	}
-#endif
-
 	case WM_CHAR:
 		if (wparam == 8)
 		{
 			if (strlen(m_pInputBuffer) > 0)
 			{
 				len = strlen(m_pInputBuffer);
-				switch (GetCharKind(m_pInputBuffer, len - 1)) {
+				switch (GetCharKind(m_pInputBuffer, static_cast<int>(len) - 1)) {
 				case 1:
 					m_pInputBuffer[len - 1] = 0;
 					break;
@@ -4849,7 +4814,7 @@ bool CGame::GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, int
 		else if ((wparam != 9) && (wparam != 13) && (wparam != 27))
 		{
 			len = strlen(m_pInputBuffer);
-			if (len >= m_cInputMaxLen - 1) return false;
+			if (len >= static_cast<size_t>(m_cInputMaxLen) - 1) return false;
 			m_pInputBuffer[len] = wparam & 0xff;
 			m_pInputBuffer[len + 1] = 0;
 		}
@@ -4882,10 +4847,10 @@ void CGame::ShowReceivedString(bool bIsHide)
 
 	std::memset(G_cTxt, 0, sizeof(G_cTxt));
 
-	strcpy(G_cTxt, m_pInputBuffer);
+	std::snprintf(G_cTxt, sizeof(G_cTxt), "%s", m_pInputBuffer);
 	if ((m_cEdit[0] != 0) && (strlen(m_pInputBuffer) + strlen(m_cEdit) + 1 <= m_cInputMaxLen))
 	{
-		strcpy(G_cTxt + strlen(m_pInputBuffer), m_cEdit);
+		std::snprintf(G_cTxt + strlen(m_pInputBuffer), sizeof(G_cTxt) - strlen(m_pInputBuffer), "%s", m_cEdit);
 	}
 
 	if (bIsHide == true)
@@ -4918,18 +4883,18 @@ void CGame::StartInputString(int sX, int sY, unsigned char iLen, char* pBuffer, 
 void CGame::EndInputString()
 {
 	m_bInputStatus = false;
-	int len = strlen(m_cEdit);
+	size_t len = strlen(m_cEdit);
 	if (len > 0)
 	{
 		m_cEdit[len] = 0;
-		strcpy(m_pInputBuffer + strlen(m_pInputBuffer), m_cEdit);
+		std::snprintf(m_pInputBuffer + strlen(m_pInputBuffer), m_cInputMaxLen - strlen(m_pInputBuffer), "%s", m_cEdit);
 		std::memset(m_cEdit, 0, sizeof(m_cEdit));
 	}
 }
 
 void CGame::ReceiveString(char* pString)
 {
-	strcpy(pString, m_pInputBuffer);
+	std::snprintf(pString, m_cInputMaxLen, "%s", m_pInputBuffer);
 }
 
 void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey, bool bIsTrans)
@@ -4986,7 +4951,7 @@ void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 {
 	std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
-	strcpy(m_cTopMsg, pString);
+	std::snprintf(m_cTopMsg, sizeof(m_cTopMsg), "%s", pString);
 
 	m_iTopMsgLastSec = iLastSec;
 	m_dwTopMsgTime = GameClock::GetTimeMS();
@@ -5013,7 +4978,7 @@ void CGame::CannotConstruct(int iCode)
 		break;
 
 	case 2: //
-		wsprintf(G_cTxt, "%s XY(%d, %d)", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "%s XY(%d, %d)", m_pGameMsgList[19]->m_pMsg, m_pPlayer->m_iConstructLocX, m_pPlayer->m_iConstructLocY);
 		SetTopMsg(G_cTxt, 5);
 		break;
 
@@ -5032,7 +4997,7 @@ void CGame::FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize)
 	if (buffer == nullptr || bufSize == 0) return;
 
 	char numStr[20];
-	_ultoa(value, numStr, 10);
+	std::snprintf(numStr, sizeof(numStr), "%lu", static_cast<unsigned long>(value));
 
 #ifdef DEF_COMMA_GOLD
 	int srcLen = static_cast<int>(strlen(numStr));
@@ -5056,8 +5021,7 @@ void CGame::FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize)
 		buffer[j] = tmp;
 	}
 #else
-	strncpy(buffer, numStr, bufSize - 1);
-	buffer[bufSize - 1] = '\0';
+	std::snprintf(buffer, bufSize, "%s", numStr);
 #endif
 }
 
@@ -5086,7 +5050,7 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, m_pGameMsgList[27]->m_pMsg, 0); // Experience point of the battle contribution:
 		std::memset(cTemp, 0, sizeof(cTemp));											//
-		wsprintf(cTemp, "+%dExp Points!", iWarContribution);
+		std::snprintf(cTemp, sizeof(cTemp), "+%dExp Points!", iWarContribution);
 		m_pMsgTextList[8] = std::make_unique<CMsg>(0, cTemp, 0);
 		for (i = 9; i < 18; i++)
 			m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
@@ -5256,10 +5220,8 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	char cMsg[100], cMsgA[22], cMsgB[22], cMsgC[22], * cp;
 	int  iRet, iLines, i, iSize, iSize2, iLoc, iFontSize;
 	uint32_t dwTime;
-	COLORREF rgb;
+	GameColor rgb;
 	bool bIsTrans;
-	RECT rcRect;
-	SIZE Size;
 
 	std::memset(cMsg, 0, sizeof(cMsg));
 	std::memset(cMsgA, 0, sizeof(cMsgA));
@@ -5267,27 +5229,27 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	std::memset(cMsgC, 0, sizeof(cMsgC));
 
 	dwTime = m_pChatMsgList[iChatIndex]->m_dwTime;
-	strcpy(cMsg, m_pChatMsgList[iChatIndex]->m_pMsg);
+	std::snprintf(cMsg, sizeof(cMsg), "%s", m_pChatMsgList[iChatIndex]->m_pMsg);
 	cp = (char*)cMsg;
 	iLines = 0;
 
-	rgb = GameColors::UIWhite.ToColorRef();
+	rgb = GameColors::UIWhite;
 	switch (m_pChatMsgList[iChatIndex]->m_cType) {
 	case 1:
-		rgb = GameColors::UIWhite.ToColorRef();
+		rgb = GameColors::UIWhite;
 		break;
 	case hb::owner::Howard:
-		rgb = GameColors::UIDmgYellow.ToColorRef();
+		rgb = GameColors::UIDmgYellow;
 		// �޽��� ǥ�ÿ� �����̰� �ɸ���.
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
 		break;
 	case hb::owner::GrandMagicGenerator:
-		rgb = GameColors::UIDmgRed.ToColorRef();
+		rgb = GameColors::UIDmgRed;
 		break;
 
 	case hb::owner::ManaStone:
-		rgb = GameColors::UIDmgRed.ToColorRef();
+		rgb = GameColors::UIDmgRed;
 		if ((m_dwCurTime - dwTime) < 650) return;
 		else dwTime += 650;
 		break;
@@ -5401,47 +5363,27 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 		switch (iTextWidth / 160) {
 		case 0:
-			SetRect(&rcRect, sX - 80 + 1, sY - 65 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 65 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 65 - iLoc, sX + 80, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 65 - iLoc, 160, 65), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc + 1, 160, 65), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc, 160, 65), cMsg, rgb.r, rgb.g, rgb.b);
 			break;
 
 		case 1:
-			SetRect(&rcRect, sX - 80 + 1, sY - 83 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 83 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 83 - iLoc, sX + 80, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 83 - iLoc, 160, 83), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc + 1, 160, 83), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc, 160, 83), cMsg, rgb.r, rgb.g, rgb.b);
 			break;
 
 		case 2:
-			SetRect(&rcRect, sX - 80 + 1, sY - 101 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 101 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 101 - iLoc, sX + 80, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 101 - iLoc, 160, 101), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc + 1, 160, 101), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc, 160, 101), cMsg, rgb.r, rgb.g, rgb.b);
 			break;
 
 		case 3:
-			SetRect(&rcRect, sX - 80 + 1, sY - 119 - iLoc, sX + 80 + 1, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 119 - iLoc + 1, sX + 80, sY - iLoc + 1);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, GameColors::UIBlack.ToColorRef());
-
-			SetRect(&rcRect, sX - 80, sY - 119 - iLoc, sX + 80, sY - iLoc);
-			m_Renderer->DrawTextRect(&rcRect, cMsg, rgb);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 119 - iLoc, 160, 119), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc + 1, 160, 119), cMsg, 0, 0, 0);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc, 160, 119), cMsg, rgb.r, rgb.g, rgb.b);
 			break;
 		}
 
@@ -6625,7 +6567,7 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 
 	CItem* pCfg = GetItemConfig(pItem->m_sIDnum);
 	if (!pCfg) {
-		strcpy(pStr1, "Unknown Item");
+		std::snprintf(pStr1, 64, "%s", "Unknown Item");
 		return;
 	}
 
@@ -6636,27 +6578,27 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	if ((pItem->m_dwAttribute & 0x00000001) != 0)
 	{
 		m_bIsSpecial = true;
-		strcpy(pStr1, cName);
+		std::snprintf(pStr1, 64, "%s", cName);
 		if (pCfg->GetItemType() == ItemType::Material)
-			wsprintf(pStr2, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
+			std::snprintf(pStr2, 64, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
 		else
 		{
 			if (pCfg->GetEquipPos() == EquipPos::LeftFinger)
 			{
-				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
+				std::snprintf(pStr2, 64, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
 			}
 			else
 			{
-				wsprintf(pStr2, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);
+				std::snprintf(pStr2, 64, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);
 			}
 		}
 	}
 	else
 	{
 		if (pItem->m_dwCount == 1)
-			wsprintf(G_cTxt, "%s", cName);
-		else wsprintf(G_cTxt, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);
-		strcpy(pStr1, G_cTxt);
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "%s", cName);
+		else std::snprintf(G_cTxt, sizeof(G_cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);
+		std::snprintf(pStr1, 64, "%s", G_cTxt);
 	}
 
 	if ((pItem->m_dwAttribute & 0x00F0F000) != 0)
@@ -6670,57 +6612,57 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
 			switch (dwType1) {
-			case 1: strcpy(cTxt, GET_ITEM_NAME3);   break;
-			case 2: strcpy(cTxt, GET_ITEM_NAME4);   break;
-			case 3: strcpy(cTxt, GET_ITEM_NAME5);   break;
+			case 1: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME3);   break;
+			case 2: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME4);   break;
+			case 3: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME5);   break;
 			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME6);   break;
-			case 6: strcpy(cTxt, GET_ITEM_NAME7);   break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME8);   break;
-			case 8: strcpy(cTxt, GET_ITEM_NAME9);   break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME10);  break;
-			case hb::owner::Slime: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case hb::owner::Skeleton: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case hb::owner::StoneGolem: strcpy(cTxt, GET_ITEM_NAME13); break;
+			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME6);   break;
+			case 6: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME7);   break;
+			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8);   break;
+			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9);   break;
+			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10);  break;
+			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
+			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
+			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
 			}
-			strcat(cTxt, pStr1);
+			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
 			std::memset(pStr1, 0, 64);
-			strcpy(pStr1, cTxt);
+			std::snprintf(pStr1, 64, "%s", cTxt);
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			switch (dwType1) {
-			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break;
-			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break;
+			case 1: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME14, dwValue1); break;
+			case 2: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME15, dwValue1 * 5); break;
 			case 3: break;
 			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME16); break;
-			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
-			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME16); break;
+			case 6: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME17, dwValue1 * 4); break;
+			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
+			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
+			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
+			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
+			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
 			}
-			strcat(pStr2, cTxt);
+			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
 
 			if (dwType2 != 0) {
 				std::memset(cTxt, 0, sizeof(cTxt));
 				switch (dwType2) {
-				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7); break;
-				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7); break;
-				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7); break;
-				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7); break;
-				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7); break;
-				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7); break;
-				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7); break;
-				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3); break;
-				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3); break;
-				case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);   break;
-				case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				case 1:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME24, dwValue2 * 7); break;
+				case 2:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME25, dwValue2 * 7); break;
+				case 3:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME26, dwValue2 * 7); break;
+				case 4:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME27, dwValue2 * 7); break;
+				case 5:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME28, dwValue2 * 7); break;
+				case 6:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME29, dwValue2 * 7); break;
+				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7); break;
+				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3); break;
+				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3); break;
+				case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);   break;
+				case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
-				strcpy(pStr3, cTxt);
+				std::snprintf(pStr3, 64, "%s", cTxt);
 			}
 		}
 	}
@@ -6734,15 +6676,15 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 			std::memset(cTxt, 0, sizeof(cTxt));
 			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
 			std::memset(cTxt2, 0, sizeof(cTxt2));
-			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
+			std::snprintf(cTxt2, sizeof(cTxt2), "%s+%d", cTxt, dwValue3);
 			std::memset(pStr1, 0, 64);
-			strcpy(pStr1, cTxt2);
+			std::snprintf(pStr1, 64, "%s", cTxt2);
 		}
 		else
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, "+%d", dwValue3);
-			strcat(pStr1, cTxt);
+			std::snprintf(cTxt, sizeof(cTxt), "+%d", dwValue3);
+			std::snprintf(pStr1 + strlen(pStr1), 64 - strlen(pStr1), "%s", cTxt);
 		}
 	}
 
@@ -6763,12 +6705,12 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	{
 		m_bIsSpecial = true;
 		std::memset(cTxt, 0, sizeof(cTxt));
-		wsprintf(cTxt, "Mana Save +%d%%", iManaSaveValue);
+		std::snprintf(cTxt, sizeof(cTxt), "Mana Save +%d%%", iManaSaveValue);
 		// Add to pStr2 if empty, otherwise pStr3
 		if (pStr2[0] == '\0')
-			strcpy(pStr2, cTxt);
+			std::snprintf(pStr2, 64, "%s", cTxt);
 		else if (pStr3[0] == '\0')
-			strcpy(pStr3, cTxt);
+			std::snprintf(pStr3, 64, "%s", cTxt);
 	}
 }
 
@@ -6789,10 +6731,10 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 	}
 	if (cName == nullptr || cName[0] == '\0') {
 		// Fallback to "Unknown Item" if no display name found
-		strcpy(pStr1, "Unknown Item");
+		std::snprintf(pStr1, 64, "%s", "Unknown Item");
 		return;
 	}
-	strcpy(pStr1, cName);
+	std::snprintf(pStr1, 64, "%s", cName);
 
 	if ((dwAttribute & 0x00F0F000) != 0)
 	{
@@ -6805,58 +6747,58 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
 			switch (dwType1) {
-			case 1: strcpy(cTxt, GET_ITEM_NAME3); break;
-			case 2: strcpy(cTxt, GET_ITEM_NAME4); break;
-			case 3: strcpy(cTxt, GET_ITEM_NAME5); break;
+			case 1: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME3); break;
+			case 2: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME4); break;
+			case 3: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME5); break;
 			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME6); break;
-			case 6: strcpy(cTxt, GET_ITEM_NAME7); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME8); break;
-			case 8: strcpy(cTxt, GET_ITEM_NAME9); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME10); break;
-			case hb::owner::Slime: strcpy(cTxt, GET_ITEM_NAME11); break;
-			case hb::owner::Skeleton: strcpy(cTxt, GET_ITEM_NAME12); break;
-			case hb::owner::StoneGolem: strcpy(cTxt, GET_ITEM_NAME13); break;
+			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME6); break;
+			case 6: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME7); break;
+			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8); break;
+			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9); break;
+			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10); break;
+			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
+			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
+			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
 			}
-			strcat(cTxt, pStr1);
+			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
 			std::memset(pStr1, 0, 64);
-			strcpy(pStr1, cTxt);
+			std::snprintf(pStr1, 64, "%s", cTxt);
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			switch (dwType1) {
-			case 1: wsprintf(cTxt, GET_ITEM_NAME14, dwValue1); break;
-			case 2: wsprintf(cTxt, GET_ITEM_NAME15, dwValue1 * 5); break;
+			case 1: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME14, dwValue1); break;
+			case 2: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME15, dwValue1 * 5); break;
 			case 3: break;
 			case 4: break;
-			case 5: strcpy(cTxt, GET_ITEM_NAME16); break;
-			case 6: wsprintf(cTxt, GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: strcpy(cTxt, GET_ITEM_NAME18); break;
-			case 8: wsprintf(cTxt, GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: strcpy(cTxt, GET_ITEM_NAME20); break;
-			case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME22, dwValue1); break;
-			case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME23, dwValue1); break;
+			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME16); break;
+			case 6: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME17, dwValue1 * 4); break;
+			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
+			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
+			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
+			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
+			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
 			}
-			strcat(pStr2, cTxt);
+			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
 
 			if (dwType2 != 0)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
 				switch (dwType2) {
-				case 1:  wsprintf(cTxt, GET_ITEM_NAME24, dwValue2 * 7);  break;
-				case 2:  wsprintf(cTxt, GET_ITEM_NAME25, dwValue2 * 7);  break;
-				case 3:  wsprintf(cTxt, GET_ITEM_NAME26, dwValue2 * 7);  break;
-				case 4:  wsprintf(cTxt, GET_ITEM_NAME27, dwValue2 * 7);  break;
-				case 5:  wsprintf(cTxt, GET_ITEM_NAME28, dwValue2 * 7);  break;
-				case 6:  wsprintf(cTxt, GET_ITEM_NAME29, dwValue2 * 7);  break;
-				case 7:  wsprintf(cTxt, GET_ITEM_NAME30, dwValue2 * 7);  break;
-				case 8:  wsprintf(cTxt, GET_ITEM_NAME31, dwValue2 * 3);  break;
-				case 9:  wsprintf(cTxt, GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case hb::owner::Slime: wsprintf(cTxt, GET_ITEM_NAME33, dwValue2);    break;
-				case hb::owner::Skeleton: wsprintf(cTxt, GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::owner::StoneGolem: wsprintf(cTxt, GET_ITEM_NAME35, dwValue2 * 10); break;
+				case 1:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME24, dwValue2 * 7);  break;
+				case 2:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME25, dwValue2 * 7);  break;
+				case 3:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME26, dwValue2 * 7);  break;
+				case 4:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME27, dwValue2 * 7);  break;
+				case 5:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME28, dwValue2 * 7);  break;
+				case 6:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME29, dwValue2 * 7);  break;
+				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7);  break;
+				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3);  break;
+				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3);  break;
+				case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);    break;
+				case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
-				strcpy(pStr3, cTxt);
+				std::snprintf(pStr3, 64, "%s", cTxt);
 			}
 		}
 	}
@@ -6870,15 +6812,15 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
 			std::memset(cTxt2, 0, sizeof(cTxt2));
-			wsprintf(cTxt2, "%s+%d", cTxt, dwValue3);
+			std::snprintf(cTxt2, sizeof(cTxt2), "%s+%d", cTxt, dwValue3);
 			std::memset(pStr1, 0, 64);
-			strcpy(pStr1, cTxt2);
+			std::snprintf(pStr1, 64, "%s", cTxt2);
 		}
 		else
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, "+%d", dwValue3);
-			strcat(pStr1, cTxt);
+			std::snprintf(cTxt, sizeof(cTxt), "+%d", dwValue3);
+			std::snprintf(pStr1 + strlen(pStr1), 64 - strlen(pStr1), "%s", cTxt);
 		}
 	}
 }
@@ -7423,7 +7365,7 @@ void CGame::RetrieveItemHandler(char* pData)
 			GetItemName(m_pBankList[cBankItemIndex].get(), cStr1, cStr2, cStr3);
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
+			std::snprintf(cTxt, sizeof(cTxt), RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
 			AddEventList(cTxt, 10);
 
 			CItem* pCfgBank = GetItemConfig(m_pBankList[cBankItemIndex]->m_sIDnum);
@@ -7495,8 +7437,8 @@ void CGame::EraseItem(char cItemID)
 		if (m_sShortCut[i] == cItemID)
 		{
 			GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-			if (i < 3) wsprintf(G_cTxt, ERASE_ITEM, cStr1, cStr2, cStr3, i + 1);
-			else wsprintf(G_cTxt, ERASE_ITEM, cStr1, cStr2, cStr3, i + 7);
+			if (i < 3) std::snprintf(G_cTxt, sizeof(G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 1);
+			else std::snprintf(G_cTxt, sizeof(G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 7);
 			AddEventList(G_cTxt, 10);
 			m_sShortCut[i] = -1;
 		}
@@ -7526,14 +7468,14 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	std::memset(cTxt, 0, sizeof(cTxt));
 	std::memset(cTxt2, 0, sizeof(cTxt2));
 	GetNpcName(sOwnerType, cTxt);
-	if (status.bBerserk) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
-	if (status.bFrozen) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
+	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
+	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
-		strcpy(cTxt, DRAW_OBJECT_NAME87);//"(Unknown)"
+		std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME87);//"(Unknown)"
 		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); // v2.171
 	}
 	else
@@ -7553,14 +7495,14 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	}
 	switch (status.iAngelPercent) {
 	case 0: break;
-	case 1: strcpy(cTxt2, DRAW_OBJECT_NAME52); break;//"Clairvoyant"
-	case 2: strcpy(cTxt2, DRAW_OBJECT_NAME53); break;//"Destruction of Magic Protection"
-	case 3: strcpy(cTxt2, DRAW_OBJECT_NAME54); break;//"Anti-Physical Damage"
-	case 4: strcpy(cTxt2, DRAW_OBJECT_NAME55); break;//"Anti-Magic Damage"
-	case 5: strcpy(cTxt2, DRAW_OBJECT_NAME56); break;//"Poisonous"
-	case 6: strcpy(cTxt2, DRAW_OBJECT_NAME57); break;//"Critical Poisonous"
-	case 7: strcpy(cTxt2, DRAW_OBJECT_NAME58); break;//"Explosive"
-	case 8: strcpy(cTxt2, DRAW_OBJECT_NAME59); break;//"Critical Explosive"
+	case 1: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME52); break;//"Clairvoyant"
+	case 2: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME53); break;//"Destruction of Magic Protection"
+	case 3: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME54); break;//"Anti-Physical Damage"
+	case 4: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME55); break;//"Anti-Magic Damage"
+	case 5: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME56); break;//"Poisonous"
+	case 6: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME57); break;//"Critical Poisonous"
+	case 7: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME58); break;//"Explosive"
+	case 8: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME59); break;//"Critical Explosive"
 	}
 	TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(GameColors::MonsterStatusEffect.r, GameColors::MonsterStatusEffect.g, GameColors::MonsterStatusEffect.b));
 
@@ -7617,7 +7559,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& status, uint16_t wObjectID)
 {
 	char cTxt[64], cTxt2[64];
-	short sR, sG, sB;
+	uint8_t sR, sG, sB;
 	int i, iGuildIndex, iFOE, iAddY = 0;
 	bool bPK, bCitizen, bAresden, bHunter;
 	iFOE = _iGetFOE(status);
@@ -7638,14 +7580,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 
 	if (m_iIlusionOwnerH == 0)
 	{
-		if (m_bIsCrusadeMode == false) wsprintf(cTxt, "%s", pName);
+		if (m_bIsCrusadeMode == false) std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
 		else
 		{
-			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) strcpy(cTxt, NPC_NAME_MERCENARY); //"Mercenary"
+			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_NAME_MERCENARY); //"Mercenary"
 			else
 			{
-				if (iFOE == -1) wsprintf(cTxt, "%d", m_entityState.m_wObjectID);
-				else strcpy(cTxt, pName);
+				if (iFOE == -1) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
+				else std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
 			}
 		}
 		if (m_iPartyStatus != 0)
@@ -7654,16 +7596,16 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 			{
 				if (strcmp(m_stPartyMemberNameList[i].cName, pName) == 0)
 				{
-					strcat(cTxt, BGET_NPC_NAME23); // ", Party Member"
+					std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", BGET_NPC_NAME23); // ", Party Member"
 					break;
 				}
 			}
 		}
 	}
-	else strcpy(cTxt, "?????");
+	else std::snprintf(cTxt, sizeof(cTxt), "%s", "?????");
 
-	if (status.bBerserk) strcat(cTxt, DRAW_OBJECT_NAME50);//" Berserk"
-	if (status.bFrozen) strcat(cTxt, DRAW_OBJECT_NAME51);//" Frozen"
+	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
+	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
 
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
 	std::memset(cTxt, 0, sizeof(cTxt));
@@ -7672,13 +7614,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 	{
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
-			wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
+			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
 			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
-			wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
+			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
 			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 			iAddY = 14;
 		}
@@ -7712,14 +7654,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 					{
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
-							wsprintf(G_cTxt, DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
+							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
 							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
-							wsprintf(G_cTxt, DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
+							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
 							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
@@ -7735,27 +7677,27 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		}
 	}
 
-	if (bCitizen == false)	strcpy(cTxt, DRAW_OBJECT_NAME60);// "Traveller"
+	if (bCitizen == false)	std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME60);// "Traveller"
 	else
 	{
 		if (bAresden)
 		{
-			if (bHunter == true) strcpy(cTxt, DEF_MSG_ARECIVIL); // "Aresden Civilian"
-			else strcpy(cTxt, DEF_MSG_ARESOLDIER); // "Aresden Combatant"
+			if (bHunter == true) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ARECIVIL); // "Aresden Civilian"
+			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ARESOLDIER); // "Aresden Combatant"
 		}
 		else
 		{
-			if (bHunter == true) strcpy(cTxt, DEF_MSG_ELVCIVIL);// "Elvine Civilian"
-			else strcpy(cTxt, DEF_MSG_ELVSOLDIER);	// "Elvine Combatant"
+			if (bHunter == true) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVCIVIL);// "Elvine Civilian"
+			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVSOLDIER);	// "Elvine Combatant"
 		}
 	}
 	if (bPK == true)
 	{
-		if (bCitizen == false) strcpy(cTxt, DEF_MSG_PK);	//"Criminal"
+		if (bCitizen == false) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_PK);	//"Criminal"
 		else
 		{
-			if (bAresden) strcpy(cTxt, DEF_MSG_AREPK);// "Aresden Criminal"
-			else strcpy(cTxt, DEF_MSG_ELVPK);  // "Elvine Criminal"
+			if (bAresden) std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_AREPK);// "Aresden Criminal"
+			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVPK);  // "Elvine Criminal"
 		}
 	}
 	TextLib::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, TextLib::TextStyle::WithShadow(sR, sG, sB));
@@ -7801,371 +7743,371 @@ char CGame::GetOfficialMapName(char* pMapName, char* pName)
 {	// MapIndex
 	if (strcmp(pMapName, "middleland") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME28);	// Middleland
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME28);	// Middleland
 		return 4;
 	}
 	else if (strcmp(pMapName, "huntzone3") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME31);	// Death Valley
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME31);	// Death Valley
 		return 0;
 	}
 	else if (strcmp(pMapName, "huntzone1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME29);	// Rocky Highland
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME29);	// Rocky Highland
 		return 1;
 	}
 	else if (strcmp(pMapName, "elvuni") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME57);	// Eldiniel Garden
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME57);	// Eldiniel Garden
 		return 2;
 	}
 	else if (strcmp(pMapName, "elvine") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME24);	// Elvine City
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME24);	// Elvine City
 		return 3;
 	}
 	else if (strcmp(pMapName, "elvfarm") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME2);	// Elvine Farm
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME2);	// Elvine Farm
 		return 5;
 	}
 	else if (strcmp(pMapName, "arefarm") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME1);	// Aresden Farm
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME1);	// Aresden Farm
 		return 6;
 	}
 	else if (strcmp(pMapName, "default") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME3);	// Beginner Zone
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME3);	// Beginner Zone
 		return 7;
 	}
 	else if (strcmp(pMapName, "huntzone4") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME32);	// Silent Wood
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME32);	// Silent Wood
 		return 8;
 	}
 	else if (strcmp(pMapName, "huntzone2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME30);	// Eternal Field
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME30);	// Eternal Field
 		return 9;
 	}
 	else if (strcmp(pMapName, "areuni") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME56);	// Aresien Garden
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME56);	// Aresien Garden
 		return 10;
 	}
 	else if (strcmp(pMapName, "aresden") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME22);	// Aresden City
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME22);	// Aresden City
 		return 11;
 	}
 	else if (strcmp(pMapName, "dglv2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME25);	// Dungeon L2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME25);	// Dungeon L2
 		return 12;
 	}
 	else if (strcmp(pMapName, "dglv3") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME26);	// Dungeon L3
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME26);	// Dungeon L3
 		return 13;
 	}
 	else if (strcmp(pMapName, "dglv4") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME53);	// Dungeon L4
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME53);	// Dungeon L4
 		return 14;
 	}
 	else if (strcmp(pMapName, "elvined1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME23);	// Elvine Dungeon
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME23);	// Elvine Dungeon
 		return 15;
 	}
 	else if (strcmp(pMapName, "aresdend1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME21);	// Aresden Dungeon
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME21);	// Aresden Dungeon
 		return 16;
 	}
 	else if (strcmp(pMapName, "bisle") == 0) {
-		strcpy(pName, GET_OFFICIAL_MAP_NAME27);	// Bleeding Island
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME27);	// Bleeding Island
 		return 17;
 	}
 	else if (strcmp(pMapName, "toh1") == 0) {
-		strcpy(pName, GET_OFFICIAL_MAP_NAME60);	// Tower of Hell 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME60);	// Tower of Hell 1
 		return 18;
 	}
 	else if (strcmp(pMapName, "toh2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME61);	// Tower of Hell 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME61);	// Tower of Hell 2
 		return 19;
 	}
 	else if (strcmp(pMapName, "toh3") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME62);	// Tower of Hell 3
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME62);	// Tower of Hell 3
 		return 20;
 	}
 	else if (strcmp(pMapName, "middled1x") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME58);	// Middleland Mine
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME58);	// Middleland Mine
 		return 21;
 	}
 	else if (strcmp(pMapName, "middled1n") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME59);	// Middleland Dungeon
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME59);	// Middleland Dungeon
 		return 22;
 	}
 	else if (strcmp(pMapName, "2ndmiddle") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME65);	// Promiseland
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME65);	// Promiseland
 		return 23;
 	}
 	else if (strcmp(pMapName, "icebound") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME66);	// Ice Map
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME66);	// Ice Map
 		return 24;
 		// Snoopy:
 	}
 	else if (strcmp(pMapName, "druncncity") == 0) // Snoopy: Apocalypse maps
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME70);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME70);
 		return 25;
 	}
 	else if (strcmp(pMapName, "inferniaA") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME71);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME71);
 		return 26;
 	}
 	else if (strcmp(pMapName, "inferniaB") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME72);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME72);
 		return 27;
 	}
 	else if (strcmp(pMapName, "maze") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME73);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME73);
 		return 28;
 	}
 	else if (strcmp(pMapName, "procella") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME74);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME74);
 		return 29;
 	}
 	else if (strcmp(pMapName, "abaddon") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME75);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME75);
 		return 30;
 	}
 	else if (strcmp(pMapName, "BtField") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME76);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME76);
 		return 35;
 	}
 	else if (strcmp(pMapName, "GodH") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME77);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME77);
 		return 36;
 	}
 	else if (strcmp(pMapName, "HRampart") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME78);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME78);
 		return 37;
 	}
 	else if (strcmp(pMapName, "cityhall_1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME35);	// Aresden Cityhall
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME35);	// Aresden Cityhall
 		return -1;
 	}
 	else if (strcmp(pMapName, "cityhall_2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME36);	// Elvine Cityhall
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME36);	// Elvine Cityhall
 		return -1;
 	}
 	else if (strcmp(pMapName, "gldhall_1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME37);	// Aresden Guildhall
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME37);	// Aresden Guildhall
 		return -1;
 	}
 	else if (strcmp(pMapName, "gldhall_2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME38);	// Elvine Guildhall
 		return -1;
 	}
 	else if (memcmp(pMapName, "bsmith_1", 8) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME33);	// Aresden Blacksmith
 		return -1;
 	}
 	else if (memcmp(pMapName, "bsmith_2", 8) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME34);	// Elvine Blacksmith
 		return -1;
 	}
 	else if (memcmp(pMapName, "gshop_1", 7) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME39);	// Aresden Shop
 		return -1;
 	}
 	else if (memcmp(pMapName, "gshop_2", 7) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME40);	// Elvine Shop
 		return -1;
 	}
 	else if (memcmp(pMapName, "wrhus_1", 7) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME43);	// Aresden Warehouse
 		return -1;
 	}
 	else if (memcmp(pMapName, "wrhus_2", 7) == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME44);	// Elvine Warehouse
 		return -1;
 	}
 	else if (strcmp(pMapName, "arewrhus") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME45);	// Aresden Warehouse
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME45);	// Aresden Warehouse
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvwrhus") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME46);	// Elvine Warehouse
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME46);	// Elvine Warehouse
 		return -1;
 	}
 	else if (strcmp(pMapName, "wzdtwr_1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME41);	// Magic Tower
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME41);	// Magic Tower
 		return -1;
 	}
 	else if (strcmp(pMapName, "wzdtwr_2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME42);	// Magic Tower
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME42);	// Magic Tower
 		return -1;
 	}
 	else if (strcmp(pMapName, "cath_1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME47);	// Aresien Church
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME47);	// Aresien Church
 		return -1;
 	}
 	else if (strcmp(pMapName, "cath_2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME48);	// Eldiniel Church
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME48);	// Eldiniel Church
 		return -1;
 	}
 	else if (strcmp(pMapName, "resurr1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME54);	// Revival Zone
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME54);	// Revival Zone
 		return -1;
 	}
 	else if (strcmp(pMapName, "resurr2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME55);	// Revival Zone
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME55);	// Revival Zone
 		return -1;
 	}
 	else if (strcmp(pMapName, "arebrk11") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME4);	// Aresden Barrack 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME4);	// Aresden Barrack 1
 		return -1;
 	}
 	else if (strcmp(pMapName, "arebrk12") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME5);	// Aresden Barrack 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME5);	// Aresden Barrack 1
 		return -1;
 	}
 	else if (strcmp(pMapName, "arebrk21") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME6);	// Aresden Barrack 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME6);	// Aresden Barrack 2
 		return -1;
 	}
 	else if (strcmp(pMapName, "arebrk22") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME7);	// Aresden Barrack 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME7);	// Aresden Barrack 2
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvbrk11") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME8);	// Elvine Barrack 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME8);	// Elvine Barrack 1
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvbrk12") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME9);	// Elvine Barrack 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME9);	// Elvine Barrack 1
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvbrk21") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME10);	// Elvine Barrack 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME10);	// Elvine Barrack 2
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvbrk22") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME11);	// Elvine Barrack 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME11);	// Elvine Barrack 2
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone1") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME12);	// Arena 1
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME12);	// Arena 1
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME13);	// Arena 2
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME13);	// Arena 2
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone3") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME14);	// Arena 3
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME14);	// Arena 3
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone4") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME15);	// Arena 4
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME15);	// Arena 4
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone5") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME16);	// Arena 5
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME16);	// Arena 5
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone6") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME17);	// Arena 6
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME17);	// Arena 6
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone7") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME18);	// Arena 7
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME18);	// Arena 7
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone8") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME19);	// Arena 8
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME19);	// Arena 8
 		return -1;
 	}
 	else if (strcmp(pMapName, "fightzone9") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME20);	// Arena 9
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME20);	// Arena 9
 		return -1;
 	}
 	else if (strcmp(pMapName, "arejail") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME63);	// Aresden Jail
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME63);	// Aresden Jail
 		return -1;
 	}
 	else if (strcmp(pMapName, "elvjail") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME64);	// Elvine Jail
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME64);	// Elvine Jail
 		return -1;
 	}
 	else if (strcmp(pMapName, "CmdHall_1") == 0) // Snoopy: Commander Halls
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME79);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME79);
 		return -1;
 	}
 	else if (strcmp(pMapName, "CmdHall_2") == 0)
 	{
-		strcpy(pName, GET_OFFICIAL_MAP_NAME79);
+		std::snprintf(pName, 21, "%s", GET_OFFICIAL_MAP_NAME79);
 		return -1;
 	}
 	else
 	{
-		strcpy(pName, pMapName);
+		std::snprintf(pName, 21, "%s", pMapName);
 		return -1;
 	}
 }
@@ -8292,32 +8234,32 @@ void CGame::NpcTalkHandler(char* pData)
 			std::memset(cTemp, 0, sizeof(cTemp));
 			GetNpcName(iTargetType, cTemp);
 			std::memset(cTxt, 0, sizeof(cTxt));
-			wsprintf(cTxt, NPC_TALK_HANDLER16, iTargetCount, cTemp);
+			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, iTargetCount, cTemp);
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				strcpy(cTxt, NPC_TALK_HANDLER17);//"
+				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER17);//"
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				wsprintf(cTxt, NPC_TALK_HANDLER18, cTemp);//"Map : %s"
+				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER18, cTemp);//"Map : %s"
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 
 				if (iX != 0) {
 					std::memset(cTxt, 0, sizeof(cTxt));
-					wsprintf(cTxt, NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
+					std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER19, iX, iY, iRange);//"Position: %d,%d within %d blocks"
 					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 					iIndex++;
 				}
 
 				std::memset(cTxt, 0, sizeof(cTxt));
-				wsprintf(cTxt, NPC_TALK_HANDLER20, iContribution);//"
+				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER20, iContribution);//"
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
@@ -8331,26 +8273,26 @@ void CGame::NpcTalkHandler(char* pData)
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				strcpy(cTxt, NPC_TALK_HANDLER22);
+				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER22);
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				wsprintf(cTxt, NPC_TALK_HANDLER23, cTemp);
+				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER23, cTemp);
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 
 				if (iX != 0) {
 					std::memset(cTxt, 0, sizeof(cTxt));
-					wsprintf(cTxt, NPC_TALK_HANDLER24, iX, iY, iRange);
+					std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER24, iX, iY, iRange);
 					m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 					iIndex++;
 				}
 
 				std::memset(cTxt, 0, sizeof(cTxt));
-				wsprintf(cTxt, NPC_TALK_HANDLER25, iContribution);
+				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER25, iContribution);
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
@@ -8363,40 +8305,40 @@ void CGame::NpcTalkHandler(char* pData)
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			strcpy(cTxt, NPC_TALK_HANDLER27);//"
+			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER27);//"
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			strcpy(cTxt, NPC_TALK_HANDLER28);//"
+			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER28);//"
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			strcpy(cTxt, NPC_TALK_HANDLER29);//"
+			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER29);//"
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			strcpy(cTxt, NPC_TALK_HANDLER30);//"
+			std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER30);//"
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
-			strcpy(cTxt, " ");
+			std::snprintf(cTxt, sizeof(cTxt), "%s", " ");
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 			iIndex++;
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			if (memcmp(cTargetName, "NONE", 4) == 0) {
-				strcpy(cTxt, NPC_TALK_HANDLER31);//"
+				std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_TALK_HANDLER31);//"
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
 			else {
 				std::memset(cTemp, 0, sizeof(cTemp));
 				GetOfficialMapName(cTargetName, cTemp);
-				wsprintf(cTxt, NPC_TALK_HANDLER32, cTemp);//"
+				std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER32, cTemp);//"
 				m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
 				iIndex++;
 			}
@@ -8434,125 +8376,125 @@ void CGame::GetNpcName(short sType, char* pName)
 {
 	switch (sType)
 	{
-	case hb::owner::Slime: strcpy(pName, NPC_NAME_SLIME); break;
-	case hb::owner::Skeleton: strcpy(pName, NPC_NAME_SKELETON); break;
-	case hb::owner::StoneGolem: strcpy(pName, NPC_NAME_STONEGOLEM); break;
-	case hb::owner::Cyclops: strcpy(pName, NPC_NAME_CYCLOPS); break;
-	case hb::owner::OrcMage: strcpy(pName, NPC_NAME_ORC); break;
-	case hb::owner::ShopKeeper: strcpy(pName, NPC_NAME_SHOP_KEEPER); break;
-	case hb::owner::GiantAnt: strcpy(pName, NPC_NAME_GIANTANT); break;
-	case hb::owner::Scorpion: strcpy(pName, NPC_NAME_GIANTSCORPION); break;
-	case hb::owner::Zombie: strcpy(pName, NPC_NAME_ZOMBIE); break;
-	case hb::owner::Gandalf: strcpy(pName, NPC_NAME_MAGICIAN); break;
-	case hb::owner::Howard: strcpy(pName, NPC_NAME_WAREHOUSE_KEEPER); break;
-	case hb::owner::Guard: strcpy(pName, NPC_NAME_GUARD); break;
-	case hb::owner::Amphis: strcpy(pName, NPC_NAME_SNAKE); break;
-	case hb::owner::ClayGolem: strcpy(pName, NPC_NAME_CLAYGOLEM); break;
-	case hb::owner::Tom: strcpy(pName, NPC_NAME_BLACKSMITH_KEEPER); break;
-	case hb::owner::William: strcpy(pName, NPC_NAME_CITYHALL_OFFICER); break;
-	case hb::owner::Kennedy: strcpy(pName, NPC_NAME_GUILDHALL_OFFICER); break;
-	case hb::owner::Hellhound: strcpy(pName, NPC_NAME_HELHOUND); break;
-	case hb::owner::Troll: strcpy(pName, NPC_NAME_TROLL); break;
-	case hb::owner::Ogre: strcpy(pName, NPC_NAME_OGRE); break;
-	case hb::owner::Liche: strcpy(pName, NPC_NAME_LICHE); break;
-	case hb::owner::Demon: strcpy(pName, NPC_NAME_DEMON); break;
-	case hb::owner::Unicorn: strcpy(pName, NPC_NAME_UNICORN); break;
-	case hb::owner::WereWolf: strcpy(pName, NPC_NAME_WEREWOLF); break;
-	case hb::owner::Dummy: strcpy(pName, NPC_NAME_DUMMY); break;
-	case hb::owner::EnergySphere: strcpy(pName, NPC_NAME_ENERGYSPHERE); break;
+	case hb::owner::Slime: std::snprintf(pName, 21, "%s", NPC_NAME_SLIME); break;
+	case hb::owner::Skeleton: std::snprintf(pName, 21, "%s", NPC_NAME_SKELETON); break;
+	case hb::owner::StoneGolem: std::snprintf(pName, 21, "%s", NPC_NAME_STONEGOLEM); break;
+	case hb::owner::Cyclops: std::snprintf(pName, 21, "%s", NPC_NAME_CYCLOPS); break;
+	case hb::owner::OrcMage: std::snprintf(pName, 21, "%s", NPC_NAME_ORC); break;
+	case hb::owner::ShopKeeper: std::snprintf(pName, 21, "%s", NPC_NAME_SHOP_KEEPER); break;
+	case hb::owner::GiantAnt: std::snprintf(pName, 21, "%s", NPC_NAME_GIANTANT); break;
+	case hb::owner::Scorpion: std::snprintf(pName, 21, "%s", NPC_NAME_GIANTSCORPION); break;
+	case hb::owner::Zombie: std::snprintf(pName, 21, "%s", NPC_NAME_ZOMBIE); break;
+	case hb::owner::Gandalf: std::snprintf(pName, 21, "%s", NPC_NAME_MAGICIAN); break;
+	case hb::owner::Howard: std::snprintf(pName, 21, "%s", NPC_NAME_WAREHOUSE_KEEPER); break;
+	case hb::owner::Guard: std::snprintf(pName, 21, "%s", NPC_NAME_GUARD); break;
+	case hb::owner::Amphis: std::snprintf(pName, 21, "%s", NPC_NAME_SNAKE); break;
+	case hb::owner::ClayGolem: std::snprintf(pName, 21, "%s", NPC_NAME_CLAYGOLEM); break;
+	case hb::owner::Tom: std::snprintf(pName, 21, "%s", NPC_NAME_BLACKSMITH_KEEPER); break;
+	case hb::owner::William: std::snprintf(pName, 21, "%s", NPC_NAME_CITYHALL_OFFICER); break;
+	case hb::owner::Kennedy: std::snprintf(pName, 21, "%s", NPC_NAME_GUILDHALL_OFFICER); break;
+	case hb::owner::Hellhound: std::snprintf(pName, 21, "%s", NPC_NAME_HELHOUND); break;
+	case hb::owner::Troll: std::snprintf(pName, 21, "%s", NPC_NAME_TROLL); break;
+	case hb::owner::Ogre: std::snprintf(pName, 21, "%s", NPC_NAME_OGRE); break;
+	case hb::owner::Liche: std::snprintf(pName, 21, "%s", NPC_NAME_LICHE); break;
+	case hb::owner::Demon: std::snprintf(pName, 21, "%s", NPC_NAME_DEMON); break;
+	case hb::owner::Unicorn: std::snprintf(pName, 21, "%s", NPC_NAME_UNICORN); break;
+	case hb::owner::WereWolf: std::snprintf(pName, 21, "%s", NPC_NAME_WEREWOLF); break;
+	case hb::owner::Dummy: std::snprintf(pName, 21, "%s", NPC_NAME_DUMMY); break;
+	case hb::owner::EnergySphere: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSPHERE); break;
 	case hb::owner::ArrowGuardTower:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_ARROWGUARDTOWER_CK);
-		else strcpy(pName, NPC_NAME_ARROWGUARDTOWER);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER_CK);
+		else std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER);
 		break;
 	case hb::owner::CannonGuardTower:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_CANNONGUARDTOWER_CK);
-		else strcpy(pName, NPC_NAME_CANNONGUARDTOWER);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER_CK);
+		else std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER);
 		break;
 	case hb::owner::ManaCollector:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_MANACOLLECTOR_CK);
-		else strcpy(pName, NPC_NAME_MANACOLLECTOR);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR_CK);
+		else std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR);
 		break;
 	case hb::owner::Detector:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) strcpy(pName, NPC_NAME_DETECTOR_CK);
-		else strcpy(pName, NPC_NAME_DETECTOR);
+		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR_CK);
+		else std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR);
 		break;
-	case hb::owner::EnergyShield: strcpy(pName, NPC_NAME_ENERGYSHIELD); break;
-	case hb::owner::GrandMagicGenerator: strcpy(pName, NPC_NAME_GRANDMAGICGENERATOR); break;
-	case hb::owner::ManaStone: strcpy(pName, NPC_NAME_MANASTONE); break;
-	case hb::owner::LightWarBeetle: strcpy(pName, NPC_NAME_LIGHTWARBEETLE); break;
-	case hb::owner::GodsHandKnight: strcpy(pName, NPC_NAME_GODSHANDKNIGHT); break;
-	case hb::owner::GodsHandKnightCK: strcpy(pName, NPC_NAME_GODSHANDKNIGHT_CK); break;
-	case hb::owner::TempleKnight: strcpy(pName, NPC_NAME_TEMPLEKNIGHT); break;
-	case hb::owner::BattleGolem: strcpy(pName, NPC_NAME_BATTLEGOLEM); break;
-	case hb::owner::Stalker: strcpy(pName, NPC_NAME_STALKER); break;
-	case hb::owner::HellClaw: strcpy(pName, NPC_NAME_HELLCLAW); break;
-	case hb::owner::TigerWorm: strcpy(pName, NPC_NAME_TIGERWORM); break;
-	case hb::owner::Catapult: strcpy(pName, NPC_NAME_CATAPULT); break;
-	case hb::owner::Gargoyle: strcpy(pName, NPC_NAME_GARGOYLE); break;
-	case hb::owner::Beholder: strcpy(pName, NPC_NAME_BEHOLDER); break;
-	case hb::owner::DarkElf: strcpy(pName, NPC_NAME_DARKELF); break;
-	case hb::owner::Bunny: strcpy(pName, NPC_NAME_RABBIT); break;
-	case hb::owner::Cat: strcpy(pName, NPC_NAME_CAT); break;
-	case hb::owner::GiantFrog: strcpy(pName, NPC_NAME_FROG); break;
-	case hb::owner::MountainGiant: strcpy(pName, NPC_NAME_MOUNTAIN_GIANT); break;
-	case hb::owner::Ettin: strcpy(pName, NPC_NAME_ETTIN); break;
-	case hb::owner::CannibalPlant: strcpy(pName, NPC_NAME_CANNIBAL); break;
-	case hb::owner::Rudolph: strcpy(pName, NPC_NAME_RUDOLPH); break;
-	case hb::owner::DireBoar: strcpy(pName, NPC_NAME_DIREBOAR); break;
-	case hb::owner::Frost: strcpy(pName, NPC_NAME_FROST); break;
+	case hb::owner::EnergyShield: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSHIELD); break;
+	case hb::owner::GrandMagicGenerator: std::snprintf(pName, 21, "%s", NPC_NAME_GRANDMAGICGENERATOR); break;
+	case hb::owner::ManaStone: std::snprintf(pName, 21, "%s", NPC_NAME_MANASTONE); break;
+	case hb::owner::LightWarBeetle: std::snprintf(pName, 21, "%s", NPC_NAME_LIGHTWARBEETLE); break;
+	case hb::owner::GodsHandKnight: std::snprintf(pName, 21, "%s", NPC_NAME_GODSHANDKNIGHT); break;
+	case hb::owner::GodsHandKnightCK: std::snprintf(pName, 21, "%s", NPC_NAME_GODSHANDKNIGHT_CK); break;
+	case hb::owner::TempleKnight: std::snprintf(pName, 21, "%s", NPC_NAME_TEMPLEKNIGHT); break;
+	case hb::owner::BattleGolem: std::snprintf(pName, 21, "%s", NPC_NAME_BATTLEGOLEM); break;
+	case hb::owner::Stalker: std::snprintf(pName, 21, "%s", NPC_NAME_STALKER); break;
+	case hb::owner::HellClaw: std::snprintf(pName, 21, "%s", NPC_NAME_HELLCLAW); break;
+	case hb::owner::TigerWorm: std::snprintf(pName, 21, "%s", NPC_NAME_TIGERWORM); break;
+	case hb::owner::Catapult: std::snprintf(pName, 21, "%s", NPC_NAME_CATAPULT); break;
+	case hb::owner::Gargoyle: std::snprintf(pName, 21, "%s", NPC_NAME_GARGOYLE); break;
+	case hb::owner::Beholder: std::snprintf(pName, 21, "%s", NPC_NAME_BEHOLDER); break;
+	case hb::owner::DarkElf: std::snprintf(pName, 21, "%s", NPC_NAME_DARKELF); break;
+	case hb::owner::Bunny: std::snprintf(pName, 21, "%s", NPC_NAME_RABBIT); break;
+	case hb::owner::Cat: std::snprintf(pName, 21, "%s", NPC_NAME_CAT); break;
+	case hb::owner::GiantFrog: std::snprintf(pName, 21, "%s", NPC_NAME_FROG); break;
+	case hb::owner::MountainGiant: std::snprintf(pName, 21, "%s", NPC_NAME_MOUNTAIN_GIANT); break;
+	case hb::owner::Ettin: std::snprintf(pName, 21, "%s", NPC_NAME_ETTIN); break;
+	case hb::owner::CannibalPlant: std::snprintf(pName, 21, "%s", NPC_NAME_CANNIBAL); break;
+	case hb::owner::Rudolph: std::snprintf(pName, 21, "%s", NPC_NAME_RUDOLPH); break;
+	case hb::owner::DireBoar: std::snprintf(pName, 21, "%s", NPC_NAME_DIREBOAR); break;
+	case hb::owner::Frost: std::snprintf(pName, 21, "%s", NPC_NAME_FROST); break;
 	case hb::owner::Crops:
 	{
 		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
-		case 1:	strcpy(pName, NPC_NAME_WATERMELON);	break;
-		case 2: strcpy(pName, NPC_NAME_PUMPKIN); break;
-		case 3: strcpy(pName, NPC_NAME_GARLIC); break;
-		case 4: strcpy(pName, NPC_NAME_BARLEY); break;
-		case 5:	strcpy(pName, NPC_NAME_CARROT); break;
-		case 6: strcpy(pName, NPC_NAME_RADISH); break;
-		case 7: strcpy(pName, NPC_NAME_CORN); break;
-		case 8: strcpy(pName, NPC_NAME_BFLOWER); break;
-		case 9: strcpy(pName, NPC_NAME_MELON); break;
-		case hb::owner::Slime: strcpy(pName, NPC_NAME_TOMATO); break;
-		case hb::owner::Skeleton: strcpy(pName, NPC_NAME_GRAPPE); break;
-		case hb::owner::StoneGolem: strcpy(pName, NPC_NAME_BLUEGRAPPE); break;
-		case hb::owner::Cyclops: strcpy(pName, NPC_NAME_MUSHROM); break;
-		case hb::owner::OrcMage: strcpy(pName, NPC_NAME_GINSENG); break;
-		default: strcpy(pName, NPC_NAME_CROP); break;
+		case 1:	std::snprintf(pName, 21, "%s", NPC_NAME_WATERMELON);	break;
+		case 2: std::snprintf(pName, 21, "%s", NPC_NAME_PUMPKIN); break;
+		case 3: std::snprintf(pName, 21, "%s", NPC_NAME_GARLIC); break;
+		case 4: std::snprintf(pName, 21, "%s", NPC_NAME_BARLEY); break;
+		case 5:	std::snprintf(pName, 21, "%s", NPC_NAME_CARROT); break;
+		case 6: std::snprintf(pName, 21, "%s", NPC_NAME_RADISH); break;
+		case 7: std::snprintf(pName, 21, "%s", NPC_NAME_CORN); break;
+		case 8: std::snprintf(pName, 21, "%s", NPC_NAME_BFLOWER); break;
+		case 9: std::snprintf(pName, 21, "%s", NPC_NAME_MELON); break;
+		case hb::owner::Slime: std::snprintf(pName, 21, "%s", NPC_NAME_TOMATO); break;
+		case hb::owner::Skeleton: std::snprintf(pName, 21, "%s", NPC_NAME_GRAPPE); break;
+		case hb::owner::StoneGolem: std::snprintf(pName, 21, "%s", NPC_NAME_BLUEGRAPPE); break;
+		case hb::owner::Cyclops: std::snprintf(pName, 21, "%s", NPC_NAME_MUSHROM); break;
+		case hb::owner::OrcMage: std::snprintf(pName, 21, "%s", NPC_NAME_GINSENG); break;
+		default: std::snprintf(pName, 21, "%s", NPC_NAME_CROP); break;
 		}
 	}
 	break;
-	case hb::owner::IceGolem: strcpy(pName, NPC_NAME_ICEGOLEM); break;
-	case hb::owner::Wyvern: strcpy(pName, NPC_NAME_WYVERN); break;
-	case hb::owner::McGaffin: strcpy(pName, NPC_NAME_MCGAFFIN); break;
-	case hb::owner::Perry: strcpy(pName, NPC_NAME_PERRY); break;
-	case hb::owner::Devlin: strcpy(pName, NPC_NAME_DEVLIN); break;
+	case hb::owner::IceGolem: std::snprintf(pName, 21, "%s", NPC_NAME_ICEGOLEM); break;
+	case hb::owner::Wyvern: std::snprintf(pName, 21, "%s", NPC_NAME_WYVERN); break;
+	case hb::owner::McGaffin: std::snprintf(pName, 21, "%s", NPC_NAME_MCGAFFIN); break;
+	case hb::owner::Perry: std::snprintf(pName, 21, "%s", NPC_NAME_PERRY); break;
+	case hb::owner::Devlin: std::snprintf(pName, 21, "%s", NPC_NAME_DEVLIN); break;
 
-	case hb::owner::Dragon: strcpy(pName, NPC_NAME_DRAGON); break;
-	case hb::owner::Centaur: strcpy(pName, NPC_NAME_CENTAUR); break;
-	case hb::owner::ClawTurtle: strcpy(pName, NPC_NAME_CLAWTUR); break;
-	case hb::owner::FireWyvern: strcpy(pName, NPC_NAME_FIREWYV); break;
-	case hb::owner::GiantCrayfish: strcpy(pName, NPC_NAME_GICRAYF); break;
-	case hb::owner::GiLizard: strcpy(pName, NPC_NAME_GILIZAR); break;
-	case hb::owner::GiTree: strcpy(pName, NPC_NAME_GITREE); break;
-	case hb::owner::MasterOrc: strcpy(pName, NPC_NAME_MASTORC); break;
-	case hb::owner::Minaus: strcpy(pName, NPC_NAME_MINAUS); break;
-	case hb::owner::Nizie: strcpy(pName, NPC_NAME_NIZIE); break;
+	case hb::owner::Dragon: std::snprintf(pName, 21, "%s", NPC_NAME_DRAGON); break;
+	case hb::owner::Centaur: std::snprintf(pName, 21, "%s", NPC_NAME_CENTAUR); break;
+	case hb::owner::ClawTurtle: std::snprintf(pName, 21, "%s", NPC_NAME_CLAWTUR); break;
+	case hb::owner::FireWyvern: std::snprintf(pName, 21, "%s", NPC_NAME_FIREWYV); break;
+	case hb::owner::GiantCrayfish: std::snprintf(pName, 21, "%s", NPC_NAME_GICRAYF); break;
+	case hb::owner::GiLizard: std::snprintf(pName, 21, "%s", NPC_NAME_GILIZAR); break;
+	case hb::owner::GiTree: std::snprintf(pName, 21, "%s", NPC_NAME_GITREE); break;
+	case hb::owner::MasterOrc: std::snprintf(pName, 21, "%s", NPC_NAME_MASTORC); break;
+	case hb::owner::Minaus: std::snprintf(pName, 21, "%s", NPC_NAME_MINAUS); break;
+	case hb::owner::Nizie: std::snprintf(pName, 21, "%s", NPC_NAME_NIZIE); break;
 
-	case hb::owner::Tentocle: strcpy(pName, NPC_NAME_TENTOCL); break;
-	case hb::owner::Abaddon: strcpy(pName, NPC_NAME_ABADDON); break;
-	case hb::owner::Sorceress: strcpy(pName, NPC_NAME_SORCERS); break;
-	case hb::owner::ATK: strcpy(pName, NPC_NAME_ATK); break;
-	case hb::owner::MasterElf: strcpy(pName, NPC_NAME_MASTELF); break;
-	case hb::owner::DSK: strcpy(pName, NPC_NAME_DSK); break;
-	case hb::owner::HBT: strcpy(pName, NPC_NAME_HBT); break;
-	case hb::owner::CT: strcpy(pName, NPC_NAME_CT); break;
-	case hb::owner::Barbarian: strcpy(pName, NPC_NAME_BARBAR); break;
-	case hb::owner::AGC: strcpy(pName, NPC_NAME_AGC); break;
-	case hb::owner::Gail: strcpy(pName, NPC_NAME_GAIL); break;
-	case hb::owner::Gate: strcpy(pName, NPC_NAME_GATE); break;
+	case hb::owner::Tentocle: std::snprintf(pName, 21, "%s", NPC_NAME_TENTOCL); break;
+	case hb::owner::Abaddon: std::snprintf(pName, 21, "%s", NPC_NAME_ABADDON); break;
+	case hb::owner::Sorceress: std::snprintf(pName, 21, "%s", NPC_NAME_SORCERS); break;
+	case hb::owner::ATK: std::snprintf(pName, 21, "%s", NPC_NAME_ATK); break;
+	case hb::owner::MasterElf: std::snprintf(pName, 21, "%s", NPC_NAME_MASTELF); break;
+	case hb::owner::DSK: std::snprintf(pName, 21, "%s", NPC_NAME_DSK); break;
+	case hb::owner::HBT: std::snprintf(pName, 21, "%s", NPC_NAME_HBT); break;
+	case hb::owner::CT: std::snprintf(pName, 21, "%s", NPC_NAME_CT); break;
+	case hb::owner::Barbarian: std::snprintf(pName, 21, "%s", NPC_NAME_BARBAR); break;
+	case hb::owner::AGC: std::snprintf(pName, 21, "%s", NPC_NAME_AGC); break;
+	case hb::owner::Gail: std::snprintf(pName, 21, "%s", NPC_NAME_GAIL); break;
+	case hb::owner::Gate: std::snprintf(pName, 21, "%s", NPC_NAME_GATE); break;
 
 		// CLEROTH - NEW MONSTERS
-	case hb::owner::AirElemental: strcpy(pName, NPC_NAME_AIRLEMENTAL); break;
+	case hb::owner::AirElemental: std::snprintf(pName, 21, "%s", NPC_NAME_AIRLEMENTAL); break;
 	}
 }
 
@@ -8585,7 +8527,7 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
 			PlayGameSound('E', 14, 5);
 			std::memset(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr));
-			strcpy(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, m_cMCName);
+			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 1, 0, 0, m_cMCName);
 			return;
 		}
@@ -8714,7 +8656,7 @@ void CGame::MotionResponseHandler(char* pData)
 		{
 			if (m_pPlayer->m_iHP < iPreHP)
 			{
-				wsprintf(G_cTxt, NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
+				std::snprintf(G_cTxt, sizeof(G_cTxt), NOTIFYMSG_HP_DOWN, iPreHP - m_pPlayer->m_iHP);
 				AddEventList(G_cTxt, 10);
 				m_dwDamagedTime = GameClock::GetTimeMS();
 				if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
@@ -8725,7 +8667,7 @@ void CGame::MotionResponseHandler(char* pData)
 			}
 			else
 			{
-				wsprintf(G_cTxt, NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
+				std::snprintf(G_cTxt, sizeof(G_cTxt), NOTIFYMSG_HP_UP, m_pPlayer->m_iHP - iPreHP);
 				AddEventList(G_cTxt, 10);
 			}
 		}
@@ -8857,7 +8799,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 						{
 							m_cRestartCount = 5;
 							m_dwRestartCountTime = GameClock::GetTimeMS();
-							wsprintf(G_cTxt, DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
+							std::snprintf(G_cTxt, sizeof(G_cTxt), DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
 							AddEventList(G_cTxt, 10);
 							PlayGameSound('E', 14, 5);
 
@@ -10016,8 +9958,8 @@ MOTION_COMMAND_PROCESS:;
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
 					if (m_pPlayer->m_sDamageMoveAmount > 0)
-						wsprintf(cTxt, "-%dPts", m_pPlayer->m_sDamageMoveAmount); //pts
-					else strcpy(cTxt, "Critical!");
+						std::snprintf(cTxt, sizeof(cTxt), "-%dPts", m_pPlayer->m_sDamageMoveAmount); //pts
+					else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
 
 					int iFontType;
 					if ((m_pPlayer->m_sDamageMoveAmount >= 0) && (m_pPlayer->m_sDamageMoveAmount < 12))		iFontType = 21;
@@ -10238,7 +10180,7 @@ MOTION_COMMAND_PROCESS:;
 				if (m_pChatMsgList[i] == 0)
 				{
 					std::memset(cTxt, 0, sizeof(cTxt));
-					wsprintf(cTxt, "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
+					std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
 					m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, GameClock::GetTimeMS());
 					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
 					m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i);
@@ -10515,7 +10457,7 @@ void CGame::InitDataResponseHandler(char* pData)
 		m_dialogBoxManager.Info(DialogBoxId::GuideMap).sSizeY = 128;
 	}
 
-	strcpy(cPreCurLocation, m_cCurLocation);
+	std::snprintf(cPreCurLocation, sizeof(cPreCurLocation), "%s", m_cCurLocation);
 	std::memset(m_cCurLocation, 0, sizeof(m_cCurLocation));
 	memcpy(m_cCurLocation, pkt->cur_location, sizeof(pkt->cur_location));
 
@@ -10546,18 +10488,18 @@ void CGame::InitDataResponseHandler(char* pData)
 	else SetWhetherStatus(false, m_cWhetherStatus);
 
 	std::memset(cMapFileName, 0, sizeof(cMapFileName));
-	strcat(cMapFileName, "mapdata\\");
+	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mapdata\\");
 	// CLEROTH - MW MAPS
 	if (memcmp(m_cMapName, "defaultmw", 9) == 0)
 	{
-		strcat(cMapFileName, "mw\\defaultmw");
+		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mw\\defaultmw");
 	}
 	else
 	{
-		strcat(cMapFileName, m_cMapName);
+		std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", m_cMapName);
 	}
 
-	strcat(cMapFileName, ".amd");
+	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", ".amd");
 	m_pMapData->OpenMapDataFile(cMapFileName);
 
 	m_pMapData->m_sPivotX = sX;
@@ -10581,7 +10523,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 	_ReadMapData(sX + DEF_MAPDATA_BUFFER_X, sY + DEF_MAPDATA_BUFFER_Y, cp);
 	// ------------------------------------------------------------------------+
-	wsprintf(cTxt, INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
+	std::snprintf(cTxt, sizeof(cTxt), INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
 	AddEventList(cTxt, 10);
 
 	m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sX = 150;
@@ -10806,7 +10748,7 @@ void CGame::MotionEventHandler(char* pData)
 			if (m_pChatMsgList[i] == 0)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
-				wsprintf(cTxt, "%s!", m_pMagicCfgList[sV1]->m_cName);
+				std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[sV1]->m_cName);
 				m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, m_dwCurTime);
 				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
 				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
@@ -10824,8 +10766,8 @@ void CGame::MotionEventHandler(char* pData)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
 				if (sV1 > 0)
-					wsprintf(cTxt, "-%dPts!", sV1);
-				else strcpy(cTxt, "Critical!");
+					std::snprintf(cTxt, sizeof(cTxt), "-%dPts!", sV1);
+				else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
 				int iFontType;
 				if ((sV1 >= 0) && (sV1 < 12))		iFontType = 21;
 				else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
@@ -10860,15 +10802,15 @@ void CGame::MotionEventHandler(char* pData)
 				if (sV1 == DEF_DAMAGE_IMMUNE)
 				{
 					// GM immunity - show "* Immune *" with failure sound
-					strcpy(cTxt, " * Immune *");
+					std::snprintf(cTxt, sizeof(cTxt), "%s", " * Immune *");
 					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
 					PlayGameSound('C', 17, 0);
 				}
 				else if (sV1 != 0)
 				{
 					if (sV1 > 0)
-						wsprintf(cTxt, "-%dPts", sV1);
-					else strcpy(cTxt, "Critical!");
+						std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sV1);
+					else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
 					int iFontType;
 					if ((sV1 >= 0) && (sV1 < 12))		iFontType = 21;
 					else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
@@ -10878,7 +10820,7 @@ void CGame::MotionEventHandler(char* pData)
 				}
 				else
 				{
-					strcpy(cTxt, " * Failed! *");
+					std::snprintf(cTxt, sizeof(cTxt), "%s", " * Failed! *");
 					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
 					PlayGameSound('C', 17, 0);
 				}
@@ -10898,7 +10840,7 @@ void CGame::MotionEventHandler(char* pData)
 			if (m_pMagicCfgList[sV3] != 0)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
-				wsprintf(cTxt, "%s", m_pMagicCfgList[sV3]->m_cName);
+				std::snprintf(cTxt, sizeof(cTxt), "%s", m_pMagicCfgList[sV3]->m_cName);
 				AddEventList(cTxt, 10);
 			}
 		}
@@ -10927,24 +10869,24 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
@@ -11036,24 +10978,24 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[4]->m_pMsg, iV1);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[5]->m_pMsg, iV2);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[6]->m_pMsg, iV3);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d", m_pGameMsgList[58]->m_pMsg, iV4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
 		std::memset(cTemp, 0, sizeof(cTemp));
-		wsprintf(cTemp, "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
+		std::snprintf(cTemp, sizeof(cTemp), "%s %d %d %d %d", NOTIFY_MSG_STRUCTURE_HP, iHP1, iHP2, iHP3, iHP4);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, cTemp, 0);
 		m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, " ", 0);
 
@@ -11153,9 +11095,9 @@ void CGame::UseShortCut(int num)
 		if (m_sRecentShortCut == -1)
 		{
 			AddEventList(MSG_SHORTCUT1, 10);
-			wsprintf(G_cTxt, MSG_SHORTCUT2, index);// [F%d]
+			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT2, index);// [F%d]
 			AddEventList(G_cTxt, 10);
-			wsprintf(G_cTxt, MSG_SHORTCUT3, index);// [Control]-[F%d]
+			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT3, index);// [Control]-[F%d]
 			AddEventList(G_cTxt, 10);
 		}
 		else
@@ -11175,7 +11117,7 @@ void CGame::UseShortCut(int num)
 				std::memset(cStr3, 0, sizeof(cStr3));
 
 				GetItemName(m_pItemList[m_sShortCut[num]].get(), cStr1, cStr2, cStr3);
-				wsprintf(G_cTxt, MSG_SHORTCUT4, cStr1, cStr2, cStr3, index);// (%s %s %s) [F%d]
+				std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT4, cStr1, cStr2, cStr3, index);// (%s %s %s) [F%d]
 				AddEventList(G_cTxt, 10);
 			}
 			else if (m_sShortCut[num] >= 100)
@@ -11186,7 +11128,7 @@ void CGame::UseShortCut(int num)
 					m_sRecentShortCut = -1;
 					return;
 				}
-				wsprintf(G_cTxt, MSG_SHORTCUT5, m_pMagicCfgList[m_sShortCut[num] - 100]->m_cName, index);// %s) [F%d]
+				std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT5, m_pMagicCfgList[m_sShortCut[num] - 100]->m_cName, index);// %s) [F%d])
 				AddEventList(G_cTxt, 10);
 			}
 		}
@@ -11196,9 +11138,9 @@ void CGame::UseShortCut(int num)
 		if (m_sShortCut[num] == -1)
 		{
 			AddEventList(MSG_SHORTCUT1, 10);
-			wsprintf(G_cTxt, MSG_SHORTCUT2, index);// [F%d]
+			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT2, index);// [F%d]
 			AddEventList(G_cTxt, 10);
-			wsprintf(G_cTxt, MSG_SHORTCUT3, index);// [Control]-[F%d]
+			std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT3, index);// [Control]-[F%d]
 			AddEventList(G_cTxt, 10);
 		}
 		else if (m_sShortCut[num] < 100)
@@ -11297,19 +11239,19 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 	if ((cEquipPos >= 11)
 		&& (pCfgEq && pCfgEq->GetItemType() == ItemType::Equip))
 	{
-		char cItemID = m_sItemEquipmentStatus[cEquipPos];
-		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+		short sItemID = m_sItemEquipmentStatus[cEquipPos];
+		if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
 			m_pPlayer->m_iAngelicStr = 0;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
 			m_pPlayer->m_iAngelicDex = 0;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
 			m_pPlayer->m_iAngelicInt = 0;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
 			m_pPlayer->m_iAngelicMag = 0;
 	}
 
 	GetItemName(m_pItemList[m_sItemEquipmentStatus[cEquipPos]].get(), cStr1, cStr2, cStr3);
-	wsprintf(G_cTxt, ITEM_EQUIPMENT_RELEASED, cStr1);
+	std::snprintf(G_cTxt, sizeof(G_cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 	AddEventList(G_cTxt, 10);
 	m_bIsItemEquipped[m_sItemEquipmentStatus[cEquipPos]] = false;
 	m_sItemEquipmentStatus[cEquipPos] = -1;
@@ -11420,7 +11362,7 @@ void CGame::ItemEquipHandler(char cItemID)
 
 	char cStr1[64], cStr2[64], cStr3[64];
 	GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-	wsprintf(G_cTxt, BITEMDROP_CHARACTER9, cStr1);
+	std::snprintf(G_cTxt, sizeof(G_cTxt), BITEMDROP_CHARACTER9, cStr1);
 	AddEventList(G_cTxt, 10);
 	PlayGameSound('E', 28, 0);
 }
@@ -11530,7 +11472,7 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 **  int CGame::bHasHeroSet( short m_sAppr3, short m_sAppr3, char OwnerType)		( Snoopy )							**
 **  description			:: check weather the object (is character) is using a hero set (1:war, 2:mage)				**
 **********************************************************************************************************************/
-int CGame::bHasHeroSet(const PlayerAppearance& appr, char OwnerType)
+int CGame::bHasHeroSet(const PlayerAppearance& appr, short OwnerType)
 {
 	char cArmor, cLeg, cBerk, cHat;
 	cArmor = appr.iArmorType;

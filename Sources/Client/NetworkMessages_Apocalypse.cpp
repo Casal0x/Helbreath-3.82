@@ -49,7 +49,7 @@ void HandleAbaddonKilled(CGame* pGame, char* pData)
 	std::memset(cKiller, 0, sizeof(cKiller));
 	memcpy(cKiller, pkt->killer_name, sizeof(pkt->killer_name));
 	
-	wsprintf(cTxt, "Abaddon is destroyed by %s", cKiller);
+	std::snprintf(cTxt, sizeof(cTxt), "Abaddon is destroyed by %s", cKiller);
 	pGame->AddEventList(cTxt, 10);
 }
 

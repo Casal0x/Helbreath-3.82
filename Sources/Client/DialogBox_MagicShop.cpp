@@ -41,9 +41,9 @@ void DialogBox_MagicShop::OnDraw(short msX, short msY, short msZ, char cLB)
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::MagicShop).sView = 0;
 
 	// Column headers
-	TextLib::DrawText(GameFont::Default, sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef())); // "Spell Name"
-	TextLib::DrawText(GameFont::Default, sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef())); // "Req.Int"
-	TextLib::DrawText(GameFont::Default, sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, TextLib::TextStyle::FromColorRef(GameColors::UILabel.ToColorRef())); // "Cost"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 60 - 17, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP11, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b)); // "Spell Name"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 232 - 20, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP12, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b)); // "Req.Int"
+	TextLib::DrawText(GameFont::Default, sX - 20 + 270, sY - 35 + 90, DRAW_DIALOGBOX_MAGICSHOP13, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b)); // "Cost"
 
 	DrawSpellList(sX, sY, msX, msY);
 	DrawPageIndicator(sX, sY);
@@ -62,16 +62,16 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 		if ((m_pGame->m_pMagicCfgList[iCPivot + i] != nullptr) &&
 			(m_pGame->m_pMagicCfgList[iCPivot + i]->m_bIsVisible))
 		{
-			wsprintf(cTxt, "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
+			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
 			if (m_pGame->m_pPlayer->m_iMagicMastery[iCPivot + i] != 0)
 			{
 				// Already mastered - purple color
 				TextLib::DrawText(GameFont::Bitmap1, sX + 24, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
 				TextLib::DrawText(GameFont::Bitmap1, sX + 200, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
 				TextLib::DrawText(GameFont::Bitmap1, sX + 241, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple.r, GameColors::UIMagicPurple.g, GameColors::UIMagicPurple.b));
 			}
 			else if ((msX >= sX + 24) && (msX <= sX + 24 + 135) &&
@@ -79,17 +79,17 @@ void DialogBox_MagicShop::DrawSpellList(short sX, short sY, short msX, short msY
 			{
 				// Hovering - white color
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
 			}
 			else
 			{
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 44, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue2);
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 220, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
-				wsprintf(cMana, "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
+				std::snprintf(cMana, sizeof(cMana), "%3d", m_pGame->m_pMagicCfgList[iCPivot + i]->m_sValue3);
 				TextLib::DrawText(GameFont::Bitmap1, sX - 20 + 261, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
 			}
 			iYloc += 18;

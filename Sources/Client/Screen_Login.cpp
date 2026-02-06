@@ -104,18 +104,18 @@ void Screen_Login::on_update()
             // Set Player Account Credentials
             std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
             std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-            strcpy(m_pGame->m_pPlayer->m_cAccountName, m_cLoginName);
-            strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cLoginPassword);
-            
+            std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
+            std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
+
             // Connect
             m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
-            
+
             m_pGame->ChangeGameMode(GameMode::Connecting);
             m_pGame->m_dwConnectMode = MSGID_REQUEST_LOGIN;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-            strcpy(m_pGame->m_cMsg, "11");
+            std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
             return;
         case 4:
             m_pGame->ChangeGameMode(GameMode::MainMenu);
@@ -168,17 +168,17 @@ void Screen_Login::on_update()
                 m_pGame->EndInputString();
                 std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
                 std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
-                strcpy(m_pGame->m_pPlayer->m_cAccountName, m_cLoginName);
-                strcpy(m_pGame->m_pPlayer->m_cAccountPassword, m_cLoginPassword);
-                
+                std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
+                std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
+
                 m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
                 m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                 m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
-                
+
                 m_pGame->ChangeGameMode(GameMode::Connecting);
                 m_pGame->m_dwConnectMode = MSGID_REQUEST_LOGIN;
                 std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
-                strcpy(m_pGame->m_cMsg, "11");
+                std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
                 return;
             }
         }
