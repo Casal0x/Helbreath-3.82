@@ -304,8 +304,9 @@ void Screen_OnGame::on_update()
     // visible position snapping when the next tile's motion starts
     if (!m_pGame->m_pPlayer->m_Controller.IsCommandAvailable()) {
         char cmd = m_pGame->m_pPlayer->m_Controller.GetCommand();
-        if (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
-            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE) {
+        if (ConfigManager::Get().IsQuickActionsEnabled() &&
+            (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
+            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE)) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
             if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
@@ -417,6 +418,9 @@ void Screen_OnGame::on_render()
     m_pGame->m_pEffectManager->DrawEffectLights();
     FrameTiming::EndProfile(ProfileStage::DrawEffectLights);
 
+    // Tile grid BEFORE objects (so entities draw on top)
+    DrawTileGrid();
+
     FrameTiming::BeginProfile(ProfileStage::DrawObjects);
     m_pGame->DrawObjects(m_sPivotX, m_sPivotY, m_sDivX, m_sDivY, m_sModX, m_sModY, m_sMsX, m_sMsY);
     FrameTiming::EndProfile(ProfileStage::DrawObjects);
@@ -424,6 +428,9 @@ void Screen_OnGame::on_render()
     FrameTiming::BeginProfile(ProfileStage::DrawEffects);
     m_pGame->m_pEffectManager->DrawEffects();
     FrameTiming::EndProfile(ProfileStage::DrawEffects);
+
+    // Patching grid overlay (after effects, on top of everything for debug)
+    DrawPatchingGrid();
 
     FrameTiming::BeginProfile(ProfileStage::DrawWeather);
     m_pGame->DrawWhetherEffects();
@@ -600,4 +607,118 @@ void Screen_OnGame::RenderItemTooltip()
             TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b));
         }
     }
+}
+
+//=============================================================================
+// DrawTileGrid - Simple dark grid lines showing tile boundaries (DEBUG ONLY)
+// Enabled via F12 > Graphics > Tile Grid toggle
+// Called BEFORE objects so it appears below entities
+//=============================================================================
+void Screen_OnGame::DrawTileGrid()
+{
+#ifndef _DEBUG
+    return;
+#else
+    if (!ConfigManager::Get().IsTileGridEnabled()) return;
+
+    constexpr int TILE_SIZE = 32;
+    constexpr int HALF_TILE = 16;
+    constexpr float GRID_ALPHA = 0.18f;
+
+    int screenW = LOGICAL_WIDTH();
+    int screenH = LOGICAL_HEIGHT();
+
+    // Draw dark gray grid lines (subtle)
+    for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
+        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, 40, 40, 40, GRID_ALPHA);
+    }
+    for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
+        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 40, 40, 40, GRID_ALPHA);
+    }
+#endif
+}
+
+//=============================================================================
+// DrawPatchingGrid - Debug grid with direction zone colors (DEBUG ONLY)
+// Enabled via F12 > Graphics > Patching Grid toggle
+//=============================================================================
+void Screen_OnGame::DrawPatchingGrid()
+{
+#ifndef _DEBUG
+    return;
+#else
+    if (!ConfigManager::Get().IsPatchingGridEnabled()) return;
+
+    constexpr int TILE_SIZE = 32;
+    constexpr int HALF_TILE = 16;
+    constexpr float ZONE_ALPHA = 0.25f;
+    constexpr float GRID_ALPHA = 0.4f;
+
+    int screenW = LOGICAL_WIDTH();
+    int screenH = LOGICAL_HEIGHT();
+
+    short playerX = m_pGame->m_pPlayer->m_sPlayerX;
+    short playerY = m_pGame->m_pPlayer->m_sPlayerY;
+
+    // Asymmetric zones algorithm (N/S 3:1, E/W 4:1)
+    auto calcDir = [](short playerX, short playerY, short destX, short destY) -> int {
+        short dx = destX - playerX;
+        short dy = destY - playerY;
+        if (dx == 0 && dy == 0) return 0;
+
+        short absX = (dx < 0) ? -dx : dx;
+        short absY = (dy < 0) ? -dy : dy;
+
+        // Cardinal directions
+        if (absY == 0) return (dx > 0) ? 3 : 7;  // E or W
+        if (absX == 0) return (dy < 0) ? 1 : 5;  // N or S
+        if (absY >= absX * 3) return (dy < 0) ? 1 : 5;  // N or S zone
+        if (absX >= absY * 4) return (dx > 0) ? 3 : 7;  // E or W zone
+
+        // Diagonal fallback
+        if (dx > 0 && dy < 0) return 2;  // NE
+        if (dx > 0 && dy > 0) return 4;  // SE
+        if (dx < 0 && dy > 0) return 6;  // SW
+        return 8;  // NW
+    };
+
+    auto getDirColor = [](int dir, int& r, int& g, int& b) {
+        switch (dir) {
+            case 1: case 3: case 5: case 7: r = 0; g = 200; b = 0; break;
+            case 2: case 4: case 6: case 8: r = 200; g = 0; b = 0; break;
+            default: r = 150; g = 0; b = 200; break;
+        }
+    };
+
+    int startTileX = m_sDivX + m_sPivotX;
+    int startTileY = m_sDivY + m_sPivotY;
+    int tilesX = (screenW / TILE_SIZE) + 3;
+    int tilesY = (screenH / TILE_SIZE) + 3;
+
+    for (int ty = -1; ty < tilesY; ty++) {
+        for (int tx = -1; tx < tilesX; tx++) {
+            short mapX = static_cast<short>(startTileX + tx);
+            short mapY = static_cast<short>(startTileY + ty);
+
+            int dir = calcDir(playerX, playerY, mapX, mapY);
+            int r, g, b;
+            getDirColor(dir, r, g, b);
+
+            int screenX = tx * TILE_SIZE - m_sModX - HALF_TILE;
+            int screenY = ty * TILE_SIZE - m_sModY - HALF_TILE;
+
+            for (int i = 0; i < TILE_SIZE; i++) {
+                m_pGame->m_Renderer->DrawLine(screenX, screenY + i, screenX + TILE_SIZE, screenY + i, r, g, b, ZONE_ALPHA);
+            }
+        }
+    }
+
+    // Draw subtle dark grid lines over the colored zones
+    for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
+        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, 20, 20, 20, 0.35f);
+    }
+    for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
+        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 20, 20, 20, 0.35f);
+    }
+#endif
 }

@@ -33,7 +33,7 @@ namespace PlayerAnim {
 	static constexpr AnimDef Attack     = {  7, 78,  false };
 	static constexpr AnimDef AttackMove = { 12, 78,  false };
 	static constexpr AnimDef Magic      = { 15, 88,  false };
-	static constexpr AnimDef GetItem    = {  3, 150, false };
+	static constexpr AnimDef GetItem    = {  3, 75, false };
 	static constexpr AnimDef Damage     = {  7, 70,  false }; // 3+4
 	static constexpr AnimDef DamageMove = {  3, 50,  false };
 	static constexpr AnimDef Dying      = { 12, 80,  false };

@@ -13,30 +13,38 @@ enum {CODE_ENG,CODE_HAN1,CODE_HAN2};
 
 namespace CMisc
 {
+	// Movement direction calculation using asymmetric zones (N/S 3:1, E/W 4:1 ratio)
+	// Returns direction 1-8 (N, NE, E, SE, S, SW, W, NW) or 0 if same position
 	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
 	{
-		short absX, absY;
-		char  cRet = 0;
+		short diffX = dX - sX;
+		short diffY = dY - sY;
 
-		absX = sX - dX;
-		absY = sY - dY;
+		if (diffX == 0 && diffY == 0) return 0;
 
-		if ((absX == 0) && (absY == 0)) cRet = 0;
+		short absX = (diffX < 0) ? -diffX : diffX;
+		short absY = (diffY < 0) ? -diffY : diffY;
 
-		if (absX == 0) {
-			if (absY > 0) cRet = 1;
-			if (absY < 0) cRet = 5;
-		}
 		if (absY == 0) {
-			if (absX > 0) cRet = 7;
-			if (absX < 0) cRet = 3;
+			return (diffX > 0) ? 3 : 7;  // East or West
 		}
-		if ( (absX > 0)	&& (absY > 0) ) cRet = 8;
-		if ( (absX < 0)	&& (absY > 0) ) cRet = 2;
-		if ( (absX > 0)	&& (absY < 0) ) cRet = 6;
-		if ( (absX < 0)	&& (absY < 0) ) cRet = 4;
+		if (absX == 0) {
+			return (diffY < 0) ? 1 : 5;  // North or South
+		}
 
-		return cRet;
+		// Asymmetric ratios: N/S uses 3:1, E/W uses 4:1
+		if (absY >= absX * 3) {
+			return (diffY < 0) ? 1 : 5;  // North or South
+		}
+		if (absX >= absY * 4) {
+			return (diffX > 0) ? 3 : 7;  // East or West
+		}
+
+		// Diagonal
+		if (diffX > 0 && diffY < 0) return 2;  // NE
+		if (diffX > 0 && diffY > 0) return 4;  // SE
+		if (diffX < 0 && diffY > 0) return 6;  // SW
+		return 8;  // NW
 	}
 
 	static inline void GetPoint(int x0, int y0, int x1, int y1, int * pX, int * pY, int * pError, int iCount)

@@ -9010,7 +9010,62 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	}
 
 CP_SKIPMOUSEBUTTONSTATUS:;
-	if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
+	// Allow clicks to be responsive even if command not yet available
+	if (m_pPlayer->m_Controller.IsCommandAvailable() == false)
+	{
+		char cmd = m_pPlayer->m_Controller.GetCommand();
+		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN))
+		{
+			if (cLB != 0)
+			{
+				// Click on self while moving = pickup (interrupt movement)
+				if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0)
+				{
+					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+					{
+						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+						return;
+					}
+				}
+				// Left click while moving: update destination immediately
+				m_pPlayer->m_Controller.SetDestination(indexX, indexY);
+			}
+			else if (cRB != 0)
+			{
+				// Right click on self while moving = pickup (interrupt movement)
+				if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0)
+				{
+					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
+					{
+						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+						return;
+					}
+				}
+				// Right click while moving: stop after current step and face click direction
+				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+				// Save pending direction to apply when movement stops
+				char pendingDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
+				if (pendingDir != 0) m_pPlayer->m_Controller.SetPendingStopDir(pendingDir);
+			}
+		}
+		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == DEF_OBJECTSTOP && !m_bIsGetPointingMode)
+		{
+			// Right click while stopped (and not casting): process turn immediately
+			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
+			if (cDir != 0 && m_pPlayer->m_iPlayerDir != cDir)
+			{
+				m_pPlayer->m_iPlayerDir = cDir;
+				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, cDir, 0, 0, 0, 0);
+				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
+					m_pPlayer->m_sPlayerType, cDir, m_pPlayer->m_playerAppearance,
+					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0, 0, 10);
+				m_pPlayer->m_Controller.SetCommandTime(dwTime);
+			}
+		}
+		return;
+	}
 	if ((dwTime - m_pPlayer->m_Controller.GetCommandTime()) < 300)
 	{
 		m_pGSock.reset();
@@ -9700,20 +9755,32 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	}
 	else if (cRB != 0) // Mouse Right button
 	{
-		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
-		if (m_bIsGetPointingMode == true)
+		// Right click on self = pickup (Quick Actions feature)
+		if (ConfigManager::Get().IsQuickActionsEnabled() &&
+			memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
+			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 		{
-			m_bIsGetPointingMode = false;
-			AddEventList(COMMAND_PROCESSOR1, 10);
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
+			goto MOTION_COMMAND_PROCESS;
 		}
-		if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
-		if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
-
-		if ((m_sMCX != 0) && (m_sMCY != 0))
+		else
 		{
-			absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
-			absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-			if (absX == 0 && absY == 0) return;
+			// Original right click behavior (stop, turn, attack, etc.)
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			if (m_bIsGetPointingMode == true)
+			{
+				m_bIsGetPointingMode = false;
+				AddEventList(COMMAND_PROCESSOR1, 10);
+			}
+			if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
+			if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
+
+			if ((m_sMCX != 0) && (m_sMCY != 0))
+			{
+				absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
+				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
+				if (absX == 0 && absY == 0) return;
 
 			if (Input::IsCtrlDown() == true)
 			{
@@ -9927,6 +9994,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			return;
 		}
+		} // close else block for "not clicking on self"
 	}
 
 MOTION_COMMAND_PROCESS:;
@@ -10009,7 +10077,20 @@ MOTION_COMMAND_PROCESS:;
 			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID); // v1.4
 
 			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
+			{
 				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				// Apply pending stop direction if set (from right-click while moving)
+				char pendingDir = m_pPlayer->m_Controller.GetPendingStopDir();
+				if (pendingDir != 0)
+				{
+					m_pPlayer->m_iPlayerDir = pendingDir;
+					bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, pendingDir, 0, 0, 0, 0);
+					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
+						m_pPlayer->m_sPlayerType, pendingDir, m_pPlayer->m_playerAppearance,
+						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0, 0, 10);
+					m_pPlayer->m_Controller.ClearPendingStopDir();
+				}
+			}
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
 				(bGORet == true) && (sDstOwnerType != 0))
 				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);

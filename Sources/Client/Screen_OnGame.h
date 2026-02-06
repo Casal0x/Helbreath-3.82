@@ -24,6 +24,8 @@ public:
 
 private:
     void RenderItemTooltip();
+    void DrawTileGrid();      // Simple dark grid lines
+    void DrawPatchingGrid();  // Debug grid with zone colors
 
 private:
     // Screen-specific state (previously file-scope static variables)

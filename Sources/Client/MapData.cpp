@@ -1646,24 +1646,47 @@ EXIT_SEARCH_LOOP:;
 					// Entity still interpolating previous tile — queue this move
 					m_pData[dX][dY].m_motion.QueueMove(cDir, duration);
 				}
-				else if (bHadOldMotion && cOldMotionDir == cDir)
+				else if (bHadOldMotion)
 				{
-					// Seamless tile transition: only when continuing in the SAME direction
-					// When transitioning from old tile at offset (e.g., -1.6) to new tile,
-					// the new offset should be: oldOffset + stdStart
-					// This maintains visual continuity across tile boundaries
+					// Seamless tile transition with direction-aware offset handling
+					//
+					// Key insight: Cardinal directions (N/S/E/W) only move ONE axis.
+					// When changing from diagonal to cardinal, the "unused" axis has
+					// a residual offset that would cause unwanted lateral movement.
+					//
+					// Solution: Only preserve offset in axes the NEW direction uses.
+					// This may cause a small instant jump (1-3 pixels) but prevents
+					// the "sliding" effect during cardinal movement.
+					//
 					int16_t stdStartX, stdStartY;
 					EntityMotion::GetDirectionStartOffset(cDir, stdStartX, stdStartY);
 
-					// Calculate the continuous offset for the new tile
-					// newOffset = oldOffset + stdStart (since stdStart is negative, this extends the range)
-					float newOffsetX = fOldMotionOffsetX + static_cast<float>(stdStartX);
-					float newOffsetY = fOldMotionOffsetY + static_cast<float>(stdStartY);
+					float newOffsetX, newOffsetY;
+
+					// Determine which axes the new direction uses
+					bool usesX = (stdStartX != 0);  // E/W/NE/SE/SW/NW use X
+					bool usesY = (stdStartY != 0);  // N/S/NE/SE/SW/NW use Y
+
+					if (cOldMotionDir == cDir)
+					{
+						// Same direction: full blending for smooth continuous movement
+						newOffsetX = fOldMotionOffsetX + static_cast<float>(stdStartX);
+						newOffsetY = fOldMotionOffsetY + static_cast<float>(stdStartY);
+					}
+					else
+					{
+						// Direction changed: only blend axes the new direction uses
+						newOffsetX = usesX ? (fOldMotionOffsetX + static_cast<float>(stdStartX))
+						                   : static_cast<float>(stdStartX);
+						newOffsetY = usesY ? (fOldMotionOffsetY + static_cast<float>(stdStartY))
+						                   : static_cast<float>(stdStartY);
+					}
 
 					m_pData[dX][dY].m_motion.StartMoveWithOffset(cDir, dwTime, duration, newOffsetX, newOffsetY);
 				}
 				else
 				{
+					// No previous motion - use standard start offset
 					m_pData[dX][dY].m_motion.StartMove(cDir, dwTime, duration);
 				}
 			}

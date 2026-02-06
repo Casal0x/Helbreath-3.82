@@ -382,6 +382,22 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
+#ifdef _DEBUG
+	// Tile Grid (simple dark lines) - DEBUG ONLY
+	PutString(labelX, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
+	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsTileGridEnabled(), msX, msY);
+
+	lineY += 18;
+
+	// Patching Grid (debug with zone colors) - DEBUG ONLY
+	PutString(labelX, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
+	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsPatchingGridEnabled(), msX, msY);
+
+	lineY += 18;
+#endif
+
 	// Display Mode - wide box showing current mode (clicking toggles)
 	PutString(labelX, lineY, "Display Mode:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Display Mode:", GameColors::UILabel);
@@ -836,6 +852,28 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	}
 
 	lineY += 18;
+
+#ifdef _DEBUG
+	// Tile Grid toggle - DEBUG ONLY
+	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsTileGridEnabled();
+		ConfigManager::Get().SetTileGridEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// Patching Grid toggle - DEBUG ONLY
+	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsPatchingGridEnabled();
+		ConfigManager::Get().SetPatchingGridEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+#endif
 
 	// Display Mode toggle click (wide box, toggles between windowed/fullscreen)
 	const int modeBoxY = lineY - 2;

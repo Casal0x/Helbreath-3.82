@@ -87,9 +87,20 @@ public:
 	bool IsMouseCaptureEnabled() const { return m_bCaptureMouse; }
 	void SetMouseCaptureEnabled(bool enabled);
 
+	// Tile grid overlay (simple dark lines)
+	bool IsTileGridEnabled() const { return m_bTileGrid; }
+	void SetTileGridEnabled(bool enabled);
+
+	// Patching grid overlay (debug with zone colors)
+	bool IsPatchingGridEnabled() const { return m_bPatchingGrid; }
+	void SetPatchingGridEnabled(bool enabled);
+
 	// Borderless window
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
+
+	// Quick Actions - always enabled (pickup during movement, 95% unlock, responsive stops)
+	bool IsQuickActionsEnabled() const { return true; }
 
 	// Base resolution (640x480 or 800x600) - determines logical render size
 	int GetBaseResolutionWidth() const { return m_baseResolutionWidth; }
@@ -140,6 +151,8 @@ private:
 	bool m_bFullscreen;
 	bool m_bCaptureMouse;
 	bool m_bBorderless;
+	bool m_bTileGrid;
+	bool m_bPatchingGrid;
 
 	// Base resolution (640x480 or 800x600)
 	int m_baseResolutionWidth;
