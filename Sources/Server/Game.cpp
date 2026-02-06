@@ -10731,9 +10731,13 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 
 	// Auto-aim: If client clicked on an entity, use the target's current position
 	// This compensates for latency - players with high ping can still hit moving targets
+	// Security: Only allow if target is within reasonable distance of original click (prevents cross-map exploits)
+	constexpr int MAX_AUTOAIM_DISTANCE = 10;  // Max tiles target can move and still be tracked
 	if (targetObjectID != 0)
 	{
 		int targetMapIndex = m_pClientList[iClientH]->m_cMapIndex;
+		int targetX = -1, targetY = -1;
+
 		if (targetObjectID < 10000)
 		{
 			// Target is a player
@@ -10742,8 +10746,8 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 				// Verify target is on the same map
 				if (m_pClientList[targetObjectID]->m_cMapIndex == targetMapIndex)
 				{
-					dX = m_pClientList[targetObjectID]->m_sX;
-					dY = m_pClientList[targetObjectID]->m_sY;
+					targetX = m_pClientList[targetObjectID]->m_sX;
+					targetY = m_pClientList[targetObjectID]->m_sY;
 				}
 			}
 		}
@@ -10756,10 +10760,24 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 				// Verify target is on the same map
 				if (m_pNpcList[npcIndex]->m_cMapIndex == targetMapIndex)
 				{
-					dX = m_pNpcList[npcIndex]->m_sX;
-					dY = m_pNpcList[npcIndex]->m_sY;
+					targetX = m_pNpcList[npcIndex]->m_sX;
+					targetY = m_pNpcList[npcIndex]->m_sY;
 				}
 			}
+		}
+
+		// Only use auto-aim if target was near the original click position
+		// This prevents exploits where hackers send fake objectIDs for targets across the map
+		if (targetX >= 0 && targetY >= 0)
+		{
+			int distX = abs(targetX - dX);
+			int distY = abs(targetY - dY);
+			if (distX <= MAX_AUTOAIM_DISTANCE && distY <= MAX_AUTOAIM_DISTANCE)
+			{
+				dX = targetX;
+				dY = targetY;
+			}
+			// If target moved too far, fall back to original tile coordinates (no tracking)
 		}
 	}
 
