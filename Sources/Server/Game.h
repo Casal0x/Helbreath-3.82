@@ -622,7 +622,7 @@ public:
 	void RequestStudyMagicHandler(int iClientH, const char * pName, bool bIsPurchase = true);
 	void ReleaseFollowMode(short sOwnerH, char cOwnerType);
 	void RequestTeleportHandler(int iClientH, char * pData, char * cMapName = 0, int dX = -1, int dY = -1);
-	void PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect = false, int iV1 = 0);
+	void PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect = false, int iV1 = 0, uint16_t targetObjectID = 0);
 	int  iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cDir);
 	void ToggleCombatModeHandler(int iClientH);
 	void GuildNotifyHandler(char * pData, size_t dwMsgSize);

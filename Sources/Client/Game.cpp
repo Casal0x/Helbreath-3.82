@@ -45,6 +45,9 @@
 // Entity render state
 #include "EntityRenderState.h"
 
+// Cursor targeting
+#include "CursorTarget.h"
+
 // Screen system
 #include "IGameScreen.h"
 #include "Screen_OnGame.h"
@@ -969,6 +972,23 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 			req.item_ids[4] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV5);
 			req.item_ids[5] = static_cast<uint8_t>(m_dialogBoxManager.Info(DialogBoxId::Slates).sV6);
 			req.padding = 0;
+			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
+		}
+		break;
+
+		// Magic spell casting - uses time_ms field to carry target object ID for auto-aim
+		case DEF_COMMONTYPE_MAGIC:
+		{
+			hb::net::PacketCommandCommonWithTime req{};
+			req.base.header.msg_id = dwMsgID;
+			req.base.header.msg_type = wCommand;
+			req.base.x = m_pPlayer->m_sPlayerX;
+			req.base.y = m_pPlayer->m_sPlayerY;
+			req.base.dir = static_cast<uint8_t>(cDir);
+			req.v1 = iV1;  // target X
+			req.v2 = iV2;  // target Y
+			req.v3 = iV3;  // magic type (100-199)
+			req.time_ms = static_cast<uint32_t>(iV4);  // target object ID (0 = tile-based, >0 = entity tracking)
 			iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 		}
 		break;
@@ -8535,7 +8555,15 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 	char cTemp[31];
 	if ((m_iPointCommandType >= 100) && (m_iPointCommandType < 200))
 	{
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_MAGIC, 0, indexX, indexY, m_iPointCommandType, 0);
+		// Get target object ID for auto-aim (lag compensation)
+		// If player clicked on an entity, send its ID so server can track its current position
+		int targetObjectID = 0;
+		const FocusedObject& focused = CursorTarget::GetFocusedObject();
+		if (focused.valid && (focused.type == FocusedObjectType::Player || focused.type == FocusedObjectType::NPC))
+		{
+			targetObjectID = focused.objectID;
+		}
+		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_MAGIC, 0, indexX, indexY, m_iPointCommandType, nullptr, targetObjectID);
 	}
 	else if ((m_iPointCommandType >= 0) && (m_iPointCommandType < 50))
 	{

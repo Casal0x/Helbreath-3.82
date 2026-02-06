@@ -6470,9 +6470,15 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 		break;
 
 	case DEF_COMMONTYPE_MAGIC:
+	{
 		//DbgWnd->AddEventMsg("RECV -> DEF_MSGFROM_CLIENT -> MSGID_COMMAND_COMMON -> DEF_COMMONTYPE_MAGIC");
-		PlayerMagicHandler(iClientH, iV1, iV2, (iV3 - 100));
-		break;
+		// Parse as PacketCommandCommonWithTime to get target object ID from time_ms field
+		const auto* magicReq = hb::net::PacketCast<hb::net::PacketCommandCommonWithTime>(
+			pData, sizeof(hb::net::PacketCommandCommonWithTime));
+		uint16_t targetObjectID = magicReq ? static_cast<uint16_t>(magicReq->time_ms) : 0;
+		PlayerMagicHandler(iClientH, iV1, iV2, (iV3 - 100), false, 0, targetObjectID);
+	}
+	break;
 
 	case DEF_COMMONTYPE_TOGGLESAFEATTACKMODE:
 		//DbgWnd->AddEventMsg("RECV -> DEF_MSGFROM_CLIENT -> MSGID_COMMAND_COMMON -> DEF_COMMONTYPE_TOGGLESAFEATTACKMODE");
@@ -10701,7 +10707,7 @@ int CGame::iClientMotion_Magic_Handler(int iClientH, short sX, short sY, char cD
 **********************************************************************************************************************/
 int  _tmp_iMCProb[] = { 0, 300, 250, 200, 150, 100, 80, 70, 60, 50, 40 };
 int  _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,  10, 14, 28, 32, 36, 40 };
-void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect, int iV1)
+void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect, int iV1, uint16_t targetObjectID)
 {
 	short sX, sY, sOwnerH, sMagicCircle, rx, ry, sLevelMagic, sTemp;
 	char cDir, cOwnerType, cName[11], cItemName[DEF_ITEMNAME], cNpcWaypoint[11], cName_Master[11], cNpcName[21], cRemainItemColor, cScanMessage[256];
@@ -10722,6 +10728,58 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
+
+	// Auto-aim: If client clicked on an entity, use the target's current position
+	// This compensates for latency - players with high ping can still hit moving targets
+	// Security: Only allow if target is within reasonable distance of original click (prevents cross-map exploits)
+	constexpr int MAX_AUTOAIM_DISTANCE = 10;  // Max tiles target can move and still be tracked
+	if (targetObjectID != 0)
+	{
+		int targetMapIndex = m_pClientList[iClientH]->m_cMapIndex;
+		int targetX = -1, targetY = -1;
+
+		if (targetObjectID < 10000)
+		{
+			// Target is a player
+			if ((targetObjectID > 0) && (targetObjectID < DEF_MAXCLIENTS) && m_pClientList[targetObjectID] != nullptr)
+			{
+				// Verify target is on the same map
+				if (m_pClientList[targetObjectID]->m_cMapIndex == targetMapIndex)
+				{
+					targetX = m_pClientList[targetObjectID]->m_sX;
+					targetY = m_pClientList[targetObjectID]->m_sY;
+				}
+			}
+		}
+		else
+		{
+			// Target is an NPC (objectID - 10000)
+			int npcIndex = targetObjectID - 10000;
+			if ((npcIndex > 0) && (npcIndex < DEF_MAXNPCS) && m_pNpcList[npcIndex] != nullptr)
+			{
+				// Verify target is on the same map
+				if (m_pNpcList[npcIndex]->m_cMapIndex == targetMapIndex)
+				{
+					targetX = m_pNpcList[npcIndex]->m_sX;
+					targetY = m_pNpcList[npcIndex]->m_sY;
+				}
+			}
+		}
+
+		// Only use auto-aim if target was near the original click position
+		// This prevents exploits where hackers send fake objectIDs for targets across the map
+		if (targetX >= 0 && targetY >= 0)
+		{
+			int distX = abs(targetX - dX);
+			int distY = abs(targetY - dY);
+			if (distX <= MAX_AUTOAIM_DISTANCE && distY <= MAX_AUTOAIM_DISTANCE)
+			{
+				dX = targetX;
+				dY = targetY;
+			}
+			// If target moved too far, fall back to original tile coordinates (no tracking)
+		}
+	}
 
 	if ((dX < 0) || (dX >= m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeX) ||
 		(dY < 0) || (dY >= m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_sSizeY)) return;
