@@ -384,15 +384,15 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 #ifdef _DEBUG
 	// Tile Grid (simple dark lines) - DEBUG ONLY
-	PutString(labelX, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
+	PutString(labelX, lineY, "Tile Grid:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "Tile Grid:", GameColors::UILabel);
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsTileGridEnabled(), msX, msY);
 
 	lineY += 18;
 
 	// Patching Grid (debug with zone colors) - DEBUG ONLY
-	PutString(labelX, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
+	PutString(labelX, lineY, "Patching Grid:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "Patching Grid:", GameColors::UILabel);
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsPatchingGridEnabled(), msX, msY);
 
 	lineY += 18;

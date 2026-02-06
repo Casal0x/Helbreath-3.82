@@ -5603,7 +5603,7 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 		}
 
 		m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->GetOwner(&sOwner, &cOwnerType, dX, dY);
-		if (sOwner == (wTargetObjectID - 10000)) {
+		if ((sOwner == (wTargetObjectID - 10000)) && (m_pNpcList[sOwner] != 0)) {
 			tdX = m_pNpcList[sOwner]->m_sX;
 			dX = tdX;
 			tdY = m_pNpcList[sOwner]->m_sY;
@@ -6498,14 +6498,6 @@ void CGame::ClientCommonHandler(int iClientH, char* pData)
 	case DEF_COMMONTYPE_REQUEST_ACCEPTJOINPARTY:
 		//DbgWnd->AddEventMsg("RECV -> DEF_MSGFROM_CLIENT -> MSGID_COMMAND_COMMON -> DEF_COMMONTYPE_REQUEST_ACCEPTJOINPARTY");
 		RequestAcceptJoinPartyHandler(iClientH, iV1);
-		break;
-
-		//50Cent - HP Bar
-	case DEF_COMMONTYPE_REQ_GETNPCHP:
-		if ((iV1 - 10000 <= 0) || (iV1 - 10000 >= DEF_MAXNPCS)) return;
-		if (m_pNpcList[iV1 - 10000] == 0) return;
-		if (m_pNpcList[iV1 - 10000]->m_iHP > m_pNpcList[iV1 - 10000]->m_iMaxHP) m_pNpcList[iV1 - 10000]->m_iMaxHP = m_pNpcList[iV1 - 10000]->m_iHP;
-		SendNotifyMsg(0, iClientH, DEF_SEND_NPCHP, m_pNpcList[iV1 - 10000]->m_iHP, m_pNpcList[iV1 - 10000]->m_iMaxHP, 0, 0);
 		break;
 
 	default:
@@ -8067,17 +8059,6 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}
-	case DEF_SEND_NPCHP: //50Cent - HP Bar
-	{
-		hb::net::PacketNotifyNpcHp pkt{};
-		pkt.header.msg_id = MSGID_NOTIFY;
-		pkt.header.msg_type = wMsgType;
-		pkt.hp = static_cast<int32_t>(sV1);
-		pkt.max_hp = static_cast<int32_t>(sV2);
-		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
-	}
-	break;
-
 	case DEF_NOTIFY_HELDENIANCOUNT:
 	{
 		hb::net::PacketNotifyHeldenianCount pkt{};

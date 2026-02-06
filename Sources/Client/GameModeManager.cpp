@@ -118,22 +118,26 @@ void GameModeManager::UpdateScreensImpl()
     if (m_transitionState == TransitionState::Switching)
         return;
 
-    // If overlay exists, suppress input for base screen
-    if (m_pActiveOverlay)
+    bool bTransitioning = (m_transitionState != TransitionState::None);
+
+    // Suppress input for base screen during transitions or when overlay is active
+    if (bTransitioning || m_pActiveOverlay)
     {
         Input::SetSuppressed(true);
     }
 
-    // Update base screen (input suppressed if overlay active)
+    // Update base screen (input suppressed if transitioning or overlay active)
     if (m_pCurrentScreen)
     {
         m_pCurrentScreen->on_update();
     }
 
-    // Restore input for overlay and update it
-    if (m_pActiveOverlay)
+    // Always restore input before overlay update
+    Input::SetSuppressed(false);
+
+    // Update overlay (receives input only when not transitioning)
+    if (m_pActiveOverlay && !bTransitioning)
     {
-        Input::SetSuppressed(false);
         m_pActiveOverlay->on_update();
     }
 }

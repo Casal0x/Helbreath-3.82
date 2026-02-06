@@ -126,3 +126,10 @@ Must stay synchronized between client and server:
 3. **Network changes:** Update both client and server, rebuild both
 4. **Large changes:** Pause after build, let user test
 5. **No automated tests** - manual verification via running server then client
+6. **Changelog:** After changes are verified and accepted by the user, append a summary to `CHANGELOG.md` (git-ignored). Use this format:
+   ```
+   ## Short Title
+   Brief description of what was fixed/updated and how it should feel/look better.
+   - Previously: old behavior/value (reason it was wrong)
+   - Now: new behavior/value
+   ```

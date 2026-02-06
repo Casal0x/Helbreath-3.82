@@ -291,6 +291,7 @@ void _LoadShopMenuContents(char cType);
 
 	void ReserveFightzoneResponseHandler(char * pData);
 	int _iGetAttackType();
+	bool CanSuperAttack();
 	bool __bDecodeBuildItemContents(const std::string& buffer);
 	int _iGetBankItemCount();
 	int _iGetTotalItemNum();
@@ -582,8 +583,6 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	bool EnsureItemConfigsLoaded()  { return _EnsureConfigLoaded(0); }
 	bool EnsureMagicConfigsLoaded() { return _EnsureConfigLoaded(1); }
 	bool EnsureSkillConfigsLoaded() { return _EnsureConfigLoaded(2); }
-
-	int iNpcHP, iNpcMaxHP;
 
 	short m_sItemDropID[25];
 

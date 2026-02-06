@@ -17,9 +17,11 @@
         "detailLevel": 2,
         "dialogTransparency": false,
         "fullscreen": false,
+        "patchingGrid": false,
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
+        "tileGrid": false,
         "zoomMap": true
     },
     "resolution": {

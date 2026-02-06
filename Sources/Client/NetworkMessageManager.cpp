@@ -164,8 +164,6 @@ namespace NetworkMessageHandlers {
 	void HandleObserverMode(CGame* pGame, char* pData);
 	void HandleSuperAttackLeft(CGame* pGame, char* pData);
 	void HandleSafeAttackMode(CGame* pGame, char* pData);
-	void HandleNpcHp(CGame* pGame, char* pData);
-
 	// Skills
 	void HandleSkillTrainSuccess(CGame* pGame, char* pData);
 	void HandleMagicStudySuccess(CGame* pGame, char* pData);
@@ -330,8 +328,6 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		case DEF_NOTIFY_OBSERVERMODE: NetworkMessageHandlers::HandleObserverMode(m_pGame, pData); return true;
 		case DEF_NOTIFY_SUPERATTACKLEFT: NetworkMessageHandlers::HandleSuperAttackLeft(m_pGame, pData); return true;
 		case DEF_NOTIFY_SAFEATTACKMODE: NetworkMessageHandlers::HandleSafeAttackMode(m_pGame, pData); return true;
-		case DEF_SEND_NPCHP: NetworkMessageHandlers::HandleNpcHp(m_pGame, pData); return true;
-
 		// Skills
 		case DEF_NOTIFY_SKILLTRAINSUCCESS: NetworkMessageHandlers::HandleSkillTrainSuccess(m_pGame, pData); return true;
 		case DEF_NOTIFY_MAGICSTUDYSUCCESS: NetworkMessageHandlers::HandleMagicStudySuccess(m_pGame, pData); return true;

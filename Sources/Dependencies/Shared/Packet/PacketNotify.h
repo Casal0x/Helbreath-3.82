@@ -92,12 +92,6 @@ namespace net {
 		uint8_t padding[2];
 	};
 
-	struct HB_PACKED PacketNotifyNpcHp {
-		PacketHeader header;
-		int32_t hp;
-		int32_t max_hp;
-	};
-
 	struct HB_PACKED PacketNotifyForceRecallTime {
 		PacketHeader header;
 		uint16_t seconds_left;

@@ -242,15 +242,6 @@ namespace NetworkMessageHandlers {
 		}
 	}
 
-	void HandleNpcHp(CGame* pGame, char* pData)
-	{
-		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyNpcHp>(
-			pData, sizeof(hb::net::PacketNotifyNpcHp));
-		if (!pkt) return;
-		pGame->iNpcHP = pkt->hp;
-		pGame->iNpcMaxHP = pkt->max_hp;
-	}
-
 	void HandleSpellInterrupted(CGame* pGame, char* pData)
 	{
 		if (pGame->m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMAGIC)

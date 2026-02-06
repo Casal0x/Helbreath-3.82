@@ -6015,6 +6015,13 @@ int CGame::_iGetWeaponSkillType()
 	return 1; // Fishing !
 }
 
+bool CGame::CanSuperAttack()
+{
+	return m_pPlayer->m_iSuperAttackLeft > 0
+		&& m_pPlayer->m_bSuperAttackMode
+		&& m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] >= 100;
+}
+
 int CGame::_iGetBankItemCount()
 {
 	int i, iCnt;
@@ -7576,14 +7583,6 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	case hb::owner::Gail:
 		break;
 	default:
-		if (iNpcHP > 0)
-		{
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->DrawWidth(sX, sY + 16, 18, 75);
-			int iBarWidth2 = (iNpcHP * 75) / iNpcMaxHP;
-			if (iBarWidth2 < 0) iBarWidth2 = 0;
-			if (iBarWidth2 > 75) iBarWidth2 = 75;
-			m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS]->DrawWidth(sX, sY + 16, 19, iBarWidth2); // 16
-		}
 		break;
 	}
 }
@@ -8642,9 +8641,6 @@ void CGame::MotionResponseHandler(char* pData)
 
 	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
 		m_pPlayer->m_Controller.DecrementCommandCount();
-		if (hb::objectid::IsNpcID(m_wLastAttackTargetID)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETNPCHP, 0, m_wLastAttackTargetID, 0, 0, 0);
-		}
 		break;
 
 	case DEF_OBJECTMOTION_REJECT:
@@ -9188,14 +9184,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 8: // LS
-							if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+							if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
 								&& (_iGetAttackType() != 30)) // Crit without StormBlade
 							{
 								wType = _iGetAttackType();
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+							else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 								&& (_iGetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
 							{
 								wType = _iGetAttackType();
@@ -9248,7 +9244,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 9: // Fencing
-							if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
+							if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -9285,7 +9281,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case hb::owner::Slime: // Axe
-							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
+							if ((absX <= 2) && (absY <= 2) && CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
@@ -9328,7 +9324,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 						case hb::owner::OrcMage: // Hammer
-							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
@@ -9363,7 +9359,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 						case hb::owner::Guard: // Wand
-							if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
@@ -9620,7 +9616,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case 8: // LS
-									if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+									if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
 										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
@@ -9629,7 +9625,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
-									else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+									else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
@@ -9657,7 +9653,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case 9: // Fencing
-									if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true))
+									if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
 									{
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
@@ -9677,7 +9673,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case hb::owner::Slime: //
-									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
@@ -9694,7 +9690,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									break;
 								case hb::owner::OrcMage: //
-									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
@@ -9711,7 +9707,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									break;
 								case hb::owner::Guard: //
-									if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
 										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
@@ -9815,14 +9811,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case 8: // LS
-						if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+						if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
 							&& (_iGetAttackType() != 30)) // without StormBlade by Snoopy
 						{
 							wType = _iGetAttackType();
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+						else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 							&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 						{
 							wType = _iGetAttackType();
@@ -9839,7 +9835,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case 9: // Fencing
-						if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+						if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
@@ -9847,7 +9843,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case hb::owner::Slime: //
-						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
@@ -9855,14 +9851,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case hb::owner::OrcMage: //
-						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 					case hb::owner::Guard: //
-						if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
@@ -9916,14 +9912,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								break;
 
 							case 8: // LS
-								if ((absX <= 3) && (absY <= 3) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+								if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
 									&& (_iGetAttackType() != 30)) // crit without StormBlade by Snoopy
 								{
 									wType = _iGetAttackType();
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
-								else if ((absX <= 5) && (absY <= 5) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)
+								else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 									&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 								{
 									wType = _iGetAttackType();
@@ -9940,7 +9936,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								break;
 
 							case 9: // fencing
-								if ((absX <= 4) && (absY <= 4) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
@@ -9948,21 +9944,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								break;
 
 							case hb::owner::Slime: //
-								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 							case hb::owner::OrcMage: // hammer
-								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 							case hb::owner::Guard: // wand
-								if ((absX <= 2) && (absY <= 2) && (m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true)) {
+								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
