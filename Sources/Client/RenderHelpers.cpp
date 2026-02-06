@@ -160,7 +160,7 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	}
 
 	// Capture body bounding rect
-	auto& br = game.m_pSprite[iBodyDirIndex]->GetBoundRect();
+	auto br = game.m_pSprite[iBodyDirIndex]->GetBoundRect();
 	game.m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top);
 }
 

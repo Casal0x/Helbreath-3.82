@@ -51,15 +51,6 @@ public:
         m_iEffectFrame = 0;
     }
 
-    // Set name from C-string (copies up to ENTITY_NAME_LENGTH-1 chars)
-    void SetName(const char* name)
-    {
-        m_cName.fill('\0');
-        if (name) {
-            std::strncpy(m_cName.data(), name, ENTITY_NAME_LENGTH - 1);
-        }
-    }
-
     // Get name as C-string
     const char* GetName() const { return m_cName.data(); }
 

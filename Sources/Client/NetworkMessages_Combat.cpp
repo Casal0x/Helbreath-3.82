@@ -149,7 +149,7 @@ namespace NetworkMessageHandlers {
 
 		if (iExp >= 0) pGame->m_pPlayer->m_iExp = iExp;
 		if (iEnemyKillCount >= 0) pGame->m_pPlayer->m_iEnemyKillCount = iEnemyKillCount;
-		pGame->PlaySound('E', 23, 0);
+		pGame->PlayGameSound('E', 23, 0);
 
 		pGame->_RemoveChatMsgListByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		for (int i = 1; i < DEF_MAXCHATMSGS; i++) {

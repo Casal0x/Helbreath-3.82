@@ -67,18 +67,18 @@ void HandleFishCanceled(CGame* pGame, char* pData)
 void HandleFishSuccess(CGame* pGame, char* pData)
 {
 	pGame->AddEventList(NOTIFY_MSG_HANDLER55, 10);
-	pGame->PlaySound('E', 23, 5);
-	pGame->PlaySound('E', 17, 5);
+	pGame->PlayGameSound('E', 23, 5);
+	pGame->PlayGameSound('E', 17, 5);
 	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:
-		pGame->PlaySound('C', 21, 0);
+		pGame->PlayGameSound('C', 21, 0);
 		break;
 	case 4:
 	case 5:
 	case 6:
-		pGame->PlaySound('C', 22, 0);
+		pGame->PlayGameSound('C', 22, 0);
 		break;
 	}
 }
@@ -86,7 +86,7 @@ void HandleFishSuccess(CGame* pGame, char* pData)
 void HandleFishFail(CGame* pGame, char* pData)
 {
 	pGame->AddEventList(NOTIFY_MSG_HANDLER56, 10);
-	pGame->PlaySound('E', 24, 5);
+	pGame->PlayGameSound('E', 24, 5);
 }
 
 } // namespace NetworkMessageHandlers

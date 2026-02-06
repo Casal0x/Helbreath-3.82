@@ -47,15 +47,15 @@ void IDialogBox::PutAlignedString(int iX1, int iX2, int iY, const char* pString,
 
 void IDialogBox::PlaySoundEffect(char cType, int iNum, int iDist, long lPan)
 {
-	m_pGame->PlaySound(cType, iNum, iDist, lPan);
+	m_pGame->PlayGameSound(cType, iNum, iDist, lPan);
 }
 
-void IDialogBox::AddEventList(char* pTxt, char cColor, bool bDupAllow)
+void IDialogBox::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 {
 	m_pGame->AddEventList(pTxt, cColor, bDupAllow);
 }
 
-bool IDialogBox::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4)
+bool IDialogBox::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4)
 {
 	return m_pGame->bSendCommand(dwMsgID, wCommand, cDir, iV1, iV2, iV3, pString, iV4);
 }

@@ -21,7 +21,6 @@ public:
     inline CItem()
     {
         std::memset(m_cName, 0, sizeof(m_cName));
-        std::memset(m_cDisplayName, 0, sizeof(m_cDisplayName));
 
         m_sIDnum = 0;
         m_cItemType = 0;
@@ -83,7 +82,6 @@ public:
     //------------------------------------------------------------------------
 
     char  m_cName[DEF_ITEMNAME];    // Internal item name (from database)
-    char  m_cDisplayName[34];       // Localized display name (from ItemName.cfg mapping)
 
     short m_sIDnum;                 // Item ID number (unique identifier)
     char  m_cItemType;              // Item type (see ItemType enum)
@@ -191,28 +189,7 @@ public:
     // Note: Since DB migration, m_cName now contains display names directly
     const char* GetDisplayName() const
     {
-        return (m_cDisplayName[0] != '\0') ? m_cDisplayName : m_cName;
-    }
-
-    // Legacy method - copies m_cName to m_cDisplayName for compatibility
-    // Note: Since DB migration, m_cName already contains display names
-    void PopulateDisplayName()
-    {
-        if (m_cName[0] != '\0')
-        {
-            std::strncpy(m_cDisplayName, m_cName, sizeof(m_cDisplayName) - 1);
-            m_cDisplayName[sizeof(m_cDisplayName) - 1] = '\0';
-        }
-    }
-
-    // Set display name directly
-    void SetDisplayName(const char* name)
-    {
-        if (name != nullptr)
-        {
-            std::strncpy(m_cDisplayName, name, sizeof(m_cDisplayName) - 1);
-            m_cDisplayName[sizeof(m_cDisplayName) - 1] = '\0';
-        }
+        return m_cName;
     }
 
     //------------------------------------------------------------------------

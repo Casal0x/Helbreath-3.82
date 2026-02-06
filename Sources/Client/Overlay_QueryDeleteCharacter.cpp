@@ -23,7 +23,7 @@ void Overlay_QueryDeleteCharacter::on_initialize()
     m_dwAnimTime = m_dwStartTime;
 
     // Play warning sound
-    PlaySound('E', 25, 0);
+    PlayGameSound('E', 25, 0);
 }
 
 void Overlay_QueryDeleteCharacter::on_uninitialize()
@@ -48,7 +48,7 @@ void Overlay_QueryDeleteCharacter::on_update()
     // Mouse click detection
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        PlaySound('E', 14, 5);
+        PlayGameSound('E', 14, 5);
 
         // Yes button - confirm deletion
         if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))

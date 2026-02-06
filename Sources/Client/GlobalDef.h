@@ -20,10 +20,10 @@
 /*** Put here global data for your server ***/
 #include "Version.h"
 
-#define NAME_WORLDNAME1			"WS1" // Name for default (1st) server
-#define DEF_SERVER_IP			"199.187.160.239"//"127.0.0.1"	//
-#define DEF_SERVER_PORT			2500
-#define DEF_GSERVER_PORT		9907
+constexpr const char* NAME_WORLDNAME1 = "WS1";
+constexpr const char* DEF_SERVER_IP = "199.187.160.239"; //"127.0.0.1";
+constexpr const int DEF_SERVER_PORT = 2500;
+constexpr const int DEF_GSERVER_PORT = 9907;
 
 // Resolution-dependent values are now provided by ResolutionConfig singleton
 // Include ResolutionConfig.h and use ResolutionConfig::Get().MethodName()

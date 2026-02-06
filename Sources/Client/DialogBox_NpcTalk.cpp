@@ -137,7 +137,7 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 			(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		{
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;
@@ -149,7 +149,7 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 			// Accept
 			m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_QUESTACCEPTED, 0, 0, 0, 0, 0);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
@@ -157,7 +157,7 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 		{
 			// Decline
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;
@@ -167,7 +167,7 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 			(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		{
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;

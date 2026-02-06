@@ -62,7 +62,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->magic_name, 30);
 		wsprintf(cTxt, NOTIFYMSG_MAGICSTUDY_SUCCESS1, cName);
 		pGame->AddEventList(cTxt, 10);
-		pGame->PlaySound('E', 23, 0);
+		pGame->PlayGameSound('E', 23, 0);
 	}
 
 	void HandleSkillTrainSuccess(CGame* pGame, char* pData)
@@ -79,7 +79,7 @@ namespace NetworkMessageHandlers {
 		pGame->AddEventList(cTemp, 10);
 		pGame->m_pSkillCfgList[cSkillNum]->m_iLevel = cSkillLevel;
 		pGame->m_pPlayer->m_iSkillMastery[cSkillNum] = (unsigned char)cSkillLevel;
-		pGame->PlaySound('E', 23, 0);
+		pGame->PlayGameSound('E', 23, 0);
 	}
 
 	void HandleSkill(CGame* pGame, char* pData)
@@ -98,7 +98,7 @@ namespace NetworkMessageHandlers {
 		{
 			wsprintf(cTxt, NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
 			pGame->AddEventList(cTxt, 10);
-			pGame->PlaySound('E', 23, 0);
+			pGame->PlayGameSound('E', 23, 0);
 			for (i = 1; i < DEF_MAXCHATMSGS; i++)
 				if (pGame->m_pChatMsgList[i] == 0)
 				{
@@ -117,7 +117,7 @@ namespace NetworkMessageHandlers {
 		else if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel > sValue) {
 			wsprintf(cTxt, NOTIFYMSG_SKILL2, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel - sValue);
 			pGame->AddEventList(cTxt, 10);
-			pGame->PlaySound('E', 24, 0);
+			pGame->PlayGameSound('E', 24, 0);
 			for (i = 1; i < DEF_MAXCHATMSGS; i++)
 				if (pGame->m_pChatMsgList[i] == 0)
 				{
@@ -428,7 +428,7 @@ namespace NetworkMessageHandlers {
 
 		if (sV1 == 1) // Use SA
 		{
-			pGame->PlaySound('E', 35, 0);
+			pGame->PlayGameSound('E', 35, 0);
 			pGame->AddEventList(NOTIFY_MSG_HANDLER4, 10); 
 			switch (sV2) {
 			case 1: wsprintf(pGame->G_cTxt, NOTIFY_MSG_HANDLER5, sV3); break;
@@ -452,7 +452,7 @@ namespace NetworkMessageHandlers {
 		{
 			if (pGame->m_pPlayer->m_iSpecialAbilityType != (int)sV2)
 			{
-				pGame->PlaySound('E', 34, 0);
+				pGame->PlayGameSound('E', 34, 0);
 				pGame->AddEventList(NOTIFY_MSG_HANDLER13, 10);
 				if (sV3 >= 60)
 				{
@@ -510,14 +510,14 @@ namespace NetworkMessageHandlers {
 		}
 		else if (sV1 == 5) // Angel
 		{
-			pGame->PlaySound('E', 52, 0); 
+			pGame->PlayGameSound('E', 52, 0); 
 		}
 	}
 
 	void HandleSpecialAbilityEnabled(CGame* pGame, char* pData)
 	{
 		if (pGame->m_pPlayer->m_bIsSpecialAbilityEnabled == false) {
-			pGame->PlaySound('E', 30, 5);
+			pGame->PlayGameSound('E', 30, 5);
 			pGame->AddEventList(NOTIFY_MSG_HANDLER32, 10);
 		}
 		pGame->m_pPlayer->m_bIsSpecialAbilityEnabled = true;
@@ -526,6 +526,6 @@ namespace NetworkMessageHandlers {
 	void HandleSkillTrainFail(CGame* pGame, char* pData)
 	{
 		pGame->AddEventList("You failed to train skill.", 10);
-		pGame->PlaySound('E', 24, 0);
+		pGame->PlayGameSound('E', 24, 0);
 	}
 }

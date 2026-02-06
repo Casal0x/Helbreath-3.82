@@ -152,7 +152,7 @@ bool DialogBox_MagicShop::HandleSpellClick(short sX, short sY, short msX, short 
 				{
 					m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_STUDYMAGIC, 0, 0, 0, 0,
 						m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
-					m_pGame->PlaySound('E', 14, 5);
+					m_pGame->PlayGameSound('E', 14, 5);
 				}
 				return true;
 			}

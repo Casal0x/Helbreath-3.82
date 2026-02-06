@@ -38,7 +38,7 @@ namespace NetworkMessageHandlers {
 				
 				if (pGame->m_pPlayer->m_bCitizen == false) pGame->SetTopMsg(NOTIFY_MSG_CRUSADESTART_NONE, 10);
 				else pGame->SetTopMsg(pGame->m_pGameMsgList[9]->m_pMsg, 10);
-				pGame->PlaySound('E', 25, 0, 0);
+				pGame->PlayGameSound('E', 25, 0, 0);
 			}
 			if (iV3 != 0) // Crusade finished, show XP result screen
 			{
@@ -64,7 +64,7 @@ namespace NetworkMessageHandlers {
 				{
 					pGame->m_pPlayer->m_iCrusadeDuty = iV2;
 					pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 2, iV2, 0);
-					pGame->PlaySound('E', 25, 0, 0);
+					pGame->PlayGameSound('E', 25, 0, 0);
 				}
 			}
 			if (iV4 == -1)
@@ -105,7 +105,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sV1 = pkt->phase;
 		pGame->MeteorStrikeComing(sV1);
-		pGame->PlaySound('E', 25, 0, 0);
+		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 
 	void HandleMeteorStrikeHit(CGame* pGame, char* pData)
@@ -124,7 +124,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sV1 = static_cast<short>(pkt->reason);
 		pGame->CannotConstruct(sV1);
-		pGame->PlaySound('E', 25, 0, 0);
+		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 
 	void HandleTCLoc(CGame* pGame, char* pData)
@@ -156,35 +156,35 @@ namespace NetworkMessageHandlers {
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
 				wsprintf(pGame->G_cTxt, "%s +%d, %s +%d", pGame->m_pGameMsgList[13]->m_pMsg, (sV1 - pGame->m_pPlayer->m_iConstructionPoint), pGame->m_pGameMsgList[21]->m_pMsg, (sV2 - pGame->m_pPlayer->m_iWarContribution));
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
-				pGame->PlaySound('E', 23, 0, 0);
+				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if ((sV1 > pGame->m_pPlayer->m_iConstructionPoint) && (sV2 == pGame->m_pPlayer->m_iWarContribution)) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
 					wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[13]->m_pMsg, sV1 - pGame->m_pPlayer->m_iConstructionPoint);
 					pGame->SetTopMsg(pGame->G_cTxt, 5);
-					pGame->PlaySound('E', 23, 0, 0);
+					pGame->PlayGameSound('E', 23, 0, 0);
 				}
 			}
 
 			if ((sV1 == pGame->m_pPlayer->m_iConstructionPoint) && (sV2 > pGame->m_pPlayer->m_iWarContribution)) {
 				wsprintf(pGame->G_cTxt, "%s +%d", pGame->m_pGameMsgList[21]->m_pMsg, sV2 - pGame->m_pPlayer->m_iWarContribution);
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
-				pGame->PlaySound('E', 23, 0, 0);
+				pGame->PlayGameSound('E', 23, 0, 0);
 			}
 
 			if (sV1 < pGame->m_pPlayer->m_iConstructionPoint) {
 				if (pGame->m_pPlayer->m_iCrusadeDuty == 3) {
 					wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[13]->m_pMsg, pGame->m_pPlayer->m_iConstructionPoint - sV1);
 					pGame->SetTopMsg(pGame->G_cTxt, 5);
-					pGame->PlaySound('E', 25, 0, 0);
+					pGame->PlayGameSound('E', 25, 0, 0);
 				}
 			}
 
 			if (sV2 < pGame->m_pPlayer->m_iWarContribution) {
 				wsprintf(pGame->G_cTxt, "%s -%d", pGame->m_pGameMsgList[21]->m_pMsg, pGame->m_pPlayer->m_iWarContribution - sV2);
 				pGame->SetTopMsg(pGame->G_cTxt, 5);
-				pGame->PlaySound('E', 24, 0, 0);
+				pGame->PlayGameSound('E', 24, 0, 0);
 			}
 		}
 
@@ -195,7 +195,7 @@ namespace NetworkMessageHandlers {
 	void HandleNoMoreCrusadeStructure(CGame* pGame, char* pData)
 	{
 		pGame->SetTopMsg(pGame->m_pGameMsgList[12]->m_pMsg, 5);
-		pGame->PlaySound('E', 25, 0, 0);
+		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 
 	void HandleEnergySphereGoalIn(CGame* pGame, char* pData)
@@ -213,7 +213,7 @@ namespace NetworkMessageHandlers {
 
 		if (sV2 == sV3)
 		{
-			pGame->PlaySound('E', 24, 0);
+			pGame->PlayGameSound('E', 24, 0);
 			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
 			{
 				pGame->AddEventList(NOTIFY_MSG_HANDLER33, 10); // "You pushed energy sphere to enemy's energy portal! Contribution point will be decreased by 10 points."
@@ -230,19 +230,19 @@ namespace NetworkMessageHandlers {
 		}
 		else
 		{
-			pGame->PlaySound('E', 23, 0);
+			pGame->PlayGameSound('E', 23, 0);
 			if (strcmp(cTxt, pGame->m_pPlayer->m_cPlayerName) == 0)
 			{
 				switch (pGame->m_pPlayer->m_sPlayerType) {
 				case 1:
 				case 2:
 				case 3:
-					pGame->PlaySound('C', 21, 0);
+					pGame->PlayGameSound('C', 21, 0);
 					break;
 				case 4:
 				case 5:
 				case 6:
-					pGame->PlaySound('C', 22, 0);
+					pGame->PlayGameSound('C', 22, 0);
 					break;
 				}
 				pGame->AddEventList(NOTIFY_MSG_HANDLER35, 10); // "Congulaturations! You brought energy sphere to energy portal and earned experience and prize gold!"

@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -78,12 +79,13 @@ bool LocalCacheManager::FinalizeAndSave(ConfigCacheType type)
 	hdr.crc32 = hash;
 	hdr.payloadSize = static_cast<uint32_t>(acc.data.size());
 
-	FILE* fp = std::fopen(_GetFilename(type), "wb");
-	if (!fp) return false;
+	std::ofstream file(_GetFilename(type), std::ios::binary);
+	if (!file) return false;
 
-	std::fwrite(&hdr, sizeof(hdr), 1, fp);
-	std::fwrite(acc.data.data(), 1, acc.data.size(), fp);
-	std::fclose(fp);
+	file.write(reinterpret_cast<const char*>(&hdr), sizeof(hdr));
+	file.write(reinterpret_cast<const char*>(acc.data.data()), acc.data.size());
+
+	if (!file) return false;
 
 	m_state[idx].hasCache = true;
 	m_state[idx].hash = hash;
@@ -97,32 +99,35 @@ bool LocalCacheManager::FinalizeAndSave(ConfigCacheType type)
 bool LocalCacheManager::ReplayFromCache(ConfigCacheType type, PacketCallback cb, void* ctx)
 {
 	m_bIsReplaying = true;
-	FILE* fp = std::fopen(_GetFilename(type), "rb");
-	if (!fp) { m_bIsReplaying = false; return false; }
+
+	std::ifstream file(_GetFilename(type), std::ios::binary);
+	if (!file) {
+		m_bIsReplaying = false;
+		return false;
+	}
 
 	CacheHeader hdr{};
-	if (std::fread(&hdr, sizeof(hdr), 1, fp) != 1) {
-		std::fclose(fp);
+	if (!file.read(reinterpret_cast<char*>(&hdr), sizeof(hdr))) {
 		m_bIsReplaying = false;
 		return false;
 	}
 
 	if (hdr.magic != CACHE_MAGIC || hdr.version != CACHE_VERSION) {
-		std::fclose(fp);
 		m_bIsReplaying = false;
 		return false;
 	}
 
 	std::vector<uint8_t> payload(hdr.payloadSize);
-	if (std::fread(payload.data(), 1, hdr.payloadSize, fp) != hdr.payloadSize) {
-		std::fclose(fp);
+	if (!file.read(reinterpret_cast<char*>(payload.data()), hdr.payloadSize)) {
 		m_bIsReplaying = false;
 		return false;
 	}
-	std::fclose(fp);
 
 	uint32_t check = hb_crc32(payload.data(), payload.size());
-	if (check != hdr.crc32) { m_bIsReplaying = false; return false; }
+	if (check != hdr.crc32) {
+		m_bIsReplaying = false;
+		return false;
+	}
 
 	size_t offset = 0;
 	while (offset + 2 <= payload.size()) {
@@ -166,15 +171,13 @@ bool LocalCacheManager::_LoadHeader(ConfigCacheType type)
 	m_state[idx].hasCache = false;
 	m_state[idx].hash = 0;
 
-	FILE* fp = std::fopen(_GetFilename(type), "rb");
-	if (!fp) return false;
+	std::ifstream file(_GetFilename(type), std::ios::binary);
+	if (!file) return false;
 
 	CacheHeader hdr{};
-	if (std::fread(&hdr, sizeof(hdr), 1, fp) != 1) {
-		std::fclose(fp);
+	if (!file.read(reinterpret_cast<char*>(&hdr), sizeof(hdr))) {
 		return false;
 	}
-	std::fclose(fp);
 
 	if (hdr.magic != CACHE_MAGIC || hdr.version != CACHE_VERSION) {
 		return false;

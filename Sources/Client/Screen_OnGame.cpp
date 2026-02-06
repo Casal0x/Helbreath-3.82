@@ -274,7 +274,7 @@ void Screen_OnGame::on_update()
         m_pGame->WriteSettings();
         m_pGame->m_pGSock.reset();
         m_pGame->m_pGSock.reset();
-        PlaySound('E', 14, 5);
+        PlayGameSound('E', 14, 5);
         AudioManager::Get().StopSound(SoundType::Effect, 38);
         AudioManager::Get().StopMusic();
         m_pGame->ChangeGameMode(GameMode::MainMenu);

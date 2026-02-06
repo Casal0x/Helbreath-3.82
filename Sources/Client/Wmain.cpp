@@ -6,17 +6,95 @@
 // --------------------------------------------------------------
 
 #include "NativeTypes.h"
-#include "Application.h"
+#include "Game.h"
+#include "GameWindowHandler.h"
+#include "RendererFactory.h"
+#include "FrameTiming.h"
+#include "ConfigManager.h"
+#include "ResolutionConfig.h"
+#include "DevConsole.h"
+#include "IInput.h"
 #include "resource.h"
+#include <memory>
+#include <cstdlib>
+#include <ctime>
 
 // --------------------------------------------------------------
 // Platform-independent core
 int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
 {
-    Application app;
-    if (!app.initialize(nativeInstance, iconResourceId, cmdLine))
+    srand((unsigned)time(0));
+
+    DevConsole::Get().Initialize();
+
+    ConfigManager::Get().Initialize();
+    ConfigManager::Get().Load();
+
+    ResolutionConfig::Initialize(
+        ConfigManager::Get().GetBaseResolutionWidth(),
+        ConfigManager::Get().GetBaseResolutionHeight(),
+        ConfigManager::Get().GetWindowWidth(),
+        ConfigManager::Get().GetWindowHeight()
+    );
+
+    auto game = std::make_unique<CGame>();
+
+    WindowParams params = {};
+    params.title = "Helbreath";
+    params.width = ConfigManager::Get().GetWindowWidth();
+    params.height = ConfigManager::Get().GetWindowHeight();
+    params.fullscreen = false;
+    params.centered = true;
+    params.nativeInstance = nativeInstance;
+    params.iconResourceId = iconResourceId;
+
+    if (!Window::Create(params))
+    {
+        Window::ShowError("ERROR", "Failed to create window!");
+        game.reset();
         return 1;
-    return app.run();
+    }
+
+    auto windowHandler = std::make_unique<GameWindowHandler>(game.get());
+    Window::Get()->SetEventHandler(windowHandler.get());
+    Window::Get()->Show();
+
+    FrameTiming::Initialize();
+
+    if (game->bInit() == false)
+    {
+        Window::Get()->SetEventHandler(nullptr);
+        windowHandler.reset();
+        game.reset();
+        Window::Close();
+        return 1;
+    }
+
+    // Event loop
+    IWindow* window = Window::Get();
+    while (true)
+    {
+        Input::BeginFrame();
+
+        if (!window->ProcessMessages())
+            break;
+
+        FrameTiming::BeginFrame();
+        game->RenderFrame();
+        FrameTiming::EndFrame();
+    }
+
+    // Shutdown
+    Window::Get()->SetEventHandler(nullptr);
+    windowHandler.reset();
+    game.reset();
+
+    Window::Destroy();
+    Renderer::Destroy();
+
+    DevConsole::Get().Shutdown();
+
+    return 0;
 }
 
 // --------------------------------------------------------------

@@ -205,7 +205,7 @@ void Overlay_ChangePassword::on_update()
     // Enter key
     if (Input::IsKeyPressed(VK_RETURN))
     {
-        PlaySound('E', 14, 5);
+        PlayGameSound('E', 14, 5);
         switch (m_iCurFocus)
         {
         case 1:
@@ -238,7 +238,7 @@ void Overlay_ChangePassword::on_update()
 
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        PlaySound('E', 14, 5);
+        PlayGameSound('E', 14, 5);
 
         int iClickedField = 0;
         if (Input::IsMouseInRect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;

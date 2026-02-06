@@ -473,7 +473,7 @@ bool DialogBox_Shop::OnClickItemList(short sX, short sY, short msX, short msY)
                 return true;
             }
 
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             if (m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i] != 0)
                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i + 1;
             return true;
@@ -532,7 +532,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
         }
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-        m_pGame->PlaySound('E', 14, 5);
+        m_pGame->PlayGameSound('E', 14, 5);
         return true;
     }
 
@@ -540,7 +540,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-        m_pGame->PlaySound('E', 14, 5);
+        m_pGame->PlayGameSound('E', 14, 5);
         return true;
     }
 

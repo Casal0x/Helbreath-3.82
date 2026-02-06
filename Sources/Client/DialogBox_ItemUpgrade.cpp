@@ -240,7 +240,7 @@ void DialogBox_ItemUpgrade::DrawMode4_Failed(int sX, int sY, int msX, int msY)
     // Check if item was destroyed
     if ((iItemIndex != -1) && (m_pGame->m_pItemList[iItemIndex] == 0))
     {
-        m_pGame->PlaySound('E', 24, 0, 0);
+        m_pGame->PlayGameSound('E', 24, 0, 0);
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 7;
         return;
     }
@@ -411,8 +411,8 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
             iValue = iValue * (iValue + 6) / 8 + 2;
             if (m_pGame->m_iGizonItemUpgradeLeft < iValue) break;
 
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->PlaySound('E', 44, 0);
+            m_pGame->PlayGameSound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 44, 0);
             m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
             m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = m_pGame->m_dwCurTime;
             return true;
@@ -420,7 +420,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
             && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
             return true;
         }
@@ -436,7 +436,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
             && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
             return true;
         }
@@ -446,7 +446,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         // Normal item upgrade (Stone)
         if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 100) && (msY < sY + 115))
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             int iSoX = 0, iSoM = 0;
             for (int i = 0; i < DEF_MAXITEMS; i++)
                 if (m_pGame->m_pItemList[i] != 0)
@@ -469,14 +469,14 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((msX > sX + 24) && (msX < sX + 248) && (msY > sY + 120) && (msY < sY + 135))
         {
             m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 1;
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             return true;
         }
         // Cancel
         if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
             && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
             return true;
         }
@@ -486,8 +486,8 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((iItemIndex != -1) && (msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX)
             && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
         {
-            m_pGame->PlaySound('E', 14, 5);
-            m_pGame->PlaySound('E', 44, 0);
+            m_pGame->PlayGameSound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 44, 0);
             m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 2;
             m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = m_pGame->m_dwCurTime;
             return true;
@@ -495,7 +495,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX)
             && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemUpgrade);
             return true;
         }
@@ -518,14 +518,14 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
-		m_pGame->PlaySound('E', 29, 0);
+		m_pGame->PlayGameSound('E', 29, 0);
 		break;
 
 	case 6:
 		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
-		m_pGame->PlaySound('E', 29, 0);
+		m_pGame->PlayGameSound('E', 29, 0);
 		break;
 	}
 

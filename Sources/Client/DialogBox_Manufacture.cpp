@@ -212,7 +212,7 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_CREATEPORTION, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		m_pGame->PlaySound('E', 42, 0);
+		m_pGame->PlayGameSound('E', 42, 0);
 	}
 }
 
@@ -668,7 +668,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CRAFTITEM, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		m_pGame->PlaySound('E', 42, 0);
+		m_pGame->PlayGameSound('E', 42, 0);
 	}
 }
 
@@ -686,9 +686,9 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 			Info().cMode = 2;
 			Info().cStr[0] = 1;
 			Info().dwT1 = m_pGame->m_dwCurTime;
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			m_pGame->AddEventList(DLGBOX_CLICK_SKILLDLG1, 10);
-			m_pGame->PlaySound('E', 41, 0);
+			m_pGame->PlayGameSound('E', 41, 0);
 			return true;
 		}
 		break;
@@ -699,16 +699,16 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 			if (Info().sV1 == -1)
 			{
 				m_pGame->AddEventList(DLGBOX_CLICK_SKILLDLG2, 10);
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 			}
 			else
 			{
 				Info().cMode = 8;
 				Info().dwT1 = m_pGame->m_dwCurTime;
 				Info().cStr[1] = 1;
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 				m_pGame->AddEventList(DLGBOX_CLICK_SKILLDLG3, 10);
-				m_pGame->PlaySound('E', 51, 0);
+				m_pGame->PlayGameSound('E', 51, 0);
 			}
 			return true;
 		}
@@ -723,7 +723,7 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 				if ((msX >= sX + iAdjX + 44) && (msX <= sX + iAdjX + 135 + 44) && (msY >= sY + iAdjY + 55 + i * 15) && (msY <= sY + iAdjY + 55 + 14 + i * 15)) {
 					Info().cMode = 4;
 					Info().cStr[0] = i + Info().sView;
-					m_pGame->PlaySound('E', 14, 5);
+					m_pGame->PlayGameSound('E', 14, 5);
 					return true;
 				}
 			}
@@ -738,7 +738,7 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 				// Back
 				ResetItemSlots();
 				Info().cMode = 3;
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
 			}
 
@@ -750,8 +750,8 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 					Info().cMode = 5;
 					Info().cStr[1] = 0;
 					Info().dwT1 = m_pGame->m_dwCurTime;
-					m_pGame->PlaySound('E', 14, 5);
-					m_pGame->PlaySound('E', 44, 0);
+					m_pGame->PlayGameSound('E', 14, 5);
+					m_pGame->PlayGameSound('E', 44, 0);
 				}
 				return true;
 			}
@@ -763,7 +763,7 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 				// Back
 				ResetItemSlots();
 				Info().cMode = 3;
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
 			}
 		}
@@ -776,7 +776,7 @@ bool DialogBox_Manufacture::OnClick(short msX, short msY)
 			// Back
 			ResetItemSlots();
 			Info().cMode = 3;
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;

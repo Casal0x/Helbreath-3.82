@@ -1,7 +1,7 @@
-// Game.cpp: implementation of the CGame class.
-//
-//////////////////////////////////////////////////////////////////////
-
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#endif
 
 #include "Game.h"
 #include "ObjectIDRange.h"
@@ -16,10 +16,14 @@
 #include "SharedCalculations.h"
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <format>
+#include <chrono>
+#include <string>
+#include <charconv>
 #ifdef _WIN32
 #include <windows.h>
 #endif
-#include <charconv>
 
 // Renderer
 #include "RendererFactory.h"
@@ -576,7 +580,7 @@ void CGame::RestoreSprites()
 	}
 }
 
-bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4)
+bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4)
 {
 	char cMsg[300], cKey;
 	DWORD dwTime;
@@ -2386,7 +2390,7 @@ void CGame::_ShiftGuildOperationList()
 		}
 }
 
-void CGame::AddEventList(char* pTxt, char cColor, bool bDupAllow)
+void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 {
 	int i;
 	if ((bDupAllow == false) && (strcmp(m_stEventHistory[5].cTxt, pTxt) == 0)) return;
@@ -2598,8 +2602,6 @@ void CGame::ResponseShopContentsHandler(char* pData)
 		pItem->m_sSpecialEffect = pConfig->m_sSpecialEffect;
 		pItem->m_cSpeed = pConfig->m_cSpeed;
 
-		// Copy display name
-		pItem->SetDisplayName(pConfig->GetDisplayName());
 		shopIndex++;
 	}
 
@@ -4656,153 +4658,97 @@ void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
 
 void CGame::_LoadTextDlgContents(int cType)
 {
-	char* pContents, * token, cTemp[120], cFileName[120];
-	char   seps[] = "\n";
-	int    iIndex = 0, i;
-	uint32_t dwFileSize;
-	HANDLE hFile;
-	FILE* pFile;
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 	}
-	// cType
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
 
-	wsprintf(cTemp, "contents%d", cType);
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
+	std::string fileName = std::format("contents\\\\contents{}.txt", cType);
 
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return;
-	else
+	std::ifstream file(fileName);
+	if (!file) return;
+
+	std::string line;
+	int iIndex = 0;
+	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
 	{
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
+		if (!line.empty())
+		{
+			m_pMsgTextList[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
+			iIndex++;
+		}
 	}
-	fclose(pFile);
-	token = strtok(pContents, seps);
-	while (token != 0)
-	{
-		m_pMsgTextList[iIndex] = std::make_unique<CMsg>(0, token, 0);
-		token = strtok(NULL, seps);
-		iIndex++;
-	}
-	delete[] pContents;
 }
 
 int CGame::_iLoadTextDlgContents2(int iType)
 {
-	char* pContents, * token, cTemp[120], cFileName[120];
-	char   seps[] = "\n";
-	int    iIndex = 0, i;
-	uint32_t dwFileSize;
-	HANDLE hFile;
-	FILE* pFile;
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
 	{
 		if (m_pMsgTextList2[i] != 0)
 			m_pMsgTextList2[i].reset();
 	}
-	// cType
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
 
-	wsprintf(cTemp, "contents%d", iType);
+	std::string fileName = std::format("contents\\\\contents{}.txt", iType);
 
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return -1;
-	else
+	std::ifstream file(fileName);
+	if (!file) return -1;
+
+	std::string line;
+	int iIndex = 0;
+	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
 	{
-		pContents = new char[dwFileSize + 1];
-		if (pContents == 0) return -1;
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
+		if (!line.empty())
+		{
+			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
+			iIndex++;
+		}
 	}
-	fclose(pFile);
-	token = strtok(pContents, seps);
-	while (token != 0)
-	{
-		m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, token, 0);
-		token = strtok(NULL, seps);
-		iIndex++;
-	}
-	delete[] pContents;
 	return iIndex;
 }
 
 void CGame::_LoadGameMsgTextContents()
 {
-	char* pContents, * token, cTemp[120], cFileName[120];
-	char   seps[] = ";\n";
-	int    iIndex = 0, i;
-	uint32_t dwFileSize;
-	HANDLE hFile;
-	FILE* pFile;
-
-	for (i = 0; i < DEF_MAXGAMEMSGS; i++) {
+	for (int i = 0; i < DEF_MAXGAMEMSGS; i++)
+	{
 		if (m_pGameMsgList[i] != 0)
 			m_pGameMsgList[i].reset();
 	}
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
+	std::ifstream file("contents\\\\GameMsgList.txt");
+	if (!file) return;
 
-	strcpy(cTemp, "GameMsgList");
+	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
-
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return;
-	else {
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
+	int iIndex = 0;
+	size_t start = 0;
+	size_t end = 0;
+	while ((end = content.find_first_of(";\n", start)) != std::string::npos && iIndex < DEF_MAXGAMEMSGS)
+	{
+		if (end > start)
+		{
+			std::string token = content.substr(start, end - start);
+			m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token.c_str(), 0);
+			iIndex++;
+		}
+		start = end + 1;
 	}
-
-	fclose(pFile);
-
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token, 0);
-		token = strtok(NULL, seps);
-		iIndex++;
+	if (start < content.size() && iIndex < DEF_MAXGAMEMSGS)
+	{
+		std::string token = content.substr(start);
+		if (!token.empty())
+		{
+			m_pGameMsgList[iIndex] = std::make_unique<CMsg>(0, token.c_str(), 0);
+		}
 	}
-
-	delete[] pContents;
 }
 
-void CGame::_RequestMapStatus(char* pMapName, int iMode)
+void CGame::_RequestMapStatus(const char* pMapName, int iMode)
 {
 	bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_MAPSTATUS, 0, iMode, 0, 0, pMapName);
 }
 
-void CGame::AddMapStatusInfo(char* pData, bool bIsLastData)
+void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 {
 	char cTotal;
 	short sIndex;
@@ -5037,7 +4983,7 @@ void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 	}
 }
 
-void CGame::SetTopMsg(char* pString, unsigned char iLastSec)
+void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 {
 	std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
 	strcpy(m_cTopMsg, pString);
@@ -5128,9 +5074,9 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	}
 	if (iWarContribution > 0)
 	{
-		PlaySound('E', 23, 0, 0);
-		PlaySound('C', 21, 0, 0);
-		PlaySound('C', 22, 0, 0);
+		PlayGameSound('E', 23, 0, 0);
+		PlayGameSound('C', 21, 0, 0);
+		PlayGameSound('C', 22, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[22]->m_pMsg, 0); // Congratulations! Your nation
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[23]->m_pMsg, 0); // was victory in the battle!
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
@@ -5148,9 +5094,9 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	}
 	else if (iWarContribution < 0)
 	{
-		PlaySound('E', 24, 0, 0);
-		PlaySound('C', 12, 0, 0);
-		PlaySound('C', 13, 0, 0);
+		PlayGameSound('E', 24, 0, 0);
+		PlayGameSound('C', 12, 0, 0);
+		PlayGameSound('C', 13, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[28]->m_pMsg, 0); // Unfortunately! Your country
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[29]->m_pMsg, 0); // have lost the all out war.
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, " ", 0);
@@ -5165,7 +5111,7 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	}
 	else if (iWarContribution == 0)
 	{
-		PlaySound('E', 25, 0, 0);
+		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[50]->m_pMsg, 0); // The battle that you have participated
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[51]->m_pMsg, 0); // is already finished;
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[52]->m_pMsg, 0); //
@@ -5196,21 +5142,21 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 	{
 		switch (iWinnerSide) {
 		case 0:
-			PlaySound('E', 25, 0, 0);
+			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
 			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
 			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 1:
-			PlaySound('E', 25, 0, 0);
+			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[38]->m_pMsg, 0); // Aresden was victorious
 			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[39]->m_pMsg, 0); // and put an end to the war
 			m_pMsgTextList[3] = std::make_unique<CMsg>(0, " ", 0);
 			break;
 		case 2:
-			PlaySound('E', 25, 0, 0);
+			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[40]->m_pMsg, 0); // Elvine was victorious
 			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[41]->m_pMsg, 0); // and put an end to the war
@@ -5224,7 +5170,7 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 	{
 		if (iWinnerSide == 0)
 		{
-			PlaySound('E', 25, 0, 0);
+			PlayGameSound('E', 25, 0, 0);
 			m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
 			m_pMsgTextList[1] = std::make_unique<CMsg>(0, m_pGameMsgList[36]->m_pMsg, 0); // There was a draw in the
 			m_pMsgTextList[2] = std::make_unique<CMsg>(0, m_pGameMsgList[37]->m_pMsg, 0); // battle
@@ -5236,9 +5182,9 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 		{
 			if (iWinnerSide == iPlayerSide)
 			{
-				PlaySound('E', 23, 0, 0);
-				PlaySound('C', 21, 0, 0);
-				PlaySound('C', 22, 0, 0);
+				PlayGameSound('E', 23, 0, 0);
+				PlayGameSound('C', 21, 0, 0);
+				PlayGameSound('C', 22, 0, 0);
 				switch (iWinnerSide) {
 				case 1:
 					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!;
@@ -5266,9 +5212,9 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 			}
 			else if (iWinnerSide != iPlayerSide)
 			{
-				PlaySound('E', 24, 0, 0);
-				PlaySound('C', 12, 0, 0);
-				PlaySound('C', 13, 0, 0);
+				PlayGameSound('E', 24, 0, 0);
+				PlayGameSound('C', 12, 0, 0);
+				PlayGameSound('C', 13, 0, 0);
 				switch (iWinnerSide) {
 				case 1:
 					m_pMsgTextList[0] = std::make_unique<CMsg>(0, m_pGameMsgList[35]->m_pMsg, 0); // All out war finished!
@@ -5569,7 +5515,7 @@ void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
 		}
 }
 
-void CGame::PlaySound(char cType, int iNum, int iDist, long lPan)
+void CGame::PlayGameSound(char cType, int iNum, int iDist, long lPan)
 {
 	// Forward to AudioManager
 	SoundType type;
@@ -5587,7 +5533,7 @@ void CGame::PlaySound(char cType, int iNum, int iDist, long lPan)
 	default:
 		return;
 	}
-	AudioManager::Get().PlaySound(type, iNum, iDist, static_cast<int>(lPan));
+	AudioManager::Get().PlayGameSound(type, iNum, iDist, static_cast<int>(lPan));
 }
 
 bool CGame::_bCheckItemByType(ItemType type)
@@ -5930,39 +5876,32 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 {
 	int j, iErr, pX1, pY1, iX1, iY1, tX, tY;
 	char cDir;
-	uint32_t dwTime;
-	uint16_t wR1, wG1, wB1, wR2, wG2, wB2, wR3, wG3, wB3, wR4, wG4, wB4;
-	dwTime = m_dwCurTime;
-	sX = pX1 = iX1 = tX = sX;
-	sY = pY1 = iY1 = tY = sY;
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueMid.ToColorRef(), &wR1, &wG1, &wB1);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueDark.ToColorRef(), &wR2, &wG2, &wB2);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueDeep.ToColorRef(), &wR3, &wG3, &wB3);
-	CMisc::ColorTransfer(m_Renderer->GetPixelFormat(), GameColors::NightBlueBright.ToColorRef(), &wR4, &wG4, &wB4);
+	pX1 = iX1 = tX = sX;
+	pY1 = iY1 = tY = sY;
 
 	for (j = 0; j < 100; j++)
 	{
 		switch (cType) {
 		case 1:
 			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, 15, 15, 20);
-			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, wR1, wG1, wB1);
-			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, wR1, wG1, wB1);
-			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, wR1, wG1, wB1);
-			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, wR1, wG1, wB1);
+			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
+			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
+			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
+			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
 
-			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, wR2, wG2, wB2);
-			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, wR2, wG2, wB2);
-			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, wR2, wG2, wB2);
-			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, wR2, wG2, wB2);
+			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
+			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
+			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
+			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
 
-			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, wR3, wG3, wB3);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, wR3, wG3, wB3);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, wR3, wG3, wB3);
-			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, wR3, wG3, wB3);
+			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
+			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
 			break;
 
 		case 2:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, wR4, wG4, wB4, 0.5f);
+			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 0.5f);
 			break;
 		}
 		iErr = 0;
@@ -6115,46 +6054,18 @@ int CGame::_iGetBankItemCount()
 
 bool CGame::_bDecodeBuildItemContents()
 {
-	char cFileName[255], cTemp[255];
-	HANDLE hFile;
-	FILE* pFile;
-	uint32_t dwFileSize;
-	char* pBuffer;
-	bool   bRet;
-	int    i;
-
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
-		if (m_pBuildItemList[i] != 0)
-		{
-			m_pBuildItemList[i].reset();
-		}
-
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
-
-	strcpy(cTemp, "BItemcfg");
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
-
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return false;
-	else
+	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
 	{
-		pBuffer = new char[dwFileSize + 1];
-		std::memset(pBuffer, 0, dwFileSize + 1);
-		fread(pBuffer, dwFileSize, 1, pFile);
-		bRet = __bDecodeBuildItemContents(pBuffer);
-		delete[] pBuffer;
+		if (m_pBuildItemList[i] != 0)
+			m_pBuildItemList[i].reset();
 	}
-	fclose(pFile);
-	return bRet;
+
+	std::ifstream file("contents\\\\BItemcfg.txt");
+	if (!file) return false;
+
+	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+	return __bDecodeBuildItemContents(content);
 }
 
 bool CGame::_bCheckBuildItemStatus()
@@ -6393,124 +6304,127 @@ bool CGame::_ItemDropHistory(short sItemID)
 	return true;
 }
 
-bool CGame::__bDecodeBuildItemContents(char* pBuffer)
+bool CGame::__bDecodeBuildItemContents(const std::string& buffer)
 {
-	char* pContents, * token;
-	char seps[] = "= ,\t\n";
+	constexpr std::string_view seps = "= ,\t\n";
 	char cReadModeA = 0;
 	char cReadModeB = 0;
-	int  iIndex = 0;
-	pContents = pBuffer;
-	token = strtok(pContents, seps);
+	int iIndex = 0;
 
-	while (token != 0)
+	auto copyToCharArray = [](char* dest, size_t destSize, const std::string& src) {
+		std::memset(dest, 0, destSize);
+		size_t copyLen = std::min(src.length(), destSize - 1);
+		std::memcpy(dest, src.c_str(), copyLen);
+	};
+
+	size_t start = 0;
+	while (start < buffer.size())
 	{
-		if (cReadModeA != 0)
+		size_t end = buffer.find_first_of(seps, start);
+		if (end == std::string::npos) end = buffer.size();
+
+		if (end > start)
 		{
-			switch (cReadModeA) {
-			case 1:
-				switch (cReadModeB) {
+			std::string token = buffer.substr(start, end - start);
+
+			if (cReadModeA != 0)
+			{
+				switch (cReadModeA) {
 				case 1:
-					std::memset(m_pBuildItemList[iIndex]->m_cName, 0, sizeof(m_pBuildItemList[iIndex]->m_cName));
-					memcpy(m_pBuildItemList[iIndex]->m_cName, token, strlen(token));
-					cReadModeB = 2;
-					break;
-				case 2:
-					m_pBuildItemList[iIndex]->m_iSkillLimit = atoi(token);
-					cReadModeB = 3;
-					break;
-				case 3: // m_cElementName1
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName1, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName1));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName1, token, strlen(token));
-					cReadModeB = 4;
-					break;
-				case 4: // m_iElementCount1
-					m_pBuildItemList[iIndex]->m_iElementCount[1] = atoi(token);
-					cReadModeB = 5;
-					break;
-				case 5: // m_cElementName2
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName2, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName2));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName2, token, strlen(token));
-					cReadModeB = 6;
-					break;
-				case 6: // m_iElementCount2
-					m_pBuildItemList[iIndex]->m_iElementCount[2] = atoi(token);
-					cReadModeB = 7;
-					break;
-				case 7: // m_cElementName3
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName3, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName3));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName3, token, strlen(token));
-					cReadModeB = 8;
-					break;
-				case 8: // m_iElementCount3
-					m_pBuildItemList[iIndex]->m_iElementCount[3] = atoi(token);
-					cReadModeB = 9;
-					break;
-				case 9: // m_cElementName4
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName4, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName4));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName4, token, strlen(token));
-					cReadModeB = 10;
-					break;
-				case hb::owner::Slime: // m_iElementCount4
-					m_pBuildItemList[iIndex]->m_iElementCount[4] = atoi(token);
-					cReadModeB = 11;
-					break;
-				case hb::owner::Skeleton: // m_cElementName5
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName5, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName5));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName5, token, strlen(token));
-					cReadModeB = 12;
-					break;
-				case hb::owner::StoneGolem: // m_iElementCount5
-					m_pBuildItemList[iIndex]->m_iElementCount[5] = atoi(token);
-					cReadModeB = 13;
-					break;
-				case hb::owner::Cyclops: // m_cElementName6
-					std::memset(m_pBuildItemList[iIndex]->m_cElementName6, 0, sizeof(m_pBuildItemList[iIndex]->m_cElementName6));
-					memcpy(m_pBuildItemList[iIndex]->m_cElementName6, token, strlen(token));
-					cReadModeB = 14;
-					break;
-				case hb::owner::OrcMage: // m_iElementCount6
-					m_pBuildItemList[iIndex]->m_iElementCount[6] = atoi(token);
-					cReadModeB = 15;
-					break;
-
-				case hb::owner::ShopKeeper:
-					m_pBuildItemList[iIndex]->m_iSprH = atoi(token);
-					cReadModeB = 16;
-					break;
-
-				case hb::owner::GiantAnt:
-					m_pBuildItemList[iIndex]->m_iSprFrame = atoi(token);
-					cReadModeB = 17;
-					break;
-
-				case hb::owner::Scorpion:
-					m_pBuildItemList[iIndex]->m_iMaxSkill = atoi(token);
-
-					cReadModeA = 0;
-					cReadModeB = 0;
-					iIndex++;
+					switch (cReadModeB) {
+					case 1:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cName, sizeof(m_pBuildItemList[iIndex]->m_cName), token);
+						cReadModeB = 2;
+						break;
+					case 2:
+						m_pBuildItemList[iIndex]->m_iSkillLimit = std::stoi(token);
+						cReadModeB = 3;
+						break;
+					case 3:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName1, sizeof(m_pBuildItemList[iIndex]->m_cElementName1), token);
+						cReadModeB = 4;
+						break;
+					case 4:
+						m_pBuildItemList[iIndex]->m_iElementCount[1] = std::stoi(token);
+						cReadModeB = 5;
+						break;
+					case 5:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName2, sizeof(m_pBuildItemList[iIndex]->m_cElementName2), token);
+						cReadModeB = 6;
+						break;
+					case 6:
+						m_pBuildItemList[iIndex]->m_iElementCount[2] = std::stoi(token);
+						cReadModeB = 7;
+						break;
+					case 7:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName3, sizeof(m_pBuildItemList[iIndex]->m_cElementName3), token);
+						cReadModeB = 8;
+						break;
+					case 8:
+						m_pBuildItemList[iIndex]->m_iElementCount[3] = std::stoi(token);
+						cReadModeB = 9;
+						break;
+					case 9:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName4, sizeof(m_pBuildItemList[iIndex]->m_cElementName4), token);
+						cReadModeB = 10;
+						break;
+					case 10:
+						m_pBuildItemList[iIndex]->m_iElementCount[4] = std::stoi(token);
+						cReadModeB = 11;
+						break;
+					case 11:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName5, sizeof(m_pBuildItemList[iIndex]->m_cElementName5), token);
+						cReadModeB = 12;
+						break;
+					case 12:
+						if (token == "xxx")
+							m_pBuildItemList[iIndex]->m_iElementCount[5] = 0;
+						else
+							m_pBuildItemList[iIndex]->m_iElementCount[5] = std::stoi(token);
+						cReadModeB = 13;
+						break;
+					case 13:
+						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName6, sizeof(m_pBuildItemList[iIndex]->m_cElementName6), token);
+						cReadModeB = 14;
+						break;
+					case 14:
+						if(token == "xxx")
+							m_pBuildItemList[iIndex]->m_iElementCount[6] = 0;
+						else
+							m_pBuildItemList[iIndex]->m_iElementCount[6] = std::stoi(token);
+						cReadModeB = 15;
+						break;
+					case 15:
+						m_pBuildItemList[iIndex]->m_iSprH = std::stoi(token);
+						cReadModeB = 16;
+						break;
+					case 16:
+						m_pBuildItemList[iIndex]->m_iSprFrame = std::stoi(token);
+						cReadModeB = 17;
+						break;
+					case 17:
+						m_pBuildItemList[iIndex]->m_iMaxSkill = std::stoi(token);
+						cReadModeA = 0;
+						cReadModeB = 0;
+						iIndex++;
+						break;
+					}
 					break;
 				}
-				break;
-
-			default:
-				break;
 			}
-		}
-		else
-		{
-			if (memcmp(token, "BuildItem", 9) == 0)
+			else
 			{
-				cReadModeA = 1;
-				cReadModeB = 1;
-				m_pBuildItemList[iIndex] = std::make_unique<CBuildItem>();
+				if (token.starts_with("BuildItem"))
+				{
+					cReadModeA = 1;
+					cReadModeB = 1;
+					m_pBuildItemList[iIndex] = std::make_unique<CBuildItem>();
+				}
 			}
 		}
-		token = strtok(NULL, seps);
+		start = end + 1;
 	}
-	if ((cReadModeA != 0) || (cReadModeB != 0)) return false;
-	return true;
+	return (cReadModeA == 0) && (cReadModeB == 0);
 }
 
 bool CGame::_bCheckCurrentBuildItemStatus()
@@ -7102,7 +7016,6 @@ short CGame::FindItemIdByName(const char* cItemName)
 
 void CGame::NoticementHandler(char* pData)
 {
-	FILE* pFile;
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
@@ -7112,10 +7025,11 @@ void CGame::NoticementHandler(char* pData)
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseNoticementText>(
 			pData, sizeof(hb::net::PacketResponseNoticementText));
 		if (!pkt) return;
-		pFile = fopen("contents\\contents1000.txt", "wt");
-		if (pFile == 0) return;
-		fwrite(pkt->text, strlen(pkt->text), 1, pFile);
-		fclose(pFile);
+		{
+			std::ofstream file("contents\\contents1000.txt");
+			if (!file) return;
+			file << pkt->text;
+		}
 		m_dialogBoxManager.Info(DialogBoxId::Text).sX = 20;
 		m_dialogBoxManager.Info(DialogBoxId::Text).sY = 65;
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 1000, 0, 0);
@@ -7123,7 +7037,6 @@ void CGame::NoticementHandler(char* pData)
 	}
 	AddEventList("Press F1 for news and help.", 10);
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
-
 }
 
 int CGame::_iGetFOE(const PlayerStatus& status)
@@ -7190,42 +7103,36 @@ void CGame::ResponsePanningHandler(char* pData)
 **  description			:: Fixed Screen Shots																		**
 **********************************************************************************************************************/
 void CGame::CreateScreenShot()
-{	//HelShot20060307_173003_Warehouse000.jpg
-	int i;
-	FILE* pFile;
-	char cFn[256];
-	char LongMapName[128];
-	char SStime[32];
-	SYSTEMTIME SysTime;
-	GetLocalTime(&SysTime);
-	std::memset(LongMapName, 0, sizeof(LongMapName));
-	GetOfficialMapName(m_cMapName, LongMapName);
-	std::memset(SStime, 0, sizeof(SStime));
-	wsprintf(SStime, "%02d:%02d - %02d:%02d:%02d"
-		, SysTime.wMonth, SysTime.wDay
-		, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
-		, LongMapName);
-	TextLib::DrawTextAligned(GameFont::Default, 500 , 30, (650 ) - (500 ), 15, SStime, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b), TextLib::Align::TopCenter); //ScreenShot time
+{
+	char longMapName[128] = {};
+	GetOfficialMapName(m_cMapName, longMapName);
 
-	for (i = 0; i < 1000; i++)
+	auto now = std::chrono::system_clock::now();
+	auto time = std::chrono::system_clock::to_time_t(now);
+	std::tm tm{};
+	localtime_s(&tm, &time);
+
+	std::string timeStr = std::format("{:02d}:{:02d} - {:02d}:{:02d}:{:02d}",
+		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+	TextLib::DrawTextAligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
+		TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b),
+		TextLib::Align::TopCenter);
+
+	std::filesystem::create_directory("SAVE");
+
+	for (int i = 0; i < 1000; i++)
 	{
-		std::memset(cFn, 0, sizeof(cFn));
-		wsprintf(cFn, "Save\\HelShot%04d%02d%02d_%02d%02d%02d_%s%03d.bmp"
-			, SysTime.wYear, SysTime.wMonth, SysTime.wDay
-			, SysTime.wHour, SysTime.wMinute, SysTime.wSecond
-			, LongMapName
-			, i);
-		std::filesystem::create_directory("SAVE");
-		pFile = fopen(cFn, "rb");
-		if (pFile == 0)
-		{
-			m_Renderer->Screenshot(cFn);
+		std::string fileName = std::format("Save\\HelShot{:04d}{:02d}{:02d}_{:02d}{:02d}{:02d}_{}{:03d}.png",
+			tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday,
+			tm.tm_hour, tm.tm_min, tm.tm_sec,
+			longMapName, i);
 
-			wsprintf(G_cTxt, NOTIFYMSG_CREATE_SCREENSHOT1, cFn);
-			AddEventList(G_cTxt, 10);
+		if (!std::filesystem::exists(fileName))
+		{
+			m_Renderer->Screenshot(fileName.c_str());
+			AddEventList(std::format(NOTIFYMSG_CREATE_SCREENSHOT1, fileName).c_str(), 10);
 			return;
 		}
-		fclose(pFile);
 	}
 	AddEventList(NOTIFYMSG_CREATE_SCREENSHOT2, 10);
 }
@@ -7234,49 +7141,27 @@ void CGame::CreateScreenShot()
 
 void CGame::_LoadAgreementTextContents(char cType)
 {
-	char* pContents, * token, cTemp[120], cFileName[120];
-	char   seps[] = "\n";
-	int    iIndex = 0, i;
-	uint32_t dwFileSize;
-	HANDLE hFile;
-	FILE* pFile;
-
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
+	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	{
 		if (m_pAgreeMsgTextList[i] != 0)
 			m_pAgreeMsgTextList[i].reset();
 	}
 
-	std::memset(cTemp, 0, sizeof(cTemp));
-	std::memset(cFileName, 0, sizeof(cFileName));
+	std::string fileName = std::format("contents\\\\contents{}.txt", static_cast<int>(cType));
 
-	wsprintf(cTemp, "contents%d", cType);
+	std::ifstream file(fileName);
+	if (!file) return;
 
-	strcat(cFileName, "contents");
-	strcat(cFileName, "\\");
-	strcat(cFileName, "\\");
-	strcat(cFileName, cTemp);
-	strcat(cFileName, ".txt");
-
-	hFile = CreateFile(cFileName, GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
-	dwFileSize = GetFileSize(hFile, 0);
-	if (hFile != INVALID_HANDLE_VALUE) CloseHandle(hFile);
-
-	pFile = fopen(cFileName, "rt");
-	if (pFile == 0) return;
-	else {
-		pContents = new char[dwFileSize + 1];
-		std::memset(pContents, 0, dwFileSize + 1);
-		fread(pContents, dwFileSize, 1, pFile);
+	std::string line;
+	int iIndex = 0;
+	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
+	{
+		if (!line.empty())
+		{
+			m_pAgreeMsgTextList[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
+			iIndex++;
+		}
 	}
-
-	fclose(pFile);
-	token = strtok(pContents, seps);
-	while (token != 0) {
-		m_pAgreeMsgTextList[iIndex] = std::make_unique<CMsg>(0, token, 0);
-		token = strtok(NULL, seps);
-		iIndex++;
-	}
-	delete[] pContents;
 }
 
 
@@ -8285,7 +8170,7 @@ char CGame::GetOfficialMapName(char* pMapName, char* pName)
 	}
 }
 
-bool CGame::bCheckLocalChatCommand(char* pMsg)
+bool CGame::bCheckLocalChatCommand(const char* pMsg)
 {
 	return ChatCommandManager::Get().ProcessCommand(pMsg);
 }
@@ -8692,13 +8577,13 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 		if ((strlen(m_cMCName) == 0) || (strcmp(m_cMCName, m_pPlayer->m_cPlayerName) == 0) || (m_cMCName[0] == '_'))
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 0;
-			PlaySound('E', 14, 5);
+			PlayGameSound('E', 14, 5);
 			AddEventList(POINT_COMMAND_HANDLER1, 10);
 		}
 		else
 		{
 			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = 3;
-			PlaySound('E', 14, 5);
+			PlayGameSound('E', 14, 5);
 			std::memset(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr));
 			strcpy(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, m_cMCName);
 			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 1, 0, 0, m_cMCName);
@@ -8881,12 +8766,12 @@ void CGame::MotionResponseHandler(char* pData)
 		case 1:
 		case 2:
 		case 3:
-			PlaySound('C', 12, 0);
+			PlayGameSound('C', 12, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			PlaySound('C', 13, 0);
+			PlayGameSound('C', 13, 0);
 			break;
 		}
 		//m_pPlayer->m_Controller.SetCommandAvailable(true);
@@ -8963,7 +8848,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 						if ((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) && (m_pPlayer->m_iLU_Point > 0))
 						{
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
-							PlaySound('E', 14, 5);
+							PlayGameSound('E', 14, 5);
 						}
 					}
 					else // Centuu : restart
@@ -8974,7 +8859,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 							m_dwRestartCountTime = GameClock::GetTimeMS();
 							wsprintf(G_cTxt, DLGBOX_CLICK_SYSMENU1, m_cRestartCount); // "Restarting game....%d"
 							AddEventList(G_cTxt, 10);
-							PlaySound('E', 14, 5);
+							PlayGameSound('E', 14, 5);
 
 						}
 					}
@@ -9156,7 +9041,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	{
 		m_pGSock.reset();
 		m_pGSock.reset();
-		PlaySound('E', 14, 5);
+		PlayGameSound('E', 14, 5);
 		AudioManager::Get().StopSound(SoundType::Effect, 38);
 		AudioManager::Get().StopMusic();
 		ChangeGameMode(GameMode::MainMenu);
@@ -10977,7 +10862,7 @@ void CGame::MotionEventHandler(char* pData)
 					// GM immunity - show "* Immune *" with failure sound
 					strcpy(cTxt, " * Immune *");
 					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-					PlaySound('C', 17, 0);
+					PlayGameSound('C', 17, 0);
 				}
 				else if (sV1 != 0)
 				{
@@ -10995,7 +10880,7 @@ void CGame::MotionEventHandler(char* pData)
 				{
 					strcpy(cTxt, " * Failed! *");
 					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-					PlaySound('C', 17, 0);
+					PlayGameSound('C', 17, 0);
 				}
 				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
 				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
@@ -11021,7 +10906,7 @@ void CGame::MotionEventHandler(char* pData)
 	}
 }
 
-void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4)
+void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4)
 {
 	int i, iTxtIdx = 0;
 	char cTemp[120];
@@ -11066,7 +10951,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 		if (iV2 == 0) {
 			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
-				PlaySound('E', 25, 0, 0);
+				PlayGameSound('E', 25, 0, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
@@ -11075,7 +10960,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 			}
 			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
-				PlaySound('E', 25, 0, 0);
+				PlayGameSound('E', 25, 0, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
@@ -11084,7 +10969,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
 				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else PlaySound('E', 25, 0, 0);
+			else PlayGameSound('E', 25, 0, 0);
 		}
 		else
 		{
@@ -11092,9 +10977,9 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 			{
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
-					PlaySound('E', 23, 0, 0);
-					PlaySound('C', 21, 0, 0);
-					PlaySound('C', 22, 0, 0);
+					PlayGameSound('E', 23, 0, 0);
+					PlayGameSound('C', 21, 0, 0);
+					PlayGameSound('C', 22, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
@@ -11102,9 +10987,9 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
-					PlaySound('E', 24, 0, 0);
-					PlaySound('C', 12, 0, 0);
-					PlaySound('C', 13, 0, 0);
+					PlayGameSound('E', 24, 0, 0);
+					PlayGameSound('C', 12, 0, 0);
+					PlayGameSound('C', 13, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
@@ -11115,13 +11000,13 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
 					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlaySound('E', 25, 0, 0);
+				else PlayGameSound('E', 25, 0, 0);
 			}
 			else
 			{
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
-					PlaySound('E', 23, 0, 0);
+					PlayGameSound('E', 23, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
@@ -11129,7 +11014,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
-					PlaySound('E', 24, 0, 0);
+					PlayGameSound('E', 24, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
@@ -11140,7 +11025,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
 					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlaySound('E', 25, 0, 0);
+				else PlayGameSound('E', 25, 0, 0);
 			}
 		}
 	}
@@ -11175,7 +11060,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 		if (iV2 == 0) {
 			if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 			{
-				PlaySound('E', 25, 0, 0);
+				PlayGameSound('E', 25, 0, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[59]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[60]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[61]->m_pMsg, 0);
@@ -11184,7 +11069,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 			}
 			else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 			{
-				PlaySound('E', 25, 0, 0);
+				PlayGameSound('E', 25, 0, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[69]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[70]->m_pMsg, 0);
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[71]->m_pMsg, 0);
@@ -11193,16 +11078,16 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[74]->m_pMsg, 0);
 				for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 			}
-			else PlaySound('E', 25, 0, 0);
+			else PlayGameSound('E', 25, 0, 0);
 		}
 		else
 		{
 			if (iV1 != 0) {
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
-					PlaySound('E', 23, 0, 0);
-					PlaySound('C', 21, 0, 0);
-					PlaySound('C', 22, 0, 0);
+					PlayGameSound('E', 23, 0, 0);
+					PlayGameSound('C', 21, 0, 0);
+					PlayGameSound('C', 22, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[63]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[64]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[65]->m_pMsg, 0);
@@ -11210,9 +11095,9 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
-					PlaySound('E', 24, 0, 0);
-					PlaySound('C', 12, 0, 0);
-					PlaySound('C', 13, 0, 0);
+					PlayGameSound('E', 24, 0, 0);
+					PlayGameSound('C', 12, 0, 0);
+					PlayGameSound('C', 13, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[75]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[76]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[77]->m_pMsg, 0);
@@ -11223,13 +11108,13 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[82]->m_pMsg, 0);
 					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlaySound('E', 25, 0, 0);
+				else PlayGameSound('E', 25, 0, 0);
 			}
 			else
 			{
 				if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == true))
 				{
-					PlaySound('E', 23, 0, 0);
+					PlayGameSound('E', 23, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[66]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[67]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[68]->m_pMsg, 0);
@@ -11237,7 +11122,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 				}
 				else if ((m_pPlayer->m_bCitizen == true) && (m_pPlayer->m_bAresden == false))
 				{
-					PlaySound('E', 24, 0, 0);
+					PlayGameSound('E', 24, 0, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[83]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[84]->m_pMsg, 0);
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[85]->m_pMsg, 0);
@@ -11248,7 +11133,7 @@ void CGame::GrandMagicResult(char* pMapName, int iV1, int iV2, int iV3, int iV4,
 					m_pMsgTextList[iTxtIdx++] = std::make_unique<CMsg>(0, m_pGameMsgList[90]->m_pMsg, 0);
 					for (i = iTxtIdx; i < 18; i++) m_pMsgTextList[i] = std::make_unique<CMsg>(0, " ", 0);
 				}
-				else PlaySound('E', 25, 0, 0);
+				else PlayGameSound('E', 25, 0, 0);
 			}
 		}
 	}
@@ -11537,7 +11422,7 @@ void CGame::ItemEquipHandler(char cItemID)
 	GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 	wsprintf(G_cTxt, BITEMDROP_CHARACTER9, cStr1);
 	AddEventList(G_cTxt, 10);
-	PlaySound('E', 28, 0);
+	PlayGameSound('E', 28, 0);
 }
 
 /*********************************************************************************************************************
@@ -11690,21 +11575,21 @@ void CGame::ShowHeldenianVictory(short sSide)
 	else if (m_pPlayer->m_bAresden == false) iPlayerSide = 2;
 	switch (sSide) {
 	case 0:
-		PlaySound('E', 25, 0, 0);
+		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
 		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in a tie.", 0);
 		break;
 	case 1:
-		PlaySound('E', 25, 0, 0);
+		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
 		m_pMsgTextList[3] = std::make_unique<CMsg>(0, "in favor of Aresden.", 0);
 		break;
 	case 2:
-		PlaySound('E', 25, 0, 0);
+		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[0] = std::make_unique<CMsg>(0, "Heldenian holy war has been closed!", 0);
 		m_pMsgTextList[1] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[2] = std::make_unique<CMsg>(0, "Heldenian Holy war ended", 0);
@@ -11716,7 +11601,7 @@ void CGame::ShowHeldenianVictory(short sSide)
 	if (((iPlayerSide != 1) && (iPlayerSide != 2))   // Player not a normal citizen
 		|| (sSide == 0))								// or no winner
 	{
-		PlaySound('E', 25, 0, 0);
+		PlayGameSound('E', 25, 0, 0);
 		m_pMsgTextList[5] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[6] = std::make_unique<CMsg>(0, " ", 0);
 		m_pMsgTextList[7] = std::make_unique<CMsg>(0, " ", 0);
@@ -11726,9 +11611,9 @@ void CGame::ShowHeldenianVictory(short sSide)
 	{
 		if (sSide == iPlayerSide)
 		{
-			PlaySound('E', 23, 0, 0);
-			PlaySound('C', 21, 0, 0);
-			PlaySound('C', 22, 0, 0);
+			PlayGameSound('E', 23, 0, 0);
+			PlayGameSound('C', 21, 0, 0);
+			PlayGameSound('C', 22, 0, 0);
 			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "Congratulation.", 0);
 			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of victory,", 0);
 			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You will recieve a reward.", 0);
@@ -11736,9 +11621,9 @@ void CGame::ShowHeldenianVictory(short sSide)
 		}
 		else
 		{
-			PlaySound('E', 24, 0, 0);
-			PlaySound('C', 12, 0, 0);
-			PlaySound('C', 13, 0, 0);
+			PlayGameSound('E', 24, 0, 0);
+			PlayGameSound('C', 12, 0, 0);
+			PlayGameSound('C', 13, 0, 0);
 			m_pMsgTextList[5] = std::make_unique<CMsg>(0, "To our regret", 0);
 			m_pMsgTextList[6] = std::make_unique<CMsg>(0, "As cityzen of defeat,", 0);
 			m_pMsgTextList[7] = std::make_unique<CMsg>(0, "You cannot recieve any reward.", 0);

@@ -500,7 +500,7 @@ void CGame::Hotkey_Simple_Escape()
 		if ((m_bIsObserverMode == true) && (Input::IsShiftDown())) {
 			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
-			PlaySound('E', 14, 5);
+			PlayGameSound('E', 14, 5);
 		}
 		else if (m_cLogOutCount != -1) {
 			if (m_bForceDisconn == false) {

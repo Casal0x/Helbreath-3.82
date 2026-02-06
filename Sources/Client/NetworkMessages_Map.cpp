@@ -34,7 +34,7 @@ namespace NetworkMessageHandlers {
 		char msgBuf[128];
 		snprintf(msgBuf, sizeof(msgBuf), NOTIFY_MSG_HANDLER3, sV1, cTemp);
 		pGame->SetTopMsg(msgBuf, 10);
-		pGame->PlaySound('E', 25, 0, 0);
+		pGame->PlayGameSound('E', 25, 0, 0);
 	}
 
 	void HandleShowMap(CGame* pGame, char* pData)

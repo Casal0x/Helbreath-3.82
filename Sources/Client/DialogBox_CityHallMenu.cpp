@@ -409,7 +409,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_pPlayer->m_bCitizen == true) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 1;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -418,7 +418,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_pPlayer->m_iRewardGold <= 0) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 5;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -427,7 +427,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_pPlayer->m_iEnemyKillCount < 100) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -436,7 +436,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_stQuest.sQuestType == 0) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 8;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -448,7 +448,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 		if (m_pGame->m_pPlayer->m_bCitizen == false) return false;
 		if ((m_pGame->m_pPlayer->m_iLevel > 100) && (m_pGame->m_pPlayer->m_bHunter == false)) return false;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 9;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -458,7 +458,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 10;
 		m_pGame->m_iTeleportMapCount = -1;
 		m_pGame->bSendCommand(MSGID_REQUEST_TELEPORT_LIST, 0, 0, 0, 0, 0, 0);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -467,7 +467,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		if (m_pGame->m_bIsCrusadeMode == false) return false;
 		m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::CrusadeJob, 1, 0, 0);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -481,7 +481,7 @@ bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short m
 	{
 		m_pGame->bSendCommand(MSGID_REQUEST_CIVILRIGHT, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 2;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -489,7 +489,7 @@ bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short m
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -502,7 +502,7 @@ bool DialogBox_CityHallMenu::OnClickMode3_4(short sX, short sY, short msX, short
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 	return false;
@@ -515,7 +515,7 @@ bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short m
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETREWARDMONEY, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -523,7 +523,7 @@ bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short m
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -543,7 +543,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU47, strlen(DRAW_DIALOGBOX_CITYHALL_MENU47));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -558,7 +558,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU48, strlen(DRAW_DIALOGBOX_CITYHALL_MENU48));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -573,7 +573,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU49, strlen(DRAW_DIALOGBOX_CITYHALL_MENU49));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -588,7 +588,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU50, strlen(DRAW_DIALOGBOX_CITYHALL_MENU50));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -603,7 +603,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU51, strlen(DRAW_DIALOGBOX_CITYHALL_MENU51));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -618,7 +618,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU52, strlen(DRAW_DIALOGBOX_CITYHALL_MENU52));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -633,7 +633,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 		memcpy(m_pGame->m_cTakeHeroItemName, DRAW_DIALOGBOX_CITYHALL_MENU53, strlen(DRAW_DIALOGBOX_CITYHALL_MENU53));
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 11;
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1 = iReqHeroItemID;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -647,7 +647,7 @@ bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short m
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_CANCELQUEST, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -655,7 +655,7 @@ bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short m
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -669,7 +669,7 @@ bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short m
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_HUNTMODE, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -677,7 +677,7 @@ bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short m
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -708,7 +708,7 @@ bool DialogBox_CityHallMenu::OnClickMode11(short sX, short sY, short msX, short 
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETHEROMANTLE, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -716,7 +716,7 @@ bool DialogBox_CityHallMenu::OnClickMode11(short sX, short sY, short msX, short 
 	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 

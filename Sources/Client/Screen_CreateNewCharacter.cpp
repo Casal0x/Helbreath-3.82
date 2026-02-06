@@ -125,7 +125,7 @@ void Screen_CreateNewCharacter::on_update()
     // Handle mouse clicks
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        m_pGame->PlaySound('E', 14, 5);
+        m_pGame->PlayGameSound('E', 14, 5);
 
         // Determine which button was clicked
         int iMIbuttonNum = 0;

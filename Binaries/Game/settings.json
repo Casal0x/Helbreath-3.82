@@ -27,7 +27,7 @@
         "width": 800
     },
     "server": {
-        "address": "127.0.0.1",
+        "address": "199.187.160.239",
         "gamePort": 9907,
         "port": 2500
     },

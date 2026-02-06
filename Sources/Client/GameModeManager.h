@@ -16,8 +16,9 @@
 #include <type_traits>
 #include <tuple>
 
+#include "IGameScreen.h"
+
 class CGame;
-class IGameScreen;
 
 // Game mode constants - matches DEF_GAMEMODE_* values for backwards compatibility
 enum class GameMode : int8_t {

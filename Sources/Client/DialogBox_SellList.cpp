@@ -181,7 +181,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 				m_pGame->m_bIsItemDisabled[m_pGame->m_stSellItemList[i].iIndex] = false;
 				m_pGame->m_stSellItemList[i].iIndex = -1;
 
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 
 				// Compact the list
 				for (int x = 0; x < DEF_MAXSELLLIST - 1; x++)
@@ -205,7 +205,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->bSendCommand(MSGID_REQUEST_SELLITEMLIST, 0, 0, 0, 0, 0, 0);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		DisableThisDialog();
 		return true;
 	}
@@ -214,7 +214,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 	if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) &&
 		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		DisableThisDialog();
 		return true;
 	}

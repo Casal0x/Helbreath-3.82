@@ -54,7 +54,7 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 2:
-		m_pGame->PlaySound('E', 16, 0);
+		m_pGame->PlayGameSound('E', 16, 0);
 		if (Info().cStr[0] != 0)
 		{
 			sX = Info().sX + iAdjX + (Info().cStr[0] - (rand() % (Info().cStr[0] * 2)));

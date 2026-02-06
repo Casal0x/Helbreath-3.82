@@ -1115,9 +1115,8 @@
 #define DRAW_DIALOGBOX_MAGICSHOP15	"Req Str"
 #define	DRAW_DIALOGBOX_MAGICSHOP12	"Int"
 
-
-#define	DRAW_DIALOGBOX_NOTICEMSG1	" GameServer will be shut down after %d Minutes!"
-#define	DRAW_DIALOGBOX_NOTICEMSG2	" GameServer will be shut down soon!"
+#define DRAW_DIALOGBOX_NOTICEMSG1	"GameServer will be shut down after %d Minutes!"
+#define	DRAW_DIALOGBOX_NOTICEMSG2	"GameServer will be shut down soon!"
 #define	DRAW_DIALOGBOX_NOTICEMSG3	"You have to logout now to save your data"
 #define	DRAW_DIALOGBOX_NOTICEMSG4	"safely. After beginning of shutdown, user's"
 #define	DRAW_DIALOGBOX_NOTICEMSG5	"data are not saved and the lost data cannot"

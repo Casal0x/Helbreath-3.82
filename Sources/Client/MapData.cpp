@@ -1818,7 +1818,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 10)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						//if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
-						//	m_pGame->PlaySound('E', 16, sDist);
+						//	m_pGame->PlayGameSound('E', 16, sDist);
 						break;
 
 					case DEF_DYNAMICOBJECT_FIRE:// Firewall
@@ -1827,7 +1827,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
 						{
-							m_pGame->PlaySound('E', 9, sDist);
+							m_pGame->PlayGameSound('E', 9, sDist);
 						}
 						break;
 
@@ -1836,7 +1836,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
 						{
-							m_pGame->PlaySound('E', 9, sDist);
+							m_pGame->PlayGameSound('E', 9, sDist);
 						}
 						if ((m_pData[dX][dY].m_cDynamicObjectFrame % 6) == 0)
 						{
@@ -2137,7 +2137,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case hb::owner::DarkElf: // Dark-Elf
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1) || (m_pData[dX][dY].m_animation.cCurrentFrame == 5))
 							{
-								m_pGame->PlaySound('C', 8, sDist, lPan);
+								m_pGame->PlayGameSound('C', 8, sDist, lPan);
 								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									cTotalFrame = 8;
@@ -2168,170 +2168,170 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 						case hb::owner::Sorceress: // Snoopy: Sorceress
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 149, sDist, lPan);
+								m_pGame->PlayGameSound('M', 149, sDist, lPan);
 							break;
 
 						case hb::owner::ATK: // Snoopy: ATK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 142, sDist, lPan);
+								m_pGame->PlayGameSound('M', 142, sDist, lPan);
 							break;
 
 						case hb::owner::MasterElf: // Snoopy: MasterElf
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
-								if (true) m_pGame->PlaySound('C', 10, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 10, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::DSK: // Snoopy: DSK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 147, sDist, lPan);
+								m_pGame->PlayGameSound('M', 147, sDist, lPan);
 							break;
 
 						case hb::owner::Slime: // Slime
 						case hb::owner::TigerWorm: // TW
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 1, sDist, lPan);
+								m_pGame->PlayGameSound('M', 1, sDist, lPan);
 							break;
 
 						case hb::owner::Skeleton: // SKel
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 13, sDist, lPan);
+								m_pGame->PlayGameSound('M', 13, sDist, lPan);
 							break;
 
 						case hb::owner::Cyclops: // Cyclops
 						case hb::owner::HellClaw: // HC
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 41, sDist, lPan);
+								m_pGame->PlayGameSound('M', 41, sDist, lPan);
 							break;
 
 						case hb::owner::OrcMage: // Orc
 						case hb::owner::Stalker: // SK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 9, sDist, lPan);
+								m_pGame->PlayGameSound('M', 9, sDist, lPan);
 							break;
 
 						case hb::owner::GiantAnt: // Ant
 						case hb::owner::LightWarBeetle: // LWBeetle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 29, sDist, lPan);
+								m_pGame->PlayGameSound('M', 29, sDist, lPan);
 							break;
 
 						case hb::owner::Scorpion: // Scorpion
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 21, sDist, lPan);
+								m_pGame->PlayGameSound('M', 21, sDist, lPan);
 							break;
 
 						case hb::owner::Zombie: // Zombie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 17, sDist, lPan);
+								m_pGame->PlayGameSound('M', 17, sDist, lPan);
 							break;
 
 						case hb::owner::Amphis: // Snake
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 25, sDist, lPan);
+								m_pGame->PlayGameSound('M', 25, sDist, lPan);
 							break;
 
 						case hb::owner::ClayGolem: // Clay-Golem
 						case hb::owner::Gargoyle: // Gargoyle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 37, sDist, lPan);
+								m_pGame->PlayGameSound('M', 37, sDist, lPan);
 							break;
 
 						case hb::owner::Hellhound: // HH
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 5, sDist, lPan);
+								m_pGame->PlayGameSound('M', 5, sDist, lPan);
 							break;
 
 						case hb::owner::Troll: // Troll
 						case hb::owner::Minaus: // Snoopy: Ajout Minaus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 46, sDist, lPan);
+								m_pGame->PlayGameSound('M', 46, sDist, lPan);
 							break;
 
 						case hb::owner::Ogre: // Ogre
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 51, sDist, lPan);
+								m_pGame->PlayGameSound('M', 51, sDist, lPan);
 							break;
 
 						case hb::owner::Liche: // Liche
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 55, sDist, lPan);
+								m_pGame->PlayGameSound('M', 55, sDist, lPan);
 							break;
 
 						case hb::owner::Demon: // DD
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 59, sDist, lPan);
+								m_pGame->PlayGameSound('M', 59, sDist, lPan);
 							break;
 
 						case hb::owner::Unicorn: // Uni
 						case hb::owner::GodsHandKnightCK: // GHKABS
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 63, sDist, lPan);
+								m_pGame->PlayGameSound('M', 63, sDist, lPan);
 							break;
 
 						case hb::owner::WereWolf: // WW
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 67, sDist, lPan);
+								m_pGame->PlayGameSound('M', 67, sDist, lPan);
 							break;
 
 						case hb::owner::Bunny://Rabbit
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 71, sDist, lPan);
+								m_pGame->PlayGameSound('M', 71, sDist, lPan);
 							break;
 
 						case hb::owner::Cat://Cat
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 72, sDist, lPan);
+								m_pGame->PlayGameSound('M', 72, sDist, lPan);
 							break;
 
 						case hb::owner::GiantFrog://Giant-Frog
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 73, sDist, lPan);
+								m_pGame->PlayGameSound('M', 73, sDist, lPan);
 							break;
 
 						case hb::owner::MountainGiant://Mountain Giant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 87, sDist, lPan);
+								m_pGame->PlayGameSound('M', 87, sDist, lPan);
 							break;
 
 						case hb::owner::Ettin://Ettin
 						case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 91, sDist, lPan);
+								m_pGame->PlayGameSound('M', 91, sDist, lPan);
 							break;
 
 						case hb::owner::CannibalPlant://Cannibal Plant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 95, sDist, lPan);
+								m_pGame->PlayGameSound('M', 95, sDist, lPan);
 							break;
 
 						case hb::owner::Rudolph://Rudolph
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('C', 11, sDist, lPan);
+								m_pGame->PlayGameSound('C', 11, sDist, lPan);
 							break;
 
 						case hb::owner::DireBoar: // DireBoar
 						case hb::owner::GiantCrayfish: // Snoopy: GiantCrayFish
 						case hb::owner::Barbarian: // Snoopy: Barbarian
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 87, sDist, lPan);
+								m_pGame->PlayGameSound('M', 87, sDist, lPan);
 							break;
 
 						case hb::owner::Frost://Frost
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 25, sDist, lPan);
+								m_pGame->PlayGameSound('M', 25, sDist, lPan);
 							break;
 
 						case hb::owner::StoneGolem: // Stone-Golem
 						case hb::owner::BattleGolem: // BG
 						case hb::owner::IceGolem: // Snoopy: IceGolem
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 33, sDist, lPan);
+								m_pGame->PlayGameSound('M', 33, sDist, lPan);
 							break;
 							/*	case hb::owner::IceGolem: // IceGolem particulier a la v2.20, absent de la v3.51
 								if ( (m_pData[dX][dY].m_animation.cCurrentFrame == 1) )
-								{	m_pGame->PlaySound('M', 33, sDist, lPan);
+								{	m_pGame->PlayGameSound('M', 33, sDist, lPan);
 									switch (m_pData[dX][dY].m_animation.cDir) {
 									case 1 : dx = 0; dy = -1; break;
 									case 2 : dy = -1; dx = 1; break;
@@ -2350,52 +2350,52 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 						case hb::owner::FireWyvern: // Snoopy: Fite-Wyvern
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 106, sDist, lPan);
+								m_pGame->PlayGameSound('M', 106, sDist, lPan);
 							break;
 
 						case hb::owner::Tentocle: // Snoopy: Tentocle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 110, sDist, lPan);
+								m_pGame->PlayGameSound('M', 110, sDist, lPan);
 							break;
 
 						case hb::owner::ClawTurtle: // Snoopy: Claw Turtle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 114, sDist, lPan);
+								m_pGame->PlayGameSound('M', 114, sDist, lPan);
 							break;
 
 						case hb::owner::Centaur: // Snoopy: Centaurus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 117, sDist, lPan);
+								m_pGame->PlayGameSound('M', 117, sDist, lPan);
 							break;
 
 						case hb::owner::GiTree: // Snoopy: Giant Tree
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 122, sDist, lPan);
+								m_pGame->PlayGameSound('M', 122, sDist, lPan);
 							break;
 
 						case hb::owner::GiLizard: // Snoopy: Giant Lizard
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 126, sDist, lPan);
+								m_pGame->PlayGameSound('M', 126, sDist, lPan);
 							break;
 
 						case hb::owner::Dragon: // Snoopy: Dragon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 130, sDist, lPan);
+								m_pGame->PlayGameSound('M', 130, sDist, lPan);
 							break;
 
 						case hb::owner::Nizie: // Snoopy: Nizie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 134, sDist, lPan);
+								m_pGame->PlayGameSound('M', 134, sDist, lPan);
 							break;
 
 						case hb::owner::Abaddon: // void CGame::DrawDruncncity();Abaddon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 136, sDist, lPan);
+								m_pGame->PlayGameSound('M', 136, sDist, lPan);
 							break;
 
 						default:
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1) || (m_pData[dX][dY].m_animation.cCurrentFrame == 3))
-								m_pGame->PlaySound('C', 8, sDist, lPan);
+								m_pGame->PlayGameSound('C', 8, sDist, lPan);
 							break;
 						}
 					} // Fin du DEF_OBJECTMOVE
@@ -2440,7 +2440,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 15 + 10), (m_sPivotY + dY) * 32 - (rand() % 30) - 50, 0, 0, -(rand() % 8), 0);
 								}
-								m_pGame->PlaySound('C', 10, sDist, lPan);
+								m_pGame->PlayGameSound('C', 10, sDist, lPan);
 							}
 							break;
 						}
@@ -2456,7 +2456,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6:
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2) // vu comme case 2
 							{
-								if (true) m_pGame->PlaySound('C', 4, sDist); //bruit fleche
+								if (true) m_pGame->PlayGameSound('C', 4, sDist); //bruit fleche
 								cTotalFrame = 8;
 								cFrameMoveDots = 32 / cTotalFrame;
 								dx = dy = 0;
@@ -2501,26 +2501,26 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + ((rand() % 20) - 10), (m_sPivotY + dY) * 32 + ((rand() % 20) - 10), 0, 0, 0, 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + ((rand() % 20) - 10), (m_sPivotY + dY) * 32 + ((rand() % 20) - 10), 0, 0, 0, 0);
 								}
-								if (true) m_pGame->PlaySound('C', 11, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 11, sDist, lPan);
 							}
 							else if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) // vu comme case 5
 							{
 								sWeaponType = m_pData[dX][dY].m_appearance.iWeaponType;
 								if ((sWeaponType >= 1) && (sWeaponType <= 2))
 								{
-									m_pGame->PlaySound('C', 1, sDist, lPan);
+									m_pGame->PlayGameSound('C', 1, sDist, lPan);
 								}
 								else if ((sWeaponType >= 3) && (sWeaponType <= 19))
 								{
-									m_pGame->PlaySound('C', 2, sDist, lPan);
+									m_pGame->PlayGameSound('C', 2, sDist, lPan);
 								}
 								else if ((sWeaponType >= 20) && (sWeaponType <= 39))
 								{
-									m_pGame->PlaySound('C', 18, sDist, lPan);
+									m_pGame->PlayGameSound('C', 18, sDist, lPan);
 								}
 								else if ((sWeaponType >= 40) && (sWeaponType <= 59))
 								{
-									m_pGame->PlaySound('C', 3, sDist, lPan);
+									m_pGame->PlayGameSound('C', 3, sDist, lPan);
 								}
 							}
 							break;
@@ -2540,7 +2540,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::GATE_ROUND, m_sPivotX + m_pData[dX][dY].m_sV1, m_sPivotY + m_pData[dX][dY].m_sV2
 									, m_sPivotX + m_pData[dX][dY].m_sV1 + dX, m_sPivotY + m_pData[dX][dY].m_sV2 + dY, 0, 87);
-								//m_pGame->PlaySound('E', 43, sDist, lPan); // Son "wouufffff"
+								//m_pGame->PlayGameSound('E', 43, sDist, lPan); // Son "wouufffff"
 							}
 							break;
 						case hb::owner::AGC: // void CGame::DrawDruncncity();AGT (Heldenian)
@@ -2548,7 +2548,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::ARROW_FLYING, m_sPivotX + m_pData[dX][dY].m_sV1, m_sPivotY + m_pData[dX][dY].m_sV2
 									, m_sPivotX + m_pData[dX][dY].m_sV1 + dX, m_sPivotY + m_pData[dX][dY].m_sV2 + dY, 0, 89);
-								//m_pGame->PlaySound('E', 43, sDist, lPan); // Son "wouufffff"
+								//m_pGame->PlayGameSound('E', 43, sDist, lPan); // Son "wouufffff"
 							}
 							break;
 						case 1:
@@ -2568,12 +2568,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 1:
 								case 2:
 								case 3:
-									if (true) m_pGame->PlaySound('C', 23, sDist, lPan); // Critical sound
+									if (true) m_pGame->PlayGameSound('C', 23, sDist, lPan); // Critical sound
 									break;
 								case 4:
 								case 5:
 								case 6:
-									if (true) m_pGame->PlaySound('C', 24, sDist, lPan); // Critical sound
+									if (true) m_pGame->PlayGameSound('C', 24, sDist, lPan); // Critical sound
 									break;
 								}
 							}
@@ -2586,7 +2586,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 										m_pGame->m_pEffectManager->AddEffect(static_cast<EffectType>(m_pData[dX][dY].m_sV3), m_sPivotX + dX, m_sPivotY + dY
 											, m_sPivotX + dX + m_pData[dX][dY].m_sV1, m_sPivotY + dY + m_pData[dX][dY].m_sV2
 											, 0, m_pData[dX][dY].m_sOwnerType);
-										if (m_pData[dX][dY].m_sV3 >= 20) m_pGame->PlaySound('E', 43, sDist, lPan); // Son "loup�"
+										if (m_pData[dX][dY].m_sV3 >= 20) m_pGame->PlayGameSound('E', 43, sDist, lPan); // Son "loup�"
 									}
 									if (m_pData[dX][dY].m_appearance.iWeaponType == 15) // StormBlade
 									{
@@ -2645,28 +2645,28 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								{
 									if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									{
-										m_pGame->PlaySound('C', 1, sDist, lPan);
+										m_pGame->PlayGameSound('C', 1, sDist, lPan);
 									}
 								}
 								else if ((sWeaponType >= 3) && (sWeaponType <= 19))
 								{
 									if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									{
-										m_pGame->PlaySound('C', 2, sDist, lPan);
+										m_pGame->PlayGameSound('C', 2, sDist, lPan);
 									}
 								}
 								else if ((sWeaponType >= 20) && (sWeaponType <= 39))
 								{
 									if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									{
-										m_pGame->PlaySound('C', 18, sDist, lPan);
+										m_pGame->PlayGameSound('C', 18, sDist, lPan);
 									}
 								}
 								else if ((sWeaponType >= 40) && (sWeaponType <= 59))
 								{
 									if (m_pData[dX][dY].m_animation.cCurrentFrame == 3)
 									{
-										m_pGame->PlaySound('C', 3, sDist, lPan);
+										m_pGame->PlayGameSound('C', 3, sDist, lPan);
 									}
 								}
 							}
@@ -2674,58 +2674,58 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 						case hb::owner::ATK: // Snoopy: ATK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 140, sDist, lPan);
+								m_pGame->PlayGameSound('M', 140, sDist, lPan);
 							break;
 
 						case hb::owner::MasterElf: // Snoopy: MasterElf
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('C', 8, sDist, lPan);
+								m_pGame->PlayGameSound('C', 8, sDist, lPan);
 							break;
 
 						case hb::owner::DSK: // Snoopy: DSK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 145, sDist, lPan);
+								m_pGame->PlayGameSound('M', 145, sDist, lPan);
 							break;
 
 						case hb::owner::Beholder: // Beholder
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('E', 46, sDist, lPan);
+								m_pGame->PlayGameSound('E', 46, sDist, lPan);
 							break;
 
 						case hb::owner::DarkElf: // DE
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
-								if (true) m_pGame->PlaySound('C', 3, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 3, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::TigerWorm: // TW
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
-								if (true) m_pGame->PlaySound('C', 1, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 1, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::Slime: // Slime
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 2, sDist, lPan);
+								m_pGame->PlayGameSound('M', 2, sDist, lPan);
 							break;
 
 						case hb::owner::Skeleton: // Skell
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 14, sDist, lPan);
+								m_pGame->PlayGameSound('M', 14, sDist, lPan);
 							break;
 
 						case hb::owner::StoneGolem: // Stone-Golem
 						case hb::owner::IceGolem: // ICeGolem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 34, sDist, lPan);
+								m_pGame->PlayGameSound('M', 34, sDist, lPan);
 							break;
 
 						case hb::owner::Cyclops: // Cyclops
 						case hb::owner::HellClaw: // HC
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 42, sDist, lPan);
+								m_pGame->PlayGameSound('M', 42, sDist, lPan);
 							break;
 
 						case hb::owner::GodsHandKnight: // GHK
@@ -2734,207 +2734,207 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case hb::owner::Gargoyle: // GG
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
-								if (true) m_pGame->PlaySound('C', 2, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 2, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::OrcMage: // orc
 						case hb::owner::Stalker: // SK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 10, sDist, lPan);
+								m_pGame->PlayGameSound('M', 10, sDist, lPan);
 							break;
 
 						case hb::owner::GiantAnt: // Ant
 						case hb::owner::LightWarBeetle: // LWB
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 30, sDist, lPan);
+								m_pGame->PlayGameSound('M', 30, sDist, lPan);
 							break;
 
 						case hb::owner::Scorpion: // Scorpion
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 22, sDist, lPan);
+								m_pGame->PlayGameSound('M', 22, sDist, lPan);
 							break;
 
 						case hb::owner::Zombie: // Zombie
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 18, sDist, lPan);
+								m_pGame->PlayGameSound('M', 18, sDist, lPan);
 							break;
 
 						case hb::owner::Amphis: // Snake
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 26, sDist, lPan);
+								m_pGame->PlayGameSound('M', 26, sDist, lPan);
 							break;
 
 						case hb::owner::ClayGolem: // Clay-Golem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 38, sDist, lPan);
+								m_pGame->PlayGameSound('M', 38, sDist, lPan);
 							break;
 
 						case hb::owner::Hellhound: // HH
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 6, sDist, lPan);
+								m_pGame->PlayGameSound('M', 6, sDist, lPan);
 							break;
 
 						case hb::owner::Troll: // Troll
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 47, sDist, lPan);
+								m_pGame->PlayGameSound('M', 47, sDist, lPan);
 							break;
 
 						case hb::owner::Ogre: // Ogre
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 52, sDist, lPan);
+								m_pGame->PlayGameSound('M', 52, sDist, lPan);
 							break;
 
 						case hb::owner::Liche: // Liche
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 56, sDist, lPan);
+								m_pGame->PlayGameSound('M', 56, sDist, lPan);
 							break;
 
 						case hb::owner::Demon: // DD
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 60, sDist, lPan);
+								m_pGame->PlayGameSound('M', 60, sDist, lPan);
 							break;
 
 						case hb::owner::Unicorn: // Uni
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 64, sDist, lPan);
+								m_pGame->PlayGameSound('M', 64, sDist, lPan);
 							break;
 
 						case hb::owner::WereWolf: // WW
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-								m_pGame->PlaySound('M', 68, sDist, lPan);
+								m_pGame->PlayGameSound('M', 68, sDist, lPan);
 							break;
 
 						case hb::owner::Bunny://Rabbit
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 75, sDist, lPan);
+								m_pGame->PlayGameSound('M', 75, sDist, lPan);
 							break;
 
 						case hb::owner::Cat://Cat
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 76, sDist, lPan);
+								m_pGame->PlayGameSound('M', 76, sDist, lPan);
 							break;
 
 						case hb::owner::GiantFrog://Giant-Frog
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 77, sDist, lPan);
+								m_pGame->PlayGameSound('M', 77, sDist, lPan);
 							break;
 
 						case hb::owner::MountainGiant://Mountain Giant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 88, sDist, lPan);
+								m_pGame->PlayGameSound('M', 88, sDist, lPan);
 							break;
 
 						case hb::owner::Ettin://Ettin
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 92, sDist, lPan);
+								m_pGame->PlayGameSound('M', 92, sDist, lPan);
 							break;
 
 						case hb::owner::CannibalPlant://Cannibal Plant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 96, sDist, lPan);
+								m_pGame->PlayGameSound('M', 96, sDist, lPan);
 							break;
 
 						case hb::owner::Rudolph://Rudolph
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
-								if (true) m_pGame->PlaySound('M', 38, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('M', 38, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::DireBoar://DireBoar
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 68, sDist, lPan);
+								m_pGame->PlayGameSound('M', 68, sDist, lPan);
 							break;
 
 						case hb::owner::Frost://Frost
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
-								if (true) m_pGame->PlaySound('C', 4, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 4, sDist, lPan);
 							}
 							break;
 
 						case hb::owner::MasterOrc: // Snoopy: Master MageOrc
 						case hb::owner::Barbarian: // Snoopy: Barbarian
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 78, sDist, lPan);
+								m_pGame->PlayGameSound('M', 78, sDist, lPan);
 							break;
 
 						case hb::owner::GiantCrayfish: // Snoopy: GiantCrayFish
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 100, sDist, lPan);
+								m_pGame->PlayGameSound('M', 100, sDist, lPan);
 							break;
 
 						case hb::owner::FireWyvern: // Snoopy: Fire Wyvern
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 107, sDist, lPan);
+								m_pGame->PlayGameSound('M', 107, sDist, lPan);
 							break;
 
 						case hb::owner::Tentocle: // Snoopy: Tentocle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 111, sDist, lPan);
+								m_pGame->PlayGameSound('M', 111, sDist, lPan);
 							break;
 
 						case hb::owner::Abaddon: // Snoopy: Abaddon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 137, sDist, lPan);
+								m_pGame->PlayGameSound('M', 137, sDist, lPan);
 							break;
 
 						case hb::owner::ClawTurtle: // Snoopy: Claw-Turtle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 115, sDist, lPan);
+								m_pGame->PlayGameSound('M', 115, sDist, lPan);
 							break;
 
 						case hb::owner::Centaur: // Snoopy: Centaurus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 119, sDist, lPan);
+								m_pGame->PlayGameSound('M', 119, sDist, lPan);
 							break;
 
 						case hb::owner::GiTree: // Snoopy: Giant-Tree
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 123, sDist, lPan);
+								m_pGame->PlayGameSound('M', 123, sDist, lPan);
 							break;
 
 						case hb::owner::GiLizard: // Snoopy: GiantLizard
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 127, sDist, lPan);
+								m_pGame->PlayGameSound('M', 127, sDist, lPan);
 							break;
 
 						case hb::owner::Dragon: // Snoopy: Dragon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 131, sDist, lPan);
+								m_pGame->PlayGameSound('M', 131, sDist, lPan);
 							break;
 
 						case hb::owner::Nizie: //Snoopy:  Nizie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 135, sDist, lPan);
+								m_pGame->PlayGameSound('M', 135, sDist, lPan);
 							break;
 
 						case hb::owner::Minaus: // Snoopy: Minaus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 104, sDist, lPan);
+								m_pGame->PlayGameSound('M', 104, sDist, lPan);
 							break;
 
 						case hb::owner::HBT: // Snoopy: Heavy BattleTank
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 151, sDist, lPan);
+								m_pGame->PlayGameSound('M', 151, sDist, lPan);
 							break;
 
 						case hb::owner::CT: // Snoopy: Crosbow Turret
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 153, sDist, lPan);
+								m_pGame->PlayGameSound('M', 153, sDist, lPan);
 							break;
 
 						case hb::owner::AGC: // Snoopy: Cannon Turret
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-								m_pGame->PlaySound('M', 155, sDist, lPan);
+								m_pGame->PlayGameSound('M', 155, sDist, lPan);
 							break;
 
 						case hb::owner::Dummy: // Dummy
 						case hb::owner::EnergySphere: // Snoopy: EnergySphere
 						default:
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2) {
-								if (true) m_pGame->PlaySound('C', 2, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 2, sDist, lPan);
 							}
 							break;
 						}
@@ -2962,12 +2962,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 4);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 							{
-								if (true) m_pGame->PlaySound('C', 12, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 12, sDist, lPan);
 							}
 							break;
 						case 4:
@@ -2986,12 +2986,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 4);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 							{
-								if (true) m_pGame->PlaySound('C', 13, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 							}
 							break;
 
@@ -3010,7 +3010,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									iSoundIndex = 7; // Arrow hit
 								else iSoundIndex = 5;
 
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								if (iSoundIndex == 7) // Change the effect for Arrows hitting (no more at fixed heigh with arrow flying but on damage)
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, m_pData[dX][dY].m_sOwnerType);
@@ -3023,176 +3023,176 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
 							case hb::owner::Barbarian: // Snoopy: Barbarian
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlaySound('M', 144, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlayGameSound('M', 144, sDist, lPan);
 								break;
 
 							case hb::owner::ATK: // Snoopy: ATK
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlaySound('M', 143, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlayGameSound('M', 143, sDist, lPan);
 								break;
 
 							case hb::owner::MasterElf: // Snoopy: MasterElf
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlaySound('C', 7, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('C', 7, sDist, lPan);
 								break;
 
 							case hb::owner::DSK: // Snoopy: DSK
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlaySound('M', 148, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('M', 148, sDist, lPan);
 								break;
 
 							case hb::owner::DarkElf: // DE
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5 && true) m_pGame->PlaySound('C', 13, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5 && true) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 								break;
 
 							case hb::owner::Slime: // Slime
 							case hb::owner::Beholder: // BB
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 3, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 3, sDist, lPan);
 								break;
 
 							case hb::owner::Skeleton: // Skell
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 15, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 15, sDist, lPan);
 								break;
 
 							case hb::owner::StoneGolem: // Stone-Golem
 							case hb::owner::IceGolem: // IceGolem
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 35, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 35, sDist, lPan);
 								break;
 
 							case hb::owner::Cyclops: // Cyclops
 							case hb::owner::HellClaw: // HC
 							case hb::owner::Gargoyle: // GG
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 43, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 43, sDist, lPan);
 								break;
 
 							case hb::owner::OrcMage: // Orc
 							case hb::owner::Stalker: // SK
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 11, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 11, sDist, lPan);
 								break;
 
 							case hb::owner::GiantAnt: // Ant
 							case hb::owner::LightWarBeetle: // LWB
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 31, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 31, sDist, lPan);
 								break;
 
 							case hb::owner::Scorpion: // Scorp
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 23, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 23, sDist, lPan);
 								break;
 
 							case hb::owner::Zombie: // Zombie
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 19, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 19, sDist, lPan);
 								break;
 
 							case hb::owner::Amphis: // Snake
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 27, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 27, sDist, lPan);
 								break;
 
 							case hb::owner::ClayGolem: // Clay-Golem
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 39, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
 							case hb::owner::Hellhound: // HH
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 7, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 7, sDist, lPan);
 								break;
 
 							case hb::owner::Troll: // Troll
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 48, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 48, sDist, lPan);
 								break;
 
 							case hb::owner::Ogre: // Ogre
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 53, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 53, sDist, lPan);
 								break;
 
 							case hb::owner::Liche: // Liche
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 57, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 57, sDist, lPan);
 								break;
 
 							case hb::owner::Demon: // DD
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 61, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 61, sDist, lPan);
 								break;
 
 							case hb::owner::Unicorn: // Uni
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 65, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
 							case hb::owner::WereWolf: // WW
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 69, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
 
 							case hb::owner::Dummy: // dummy
 							case hb::owner::EnergySphere: // Snoopy: EnergyBall
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlaySound('M', 2, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 2, sDist, lPan);
 								break;
 
 							case hb::owner::Bunny://Rabbit
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 79, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 79, sDist, lPan);
 								break;
 
 							case hb::owner::Cat://Cat
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 80, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 80, sDist, lPan);
 								break;
 
 							case hb::owner::GiantFrog://Giant-Frog
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 81, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 81, sDist, lPan);
 								break;
 
 							case hb::owner::MountainGiant: // Mountain Giant
 							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 89, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 89, sDist, lPan);
 								break;
 
 							case hb::owner::Ettin://Ettin
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 93, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 93, sDist, lPan);
 								break;
 							case hb::owner::CannibalPlant://Cannabl Plant
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 97, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 97, sDist, lPan);
 								break;
 							case hb::owner::Rudolph://Rudolph
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 69, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
 							case hb::owner::DireBoar://DireBoar
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 78, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 78, sDist, lPan);
 								break;
 							case hb::owner::Frost://Frost
-								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlaySound('C', 13, sDist, lPan);
+								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 								break;
 
 							case hb::owner::GiantCrayfish: // Snoopy: Giant CrayFish
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 101, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
 							case hb::owner::Minaus: // Snoopy: Minaus
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 102, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 102, sDist, lPan);
 								break;
 
 							case hb::owner::Tentocle: // Snoopy: Tentocle
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 108, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 108, sDist, lPan);
 								break;
 
 							case hb::owner::Abaddon: // Snoopy: Abaddon
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 138, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 138, sDist, lPan);
 								break;
 
 							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 112, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 112, sDist, lPan);
 								break;
 
 							case hb::owner::Centaur: // Snoopy: Centaurus
 							case hb::owner::Sorceress: // Snoopy: Sorceress
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 116, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 116, sDist, lPan);
 								break;
 
 							case hb::owner::GiTree: // Snoopy: GiantTree
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 120, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 120, sDist, lPan);
 								break;
 
 							case hb::owner::GiLizard: // Snoopy: GiantLizard
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 124, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 124, sDist, lPan);
 								break;
 
 							case hb::owner::Dragon: // Snoopy: Dragon
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 128, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 128, sDist, lPan);
 								break;
 
 							case hb::owner::Nizie: // Snoopy: Nizie
-								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlaySound('M', 132, sDist, lPan);
+								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 132, sDist, lPan);
 								break;
 							}
 							break;
@@ -3218,12 +3218,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
 
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 4);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 							{
-								if (true) m_pGame->PlaySound('C', 12, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 12, sDist, lPan);
 							}
 							break;
 
@@ -3243,12 +3243,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 4);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 							{
-								if (true) m_pGame->PlaySound('C', 13, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 							}
 							break;
 
@@ -3266,204 +3266,204 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 4);
 							}
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
 							case hb::owner::ATK: //Snoopy:  ATK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('M', 143, sDist, lPan);
+									m_pGame->PlayGameSound('M', 143, sDist, lPan);
 								break;
 							case hb::owner::MasterElf: // Snoopy: MasterElf
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('C', 7, sDist, lPan);
+									m_pGame->PlayGameSound('C', 7, sDist, lPan);
 								break;
 							case hb::owner::Barbarian: // Snoopy: Barbarian
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('M', 144, sDist, lPan);
+									m_pGame->PlayGameSound('M', 144, sDist, lPan);
 								break;
 							case hb::owner::DSK: // Snoopy: DSK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('M', 148, sDist, lPan);
+									m_pGame->PlayGameSound('M', 148, sDist, lPan);
 								break;
 
 							case hb::owner::Slime: // Slime
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 3, sDist, lPan);
+									m_pGame->PlayGameSound('M', 3, sDist, lPan);
 								break;
 
 							case hb::owner::Skeleton: // Skell
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 15, sDist, lPan);
+									m_pGame->PlayGameSound('M', 15, sDist, lPan);
 								break;
 
 							case hb::owner::StoneGolem: // Stone Golem
 							case hb::owner::IceGolem: // IceGolem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 35, sDist, lPan);
+									m_pGame->PlayGameSound('M', 35, sDist, lPan);
 								break;
 
 							case hb::owner::Cyclops: // Cyclops
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 43, sDist, lPan);
+									m_pGame->PlayGameSound('M', 43, sDist, lPan);
 								break;
 
 							case hb::owner::OrcMage: // Orc
 							case hb::owner::Stalker: // SK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 11, sDist, lPan);
+									m_pGame->PlayGameSound('M', 11, sDist, lPan);
 								break;
 
 							case hb::owner::GiantAnt: // Ant
 							case hb::owner::LightWarBeetle: // LWB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 31, sDist, lPan);
+									m_pGame->PlayGameSound('M', 31, sDist, lPan);
 								break;
 
 							case hb::owner::Scorpion: // Scorpion
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 23, sDist, lPan);
+									m_pGame->PlayGameSound('M', 23, sDist, lPan);
 								break;
 
 							case hb::owner::Zombie: // Zombie
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 19, sDist, lPan);
+									m_pGame->PlayGameSound('M', 19, sDist, lPan);
 								break;
 
 							case hb::owner::Amphis: // Snake
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 27, sDist, lPan);
+									m_pGame->PlayGameSound('M', 27, sDist, lPan);
 								break;
 
 							case hb::owner::ClayGolem: // Clay-Golem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 39, sDist, lPan);
+									m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
 							case hb::owner::Hellhound: // HH
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 7, sDist, lPan);
+									m_pGame->PlayGameSound('M', 7, sDist, lPan);
 								break;
 
 							case hb::owner::Troll: // Troll
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 48, sDist, lPan);
+									m_pGame->PlayGameSound('M', 48, sDist, lPan);
 								break;
 
 							case hb::owner::Ogre: // Ogre
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 53, sDist, lPan);
+									m_pGame->PlayGameSound('M', 53, sDist, lPan);
 								break;
 
 							case hb::owner::Liche: // Liche
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 57, sDist, lPan);
+									m_pGame->PlayGameSound('M', 57, sDist, lPan);
 								break;
 
 							case hb::owner::Demon: // DD
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 61, sDist, lPan);
+									m_pGame->PlayGameSound('M', 61, sDist, lPan);
 								break;
 
 							case hb::owner::Unicorn: // Uni
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 65, sDist, lPan);
+									m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
 							case hb::owner::WereWolf: // WW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
-									m_pGame->PlaySound('M', 69, sDist, lPan);
+									m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
 							case hb::owner::Bunny://Rabbit
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 79, sDist, lPan);
+									m_pGame->PlayGameSound('M', 79, sDist, lPan);
 								break;
 
 							case hb::owner::Cat://Cat
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 80, sDist, lPan);
+									m_pGame->PlayGameSound('M', 80, sDist, lPan);
 								break;
 
 							case hb::owner::GiantFrog://Giant-Frog
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 81, sDist, lPan);
+									m_pGame->PlayGameSound('M', 81, sDist, lPan);
 								break;
 
 							case hb::owner::MountainGiant://Mountain Giant
 							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 89, sDist, lPan);
+									m_pGame->PlayGameSound('M', 89, sDist, lPan);
 								break;
 
 							case hb::owner::Ettin://Ettin
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 93, sDist, lPan);
+									m_pGame->PlayGameSound('M', 93, sDist, lPan);
 								break;
 
 							case hb::owner::CannibalPlant://Cannibal Plant
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 97, sDist, lPan);
+									m_pGame->PlayGameSound('M', 97, sDist, lPan);
 								break;
 
 							case hb::owner::Rudolph://Rudolph
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 69, sDist, lPan);
+									m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
 							case hb::owner::DireBoar://DireBoar
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 78, sDist, lPan);
+									m_pGame->PlayGameSound('M', 78, sDist, lPan);
 								break;
 
 							case hb::owner::GiantCrayfish: //Snoopy:  GiantCrayFish
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 101, sDist, lPan);
+									m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
 							case hb::owner::Minaus: // Snoopy: Minos
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 101, sDist, lPan);
+									m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
 							case hb::owner::Tentocle: // Snoopy: Tentocle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 108, sDist, lPan);
+									m_pGame->PlayGameSound('M', 108, sDist, lPan);
 								break;
 
 							case hb::owner::Abaddon: // Snoopy: Abaddon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 138, sDist, lPan);
+									m_pGame->PlayGameSound('M', 138, sDist, lPan);
 								break;
 
 							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 112, sDist, lPan);
+									m_pGame->PlayGameSound('M', 112, sDist, lPan);
 								break;
 
 							case hb::owner::Centaur: // Snoopy: Centaurus
 							case hb::owner::Sorceress: // Snoopy: Sorceress
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 116, sDist, lPan);
+									m_pGame->PlayGameSound('M', 116, sDist, lPan);
 								break;
 
 							case hb::owner::GiTree: // Snoopy: GiantTree
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 120, sDist, lPan);
+									m_pGame->PlayGameSound('M', 120, sDist, lPan);
 								break;
 
 							case hb::owner::GiLizard: // Snoopy: GiantLizard
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 124, sDist, lPan);
+									m_pGame->PlayGameSound('M', 124, sDist, lPan);
 								break;
 
 							case hb::owner::Dragon: // Snoopy: Dragon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 128, sDist, lPan);
+									m_pGame->PlayGameSound('M', 128, sDist, lPan);
 								break;
 
 							case hb::owner::Nizie: // Snoopy: Nizie
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 132, sDist, lPan);
+									m_pGame->PlayGameSound('M', 132, sDist, lPan);
 								break;
 
 							default:
@@ -3484,7 +3484,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 6:
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
-								if (true) m_pGame->PlaySound('C', 16, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 16, sDist, lPan);
 								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 20 - 10), (m_sPivotY + dY) * 32 - (rand() % 50) - 5, 0, 0, -(rand() % 8), 0);
@@ -3535,12 +3535,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 12);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 7)
 							{
-								if (true) m_pGame->PlaySound('C', 14, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 14, sDist, lPan);
 							}
 							break;
 
@@ -3561,12 +3561,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 12);
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 7)
 							{
-								if (true) m_pGame->PlaySound('C', 15, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', 15, sDist, lPan);
 							}
 							break;
 
@@ -3584,32 +3584,32 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								else if ((m_pData[dX][dY].m_sV2 >= 40) && (m_pData[dX][dY].m_sV2 <= 59))
 									iSoundIndex = 7;
 								else iSoundIndex = 5;
-								if (true) m_pGame->PlaySound('C', iSoundIndex, sDist, lPan);
+								if (true) m_pGame->PlayGameSound('C', iSoundIndex, sDist, lPan);
 								m_pGame->m_pEffectManager->AddEffect(EffectType::NORMAL_HIT, m_sPivotX + dX, m_sPivotY + dY, 0, 0, 0, 12);
 							}
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
 							case hb::owner::Beholder: // BB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 39, sDist, lPan);
+									m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
 							case hb::owner::Slime: // Slime
 							case hb::owner::Dummy: // Dummy
 							case hb::owner::EnergySphere: // Snoopy: EnergyBall
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 4, sDist, lPan);
+									m_pGame->PlayGameSound('M', 4, sDist, lPan);
 								break;
 
 							case hb::owner::Skeleton: // Skell
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 16, sDist, lPan);
+									m_pGame->PlayGameSound('M', 16, sDist, lPan);
 								break;
 
 							case hb::owner::StoneGolem: // Stone-Golem
 							case hb::owner::BattleGolem: // BG
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 36, sDist, lPan);
+									m_pGame->PlayGameSound('M', 36, sDist, lPan);
 								break;
 
 							case hb::owner::IceGolem: // IceGolem
@@ -3617,82 +3617,82 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								//								m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_2, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, 0, 0, 0 );
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) {
 									m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_2, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0);
-									m_pGame->PlaySound('M', 36, sDist, lPan);
+									m_pGame->PlayGameSound('M', 36, sDist, lPan);
 								}
 								break;
 
 							case hb::owner::Cyclops: // Cyclops
 							case hb::owner::HellClaw: // HC
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 44, sDist, lPan);
+									m_pGame->PlayGameSound('M', 44, sDist, lPan);
 								break;
 
 							case hb::owner::OrcMage: // Orc
 							case hb::owner::Stalker: // SK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 12, sDist, lPan);
+									m_pGame->PlayGameSound('M', 12, sDist, lPan);
 								break;
 
 							case hb::owner::GiantAnt: // Ant
 							case hb::owner::LightWarBeetle: // LWB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 32, sDist, lPan);
+									m_pGame->PlayGameSound('M', 32, sDist, lPan);
 								break;
 
 							case hb::owner::Scorpion: // Scorp
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 24, sDist, lPan);
+									m_pGame->PlayGameSound('M', 24, sDist, lPan);
 								break;
 
 							case hb::owner::Zombie: // Zombie
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 20, sDist, lPan);
+									m_pGame->PlayGameSound('M', 20, sDist, lPan);
 								break;
 
 							case hb::owner::Amphis: // Snake
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 28, sDist, lPan);
+									m_pGame->PlayGameSound('M', 28, sDist, lPan);
 								break;
 
 							case hb::owner::ClayGolem: // Clay-Golem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 40, sDist, lPan);
+									m_pGame->PlayGameSound('M', 40, sDist, lPan);
 								break;
 
 							case hb::owner::Hellhound: // HH
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 8, sDist, lPan);
+									m_pGame->PlayGameSound('M', 8, sDist, lPan);
 								break;
 
 							case hb::owner::Troll: // Troll
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 49, sDist, lPan);
+									m_pGame->PlayGameSound('M', 49, sDist, lPan);
 								break;
 
 							case hb::owner::Ogre: // Ogre
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 54, sDist, lPan);
+									m_pGame->PlayGameSound('M', 54, sDist, lPan);
 								break;
 
 							case hb::owner::Liche: // Liche
 							case hb::owner::TigerWorm: // TW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 58, sDist, lPan);
+									m_pGame->PlayGameSound('M', 58, sDist, lPan);
 								break;
 
 							case hb::owner::Demon: // DD
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 62, sDist, lPan);
+									m_pGame->PlayGameSound('M', 62, sDist, lPan);
 								break;
 
 							case hb::owner::Unicorn: // Uni
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 66, sDist, lPan);
+									m_pGame->PlayGameSound('M', 66, sDist, lPan);
 								break;
 
 							case hb::owner::WereWolf: // WW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('M', 70, sDist, lPan);
+									m_pGame->PlayGameSound('M', 70, sDist, lPan);
 								break;
 
 							case hb::owner::ArrowGuardTower: // AGT
@@ -3730,7 +3730,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, (m_sPivotX + dX) * 32 + 30 - (rand() % 60), (m_sPivotY + dY) * 32 + 30 - (rand() % 60), 0, 0, -1 * (rand() % 2));
 								}
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('M', 154, sDist, lPan);
+									m_pGame->PlayGameSound('M', 154, sDist, lPan);
 								break;
 
 							case hb::owner::AGC: // Snoopy: CannonTurret
@@ -3747,7 +3747,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_CASTING, (m_sPivotX + dX) * 32 + 30 - (rand() % 60), (m_sPivotY + dY) * 32 + 30 - (rand() % 60), 0, 0, -1 * (rand() % 2));
 								}
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
-									m_pGame->PlaySound('M', 156, sDist, lPan);
+									m_pGame->PlayGameSound('M', 156, sDist, lPan);
 								break;
 
 							case hb::owner::Catapult: // CP
@@ -3768,7 +3768,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							case hb::owner::Gargoyle: // GG
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 								{
-									m_pGame->PlaySound('M', 44, sDist, lPan);
+									m_pGame->PlayGameSound('M', 44, sDist, lPan);
 								}
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 11)
 								{
@@ -3787,127 +3787,127 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 							case hb::owner::Bunny:// Rabbit
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 83, sDist, lPan);
+									m_pGame->PlayGameSound('M', 83, sDist, lPan);
 								break;
 
 							case hb::owner::Cat: // Cat
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 84, sDist, lPan);
+									m_pGame->PlayGameSound('M', 84, sDist, lPan);
 								break;
 
 							case hb::owner::GiantFrog://Giant-Frog
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 85, sDist, lPan);
+									m_pGame->PlayGameSound('M', 85, sDist, lPan);
 								break;
 
 							case hb::owner::MountainGiant://Mountain Giant
 							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 90, sDist, lPan);
+									m_pGame->PlayGameSound('M', 90, sDist, lPan);
 								break;
 
 							case hb::owner::Ettin://Ettin
 							case hb::owner::Barbarian: // Snoopy: Barbarian
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 94, sDist, lPan);
+									m_pGame->PlayGameSound('M', 94, sDist, lPan);
 								break;
 
 							case hb::owner::ATK: // Snoopy: ATK
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 141, sDist, lPan);
+									m_pGame->PlayGameSound('M', 141, sDist, lPan);
 								break;
 
 							case hb::owner::DSK: // Snoopy: DSK
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 146, sDist, lPan);
+									m_pGame->PlayGameSound('M', 146, sDist, lPan);
 								break;
 
 							case hb::owner::Rudolph://Rudolph
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 65, sDist, lPan);
+									m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
 							case hb::owner::DireBoar://DireBoar
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 94, sDist, lPan);
+									m_pGame->PlayGameSound('M', 94, sDist, lPan);
 								break;
 
 							case hb::owner::Wyvern: // Wyvern
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('E', 7, sDist, lPan);
+									m_pGame->PlayGameSound('E', 7, sDist, lPan);
 								break;
 
 							case hb::owner::Dragon: // Snoopy: Dragon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 129, sDist, lPan);
+									m_pGame->PlayGameSound('M', 129, sDist, lPan);
 								break;
 
 							case hb::owner::Centaur: // Snoopy: Centaur
 							case hb::owner::Sorceress: // Snoopy: Sorceress
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 129, sDist, lPan);
+									m_pGame->PlayGameSound('M', 129, sDist, lPan);
 								break;
 
 							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 113, sDist, lPan);
+									m_pGame->PlayGameSound('M', 113, sDist, lPan);
 								break;
 
 							case hb::owner::FireWyvern: // Snoopy: FireWyvern
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 105, sDist, lPan);
+									m_pGame->PlayGameSound('M', 105, sDist, lPan);
 								break;
 
 
 							case hb::owner::CannibalPlant: // Cannibal Plant
 							case hb::owner::GiantCrayfish: // Snoopy: GiantGrayFish
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 98, sDist, lPan);
+									m_pGame->PlayGameSound('M', 98, sDist, lPan);
 								break;
 
 							case hb::owner::GiLizard: //Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 125, sDist, lPan);
+									m_pGame->PlayGameSound('M', 125, sDist, lPan);
 								break;
 
 							case hb::owner::GiTree: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 121, sDist, lPan);
+									m_pGame->PlayGameSound('M', 121, sDist, lPan);
 								break;
 
 							case hb::owner::Minaus: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 103, sDist, lPan);
+									m_pGame->PlayGameSound('M', 103, sDist, lPan);
 								break;
 
 							case hb::owner::Nizie: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 133, sDist, lPan);
+									m_pGame->PlayGameSound('M', 133, sDist, lPan);
 								break;
 
 							case hb::owner::Tentocle: //Snoopy: Tentocle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 109, sDist, lPan);
+									m_pGame->PlayGameSound('M', 109, sDist, lPan);
 								break;
 
 							case hb::owner::Abaddon: // Snoopy: Abaddon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 139, sDist, lPan);
+									m_pGame->PlayGameSound('M', 139, sDist, lPan);
 								break;
 
 							case hb::owner::MasterElf: // Snoopy: MasterElf
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 150, sDist, lPan);
+									m_pGame->PlayGameSound('M', 150, sDist, lPan);
 								break;
 
 							case hb::owner::HBT: // Snoopy: HBT
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
-									m_pGame->PlaySound('M', 152, sDist, lPan);
+									m_pGame->PlayGameSound('M', 152, sDist, lPan);
 								break;
 
 							default:
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
-									m_pGame->PlaySound('C', 15, sDist, lPan);
+									m_pGame->PlayGameSound('C', 15, sDist, lPan);
 								break;
 
 							case hb::owner::Frost: // Frost
@@ -3958,7 +3958,7 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 	{
 		if (bDropEffect == true)
 		{
-			m_pGame->PlaySound('E', 11, sDist);
+			m_pGame->PlayGameSound('E', 11, sDist);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + (10 - (rand() % 20)), (m_sPivotY + dY) * 32 + (10 - (rand() % 20)), 0, 0, (rand() % 2), 0);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + (10 - (rand() % 20)), (m_sPivotY + dY) * 32 + (10 - (rand() % 20)), 0, 0, (rand() % 2), 0);

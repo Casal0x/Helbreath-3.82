@@ -283,7 +283,7 @@ bool AudioManager::IsCategoryEnabled(SoundType type, int index) const
 	return m_bSoundEnabled;
 }
 
-void AudioManager::PlaySound(SoundType type, int index, int distance, int pan)
+void AudioManager::PlayGameSound(SoundType type, int index, int distance, int pan)
 {
 	if (!m_bSoundAvailable || !IsCategoryEnabled(type, index))
 		return;

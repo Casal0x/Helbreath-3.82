@@ -431,7 +431,7 @@ void EffectManager::DrawEffectsImpl()
 				if (cTempFrame < 0) break;
 				dX = (m_pEffectList[i]->m_mX) - m_pGame->m_Camera.GetX();
 				dY = (m_pEffectList[i]->m_mY) - m_pGame->m_Camera.GetY();
-				switch (rand() % 3) {
+				switch (static_cast<EffectType>(rand() % 3)) {
 				case EffectType::INVALID:      (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, SpriteLib::DrawParams::AdditiveNoColorKey(0.25f)); break;
 				case EffectType::NORMAL_HIT:   (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, SpriteLib::DrawParams::AdditiveNoColorKey()); break;
 				case EffectType::ARROW_FLYING: (*m_pEffectSpr)[0]->Draw(dX, dY + 20, 1, SpriteLib::DrawParams::AdditiveNoColorKey(0.7f)); break;
@@ -453,7 +453,7 @@ void EffectManager::DrawEffectsImpl()
 				}
 				else
 				{
-					switch (cTempFrame) {
+					switch (static_cast<EffectType>(cTempFrame)) {
 					case EffectType::BURST_LARGE:
 					case EffectType::BUBBLES_DRUNK:
 					case EffectType::FOOTPRINT:           (*m_pEffectSpr)[40]->Draw(dX, dY, 11); break;

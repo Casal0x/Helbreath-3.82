@@ -59,9 +59,9 @@ void IGameScreen::DrawVersion()
 
 // ============== Audio Helpers ==============
 
-void IGameScreen::PlaySound(char cType, int iNum, int iDist, long lPan)
+void IGameScreen::PlayGameSound(char cType, int iNum, int iDist, long lPan)
 {
-    m_pGame->PlaySound(cType, iNum, iDist, lPan);
+    m_pGame->PlayGameSound(cType, iNum, iDist, lPan);
 }
 
 // ============== Event/Message Helpers ==============

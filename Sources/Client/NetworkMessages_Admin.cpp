@@ -42,7 +42,7 @@ void HandleServerShutdown(CGame* pGame, char* pData)
 	if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Noticement) == false)
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Noticement, pkt->mode, 0, 0);
 	else pGame->m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode = pkt->mode;
-	pGame->PlaySound('E', 27, 0);
+	pGame->PlayGameSound('E', 27, 0);
 }
 
 } // namespace NetworkMessageHandlers

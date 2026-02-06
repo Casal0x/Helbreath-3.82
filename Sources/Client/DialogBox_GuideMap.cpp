@@ -246,7 +246,7 @@ bool DialogBox_GuideMap::OnClick(short msX, short msY)
 		// Toggle zoom mode
 		bool zoomMap = ConfigManager::Get().IsZoomMapEnabled();
 		ConfigManager::Get().SetZoomMapEnabled(!zoomMap);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 

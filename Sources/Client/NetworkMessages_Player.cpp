@@ -23,7 +23,7 @@ namespace NetworkMessageHandlers {
 		{
 			wsprintf(cTxt, NOTIFYMSG_CHARISMA_UP, pGame->m_pPlayer->m_iCharisma - iPrevChar);
 			pGame->AddEventList(cTxt, 10);
-			pGame->PlaySound('E', 21, 0);
+			pGame->PlayGameSound('E', 21, 0);
 		}
 		else
 		{
@@ -149,7 +149,7 @@ namespace NetworkMessageHandlers {
 			if (cValue == 1)
 			{
 				strcpy(cTxt, NOTIFYMSG_RATING_PLAYER1);
-				pGame->PlaySound('E', 23, 0);
+				pGame->PlayGameSound('E', 23, 0);
 			}
 		}
 		else

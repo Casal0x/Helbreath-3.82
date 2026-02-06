@@ -144,7 +144,7 @@ namespace NetworkMessageHandlers {
 		else wsprintf(cTxt, NOTIFYMSG_ITEMOBTAINED1, dwCount, cStr1);
 
 		pGame->AddEventList(cTxt, 10);
-		pGame->PlaySound('E', 20, 0);
+		pGame->PlayGameSound('E', 20, 0);
 
 		pGame->m_pMapData->bSetItem(pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, 0, 0, 0, false);
 
@@ -223,7 +223,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
 		pGame->m_pItemList[sItemIndex]->m_wCurLifeSpan = 0;
 
-		pGame->PlaySound('E', 10, 0);
+		pGame->PlayGameSound('E', 10, 0);
 	}
 
 	void HandleItemReleased(CGame* pGame, char* pData)
@@ -248,9 +248,9 @@ namespace NetworkMessageHandlers {
 			short sID = pGame->m_pItemList[sItemIndex]->m_sIDnum;
 			if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
 				sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
-				pGame->PlaySound('E', 53, 0);
+				pGame->PlayGameSound('E', 53, 0);
 			else
-				pGame->PlaySound('E', 29, 0);
+				pGame->PlayGameSound('E', 29, 0);
 		}
 	}
 
@@ -314,9 +314,9 @@ namespace NetworkMessageHandlers {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM4, cStr1);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 1) && (pGame->m_pPlayer->m_sPlayerType <= 3))
-						pGame->PlaySound('C', 19, 0);
+						pGame->PlayGameSound('C', 19, 0);
 					if ((pGame->m_pPlayer->m_sPlayerType >= 4) && (pGame->m_pPlayer->m_sPlayerType <= 6))
-						pGame->PlaySound('C', 20, 0);
+						pGame->PlayGameSound('C', 20, 0);
 				}
 			}
 			else if (pCfg->GetItemType() == ItemType::UseDepleteDest) {
@@ -327,7 +327,7 @@ namespace NetworkMessageHandlers {
 			else {
 				if (bIsUseItemResult == true) {
 					wsprintf(cTxt, NOTIFYMSG_ITEMDEPlETED_ERASEITEM6, cStr1);
-					pGame->PlaySound('E', 10, 0);
+					pGame->PlayGameSound('E', 10, 0);
 				}
 			}
 		}
@@ -853,7 +853,7 @@ namespace NetworkMessageHandlers {
 			{
 				pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 4;// Failed
 			}
-			pGame->PlaySound('E', 24, 5);
+			pGame->PlayGameSound('E', 24, 5);
 		}
 		else
 		{
@@ -861,17 +861,17 @@ namespace NetworkMessageHandlers {
 			{
 				pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // Success
 			}
-			pGame->PlaySound('E', 23, 5);
+			pGame->PlayGameSound('E', 23, 5);
 			switch (pGame->m_pPlayer->m_sPlayerType) {
 			case 1:
 			case 2:
 			case 3:
-				pGame->PlaySound('C', 21, 0);
+				pGame->PlayGameSound('C', 21, 0);
 				break;
 			case 4:
 			case 5:
 			case 6:
-				pGame->PlaySound('C', 22, 0);
+				pGame->PlayGameSound('C', 22, 0);
 				break;
 			}
 		}
@@ -885,7 +885,7 @@ namespace NetworkMessageHandlers {
 		if (!pkt) return;
 		sV1 = static_cast<short>(pkt->reason);
 		if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false) return;
-		pGame->PlaySound('E', 24, 5);
+		pGame->PlayGameSound('E', 24, 5);
 		switch (sV1) {
 		case 1:
 			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 8; // Failed
@@ -929,17 +929,17 @@ namespace NetworkMessageHandlers {
 		{
 			pGame->m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 3; // success
 		}
-		pGame->PlaySound('E', 23, 5);
+		pGame->PlayGameSound('E', 23, 5);
 		switch (pGame->m_pPlayer->m_sPlayerType) {
 		case 1:
 		case 2:
 		case 3:
-			pGame->PlaySound('C', 21, 0);
+			pGame->PlayGameSound('C', 21, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			pGame->PlaySound('C', 22, 0);
+			pGame->PlayGameSound('C', 22, 0);
 			break;
 		}
 	}

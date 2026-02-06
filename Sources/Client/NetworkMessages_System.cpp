@@ -33,12 +33,12 @@ void HandleTimeChange(CGame* pGame, char* pData)
 	if (!pkt) return;
 	G_cSpriteAlphaDegree = static_cast<char>(pkt->sprite_alpha);
 	switch (G_cSpriteAlphaDegree) {
-	case 1:	pGame->m_bIsXmas = false; pGame->PlaySound('E', 32, 0); break;
-	case 2: pGame->m_bIsXmas = false; pGame->PlaySound('E', 31, 0); break;
+	case 1:	pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 32, 0); break;
+	case 2: pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 31, 0); break;
 	case 3: // Snoopy Special night with chrismas bulbs
 		if (pGame->m_cWhetherEffectType > 3) pGame->m_bIsXmas = true;
 		else pGame->m_bIsXmas = false;
-		pGame->PlaySound('E', 31, 0);
+		pGame->PlayGameSound('E', 31, 0);
 		G_cSpriteAlphaDegree = 2; break;
 	}
 }

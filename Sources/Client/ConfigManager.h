@@ -21,9 +21,9 @@ public:
 	bool Save(const char* filename = "settings.json");
 
 	// Server address - uses DEF_SERVER_IP/PORT macros as defaults
-	const char* GetServerAddress() const { return m_serverAddress; }
-	int GetServerPort() const { return m_serverPort; }
-	int GetGameServerPort() const { return m_gameServerPort; }
+	//const char* GetServerAddress() const { return DEF_SERVER_IP; }
+	//int GetServerPort() const { return DEF_SERVER_PORT; }
+	//int GetGameServerPort() const { return DEF_GSERVER_PORT; }
 
 	// Shortcuts - replaces registry storage
 	// Magic shortcut: -1 = none, 0-99 = valid slot
@@ -108,11 +108,6 @@ private:
 
 	void SetDefaults();
 	int Clamp(int value, int min, int max);
-
-	// Server connection (defaults from DEF_SERVER_IP, DEF_SERVER_PORT, DEF_GSERVER_PORT)
-	char m_serverAddress[64];
-	int m_serverPort;
-	int m_gameServerPort;
 
 	// Shortcuts (matches m_sMagicShortCut, m_sShortCut[5], m_sRecentShortCut)
 	short m_magicShortcut;

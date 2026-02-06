@@ -101,15 +101,15 @@ void HandleQuestCompleted(CGame* pGame, char* pData)
 	case 1:
 	case 2:
 	case 3:
-		pGame->PlaySound('C', 21, 0);
+		pGame->PlayGameSound('C', 21, 0);
 		break;
 	case 4:
 	case 5:
 	case 6:
-		pGame->PlaySound('C', 22, 0);
+		pGame->PlayGameSound('C', 22, 0);
 		break;
 	}
-	pGame->PlaySound('E', 23, 0);
+	pGame->PlayGameSound('E', 23, 0);
 	pGame->AddEventList(NOTIFY_MSG_HANDLER44, 10);
 }
 

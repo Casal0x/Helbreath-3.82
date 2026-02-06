@@ -70,7 +70,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 10;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
-				m_pGame->PlaySound('C', 4, sDist);
+				m_pGame->PlayGameSound('C', 4, sDist);
 				break;
 
 			case EffectType::GOLD_DROP: // Gold
@@ -83,7 +83,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				if (sAbsX > sAbsY) sDist = sAbsX;
 				else sDist = sAbsY;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 12, sDist, lPan);
+				m_pGame->PlayGameSound('E', 12, sDist, lPan);
 				break;
 
 			case EffectType::FIREBALL_EXPLOSION: // FireBall Fire Explosion
@@ -97,7 +97,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
 
@@ -113,7 +113,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 2, sDist, lPan);
+				m_pGame->PlayGameSound('E', 2, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
 
@@ -128,7 +128,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 3, sDist, lPan);
+				m_pGame->PlayGameSound('E', 3, sDist, lPan);
 				break;
 
 			case EffectType::BURST_SMALL: // Burst
@@ -253,7 +253,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist * 2);
 				break;
 
@@ -269,7 +269,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
 
@@ -313,7 +313,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist * 2);
 				break;
 
@@ -328,7 +328,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist);
 				break;
 
@@ -343,7 +343,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 45, sDist, lPan);
+				m_pGame->PlayGameSound('E', 45, sDist, lPan);
 				break;
 
 			case EffectType::ICE_STRIKE_VARIANT_1: // Large Type 1, 2, 3, 4
@@ -363,7 +363,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 46, sDist, lPan);
+				m_pGame->PlayGameSound('E', 46, sDist, lPan);
 				break;
 
 			case EffectType::BLIZZARD_VARIANT_1: // Blizzard
@@ -380,7 +380,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 46, sDist, lPan);
+				m_pGame->PlayGameSound('E', 46, sDist, lPan);
 				break;
 
 			case EffectType::SMOKE_DUST: //
@@ -395,7 +395,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				if ((rand() % 4) == 1) m_pGame->SetCameraShakingEffect(sDist);
-				m_pGame->PlaySound('E', 47, sDist, lPan);
+				m_pGame->PlayGameSound('E', 47, sDist, lPan);
 				break;
 
 			case EffectType::SPARKLE_SMALL:
@@ -416,7 +416,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::HOLD_TWIST: // Hold twist
@@ -430,7 +430,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::STAR_TWINKLE: // star twingkling (effect armes brillantes)
@@ -452,7 +452,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
-				m_pGame->PlaySound('E', 45, sDist, lPan);
+				m_pGame->PlayGameSound('E', 45, sDist, lPan);
 				break;
 
 			case EffectType::BUFF_EFFECT_LIGHT: //
@@ -480,7 +480,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				break;
 
@@ -523,7 +523,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				break;
 
@@ -545,7 +545,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pEffectList[i]->m_iV1 = sDist;
 				//game->SetCameraShakingEffect(sDist, 2);
 				break;
@@ -561,7 +561,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 42, sDist, lPan);
+				m_pGame->PlayGameSound('E', 42, sDist, lPan);
 				break;
 
 			case EffectType::LIGHT_EFFECT_2: // identtique au cas 69
@@ -575,7 +575,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				else sDist = sAbsY;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 42, sDist, lPan);
+				m_pGame->PlayGameSound('E', 42, sDist, lPan);
 				break;
 
 			case EffectType::BLIZZARD_PROJECTILE: //
@@ -604,7 +604,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				sDist = sDist / 32;
 				lPan = ((sX - m_pGame->m_Camera.GetX()) - x) * 30;
 				if ((rand() % 4) == 1) m_pGame->SetCameraShakingEffect(sDist);
-				m_pGame->PlaySound('E', 47, sDist, lPan);
+				m_pGame->PlayGameSound('E', 47, sDist, lPan);
 				break;
 
 			case EffectType::AURA_EFFECT_1:
@@ -682,7 +682,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::HEAL: // Heal
@@ -693,7 +693,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 14;
 				m_pEffectList[i]->m_dwFrameTime = 80;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::CREATE_FOOD: // CreateFood
@@ -710,7 +710,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 13;
 				m_pEffectList[i]->m_dwFrameTime = 120;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::ENERGY_BOLT_FLYING: // Energy-Bolt
@@ -720,7 +720,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::RECALL: // Recall
@@ -730,7 +730,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 80;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::DEFENSE_SHIELD: // Defense-Shield
@@ -738,7 +738,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 12;
 				m_pEffectList[i]->m_dwFrameTime = 120;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::CELEBRATING_LIGHT: // Celebrating Light
@@ -758,7 +758,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::PROTECT_FROM_NM: // Protect form N.M
@@ -782,12 +782,12 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::TREMOR: // Tremor.
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				m_pGame->SetCameraShakingEffect(sDist, 2);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
@@ -817,7 +817,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 7;
 				m_pEffectList[i]->m_dwFrameTime = 10;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 40, sDist, lPan);
+				m_pGame->PlayGameSound('E', 40, sDist, lPan);
 				break;
 
 			case EffectType::CHILL_WIND: // ChillWind
@@ -839,7 +839,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 11;
 				m_pEffectList[i]->m_dwFrameTime = 100;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::LIGHTNING_BOLT: // LightningBolt
@@ -851,7 +851,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 10;
 				m_pEffectList[i]->m_dwFrameTime = 10;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 40, sDist, lPan);
+				m_pGame->PlayGameSound('E', 40, sDist, lPan);
 				break;
 
 			case EffectType::MASS_LIGHTNING_ARROW: // Mass-Ligtning-Arrow
@@ -878,7 +878,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				m_pEffectList[i]->m_cDir = CMisc::cCalcDirection(sX, sY, dX, dY);
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::MASS_CHILL_WIND_SPELL: // Mass-Chill-Wind
@@ -888,7 +888,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 
 			case EffectType::WORM_BITE_MASS: // worm-bite
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 4, sDist, lPan);
+				m_pGame->PlayGameSound('E', 4, sDist, lPan);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
 				AddEffectImpl( EffectType::FOOTPRINT, dX * 32 + (rand() % 120) - 60, dY * 32 + (rand() % 80) - 40, 0, 0, 0, 0);
@@ -912,14 +912,14 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 21;
 				m_pEffectList[i]->m_dwFrameTime = 70;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::ARMOR_BREAK: // Armor Break
 				m_pEffectList[i]->m_cMaxFrame = 13;
 				m_pEffectList[i]->m_dwFrameTime = 80;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::BLOODY_SHOCK_WAVE: // Bloody-Shock-Wave
@@ -942,7 +942,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_dwFrameTime = 60;
 				sDist = sDist / 32;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 5, sDist, lPan);
+				m_pGame->PlayGameSound('E', 5, sDist, lPan);
 				break;
 
 			case EffectType::METEOR_STRIKE_DESCENDING: // MS
@@ -959,7 +959,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 				m_pEffectList[i]->m_cMaxFrame = 0;
 				m_pEffectList[i]->m_dwFrameTime = 20;
 				lPan = -(((m_pGame->m_Camera.GetX() / 32) + fixx) - sX) * fixpan;
-				m_pGame->PlaySound('E', 1, sDist, lPan);
+				m_pGame->PlayGameSound('E', 1, sDist, lPan);
 				break;
 
 			case EffectType::MASS_MM_AURA_CASTER: // Snoopy: Moved for new spells: Caster aura for Mass MagicMissile

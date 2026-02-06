@@ -34,7 +34,7 @@ void DialogBox_HudPanel::ToggleDialogWithSound(DialogBoxId::Type dialogId)
 		m_pGame->m_dialogBoxManager.DisableDialogBox(dialogId);
 	else
 		EnableDialogBox(dialogId, 0, 0, 0);
-	m_pGame->PlaySound('E', 14, 5);
+	m_pGame->PlayGameSound('E', 14, 5);
 }
 
 void DialogBox_HudPanel::DrawGaugeBars()
@@ -224,7 +224,7 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 		case 3: EnableDialogBox(DialogBoxId::CrusadeCommander, 0, 0, 0); break;
 		default: return false;
 		}
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 
@@ -232,7 +232,7 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 	if (IsInButton(msX, msY, BTN_COMBAT_X1(), BTN_COMBAT_X2()))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 

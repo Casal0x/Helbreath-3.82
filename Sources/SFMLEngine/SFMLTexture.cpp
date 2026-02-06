@@ -127,7 +127,8 @@ void SFMLTexture::Unlock()
     }
 
     // Update the texture from the image
-    m_texture.loadFromImage(m_image);
+    if (!m_texture.loadFromImage(m_image))
+		throw std::runtime_error("Failed to update SFML texture from image.");
 
     // Update the render texture
     m_renderTexture.clear(sf::Color::Transparent);
@@ -239,7 +240,10 @@ bool SFMLTexture::Restore()
 
 void SFMLTexture::UpdateFromImage()
 {
-    m_texture.loadFromImage(m_image);
+    if (!m_texture.loadFromImage(m_image))
+    {
+		throw std::runtime_error("Failed to update SFML texture from image.");
+    }
 
     // Update the render texture
     m_renderTexture.clear(sf::Color::Transparent);

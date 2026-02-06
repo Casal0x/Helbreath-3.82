@@ -109,14 +109,14 @@ void Screen_CreateAccount::on_update()
         if (Input::IsMouseInRect(297, 398, 72, 20))
         {
             m_cCurFocus = 5;
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             _submit_create_account();
         }
         // Button 6: Clear
         if (Input::IsMouseInRect(392, 398, 72, 20))
         {
             m_cCurFocus = 6;
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             _clear_fields();
             m_cCurFocus = 1;
             m_cNewAcctPrevFocus = 0; // Trigger reset
@@ -125,7 +125,7 @@ void Screen_CreateAccount::on_update()
         if (Input::IsMouseInRect(488, 398, 72, 20))
         {
             m_cCurFocus = 7;
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
         }
     }
@@ -140,7 +140,7 @@ void Screen_CreateAccount::on_update()
     // Handle Tab key
     if (Input::IsKeyPressed(VK_TAB))
     {
-        m_pGame->PlaySound('E', 14, 5);
+        m_pGame->PlayGameSound('E', 14, 5);
         if (Input::IsShiftDown())
         {
             m_cCurFocus--;
@@ -156,7 +156,7 @@ void Screen_CreateAccount::on_update()
     // Handle Enter key
     if (Input::IsKeyPressed(VK_RETURN))
     {
-        m_pGame->PlaySound('E', 14, 5);
+        m_pGame->PlayGameSound('E', 14, 5);
 
         if (m_cCurFocus <= 4)
         {

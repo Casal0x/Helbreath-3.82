@@ -561,9 +561,9 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 			short sID = m_pGame->m_pItemList[cSelectedID]->m_sIDnum;
 			if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
 				sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
-				m_pGame->PlaySound('E', 53, 0);
+				m_pGame->PlayGameSound('E', 53, 0);
 			else
-				m_pGame->PlaySound('E', 29, 0);
+				m_pGame->PlayGameSound('E', 29, 0);
 		}
 
 		// Remove Angelic Stats

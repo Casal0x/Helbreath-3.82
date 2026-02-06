@@ -13,12 +13,12 @@ namespace NetworkMessageHandlers {
 		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
 		//Snoopy: MultiTrade
 		pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::ConfirmExchange);
-		pGame->PlaySound('E', 23, 5);
+		pGame->PlayGameSound('E', 23, 5);
 	}
 
 	void HandleCancelExchangeItem(CGame* pGame, char* pData)
 	{
-		pGame->PlaySound('E', 24, 5);
+		pGame->PlayGameSound('E', 24, 5);
 		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM1, 10);
 		pGame->AddEventList(NOTIFYMSG_CANCEL_EXCHANGEITEM2, 10);
 		//Snoopy: MultiTrade

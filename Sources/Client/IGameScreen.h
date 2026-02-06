@@ -78,7 +78,7 @@ protected:
     void DrawVersion();
 
     // Audio helpers
-    void PlaySound(char cType, int iNum, int iDist, long lPan = 0);
+    void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);
 
     // Event/message helpers
     void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);

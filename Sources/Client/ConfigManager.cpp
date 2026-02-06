@@ -47,12 +47,6 @@ void ConfigManager::Shutdown()
 
 void ConfigManager::SetDefaults()
 {
-	// Server defaults from compile-time macros
-	std::memset(m_serverAddress, 0, sizeof(m_serverAddress));
-	std::strcpy(m_serverAddress, DEF_SERVER_IP);
-	m_serverPort = DEF_SERVER_PORT;
-	m_gameServerPort = DEF_GSERVER_PORT;
-
 	// Shortcut defaults (none assigned)
 	m_magicShortcut = -1;
 	m_recentShortcut = -1;
@@ -126,17 +120,17 @@ bool ConfigManager::Load(const char* filename)
 			auto& server = j["server"];
 			if (server.contains("address"))
 			{
-				std::string addr = server["address"].get<std::string>();
-				std::strncpy(m_serverAddress, addr.c_str(), sizeof(m_serverAddress) - 1);
-				m_serverAddress[sizeof(m_serverAddress) - 1] = '\0';
+				//std::string addr = server["address"].get<std::string>();
+				//std::strncpy(DEF_SERVER_IP, addr.c_str(), sizeof(DEF_SERVER_IP) - 1);
+				//DEF_SERVER_IP[sizeof(DEF_SERVER_IP) - 1] = '\0';
 			}
 			if (server.contains("port"))
 			{
-				m_serverPort = server["port"].get<int>();
+				//DEF_SERVER_PORT = server["port"].get<int>();
 			}
 			if (server.contains("gamePort"))
 			{
-				m_gameServerPort = server["gamePort"].get<int>();
+				//DEF_GSERVER_PORT = server["gamePort"].get<int>();
 			}
 		}
 
@@ -340,9 +334,9 @@ bool ConfigManager::Save(const char* filename)
 	json j;
 
 	// Server settings
-	j["server"]["address"] = m_serverAddress;
-	j["server"]["port"] = m_serverPort;
-	j["server"]["gamePort"] = m_gameServerPort;
+	j["server"]["address"] = DEF_SERVER_IP;
+	j["server"]["port"] = DEF_SERVER_PORT;
+	j["server"]["gamePort"] = DEF_GSERVER_PORT;
 
 	// Shortcuts
 	j["shortcuts"]["magic"] = m_magicShortcut;

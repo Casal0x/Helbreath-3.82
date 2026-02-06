@@ -17,17 +17,17 @@ void HandleCraftingSuccess(CGame* pGame, char* pData)
 	pGame->m_iContributionPrice = 0;
 	pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Noticement);
 	pGame->AddEventList(NOTIFY_MSG_HANDLER42, 10);		// "Item manufacture success!"
-	pGame->PlaySound('E', 23, 5);
+	pGame->PlayGameSound('E', 23, 5);
 	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:
-		pGame->PlaySound('C', 21, 0);
+		pGame->PlayGameSound('C', 21, 0);
 		break;
 	case 4:
 	case 5:
 	case 6:
-		pGame->PlaySound('C', 22, 0);
+		pGame->PlayGameSound('C', 22, 0);
 		break;
 	}
 }
@@ -45,16 +45,16 @@ void HandleCraftingFail(CGame* pGame, char* pData)
 	switch (iV1) {
 	case 1:
 		pGame->AddEventList(DEF_MSG_NOTIFY_CRAFTING_NO_PART, 10);		// "There is not enough material"
-		pGame->PlaySound('E', 24, 5);
+		pGame->PlayGameSound('E', 24, 5);
 		break;
 	case 2:
 		pGame->AddEventList(DEF_MSG_NOTIFY_CRAFTING_NO_CONTRIB, 10);	// "There is not enough Contribution Point"
-		pGame->PlaySound('E', 24, 5);
+		pGame->PlayGameSound('E', 24, 5);
 		break;
 	default:
 	case 3:
 		pGame->AddEventList(DEF_MSG_NOTIFY_CRAFTING_FAILED, 10);		// "Crafting failed"
-		pGame->PlaySound('E', 24, 5);
+		pGame->PlayGameSound('E', 24, 5);
 		break;
 	}
 }
@@ -81,18 +81,18 @@ void HandleBuildItemSuccess(CGame* pGame, char* pData)
 		pGame->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = sV2;
 	}
 	pGame->AddEventList(NOTIFY_MSG_HANDLER42, 10);
-	pGame->PlaySound('E', 23, 5);
+	pGame->PlayGameSound('E', 23, 5);
 	switch (pGame->m_pPlayer->m_sPlayerType) {
 	case 1:
 	case 2:
 	case 3:
-		pGame->PlaySound('C', 21, 0);
+		pGame->PlayGameSound('C', 21, 0);
 		break;
 
 	case 4:
 	case 5:
 	case 6:
-		pGame->PlaySound('C', 22, 0);
+		pGame->PlayGameSound('C', 22, 0);
 		break;
 	}
 }
@@ -102,7 +102,7 @@ void HandleBuildItemFail(CGame* pGame, char* pData)
 	pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 	pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 6, 0, 0);
 	pGame->AddEventList(NOTIFY_MSG_HANDLER43, 10);
-	pGame->PlaySound('E', 24, 5);
+	pGame->PlayGameSound('E', 24, 5);
 }
 
 void HandlePortionSuccess(CGame* pGame, char* pData)

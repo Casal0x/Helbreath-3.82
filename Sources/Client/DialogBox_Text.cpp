@@ -133,7 +133,7 @@ bool DialogBox_Text::OnClick(short msX, short msY)
 		(msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 	{
 		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-		m_pGame->PlaySound('E', 14, 5);
+		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
 

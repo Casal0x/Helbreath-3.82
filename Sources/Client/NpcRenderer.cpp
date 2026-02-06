@@ -848,7 +848,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 			RenderHelpers::DrawBody(m_game, eq.iBodyIndex, sX, sY, cFrame, false, state.m_sOwnerType, state.m_status.bFrozen);
 		}
 
-		{ auto& br = m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
+		{ auto br = m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 		  m_game.m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top); }
 
 		// Berserk glow

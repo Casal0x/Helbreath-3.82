@@ -49,7 +49,7 @@ public:
 	void CleanupFinishedSounds();
 
 	// Sound effect playback
-	void PlaySound(SoundType type, int index, int distance = 0, int pan = 0);
+	void PlayGameSound(SoundType type, int index, int distance = 0, int pan = 0);
 	void PlaySoundLoop(SoundType type, int index);
 	void StopSound(SoundType type, int index);
 	void StopAllSounds();

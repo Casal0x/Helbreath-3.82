@@ -66,13 +66,13 @@ void Screen_MainMenu::on_update()
     {
         if (Input::IsShiftDown())
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus--;
             if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
         }
         else
         {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus++;
             if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
         }
@@ -81,15 +81,15 @@ void Screen_MainMenu::on_update()
     if (Input::IsKeyPressed(VK_RETURN) == true) {
         switch (m_cCurFocus) {
         case 1:
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         case 2:
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         case 3:
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::Quit);
             return;
         }
@@ -99,21 +99,21 @@ void Screen_MainMenu::on_update()
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         // Game button
         if (Input::IsMouseInRect(465, 238, 164, 22)) {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 1;
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         }
         // Account button
         else if (Input::IsMouseInRect(465, 276, 164, 22)) {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 2;
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         }
         // Quit button
         else if (Input::IsMouseInRect(465, 315, 164, 22)) {
-            m_pGame->PlaySound('E', 14, 5);
+            m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 3;
             m_pGame->ChangeGameMode(GameMode::Quit);
             return;

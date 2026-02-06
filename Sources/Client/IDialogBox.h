@@ -49,8 +49,8 @@ protected:
 	void PutString2(int iX, int iY, const char* pString, short sR, short sG, short sB);
 	void PutAlignedString(int iX1, int iX2, int iY, const char* pString, short sR = 0, short sG = 0, short sB = 0);
 	void PlaySoundEffect(char cType, int iNum, int iDist, long lPan = 0);
-	void AddEventList(char* pTxt, char cColor = 0, bool bDupAllow = true);
-	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char* pString, int iV4 = 0);
+	void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
+	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4 = 0);
 	void SetDefaultRect(short sX, short sY, short sSizeX, short sSizeY);
 
 	// Dialog management helpers

@@ -60,12 +60,6 @@
 
 #include "GameConstants.h"
 
-#ifndef WM_USER
-#define WM_USER 0x0400
-#endif
-#define WM_USER_GAMESOCKETEVENT	(WM_USER + 2000)
-#define WM_USER_LOGSOCKETEVENT	(WM_USER + 2001)
-
 // Overlay types for popup screens that render over base screens
 enum class OverlayType {
 	None = 0,
@@ -119,14 +113,14 @@ public:
 	void CrusadeContributionResult(int iWarContribution);
 	void CannotConstruct(int iCode);
 	void DrawTopMsg();
-	void SetTopMsg(char * pString, unsigned char iLastSec);
+	void SetTopMsg(const char* pString, unsigned char iLastSec);
 	void DrawObjectFOE(int ix, int iy, int iFrame);
-	void GrandMagicResult(char * pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4) ;
+	void GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, int iV4, int iHP1, int iHP2, int iHP3, int iHP4);
 	void MeteorStrikeComing(int iCode);
 
 	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
-	void AddMapStatusInfo(char * pData, bool bIsLastData);
-	void _RequestMapStatus(char * pMapName, int iMode);
+	void AddMapStatusInfo(const char* pData, bool bIsLastData);
+	void _RequestMapStatus(const char* pMapName, int iMode);
 	int  GetCharKind(char *str, int index);
 	void ReceiveString(char * pString);
 	void EndInputString();
@@ -176,7 +170,7 @@ public:
 	void WhetherObjectFrameCounter();
 	void DrawWhetherEffects();
 	bool bCheckExID(char * pName);
-	bool bCheckLocalChatCommand(char * pMsg);
+	bool bCheckLocalChatCommand(const char* pMsg);
 	char GetOfficialMapName(char * pMapName, char * pName);
 	uint32_t iGetLevelExp(int iLevel);
 	int _iCalcTotalWeight();
@@ -186,7 +180,7 @@ public:
 	bool _bCheckItemByType(hb::item::ItemType type);
 	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status);
 	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
-	void PlaySound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
+	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _RemoveChatMsgListByObjectID(int iObjectID);
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
@@ -204,7 +198,7 @@ void _LoadShopMenuContents(char cType);
 	void PutChatScrollList(char * pMsg, char cType);
 	void RequestTeleportAndWaitData();
 	void PointCommandHandler(int indexX, int indexY, char cItemID = -1);
-	void AddEventList(char * pTxt, char cColor = 0, bool bDupAllow = true);
+	void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
 	void ShowEventList(uint32_t dwTime);
 	void _ShiftGuildOperationList();
 	void _PutGuildOperationList(char * pName, char cOpMode);
@@ -252,7 +246,7 @@ void _LoadShopMenuContents(char cType);
 	void MotionResponseHandler(char * pData);
 	void GameRecvMsgHandler(uint32_t dwMsgSize, char * pData);
 	void DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, short sModX, short sModY, short msX, short msY);
-	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, char * pString, int iV4 = 0); // v1.4
+	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4 = 0); // v1.4
 	void RestoreSprites();
 	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
@@ -296,7 +290,7 @@ void _LoadShopMenuContents(char cType);
 
 	void ReserveFightzoneResponseHandler(char * pData);
 	int _iGetAttackType();
-	bool __bDecodeBuildItemContents(char * pBuffer);
+	bool __bDecodeBuildItemContents(const std::string& buffer);
 	int _iGetBankItemCount();
 	int _iGetTotalItemNum();
 	void StartBGM();  // Forwards to AudioManager based on current location

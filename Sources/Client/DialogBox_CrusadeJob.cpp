@@ -116,7 +116,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 		if (!m_pGame->m_pPlayer->m_bCitizen)
 		{
 			DisableDialogBox(DialogBoxId::CrusadeJob);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 
@@ -127,7 +127,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			{
 				m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 3, 0, 0, 0);
 				DisableDialogBox(DialogBoxId::CrusadeJob);
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
 			}
 		}
@@ -138,7 +138,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			{
 				m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 1, 0, 0, 0);
 				DisableDialogBox(DialogBoxId::CrusadeJob);
-				m_pGame->PlaySound('E', 14, 5);
+				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
 			}
 
@@ -149,7 +149,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 				{
 					m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 2, 0, 0, 0);
 					DisableDialogBox(DialogBoxId::CrusadeJob);
-					m_pGame->PlaySound('E', 14, 5);
+					m_pGame->PlayGameSound('E', 14, 5);
 					return true;
 				}
 			}
@@ -160,7 +160,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 		{
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
 			m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Text, 813, 0, 0);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;
@@ -183,7 +183,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			(msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
 		{
 			DisableDialogBox(DialogBoxId::CrusadeJob);
-			m_pGame->PlaySound('E', 14, 5);
+			m_pGame->PlayGameSound('E', 14, 5);
 			return true;
 		}
 		break;

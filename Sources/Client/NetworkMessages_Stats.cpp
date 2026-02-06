@@ -26,7 +26,7 @@ namespace NetworkMessageHandlers {
 		if ((pGame->m_pPlayer->m_iHP - iPrevHP) < 10) return;
 		wsprintf(cTxt, NOTIFYMSG_HP_UP, pGame->m_pPlayer->m_iHP - iPrevHP);
 		pGame->AddEventList(cTxt, 10);
-		pGame->PlaySound('E', 21, 0);
+		pGame->PlayGameSound('E', 21, 0);
 	}
 	else
 	{
@@ -57,7 +57,7 @@ namespace NetworkMessageHandlers {
 		{
 			wsprintf(cTxt, NOTIFYMSG_MP_UP, pGame->m_pPlayer->m_iMP - iPrevMP);
 			pGame->AddEventList(cTxt, 10);
-			pGame->PlaySound('E', 21, 0);
+			pGame->PlayGameSound('E', 21, 0);
 		}
 		else
 		{
@@ -80,7 +80,7 @@ namespace NetworkMessageHandlers {
 		{
 			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SP_UP, pGame->m_pPlayer->m_iSP - iPrevSP);
 			pGame->AddEventList(cTxt, 10);
-			pGame->PlaySound('E', 21, 0);
+			pGame->PlayGameSound('E', 21, 0);
 		}
 		else
 		{
@@ -140,12 +140,12 @@ namespace NetworkMessageHandlers {
 		case 1:
 		case 2:
 		case 3:
-			pGame->PlaySound('C', 21, 0);
+			pGame->PlayGameSound('C', 21, 0);
 			break;
 		case 4:
 		case 5:
 		case 6:
-			pGame->PlaySound('C', 22, 0);
+			pGame->PlayGameSound('C', 22, 0);
 			break;
 		}
 
