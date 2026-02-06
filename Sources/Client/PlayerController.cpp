@@ -24,6 +24,7 @@ void CPlayerController::Reset()
 	m_iPrevMoveY = 0;
 	m_bIsPrevMoveBlocked = false;
 	m_cPlayerTurn = 0;
+	m_cPendingStopDir = 0;
 }
 
 char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dstY,

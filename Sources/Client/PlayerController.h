@@ -49,6 +49,11 @@ public:
 	char GetPlayerTurn() const { return m_cPlayerTurn; }
 	void SetPlayerTurn(char turn) { m_cPlayerTurn = turn; }
 
+	// Pending stop direction (for right-click stop while moving)
+	char GetPendingStopDir() const { return m_cPendingStopDir; }
+	void SetPendingStopDir(char dir) { m_cPendingStopDir = dir; }
+	void ClearPendingStopDir() { m_cPendingStopDir = 0; }
+
 	// Direction Calculation
 	// Returns direction 1-8 to move from (sX,sY) toward (dstX,dstY), or 0 if no valid move
 	// bMoveCheck: if true, considers previously blocked moves
@@ -80,4 +85,7 @@ private:
 
 	// Turn direction for obstacle avoidance
 	char m_cPlayerTurn;
+
+	// Pending stop direction (applied when movement ends)
+	char m_cPendingStopDir;
 };
