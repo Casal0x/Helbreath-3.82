@@ -87,11 +87,6 @@ public:
 	bool IsMouseCaptureEnabled() const { return m_bCaptureMouse; }
 	void SetMouseCaptureEnabled(bool enabled);
 
-	// Patching mode (movement direction calculation)
-	// 0 = Original (diagonal priority), 1 = New (asymmetric zones), 2 = Shadow (symmetric 2:1)
-	int GetPatchingMode() const { return m_iPatchingMode; }
-	void SetPatchingMode(int mode);
-
 	// Tile grid overlay (simple dark lines)
 	bool IsTileGridEnabled() const { return m_bTileGrid; }
 	void SetTileGridEnabled(bool enabled);
@@ -104,9 +99,8 @@ public:
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
 
-	// Quick Actions - pickup during movement, 95% unlock, responsive stops
-	bool IsQuickActionsEnabled() const { return m_bQuickActions; }
-	void SetQuickActionsEnabled(bool enabled);
+	// Quick Actions - always enabled (pickup during movement, 95% unlock, responsive stops)
+	bool IsQuickActionsEnabled() const { return true; }
 
 	// Base resolution (640x480 or 800x600) - determines logical render size
 	int GetBaseResolutionWidth() const { return m_baseResolutionWidth; }
@@ -162,10 +156,8 @@ private:
 	bool m_bFullscreen;
 	bool m_bCaptureMouse;
 	bool m_bBorderless;
-	int m_iPatchingMode;  // 0=Original, 1=New, 2=Shadow
 	bool m_bTileGrid;
 	bool m_bPatchingGrid;
-	bool m_bQuickActions;
 
 	// Base resolution (640x480 or 800x600)
 	int m_baseResolutionWidth;

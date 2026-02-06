@@ -8,41 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "GlobalDef.h"
-#include "ConfigManager.h"
 
 enum {CODE_ENG,CODE_HAN1,CODE_HAN2};
 
 namespace CMisc
 {
-	// Original patching: always uses diagonal when both X and Y differ
-	static inline char cGetNextMoveDir_Original(short sX, short sY, short dX, short dY)
-	{
-		short absX, absY;
-		char  cRet = 0;
-
-		absX = sX - dX;
-		absY = sY - dY;
-
-		if ((absX == 0) && (absY == 0)) cRet = 0;
-
-		if (absX == 0) {
-			if (absY > 0) cRet = 1;
-			if (absY < 0) cRet = 5;
-		}
-		if (absY == 0) {
-			if (absX > 0) cRet = 7;
-			if (absX < 0) cRet = 3;
-		}
-		if ( (absX > 0)	&& (absY > 0) ) cRet = 8;
-		if ( (absX < 0)	&& (absY > 0) ) cRet = 2;
-		if ( (absX > 0)	&& (absY < 0) ) cRet = 6;
-		if ( (absX < 0)	&& (absY < 0) ) cRet = 4;
-
-		return cRet;
-	}
-
-	// New patching: uses asymmetric zones (N/S 3:1, E/W 4:1 ratio)
-	static inline char cGetNextMoveDir_New(short sX, short sY, short dX, short dY)
+	// Movement direction calculation using asymmetric zones (N/S 3:1, E/W 4:1 ratio)
+	// Returns direction 1-8 (N, NE, E, SE, S, SW, W, NW) or 0 if same position
+	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
 	{
 		short diffX = dX - sX;
 		short diffY = dY - sY;
@@ -72,57 +45,6 @@ namespace CMisc
 		if (diffX > 0 && diffY > 0) return 4;  // SE
 		if (diffX < 0 && diffY > 0) return 6;  // SW
 		return 8;  // NW
-	}
-
-	// Shadow patching: symmetric 3:1 ratio, checks dominant axis first
-	static inline char cGetNextMoveDir_Shadow(short sX, short sY, short dX, short dY)
-	{
-		short dx = dX - sX;
-		short dy = dY - sY;
-
-		if (dx == 0 && dy == 0) return 0;
-
-		short abs_dx = (dx < 0) ? -dx : dx;
-		short abs_dy = (dy < 0) ? -dy : dy;
-
-		if (abs_dx > abs_dy) {
-			// Horizontal dominant
-			if (dx > 0) {
-				// East quadrants
-				if (dy > abs_dx / 3) return 4;   // SE
-				if (dy < -abs_dx / 3) return 2;  // NE
-				return 3;  // E
-			} else {
-				// West quadrants
-				if (dy > abs_dx / 3) return 6;   // SW
-				if (dy < -abs_dx / 3) return 8;  // NW
-				return 7;  // W
-			}
-		} else {
-			// Vertical dominant
-			if (dy > 0) {
-				// South quadrants
-				if (dx > abs_dy / 3) return 4;   // SE
-				if (dx < -abs_dy / 3) return 6;  // SW
-				return 5;  // S
-			} else {
-				// North quadrants
-				if (dx > abs_dy / 3) return 2;   // NE
-				if (dx < -abs_dy / 3) return 8;  // NW
-				return 1;  // N
-			}
-		}
-	}
-
-	// Main function that checks config and dispatches to appropriate algorithm
-	// Mode: 0=Original, 1=New (asymmetric), 2=Shadow (symmetric 2:1)
-	static inline char cGetNextMoveDir(short sX, short sY, short dX, short dY)
-	{
-		switch (ConfigManager::Get().GetPatchingMode()) {
-			case 1:  return cGetNextMoveDir_New(sX, sY, dX, dY);
-			case 2:  return cGetNextMoveDir_Shadow(sX, sY, dX, dY);
-			default: return cGetNextMoveDir_Original(sX, sY, dX, dY);
-		}
 	}
 
 	static inline void GetPoint(int x0, int y0, int x1, int y1, int * pX, int * pY, int * pError, int iCount)

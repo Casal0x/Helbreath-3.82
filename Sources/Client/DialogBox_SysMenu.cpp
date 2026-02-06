@@ -382,19 +382,21 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Tile Grid (simple dark lines)
+#ifdef _DEBUG
+	// Tile Grid (simple dark lines) - DEBUG ONLY
 	PutString(labelX, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, "Tile Grid:", GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsTileGridEnabled(), msX, msY);
 
 	lineY += 18;
 
-	// Patching Grid (debug with zone colors)
+	// Patching Grid (debug with zone colors) - DEBUG ONLY
 	PutString(labelX, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, "Patching Grid:", GameColors::UILabel.ToColorRef());
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsPatchingGridEnabled(), msX, msY);
 
 	lineY += 18;
+#endif
 
 	// Display Mode - wide box showing current mode (clicking toggles)
 	PutString(labelX, lineY, "Display Mode:", GameColors::UILabel.ToColorRef());
@@ -633,41 +635,6 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 	PutString(labelX, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
 	PutString(labelX + 1, lineY, "Capture Mouse:", GameColors::UILabel.ToColorRef());
 	DrawToggle(valueX, lineY, ConfigManager::Get().IsMouseCaptureEnabled(), msX, msY);
-
-	lineY += 20;
-
-	// Patching Mode selector (3 options: Original / New / Shadow)
-	PutString(labelX, lineY, "Patching:", GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, "Patching:", GameColors::UILabel.ToColorRef());
-
-	const int patchMode = ConfigManager::Get().GetPatchingMode();
-	const int patchBoxY = lineY - 2;
-	const int patchBoxX = valueX - 40;  // Wider box needs to start earlier
-	const int patchBoxWidth = 110;
-	const int patchBoxHeight = 16;
-	const int regionWidth = patchBoxWidth / 3;
-
-	// Draw wide background box
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, patchBoxX, patchBoxY, 78);
-
-	// Calculate text positions
-	const char* labels[] = { "Original", "New", "Shadow" };
-	for (int i = 0; i < 3; i++) {
-		TextLib::TextMetrics metrics = TextLib::GetTextRenderer()->MeasureText(labels[i]);
-		int textX = patchBoxX + (regionWidth * i) + (regionWidth - metrics.width) / 2;
-		int textY = patchBoxY + (patchBoxHeight - metrics.height) / 2;
-		bool bHover = (msX >= patchBoxX + regionWidth * i && msX < patchBoxX + regionWidth * (i + 1) &&
-		               msY >= patchBoxY && msY <= patchBoxY + patchBoxHeight);
-		COLORREF color = (patchMode == i || bHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef();
-		PutString(textX, textY, labels[i], color);
-	}
-
-	lineY += 20;
-
-	// Quick Actions toggle (pickup during movement, 95% unlock, responsive stops)
-	PutString(labelX, lineY, "Quick Actions:", GameColors::UILabel.ToColorRef());
-	PutString(labelX + 1, lineY, "Quick Actions:", GameColors::UILabel.ToColorRef());
-	DrawToggle(valueX, lineY, ConfigManager::Get().IsQuickActionsEnabled(), msX, msY);
 }
 
 // =============================================================================
@@ -886,7 +853,8 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Tile Grid toggle
+#ifdef _DEBUG
+	// Tile Grid toggle - DEBUG ONLY
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsTileGridEnabled();
 		ConfigManager::Get().SetTileGridEnabled(!enabled);
@@ -896,7 +864,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Patching Grid toggle
+	// Patching Grid toggle - DEBUG ONLY
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsPatchingGridEnabled();
 		ConfigManager::Get().SetPatchingGridEnabled(!enabled);
@@ -905,6 +873,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	}
 
 	lineY += 18;
+#endif
 
 	// Display Mode toggle click (wide box, toggles between windowed/fullscreen)
 	const int modeBoxY = lineY - 2;
@@ -1079,47 +1048,6 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
 		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
 		Input::Get()->SetWindowActive(true);
-		PlaySoundEffect('E', 14, 5);
-		return true;
-	}
-
-	lineY += 20;
-
-	// Patching Mode selector (3 regions)
-	{
-		const int patchBoxY = lineY - 2;
-		const int patchBoxX = valueX - 40;
-		const int patchBoxWidth = 110;
-		const int patchBoxHeight = 16;
-		const int regionWidth = patchBoxWidth / 3;
-
-		if (msY >= patchBoxY && msY <= patchBoxY + patchBoxHeight && msX >= patchBoxX && msX <= patchBoxX + patchBoxWidth) {
-			int clickedRegion = (msX - patchBoxX) / regionWidth;
-			if (clickedRegion > 2) clickedRegion = 2;
-			ConfigManager::Get().SetPatchingMode(clickedRegion);
-			char msg[64];
-			const char* messages[] = {
-				"Original patching (diagonal priority).",
-				"New patching (asymmetric zones).",
-				"Shadow patching (symmetric 2:1)."
-			};
-			strcpy(msg, messages[clickedRegion]);
-			AddEventList(msg, 10);
-			PlaySoundEffect('E', 14, 5);
-			return true;
-		}
-	}
-
-	lineY += 20;
-
-	// Quick Actions toggle
-	if (IsInToggleArea(valueX, lineY, msX, msY)) {
-		bool enabled = ConfigManager::Get().IsQuickActionsEnabled();
-		ConfigManager::Get().SetQuickActionsEnabled(!enabled);
-		if (!enabled)
-			AddEventList("Quick Actions enabled.", 10);
-		else
-			AddEventList("Quick Actions disabled.", 10);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

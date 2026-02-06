@@ -644,12 +644,15 @@ void Screen_OnGame::RenderItemTooltip()
 }
 
 //=============================================================================
-// DrawTileGrid - Simple dark grid lines showing tile boundaries
+// DrawTileGrid - Simple dark grid lines showing tile boundaries (DEBUG ONLY)
 // Enabled via F12 > Graphics > Tile Grid toggle
 // Called BEFORE objects so it appears below entities
 //=============================================================================
 void Screen_OnGame::DrawTileGrid()
 {
+#ifndef _DEBUG
+    return;
+#else
     if (!ConfigManager::Get().IsTileGridEnabled()) return;
 
     constexpr int TILE_SIZE = 32;
@@ -666,14 +669,18 @@ void Screen_OnGame::DrawTileGrid()
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
         m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 40, 40, 40, GRID_ALPHA);
     }
+#endif
 }
 
 //=============================================================================
-// DrawPatchingGrid - Debug grid with direction zone colors
+// DrawPatchingGrid - Debug grid with direction zone colors (DEBUG ONLY)
 // Enabled via F12 > Graphics > Patching Grid toggle
 //=============================================================================
 void Screen_OnGame::DrawPatchingGrid()
 {
+#ifndef _DEBUG
+    return;
+#else
     if (!ConfigManager::Get().IsPatchingGridEnabled()) return;
 
     constexpr int TILE_SIZE = 32;
@@ -687,9 +694,8 @@ void Screen_OnGame::DrawPatchingGrid()
     short playerX = m_pGame->m_pPlayer->m_sPlayerX;
     short playerY = m_pGame->m_pPlayer->m_sPlayerY;
 
-    int patchMode = ConfigManager::Get().GetPatchingMode();
-
-    auto calcDir = [patchMode](short playerX, short playerY, short destX, short destY) -> int {
+    // Asymmetric zones algorithm (N/S 3:1, E/W 4:1)
+    auto calcDir = [](short playerX, short playerY, short destX, short destY) -> int {
         short dx = destX - playerX;
         short dy = destY - playerY;
         if (dx == 0 && dy == 0) return 0;
@@ -697,45 +703,17 @@ void Screen_OnGame::DrawPatchingGrid()
         short absX = (dx < 0) ? -dx : dx;
         short absY = (dy < 0) ? -dy : dy;
 
-        if (patchMode == 1) {
-            // New: asymmetric zones (N/S 3:1, E/W 4:1)
-            if (absY == 0) return (dx > 0) ? 3 : 7;
-            if (absX == 0) return (dy < 0) ? 1 : 5;
-            if (absY >= absX * 3) return (dy < 0) ? 1 : 5;
-            if (absX >= absY * 4) return (dx > 0) ? 3 : 7;
-        } else if (patchMode == 2) {
-            // Shadow: symmetric 3:1, checks dominant axis first
-            if (absX > absY) {
-                if (dx > 0) {
-                    if (dy > absX / 3) return 4;   // SE
-                    if (dy < -absX / 3) return 2;  // NE
-                    return 3;  // E
-                } else {
-                    if (dy > absX / 3) return 6;   // SW
-                    if (dy < -absX / 3) return 8;  // NW
-                    return 7;  // W
-                }
-            } else {
-                if (dy > 0) {
-                    if (dx > absY / 3) return 4;   // SE
-                    if (dx < -absY / 3) return 6;  // SW
-                    return 5;  // S
-                } else {
-                    if (dx > absY / 3) return 2;   // NE
-                    if (dx < -absY / 3) return 8;  // NW
-                    return 1;  // N
-                }
-            }
-        } else {
-            // Original: diagonal priority
-            if (absX == 0) return (dy > 0) ? 5 : 1;
-            if (absY == 0) return (dx > 0) ? 3 : 7;
-        }
-        // Diagonal fallback for Original and New
-        if (dx > 0 && dy < 0) return 2;
-        if (dx > 0 && dy > 0) return 4;
-        if (dx < 0 && dy > 0) return 6;
-        return 8;
+        // Cardinal directions
+        if (absY == 0) return (dx > 0) ? 3 : 7;  // E or W
+        if (absX == 0) return (dy < 0) ? 1 : 5;  // N or S
+        if (absY >= absX * 3) return (dy < 0) ? 1 : 5;  // N or S zone
+        if (absX >= absY * 4) return (dx > 0) ? 3 : 7;  // E or W zone
+
+        // Diagonal fallback
+        if (dx > 0 && dy < 0) return 2;  // NE
+        if (dx > 0 && dy > 0) return 4;  // SE
+        if (dx < 0 && dy > 0) return 6;  // SW
+        return 8;  // NW
     };
 
     auto getDirColor = [](int dir, int& r, int& g, int& b) {
@@ -776,4 +754,5 @@ void Screen_OnGame::DrawPatchingGrid()
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
         m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 20, 20, 20, 0.35f);
     }
+#endif
 }

@@ -91,10 +91,8 @@ void ConfigManager::SetDefaults()
 #endif
 	m_bCaptureMouse = true;
 	m_bBorderless = true;
-	m_iPatchingMode = 1;     // Default to new patching (0=Original, 1=New, 2=Shadow)
 	m_bTileGrid = false;     // Simple tile grid off by default
 	m_bPatchingGrid = false; // Patching debug grid off by default
-	m_bQuickActions = true;  // Quick actions enabled by default (pickup during movement, 95% unlock, etc.)
 
 	// Base resolution defaults to 640x480
 	m_baseResolutionWidth = 640;
@@ -301,15 +299,6 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bBorderless = display["borderless"].get<bool>();
 			}
-			if (display.contains("patchingMode"))
-			{
-				m_iPatchingMode = Clamp(display["patchingMode"].get<int>(), 0, 2);
-			}
-			else if (display.contains("newPatching"))
-			{
-				// Legacy: convert bool to int
-				m_iPatchingMode = display["newPatching"].get<bool>() ? 1 : 0;
-			}
 			if (display.contains("tileGrid"))
 			{
 				m_bTileGrid = display["tileGrid"].get<bool>();
@@ -317,10 +306,6 @@ bool ConfigManager::Load(const char* filename)
 			if (display.contains("patchingGrid"))
 			{
 				m_bPatchingGrid = display["patchingGrid"].get<bool>();
-			}
-			if (display.contains("quickActions"))
-			{
-				m_bQuickActions = display["quickActions"].get<bool>();
 			}
 		}
 
@@ -407,10 +392,8 @@ bool ConfigManager::Save(const char* filename)
 	j["display"]["fullscreen"] = m_bFullscreen;
 	j["display"]["captureMouse"] = m_bCaptureMouse;
 	j["display"]["borderless"] = m_bBorderless;
-	j["display"]["patchingMode"] = m_iPatchingMode;
 	j["display"]["tileGrid"] = m_bTileGrid;
 	j["display"]["patchingGrid"] = m_bPatchingGrid;
-	j["display"]["quickActions"] = m_bQuickActions;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -717,17 +700,6 @@ void ConfigManager::SetBaseResolution(int width, int height)
 	}
 }
 
-void ConfigManager::SetPatchingMode(int mode)
-{
-	mode = Clamp(mode, 0, 2);
-	if (m_iPatchingMode != mode)
-	{
-		m_iPatchingMode = mode;
-		m_bDirty = true;
-		Save();
-	}
-}
-
 void ConfigManager::SetTileGridEnabled(bool enabled)
 {
 	if (m_bTileGrid != enabled)
@@ -743,16 +715,6 @@ void ConfigManager::SetPatchingGridEnabled(bool enabled)
 	if (m_bPatchingGrid != enabled)
 	{
 		m_bPatchingGrid = enabled;
-		m_bDirty = true;
-		Save();
-	}
-}
-
-void ConfigManager::SetQuickActionsEnabled(bool enabled)
-{
-	if (m_bQuickActions != enabled)
-	{
-		m_bQuickActions = enabled;
 		m_bDirty = true;
 		Save();
 	}
