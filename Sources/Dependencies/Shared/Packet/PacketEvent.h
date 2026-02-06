@@ -103,7 +103,7 @@ namespace net {
 		PacketHeader header;
 		std::uint16_t object_id;
 		std::uint8_t dir;
-		std::uint8_t v1;
+		std::int16_t v1;
 		std::uint8_t v2;
 	};
 

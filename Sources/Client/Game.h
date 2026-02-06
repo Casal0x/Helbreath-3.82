@@ -182,6 +182,7 @@ public:
 	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _RemoveChatMsgListByObjectID(int iObjectID);
+	std::unique_ptr<CMsg> CreateDamageMsg(short sDamage);
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
 	void DrawChatMsgs(short sX, short sY, short dX, short dY);

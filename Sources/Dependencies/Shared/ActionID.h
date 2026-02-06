@@ -14,8 +14,9 @@
 
 #define DEF_OBJECTNULLACTION	100
 
-// Special damage values for DEF_OBJECTDAMAGE events
-#define DEF_DAMAGE_IMMUNE		-1000	// GM immunity - shows "* Immune *" text
+// Special damage sentinels for DEF_OBJECTDAMAGE events (int16_t range, negative = sentinel)
+#define DEF_DAMAGE_IMMUNE		(-32768)	// GM immunity - shows "* Immune *" text
+#define DEF_MAGIC_FAILED		(-32767)	// Spell cast failure - shows "* Failed! *" text
 
 // Motion confirmation codes
 #define DEF_OBJECTMOVE_CONFIRM				1001

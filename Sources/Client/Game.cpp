@@ -5457,6 +5457,38 @@ void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
 		}
 }
 
+std::unique_ptr<CMsg> CGame::CreateDamageMsg(short sDamage)
+{
+	char cTxt[64]{};
+	if (sDamage == DEF_DAMAGE_IMMUNE)
+	{
+		std::snprintf(cTxt, sizeof(cTxt), "%s", " * Immune *");
+		PlayGameSound('C', 17, 0);
+		return std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
+	}
+	if (sDamage == DEF_MAGIC_FAILED)
+	{
+		std::snprintf(cTxt, sizeof(cTxt), "%s", " * Failed! *");
+		PlayGameSound('C', 17, 0);
+		return std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
+	}
+	if (sDamage > 128)
+	{
+		std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
+		return std::make_unique<CMsg>(23, cTxt, m_dwCurTime);
+	}
+	if (sDamage > 0)
+	{
+		std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sDamage);
+		int iFontType;
+		if (sDamage < 12)		iFontType = 21;
+		else if (sDamage < 40)	iFontType = 22;
+		else					iFontType = 23;
+		return std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
+	}
+	return nullptr;
+}
+
 void CGame::PlayGameSound(char cType, int iNum, int iDist, long lPan)
 {
 	// Forward to AudioManager
@@ -9956,19 +9988,9 @@ MOTION_COMMAND_PROCESS:;
 			for (i = 1; i < DEF_MAXCHATMSGS; i++)
 				if (m_pChatMsgList[i] == 0)
 				{
-					std::memset(cTxt, 0, sizeof(cTxt));
-					if (m_pPlayer->m_sDamageMoveAmount > 0)
-						std::snprintf(cTxt, sizeof(cTxt), "-%dPts", m_pPlayer->m_sDamageMoveAmount); //pts
-					else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
-
-					int iFontType;
-					if ((m_pPlayer->m_sDamageMoveAmount >= 0) && (m_pPlayer->m_sDamageMoveAmount < 12))		iFontType = 21;
-					else if ((m_pPlayer->m_sDamageMoveAmount >= 12) && (m_pPlayer->m_sDamageMoveAmount < 40)) iFontType = 22;
-					else if ((m_pPlayer->m_sDamageMoveAmount >= 40) || (m_pPlayer->m_sDamageMoveAmount < 0))	iFontType = 23;
-
-					m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
+					m_pChatMsgList[i] = CreateDamageMsg(m_pPlayer->m_sDamageMoveAmount);
+					if (!m_pChatMsgList[i]) break;
 					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
-
 					if (m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {
 						m_pChatMsgList[i].reset();
 					}
@@ -10764,15 +10786,8 @@ void CGame::MotionEventHandler(char* pData)
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
 			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				if (sV1 > 0)
-					std::snprintf(cTxt, sizeof(cTxt), "-%dPts!", sV1);
-				else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
-				int iFontType;
-				if ((sV1 >= 0) && (sV1 < 12))		iFontType = 21;
-				else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
-				else if ((sV1 >= 40) || (sV1 < 0))	iFontType = 23;
-				m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
+				m_pChatMsgList[i] = CreateDamageMsg(sV1);
+				if (!m_pChatMsgList[i]) return;
 				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
 				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
 				{
@@ -10798,32 +10813,8 @@ void CGame::MotionEventHandler(char* pData)
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
 			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				if (sV1 == DEF_DAMAGE_IMMUNE)
-				{
-					// GM immunity - show "* Immune *" with failure sound
-					std::snprintf(cTxt, sizeof(cTxt), "%s", " * Immune *");
-					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-					PlayGameSound('C', 17, 0);
-				}
-				else if (sV1 != 0)
-				{
-					if (sV1 > 0)
-						std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sV1);
-					else std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
-					int iFontType;
-					if ((sV1 >= 0) && (sV1 < 12))		iFontType = 21;
-					else if ((sV1 >= 12) && (sV1 < 40)) iFontType = 22;
-					else if ((sV1 >= 40) || (sV1 < 0))	iFontType = 23;
-
-					m_pChatMsgList[i] = std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
-				}
-				else
-				{
-					std::snprintf(cTxt, sizeof(cTxt), "%s", " * Failed! *");
-					m_pChatMsgList[i] = std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-					PlayGameSound('C', 17, 0);
-				}
+				m_pChatMsgList[i] = CreateDamageMsg(sV1);
+				if (!m_pChatMsgList[i]) return;
 				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
 				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
 				{

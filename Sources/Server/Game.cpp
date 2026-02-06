@@ -3318,7 +3318,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 		pkt_short.header.msg_type = wMsgType;
 		pkt_short.object_id = static_cast<std::uint16_t>(sOwnerH + 30000);
 		pkt_short.dir = static_cast<std::uint8_t>(m_pClientList[sOwnerH]->m_cDir);
-		pkt_short.v1 = static_cast<std::uint8_t>(sV1);
+		pkt_short.v1 = static_cast<std::int16_t>(sV1);
 		pkt_short.v2 = static_cast<std::uint8_t>(sV2);
 
 		hb::net::PacketEventMotionMove pkt_move{};
@@ -3533,7 +3533,7 @@ void CGame::SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t
 		pkt_short.header.msg_type = wMsgType;
 		pkt_short.object_id = static_cast<std::uint16_t>(sOwnerH + 40000);
 		pkt_short.dir = static_cast<std::uint8_t>(m_pNpcList[sOwnerH]->m_cDir);
-		pkt_short.v1 = static_cast<std::uint8_t>(sV1);
+		pkt_short.v1 = static_cast<std::int16_t>(sV1);
 		pkt_short.v2 = static_cast<std::uint8_t>(sV2);
 
 		hb::net::PacketEventMotionMove pkt_move{};
@@ -10798,7 +10798,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	//if ((var_874 ) && (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_bIsHeldenianMap ) && (m_pMagicConfigList[sType]->m_sType != 8)) return;
 
 	if (((m_pClientList[iClientH]->m_iStatus & hb::status::InhibitionCasting) != 0) && (bItemEffect != true)) {
-		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, 0, -1, 0);
+		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_MAGIC_FAILED, -1, 0);
 		return;
 	}
 
@@ -10837,7 +10837,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	}
 
 	if (m_pClientList[iClientH]->m_bInhibition) {
-		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, 0, -1, 0);
+		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_MAGIC_FAILED, -1, 0);
 		return;
 	}
 
@@ -10930,13 +10930,13 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 	if (iResult < 100) {
 		iDiceRes = iDice(1, 100);
 		if (iResult < iDiceRes) {
-			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, 0, -1, 0);
+			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_MAGIC_FAILED, -1, 0);
 			return;
 		}
 	}
 
 	if (((m_pClientList[iClientH]->m_iHungerStatus <= 10) || (m_pClientList[iClientH]->m_iSP <= 0)) && (iDice(1, 1000) <= 100)) {
-		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, 0, -1, 0);
+		SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTDAMAGE, DEF_MAGIC_FAILED, -1, 0);
 		return;
 	}
 
