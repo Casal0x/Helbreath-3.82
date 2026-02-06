@@ -104,6 +104,10 @@ public:
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
 
+	// Quick Actions - pickup during movement, 95% unlock, responsive stops
+	bool IsQuickActionsEnabled() const { return m_bQuickActions; }
+	void SetQuickActionsEnabled(bool enabled);
+
 	// Base resolution (640x480 or 800x600) - determines logical render size
 	int GetBaseResolutionWidth() const { return m_baseResolutionWidth; }
 	int GetBaseResolutionHeight() const { return m_baseResolutionHeight; }
@@ -161,6 +165,7 @@ private:
 	int m_iPatchingMode;  // 0=Original, 1=New, 2=Shadow
 	bool m_bTileGrid;
 	bool m_bPatchingGrid;
+	bool m_bQuickActions;
 
 	// Base resolution (640x480 or 800x600)
 	int m_baseResolutionWidth;

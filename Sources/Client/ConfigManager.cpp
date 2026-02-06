@@ -94,6 +94,7 @@ void ConfigManager::SetDefaults()
 	m_iPatchingMode = 1;     // Default to new patching (0=Original, 1=New, 2=Shadow)
 	m_bTileGrid = false;     // Simple tile grid off by default
 	m_bPatchingGrid = false; // Patching debug grid off by default
+	m_bQuickActions = true;  // Quick actions enabled by default (pickup during movement, 95% unlock, etc.)
 
 	// Base resolution defaults to 640x480
 	m_baseResolutionWidth = 640;
@@ -317,6 +318,10 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bPatchingGrid = display["patchingGrid"].get<bool>();
 			}
+			if (display.contains("quickActions"))
+			{
+				m_bQuickActions = display["quickActions"].get<bool>();
+			}
 		}
 
 		// Validate resolution to nearest 4:3 option
@@ -405,6 +410,7 @@ bool ConfigManager::Save(const char* filename)
 	j["display"]["patchingMode"] = m_iPatchingMode;
 	j["display"]["tileGrid"] = m_bTileGrid;
 	j["display"]["patchingGrid"] = m_bPatchingGrid;
+	j["display"]["quickActions"] = m_bQuickActions;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -737,6 +743,16 @@ void ConfigManager::SetPatchingGridEnabled(bool enabled)
 	if (m_bPatchingGrid != enabled)
 	{
 		m_bPatchingGrid = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetQuickActionsEnabled(bool enabled)
+{
+	if (m_bQuickActions != enabled)
+	{
+		m_bQuickActions = enabled;
 		m_bDirty = true;
 		Save();
 	}

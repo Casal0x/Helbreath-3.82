@@ -304,8 +304,9 @@ void Screen_OnGame::on_update()
     // visible position snapping when the next tile's motion starts
     if (!m_pGame->m_pPlayer->m_Controller.IsCommandAvailable()) {
         char cmd = m_pGame->m_pPlayer->m_Controller.GetCommand();
-        if (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
-            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE) {
+        if (ConfigManager::Get().IsQuickActionsEnabled() &&
+            (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
+            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE)) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
             if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {

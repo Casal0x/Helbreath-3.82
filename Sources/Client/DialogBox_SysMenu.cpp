@@ -661,6 +661,13 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 		COLORREF color = (patchMode == i || bHover) ? GameColors::UIWhite.ToColorRef() : GameColors::UIDisabled.ToColorRef();
 		PutString(textX, textY, labels[i], color);
 	}
+
+	lineY += 20;
+
+	// Quick Actions toggle (pickup during movement, 95% unlock, responsive stops)
+	PutString(labelX, lineY, "Quick Actions:", GameColors::UILabel.ToColorRef());
+	PutString(labelX + 1, lineY, "Quick Actions:", GameColors::UILabel.ToColorRef());
+	DrawToggle(valueX, lineY, ConfigManager::Get().IsQuickActionsEnabled(), msX, msY);
 }
 
 // =============================================================================
@@ -1101,6 +1108,20 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
+	}
+
+	lineY += 20;
+
+	// Quick Actions toggle
+	if (IsInToggleArea(valueX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsQuickActionsEnabled();
+		ConfigManager::Get().SetQuickActionsEnabled(!enabled);
+		if (!enabled)
+			AddEventList("Quick Actions enabled.", 10);
+		else
+			AddEventList("Quick Actions disabled.", 10);
+		PlaySoundEffect('E', 14, 5);
+		return true;
 	}
 
 	return false;

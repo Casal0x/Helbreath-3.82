@@ -9155,7 +9155,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	if (m_pPlayer->m_Controller.IsCommandAvailable() == false)
 	{
 		char cmd = m_pPlayer->m_Controller.GetCommand();
-		if (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN)
+		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN))
 		{
 			if (cLB != 0)
 			{
@@ -9191,7 +9191,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if (pendingDir != 0) m_pPlayer->m_Controller.SetPendingStopDir(pendingDir);
 			}
 		}
-		else if (cRB != 0 && cmd == DEF_OBJECTSTOP && !m_bIsGetPointingMode)
+		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == DEF_OBJECTSTOP && !m_bIsGetPointingMode)
 		{
 			// Right click while stopped (and not casting): process turn immediately
 			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
@@ -9896,8 +9896,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	}
 	else if (cRB != 0) // Mouse Right button
 	{
-		// Right click on self = pickup
-		if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
+		// Right click on self = pickup (Quick Actions feature)
+		if (ConfigManager::Get().IsQuickActionsEnabled() &&
+			memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
 			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 		{
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
