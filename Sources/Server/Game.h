@@ -656,6 +656,7 @@ public:
 	
 	bool bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify = true);
 	bool _bAddClientItemList(int iClientH, CItem * pItem, int * pDelReq);
+	int _bAddClientBulkItemList(int iClientH, const char* pItemName, int iAmount);
 	int  iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char cDir);
 	void DropItemHandler(int iClientH, short sItemIndex, int iAmount, const char * pItemName, bool bByPlayer = true);
 	void ClientCommonHandler(int iClientH, char * pData);

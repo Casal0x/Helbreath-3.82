@@ -204,6 +204,87 @@ namespace NetworkMessageHandlers {
 			}
 	}
 
+	void HandleItemObtainedBulk(CGame* pGame, char* pData)
+	{
+		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemObtained>(
+			pData, sizeof(hb::net::PacketNotifyItemObtained));
+		if (!pkt) return;
+
+		char cName[DEF_ITEMNAME];
+		std::memset(cName, 0, sizeof(cName));
+		memcpy(cName, pkt->name, sizeof(pkt->name));
+
+		int iTotalCount = pkt->count;
+		short sItemID = pkt->item_id;
+		uint16_t wCurLifeSpan = pkt->cur_lifespan;
+		uint16_t wMaxLifeSpan = pkt->max_lifespan;
+		uint16_t wWeight = pkt->weight;
+		short sSprite = static_cast<short>(pkt->sprite);
+		short sSpriteFrame = static_cast<short>(pkt->sprite_frame);
+		char cItemColor = static_cast<char>(pkt->item_color);
+		short sSpecialEV2 = static_cast<short>(pkt->spec_value2);
+		uint32_t dwAttribute = pkt->attribute;
+
+		// One chat message for the entire batch
+		char cTxt[120];
+		std::memset(cTxt, 0, sizeof(cTxt));
+		if (iTotalCount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMOBTAINED2, cName);
+		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMOBTAINED1, iTotalCount, cName);
+		pGame->AddEventList(cTxt, 10);
+		pGame->PlayGameSound('E', 20, 0);
+
+		// Create individual items in separate slots (no Consume/Arrow merge)
+		short nX = 40, nY = 30;
+		for (int i = 0; i < DEF_MAXITEMS; i++)
+		{
+			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
+			{
+				nX = pGame->m_pItemList[i]->m_sX;
+				nY = pGame->m_pItemList[i]->m_sY;
+				break;
+			}
+		}
+
+		int iCreated = 0;
+		for (int n = 0; n < iTotalCount; n++)
+		{
+			for (int i = 0; i < DEF_MAXITEMS; i++)
+			{
+				if (pGame->m_pItemList[i] == 0)
+				{
+					pGame->m_pItemList[i] = std::make_unique<CItem>();
+					pGame->m_pItemList[i]->m_sIDnum = sItemID;
+					pGame->m_pItemList[i]->m_dwCount = 1;
+					pGame->m_pItemList[i]->m_sX = nX;
+					pGame->m_pItemList[i]->m_sY = nY;
+					pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
+					pGame->m_bIsItemDisabled[i] = false;
+					pGame->m_bIsItemEquipped[i] = false;
+					pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
+					pGame->m_pItemList[i]->m_wMaxLifeSpan = wMaxLifeSpan;
+					pGame->m_pItemList[i]->m_wWeight = wWeight;
+					pGame->m_pItemList[i]->m_cItemColor = cItemColor;
+					pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
+					pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
+
+					for (int j = 0; j < DEF_MAXITEMS; j++)
+					{
+						if (pGame->m_cItemOrder[j] == -1)
+						{
+							pGame->m_cItemOrder[j] = i;
+							break;
+						}
+					}
+					iCreated++;
+					break;
+				}
+			}
+		}
+
+		if (iCreated > 0)
+			pGame->_bCheckBuildItemStatus();
+	}
+
 	void HandleItemLifeSpanEnd(CGame* pGame, char* pData)
 	{
 		short sEquipPos, sItemIndex;

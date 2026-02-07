@@ -75,6 +75,7 @@ namespace NetworkMessageHandlers {
 	// Items
 	void HandleItemPurchased(CGame* pGame, char* pData);
 	void HandleItemObtained(CGame* pGame, char* pData);
+	void HandleItemObtainedBulk(CGame* pGame, char* pData);
 	void HandleItemLifeSpanEnd(CGame* pGame, char* pData);
 	void HandleItemReleased(CGame* pGame, char* pData);
 	void HandleSetItemCount(CGame* pGame, char* pData);
@@ -248,6 +249,7 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		// Items - Purchased/Obtained
 		case DEF_NOTIFY_ITEMPURCHASED: NetworkMessageHandlers::HandleItemPurchased(m_pGame, pData); return true;
 		case DEF_NOTIFY_ITEMOBTAINED: NetworkMessageHandlers::HandleItemObtained(m_pGame, pData); return true;
+		case DEF_NOTIFY_ITEMOBTAINED_BULK: NetworkMessageHandlers::HandleItemObtainedBulk(m_pGame, pData); return true;
 
 		// Items - LifeSpan/Released
 		case DEF_NOTIFY_ITEMLIFESPANEND: NetworkMessageHandlers::HandleItemLifeSpanEnd(m_pGame, pData); return true;

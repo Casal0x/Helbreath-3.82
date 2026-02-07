@@ -321,6 +321,7 @@
 
 #define DEF_NOTIFY_SPELL_SKILL						0x0BF6
 #define DEF_NOTIFY_SPELLINTERRUPTED					0x0BF7
+#define DEF_NOTIFY_ITEMOBTAINED_BULK				0x0BF8
 
 // ============================================================================
 // Repair All System

@@ -28,12 +28,14 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	if (iAmount > 1000) iAmount = 1000;
 
 	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
-	bool bStackable = hb::item::IsStackableType(pGame->m_pItemConfigList[iItemID]->GetItemType());
+	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
+	bool bTrueStack = hb::item::IsTrueStackType(itemType) || (iItemID == hb::item::ItemId::Gold);
 
 	int iCreated = 0;
 
-	if (bStackable)
+	if (bTrueStack)
 	{
+		// True stacks: single item with count = amount (arrows, materials, gold)
 		CItem* pItem = new CItem();
 		if (pGame->_bInitItemAttr(pItem, pItemName))
 		{
@@ -60,29 +62,8 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	}
 	else
 	{
-		for (int i = 0; i < iAmount; i++)
-		{
-			CItem* pItem = new CItem();
-			if (pGame->_bInitItemAttr(pItem, pItemName))
-			{
-				int iEraseReq = 0;
-				if (pGame->_bAddClientItemList(iClientH, pItem, &iEraseReq))
-				{
-					pGame->SendItemNotifyMsg(iClientH, DEF_NOTIFY_ITEMOBTAINED, pItem, 0);
-					iCreated++;
-				}
-				else
-				{
-					delete pItem;
-					break;
-				}
-			}
-			else
-			{
-				delete pItem;
-				break;
-			}
-		}
+		// Soft-linked items: individual items, one bulk notification
+		iCreated = pGame->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
 	}
 
 	char buf[128];

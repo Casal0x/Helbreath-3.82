@@ -172,7 +172,7 @@ constexpr bool IsAccessorySlot(EquipPos pos)
            pos == EquipPos::LeftFinger;
 }
 
-// Check if item type indicates stackable items
+// Check if item type indicates stackable items (includes soft-linked types like potions)
 constexpr bool IsStackableType(ItemType type)
 {
     return type == ItemType::Arrow ||
@@ -180,6 +180,15 @@ constexpr bool IsStackableType(ItemType type)
            type == ItemType::Eat ||
            type == ItemType::UseDeplete ||
            type == ItemType::UseDepleteDest ||
+           type == ItemType::Material;
+}
+
+// Check if item type is a true stack (single inventory entry with count > 1).
+// Soft-linked types (Consume, Eat, etc.) are individual items that the client
+// groups by item ID and displays with a count.
+constexpr bool IsTrueStackType(ItemType type)
+{
+    return type == ItemType::Arrow ||
            type == ItemType::Material;
 }
 

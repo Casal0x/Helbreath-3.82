@@ -1,6 +1,8 @@
 #include <windows.h>
 #include "CmdGiveItem.h"
 #include "Game.h"
+#include "Item.h"
+#include "Item/ItemEnums.h"
 #include "winmain.h"
 #include <cstdio>
 #include <cstring>
@@ -82,32 +84,44 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 		return;
 	}
 
-	// Create item
-	CItem* pItem = new CItem;
-	if (pGame->_bInitItemAttr(pItem, iItemID) == false)
+	if (iAmount < 1) iAmount = 1;
+	if (iAmount > 1000) iAmount = 1000;
+
+	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
+	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
+	bool bTrueStack = hb::item::IsTrueStackType(itemType) || (iItemID == hb::item::ItemId::Gold);
+
+	int iCreated = 0;
+
+	if (bTrueStack)
 	{
-		delete pItem;
-		char buf[256];
-		std::snprintf(buf, sizeof(buf), "Failed to initialize item ID: %d.", iItemID);
-		PutLogList(buf);
-		return;
+		// True stacks: single item with count = amount (arrows, materials, gold)
+		CItem* pItem = new CItem;
+		if (pGame->_bInitItemAttr(pItem, iItemID) == false)
+		{
+			delete pItem;
+			char buf[256];
+			std::snprintf(buf, sizeof(buf), "Failed to initialize item ID: %d.", iItemID);
+			PutLogList(buf);
+			return;
+		}
+		pItem->m_dwCount = iAmount;
+
+		if (pGame->bAddItem(iClientH, pItem, 0) == false)
+		{
+			PutLogList((char*)"Failed to give item: player inventory full.");
+			return;
+		}
+		iCreated = iAmount;
 	}
-	pItem->m_dwCount = iAmount;
-
-	// Save item name before bAddItem (which may delete the item on failure)
-	char cItemName[64];
-	std::memset(cItemName, 0, sizeof(cItemName));
-	std::strncpy(cItemName, pItem->m_cName, sizeof(cItemName) - 1);
-
-	// Give item to player
-	if (pGame->bAddItem(iClientH, pItem, 0) == false)
+	else
 	{
-		PutLogList((char*)"Failed to give item: player inventory full.");
-		return;
+		// Soft-linked items: individual items, one bulk notification
+		iCreated = pGame->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
 	}
 
 	// Success
 	char buf[256];
-	std::snprintf(buf, sizeof(buf), "Gave %dx %s (ID: %d) to %s.", iAmount, cItemName, iItemID, cPlayerName);
+	std::snprintf(buf, sizeof(buf), "Gave %dx %s (ID: %d) to %s.", iCreated, pItemName, iItemID, cPlayerName);
 	PutLogList(buf);
 }

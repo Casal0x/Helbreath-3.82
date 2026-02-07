@@ -6597,7 +6597,7 @@ int CGame::iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char 
 
 bool CGame::_bAddClientItemList(int iClientH, CItem* pItem, int* pDelReq)
 {
-	
+
 
 	if (m_pClientList[iClientH] == 0) return false;
 	if (pItem == 0) return false;
@@ -6643,6 +6643,83 @@ bool CGame::_bAddClientItemList(int iClientH, CItem* pItem, int* pDelReq)
 		}
 
 	return false;
+}
+
+int CGame::_bAddClientBulkItemList(int iClientH, const char* pItemName, int iAmount)
+{
+	if (m_pClientList[iClientH] == nullptr) return 0;
+	if (pItemName == nullptr || iAmount < 1) return 0;
+
+	int iCreated = 0;
+	CItem* pFirstItem = nullptr;
+
+	for (int i = 0; i < iAmount; i++)
+	{
+		CItem* pItem = new CItem();
+		if (!_bInitItemAttr(pItem, pItemName))
+		{
+			delete pItem;
+			break;
+		}
+
+		// Weight check
+		if ((m_pClientList[iClientH]->m_iCurWeightLoad + iGetItemWeight(pItem, 1)) > _iCalcMaxLoad(iClientH))
+		{
+			delete pItem;
+			break;
+		}
+
+		// Find an empty slot directly (no merge)
+		bool bAdded = false;
+		for (int j = 0; j < DEF_MAXITEMS; j++)
+		{
+			if (m_pClientList[iClientH]->m_pItemList[j] == nullptr)
+			{
+				m_pClientList[iClientH]->m_pItemList[j] = pItem;
+				m_pClientList[iClientH]->m_ItemPosList[j].x = 40;
+				m_pClientList[iClientH]->m_ItemPosList[j].y = 30;
+				iCalcTotalWeight(iClientH);
+				if (pFirstItem == nullptr) pFirstItem = pItem;
+				iCreated++;
+				bAdded = true;
+				break;
+			}
+		}
+
+		if (!bAdded)
+		{
+			delete pItem;
+			break;
+		}
+	}
+
+	// Send one bulk notification with total count
+	if (iCreated > 0 && pFirstItem != nullptr)
+	{
+		hb::net::PacketNotifyItemObtained pkt{};
+		pkt.header.msg_id = MSGID_NOTIFY;
+		pkt.header.msg_type = DEF_NOTIFY_ITEMOBTAINED_BULK;
+		pkt.is_new = 1;
+		memcpy(pkt.name, pFirstItem->m_cName, sizeof(pkt.name));
+		pkt.count = iCreated;
+		pkt.item_type = pFirstItem->m_cItemType;
+		pkt.equip_pos = pFirstItem->m_cEquipPos;
+		pkt.is_equipped = 0;
+		pkt.level_limit = pFirstItem->m_sLevelLimit;
+		pkt.gender_limit = pFirstItem->m_cGenderLimit;
+		pkt.cur_lifespan = pFirstItem->m_wCurLifeSpan;
+		pkt.weight = pFirstItem->m_wWeight;
+		pkt.sprite = pFirstItem->m_sSprite;
+		pkt.sprite_frame = pFirstItem->m_sSpriteFrame;
+		pkt.item_color = pFirstItem->m_cItemColor;
+		pkt.spec_value2 = static_cast<uint8_t>(pFirstItem->m_sItemSpecEffectValue2);
+		pkt.attribute = pFirstItem->m_dwAttribute;
+		pkt.item_id = pFirstItem->m_sIDnum;
+		pkt.max_lifespan = pFirstItem->m_wMaxLifeSpan;
+		m_pClientList[iClientH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
+	}
+
+	return iCreated;
 }
 
 bool CGame::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify)
