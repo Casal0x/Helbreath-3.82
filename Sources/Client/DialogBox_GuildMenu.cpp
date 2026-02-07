@@ -196,7 +196,7 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu) {
 		std::string masked(strlen(m_pGame->m_pPlayer->m_cGuildName), '*');
-		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::Color(GameColors::UIWhite));
 	}
 
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
@@ -313,7 +313,7 @@ void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX
 {
 	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, GameColors::UILabel);
 	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel);
-	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::Color(GameColors::UIWhite));
 	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 25);
 	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 24);

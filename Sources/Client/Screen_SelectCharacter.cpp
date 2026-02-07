@@ -342,14 +342,14 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
                 {
                     pGame->m_pEffectSpr[0]->Draw(sX + 157 + i * 109, sY + 138, 1, SpriteLib::DrawParams::AdditiveNoColorKey(0.25f));
                     pGame->DrawObject_OnMove_ForMenu(0, 0, sX + 157 + i * 109, sY + 138, false, dwTime);
-                    TextLib::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
+                    TextLib::DrawText(GameFont::Default, sX + 112 + i * 109, sY + 179 - 9, pGame->m_pCharList[i]->m_cName, TextLib::TextStyle::Color(GameColors::UISelectPurple));
                     int	_sLevel = pGame->m_pCharList[i]->m_sLevel;
                     char charInfoBuf[32];
                     snprintf(charInfoBuf, sizeof(charInfoBuf), "%d", _sLevel);
-                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
+                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 196 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple));
 
                     pGame->FormatCommaNumber(pGame->m_pCharList[i]->m_iExp, charInfoBuf, sizeof(charInfoBuf));
-                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple.r, GameColors::UISelectPurple.g, GameColors::UISelectPurple.b));
+                    TextLib::DrawText(GameFont::Default, sX + 138 + i * 109, sY + 211 - 10, charInfoBuf, TextLib::TextStyle::Color(GameColors::UISelectPurple));
                 }
                 iTemp2 = (int64_t)pGame->m_pCharList[i]->m_iYear * 1000000 + (int64_t)pGame->m_pCharList[i]->m_iMonth * 60000 + (int64_t)pGame->m_pCharList[i]->m_iDay * 1700 + (int64_t)pGame->m_pCharList[i]->m_iHour * 70 + (int64_t)pGame->m_pCharList[i]->m_iMinute;
                 if (iTemp1 < iTemp2)
@@ -374,49 +374,49 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
 
     if ((msX > 360 + OX) && (msY >= 283 + OY) && (msX < 545 + OX) && (msY <= 315 + OY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 56);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER3, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER4, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER1, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER2, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER3, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER4, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 316 + OY) && (msX < 545 + OX) && (msY <= 345 + OY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 57);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER5, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER5, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 346 + OY) && (msX < 545 + OX) && (msY <= 375 + OY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 58);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER6, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER7, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER6, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER7, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 376 + OY) && (msX < 545 + OX) && (msY <= 405 + OY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 59);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER12, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER12, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 406 + OY) && (msX < 545 + OX) && (msY <= 435 + OY)) {
         pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 60);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER13, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER13, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
     else {
         if (cTotalChar == 0) {
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER14, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER15, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER16, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER17, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER18, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER14, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER15, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER16, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER17, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER18, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
         }
         else if (cTotalChar < 4) {
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER19, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER20, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER21, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER22, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER23, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 350 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER24, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER19, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER20, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER21, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER22, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER23, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 350 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER24, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
         }
         if (cTotalChar == 4) {
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER25, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER26, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER27, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER28, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER25, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER26, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER27, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+            TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER28, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
         }
     }
     
@@ -440,7 +440,7 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
         }
         else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER39);
     }
-    TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 385 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
 
     if (pGame->m_iIpYear != 0)
     {
@@ -459,12 +459,12 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
         }
         else snprintf(infoBuf, sizeof(infoBuf), "%s", UPDATE_SCREEN_ON_SELECT_CHARACTER42);
     }
-    TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 400 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     if (iYear != 0)
     {
         snprintf(infoBuf, sizeof(infoBuf), UPDATE_SCREEN_ON_SELECT_CHARACTER43, iYear, iMonth, iDay, iHour, iMinute);
-        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+        TextLib::DrawTextAligned(GameFont::Default, 98 + OX, 415 + 10 + OY, (357) - (98), 15, infoBuf, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
     }
 
-    TextLib::DrawTextAligned(GameFont::Default, 122 + OX, 456 + OY, (315) - (122), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER36, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b), TextLib::Align::TopCenter);
+    TextLib::DrawTextAligned(GameFont::Default, 122 + OX, 456 + OY, (315) - (122), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER36, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
 }

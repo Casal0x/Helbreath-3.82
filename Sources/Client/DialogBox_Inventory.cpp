@@ -33,8 +33,8 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
-	const GameColor* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
-	// (wG/wB merged into GameColor array above)
+	const Color* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
+	// (wG/wB merged into Color array above)
 
 
 	if (cItemColor == 0)
@@ -63,7 +63,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
-		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b));
+		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(GameColors::UIDescription));
 	}
 }
 

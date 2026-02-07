@@ -154,7 +154,7 @@ void GameModeManager::RenderImpl()
     if (m_pActiveOverlay)
     {
         if (m_pActiveOverlay->wants_background_dim())
-            m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y());
+            m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), Color::Black(128));
         m_pActiveOverlay->on_render();
     }
 }

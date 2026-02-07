@@ -26,6 +26,7 @@ enum class GameMode : int8_t {
     Quit = -1,
     Splash = -3,    // Splash screen before loading
     Test = -4,      // Test screen for TextLib validation
+    TestPrimitives = -5, // Test screen for primitive drawing
     MainMenu = 0,
     Connecting = 1,
     Loading = 2,

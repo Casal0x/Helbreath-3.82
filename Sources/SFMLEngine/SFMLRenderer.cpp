@@ -11,7 +11,9 @@
 #include "ITextRenderer.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/ConvexShape.hpp>
 #include <SFML/OpenGL.hpp>
+#include <cmath>
 #include <cstring>
 
 #ifdef _WIN32
@@ -353,7 +355,7 @@ bool SFMLRenderer::EndFrameCheckLostSurface()
     return false;
 }
 
-void SFMLRenderer::PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
+void SFMLRenderer::DrawPixel(int x, int y, const Color& color)
 {
     if (x < m_clipArea.Left() || x >= m_clipArea.Right() ||
         y < m_clipArea.Top() || y >= m_clipArea.Bottom())
@@ -361,88 +363,239 @@ void SFMLRenderer::PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 
     sf::RectangleShape pixel({1.0f, 1.0f});
     pixel.setPosition({static_cast<float>(x), static_cast<float>(y)});
-    pixel.setFillColor(sf::Color(r, g, b));
+    pixel.setFillColor(sf::Color(color.r, color.g, color.b, color.a));
     m_backBuffer.draw(pixel);
 }
 
-void SFMLRenderer::DrawShadowBox(int x1, int y1, int x2, int y2, int type)
-{
-    // Draw a semi-transparent dark box for shadow effect
-    sf::RectangleShape box(
-        {static_cast<float>(x2 - x1), static_cast<float>(y2 - y1)}
-    );
-    box.setPosition({static_cast<float>(x1), static_cast<float>(y1)});
-
-    // Different alpha levels based on type
-    uint8_t alpha;
-    switch (type)
-    {
-    case 0: alpha = 128; break;  // 50% transparent
-    case 1: alpha = 180; break;  // 70% transparent
-    case 2: alpha = 64;  break;  // 25% transparent
-    default: alpha = 128; break;
-    }
-
-    box.setFillColor(sf::Color(0, 0, 0, alpha));
-    m_backBuffer.draw(box);
-}
-
-void SFMLRenderer::DrawItemShadowBox(int x1, int y1, int x2, int y2, int type)
-{
-    // Item shadow boxes are similar but may have different styling
-    DrawShadowBox(x1, y1, x2, y2, type);
-}
-
-void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha)
+void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const Color& color, BlendMode blend)
 {
     if ((x0 == x1) && (y0 == y1)) return;
 
-    // The original code uses 5-bit/6-bit color components for RGB565
-    // Convert to 8-bit color values (iR/iB are 0-31, iG is 0-63)
-    uint8_t r = static_cast<uint8_t>((iR * 255) / 31);
-    uint8_t g = static_cast<uint8_t>((iG * 255) / 63);
-    uint8_t b = static_cast<uint8_t>((iB * 255) / 31);
-    uint8_t a = static_cast<uint8_t>(alpha * 255.0f);
+    sf::Color lineColor(color.r, color.g, color.b, color.a);
 
-    sf::Color lineColor(r, g, b, a);
-
-    // Use vertex array for GPU-accelerated line drawing
     sf::VertexArray line(sf::PrimitiveType::Lines, 2);
     line[0].position = sf::Vector2f(static_cast<float>(x0), static_cast<float>(y0));
     line[0].color = lineColor;
     line[1].position = sf::Vector2f(static_cast<float>(x1), static_cast<float>(y1));
     line[1].color = lineColor;
 
-    // Use additive blending for the glow effect
-    m_backBuffer.draw(line, sf::BlendAdd);
+    m_backBuffer.draw(line, (blend == BlendMode::Additive) ? sf::BlendAdd : sf::BlendAlpha);
 }
 
-void SFMLRenderer::DrawFadeOverlay(float alpha)
+void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const Color& color)
 {
-    if (alpha <= 0.0f) return;  // Fully transparent, nothing to draw
+    if (color.a == 0 || w <= 0 || h <= 0) return;
 
-    // Clamp alpha to [0, 1]
-    if (alpha > 1.0f) alpha = 1.0f;
-
-    // Create a full-screen black rectangle with the given alpha
-    sf::RectangleShape overlay(sf::Vector2f(static_cast<float>(m_width), static_cast<float>(m_height)));
-    overlay.setPosition({0.f, 0.f});
-    overlay.setFillColor(sf::Color(0, 0, 0, static_cast<uint8_t>(alpha * 255.0f)));
-
-    m_backBuffer.draw(overlay);
-}
-
-void SFMLRenderer::DrawDarkRect(int x1, int y1, int x2, int y2, float alpha)
-{
-    if (alpha <= 0.0f) return;
-    if (alpha > 1.0f) alpha = 1.0f;
-
-    sf::RectangleShape rect(
-        {static_cast<float>(x2 - x1), static_cast<float>(y2 - y1)}
-    );
-    rect.setPosition({static_cast<float>(x1), static_cast<float>(y1)});
-    rect.setFillColor(sf::Color(0, 0, 0, static_cast<uint8_t>(alpha * 255.0f)));
+    sf::RectangleShape rect({static_cast<float>(w), static_cast<float>(h)});
+    rect.setPosition({static_cast<float>(x), static_cast<float>(y)});
+    rect.setFillColor(sf::Color(color.r, color.g, color.b, color.a));
     m_backBuffer.draw(rect);
+}
+
+void SFMLRenderer::DrawRectOutline(int x, int y, int w, int h, const Color& color, int thickness)
+{
+    if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
+
+    sf::Color c(color.r, color.g, color.b, color.a);
+    float fx = static_cast<float>(x);
+    float fy = static_cast<float>(y);
+    float fw = static_cast<float>(w);
+    float fh = static_cast<float>(h);
+    float ft = static_cast<float>(thickness);
+
+    // Top edge
+    sf::RectangleShape top({fw, ft});
+    top.setPosition({fx, fy});
+    top.setFillColor(c);
+    m_backBuffer.draw(top);
+
+    // Bottom edge
+    sf::RectangleShape bottom({fw, ft});
+    bottom.setPosition({fx, fy + fh - ft});
+    bottom.setFillColor(c);
+    m_backBuffer.draw(bottom);
+
+    // Left edge (between top and bottom)
+    sf::RectangleShape left({ft, fh - 2.0f * ft});
+    left.setPosition({fx, fy + ft});
+    left.setFillColor(c);
+    m_backBuffer.draw(left);
+
+    // Right edge (between top and bottom)
+    sf::RectangleShape right({ft, fh - 2.0f * ft});
+    right.setPosition({fx + fw - ft, fy + ft});
+    right.setFillColor(c);
+    m_backBuffer.draw(right);
+}
+
+// Helper: generate rounded rect corner points into an array, deduplicating coincident points.
+// Returns the number of unique points written.
+static int GenerateRoundedRectPoints(sf::Vector2f* out, int maxVerts,
+                                     float fx, float fy, float fw, float fh, float fr)
+{
+    constexpr int kSegments = 8;
+    constexpr float kPi = 3.14159265f;
+    constexpr float kHalfPi = kPi * 0.5f;
+    constexpr float kEpsilon = 0.01f;
+
+    sf::Vector2f pts[kSegments * 4];
+    int idx = 0;
+    float cornerAngles[4] = { kPi, kHalfPi, 0.0f, -kHalfPi };
+    float centerX[4] = { fx + fr, fx + fw - fr, fx + fw - fr, fx + fr };
+    float centerY[4] = { fy + fr, fy + fr, fy + fh - fr, fy + fh - fr };
+
+    for (int c = 0; c < 4; ++c)
+    {
+        for (int i = 0; i < kSegments; ++i)
+        {
+            float angle = cornerAngles[c] - kHalfPi * i / (kSegments - 1);
+            pts[idx++] = { centerX[c] + fr * std::cos(angle),
+                           centerY[c] - fr * std::sin(angle) };
+        }
+    }
+
+    // Deduplicate adjacent coincident points
+    int count = 0;
+    for (int i = 0; i < idx && count < maxVerts; ++i)
+    {
+        if (count == 0 ||
+            std::abs(pts[i].x - out[count - 1].x) > kEpsilon ||
+            std::abs(pts[i].y - out[count - 1].y) > kEpsilon)
+        {
+            out[count++] = pts[i];
+        }
+    }
+    // Check wrap-around (last vs first)
+    if (count > 1 &&
+        std::abs(out[count - 1].x - out[0].x) <= kEpsilon &&
+        std::abs(out[count - 1].y - out[0].y) <= kEpsilon)
+    {
+        --count;
+    }
+    return count;
+}
+
+void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius, const Color& color)
+{
+    if (color.a == 0 || w <= 0 || h <= 0) return;
+
+    float fx = static_cast<float>(x);
+    float fy = static_cast<float>(y);
+    float fw = static_cast<float>(w);
+    float fh = static_cast<float>(h);
+
+    float maxRadius = (std::min)(fw, fh) * 0.5f;
+    float fr = (std::min)(static_cast<float>(radius), maxRadius);
+
+    if (fr <= 0.0f)
+    {
+        DrawRectFilled(x, y, w, h, color);
+        return;
+    }
+
+    sf::Vector2f pts[32];
+    int count = GenerateRoundedRectPoints(pts, 32, fx, fy, fw, fh, fr);
+    if (count < 3) { DrawRectFilled(x, y, w, h, color); return; }
+
+    // Use TriangleFan — avoids ConvexShape's edge-normal computation entirely
+    sf::VertexArray fan(sf::PrimitiveType::TriangleFan, count + 2);
+    sf::Color c(color.r, color.g, color.b, color.a);
+
+    // Center point
+    fan[0].position = { fx + fw * 0.5f, fy + fh * 0.5f };
+    fan[0].color = c;
+    for (int i = 0; i < count; ++i)
+    {
+        fan[i + 1].position = pts[i];
+        fan[i + 1].color = c;
+    }
+    // Close the fan back to the first perimeter point
+    fan[count + 1].position = pts[0];
+    fan[count + 1].color = c;
+
+    m_backBuffer.draw(fan);
+}
+
+void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
+                                          const Color& color, int thickness)
+{
+    if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
+
+    float fx = static_cast<float>(x);
+    float fy = static_cast<float>(y);
+    float fw = static_cast<float>(w);
+    float fh = static_cast<float>(h);
+
+    float maxRadius = (std::min)(fw, fh) * 0.5f;
+    float fr = (std::min)(static_cast<float>(radius), maxRadius);
+
+    if (fr <= 0.0f)
+    {
+        DrawRectOutline(x, y, w, h, color, thickness);
+        return;
+    }
+
+    float ft = static_cast<float>(thickness);
+
+    // Inner rect dimensions (inset by thickness on all sides)
+    float ifx = fx + ft;
+    float ify = fy + ft;
+    float ifw = fw - 2.0f * ft;
+    float ifh = fh - 2.0f * ft;
+    float ifr = (std::max)(0.0f, fr - ft);
+
+    // If inner rect is degenerate, fall back to filled
+    if (ifw <= 0.0f || ifh <= 0.0f)
+    {
+        DrawRoundedRectFilled(x, y, w, h, radius, color);
+        return;
+    }
+
+    // Generate both perimeters with identical point counts using same angles
+    constexpr int kSegments = 8;
+    constexpr float kPi = 3.14159265f;
+    constexpr float kHalfPi = kPi * 0.5f;
+    constexpr int totalPts = kSegments * 4;
+
+    sf::Color sfColor(color.r, color.g, color.b, color.a);
+
+    float cornerAngles[4] = { kPi, kHalfPi, 0.0f, -kHalfPi };
+
+    // Outer corner centers
+    float oCX[4] = { fx + fr, fx + fw - fr, fx + fw - fr, fx + fr };
+    float oCY[4] = { fy + fr, fy + fr, fy + fh - fr, fy + fh - fr };
+
+    // Inner corner centers
+    float iCX[4] = { ifx + ifr, ifx + ifw - ifr, ifx + ifw - ifr, ifx + ifr };
+    float iCY[4] = { ify + ifr, ify + ifr, ify + ifh - ifr, ify + ifh - ifr };
+
+    // TriangleStrip: for each perimeter point, emit outer then inner
+    sf::VertexArray strip(sf::PrimitiveType::TriangleStrip, (totalPts + 1) * 2);
+
+    for (int corner = 0; corner < 4; ++corner)
+    {
+        for (int i = 0; i < kSegments; ++i)
+        {
+            int pi = corner * kSegments + i;
+            float angle = cornerAngles[corner] - kHalfPi * i / (kSegments - 1);
+            float ca = std::cos(angle);
+            float sa = std::sin(angle);
+
+            strip[pi * 2].position = { oCX[corner] + fr * ca, oCY[corner] - fr * sa };
+            strip[pi * 2].color = sfColor;
+
+            strip[pi * 2 + 1].position = { iCX[corner] + ifr * ca, iCY[corner] - ifr * sa };
+            strip[pi * 2 + 1].color = sfColor;
+        }
+    }
+
+    // Close the strip back to the first point pair
+    strip[totalPts * 2].position = strip[0].position;
+    strip[totalPts * 2].color = sfColor;
+    strip[totalPts * 2 + 1].position = strip[1].position;
+    strip[totalPts * 2 + 1].color = sfColor;
+
+    m_backBuffer.draw(strip);
 }
 
 void SFMLRenderer::BeginTextBatch()
@@ -461,7 +614,7 @@ void SFMLRenderer::EndTextBatch()
         pTextRenderer->EndBatch();
 }
 
-void SFMLRenderer::DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b)
+void SFMLRenderer::DrawText(int x, int y, const char* text, const Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
@@ -469,10 +622,10 @@ void SFMLRenderer::DrawText(int x, int y, const char* text, uint8_t r, uint8_t g
     // Delegate to TextLib - single point of font handling
     TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
     if (pTextRenderer)
-        pTextRenderer->DrawText(x, y, text, r, g, b);
+        pTextRenderer->DrawText(x, y, text, color);
 }
 
-void SFMLRenderer::DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b)
+void SFMLRenderer::DrawTextRect(const GameRectangle& rect, const char* text, const Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
@@ -481,7 +634,7 @@ void SFMLRenderer::DrawTextRect(const GameRectangle& rect, const char* text, uin
     TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
     if (pTextRenderer)
     {
-        pTextRenderer->DrawTextAligned(rect.x, rect.y, rect.width, rect.height, text, r, g, b,
+        pTextRenderer->DrawTextAligned(rect.x, rect.y, rect.width, rect.height, text, color,
                                         TextLib::Align::TopCenter);
     }
 }

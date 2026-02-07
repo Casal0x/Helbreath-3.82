@@ -389,11 +389,24 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="GameConstants.h" />
-    <ClInclude Include="GameTimer.h" />
-    <ClInclude Include="EquipmentIndices.h" />
-    <ClInclude Include="RenderHelpers.h" />
-    <ClInclude Include="PlayerRenderer.h" />
-    <ClInclude Include="NpcRenderer.h" />
+    <ClInclude Include="Screen_TestPrimitives.h">
+      <Filter>Screens</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderHelpers.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="EquipmentIndices.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerRenderer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="NpcRenderer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTimer.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp" />
@@ -752,12 +765,25 @@
     <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
     <ClCompile Include="Game.DrawObjects.cpp" />
-    <ClCompile Include="EquipmentIndices.cpp" />
-    <ClCompile Include="RenderHelpers.cpp" />
-    <ClCompile Include="PlayerRenderer.cpp" />
-    <ClCompile Include="NpcRenderer.cpp" />
+    <ClCompile Include="Screen_TestPrimitives.cpp">
+      <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderHelpers.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="EquipmentIndices.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="NpcRenderer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerRenderer.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc">

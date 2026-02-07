@@ -84,7 +84,7 @@ void Overlay_WaitingResponse::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Draw status text
-    TextLib::DrawText(GameFont::Bitmap1, dlgX + 37, dlgY + 65, "Connected. Waiting for response...", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, dlgX + 37, dlgY + 65, "Connected. Waiting for response...", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)

@@ -65,9 +65,9 @@ void DialogBox_NpcTalk::DrawButtons(short sX, short sY, short msX, short msY)
 	case 2: // Next button
 		if ((msX >= sX + 190) && (msX <= sX + 278) &&
 			(msY >= sY + 296) && (msY <= sY + 316))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }
@@ -82,7 +82,7 @@ void DialogBox_NpcTalk::DrawTextContent(short sX, short sY)
 		if ((i < DEF_TEXTDLGMAXLINES) && (m_pGame->m_pMsgTextList2[i + sView] != nullptr))
 		{
 			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 57 + i * 15, sX + sSizeX - sX, 15,
-				m_pGame->m_pMsgTextList2[i + sView]->m_pMsg, TextLib::TextStyle::Color(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b), TextLib::Align::TopCenter);
+				m_pGame->m_pMsgTextList2[i + sView]->m_pMsg, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 		}
 	}
 }

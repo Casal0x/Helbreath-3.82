@@ -67,7 +67,7 @@ void Overlay_WaitInitData::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Waiting for response... %dsec", dwElapsed / 1000);
-    TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, m_pGame->G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, m_pGame->G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     if (dwElapsed > 7000)
     {

@@ -35,7 +35,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
 
 		if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::ItemDropExternal)
-			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+			TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite));
 
 		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
 		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);
@@ -53,7 +53,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutString(sX + 30, sY + 20, cTxt, GameColors::UILabel);
 
 		PutString(sX + 30, sY + 35, DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT3, GameColors::UILabel);
-		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+		TextLib::DrawText(GameFont::Default, sX + 40, sY + 57, m_pGame->m_cAmountString, TextLib::TextStyle::Color(GameColors::UIWhite));
 
 		std::snprintf(cTxt, sizeof(cTxt), "__________ (0 ~ %d)", m_pGame->m_pItemList[Info().sView]->m_dwCount);
 		PutString(sX + 38, sY + 62, cTxt, GameColors::UILabel);

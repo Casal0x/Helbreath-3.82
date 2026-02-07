@@ -105,7 +105,7 @@ void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
-	const GameColor* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
+	const Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 

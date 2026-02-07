@@ -60,6 +60,7 @@
 #include "Screen_Loading.h"
 #include "Screen_Splash.h"
 #include "Screen_Test.h"
+#include "Screen_TestPrimitives.h"
 #include "IInput.h"
 
 // Overlay system
@@ -391,11 +392,11 @@ void CGame::DrawCursor()
 		// In-game uses context-sensitive cursor from CursorTarget
 		if (m_bIsObserverMode) {
 			// Observer mode shows a small crosshair instead of cursor sprite
-			m_Renderer->PutPixel(msX, msY, 255, 255, 255);
-			m_Renderer->PutPixel(msX + 1, msY, 255, 255, 255);
-			m_Renderer->PutPixel(msX - 1, msY, 255, 255, 255);
-			m_Renderer->PutPixel(msX, msY + 1, 255, 255, 255);
-			m_Renderer->PutPixel(msX, msY - 1, 255, 255, 255);
+			m_Renderer->DrawPixel(msX, msY, Color::White());
+			m_Renderer->DrawPixel(msX + 1, msY, Color::White());
+			m_Renderer->DrawPixel(msX - 1, msY, Color::White());
+			m_Renderer->DrawPixel(msX, msY + 1, Color::White());
+			m_Renderer->DrawPixel(msX, msY - 1, Color::White());
 			return;
 		}
 		iCursorFrame = CursorTarget::GetCursorFrame();
@@ -465,7 +466,7 @@ void CGame::RenderFrame()
 	if (GameModeManager::IsTransitioning())
 	{
 		float alpha = GameModeManager::GetFadeAlpha();
-		m_Renderer->DrawFadeOverlay(alpha);
+		m_Renderer->DrawRectFilled(0, 0, m_Renderer->GetWidth(), m_Renderer->GetHeight(), Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
 	}
 
 	// Cursor always on top - drawn LAST after everything including fade overlay
@@ -3954,9 +3955,9 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		// Draw super attack count text at bottom-right of combat button area
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "%d", m_pPlayer->m_iSuperAttackLeft);
 		if (bMastered)
-			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(255, 255, 255), TextLib::Align::BottomRight);
+			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(Color(255, 255, 255)), TextLib::Align::BottomRight);
 		else
-			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive.r, GameColors::BmpBtnActive.g, GameColors::BmpBtnActive.b), TextLib::Align::BottomRight);
+			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive), TextLib::Align::BottomRight);
 	}
 }
 
@@ -4881,7 +4882,7 @@ void CGame::ShowReceivedString(bool bIsHide)
 
 	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
 
-	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InputNormal.r, GameColors::InputNormal.g, GameColors::InputNormal.b));
+	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InputNormal));
 }
 
 void CGame::ClearInputString()
@@ -4980,10 +4981,10 @@ void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 void CGame::DrawTopMsg()
 {
 	if (strlen(m_cTopMsg) == 0) return;
-	m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), 30);
+	m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), 30, Color::Black(128));
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b), TextLib::Align::TopCenter);
+		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow), TextLib::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
@@ -5240,7 +5241,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 	char cMsg[100], cMsgA[22], cMsgB[22], cMsgC[22], * cp;
 	int  iRet, iLines, i, iSize, iSize2, iLoc, iFontSize;
 	uint32_t dwTime;
-	GameColor rgb;
+	Color rgb;
 	bool bIsTrans;
 
 	std::memset(cMsg, 0, sizeof(cMsg));
@@ -5351,7 +5352,7 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 					i++;
 				}
 				else iSize2 += 4;
-		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x.r, GameColors::Red4x.g, GameColors::Red4x.b).WithAdditive());
+		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x).WithAdditive());
 		break;
 
 	case hb::owner::Guard:
@@ -5360,16 +5361,16 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
 		switch (iLines) {
 		case 1:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
 			break;
 		case 2:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
 			break;
 		case 3:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x.r, GameColors::Yellow2x.g, GameColors::Yellow2x.b).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
+			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
 			break;
 		}
 		break;
@@ -5383,27 +5384,27 @@ void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
 
 		switch (iTextWidth / 160) {
 		case 0:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 65 - iLoc, 160, 65), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc + 1, 160, 65), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc, 160, 65), cMsg, rgb.r, rgb.g, rgb.b);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 65 - iLoc, 160, 65), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc + 1, 160, 65), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc, 160, 65), cMsg, rgb);
 			break;
 
 		case 1:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 83 - iLoc, 160, 83), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc + 1, 160, 83), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc, 160, 83), cMsg, rgb.r, rgb.g, rgb.b);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 83 - iLoc, 160, 83), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc + 1, 160, 83), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc, 160, 83), cMsg, rgb);
 			break;
 
 		case 2:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 101 - iLoc, 160, 101), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc + 1, 160, 101), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc, 160, 101), cMsg, rgb.r, rgb.g, rgb.b);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 101 - iLoc, 160, 101), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc + 1, 160, 101), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc, 160, 101), cMsg, rgb);
 			break;
 
 		case 3:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 119 - iLoc, 160, 119), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc + 1, 160, 119), cMsg, 0, 0, 0);
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc, 160, 119), cMsg, rgb.r, rgb.g, rgb.b);
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 119 - iLoc, 160, 119), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc + 1, 160, 119), cMsg, Color::Black());
+			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc, 160, 119), cMsg, rgb);
 			break;
 		}
 
@@ -5877,25 +5878,25 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	{
 		switch (cType) {
 		case 1:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, 15, 15, 20);
-			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
-			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
-			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
-			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid.r, GameColors::NightBlueMid.g, GameColors::NightBlueMid.b);
+			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, Color(15, 15, 20), BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid, BlendMode::Additive);
 
-			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
-			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
-			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
-			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark.r, GameColors::NightBlueDark.g, GameColors::NightBlueDark.b);
+			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark, BlendMode::Additive);
 
-			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
-			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep.r, GameColors::NightBlueDeep.g, GameColors::NightBlueDeep.b);
+			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep, BlendMode::Additive);
 			break;
 
 		case 2:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 0.5f);
+			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, Color(GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 128), BlendMode::Additive);
 			break;
 		}
 		iErr = 0;
@@ -7116,7 +7117,7 @@ void CGame::CreateScreenShot()
 	std::string timeStr = std::format("{:02d}:{:02d} - {:02d}:{:02d}:{:02d}",
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 	TextLib::DrawTextAligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
-		TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b),
+		TextLib::TextStyle::Color(GameColors::UIWhite),
 		TextLib::Align::TopCenter);
 
 	std::filesystem::create_directory("SAVE");
@@ -7529,26 +7530,26 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	GetNpcName(sOwnerType, cTxt);
 	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
 	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
-	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b));
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
 		std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME87);//"(Unknown)"
-		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b)); // v2.171
+		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
 	}
 	else
 	{
 		switch (_iGetFOE(status)) {
 		case -2:
 		case -1:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed.r, GameColors::UIRed.g, GameColors::UIRed.b)); // "(Enemy)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
 			break;
 		case 0:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate.r, GameColors::NeutralNamePlate.g, GameColors::NeutralNamePlate.b)); // "(Neutral)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
 			break;
 		case 1:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(GameColors::FriendlyNamePlate.r, GameColors::FriendlyNamePlate.g, GameColors::FriendlyNamePlate.b)); // "(Friendly)"
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
 			break;
 		}
 	}
@@ -7563,7 +7564,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	case 7: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME58); break;//"Explosive"
 	case 8: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME59); break;//"Critical Explosive"
 	}
-	TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(GameColors::MonsterStatusEffect.r, GameColors::MonsterStatusEffect.g, GameColors::MonsterStatusEffect.b));
+	TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
@@ -7658,7 +7659,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
 	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
 
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 	std::memset(cTxt, 0, sizeof(cTxt));
 
 	if (wObjectID == m_pPlayer->m_sPlayerObjectID)
@@ -7666,13 +7667,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
@@ -7706,14 +7707,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
 							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
 							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
@@ -7751,7 +7752,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVPK);  // "Elvine Criminal"
 		}
 	}
-	TextLib::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, TextLib::TextStyle::WithShadow(sR, sG, sB));
+	TextLib::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, TextLib::TextStyle::WithShadow(Color(sR, sG, sB)));
 }
 
 bool CGame::FindGuildName(char* pName, int* ipIndex)
@@ -7787,7 +7788,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	TextLib::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	TextLib::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -9077,6 +9078,15 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == DEF_OBJECTSTOP && !m_bIsGetPointingMode)
 		{
 			// Right click while stopped (and not casting): process turn immediately
+			// But don't interrupt attack/magic animations — the controller command is STOP
+			// after dispatch, but the tile animation may still be playing
+			int dXc = m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX;
+			int dYc = m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY;
+			if (dXc >= 0 && dXc < MAPDATASIZEX && dYc >= 0 && dYc < MAPDATASIZEY) {
+				int8_t animAction = m_pMapData->m_pData[dXc][dYc].m_animation.cAction;
+				if (animAction == DEF_OBJECTATTACK || animAction == DEF_OBJECTATTACKMOVE || animAction == DEF_OBJECTMAGIC)
+					return;
+			}
 			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
 			if (cDir != 0 && m_pPlayer->m_iPlayerDir != cDir)
 			{
@@ -10395,25 +10405,25 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen.r, GameColors::ChatEventGreen.g, GameColors::ChatEventGreen.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat.r, GameColors::UIWorldChat.g, GameColors::UIWorldChat.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat.r, GameColors::UIFactionChat.g, GameColors::UIFactionChat.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat));
 				break;
 			case hb::owner::Slime:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat));
 				break;
 			case hb::owner::Howard:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
+				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat));
 				break;
 			}
 		}
@@ -10423,31 +10433,31 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory2[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen.r, GameColors::ChatEventGreen.g, GameColors::ChatEventGreen.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat.r, GameColors::UIWorldChat.g, GameColors::UIWorldChat.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat.r, GameColors::UIFactionChat.g, GameColors::UIFactionChat.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat.r, GameColors::UIPartyChat.g, GameColors::UIPartyChat.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat));
 				break;
 			case hb::owner::Slime:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat.r, GameColors::UIGameMasterChat.g, GameColors::UIGameMasterChat.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat));
 				break;
 			case hb::owner::Howard:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat.r, GameColors::UINormalChat.g, GameColors::UINormalChat.b));
+				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat));
 				break;
 			}
 		}
 	if (m_bSkillUsingStatus == true)
 	{
-		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
+		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
 	}
 	m_Renderer->EndTextBatch();
 }

@@ -168,7 +168,7 @@ void Screen_Test::on_render()
 	{
 		// Show placeholder if fonts not loaded
 		int y = HEADER_HEIGHT + (row++ - m_scrollOffset) * ROW_HEIGHT;
-		TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Bitmap fonts not loaded - run through Loading screen first", TextLib::TextStyle::Color(255, 100, 100));
+		TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Bitmap fonts not loaded - run through Loading screen first", TextLib::TextStyle::Color(Color(255, 100, 100)));
 	}
 
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap2))
@@ -201,7 +201,7 @@ void Screen_Test::on_render()
 		if (displayRow >= 0 && displayRow <= 10)
 		{
 			int y = HEADER_HEIGHT + displayRow * ROW_HEIGHT;
-			TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Scroll down for Alignment Showcase...", TextLib::TextStyle::Color(100, 200, 255));
+			TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, y, "Scroll down for Alignment Showcase...", TextLib::TextStyle::Color(Color(100, 200, 255)));
 		}
 	}
 
@@ -211,20 +211,20 @@ void Screen_Test::on_render()
 void Screen_Test::RenderHeader()
 {
 	// Title
-	TextLib::DrawText(GameFont::Default, 220, 5, "TEXTLIB TEST SCREEN", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
+	TextLib::DrawText(GameFont::Default, 220, 5, "TEXTLIB TEST SCREEN", TextLib::TextStyle::Color(GameColors::UITopMsgYellow));
 
 	// Instructions
-	TextLib::DrawText(GameFont::Default, 10, 25, "ESC=Quit | UP/DOWN=Scroll", TextLib::TextStyle::Color(GameColors::InfoGrayLight.r, GameColors::InfoGrayLight.g, GameColors::InfoGrayLight.b));
+	TextLib::DrawText(GameFont::Default, 10, 25, "ESC=Quit | UP/DOWN=Scroll", TextLib::TextStyle::Color(GameColors::InfoGrayLight));
 
 	// Column headers
-	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, 45, "LEGACY (PutString*)", TextLib::TextStyle::Color(255, 150, 150));
-	TextLib::DrawText(GameFont::Default, RIGHT_COLUMN_X, 45, "NEW (TextLib::DrawText)", TextLib::TextStyle::Color(150, 255, 150));
+	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, 45, "LEGACY (PutString*)", TextLib::TextStyle::Color(Color(255, 150, 150)));
+	TextLib::DrawText(GameFont::Default, RIGHT_COLUMN_X, 45, "NEW (TextLib::DrawText)", TextLib::TextStyle::Color(Color(150, 255, 150)));
 
 	// Divider line (visual separator)
 	int midX = 320;
 	for (int y = HEADER_HEIGHT; y < 480; y += 2)
 	{
-		m_pGame->m_Renderer->PutPixel(midX, y, 80, 80, 80);
+		m_pGame->m_Renderer->DrawPixel(midX, y, Color(80, 80, 80));
 	}
 }
 
@@ -239,7 +239,7 @@ void Screen_Test::RenderTestRow(int row, const char* testName,
 	int baseY = HEADER_HEIGHT + displayRow * ROW_HEIGHT;
 
 	// Test name label (small, gray)
-	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, baseY, testName, TextLib::TextStyle::Color(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	TextLib::DrawText(GameFont::Default, LEFT_COLUMN_X, baseY, testName, TextLib::TextStyle::Color(GameColors::UIDisabled));
 
 	// Render legacy version on left
 	(this->*legacyFunc)(LEFT_COLUMN_X, baseY + 16);
@@ -252,31 +252,31 @@ void Screen_Test::RenderTestRow(int row, const char* testName,
 
 void Screen_Test::Legacy_PutString_NoShadow(int x, int y)
 {
-	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::Color(GameColors::UIWhite));
 }
 
 void Screen_Test::Legacy_PutString_WithShadow(int x, int y)
 {
 	// PutString with cBGtype=1 for 3-point shadow
-	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 }
 
 void Screen_Test::Legacy_PutString2(int x, int y)
 {
-	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Default, x, y, "Hello World", TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 }
 
 void Screen_Test::Legacy_PutAlignedString(int x, int y)
 {
 	// Centered between x and x+COLUMN_WIDTH
-	TextLib::DrawTextAligned(GameFont::Default, x, y, x + COLUMN_WIDTH - x, 15, "Centered Text", TextLib::TextStyle::Color(255, 200, 100), TextLib::Align::TopCenter);
+	TextLib::DrawTextAligned(GameFont::Default, x, y, x + COLUMN_WIDTH - x, 15, "Centered Text", TextLib::TextStyle::Color(Color(255, 200, 100)), TextLib::Align::TopCenter);
 }
 
 void Screen_Test::Legacy_PutString_SprFont(int x, int y)
 {
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap1))
 	{
-		TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World", TextLib::TextStyle::WithHighlight(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+		TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World", TextLib::TextStyle::WithHighlight(GameColors::UIDisabled));
 	}
 }
 
@@ -284,7 +284,7 @@ void Screen_Test::Legacy_PutString_SprFont2(int x, int y)
 {
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap1))
 	{
-		TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World", TextLib::TextStyle::WithIntegratedShadow(255, 200, 100));
+		TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World", TextLib::TextStyle::WithIntegratedShadow(Color(255, 200, 100)));
 	}
 }
 
@@ -292,7 +292,7 @@ void Screen_Test::Legacy_PutString_SprFont3(int x, int y)
 {
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap2))
 	{
-		TextLib::DrawText(GameFont::Bitmap2, x, y, "Hello World", TextLib::TextStyle::WithTwoPointShadow(100, 200, 255));
+		TextLib::DrawText(GameFont::Bitmap2, x, y, "Hello World", TextLib::TextStyle::WithTwoPointShadow(Color(100, 200, 255)));
 	}
 }
 
@@ -300,7 +300,7 @@ void Screen_Test::Legacy_PutString_SprFont3_Trans(int x, int y)
 {
 	if (TextLib::IsBitmapFontLoaded(GameFont::Bitmap2))
 	{
-		TextLib::DrawText(GameFont::Bitmap2, x, y, "Transparent", TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b).WithAlpha(0.7f));
+		TextLib::DrawText(GameFont::Bitmap2, x, y, "Transparent", TextLib::TextStyle::Color(GameColors::UIWhite).WithAlpha(0.7f));
 	}
 }
 
@@ -309,9 +309,9 @@ void Screen_Test::Legacy_PutString_SprNum(int x, int y)
 	if (TextLib::IsBitmapFontLoaded(GameFont::Numbers))
 	{
 		// Shadow first
-		TextLib::DrawText(GameFont::Numbers, x + 1, y + 1, "12345", TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+		TextLib::DrawText(GameFont::Numbers, x + 1, y + 1, "12345", TextLib::TextStyle::Color(GameColors::UIBlack));
 		// Main text
-		TextLib::DrawText(GameFont::Numbers, x, y, "12345", TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+		TextLib::DrawText(GameFont::Numbers, x, y, "12345", TextLib::TextStyle::Color(GameColors::UIWhite));
 	}
 }
 
@@ -320,79 +320,69 @@ void Screen_Test::Legacy_PutString_SprNum(int x, int y)
 void Screen_Test::New_DrawText_NoShadow(int x, int y)
 {
 	TextLib::DrawText(GameFont::Default, x, y, "Hello World",
-	                  TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	                  TextLib::TextStyle::Color(GameColors::UIWhite));
 }
 
 void Screen_Test::New_DrawText_ThreePoint(int x, int y)
 {
 	TextLib::DrawText(GameFont::Default, x, y, "Hello World",
-	                  TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	                  TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 }
 
 void Screen_Test::New_DrawText_ThreePoint2(int x, int y)
 {
 	TextLib::DrawText(GameFont::Default, x, y, "Hello World",
-	                  TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	                  TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 }
 
 void Screen_Test::New_DrawTextCentered(int x, int y)
 {
 	TextLib::DrawTextAligned(GameFont::Default, x, y, COLUMN_WIDTH, 20, "Centered Text",
-	                         TextLib::TextStyle::Color(255, 200, 100), TextLib::Align::HCenter);
+	                         TextLib::TextStyle::Color(Color(255, 200, 100)), TextLib::Align::HCenter);
 }
 
 void Screen_Test::New_DrawText_Bitmap1_Highlight(int x, int y)
 {
 	TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World",
-	                  TextLib::TextStyle::WithHighlight(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+	                  TextLib::TextStyle::WithHighlight(GameColors::UIDisabled));
 }
 
 void Screen_Test::New_DrawText_Bitmap1_Integrated(int x, int y)
 {
 	TextLib::DrawText(GameFont::Bitmap1, x, y, "Hello World",
-	                  TextLib::TextStyle::WithIntegratedShadow(255, 200, 100));
+	                  TextLib::TextStyle::WithIntegratedShadow(Color(255, 200, 100)));
 }
 
 void Screen_Test::New_DrawText_Bitmap2_DropShadow(int x, int y)
 {
 	TextLib::DrawText(GameFont::Bitmap2, x, y, "Hello World",
-	                  TextLib::TextStyle::WithDropShadow(100, 200, 255));
+	                  TextLib::TextStyle::WithDropShadow(Color(100, 200, 255)));
 }
 
 void Screen_Test::New_DrawText_Bitmap2_Transparent(int x, int y)
 {
 	TextLib::DrawText(GameFont::Bitmap2, x, y, "Transparent",
-	                  TextLib::TextStyle::Transparent(255, 255, 255, 0.7f));
+	                  TextLib::TextStyle::Transparent(Color(255, 255, 255), 0.7f));
 }
 
 void Screen_Test::New_DrawText_Numbers(int x, int y)
 {
 	// With drop shadow like the legacy version
 	TextLib::DrawText(GameFont::Numbers, x, y, "12345",
-	                  TextLib::TextStyle::WithDropShadow(255, 255, 255));
+	                  TextLib::TextStyle::WithDropShadow(Color(255, 255, 255)));
 }
 
 // ============== Alignment Showcase ==============
 
 void Screen_Test::DrawRectOutline(int x, int y, int width, int height, uint8_t r, uint8_t g, uint8_t b)
 {
-	// Draw rectangle outline using pixels
-	for (int i = 0; i < width; i++)
-	{
-		m_pGame->m_Renderer->PutPixel(x + i, y, r, g, b);                  // Top
-		m_pGame->m_Renderer->PutPixel(x + i, y + height - 1, r, g, b);     // Bottom
-	}
-	for (int i = 0; i < height; i++)
-	{
-		m_pGame->m_Renderer->PutPixel(x, y + i, r, g, b);                  // Left
-		m_pGame->m_Renderer->PutPixel(x + width - 1, y + i, r, g, b);      // Right
-	}
+	m_pGame->m_Renderer->DrawRectOutline(x, y, width, height, Color(r, g, b));
 }
 
 void Screen_Test::RenderAlignmentShowcase()
 {
 	// Title
-	TextLib::DrawText(GameFont::Default, 180, 70, "DrawTextAligned with GameRectangle", TextLib::TextStyle::Color(GameColors::UITopMsgYellow.r, GameColors::UITopMsgYellow.g, GameColors::UITopMsgYellow.b));
+	TextLib::DrawText(GameFont::Default, 180, 70, "DrawTextAligned with GameRectangle", TextLib::TextStyle::Color(GameColors::UITopMsgYellow));
 
 	// Grid layout: 3 columns (Left, Center, Right) x 3 rows (Top, Middle, Bottom)
 	constexpr int CELL_WIDTH = 180;
@@ -409,14 +399,14 @@ void Screen_Test::RenderAlignmentShowcase()
 	for (int col = 0; col < 3; col++)
 	{
 		int x = GRID_X + col * (CELL_WIDTH + CELL_SPACING) + CELL_WIDTH / 2 - 20;
-		TextLib::DrawText(GameFont::Default, x, GRID_Y - 20, hLabels[col], TextLib::TextStyle::Color(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+		TextLib::DrawText(GameFont::Default, x, GRID_Y - 20, hLabels[col], TextLib::TextStyle::Color(GameColors::UIDisabled));
 	}
 
 	// Draw row labels
 	for (int row = 0; row < 3; row++)
 	{
 		int y = GRID_Y + row * (CELL_HEIGHT + CELL_SPACING) + CELL_HEIGHT / 2 - 8;
-		TextLib::DrawText(GameFont::Default, GRID_X - 60, y, vLabels[row], TextLib::TextStyle::Color(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+		TextLib::DrawText(GameFont::Default, GRID_X - 60, y, vLabels[row], TextLib::TextStyle::Color(GameColors::UIDisabled));
 	}
 
 	// Alignment combinations (use bitwise OR to combine)
@@ -440,13 +430,13 @@ void Screen_Test::RenderAlignmentShowcase()
 			// Create GameRectangle and draw aligned text
 			GameRectangle rect(cellX, cellY, CELL_WIDTH, CELL_HEIGHT);
 			TextLib::DrawTextAligned(GameFont::Default, rect, "Text",
-			                         TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b),
+			                         TextLib::TextStyle::Color(GameColors::UIWhite),
 			                         alignments[row][col]);
 		}
 	}
 
 	// Show code example
 	int exampleY = GRID_Y + 3 * (CELL_HEIGHT + CELL_SPACING) + 20;
-	TextLib::DrawText(GameFont::Default, GRID_X, exampleY, "Usage: GameRectangle rect(x, y, width, height);", TextLib::TextStyle::Color(150, 200, 150));
-	TextLib::DrawText(GameFont::Default, GRID_X, exampleY + 16, "       TextLib::DrawTextAligned(fontId, rect, text, style, hAlign, vAlign);", TextLib::TextStyle::Color(150, 200, 150));
+	TextLib::DrawText(GameFont::Default, GRID_X, exampleY, "Usage: GameRectangle rect(x, y, width, height);", TextLib::TextStyle::Color(Color(150, 200, 150)));
+	TextLib::DrawText(GameFont::Default, GRID_X, exampleY + 16, "       TextLib::DrawTextAligned(fontId, rect, text, style, hAlign, vAlign);", TextLib::TextStyle::Color(Color(150, 200, 150)));
 }

@@ -962,19 +962,19 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		if (strlen(cStr1) != 0)
 		{
 			if (m_bIsSpecial)
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b));
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special));
 			else
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
 			iLoc += 15;
 		}
 		if (strlen(cStr2) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
 		if (strlen(cStr3) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDisabled.r, GameColors::UIDisabled.g, GameColors::UIDisabled.b));
+			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
 	}

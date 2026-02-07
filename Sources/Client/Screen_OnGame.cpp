@@ -473,7 +473,7 @@ void Screen_OnGame::on_render()
         if (((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
             ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
         }
-        else m_pGame->m_Renderer->DrawShadowBox(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), LOGICAL_HEIGHT() - 51);
+        else m_pGame->m_Renderer->DrawRectFilled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, Color::Black(128));
         m_pGame->ShowReceivedString();
     }
 
@@ -495,13 +495,13 @@ void Screen_OnGame::on_render()
     // Heldenian tower count
     if ((m_pGame->m_iHeldenianAresdenLeftTower != -1) && (memcmp(m_pGame->m_cCurLocation, "BtField", 7) == 0)) {
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden Flags : %d", m_pGame->m_iHeldenianAresdenFlags);
-        TextLib::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, 140, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden Flags : %d", m_pGame->m_iHeldenianElvineFlags);
-        TextLib::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, 160, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Aresden's rest building number : %d", m_pGame->m_iHeldenianAresdenLeftTower);
-        TextLib::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, 180, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Elvine's rest building number : %d", m_pGame->m_iHeldenianElvineLeftTower);
-        TextLib::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, 200, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
     }
 
     m_pGame->DrawTopMsg();
@@ -512,7 +512,7 @@ void Screen_OnGame::on_render()
     int iDisplayY = 100;
     if (ConfigManager::Get().IsShowFpsEnabled()) {
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "fps : %u", FrameTiming::GetFPS());
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
         iDisplayY += 14;
     }
 
@@ -521,14 +521,14 @@ void Screen_OnGame::on_render()
             std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "latency : %d ms", m_pGame->m_iLatencyMs);
         else
             std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "latency : -- ms");
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
         iDisplayY += 14;
     }
 
     // Profiling display
     if (FrameTiming::IsProfilingEnabled()) {
         iDisplayY += 4;
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::Color(GameColors::UIProfileYellow.r, GameColors::UIProfileYellow.g, GameColors::UIProfileYellow.b));
+        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::Color(GameColors::UIProfileYellow));
         iDisplayY += 14;
 
         for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++) {
@@ -537,7 +537,7 @@ void Screen_OnGame::on_render()
             int wholePart = static_cast<int>(avgMs);
             int fracPart = static_cast<int>((avgMs - wholePart) * 100);
             std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UINearWhite.r, GameColors::UINearWhite.g, GameColors::UINearWhite.b));
+            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UINearWhite));
             iDisplayY += 12;
         }
     }
@@ -571,15 +571,15 @@ void Screen_OnGame::RenderItemTooltip()
     m_pGame->GetItemName(item, cStr1, cStr2, cStr3);
     iLoc = 0;
     if (strlen(cStr1) != 0) {
-        if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special.r, GameColors::UIItemName_Special.g, GameColors::UIItemName_Special.b));
-        else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+        if (m_pGame->m_bIsSpecial) TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special));
+        else TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
         iLoc += 15;
     }
-    if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15; }
-    if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15; }
+    if (strlen(cStr2) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
+    if (strlen(cStr3) != 0) { TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15; }
     if ((pCfg->m_sLevelLimit != 0) && item->IsCustomMade()) {
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%s: %d", DRAW_DIALOGBOX_SHOP24, pCfg->m_sLevelLimit);
-        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
+        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
     }
     if (is_equippable) {
         // Weight below 1100 is not displayed as a strength requirement
@@ -588,12 +588,12 @@ void Screen_OnGame::RenderItemTooltip()
             // Display weight, whatever the weight calculation is, divide by 100, and round up
             int _wWeight = static_cast<int>(std::ceil(pCfg->m_wWeight / 100.0f));
             std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), DRAW_DIALOGBOX_SHOP15, _wWeight);
-            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
         }
 
         // Display durability
         std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), UPDATE_SCREEN_ONGAME10, item->m_wCurLifeSpan, pCfg->m_wMaxLifeSpan);
-        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b)); iLoc += 15;
+        TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25 + iLoc, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription)); iLoc += 15;
     }
 
     if (pCfg->IsStackable()) {
@@ -604,7 +604,7 @@ void Screen_OnGame::RenderItemTooltip()
 
         if (count > 1) {
             std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), DEF_MSG_TOTAL_NUMBER, static_cast<int>(count));
-            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription.r, GameColors::UIDescription.g, GameColors::UIDescription.b));
+            TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription));
         }
     }
 }
@@ -629,11 +629,12 @@ void Screen_OnGame::DrawTileGrid()
     int screenH = LOGICAL_HEIGHT();
 
     // Draw dark gray grid lines (subtle)
+    Color gridColor(40, 40, 40, static_cast<uint8_t>(GRID_ALPHA * 255));
     for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, 40, 40, 40, GRID_ALPHA);
+        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, gridColor);
     }
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 40, 40, 40, GRID_ALPHA);
+        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, gridColor);
     }
 #endif
 }
@@ -707,18 +708,20 @@ void Screen_OnGame::DrawPatchingGrid()
             int screenX = tx * TILE_SIZE - m_sModX - HALF_TILE;
             int screenY = ty * TILE_SIZE - m_sModY - HALF_TILE;
 
+            Color zoneColor(static_cast<uint8_t>(r), static_cast<uint8_t>(g), static_cast<uint8_t>(b), static_cast<uint8_t>(ZONE_ALPHA * 255));
             for (int i = 0; i < TILE_SIZE; i++) {
-                m_pGame->m_Renderer->DrawLine(screenX, screenY + i, screenX + TILE_SIZE, screenY + i, r, g, b, ZONE_ALPHA);
+                m_pGame->m_Renderer->DrawLine(screenX, screenY + i, screenX + TILE_SIZE, screenY + i, zoneColor);
             }
         }
     }
 
     // Draw subtle dark grid lines over the colored zones
+    Color overlayGridColor(20, 20, 20, static_cast<uint8_t>(0.35f * 255));
     for (int x = -m_sModX + HALF_TILE; x <= screenW; x += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, 20, 20, 20, 0.35f);
+        m_pGame->m_Renderer->DrawLine(x, 0, x, screenH, overlayGridColor);
     }
     for (int y = -m_sModY + HALF_TILE; y <= screenH; y += TILE_SIZE) {
-        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, 20, 20, 20, 0.35f);
+        m_pGame->m_Renderer->DrawLine(0, y, screenW, y, overlayGridColor);
     }
 #endif
 }

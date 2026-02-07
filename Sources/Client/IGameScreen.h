@@ -71,9 +71,9 @@ protected:
                           bool bIsNoColorKey = false, bool bIsTrans = false);
     // Computes centered position for a dialog sprite frame within the logical resolution
     void GetCenteredDialogPos(char cType, int iFrame, int& outX, int& outY);
-    void PutString(int iX, int iY, const char* pString, const GameColor& color);
+    void PutString(int iX, int iY, const char* pString, const Color& color);
     void PutAlignedString(int iX1, int iX2, int iY, const char* pString,
-                          const GameColor& color = GameColors::UIBlack);
+                          const Color& color = GameColors::UIBlack);
     void PutString_SprFont(int iX, int iY, const char* pStr, uint8_t r, uint8_t g, uint8_t b);
     void DrawVersion();
 

@@ -58,14 +58,14 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	if (m_pGame->m_pPlayer->m_bIsPoisoned)
 	{
 		TextLib::DrawText(GameFont::Numbers, 85 + HudXOffset(), HP_NUM_Y(), statBuf,
-			TextLib::TextStyle::Color(GameColors::PoisonText.r, GameColors::PoisonText.g, GameColors::PoisonText.b));
+			TextLib::TextStyle::Color(GameColors::PoisonText));
 		TextLib::DrawText(GameFont::SprFont3_2, 35 + HudXOffset(), HP_BAR_Y() + 2, "Poisoned",
-			TextLib::TextStyle::Color(GameColors::PoisonLabel.r, GameColors::PoisonLabel.g, GameColors::PoisonLabel.b).WithAlpha(0.7f));
+			TextLib::TextStyle::Color(GameColors::PoisonLabel).WithAlpha(0.7f));
 	}
 	else
 	{
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-		TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, HP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack));
+		TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), HP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite));
 	}
 
 	// MP bar
@@ -79,8 +79,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// MP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iMP);
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-	TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X() + 1, MP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack));
+	TextLib::DrawText(GameFont::Numbers, HP_NUM_X(), MP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite));
 
 	// SP bar
 	iMaxPoint = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
@@ -92,8 +92,8 @@ void DialogBox_HudPanel::DrawGaugeBars()
 
 	// SP number
 	snprintf(statBuf, sizeof(statBuf), "%d", (short)m_pGame->m_pPlayer->m_iSP);
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
-	TextLib::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf, TextLib::TextStyle::Color(GameColors::UIBlack));
+	TextLib::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf, TextLib::TextStyle::Color(GameColors::UIWhite));
 
 	// Experience bar
 	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
@@ -117,13 +117,13 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 		if ((m_pGame->m_pPlayer->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
 		{
 			int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-			TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Level Up!", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
+			TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Level Up!", TextLib::TextStyle::WithIntegratedShadow(Color(flashColor, flashColor, 0)));
 		}
 	}
 	else if (m_pGame->m_cRestartCount == -1)
 	{
 		int flashColor = (GameClock::GetTimeMS() / 3) % 255;
-		TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", TextLib::TextStyle::WithIntegratedShadow(flashColor, flashColor, 0));
+		TextLib::DrawText(GameFont::Bitmap1, LEVELUP_TEXT_X(), LEVELUP_TEXT_Y(), "Restart", TextLib::TextStyle::WithIntegratedShadow(Color(flashColor, flashColor, 0)));
 	}
 
 	// Combat mode / Safe attack icon

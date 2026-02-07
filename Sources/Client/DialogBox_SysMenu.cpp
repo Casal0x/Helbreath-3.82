@@ -225,7 +225,7 @@ void DialogBox_SysMenu::DrawToggle(int x, int y, bool bEnabled, short msX, short
 	const int boxHeight = m_bFrameSizesInitialized ? m_iSmallBoxHeight : 16;
 
 	bool bHover = (msX >= x && msX <= x + boxWidth && msY >= boxY && msY <= boxY + boxHeight);
-	const GameColor& color = (bEnabled || bHover) ? GameColors::UIWhite : GameColors::UIDisabled;
+	const Color& color = (bEnabled || bHover) ? GameColors::UIWhite : GameColors::UIDisabled;
 
 	// Center text horizontally and vertically in the box
 	const char* text = bEnabled ? DRAW_DIALOGBOX_SYSMENU_ON : DRAW_DIALOGBOX_SYSMENU_OFF;
@@ -409,7 +409,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, modeBoxY, 78);
 
 	bool modeHover = (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight);
-	const GameColor& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
+	const Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
 
 	// Show current mode text, centered horizontally and vertically
 	const char* modeText = isFullscreen ? "Fullscreen" : "Windowed";
@@ -428,7 +428,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, styleBoxY, 78);
 
 	bool styleHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight);
-	const GameColor& styleColor = isFullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
+	const Color& styleColor = isFullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
 	const char* styleText = ConfigManager::Get().IsBorderlessEnabled() ? "Borderless" : "Bordered";
 	TextLib::TextMetrics styleMetrics = TextLib::GetTextRenderer()->MeasureText(styleText);
@@ -461,7 +461,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, resBoxY, 78);
 
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
-	const GameColor& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
+	const Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
 	// Center the resolution text horizontally and vertically in the box
 	TextLib::TextMetrics resMetrics = TextLib::GetTextRenderer()->MeasureText(resBuf);

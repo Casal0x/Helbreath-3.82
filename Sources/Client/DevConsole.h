@@ -19,7 +19,7 @@ public:
 	void Hide();
 
 	// Output
-	void Print(const char* text, const GameColor& color = GameColor{192, 192, 192});
+	void Print(const char* text, const Color& color = Color{192, 192, 192});
 	void Printf(const char* fmt, ...);
 
 	// Text input (called from Overlay_DevConsole / GameWindowHandler)
@@ -40,7 +40,7 @@ public:
 	struct ConsoleLine
 	{
 		char text[120];
-		GameColor color;
+		Color color;
 	};
 	const ConsoleLine* GetLines() const { return m_lines; }
 
@@ -62,7 +62,7 @@ private:
 	void ExecuteCommand();
 	void HistoryUp();
 	void HistoryDown();
-	void AddLine(const char* text, const GameColor& color);
+	void AddLine(const char* text, const Color& color);
 	ConsoleLine m_lines[MAX_LINES];
 	int m_iWriteIndex = 0;
 	int m_iLineCount = 0;

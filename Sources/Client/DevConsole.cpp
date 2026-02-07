@@ -46,7 +46,7 @@ void DevConsole::Initialize()
 {
 	RegisterBuiltInCommands();
 
-	Print("=== Developer Console ===", GameColor{0, 255, 0});
+	Print("=== Developer Console ===", Color{0, 255, 0});
 	Print("Type 'help' for available commands.");
 }
 
@@ -59,12 +59,12 @@ void DevConsole::Shutdown()
 void DevConsole::RegisterBuiltInCommands()
 {
 	RegisterCommand("help", [this](const char*) {
-		Print("Available commands:", GameColor{0, 255, 0});
+		Print("Available commands:", Color{0, 255, 0});
 		for (int i = 0; i < m_iCommandCount; i++)
 		{
 			char buf[64];
 			sprintf_s(buf, "  %s", m_commands[i].name);
-			Print(buf, GameColor{0, 255, 0});
+			Print(buf, Color{0, 255, 0});
 		}
 	});
 
@@ -120,7 +120,7 @@ void DevConsole::Hide()
 
 // ============== Output ==============
 
-void DevConsole::AddLine(const char* text, const GameColor& color)
+void DevConsole::AddLine(const char* text, const Color& color)
 {
 	ConsoleLine& line = m_lines[m_iWriteIndex];
 	strncpy_s(line.text, text, MAX_LINE_LEN - 1);
@@ -132,7 +132,7 @@ void DevConsole::AddLine(const char* text, const GameColor& color)
 		m_iLineCount++;
 }
 
-void DevConsole::Print(const char* text, const GameColor& color)
+void DevConsole::Print(const char* text, const Color& color)
 {
 	AddLine(text, color);
 }
@@ -257,7 +257,7 @@ void DevConsole::ExecuteCommand()
 	// Echo command in yellow
 	char echo[MAX_INPUT + 4];
 	sprintf_s(echo, "> %s", m_szInput);
-	Print(echo, GameColor{255, 255, 0});
+	Print(echo, Color{255, 255, 0});
 
 	// Parse command name and args
 	char cmdName[32] = {};
@@ -291,7 +291,7 @@ void DevConsole::ExecuteCommand()
 	{
 		char err[MAX_INPUT + 32];
 		sprintf_s(err, "Unknown command: %s", cmdName);
-		Print(err, GameColor{255, 68, 68});
+		Print(err, Color{255, 68, 68});
 	}
 
 	// Clear input

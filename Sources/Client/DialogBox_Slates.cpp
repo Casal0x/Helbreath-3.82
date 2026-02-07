@@ -48,8 +48,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
 			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		}
 		break;
 

@@ -10,6 +10,7 @@
 #include "ITextRenderer.h"
 #include "IBitmapFont.h"
 #include "BitmapFontFactory.h"
+#include "PrimitiveTypes.h"
 #include <algorithm>
 
 namespace TextLib {
@@ -37,9 +38,7 @@ enum class ShadowStyle {
 
 struct TextStyle
 {
-	uint8_t r = 255;
-	uint8_t g = 255;
-	uint8_t b = 255;
+	::Color color{255, 255, 255};
 	float alpha = 1.0f;
 	ShadowStyle shadow = ShadowStyle::None;
 	int fontSize = 0;  // 0 = use default size, ignored for bitmap fonts
@@ -48,88 +47,88 @@ struct TextStyle
 	// Default constructor
 	constexpr TextStyle() = default;
 
-	// RGB constructor
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_)
-		: r(r_), g(g_), b(b_) {}
+	// Color constructor
+	constexpr TextStyle(const ::Color& c)
+		: color(c) {}
 
-	// RGB + shadow constructor
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, ShadowStyle s)
-		: r(r_), g(g_), b(b_), shadow(s) {}
+	// Color + shadow constructor
+	constexpr TextStyle(const ::Color& c, ShadowStyle s)
+		: color(c), shadow(s) {}
 
-	// RGB + alpha constructor
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a)
-		: r(r_), g(g_), b(b_), alpha(a) {}
+	// Color + alpha constructor
+	constexpr TextStyle(const ::Color& c, float a)
+		: color(c), alpha(a) {}
 
 	// Full constructor
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a, ShadowStyle s)
-		: r(r_), g(g_), b(b_), alpha(a), shadow(s) {}
+	constexpr TextStyle(const ::Color& c, float a, ShadowStyle s)
+		: color(c), alpha(a), shadow(s) {}
 
 	// Full constructor with size
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a, ShadowStyle s, int size)
-		: r(r_), g(g_), b(b_), alpha(a), shadow(s), fontSize(size) {}
+	constexpr TextStyle(const ::Color& c, float a, ShadowStyle s, int size)
+		: color(c), alpha(a), shadow(s), fontSize(size) {}
 
 	// Full constructor with additive
-	constexpr TextStyle(uint8_t r_, uint8_t g_, uint8_t b_, float a, ShadowStyle s, int size, bool additive)
-		: r(r_), g(g_), b(b_), alpha(a), shadow(s), fontSize(size), useAdditive(additive) {}
+	constexpr TextStyle(const ::Color& c, float a, ShadowStyle s, int size, bool additive)
+		: color(c), alpha(a), shadow(s), fontSize(size), useAdditive(additive) {}
 
 	// ============== Factory Methods ==============
 
-	// Simple color (most common)
-	static constexpr TextStyle Color(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b);
+	// Simple color
+	static constexpr TextStyle Color(const ::Color& c) {
+		return TextStyle(c);
 	}
 
 	// Color with 3-point shadow (like PutString2)
-	static constexpr TextStyle WithShadow(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b, ShadowStyle::ThreePoint);
+	static constexpr TextStyle WithShadow(const ::Color& c) {
+		return TextStyle(c, ShadowStyle::ThreePoint);
 	}
 
 	// Color with 2-point shadow (0,+1 and +1,+1) (like PutString_SprFont3)
-	static constexpr TextStyle WithTwoPointShadow(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b, ShadowStyle::TwoPoint);
+	static constexpr TextStyle WithTwoPointShadow(const ::Color& c) {
+		return TextStyle(c, ShadowStyle::TwoPoint);
 	}
 
 	// Color with drop shadow (+1,+1)
-	static constexpr TextStyle WithDropShadow(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b, ShadowStyle::DropShadow);
+	static constexpr TextStyle WithDropShadow(const ::Color& c) {
+		return TextStyle(c, ShadowStyle::DropShadow);
 	}
 
 	// Color with highlight effect (like PutString_SprFont)
-	static constexpr TextStyle WithHighlight(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b, ShadowStyle::Highlight);
+	static constexpr TextStyle WithHighlight(const ::Color& c) {
+		return TextStyle(c, ShadowStyle::Highlight);
 	}
 
 	// Color with integrated shadow (like PutString_SprFont2)
-	static constexpr TextStyle WithIntegratedShadow(uint8_t r, uint8_t g, uint8_t b) {
-		return TextStyle(r, g, b, ShadowStyle::Integrated);
+	static constexpr TextStyle WithIntegratedShadow(const ::Color& c) {
+		return TextStyle(c, ShadowStyle::Integrated);
 	}
 
 	// Color with alpha transparency
-	static constexpr TextStyle Transparent(uint8_t r, uint8_t g, uint8_t b, float alpha) {
-		return TextStyle(r, g, b, alpha);
+	static constexpr TextStyle Transparent(const ::Color& c, float alpha) {
+		return TextStyle(c, alpha);
 	}
 
 	// ============== Modifier Methods ==============
 
 	// Create a copy with different shadow style
 	constexpr TextStyle WithShadowStyle(ShadowStyle s) const {
-		return TextStyle(r, g, b, alpha, s, fontSize, useAdditive);
+		return TextStyle(color, alpha, s, fontSize, useAdditive);
 	}
 
 	// Create a copy with different alpha
 	constexpr TextStyle WithAlpha(float a) const {
-		return TextStyle(r, g, b, a, shadow, fontSize, useAdditive);
+		return TextStyle(color, a, shadow, fontSize, useAdditive);
 	}
 
 	// Create a copy with different font size (ignored for bitmap fonts)
 	constexpr TextStyle WithFontSize(int size) const {
-		return TextStyle(r, g, b, alpha, shadow, size, useAdditive);
+		return TextStyle(color, alpha, shadow, size, useAdditive);
 	}
 
 	// Create a copy with additive blending enabled
 	// Use this for bright text (damage numbers) that needs DDraw-like brightness
 	constexpr TextStyle WithAdditive() const {
-		return TextStyle(r, g, b, alpha, shadow, fontSize, true);
+		return TextStyle(color, alpha, shadow, fontSize, true);
 	}
 };
 
@@ -161,18 +160,6 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 // Combine with bitwise OR: Align::HCenter | Align::VCenter, or use presets: Align::Center
 void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
                      const TextStyle& style, Align alignment = Align::TopLeft);
-
-// ============== Convenience Overloads ==============
-
-// Simple RGB color (no style object needed for basic cases)
-inline void DrawText(int fontId, int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) {
-	DrawText(fontId, x, y, text, TextStyle::Color(r, g, b));
-}
-
-inline void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
-                            uint8_t r, uint8_t g, uint8_t b, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, x, y, width, height, text, TextStyle::Color(r, g, b), alignment);
-}
 
 // ============== Text Measurement ==============
 

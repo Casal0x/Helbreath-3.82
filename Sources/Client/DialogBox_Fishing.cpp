@@ -37,13 +37,13 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack);
 
 		std::snprintf(cTxt, sizeof(cTxt), "%d %%", Info().sV1);
-		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnFishRed.r, GameColors::BmpBtnFishRed.g, GameColors::BmpBtnFishRed.b));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnFishRed));
 
 		// "Try Now!" button
 		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }

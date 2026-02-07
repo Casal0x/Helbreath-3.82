@@ -8,6 +8,7 @@
 
 #include "NativeTypes.h"
 #include "GameGeometry.h"
+#include "PrimitiveTypes.h"
 #include <cstdint>
 
 // Undefine Windows DrawText macro to avoid naming conflict with IRenderer::DrawText
@@ -40,28 +41,25 @@ public:
     virtual bool EndFrameCheckLostSurface() = 0;  // Flip and return true if surface lost
 
     // ============== Primitive Rendering ==============
-    virtual void PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) = 0;
-    virtual void DrawShadowBox(int x1, int y1, int x2, int y2, int type = 0) = 0;
-    virtual void DrawItemShadowBox(int x1, int y1, int x2, int y2, int type = 0) = 0;
+    // All rect-based primitives use (x, y, w, h) format, consistent with GameRectangle.
+    // DrawLine uses (x0, y0, x1, y1) endpoint format.
 
-    // Draw a line with additive blending
-    // alpha: 1.0 = full intensity, 0.5 = half intensity
-    virtual void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha = 1.0f) = 0;
-
-    // ============== Screen Effects ==============
-    // Draw a full-screen black overlay with given alpha (0.0 = transparent, 1.0 = opaque)
-    // Used for fade transitions between game modes
-    virtual void DrawFadeOverlay(float alpha) = 0;
-
-    // Draw a dark rectangle with given alpha (0.0 = transparent, 1.0 = opaque)
-    // Used for partial-screen overlays like the developer console
-    virtual void DrawDarkRect(int x1, int y1, int x2, int y2, float alpha) = 0;
+    virtual void DrawPixel(int x, int y, const Color& color) = 0;
+    virtual void DrawLine(int x0, int y0, int x1, int y1, const Color& color,
+                          BlendMode blend = BlendMode::Alpha) = 0;
+    virtual void DrawRectFilled(int x, int y, int w, int h, const Color& color) = 0;
+    virtual void DrawRectOutline(int x, int y, int w, int h, const Color& color,
+                                 int thickness = 1) = 0;
+    virtual void DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
+                                       const Color& color) = 0;
+    virtual void DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
+                                        const Color& color, int thickness = 1) = 0;
 
     // ============== Text Rendering ==============
     virtual void BeginTextBatch() = 0;      // GetBackBufferDC
     virtual void EndTextBatch() = 0;        // ReleaseBackBufferDC
-    virtual void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
-    virtual void DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
+    virtual void DrawText(int x, int y, const char* text, const Color& color) = 0;
+    virtual void DrawTextRect(const GameRectangle& rect, const char* text, const Color& color) = 0;
 
     // ============== Surface/Texture Management ==============
     virtual ITexture* CreateTexture(uint16_t width, uint16_t height) = 0;

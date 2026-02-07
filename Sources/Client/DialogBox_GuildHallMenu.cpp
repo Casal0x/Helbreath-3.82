@@ -45,7 +45,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		if (m_pGame->m_iTeleportMapCount > 0)
 		{
 			char teleportBuf[128];
-			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(GameColors::UILabel.r, GameColors::UILabel.g, GameColors::UILabel.b));
+			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(GameColors::UILabel));
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));

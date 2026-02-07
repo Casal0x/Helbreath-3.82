@@ -34,7 +34,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, GameColors::UILabel);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover.r, GameColors::BmpBtnHover.g, GameColors::BmpBtnHover.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, GameColors::UILabel);
@@ -43,7 +43,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, GameColors::UILabel);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover.r, GameColors::BmpBtnHover.g, GameColors::BmpBtnHover.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, GameColors::UILabel);
@@ -53,15 +53,15 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel);
 			if ((msX >= sX + 200) && (msX <= sX + 200 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			else
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		}
 		if ((msX >= sX + 450) && (msX <= sX + 450 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 
 	case 2: // You have confirmed the exchange

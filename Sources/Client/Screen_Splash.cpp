@@ -95,11 +95,11 @@ void Screen_Splash::on_render()
             continue;
 
         // Scale RGB by alpha to simulate fade (TTF fonts don't support alpha)
-        auto fade = [alpha](const GameColor& c) {
-            return TextLib::TextStyle::WithDropShadow(
+        auto fade = [alpha](const Color& c) {
+            return TextLib::TextStyle::WithDropShadow(Color(
                 static_cast<uint8_t>(c.r * alpha),
                 static_cast<uint8_t>(c.g * alpha),
-                static_cast<uint8_t>(c.b * alpha));
+                static_cast<uint8_t>(c.b * alpha)));
         };
 
         const auto& credit = m_credits[i];

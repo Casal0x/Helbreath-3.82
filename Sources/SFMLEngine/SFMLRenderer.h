@@ -36,20 +36,22 @@ public:
     bool EndFrameCheckLostSurface() override;
 
     // Primitive Rendering
-    void PutPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) override;
-    void DrawShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
-    void DrawItemShadowBox(int x1, int y1, int x2, int y2, int type = 0) override;
-    void DrawLine(int x0, int y0, int x1, int y1, int iR, int iG, int iB, float alpha = 1.0f) override;
-
-    // Screen Effects
-    void DrawFadeOverlay(float alpha) override;
-    void DrawDarkRect(int x1, int y1, int x2, int y2, float alpha) override;
+    void DrawPixel(int x, int y, const Color& color) override;
+    void DrawLine(int x0, int y0, int x1, int y1, const Color& color,
+                  BlendMode blend = BlendMode::Alpha) override;
+    void DrawRectFilled(int x, int y, int w, int h, const Color& color) override;
+    void DrawRectOutline(int x, int y, int w, int h, const Color& color,
+                         int thickness = 1) override;
+    void DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
+                               const Color& color) override;
+    void DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
+                                const Color& color, int thickness = 1) override;
 
     // Text Rendering
     void BeginTextBatch() override;
     void EndTextBatch() override;
-    void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) override;
-    void DrawTextRect(const GameRectangle& rect, const char* text, uint8_t r, uint8_t g, uint8_t b) override;
+    void DrawText(int x, int y, const char* text, const Color& color) override;
+    void DrawTextRect(const GameRectangle& rect, const char* text, const Color& color) override;
 
     // Surface/Texture Management
     ITexture* CreateTexture(uint16_t width, uint16_t height) override;

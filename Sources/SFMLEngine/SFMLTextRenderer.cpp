@@ -147,19 +147,19 @@ int SFMLTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
     return 0;
 }
 
-void SFMLTextRenderer::DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b)
+void SFMLTextRenderer::DrawText(int x, int y, const char* text, const ::Color& color)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
         return;
 
     sf::Text sfText(m_font, text, m_fontSize);
     sfText.setPosition({static_cast<float>(x), static_cast<float>(y)});
-    sfText.setFillColor(sf::Color(r, g, b));
+    sfText.setFillColor(sf::Color(color.r, color.g, color.b));
 
     m_pBackBuffer->draw(sfText);
 }
 
-void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, uint8_t r, uint8_t g, uint8_t b,
+void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, const ::Color& color,
                                         Align alignment)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
@@ -191,7 +191,7 @@ void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, cons
     int pixelY = static_cast<int>(drawY + 0.5f);
 
     sfText.setPosition({static_cast<float>(pixelX), static_cast<float>(pixelY)});
-    sfText.setFillColor(sf::Color(r, g, b));
+    sfText.setFillColor(sf::Color(color.r, color.g, color.b));
 
     m_pBackBuffer->draw(sfText);
 }

@@ -37,6 +37,7 @@
 #endif
 
 #include "GameGeometry.h"
+#include "PrimitiveTypes.h"
 
 // ============================================================================
 // Memory Operations
@@ -91,24 +92,16 @@ public:
 };
 
 // ============================================================================
-// Color System
+// Color System (defined in PrimitiveTypes.h)
 // ============================================================================
-
-struct GameColor
-{
-	uint8_t r, g, b, a;
-	constexpr GameColor() : r(0), g(0), b(0), a(255) {}
-	constexpr GameColor(uint8_t r_, uint8_t g_, uint8_t b_, uint8_t a_ = 255) : r(r_), g(g_), b(b_), a(a_) {}
-};
-
 
 namespace GameColors
 {
 	// Base gray (subtracted for tinting)
-	inline constexpr GameColor Base{ 96, 96, 96 };
+	inline constexpr Color Base{ 96, 96, 96 };
 
 	// Item/Equipment palette (indices 0-15)
-	inline constexpr GameColor Items[16] = {
+	inline constexpr Color Items[16] = {
 		{ 96, 96, 96 },   // 0  Base gray
 		{ 40, 40, 96 },   // 1  IndigoBlue
 		{ 72, 72, 56 },   // 2  CustomWeapon
@@ -128,7 +121,7 @@ namespace GameColors
 	};
 
 	// Weapon palette (indices 0-15, only 1-9 are set)
-	inline constexpr GameColor Weapons[16] = {
+	inline constexpr Color Weapons[16] = {
 		{ 0, 0, 0 },      // 0  (unused)
 		{ 64, 64, 80 },   // 1  LightBlue
 		{ 64, 64, 80 },   // 2  LightBlue
@@ -149,18 +142,18 @@ namespace GameColors
 
 	// Pre-computed math colors
 	// original: m_wR[13]*2, m_wG[13]*2, m_wB[13]*2
-	inline constexpr GameColor Yellow2x{ 160, 160, 16 };
+	inline constexpr Color Yellow2x{ 160, 160, 16 };
 	// original: m_wR[13]*4, m_wG[13]*4, m_wB[13]*4
-	inline constexpr GameColor Yellow4x{ 255, 255, 32 };
+	inline constexpr Color Yellow4x{ 255, 255, 32 };
 	// original: m_wR[14]*4, m_wG[14]*4, m_wB[14]*4
-	inline constexpr GameColor Red4x{ 255, 32, 32 };
+	inline constexpr Color Red4x{ 255, 32, 32 };
 	// original: m_wR[5]*11, m_wG[5]*11, m_wB[5]*11
-	inline constexpr GameColor PoisonText{ 88, 255, 88 };
+	inline constexpr Color PoisonText{ 88, 255, 88 };
 	// original: m_wR[5]*8, m_wG[5]*8, m_wB[5]*8
-	inline constexpr GameColor PoisonLabel{ 64, 255, 64 };
+	inline constexpr Color PoisonLabel{ 64, 255, 64 };
 	// Status effect additive colors (for AdditiveColored blend)
 	// Berserk: creates a bright reddish/golden glow when added to destination
-	inline constexpr GameColor BerserkGlow{ 255, 240, 240 };
+	inline constexpr Color BerserkGlow{ 255, 240, 240 };
 
 	// ====================================================================
 	// UI Text Colors
@@ -171,75 +164,75 @@ namespace GameColors
 	// ====================================================================
 
 	// TextLib::TextStyle::WithShadow (Game.cpp, Screen_OnGame.cpp)
-	inline constexpr GameColor InfoGrayLight{ 180, 180, 180 };  // Lighter info text
+	inline constexpr Color InfoGrayLight{ 180, 180, 180 };  // Lighter info text
 
 	// ====================================================================
 	// Additional UI Colors
 	// ====================================================================
 
-	inline constexpr GameColor UIMenuHighlight{ 250, 250, 0 };  // Teleport menu highlight (DialogBox_CityHallMenu, DialogBox_GuildHallMenu)
-	inline constexpr GameColor UINoticeRed{ 100, 10, 10 };      // Notice message text (DialogBox_Noticement)
-	inline constexpr GameColor UITooltip{ 250, 250, 220 };      // Tooltip text (DialogBox_HudPanel)
-	inline constexpr GameColor UIDisabledMed{ 120, 120, 120 };      // Grayed out text (DialogBox_Manufacture)
-	inline constexpr GameColor UISelectPurple{ 51, 0, 51 };     // Character select labels (Screen_SelectCharacter)
-	inline constexpr GameColor UIFormLabel{ 100, 100, 200 };    // Form field labels (Screen_CreateAccount)
-	inline constexpr GameColor UIProfileYellow{ 255, 255, 100 };// Profile overlay text (Screen_OnGame)
-	inline constexpr GameColor UITopMsgYellow{ 255, 255, 0 };   // Top message text (Game.cpp)
-	inline constexpr GameColor UIDmgYellow{ 255, 255, 20 };     // Damage text yellow (Game.cpp)
-	inline constexpr GameColor UIDmgRed{ 255, 80, 80 };         // Damage text red (Game.cpp)
-	inline constexpr GameColor UIBuildRed{ 180, 30, 30 };       // Build/craft warning (Game.cpp)
-	inline constexpr GameColor ChatEventGreen{ 130, 255, 130 }; // Event history green (Game.cpp)
-	inline constexpr GameColor UISlatesPink{ 220, 140, 160 };   // Slates effect text (DialogBox_Slates)
-	inline constexpr GameColor UISlatesCyan{ 90, 220, 200 };    // Slates effect text (DialogBox_Slates)
+	inline constexpr Color UIMenuHighlight{ 250, 250, 0 };  // Teleport menu highlight (DialogBox_CityHallMenu, DialogBox_GuildHallMenu)
+	inline constexpr Color UINoticeRed{ 100, 10, 10 };      // Notice message text (DialogBox_Noticement)
+	inline constexpr Color UITooltip{ 250, 250, 220 };      // Tooltip text (DialogBox_HudPanel)
+	inline constexpr Color UIDisabledMed{ 120, 120, 120 };      // Grayed out text (DialogBox_Manufacture)
+	inline constexpr Color UISelectPurple{ 51, 0, 51 };     // Character select labels (Screen_SelectCharacter)
+	inline constexpr Color UIFormLabel{ 100, 100, 200 };    // Form field labels (Screen_CreateAccount)
+	inline constexpr Color UIProfileYellow{ 255, 255, 100 };// Profile overlay text (Screen_OnGame)
+	inline constexpr Color UITopMsgYellow{ 255, 255, 0 };   // Top message text (Game.cpp)
+	inline constexpr Color UIDmgYellow{ 255, 255, 20 };     // Damage text yellow (Game.cpp)
+	inline constexpr Color UIDmgRed{ 255, 80, 80 };         // Damage text red (Game.cpp)
+	inline constexpr Color UIBuildRed{ 180, 30, 30 };       // Build/craft warning (Game.cpp)
+	inline constexpr Color ChatEventGreen{ 130, 255, 130 }; // Event history green (Game.cpp)
+	inline constexpr Color UISlatesPink{ 220, 140, 160 };   // Slates effect text (DialogBox_Slates)
+	inline constexpr Color UISlatesCyan{ 90, 220, 200 };    // Slates effect text (DialogBox_Slates)
 
 	// Bitmap font button colors
 	// TextLib::TextStyle::WithHighlight (various dialog boxes)
-	inline constexpr GameColor BmpBtnNormal{ 0, 0, 7 };         // Normal bitmap button (DialogBox_NpcTalk, DialogBox_Exchange, DialogBox_Manufacture, DialogBox_Slates)
-	inline constexpr GameColor BmpBtnHover{ 15, 15, 15 };       // Hover bitmap button (DialogBox_Exchange)
-	inline constexpr GameColor BmpBtnActive{ 10, 10, 10 };      // Active bitmap button (Game.cpp, DialogBox_Manufacture)
-	inline constexpr GameColor BmpBtnBlue{ 16, 16, 30 };        // Blue bitmap button (DialogBox_Manufacture)
-	inline constexpr GameColor BmpBtnRed{ 20, 6, 6 };           // Red bitmap button (DialogBox_Manufacture)
-	inline constexpr GameColor BmpBtnFishRed{ 10, 0, 0 };       // Fishing button (DialogBox_Fishing)
+	inline constexpr Color BmpBtnNormal{ 0, 0, 7 };         // Normal bitmap button (DialogBox_NpcTalk, DialogBox_Exchange, DialogBox_Manufacture, DialogBox_Slates)
+	inline constexpr Color BmpBtnHover{ 15, 15, 15 };       // Hover bitmap button (DialogBox_Exchange)
+	inline constexpr Color BmpBtnActive{ 10, 10, 10 };      // Active bitmap button (Game.cpp, DialogBox_Manufacture)
+	inline constexpr Color BmpBtnBlue{ 16, 16, 30 };        // Blue bitmap button (DialogBox_Manufacture)
+	inline constexpr Color BmpBtnRed{ 20, 6, 6 };           // Red bitmap button (DialogBox_Manufacture)
+	inline constexpr Color BmpBtnFishRed{ 10, 0, 0 };       // Fishing button (DialogBox_Fishing)
 
 	// Minimap night colors (Game.cpp CMisc::ColorTransfer)
-	inline constexpr GameColor NightBlueMid{ 50, 50, 100 };     // Night sky mid
-	inline constexpr GameColor NightBlueDark{ 30, 30, 100 };    // Night sky dark
-	inline constexpr GameColor NightBlueDeep{ 0, 0, 30 };       // Night deep
-	inline constexpr GameColor NightBlueBright{ 50, 50, 200 };  // Night sky bright
+	inline constexpr Color NightBlueMid{ 50, 50, 100 };     // Night sky mid
+	inline constexpr Color NightBlueDark{ 30, 30, 100 };    // Night sky dark
+	inline constexpr Color NightBlueDeep{ 0, 0, 30 };       // Night deep
+	inline constexpr Color NightBlueBright{ 50, 50, 200 };  // Night sky bright
 
 
 	// Completed
-	inline constexpr GameColor UIMagicBlue{ 4,0,50 };
-	inline constexpr GameColor UIMagicPurple{ 60, 10, 60 };
-	inline constexpr GameColor UIGuildGreen{ 130, 200, 130 };
-	inline constexpr GameColor UIWorldChat{ 255, 130, 130 };
-	inline constexpr GameColor UIFactionChat{ 130, 130, 255 };
-	inline constexpr GameColor UIPartyChat{ 230, 230, 130 };
-	inline constexpr GameColor UINormalChat{ 150, 150, 170 };
-	inline constexpr GameColor UIGameMasterChat{ 180, 255, 180 };
-	inline constexpr GameColor UILabel{ 25, 25, 25 };
-	inline constexpr GameColor UIDisabled{ 65, 65, 65 };
-	inline constexpr GameColor MonsterStatusEffect{ 240, 240, 70 };
-	inline constexpr GameColor UIItemName_Special{ 0, 255, 50 };
-	inline constexpr GameColor NeutralNamePlate{ 50, 50, 255 };
-	inline constexpr GameColor EnemyNamePlate{ 255, 0, 0 };
-	inline constexpr GameColor FriendlyNamePlate{ 30, 255, 30 };
-	inline constexpr GameColor UIModifiedStat{ 0, 0, 192 };
+	inline constexpr Color UIMagicBlue{ 4,0,50 };
+	inline constexpr Color UIMagicPurple{ 60, 10, 60 };
+	inline constexpr Color UIGuildGreen{ 130, 200, 130 };
+	inline constexpr Color UIWorldChat{ 255, 130, 130 };
+	inline constexpr Color UIFactionChat{ 130, 130, 255 };
+	inline constexpr Color UIPartyChat{ 230, 230, 130 };
+	inline constexpr Color UINormalChat{ 150, 150, 170 };
+	inline constexpr Color UIGameMasterChat{ 180, 255, 180 };
+	inline constexpr Color UILabel{ 25, 25, 25 };
+	inline constexpr Color UIDisabled{ 65, 65, 65 };
+	inline constexpr Color MonsterStatusEffect{ 240, 240, 70 };
+	inline constexpr Color UIItemName_Special{ 0, 255, 50 };
+	inline constexpr Color NeutralNamePlate{ 50, 50, 255 };
+	inline constexpr Color EnemyNamePlate{ 255, 0, 0 };
+	inline constexpr Color FriendlyNamePlate{ 30, 255, 30 };
+	inline constexpr Color UIModifiedStat{ 0, 0, 192 };
 
-	inline constexpr GameColor InputValid{ 100, 200, 100 };
-	inline constexpr GameColor InputInvalid{ 200, 100, 100 };
-	inline constexpr GameColor InputNormal{ 200, 200, 200 };
+	inline constexpr Color InputValid{ 100, 200, 100 };
+	inline constexpr Color InputInvalid{ 200, 100, 100 };
+	inline constexpr Color InputNormal{ 200, 200, 200 };
 
-	inline constexpr GameColor UIBlack{ 0, 0, 0 };
-	inline constexpr GameColor UIWhite{ 255, 255, 255 };
-	inline constexpr GameColor UINearWhite{ 232, 232, 232 };
-	inline constexpr GameColor UIDescription{ 150, 150, 150 };  // Item tooltips, stats, descriptions
-	inline constexpr GameColor UIGreen{ 0, 255, 0 };
-	inline constexpr GameColor UIDarkGreen{ 0, 55, 0 };
-	inline constexpr GameColor UIRed{ 255, 0, 0 };
-	inline constexpr GameColor UIDarkRed{ 58, 0, 0 };
-	inline constexpr GameColor UIWarningRed{ 195, 25, 25 };
-	inline constexpr GameColor UIOrange{ 220, 130, 45 };
-	inline constexpr GameColor UIYellow{ 200, 200, 25 };
-	inline constexpr GameColor UIPaleYellow{ 200, 200, 120 };
+	inline constexpr Color UIBlack{ 0, 0, 0 };
+	inline constexpr Color UIWhite{ 255, 255, 255 };
+	inline constexpr Color UINearWhite{ 232, 232, 232 };
+	inline constexpr Color UIDescription{ 150, 150, 150 };  // Item tooltips, stats, descriptions
+	inline constexpr Color UIGreen{ 0, 255, 0 };
+	inline constexpr Color UIDarkGreen{ 0, 55, 0 };
+	inline constexpr Color UIRed{ 255, 0, 0 };
+	inline constexpr Color UIDarkRed{ 58, 0, 0 };
+	inline constexpr Color UIWarningRed{ 195, 25, 25 };
+	inline constexpr Color UIOrange{ 220, 130, 45 };
+	inline constexpr Color UIYellow{ 200, 200, 25 };
+	inline constexpr Color UIPaleYellow{ 200, 200, 120 };
 }

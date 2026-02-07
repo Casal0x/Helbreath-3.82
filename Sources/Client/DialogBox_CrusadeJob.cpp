@@ -52,9 +52,9 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 
 	// Help button
 	if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue.r, GameColors::UIMagicBlue.g, GameColors::UIMagicBlue.b));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 	else
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal.r, GameColors::BmpBtnNormal.g, GameColors::BmpBtnNormal.b));
+		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 }
 
 void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short msY)

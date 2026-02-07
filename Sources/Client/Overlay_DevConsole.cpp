@@ -30,7 +30,7 @@ static constexpr int SEPARATOR_Y = 222;
 static constexpr int INPUT_Y = 224;
 
 // Colors
-static constexpr GameColor COLOR_INPUT{0, 255, 0};      // Green
+static constexpr Color COLOR_INPUT{0, 255, 0};      // Green
 
 Overlay_DevConsole::Overlay_DevConsole(CGame* pGame)
 	: IGameScreen(pGame)
@@ -78,10 +78,10 @@ void Overlay_DevConsole::on_render()
 	const int consoleRight = LOGICAL_WIDTH();
 
 	// Draw 75% opaque black background over top half
-	pRenderer->DrawDarkRect(CONSOLE_LEFT, CONSOLE_TOP, consoleRight, CONSOLE_BOTTOM, CONSOLE_ALPHA);
+	pRenderer->DrawRectFilled(CONSOLE_LEFT, CONSOLE_TOP, consoleRight - CONSOLE_LEFT, CONSOLE_BOTTOM - CONSOLE_TOP, Color::Black(static_cast<uint8_t>(CONSOLE_ALPHA * 255)));
 
 	// Draw separator line
-	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, consoleRight - TEXT_MARGIN, SEPARATOR_Y, 16, 32, 16, 0.8f);
+	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, consoleRight - TEXT_MARGIN, SEPARATOR_Y, Color(16, 32, 16, 204));
 
 	// Begin text rendering
 	pRenderer->BeginTextBatch();
@@ -103,7 +103,7 @@ void Overlay_DevConsole::on_render()
 		int y = TEXT_AREA_BOTTOM - i * LINE_HEIGHT;
 		if (y < TEXT_AREA_TOP) break;
 
-		pRenderer->DrawText(TEXT_MARGIN, y, lines[bufIdx].text, lines[bufIdx].color.r, lines[bufIdx].color.g, lines[bufIdx].color.b);
+		pRenderer->DrawText(TEXT_MARGIN, y, lines[bufIdx].text, lines[bufIdx].color);
 	}
 
 	// Draw input line with prompt
@@ -116,7 +116,7 @@ void Overlay_DevConsole::on_render()
 	else
 		sprintf_s(inputLine, "> %s", console.GetInputBuffer());
 
-	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine, COLOR_INPUT.r, COLOR_INPUT.g, COLOR_INPUT.b);
+	pRenderer->DrawText(TEXT_MARGIN, INPUT_Y, inputLine, COLOR_INPUT);
 
 	pRenderer->EndTextBatch();
 }

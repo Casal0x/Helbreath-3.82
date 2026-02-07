@@ -106,14 +106,14 @@ void Overlay_QueryDeleteCharacter::on_render()
     // Double shadow effect after initial animation period (600ms)
     if (dwElapsed >= 600)
     {
-        m_pGame->m_Renderer->DrawShadowBox(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y());
+        m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), Color::Black(128));
     }
 
     // Draw dialog box
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Title
-    TextLib::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed.r, GameColors::UIDarkRed.g, GameColors::UIDarkRed.b));
+    TextLib::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     // Character name display
     PutString(dlgX + 53, dlgY + 70, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack);

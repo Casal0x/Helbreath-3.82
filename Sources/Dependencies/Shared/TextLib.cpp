@@ -68,15 +68,15 @@ static BitmapTextParams StyleToBitmapParams(const TextStyle& style)
 	BitmapTextParams params;
 	if (style.alpha < 1.0f)
 	{
-		params = BitmapTextParams::ColorReplaceWithAlpha(style.r, style.g, style.b, style.alpha);
+		params = BitmapTextParams::ColorReplaceWithAlpha(style.color.r, style.color.g, style.color.b, style.alpha);
 	}
 	else if (style.shadow == ShadowStyle::Integrated)
 	{
-		params = BitmapTextParams::ColorReplaceWithShadow(style.r, style.g, style.b);
+		params = BitmapTextParams::ColorReplaceWithShadow(style.color.r, style.color.g, style.color.b);
 	}
 	else
 	{
-		params = BitmapTextParams::ColorReplace(style.r, style.g, style.b);
+		params = BitmapTextParams::ColorReplace(style.color.r, style.color.g, style.color.b);
 	}
 	params.useAdditive = style.useAdditive;
 	return params;
@@ -85,9 +85,9 @@ static BitmapTextParams StyleToBitmapParams(const TextStyle& style)
 // Calculate brightened highlight color
 static void GetHighlightColor(const TextStyle& style, uint8_t& hr, uint8_t& hg, uint8_t& hb)
 {
-	hr = static_cast<uint8_t>(std::min(255, static_cast<int>(style.r) + 90));
-	hg = static_cast<uint8_t>(std::min(255, static_cast<int>(style.g) + 55));
-	hb = static_cast<uint8_t>(std::min(255, static_cast<int>(style.b) + 50));
+	hr = static_cast<uint8_t>(std::min(255, static_cast<int>(style.color.r) + 90));
+	hg = static_cast<uint8_t>(std::min(255, static_cast<int>(style.color.g) + 55));
+	hb = static_cast<uint8_t>(std::min(255, static_cast<int>(style.color.b) + 50));
 }
 
 // ============== Batching ==============
@@ -178,22 +178,22 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 			case ShadowStyle::ThreePoint:
 			{
 				// 3-point shadow: +1,+1, 0,+1, +1,0 in black
-				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
-				pRenderer->DrawText(x, y + 1, text, 0, 0, 0);
-				pRenderer->DrawText(x + 1, y, text, 0, 0, 0);
+				pRenderer->DrawText(x + 1, y + 1, text, ::Color::Black());
+				pRenderer->DrawText(x, y + 1, text, ::Color::Black());
+				pRenderer->DrawText(x + 1, y, text, ::Color::Black());
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
 				// Simple drop shadow at +1,+1 in black
-				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
+				pRenderer->DrawText(x + 1, y + 1, text, ::Color::Black());
 				break;
 			}
 			case ShadowStyle::TwoPoint:
 			{
 				// 2-point shadow: 0,+1 and +1,+1 in black
-				pRenderer->DrawText(x, y + 1, text, 0, 0, 0);
-				pRenderer->DrawText(x + 1, y + 1, text, 0, 0, 0);
+				pRenderer->DrawText(x, y + 1, text, ::Color::Black());
+				pRenderer->DrawText(x + 1, y + 1, text, ::Color::Black());
 				break;
 			}
 			case ShadowStyle::Highlight:
@@ -201,7 +201,7 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 				// Highlight at +1,0 with brightened color
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pRenderer->DrawText(x + 1, y, text, hr, hg, hb);
+				pRenderer->DrawText(x + 1, y, text, ::Color(hr, hg, hb));
 				break;
 			}
 			default:
@@ -210,7 +210,7 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 		}
 
 		// Draw main text
-		pRenderer->DrawText(x, y, text, style.r, style.g, style.b);
+		pRenderer->DrawText(x, y, text, style.color);
 	}
 }
 
@@ -294,21 +294,21 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 		{
 			case ShadowStyle::ThreePoint:
 			{
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
-				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, 0, 0, 0, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
+				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				break;
 			}
 			case ShadowStyle::DropShadow:
 			{
-				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, 0, 0, 0, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				break;
 			}
 			case ShadowStyle::Highlight:
 			{
 				uint8_t hr, hg, hb;
 				GetHighlightColor(style, hr, hg, hb);
-				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, hr, hg, hb, alignment);
+				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, ::Color(hr, hg, hb), alignment);
 				break;
 			}
 			default:
@@ -316,7 +316,7 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 		}
 
 		// Draw main aligned text
-		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, style.r, style.g, style.b, alignment);
+		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment);
 	}
 }
 

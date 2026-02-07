@@ -149,7 +149,7 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + tX, sY + tY, 43);
 		char coordBuf[32];
 		snprintf(coordBuf, sizeof(coordBuf), "%d,%d", m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
-		TextLib::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x.r, GameColors::Yellow4x.g, GameColors::Yellow4x.b));
+		TextLib::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 		break;
 	}
 }

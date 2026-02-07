@@ -252,8 +252,8 @@ void Screen_CreateAccount::on_render()
     if (password().empty())                                      iFlag = 2;
     if (name().empty())                                          iFlag = 1;
 
-    auto labelStyle = TextLib::TextStyle::Color(GameColors::UIFormLabel.r, GameColors::UIFormLabel.g, GameColors::UIFormLabel.b);
-    auto blackStyle = TextLib::TextStyle::Color(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b);
+    auto labelStyle = TextLib::TextStyle::Color(GameColors::UIFormLabel);
+    auto blackStyle = TextLib::TextStyle::Color(GameColors::UIBlack);
 
     // Draw background
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0, 0, 0, true);
@@ -271,8 +271,8 @@ void Screen_CreateAccount::on_render()
         m_pGame->ShowReceivedString();
 
     // Draw input field values with validation coloring
-    auto validStyle = TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b);
-    auto invalidStyle = TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b);
+    auto validStyle = TextLib::TextStyle::WithShadow(GameColors::InputValid);
+    auto invalidStyle = TextLib::TextStyle::WithShadow(GameColors::InputInvalid);
 
     if (m_cCurFocus != 1) {
         bool bValid = CMisc::bCheckValidName(m_cNewAcctName) != false;

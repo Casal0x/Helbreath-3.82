@@ -13,9 +13,9 @@
 
 namespace TextLib {
 
-// DrawText overload accepting GameColor
-inline void DrawText(int fontId, int x, int y, const char* text, const GameColor& color) {
-	DrawText(fontId, x, y, text, TextStyle::Color(color.r, color.g, color.b));
+// DrawText overload accepting Color
+inline void DrawText(int fontId, int x, int y, const char* text, const Color& color) {
+	DrawText(fontId, x, y, text, TextStyle::Color(color));
 }
 
 // DrawTextAligned overload accepting GameRectangle
@@ -24,16 +24,16 @@ inline void DrawTextAligned(int fontId, const GameRectangle& rect, const char* t
 	DrawTextAligned(fontId, rect.x, rect.y, rect.width, rect.height, text, style, alignment);
 }
 
-// Convenience overload with RGB values
+// DrawTextAligned overload accepting GameRectangle + Color
 inline void DrawTextAligned(int fontId, const GameRectangle& rect, const char* text,
-                            uint8_t r, uint8_t g, uint8_t b, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, rect, text, TextStyle::Color(r, g, b), alignment);
+                            const Color& color, Align alignment = Align::TopLeft) {
+	DrawTextAligned(fontId, rect, text, TextStyle::Color(color), alignment);
 }
 
-// DrawTextAligned overload accepting GameColor
+// DrawTextAligned overload accepting Color
 inline void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
-                            const GameColor& color, Align alignment = Align::TopLeft) {
-	DrawTextAligned(fontId, x, y, width, height, text, TextStyle::Color(color.r, color.g, color.b), alignment);
+                            const Color& color, Align alignment = Align::TopLeft) {
+	DrawTextAligned(fontId, x, y, width, height, text, TextStyle::Color(color), alignment);
 }
 
 } // namespace TextLib

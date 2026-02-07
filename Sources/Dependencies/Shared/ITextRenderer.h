@@ -6,6 +6,7 @@
 #pragma once
 
 #include <cstdint>
+#include "PrimitiveTypes.h"
 
 // Undefine Windows DrawText macro to avoid naming conflict
 #ifdef DrawText
@@ -72,8 +73,8 @@ public:
     virtual int GetFittingCharCount(const char* text, int maxWidth) const = 0;
 
     // Drawing
-    virtual void DrawText(int x, int y, const char* text, uint8_t r, uint8_t g, uint8_t b) = 0;
-    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, uint8_t r, uint8_t g, uint8_t b,
+    virtual void DrawText(int x, int y, const char* text, const ::Color& color) = 0;
+    virtual void DrawTextAligned(int x, int y, int width, int height, const char* text, const ::Color& color,
                                  Align alignment = Align::TopLeft) = 0;
 
     // Batching for performance (DDraw needs DC acquisition)

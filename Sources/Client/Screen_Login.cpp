@@ -219,8 +219,8 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
 
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(pAccount) != false)
-            TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b));
-        else TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b));
+            TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputValid));
+        else TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputInvalid));
     }
     if ((CMisc::bCheckValidName(pAccount) == false) || (strlen(pAccount) == 0)) bFlag = false;
 
@@ -229,10 +229,10 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
         std::string masked(strlen(pPassword), '*');
         if ((CMisc::bCheckValidString(pPassword) != false))
             TextLib::DrawText(GameFont::Default, 234, 245, masked.c_str(),
-                              TextLib::TextStyle::WithShadow(GameColors::InputValid.r, GameColors::InputValid.g, GameColors::InputValid.b));
+                              TextLib::TextStyle::WithShadow(GameColors::InputValid));
         else
             TextLib::DrawText(GameFont::Default, 234, 245, masked.c_str(),
-                              TextLib::TextStyle::WithShadow(GameColors::InputInvalid.r, GameColors::InputInvalid.g, GameColors::InputInvalid.b));
+                              TextLib::TextStyle::WithShadow(GameColors::InputInvalid));
     }
     if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
 

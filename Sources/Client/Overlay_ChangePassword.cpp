@@ -294,33 +294,33 @@ void Overlay_ChangePassword::on_render()
     PutString(dlgX + 53, dlgY + 115, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel);
 
     // Draw input field values (when not focused)
-    static constexpr GameColor kInvalidInput{55, 18, 13};
+    static constexpr Color kInvalidInput{55, 18, 13};
 
     if (m_iCurFocus != 1)
     {
-        const GameColor& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
+        const Color& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
         PutString(dlgX + 161, dlgY + 43, m_cAccountName, color);
     }
 
     if (m_iCurFocus != 2)
     {
-        const GameColor& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
+        const Color& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedOld(strlen(m_cOldPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 3)
     {
-        const GameColor& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
+        const Color& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedNew(strlen(m_cNewPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 4)
     {
-        const GameColor& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
+        const Color& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::Color(color.r, color.g, color.b));
+        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::Color(color));
     }
 
     // Show active input string (with masking for password fields)

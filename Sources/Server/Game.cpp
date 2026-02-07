@@ -5579,7 +5579,27 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 	m_pClientList[iClientH]->m_iAttackMsgRecvCount++;
 	if (m_pClientList[iClientH]->m_iAttackMsgRecvCount >= 7) {
 		if (m_pClientList[iClientH]->m_dwAttackLAT != 0) {
-			if ((dwTime - m_pClientList[iClientH]->m_dwAttackLAT) < (3500)) {
+			// Compute expected time for 7 consecutive attacks from weapon speed and status.
+			// Must match client-side animation timing (PlayerAnim::Attack: sMaxFrame=7, frames 0-7 = 8 durations @ 78ms base).
+			constexpr int ATTACK_FRAME_DURATIONS = 8;
+			constexpr int BASE_FRAME_TIME = 78;
+			constexpr int RUN_FRAME_TIME = 39;
+			constexpr int BATCH_TOLERANCE_MS = 100;
+
+			int iStatus = m_pClientList[iClientH]->m_iStatus;
+			int iAttackDelay = iStatus & hb::status::AttackDelayMask;
+			bool bHaste = (iStatus & hb::status::Haste) != 0;
+			bool bFrozen = (iStatus & hb::status::Frozen) != 0;
+
+			int effectiveFrameTime = BASE_FRAME_TIME + (iAttackDelay * 12);
+			if (bFrozen) effectiveFrameTime += BASE_FRAME_TIME >> 2;
+			if (bHaste)  effectiveFrameTime -= static_cast<int>(RUN_FRAME_TIME / 2.3);
+
+			int singleSwingTime = ATTACK_FRAME_DURATIONS * effectiveFrameTime;
+			int batchThreshold = 7 * singleSwingTime - BATCH_TOLERANCE_MS;
+			if (batchThreshold < 2800) batchThreshold = 2800;
+
+			if ((dwTime - m_pClientList[iClientH]->m_dwAttackLAT) < static_cast<uint32_t>(batchThreshold)) {
 				DeleteClient(iClientH, true, true, true);
 				return 0;
 			}
@@ -29671,34 +29691,48 @@ void CGame::RequestResurrectPlayer(int iClientH, bool bResurrect)
 
 bool CGame::bCheckClientAttackFrequency(int iClientH, uint32_t dwClientTime)
 {
-	uint32_t dwTimeGap;
-
 	if (m_pClientList[iClientH] == 0) return false;
-
 
 	if (m_pClientList[iClientH]->m_dwAttackFreqTime == 0)
 		m_pClientList[iClientH]->m_dwAttackFreqTime = dwClientTime;
 	else {
-		dwTimeGap = dwClientTime - m_pClientList[iClientH]->m_dwAttackFreqTime;
+		uint32_t dwTimeGap = dwClientTime - m_pClientList[iClientH]->m_dwAttackFreqTime;
 		m_pClientList[iClientH]->m_dwAttackFreqTime = dwClientTime;
 
-		if (dwTimeGap < 450) {
+		// Compute expected minimum swing time from player's weapon speed and status effects.
+		// Must match client-side animation timing (PlayerAnim::Attack: sMaxFrame=7, frames 0-7 = 8 durations @ 78ms base).
+		constexpr int ATTACK_FRAME_DURATIONS = 8;
+		constexpr int BASE_FRAME_TIME = 78;
+		constexpr int RUN_FRAME_TIME = 39;
+		constexpr int TOLERANCE_MS = 50;
+
+		int iStatus = m_pClientList[iClientH]->m_iStatus;
+		int iAttackDelay = iStatus & hb::status::AttackDelayMask;  // 0 = full swing (STR meets weapon req)
+		bool bHaste = (iStatus & hb::status::Haste) != 0;
+		bool bFrozen = (iStatus & hb::status::Frozen) != 0;
+
+		int effectiveFrameTime = BASE_FRAME_TIME + (iAttackDelay * 12);
+		if (bFrozen) effectiveFrameTime += BASE_FRAME_TIME >> 2;
+		if (bHaste)  effectiveFrameTime -= static_cast<int>(RUN_FRAME_TIME / 2.3);
+
+		int expectedSwingTime = ATTACK_FRAME_DURATIONS * effectiveFrameTime;
+		int threshold = expectedSwingTime - TOLERANCE_MS;
+		if (threshold < 200) threshold = 200;
+
+		if (dwTimeGap < static_cast<uint32_t>(threshold)) {
 			try
 			{
-				std::snprintf(G_cTxt, sizeof(G_cTxt), "Swing Hack: (%s) Player: (%s) - attacking with weapon at irregular rates.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "Swing Hack: (%s) Player: (%s) - attacking at irregular rates. Gap: %ums, Min: %dms",
+					m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName,
+					dwTimeGap, expectedSwingTime);
 				PutHackLogFileList(G_cTxt);
 				DeleteClient(iClientH, true, true);
 			}
 			catch (...)
 			{
 			}
-
 			return false;
 		}
-
-		//testcode
-		//std::snprintf(G_cTxt, sizeof(G_cTxt), "Attack: %d", dwTimeGap);
-		//PutLogList(G_cTxt);
 	}
 
 	return false;
