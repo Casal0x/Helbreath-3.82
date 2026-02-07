@@ -218,25 +218,6 @@ void DialogBox_GuideMap::OnDraw(short msX, short msY, short msZ, char cLB)
 
 bool DialogBox_GuideMap::OnClick(short msX, short msY)
 {
-	short sX = Info().sX;
-	short sY = Info().sY;
-	short szY = Info().sSizeY;
-
-	// Clamp position (same as draw)
-	if (sX < 20) sX = 0;
-	if (sY < 20) sY = 0;
-	if (sX > LOGICAL_WIDTH() - 128 - 20) sX = LOGICAL_WIDTH() - 128;
-	if (sY > 547 - 128 - 20) sY = 547 - 128;
-
-	if (msX >= sX && msX < sX + szY && msY >= sY && msY < sY + szY)
-	{
-		// Toggle zoom mode
-		bool zoomMap = ConfigManager::Get().IsZoomMapEnabled();
-		ConfigManager::Get().SetZoomMapEnabled(!zoomMap);
-		m_pGame->PlayGameSound('E', 14, 5);
-		return true;
-	}
-
 	return false;
 }
 
