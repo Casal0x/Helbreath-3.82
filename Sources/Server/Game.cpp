@@ -6690,6 +6690,11 @@ int CGame::iClientMotion_GetItem_Handler(int iClientH, short sX, short sY, char 
 				DeleteClient(iClientH, true, true);
 				return 0;
 			}
+
+			// Broadcast remaining item state to nearby clients (clears tile if no items remain)
+			SendEventToNearClient_TypeB(MSGID_EVENT_COMMON, DEF_COMMONTYPE_SETITEM,
+				m_pClientList[iClientH]->m_cMapIndex,
+				sX, sY, sIDNum, 0, cRemainItemColor, dwAttribute);
 		}
 		else
 		{
