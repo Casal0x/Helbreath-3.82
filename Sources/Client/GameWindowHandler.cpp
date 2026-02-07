@@ -170,7 +170,7 @@ void GameWindowHandler::OnKeyUp(KeyCode keyCode)
         keyCode != KeyCode::LShift && keyCode != KeyCode::RShift &&
         keyCode != KeyCode::LControl && keyCode != KeyCode::RControl &&
         keyCode != KeyCode::LAlt && keyCode != KeyCode::RAlt &&
-        keyCode != KeyCode::Enter && keyCode != KeyCode::Escape)
+        keyCode != KeyCode::Enter)
     {
         m_pGame->OnKeyUp(keyCode);
     }
