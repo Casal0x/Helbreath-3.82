@@ -98,6 +98,8 @@ public:
 namespace GameColors
 {
 	// Item/Equipment tint palette (indices 0-15, multiply-ready RGB values)
+	// Values are used as multiplicative factors: pixel = sprite_pixel * (value / 255)
+	// Higher values = brighter/less tinted, lower values = darker/more saturated
 	inline constexpr Color Items[16] = {
 		{ 0, 0, 0 },      // 0  (no tint)
 		{ 80, 80, 192 },  // 1  IndigoBlue
@@ -105,16 +107,16 @@ namespace GameColors
 		{ 255, 208, 48 }, // 3  Gold
 		{ 240, 32, 0 },   // 4  Crimson
 		{ 16, 112, 16 },  // 5  Green
-		{ 80, 80, 80 },   // 6  Gray
+		{ 160, 160, 160 },// 6  Gray (DK/DM armor)
 		{ 80, 144, 160 }, // 7  Aqua
 		{ 240, 96, 176 }, // 8  Pink
 		{ 176, 112, 176 },// 9  Violet
 		{ 0, 64, 112 },   // 10 Blue
-		{ 208, 176, 128 },// 11 Tan
+		{ 235, 215, 180 },// 11 Tan (Knight/Wizard armor)
 		{ 176, 176, 96 }, // 12 Khaki
 		{ 160, 160, 16 }, // 13 Yellow
 		{ 144, 16, 16 },  // 14 Red
-		{ 96, 96, 96 },   // 15 Black
+		{ 128, 128, 128 },// 15 Black
 	};
 
 	// Weapon tint palette (indices 0-15, multiply-ready RGB values)
@@ -125,12 +127,12 @@ namespace GameColors
 		{ 128, 128, 160 },// 3  LightBlue
 		{ 128, 192, 128 },// 4  Green
 		{ 255, 176, 16 }, // 5  Critical
-		{ 80, 96, 208 },  // 6  HeavyBlue
+		{ 150, 160, 225 },// 6  HeavyBlue (DK/DM weapons)
 		{ 255, 255, 255 },// 7  White
 		{ 240, 192, 240 },// 8  Violet
 		{ 144, 16, 16 },  // 9  HeavyRed
 		{ 0, 0, 0 },      // 10 (unused)
-		{ 0, 0, 0 },      // 11 (unused)
+		{ 235, 215, 180 },// 11 Tan (Knight/Wizard weapons)
 		{ 0, 0, 0 },      // 12 (unused)
 		{ 0, 0, 0 },      // 13 (unused)
 		{ 0, 0, 0 },      // 14 (unused)
