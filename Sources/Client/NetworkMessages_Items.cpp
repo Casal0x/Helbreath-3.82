@@ -806,7 +806,7 @@ namespace NetworkMessageHandlers {
 
 		int iItemIndex = pkt->item_index;
 
-		if (pGame->m_pItemList[iItemIndex] != nullptr)
+		if (pGame->m_pItemList[iItemIndex] == nullptr)
 			return;
 
 		pGame->m_pItemList[iItemIndex]->m_wCurLifeSpan = static_cast<WORD>(pkt->cur_lifespan);
