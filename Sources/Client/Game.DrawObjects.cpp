@@ -106,15 +106,14 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	}
 	// Helper lambdas for drawing with optional color tint
 	int dirFrame = (m_entityState.m_iDir - 1) * 8 + m_entityState.m_iFrame;
-	int hairColor = m_entityState.m_appearance.iHairColor >> 4;
-	int iR, iG, iB;
+	int hairColor = m_entityState.m_appearance.iHairColor;
 
 	auto drawEquipment = [&](int idx, int color) {
 		if (idx == -1) return;
 		if (color == 0)
 			m_pSprite[idx]->Draw(sX, sY, dirFrame);
 		else
-			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(GameColors::Items[color].r - GameColors::Base.r, GameColors::Items[color].g - GameColors::Base.g, GameColors::Items[color].b - GameColors::Base.b));
+			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
 	};
 
 	auto drawWeapon = [&]() {
@@ -122,7 +121,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 		if (eq.weaponColor == 0)
 			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame);
 		else
-			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r - GameColors::Base.r, GameColors::Weapons[eq.weaponColor].g - GameColors::Base.g, GameColors::Weapons[eq.weaponColor].b - GameColors::Base.b));
+			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
 	};
 
 	auto drawMantle = [&](int order) {
@@ -161,8 +160,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	// Hair (only if no helm)
 	if (eq.hair != -1 && eq.helm == -1)
 	{
-		_GetHairColorRGB(hairColor, &iR, &iG, &iB);
-		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hc = GameColors::Hair[hairColor];
+		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt
@@ -414,10 +413,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 2: // Bows
 						case 3: // Shields
 						case hb::owner::ShopKeeper: // Axes hammers
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 							break;
 						default:
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 							break;
 						}
 					}
@@ -742,7 +741,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 				case DEF_DYNAMICOBJECT_ICESTORM:		// 8
 					iDvalue = (rand() % 5) * (-1);
-					m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams::TintedAlpha(iDvalue, iDvalue, iDvalue, 0.7f));
+					m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams::TintedAlpha(192 + 2 * iDvalue, 192 + 2 * iDvalue, 192 + 2 * iDvalue, 0.7f));
 					m_pEffectSpr[13]->Draw(ix, iy, sDynamicObjectFrame, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 

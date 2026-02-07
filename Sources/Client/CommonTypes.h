@@ -97,47 +97,64 @@ public:
 
 namespace GameColors
 {
-	// Base gray (subtracted for tinting)
-	inline constexpr Color Base{ 96, 96, 96 };
-
-	// Item/Equipment palette (indices 0-15)
+	// Item/Equipment tint palette (indices 0-15, multiply-ready RGB values)
 	inline constexpr Color Items[16] = {
-		{ 96, 96, 96 },   // 0  Base gray
-		{ 40, 40, 96 },   // 1  IndigoBlue
-		{ 72, 72, 56 },   // 2  CustomWeapon
-		{ 128, 104, 24 }, // 3  Gold
-		{ 120, 16, 0 },   // 4  Crimson
-		{ 8, 56, 8 },     // 5  Green
-		{ 40, 40, 40 },   // 6  Gray
-		{ 40, 72, 80 },   // 7  Aqua
-		{ 120, 48, 88 },  // 8  Pink
-		{ 88, 56, 88 },   // 9  Violet
-		{ 0, 32, 56 },    // 10 Blue
-		{ 104, 88, 64 },  // 11 Tan
-		{ 88, 88, 48 },   // 12 Khaki
-		{ 80, 80, 8 },    // 13 Yellow
-		{ 72, 8, 8 },     // 14 Red
-		{ 48, 48, 48 },   // 15 Black
+		{ 0, 0, 0 },      // 0  (no tint)
+		{ 80, 80, 192 },  // 1  IndigoBlue
+		{ 144, 144, 112 },// 2  CustomWeapon
+		{ 255, 208, 48 }, // 3  Gold
+		{ 240, 32, 0 },   // 4  Crimson
+		{ 16, 112, 16 },  // 5  Green
+		{ 80, 80, 80 },   // 6  Gray
+		{ 80, 144, 160 }, // 7  Aqua
+		{ 240, 96, 176 }, // 8  Pink
+		{ 176, 112, 176 },// 9  Violet
+		{ 0, 64, 112 },   // 10 Blue
+		{ 208, 176, 128 },// 11 Tan
+		{ 176, 176, 96 }, // 12 Khaki
+		{ 160, 160, 16 }, // 13 Yellow
+		{ 144, 16, 16 },  // 14 Red
+		{ 96, 96, 96 },   // 15 Black
 	};
 
-	// Weapon palette (indices 0-15, only 1-9 are set)
+	// Weapon tint palette (indices 0-15, multiply-ready RGB values)
 	inline constexpr Color Weapons[16] = {
 		{ 0, 0, 0 },      // 0  (unused)
-		{ 64, 64, 80 },   // 1  LightBlue
-		{ 64, 64, 80 },   // 2  LightBlue
-		{ 64, 64, 80 },   // 3  LightBlue
-		{ 64, 96, 64 },   // 4  Green
-		{ 128, 88, 8 },   // 5  Critical
-		{ 40, 48, 104 },  // 6  HeavyBlue
-		{ 144, 144, 144 },// 7  White
-		{ 120, 96, 120 }, // 8  Violet
-		{ 72, 8, 8 },     // 9  HeavyRed
+		{ 128, 128, 160 },// 1  LightBlue
+		{ 128, 128, 160 },// 2  LightBlue
+		{ 128, 128, 160 },// 3  LightBlue
+		{ 128, 192, 128 },// 4  Green
+		{ 255, 176, 16 }, // 5  Critical
+		{ 80, 96, 208 },  // 6  HeavyBlue
+		{ 255, 255, 255 },// 7  White
+		{ 240, 192, 240 },// 8  Violet
+		{ 144, 16, 16 },  // 9  HeavyRed
 		{ 0, 0, 0 },      // 10 (unused)
 		{ 0, 0, 0 },      // 11 (unused)
 		{ 0, 0, 0 },      // 12 (unused)
 		{ 0, 0, 0 },      // 13 (unused)
 		{ 0, 0, 0 },      // 14 (unused)
 		{ 0, 0, 0 },      // 15 (unused)
+	};
+
+	// Hair tint palette (indices 0-15, target color for grayscale sprites)
+	inline constexpr Color Hair[16] = {
+		{ 180, 80, 60 },  // 0  Auburn
+		{ 220, 150, 60 }, // 1  Orange
+		{ 210, 180, 120 },// 2  Light brown
+		{ 80, 170, 80 },  // 3  Green
+		{ 90, 120, 220 }, // 4  Bright blue
+		{ 70, 70, 170 },  // 5  Dark blue
+		{ 160, 80, 175 }, // 6  Purple
+		{ 60, 60, 60 },   // 7  Black
+		{ 170, 120, 160 },// 8  Pink
+		{ 180, 160, 110 },// 9  Sandy
+		{ 80, 160, 180 }, // 10 Teal
+		{ 160, 130, 200 },// 11 Lavender
+		{ 200, 120, 110 },// 12 Coral
+		{ 120, 130, 210 },// 13 Light blue
+		{ 120, 180, 120 },// 14 Light green
+		{ 150, 155, 110 },// 15 Olive
 	};
 
 	// Pre-computed math colors

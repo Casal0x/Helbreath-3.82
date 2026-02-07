@@ -114,14 +114,14 @@ void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 		if (cItemColor == 0)
 			pSprite->Draw(drawX, drawY, sFrame);
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(colors[cItemColor].r - GameColors::Base.r, colors[cItemColor].g - GameColors::Base.g, colors[cItemColor].b - GameColors::Base.b));
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b));
 	}
 	else
 	{
 		if (cItemColor == 0)
 			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Alpha(0.25f));
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(colors[cItemColor].r - GameColors::Base.r, colors[cItemColor].g - GameColors::Base.g, colors[cItemColor].b - GameColors::Base.b, 0.7f));
+			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b, 0.7f));
 	}
 
 	if (bHighlight)
@@ -317,9 +317,8 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	// Hair (if no helmet)
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
-		int iR, iG, iB;
-		m_pGame->_GetHairColorRGB(m_pGame->m_pPlayer->m_playerAppearance.iHairColor, &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear
@@ -367,9 +366,8 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	// Hair (if no helmet) - female hair is at +18+40 = +58
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
-		int iR, iG, iB;
-		m_pGame->_GetHairColorRGB(m_pGame->m_pPlayer->m_playerAppearance.iHairColor, &iR, &iG, &iB);
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59

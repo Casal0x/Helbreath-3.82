@@ -283,7 +283,6 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     // Check if we need any color modifications
     bool needsColorChange = (params.alpha < 1.0f) ||
                             (params.tintR != 0 || params.tintG != 0 || params.tintB != 0) ||
-                            params.isColorReplace ||
                             params.isShadow || params.isFade ||
                             (m_alphaDegree == 2 && m_alphaEffect);
 
@@ -297,54 +296,13 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
             color.a = static_cast<uint8_t>(params.alpha * 255.0f);
         }
 
-        // Apply color replacement or offset-based tinting
-        //
-        // SFML uses MULTIPLICATIVE blending: white × color = color
-        //
-        // Two modes:
-        // 1. ColorReplace (isColorReplace=true): Direct RGB values are the output color
-        //    - (0, 0, 0) = black
-        //    - (255, 255, 255) = white
-        //    - (200, 200, 0) = yellow
-        //
-        // 2. Offset Tint (isColorReplace=false): Values are offsets from base gray (96)
-        //    - Gold offset (32, 8, -72) → final color (128, 104, 24)
-        //
-        if (params.isColorReplace || params.tintR != 0 || params.tintG != 0 || params.tintB != 0)
+        // Apply tint: SFML multiplies sprite pixels by color/255
+        // (255,255,255) = no change, (0,0,0) = black, (255,200,0) = gold
+        if (params.tintR != 0 || params.tintG != 0 || params.tintB != 0)
         {
-            int r, g, b;
-
-            if (params.isColorReplace)
-            {
-                // Direct color replacement: tint values ARE the desired RGB output
-                r = params.tintR;
-                g = params.tintG;
-                b = params.tintB;
-            }
-            else
-            {
-                // Offset system: DDraw ADDS offset to sprite pixels
-                // SFML MULTIPLIES, so we need to compensate
-                //
-                // DDraw: result = sprite_pixel + offset
-                // SFML:  result = sprite_pixel × (color/255)
-                //
-                // For mid-gray sprites (~128), to get same result:
-                // sprite × (color/255) = sprite + offset
-                // color = (sprite + offset) × 255 / sprite
-                // color ≈ (96 + offset) × 2  (for ~128 gray sprites)
-                //
-                // This doubles the target color to compensate for multiplicative darkening
-                const int BASE_GRAY = 96;
-                int targetR = BASE_GRAY + params.tintR;
-                int targetG = BASE_GRAY + params.tintG;
-                int targetB = BASE_GRAY + params.tintB;
-
-                // Boost to compensate for multiplicative blending on mid-gray sprites
-                r = targetR * 2;
-                g = targetG * 2;
-                b = targetB * 2;
-            }
+            int r = params.tintR;
+            int g = params.tintG;
+            int b = params.tintB;
 
             // Clamp to valid range
             color.r = static_cast<uint8_t>(r < 0 ? 0 : (r > 255 ? 255 : r));

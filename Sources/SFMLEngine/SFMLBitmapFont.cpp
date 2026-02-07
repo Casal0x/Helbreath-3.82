@@ -91,13 +91,20 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
         return;
 
     // Set up draw parameters for bitmap font rendering
-    // Use ColorReplace mode to treat tint values as direct RGB output
+    // Bitmap font sprites are pure white - SFML multiply tint acts as color replacement:
+    // white(255) * tint / 255 = tint. But (0,0,0) skips the tint block, so clamp to (1,1,1).
     SpriteLib::DrawParams drawParams;
     drawParams.alpha = params.alpha;
-    drawParams.isColorReplace = true;  // Tint values are direct RGB
     drawParams.tintR = params.tintR;
     drawParams.tintG = params.tintG;
     drawParams.tintB = params.tintB;
+
+    if (params.isColorReplace && drawParams.tintR == 0 && drawParams.tintG == 0 && drawParams.tintB == 0)
+    {
+        drawParams.tintR = 1;
+        drawParams.tintG = 1;
+        drawParams.tintB = 1;
+    }
 
     // Use additive blending when explicitly requested (for bright text like damage numbers)
     // This matches DDraw's additive tinting behavior for bright colors
@@ -123,11 +130,9 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
                     // Draw raw/uncolored sprite at (+1,0) and (+1,+1) before main colored text
                     // In SFML, raw sprites appear white, so we draw with black to match DDraw
                     SpriteLib::DrawParams shadowParams;
-                    shadowParams.tintR = 0;
-                    shadowParams.tintG = 0;
-                    shadowParams.tintB = 0;
-                    shadowParams.isColorReplace = true;
-                    shadowParams.isAdditive = true;  // Additive with black = black on any background
+                    shadowParams.tintR = 1;
+                    shadowParams.tintG = 1;
+                    shadowParams.tintB = 1;
                     m_pSprite->Draw(currentX + 1, y, frame, shadowParams);
                     m_pSprite->Draw(currentX + 1, y + 1, frame, shadowParams);
                 }

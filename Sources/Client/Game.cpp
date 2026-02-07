@@ -2228,44 +2228,6 @@ void CGame::InitGameSettings()
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
 }
 
-void CGame::_GetHairColorRGB(int iColorType, int* pR, int* pG, int* pB)
-{
-	switch (iColorType) {
-	case 0: // rouge fonc�
-		*pR = 14; *pG = -5; *pB = -5; break;
-	case 1: // Orange
-		*pR = 20; *pG = 0; *pB = 0; break;
-	case 2: // marron tres clair
-		*pR = 22; *pG = 13; *pB = -10; break;
-	case 3: // vert
-		*pR = 0; *pG = 10; *pB = 0; break;
-	case 4: // Bleu flashy
-		*pR = 0; *pG = 0; *pB = 22; break;
-	case 5: // Bleu fonc�
-		*pR = -5; *pG = -5; *pB = 15; break;
-	case 6: //Mauve
-		*pR = 15; *pG = -5; *pB = 16; break;
-	case 7: // Noir
-		*pR = -6; *pG = -6; *pB = -6; break;
-	case 8:
-		*pR = 10; *pG = 3; *pB = 10; break;
-	case 9:
-		*pR = 10; *pG = 3; *pB = -10; break;
-	case hb::owner::Slime:
-		*pR = -10; *pG = 3; *pB = 10; break;
-	case hb::owner::Skeleton:
-		*pR = 10; *pG = 3; *pB = 20; break;
-	case hb::owner::StoneGolem:
-		*pR = 21; *pG = 3; *pB = 3; break;
-	case hb::owner::Cyclops:
-		*pR = 3; *pG = 3; *pB = 25; break;
-	case hb::owner::OrcMage:
-		*pR = 3; *pG = 11; *pB = 3; break;
-	case hb::owner::ShopKeeper:
-		*pR = 6; *pG = 8; *pB = 0; break;
-	}
-}
-
 void CGame::CreateNewGuildResponseHandler(char* pData)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
@@ -3964,21 +3926,20 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 {
 	uint32_t dwTime = m_dwCurTime;
-	int  iR, iG, iB;
 
 	if (sType <= 3)
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
-		_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hcM = GameColors::Hair[m_entityState.m_appearance.iHairColor];
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, SpriteLib::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
 
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 	else
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
-		_GetHairColorRGB(m_entityState.m_appearance.iHairColor, &iR, &iG, &iB);
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle >> 8, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hcF = GameColors::Hair[m_entityState.m_appearance.iHairColor];
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, SpriteLib::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 }

@@ -498,7 +498,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawAttackMove(int indexX, int indexY, int sX
 		if (bDashDraw)
 		{
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-				SpriteLib::DrawParams::TintedAlpha(-33, 0, 25, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)
@@ -992,13 +992,13 @@ SpriteLib::BoundRect CNpcRenderer::DrawDead(int indexX, int indexY, int sX, int 
 		{
 			// Berserk corpse fade
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				SpriteLib::DrawParams::TintedAlpha(-2 * state.m_iFrame + 5, -2 * state.m_iFrame - 5, -2 * state.m_iFrame - 5, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(202 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 0.7f));
 		}
 		else
 		{
 			// Normal corpse fade
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				SpriteLib::DrawParams::TintedAlpha(-2 * state.m_iFrame, -2 * state.m_iFrame, -2 * state.m_iFrame, 0.7f));
+				SpriteLib::DrawParams::TintedAlpha(192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)

@@ -106,10 +106,10 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 					break;
 				default:
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 					break;
 				}
 			}

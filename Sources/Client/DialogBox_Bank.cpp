@@ -134,10 +134,10 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		if ((pCfg->GetEquipPos() == EquipPos::LeftHand) ||
 			(pCfg->GetEquipPos() == EquipPos::RightHand) ||
 			(pCfg->GetEquipPos() == EquipPos::TwoHand)) {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 		}
 		else {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 		}
 	}
 }

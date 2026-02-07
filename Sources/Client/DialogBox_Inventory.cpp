@@ -48,9 +48,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	else
 	{
 		// Apply color tint
-		int r = colors[cItemColor].r - GameColors::Base.r;
-		int g = colors[cItemColor].g - GameColors::Base.g;
-		int b = colors[cItemColor].b - GameColors::Base.b;
+		int r = colors[cItemColor].r;
+		int g = colors[cItemColor].g;
+		int b = colors[cItemColor].b;
 
 		if (bDisabled)
 			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));

@@ -64,7 +64,6 @@ struct DrawParams {
     bool isShadow = false;      // Shadow projection effect
     bool isReverse = false;     // Reverse blend effect
     bool isFade = false;        // Fade effect
-    bool isColorReplace = false; // true = tint values are direct RGB, false = offset from base
     bool isAdditive = false;    // Deprecated: use blendMode instead
     BlendMode blendMode = BlendMode::Alpha;  // Blend mode for rendering
 
@@ -90,25 +89,6 @@ struct DrawParams {
         p.tintR = r;
         p.tintG = g;
         p.tintB = b;
-        return p;
-    }
-
-    static DrawParams ColorReplace(int16_t r, int16_t g, int16_t b) {
-        DrawParams p;
-        p.tintR = r;
-        p.tintG = g;
-        p.tintB = b;
-        p.isColorReplace = true;
-        return p;
-    }
-
-    static DrawParams ColorReplaceAlpha(int16_t r, int16_t g, int16_t b, float a) {
-        DrawParams p;
-        p.alpha = a;
-        p.tintR = r;
-        p.tintG = g;
-        p.tintB = b;
-        p.isColorReplace = true;
         return p;
     }
 
@@ -175,7 +155,6 @@ struct DrawParams {
         p.tintR = r;
         p.tintG = g;
         p.tintB = b;
-        p.isColorReplace = true;
         p.blendMode = BlendMode::Additive;
         return p;
     }

@@ -558,10 +558,10 @@ void Screen_OnGame::RenderItemTooltip()
 
     if (cItemColor != 0) {
         if (is_hand_item) {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r - GameColors::Base.r, GameColors::Weapons[cItemColor].g - GameColors::Base.g, GameColors::Weapons[cItemColor].b - GameColors::Base.b));
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
         }
         else {
-            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r - GameColors::Base.r, GameColors::Items[cItemColor].g - GameColors::Base.g, GameColors::Items[cItemColor].b - GameColors::Base.b));
+            sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
         }
     }
     else sprite->Draw(m_sMsX - CursorTarget::GetDragDistX(), m_sMsY - CursorTarget::GetDragDistY(), pCfg->m_sSpriteFrame);

@@ -52,7 +52,7 @@ void DrawEquipLayer(CGame& game, int spriteIndex, int sX, int sY, int frame,
 	{
 		auto c = GameColors::Items[colorIndex];
 		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
+			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
 	}
 }
 
@@ -74,7 +74,7 @@ void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	{
 		auto c = GameColors::Weapons[eq.iWeaponColor];
 		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame,
-			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
+			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
 	}
 
 	// DK set glare
@@ -106,7 +106,7 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	{
 		auto c = GameColors::Items[eq.iShieldColor];
 		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(c.r - GameColors::Base.r, c.g - GameColors::Base.g, c.b - GameColors::Base.b));
+			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
 	}
 
 	// Shield glare
@@ -142,7 +142,7 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	else if (bAdminInvis)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::TintedAlpha(40, -30, -30, 0.5f));
+			SpriteLib::DrawParams::TintedAlpha(255, 132, 132, 0.5f));
 	}
 	else if (bInv)
 	{
@@ -151,7 +151,7 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	else if (bFrozen)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(-49, -16, 8));
+			SpriteLib::DrawParams::Tint(94, 160, 208));
 	}
 	else
 	{
@@ -173,7 +173,6 @@ static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
 	int dir = state.m_iDir;
 	int frame = state.m_iFrame;
 	int dirFrame = (dir - 1) * equipFrameMul + frame;
-	int iR, iG, iB;
 
 	// Mantle behind body (order 0)
 	if (eq.iMantleIndex != -1 && mantleOrder[dir] == 0)
@@ -185,8 +184,8 @@ static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
 	// Hair (only if no helm)
 	if (eq.iHairIndex != -1 && eq.iHelmIndex == -1)
 	{
-		game._GetHairColorRGB(state.m_appearance.iHairColor, &iR, &iG, &iB);
-		game.m_pSprite[eq.iHairIndex]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(iR, iG, iB));
+		const auto& hc = GameColors::Hair[state.m_appearance.iHairColor];
+		game.m_pSprite[eq.iHairIndex]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt

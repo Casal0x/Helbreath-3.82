@@ -206,7 +206,6 @@ void _LoadShopMenuContents(char cType);
 	void DisbandGuildResponseHandler(char * pData);
 	void InitPlayerCharacteristics(char * pData);
 	void CreateNewGuildResponseHandler(char * pData);
-	void _GetHairColorRGB(int iColorType , int * pR, int * pG, int * pB);
 	void InitGameSettings();
 	void CommonEventHandler(char * pData);
 	void _SetItemOrder(char cWhere, char cItemID);

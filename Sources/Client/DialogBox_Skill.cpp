@@ -64,8 +64,8 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 
 				if (m_pGame->m_iDownSkillIndex == (i + Info().sView))
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::ColorReplace(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
-				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, SpriteLib::DrawParams::ColorReplace(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b));
+					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::Tint(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, SpriteLib::DrawParams::Tint(1, 1, 1));
 			}
 
 		iTotalLines = 0;
