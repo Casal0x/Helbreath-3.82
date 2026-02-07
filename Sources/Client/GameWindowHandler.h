@@ -25,8 +25,8 @@ public:
     virtual void OnResize(int width, int height) override;
 
     // Input Events
-    virtual void OnKeyDown(int keyCode) override;
-    virtual void OnKeyUp(int keyCode) override;
+    virtual void OnKeyDown(KeyCode keyCode) override;
+    virtual void OnKeyUp(KeyCode keyCode) override;
     virtual void OnChar(char character) override;
     virtual void OnMouseMove(int x, int y) override;
     virtual void OnMouseButtonDown(int button, int x, int y) override;

@@ -66,11 +66,11 @@ void Screen_CreateNewCharacter::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
 
     // Handle arrow key navigation
-    if (Input::IsKeyPressed(VK_UP)) {
+    if (Input::IsKeyPressed(KeyCode::Up)) {
         m_cCurFocus--;
         if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
     }
-    else if (Input::IsKeyPressed(VK_DOWN)) {
+    else if (Input::IsKeyPressed(KeyCode::Down)) {
         m_cCurFocus++;
         if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
     }
@@ -87,7 +87,7 @@ void Screen_CreateNewCharacter::on_update()
     }
 
     // ESC returns to character select
-    if (Input::IsKeyPressed(VK_ESCAPE)) {
+    if (Input::IsKeyPressed(KeyCode::Escape)) {
         m_pGame->ChangeGameMode(GameMode::SelectCharacter);
         return;
     }

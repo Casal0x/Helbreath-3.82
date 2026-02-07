@@ -30,7 +30,7 @@ void Screen_TestPrimitives::on_uninitialize()
 
 void Screen_TestPrimitives::on_update()
 {
-	if (Input::Get() && Input::Get()->IsKeyPressed(VK_ESCAPE))
+	if (Input::Get() && Input::Get()->IsKeyPressed(KeyCode::Escape))
 	{
 		Window::Close();
 		return;

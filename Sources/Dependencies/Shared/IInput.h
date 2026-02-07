@@ -62,7 +62,12 @@ enum class KeyCode : int
     Backspace = 8,
     Space = 32,
 
-    // Modifiers
+    // Generic modifiers (used for filtering, not typically sent by SFML)
+    Shift = 16,      // VK_SHIFT
+    Control = 17,    // VK_CONTROL
+    Alt = 18,        // VK_MENU
+
+    // Specific modifiers
     LShift = 160,
     RShift = 161,
     LControl = 162,
@@ -105,9 +110,9 @@ public:
     virtual void BeginFrame() = 0;
 
     // ============== Keyboard ==============
-    virtual bool IsKeyDown(int key) const = 0;      // Currently held
-    virtual bool IsKeyPressed(int key) const = 0;   // Just pressed this frame
-    virtual bool IsKeyReleased(int key) const = 0;  // Just released this frame
+    virtual bool IsKeyDown(KeyCode key) const = 0;      // Currently held
+    virtual bool IsKeyPressed(KeyCode key) const = 0;   // Just pressed this frame
+    virtual bool IsKeyReleased(KeyCode key) const = 0;  // Just released this frame
 
     // ============== Mouse Buttons ==============
     virtual bool IsMouseButtonDown(int button) const = 0;
@@ -140,8 +145,8 @@ public:
 
     // ============== Input Events ==============
     // Called by window/event handler to feed input
-    virtual void OnKeyDown(int key) = 0;
-    virtual void OnKeyUp(int key) = 0;
+    virtual void OnKeyDown(KeyCode key) = 0;
+    virtual void OnKeyUp(KeyCode key) = 0;
     virtual void OnMouseMove(int x, int y) = 0;
     virtual void OnMouseDown(int button) = 0;
     virtual void OnMouseUp(int button) = 0;
@@ -160,9 +165,9 @@ namespace Input {
     // ============== Static Convenience Functions (Raylib style) ==============
 
     // Keyboard
-    inline bool IsKeyDown(int key) { return Get()->IsKeyDown(key); }
-    inline bool IsKeyPressed(int key) { return Get()->IsKeyPressed(key); }
-    inline bool IsKeyReleased(int key) { return Get()->IsKeyReleased(key); }
+    inline bool IsKeyDown(KeyCode key) { return Get()->IsKeyDown(key); }
+    inline bool IsKeyPressed(KeyCode key) { return Get()->IsKeyPressed(key); }
+    inline bool IsKeyReleased(KeyCode key) { return Get()->IsKeyReleased(key); }
 
     // Mouse buttons
     inline bool IsMouseButtonDown(int btn) { return Get()->IsMouseButtonDown(btn); }

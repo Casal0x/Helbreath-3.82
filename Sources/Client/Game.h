@@ -232,7 +232,7 @@ void _LoadShopMenuContents(char cType);
 	void ReleaseTimeoverChatMsg();
 	void ChatMsgHandler(char * pData);
 	void ReleaseUnusedSprites();
-	void OnKeyUp(int key);
+	void OnKeyUp(KeyCode key);
 	void ChangeGameMode(GameMode mode);
 	void LogRecvMsgHandler(char * pData);
 	void LogResponseHandler(char * pData);
@@ -251,7 +251,7 @@ void _LoadShopMenuContents(char cType);
 	void RestoreSprites();
 	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
-	void OnKeyDown(int key);
+	void OnKeyDown(KeyCode key);
 	void RegisterHotkeys();
 	void Hotkey_ToggleForceAttack();
 	void Hotkey_CycleDetailLevel();

@@ -103,7 +103,7 @@ void GameWindowHandler::OnResize(int width, int height)
     // Currently not handling resize events
 }
 
-void GameWindowHandler::OnKeyDown(int keyCode)
+void GameWindowHandler::OnKeyDown(KeyCode keyCode)
 {
     if (!m_pGame)
         return;
@@ -115,23 +115,23 @@ void GameWindowHandler::OnKeyDown(int keyCode)
     // Route arrow/page keys to DevConsole when visible
     if (DevConsole::Get().IsVisible())
     {
-        DevConsole::Get().HandleKeyDown(static_cast<WPARAM>(keyCode));
+        DevConsole::Get().HandleKeyDown(keyCode);
         return;
     }
 
     // Also notify game for special key handling (hotkeys, etc.)
     // Skip modifier keys as they're handled purely through Input::
-    if (keyCode != VK_SHIFT && keyCode != VK_CONTROL && keyCode != VK_MENU &&
-        keyCode != VK_LSHIFT && keyCode != VK_RSHIFT &&
-        keyCode != VK_LCONTROL && keyCode != VK_RCONTROL &&
-        keyCode != VK_LMENU && keyCode != VK_RMENU &&
-        keyCode != VK_RETURN && keyCode != VK_ESCAPE)
+    if (keyCode != KeyCode::Shift && keyCode != KeyCode::Control && keyCode != KeyCode::Alt &&
+        keyCode != KeyCode::LShift && keyCode != KeyCode::RShift &&
+        keyCode != KeyCode::LControl && keyCode != KeyCode::RControl &&
+        keyCode != KeyCode::LAlt && keyCode != KeyCode::RAlt &&
+        keyCode != KeyCode::Enter && keyCode != KeyCode::Escape)
     {
         m_pGame->OnKeyDown(keyCode);
     }
 }
 
-void GameWindowHandler::OnKeyUp(int keyCode)
+void GameWindowHandler::OnKeyUp(KeyCode keyCode)
 {
     if (!m_pGame)
         return;
@@ -141,7 +141,7 @@ void GameWindowHandler::OnKeyUp(int keyCode)
         Input::Get()->OnKeyUp(keyCode);
 
     // Alt+Tilde: Toggle developer console (GM mode only)
-    if (keyCode == static_cast<int>(KeyCode::Grave) && Input::IsAltDown())
+    if (keyCode == KeyCode::Grave && Input::IsAltDown())
     {
         DevConsole& console = DevConsole::Get();
         if (console.IsVisible())
@@ -166,11 +166,11 @@ void GameWindowHandler::OnKeyUp(int keyCode)
 
     // Also notify game for special key handling
     // Skip modifier keys as they're handled purely through Input::
-    if (keyCode != VK_SHIFT && keyCode != VK_CONTROL && keyCode != VK_MENU &&
-        keyCode != VK_LSHIFT && keyCode != VK_RSHIFT &&
-        keyCode != VK_LCONTROL && keyCode != VK_RCONTROL &&
-        keyCode != VK_LMENU && keyCode != VK_RMENU &&
-        keyCode != VK_RETURN && keyCode != VK_ESCAPE)
+    if (keyCode != KeyCode::Shift && keyCode != KeyCode::Control && keyCode != KeyCode::Alt &&
+        keyCode != KeyCode::LShift && keyCode != KeyCode::RShift &&
+        keyCode != KeyCode::LControl && keyCode != KeyCode::RControl &&
+        keyCode != KeyCode::LAlt && keyCode != KeyCode::RAlt &&
+        keyCode != KeyCode::Enter && keyCode != KeyCode::Escape)
     {
         m_pGame->OnKeyUp(keyCode);
     }

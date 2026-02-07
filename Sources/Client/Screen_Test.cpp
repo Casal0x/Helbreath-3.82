@@ -91,7 +91,7 @@ void Screen_Test::on_uninitialize()
 void Screen_Test::on_update()
 {
 	// ESC to quit
-	if (Input::Get() && Input::Get()->IsKeyPressed(VK_ESCAPE))
+	if (Input::Get() && Input::Get()->IsKeyPressed(KeyCode::Escape))
 	{
 		Window::Close();
 		return;
@@ -100,9 +100,9 @@ void Screen_Test::on_update()
 	// Scroll with arrow keys
 	if (Input::Get())
 	{
-		if (Input::Get()->IsKeyPressed(VK_UP))
+		if (Input::Get()->IsKeyPressed(KeyCode::Up))
 			m_scrollOffset = (m_scrollOffset > 0) ? m_scrollOffset - 1 : 0;
-		if (Input::Get()->IsKeyPressed(VK_DOWN))
+		if (Input::Get()->IsKeyPressed(KeyCode::Down))
 			m_scrollOffset++;
 	}
 }

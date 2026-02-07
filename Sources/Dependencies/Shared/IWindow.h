@@ -9,6 +9,9 @@
 #include "NativeTypes.h"
 #include <cstdint>
 
+// Forward declare KeyCode enum
+enum class KeyCode : int;
+
 // Forward declaration
 class IWindowEventHandler;
 
@@ -84,8 +87,8 @@ public:
     virtual void OnResize(int width, int height) = 0;
 
     // ============== Input Events ==============
-    virtual void OnKeyDown(int keyCode) = 0;
-    virtual void OnKeyUp(int keyCode) = 0;
+    virtual void OnKeyDown(KeyCode keyCode) = 0;
+    virtual void OnKeyUp(KeyCode keyCode) = 0;
     virtual void OnChar(char character) = 0;
     virtual void OnMouseMove(int x, int y) = 0;
     virtual void OnMouseButtonDown(int button, int x, int y) = 0;

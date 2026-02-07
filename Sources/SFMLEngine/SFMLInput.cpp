@@ -79,53 +79,58 @@ void SFMLInput::BeginFrame()
 
 // ============== Keyboard ==============
 
-bool SFMLInput::IsKeyDown(int key) const
+bool SFMLInput::IsKeyDown(KeyCode key) const
 {
     if (m_suppressed) return false;
-    if (key < 0 || key >= kKeyCount)
+    int k = static_cast<int>(key);
+    if (k < 0 || k >= kKeyCount)
         return false;
-    return m_keyDown[key];
+    return m_keyDown[k];
 }
 
-bool SFMLInput::IsKeyPressed(int key) const
+bool SFMLInput::IsKeyPressed(KeyCode key) const
 {
     if (m_suppressed) return false;
-    if (key < 0 || key >= kKeyCount)
+    int k = static_cast<int>(key);
+    if (k < 0 || k >= kKeyCount)
         return false;
-    return m_keyPressed[key];
+    return m_keyPressed[k];
 }
 
-bool SFMLInput::IsKeyReleased(int key) const
+bool SFMLInput::IsKeyReleased(KeyCode key) const
 {
     if (m_suppressed) return false;
-    if (key < 0 || key >= kKeyCount)
+    int k = static_cast<int>(key);
+    if (k < 0 || k >= kKeyCount)
         return false;
-    return m_keyReleased[key];
+    return m_keyReleased[k];
 }
 
-void SFMLInput::OnKeyDown(int key)
+void SFMLInput::OnKeyDown(KeyCode key)
 {
-    if (key < 0 || key >= kKeyCount)
+    int k = static_cast<int>(key);
+    if (k < 0 || k >= kKeyCount)
         return;
 
     // Only set pressed on initial key down, not on auto-repeat
-    if (!m_keyDown[key])
+    if (!m_keyDown[k])
     {
-        m_keyPressed[key] = true;
+        m_keyPressed[k] = true;
     }
-    m_keyDown[key] = true;
+    m_keyDown[k] = true;
 }
 
-void SFMLInput::OnKeyUp(int key)
+void SFMLInput::OnKeyUp(KeyCode key)
 {
-    if (key < 0 || key >= kKeyCount)
+    int k = static_cast<int>(key);
+    if (k < 0 || k >= kKeyCount)
         return;
 
-    if (m_keyDown[key])
+    if (m_keyDown[k])
     {
-        m_keyReleased[key] = true;
+        m_keyReleased[k] = true;
     }
-    m_keyDown[key] = false;
+    m_keyDown[k] = false;
 }
 
 // ============== Mouse Buttons ==============
@@ -215,19 +220,19 @@ void SFMLInput::OnMouseWheel(int delta)
 bool SFMLInput::IsShiftDown() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(VK_SHIFT) || IsKeyDown(VK_LSHIFT) || IsKeyDown(VK_RSHIFT);
+    return IsKeyDown(KeyCode::Shift) || IsKeyDown(KeyCode::LShift) || IsKeyDown(KeyCode::RShift);
 }
 
 bool SFMLInput::IsCtrlDown() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(VK_CONTROL) || IsKeyDown(VK_LCONTROL) || IsKeyDown(VK_RCONTROL);
+    return IsKeyDown(KeyCode::Control) || IsKeyDown(KeyCode::LControl) || IsKeyDown(KeyCode::RControl);
 }
 
 bool SFMLInput::IsAltDown() const
 {
     if (m_suppressed) return false;
-    return IsKeyDown(VK_MENU) || IsKeyDown(VK_LMENU) || IsKeyDown(VK_RMENU);
+    return IsKeyDown(KeyCode::Alt) || IsKeyDown(KeyCode::LAlt) || IsKeyDown(KeyCode::RAlt);
 }
 
 // ============== Input Suppression ==============

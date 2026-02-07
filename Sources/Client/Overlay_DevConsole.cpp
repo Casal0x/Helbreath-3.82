@@ -48,7 +48,7 @@ void Overlay_DevConsole::on_uninitialize()
 void Overlay_DevConsole::on_update()
 {
 	// Escape closes the console
-	if (Input::IsKeyPressed(VK_ESCAPE))
+	if (Input::IsKeyPressed(KeyCode::Escape))
 	{
 		DevConsole::Get().Hide();
 		clear_overlay();

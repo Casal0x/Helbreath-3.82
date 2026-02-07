@@ -55,23 +55,23 @@ void Screen_SelectCharacter::on_update()
 
     // Handle legacy arrow input (if set by OnKeyDown) or direct input
     // NOTE: Preferring direct input for robustness
-    if (Input::IsKeyPressed(VK_RIGHT)) {
+    if (Input::IsKeyPressed(KeyCode::Right)) {
         m_cCurFocus++;
         if (m_cCurFocus > m_cMaxFocus) m_cCurFocus = 1;
     }
-    else if (Input::IsKeyPressed(VK_LEFT)) {
+    else if (Input::IsKeyPressed(KeyCode::Left)) {
         m_cCurFocus--;
         if (m_cCurFocus <= 0) m_cCurFocus = m_cMaxFocus;
     }
     
 
-    if (Input::IsKeyPressed(VK_ESCAPE) == true)
+    if (Input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
-    if (Input::IsKeyPressed(VK_RETURN) == true)
+    if (Input::IsKeyPressed(KeyCode::Enter) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
 

@@ -95,7 +95,7 @@ void Overlay_LogResMsg::on_update()
     GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
 
     // ESC or Enter dismisses the message
-    if (Input::IsKeyPressed(VK_ESCAPE) || Input::IsKeyPressed(VK_RETURN))
+    if (Input::IsKeyPressed(KeyCode::Escape) || Input::IsKeyPressed(KeyCode::Enter))
     {
         HandleDismiss();
         return;

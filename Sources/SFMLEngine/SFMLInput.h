@@ -25,9 +25,9 @@ public:
     virtual void BeginFrame() override;
 
     // Keyboard
-    virtual bool IsKeyDown(int key) const override;
-    virtual bool IsKeyPressed(int key) const override;
-    virtual bool IsKeyReleased(int key) const override;
+    virtual bool IsKeyDown(KeyCode key) const override;
+    virtual bool IsKeyPressed(KeyCode key) const override;
+    virtual bool IsKeyReleased(KeyCode key) const override;
 
     // Mouse buttons
     virtual bool IsMouseButtonDown(int button) const override;
@@ -55,8 +55,8 @@ public:
     virtual bool IsSuppressed() const override;
 
     // Input events (called by SFMLWindow with logical coordinates)
-    virtual void OnKeyDown(int key) override;
-    virtual void OnKeyUp(int key) override;
+    virtual void OnKeyDown(KeyCode key) override;
+    virtual void OnKeyUp(KeyCode key) override;
     virtual void OnMouseMove(int x, int y) override;
     virtual void OnMouseDown(int button) override;
     virtual void OnMouseUp(int button) override;

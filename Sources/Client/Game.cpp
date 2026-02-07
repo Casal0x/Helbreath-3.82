@@ -7167,14 +7167,11 @@ void CGame::_LoadAgreementTextContents(char cType)
 }
 
 
-void CGame::OnKeyUp(int key)
+void CGame::OnKeyUp(KeyCode _key)
 {
-	if (HotkeyManager::Get().HandleKeyUp(static_cast<int>(key))) {
+	if (HotkeyManager::Get().HandleKeyUp(_key)) {
 		return;
 	}
-
-	// Use KeyCode enum for engine-agnostic key handling
-	KeyCode _key = static_cast<KeyCode>(key);
 
 	// When an overlay is active, only allow certain hotkeys (like screenshot)
 	// Block most hotkeys to prevent interaction with base screen
@@ -7288,10 +7285,8 @@ void CGame::OnKeyUp(int key)
 	}
 }
 
-void CGame::OnKeyDown(int key)
+void CGame::OnKeyDown(KeyCode _key)
 {
-	// Use KeyCode enum for engine-agnostic key handling
-	KeyCode _key = static_cast<KeyCode>(key);
 
 	// When an overlay is active, block all OnKeyDown actions
 	// Overlays handle their own input in on_update()

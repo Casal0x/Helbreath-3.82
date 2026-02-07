@@ -49,7 +49,7 @@ void Screen_Login::on_update()
     m_pGame->m_dwCurTime = dwTime;
 
     // Explicit TAB handling since legacy OnKeyDown ignores it
-    if (Input::IsKeyPressed(VK_TAB))
+    if (Input::IsKeyPressed(KeyCode::Tab))
     {
         if (Input::IsShiftDown())
         {
@@ -88,7 +88,7 @@ void Screen_Login::on_update()
          m_pGame->m_cArrowPressed = 0;
     }
 
-    if (Input::IsKeyPressed(VK_RETURN) == true)
+    if (Input::IsKeyPressed(KeyCode::Enter) == true)
     {
         switch (m_cCurFocus) {
         case 1:
@@ -123,7 +123,7 @@ void Screen_Login::on_update()
         }
     }
 
-    if (Input::IsKeyPressed(VK_ESCAPE) == true)
+    if (Input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
         m_pGame->EndInputString();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "IInput.h"  // For KeyCode
 #include <functional>
 #include <vector>
 
@@ -16,7 +17,7 @@ public:
 
 	struct KeyCombo
 	{
-		int vk;
+		KeyCode vk;
 		bool ctrl;
 		bool shift;
 		bool alt;
@@ -24,8 +25,8 @@ public:
 
 	void Clear();
 	void Register(const KeyCombo& combo, Trigger trigger, std::function<void()> callback);
-	bool HandleKeyDown(int vk);
-	bool HandleKeyUp(int vk);
+	bool HandleKeyDown(KeyCode vk);
+	bool HandleKeyUp(KeyCode vk);
 
 private:
 	HotkeyManager() = default;
@@ -40,7 +41,7 @@ private:
 		std::function<void()> callback;
 	};
 
-	bool HandleKey(int vk, Trigger trigger);
+	bool HandleKey(KeyCode vk, Trigger trigger);
 
 	std::vector<Entry> m_entries;
 };

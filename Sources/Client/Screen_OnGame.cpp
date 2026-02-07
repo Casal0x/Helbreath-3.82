@@ -73,7 +73,7 @@ void Screen_OnGame::on_update()
     }
 
     // Enter key handling
-    if (Input::IsKeyPressed(VK_RETURN) == true)
+    if (Input::IsKeyPressed(KeyCode::Enter) == true)
     {
         if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
             m_pGame->EndInputString();

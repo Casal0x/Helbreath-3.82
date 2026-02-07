@@ -61,7 +61,7 @@ public:
 
 private:
     // Convert SFML key to abstract KeyCode
-    static int SfmlKeyToKeyCode(sf::Keyboard::Key key);
+    static KeyCode SfmlKeyToKeyCode(sf::Keyboard::Key key);
 
     // Transform window coordinates to logical game coordinates (640x480)
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;

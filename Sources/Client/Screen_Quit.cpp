@@ -41,7 +41,7 @@ void Screen_Quit::on_update()
     if (dwElapsed >= INPUT_ACTIVE_MS)
     {
         // Handle escape/enter to quit
-        if (Input::IsKeyPressed(VK_ESCAPE) || Input::IsKeyPressed(VK_RETURN))
+        if (Input::IsKeyPressed(KeyCode::Escape) || Input::IsKeyPressed(KeyCode::Enter))
         {
             m_pGame->ChangeGameMode(GameMode::Null);
             Window::Close();

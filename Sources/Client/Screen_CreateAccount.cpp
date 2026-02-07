@@ -131,14 +131,14 @@ void Screen_CreateAccount::on_update()
     }
     m_cNewAcctPrevLB = cLB;
 
-    if (Input::IsKeyPressed(VK_ESCAPE) == true)
+    if (Input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
     // Handle Tab key
-    if (Input::IsKeyPressed(VK_TAB))
+    if (Input::IsKeyPressed(KeyCode::Tab))
     {
         m_pGame->PlayGameSound('E', 14, 5);
         if (Input::IsShiftDown())
@@ -154,7 +154,7 @@ void Screen_CreateAccount::on_update()
     }
 
     // Handle Enter key
-    if (Input::IsKeyPressed(VK_RETURN))
+    if (Input::IsKeyPressed(KeyCode::Enter))
     {
         m_pGame->PlayGameSound('E', 14, 5);
 

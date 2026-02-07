@@ -33,7 +33,7 @@ void Overlay_Connecting::on_update()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     // ESC key cancels connection (only after 7 seconds when hint is shown)
-    if (Input::IsKeyPressed(VK_ESCAPE))
+    if (Input::IsKeyPressed(KeyCode::Escape))
     {
         if (dwElapsed > 7000)
         {

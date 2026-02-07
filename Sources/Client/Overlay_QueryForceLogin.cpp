@@ -39,7 +39,7 @@ void Overlay_QueryForceLogin::on_update()
     GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
 
     // ESC cancels - base screen (SelectCharacter) will be revealed
-    if (Input::IsKeyPressed(VK_ESCAPE))
+    if (Input::IsKeyPressed(KeyCode::Escape))
     {
         clear_overlay();
         return;

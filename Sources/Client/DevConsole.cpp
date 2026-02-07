@@ -195,25 +195,24 @@ bool DevConsole::HandleChar(unsigned int codepoint)
 	return true;
 }
 
-bool DevConsole::HandleKeyDown(int keyCode)
+bool DevConsole::HandleKeyDown(KeyCode keyCode)
 {
-	// Using IInput KeyCode values (matches VK codes for arrow/page keys)
-	enum { Key_Up = 38, Key_Down = 40, Key_PageUp = 33, Key_PageDown = 34 };
-
 	switch (keyCode)
 	{
-	case Key_Up:
+	case KeyCode::Up:
 		HistoryUp();
 		return true;
-	case Key_Down:
+	case KeyCode::Down:
 		HistoryDown();
 		return true;
-	case Key_PageUp:
+	case KeyCode::PageUp:
 		ScrollUp(8);
 		return true;
-	case Key_PageDown:
+	case KeyCode::PageDown:
 		ScrollDown(8);
 		return true;
+	default:
+		break;
 	}
 	return false;
 }

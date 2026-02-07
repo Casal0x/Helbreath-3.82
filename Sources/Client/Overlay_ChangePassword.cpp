@@ -203,7 +203,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Enter key
-    if (Input::IsKeyPressed(VK_RETURN))
+    if (Input::IsKeyPressed(KeyCode::Enter))
     {
         PlayGameSound('E', 14, 5);
         switch (m_iCurFocus)
@@ -226,7 +226,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // ESC key - return to main menu (set_screen will clear overlay automatically)
-    if (Input::IsKeyPressed(VK_ESCAPE))
+    if (Input::IsKeyPressed(KeyCode::Escape))
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;

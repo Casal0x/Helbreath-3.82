@@ -36,7 +36,7 @@ void Overlay_VersionNotMatch::on_update()
     if (m_iFrameCount > 120) m_iFrameCount = 120;
 
     // Any key press closes the application
-    if (Input::IsKeyPressed(VK_ESCAPE) || Input::IsKeyPressed(VK_RETURN))
+    if (Input::IsKeyPressed(KeyCode::Escape) || Input::IsKeyPressed(KeyCode::Enter))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
         Window::Close();

@@ -18,17 +18,17 @@ void HotkeyManager::Register(const KeyCombo& combo, Trigger trigger, std::functi
 	m_entries.push_back(Entry{ combo, trigger, std::move(callback) });
 }
 
-bool HotkeyManager::HandleKeyDown(int vk)
+bool HotkeyManager::HandleKeyDown(KeyCode vk)
 {
 	return HandleKey(vk, Trigger::KeyDown);
 }
 
-bool HotkeyManager::HandleKeyUp(int vk)
+bool HotkeyManager::HandleKeyUp(KeyCode vk)
 {
 	return HandleKey(vk, Trigger::KeyUp);
 }
 
-bool HotkeyManager::HandleKey(int vk, Trigger trigger)
+bool HotkeyManager::HandleKey(KeyCode vk, Trigger trigger)
 {
 	if (m_entries.empty()) {
 		return false;

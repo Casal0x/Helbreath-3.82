@@ -62,7 +62,7 @@ void Screen_MainMenu::on_update()
     }
 
     // Handle Tab key
-    if (Input::IsKeyPressed(VK_TAB))
+    if (Input::IsKeyPressed(KeyCode::Tab))
     {
         if (Input::IsShiftDown())
         {
@@ -78,7 +78,7 @@ void Screen_MainMenu::on_update()
         }
     }
 
-    if (Input::IsKeyPressed(VK_RETURN) == true) {
+    if (Input::IsKeyPressed(KeyCode::Enter) == true) {
         switch (m_cCurFocus) {
         case 1:
             m_pGame->PlayGameSound('E', 14, 5);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonTypes.h"
+#include "IInput.h"  // For KeyCode
 #include <cstdint>
 #include <functional>
 
@@ -24,7 +25,7 @@ public:
 
 	// Text input (called from Overlay_DevConsole / GameWindowHandler)
 	bool HandleChar(unsigned int codepoint);
-	bool HandleKeyDown(int keyCode);
+	bool HandleKeyDown(KeyCode keyCode);
 	const char* GetInputBuffer() const { return m_szInput; }
 	int GetInputLength() const { return m_iInputLen; }
 

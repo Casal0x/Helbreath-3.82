@@ -36,7 +36,7 @@ void Overlay_WaitInitData::on_update()
     if (m_iFrameCount > 100) m_iFrameCount = 100;
 
     // ESC key returns to MainMenu (only after 7 seconds)
-    if (Input::IsKeyPressed(VK_ESCAPE))
+    if (Input::IsKeyPressed(KeyCode::Escape))
     {
         if (dwElapsed > 7000)
         {

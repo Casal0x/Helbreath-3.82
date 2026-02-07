@@ -11,29 +11,29 @@ void CGame::RegisterHotkeys()
 	auto& hotkeys = HotkeyManager::Get();
 	hotkeys.Clear();
 
-	HotkeyManager::KeyCombo ctrlOnly{ 0, true, false, false };
+	HotkeyManager::KeyCombo ctrlOnly{ KeyCode::Unknown, true, false, false };
 
-	hotkeys.Register({ 'A', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::A, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleForceAttack(); });
-	hotkeys.Register({ 'D', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::D, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_CycleDetailLevel(); });
-	hotkeys.Register({ 'H', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::H, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleHelp(); });
-	hotkeys.Register({ 'W', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::W, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleDialogTransparency(); });
-	hotkeys.Register({ 'X', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::X, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleSystemMenu(); });
-	hotkeys.Register({ 'M', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::M, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleGuideMap(); });
-	hotkeys.Register({ 'R', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::R, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleRunningMode(); });
-	hotkeys.Register({ 'S', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::S, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_ToggleSoundAndMusic(); });
-	hotkeys.Register({ 'T', ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::T, ctrlOnly.ctrl, ctrlOnly.shift, ctrlOnly.alt }, HotkeyManager::Trigger::KeyUp,
 		[this]() { Hotkey_WhisperTarget(); });
 
 	// Alt+Tilde: Toggle developer console (GM mode only)
-	hotkeys.Register({ static_cast<int>(KeyCode::Grave), false, false, true }, HotkeyManager::Trigger::KeyUp,
+	hotkeys.Register({ KeyCode::Grave, false, false, true }, HotkeyManager::Trigger::KeyUp,
 		[this]() {
 			DevConsole& console = DevConsole::Get();
 			if (console.IsVisible())
@@ -494,7 +494,7 @@ void CGame::Hotkey_Simple_ToggleSafeAttack()
 
 void CGame::Hotkey_Simple_Escape()
 {
-	// Note: Escape handling is automatic through Input::IsKeyPressed(VK_ESCAPE)
+	// Note: Escape handling is automatic through Input::IsKeyPressed(KeyCode::Escape)
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		if ((m_bIsObserverMode == true) && (Input::IsShiftDown())) {
