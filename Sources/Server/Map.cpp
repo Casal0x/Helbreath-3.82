@@ -552,18 +552,25 @@ bool CMap::_bDecodeMapDataFileContents()
 
 bool CMap::bSearchTeleportDest(int sX, int sY, char* pMapName, int* pDx, int* pDy, char* pDir)
 {
-	
+	// Collect all matching teleport entries for this source tile
+	int matches[DEF_MAXTELEPORTLOC];
+	int matchCount = 0;
 
-	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for (int i = 0; i < DEF_MAXTELEPORTLOC; i++) {
 		if ((m_pTeleportLoc[i] != 0) && (m_pTeleportLoc[i]->m_sSrcX == sX) && (m_pTeleportLoc[i]->m_sSrcY == sY)) {
-			memcpy(pMapName, m_pTeleportLoc[i]->m_cDestMapName, 10);
-			*pDx = m_pTeleportLoc[i]->m_sDestX;
-			*pDy = m_pTeleportLoc[i]->m_sDestY;
-			*pDir = m_pTeleportLoc[i]->m_cDir;
-			return true;
+			matches[matchCount++] = i;
 		}
+	}
 
-	return false;
+	if (matchCount == 0) return false;
+
+	// Randomly select among matching entries
+	int pick = matches[rand() % matchCount];
+	memcpy(pMapName, m_pTeleportLoc[pick]->m_cDestMapName, 10);
+	*pDx = m_pTeleportLoc[pick]->m_sDestX;
+	*pDy = m_pTeleportLoc[pick]->m_sDestY;
+	*pDir = m_pTeleportLoc[pick]->m_cDir;
+	return true;
 }
 
 void CMap::SetDynamicObject(uint16_t wID, short sType, short sX, short sY, uint32_t dwRegisterTime)
