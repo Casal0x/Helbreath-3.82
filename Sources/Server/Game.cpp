@@ -10877,13 +10877,8 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 		(m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)] != -1)) return;
 
 	// Reject spell if the cast was interrupted by damage (sentinel value -1)
-	// or if the player took damage during the cast window (covers network race)
 	if ((bItemEffect == false) && (m_pClientList[iClientH]->m_iSpellCount == -1)) {
 		m_pClientList[iClientH]->m_iSpellCount = 0;
-		return;
-	}
-	if ((bItemEffect == false) && (m_pClientList[iClientH]->m_dwLastDamageTakenTime != 0) &&
-		(dwTime - m_pClientList[iClientH]->m_dwLastDamageTakenTime < 3000)) {
 		return;
 	}
 
