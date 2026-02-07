@@ -15632,6 +15632,7 @@ bool CGame::bCheckLevelUp(int iClientH)
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_HP, 0, 0, 0, 0);
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_MP, 0, 0, 0, 0);
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_SP, 0, 0, 0, 0);
+			SendNotifyMsg(0, iClientH, DEF_NOTIFY_SUPERATTACKLEFT, 0, 0, 0, 0);
 
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_LEVELUP, 0, 0, 0, 0);
 
@@ -15888,6 +15889,24 @@ void CGame::LevelUpSettingsHandler(int iClientH, char* pData, size_t dwMsgSize)
 	m_pClientList[iClientH]->m_iInt += cInt;
 	m_pClientList[iClientH]->m_iMag += cMag;
 	m_pClientList[iClientH]->m_iCharisma += cChar;
+
+	// Recalculate item effects and weapon swing speed after stat changes
+	CalcTotalItemEffect(iClientH, -1, false);
+
+	// Recalculate weapon swing speed (stored in lower 4 bits of m_iStatus)
+	short sWeaponIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::RightHand)];
+	if (sWeaponIndex == -1)
+		sWeaponIndex = m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(EquipPos::TwoHand)];
+	if (sWeaponIndex != -1 && m_pClientList[iClientH]->m_pItemList[sWeaponIndex] != nullptr)
+	{
+		int iTemp = m_pClientList[iClientH]->m_iStatus;
+		iTemp = iTemp & 0xFFFFFFF0;
+		short sSpeed = m_pClientList[iClientH]->m_pItemList[sWeaponIndex]->m_cSpeed;
+		sSpeed -= ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 13);
+		if (sSpeed < 0) sSpeed = 0;
+		iTemp = iTemp | (int)sSpeed;
+		m_pClientList[iClientH]->m_iStatus = iTemp;
+	}
 
 	SendNotifyMsg(0, iClientH, DEF_NOTIFY_SETTING_SUCCESS, 0, 0, 0, 0);
 

@@ -111,7 +111,7 @@ void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
 
-	// Level up / Restart text
+	// Level up / Restart text (mutually exclusive: dead shows Restart, alive shows Level Up)
 	if (m_pGame->m_pPlayer->m_iHP > 0)
 	{
 		if ((m_pGame->m_pPlayer->m_iLU_Point > 0) && !m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting))
