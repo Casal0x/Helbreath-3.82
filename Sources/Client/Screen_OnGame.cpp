@@ -328,7 +328,8 @@ void Screen_OnGame::on_update()
                 // Only fast unlock for pure rotation (STOP animation), not after magic/attack
                 if (animAction == DEF_OBJECTSTOP) {
                     uint32_t cmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
-                    if (cmdTime > 0 && (m_dwTime - cmdTime) >= 100) {
+                    // cmdTime == 0 means just teleported/map changed, allow immediate actions
+                    if (cmdTime == 0 || (m_dwTime - cmdTime) >= 100) {
                         m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
                         m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
                     }
