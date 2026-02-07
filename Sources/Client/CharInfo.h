@@ -5,7 +5,7 @@
 #pragma once
 
 #include <windows.h>
-#include "AppearanceData.h"
+#include "Appearance.h"
 
 class CCharInfo
 {

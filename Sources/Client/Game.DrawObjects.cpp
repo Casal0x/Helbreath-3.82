@@ -37,7 +37,7 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 	int HEAD    = isFemale ? DEF_SPRID_HEAD_W      : DEF_SPRID_HEAD_M;
 
 	// Walking uses pose 3, standing uses pose 2
-	bool isWalking = state.m_appearance.iIsWalking != 0;
+	bool isWalking = state.m_appearance.bIsWalking;
 	int pose = isWalking ? 3 : 2;
 
 	// Read from unpacked appearance
@@ -52,7 +52,7 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 	int weaponType   = appr.iWeaponType;
 	int shieldType   = appr.iShieldType;
 	int mantleType   = appr.iMantleType;
-	bool hideArmor   = appr.iHideArmor != 0;
+	bool hideArmor   = appr.bHideArmor;
 
 	// Body index
 	eq.body = 500 + (state.m_sOwnerType - 1) * 8 * 15 + (pose * 8);
@@ -803,8 +803,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	if ((dwTime - m_dwEnvEffectTime) > 400) m_dwEnvEffectTime = dwTime;
 
 	// Finalize Picking system - determines cursor type
-	int foeResult = CursorTarget::HasFocusedObject() ? _iGetFOE(CursorTarget::GetFocusStatus()) : 0;
-	CursorTarget::EndFrame(foeResult, m_iPointCommandType, m_pPlayer->m_Controller.IsCommandAvailable(), m_bIsGetPointingMode);
+	EntityRelationship focusRelationship = CursorTarget::HasFocusedObject() ? CursorTarget::GetFocusStatus().iRelationship : EntityRelationship::Neutral;
+	CursorTarget::EndFrame(focusRelationship, m_iPointCommandType, m_pPlayer->m_Controller.IsCommandAvailable(), m_bIsGetPointingMode);
 
 	// Update legacy compatibility variables from Picking system
 	m_sMCX = CursorTarget::GetFocusedMapX();

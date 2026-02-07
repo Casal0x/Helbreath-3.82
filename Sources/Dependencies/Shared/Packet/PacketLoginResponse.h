@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PacketHeaders.h"
+#include "../Appearance.h"
 
 #include <cstdint>
 
@@ -14,15 +15,11 @@ namespace net {
 
 	struct HB_PACKED PacketLogCharacterEntry {
 		char name[10];
-		std::uint16_t appr1;
-		std::uint16_t appr2;
-		std::uint16_t appr3;
-		std::uint16_t appr4;
+		PlayerAppearance appearance;
 		std::uint16_t sex;
 		std::uint16_t skin;
 		std::uint16_t level;
 		std::uint32_t exp;
-		std::int32_t appr_color;
 		char map_name[10];
 	};
 

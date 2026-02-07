@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "GameCmdGM.h"
 #include "Game.h"
-#include "StatusFlags.h"
 #include <cstring>
 
 bool GameCmdGM::Execute(CGame* pGame, int iClientH, const char* pArgs)
@@ -18,7 +17,7 @@ bool GameCmdGM::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	if (_stricmp(pArgs, "on") == 0)
 	{
 		pGame->m_pClientList[iClientH]->m_bIsGMMode = true;
-		pGame->m_pClientList[iClientH]->m_iStatus |= hb::status::GMMode;
+		pGame->m_pClientList[iClientH]->m_status.bGMMode = true;
 		pGame->SendEventToNearClient_TypeA(static_cast<short>(iClientH), DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "GM mode enabled.");
 		return true;
@@ -26,7 +25,7 @@ bool GameCmdGM::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	else if (_stricmp(pArgs, "off") == 0)
 	{
 		pGame->m_pClientList[iClientH]->m_bIsGMMode = false;
-		pGame->m_pClientList[iClientH]->m_iStatus &= ~hb::status::GMMode;
+		pGame->m_pClientList[iClientH]->m_status.bGMMode = false;
 		pGame->SendEventToNearClient_TypeA(static_cast<short>(iClientH), DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "GM mode disabled.");
 		return true;

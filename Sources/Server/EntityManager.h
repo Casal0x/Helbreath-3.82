@@ -7,6 +7,7 @@
 
 #pragma once
 #include "CommonTypes.h"
+#include "EntityRelationship.h"
 
 #include "Npc.h"
 #include "Map.h"
@@ -129,8 +130,7 @@ public:
     void NpcBehavior_Dead(int iNpcH);
     void CalcNextWayPointDestination(int iNpcH);
     void NpcMagicHandler(int iNpcH, short dX, short dY, short sType);
-    int iGetNpcRelationship(int iWhatH, int iRecvH);
-    int iGetNpcRelationship_SendEvent(int iNpcH, int iOpponentH);
+    EntityRelationship GetNpcRelationship(int iNpcH, int iViewerH);
     void NpcRequestAssistance(int iNpcH);
     bool _bNpcBehavior_ManaCollector(int iNpcH);
     bool _bNpcBehavior_Detector(int iNpcH);

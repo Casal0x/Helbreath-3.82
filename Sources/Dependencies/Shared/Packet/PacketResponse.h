@@ -2,6 +2,8 @@
 
 #include "PacketHeaders.h"
 #include "NetConstants.h"
+#include "../Appearance.h"
+#include "../PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -162,12 +164,8 @@ namespace net {
 		int16_t pivot_x;
 		int16_t pivot_y;
 		int16_t player_type;
-		int16_t appr1;
-		int16_t appr2;
-		int16_t appr3;
-		int16_t appr4;
-		int32_t appr_color;
-		int32_t status;
+		PlayerAppearance appearance;
+		PlayerStatus status;
 		char map_name[10];
 		char cur_location[10];
 		uint8_t sprite_alpha;

@@ -337,24 +337,25 @@ int CEntityManager::CreateEntity(
             case 4:
             case 5:
             case 6:
-                m_pNpcList[i]->m_sAppr2 = static_cast<short>(0xF000);
-                m_pNpcList[i]->m_sAppr2 = m_pNpcList[i]->m_sAppr2 | ((rand() % 13) << 4);
-                m_pNpcList[i]->m_sAppr2 = m_pNpcList[i]->m_sAppr2 | (rand() % 9);
+                // Player-type NPCs (guard towers): encode weapon/shield into appearance
+                // iSubType stores weapon type, iSpecialFrame stores shield type
+                m_pNpcList[i]->m_appearance.iSubType = static_cast<uint8_t>(rand() % 13);    // weapon type
+                m_pNpcList[i]->m_appearance.iSpecialFrame = static_cast<uint8_t>(rand() % 9); // shield type
                 break;
 
             case 36: // AGT
             case 37: // CGT
             case 38:
             case 39:
-                m_pNpcList[i]->m_sAppr2 = 3;
+                m_pNpcList[i]->m_appearance.iSpecialFrame = 3;
                 break;
 
             case 64: // Crop
-                m_pNpcList[i]->m_sAppr2 = 1;
+                m_pNpcList[i]->m_appearance.iSpecialFrame = 1;
                 break;
 
             default:
-                m_pNpcList[i]->m_sAppr2 = 0;
+                m_pNpcList[i]->m_appearance.Clear();
                 break;
             }
 
@@ -373,7 +374,7 @@ int CEntityManager::CreateEntity(
 
             if (bFirmBerserk) {
                 m_pNpcList[i]->m_cMagicEffectStatus[DEF_MAGICTYPE_BERSERK] = 1;
-                m_pNpcList[i]->m_iStatus = m_pNpcList[i]->m_iStatus | 0x20;
+                m_pNpcList[i]->m_status.bBerserk = true;
             }
 
             if (cChangeSide != -1) m_pNpcList[i]->m_cSide = cChangeSide;
@@ -492,7 +493,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
     short sAttackerWeapon;
     if (cAttackerType == DEF_OWNERTYPE_PLAYER) {
         if (m_pGame->m_pClientList[sAttackerH] != NULL)
-            sAttackerWeapon = ((m_pGame->m_pClientList[sAttackerH]->m_sAppr2 & 0x0FF0) >> 4);
+            sAttackerWeapon = m_pGame->m_pClientList[sAttackerH]->m_appearance.iWeaponType;
         else
             sAttackerWeapon = 1;
     }
@@ -2113,55 +2114,23 @@ NMH_NOEFFECT:
 
 }
 
-int CEntityManager::iGetNpcRelationship(int iWhatH, int iRecvH)
+EntityRelationship CEntityManager::GetNpcRelationship(int iNpcH, int iViewerH)
 {
-	int iRet;
+	if (m_pGame->m_pClientList[iViewerH] == 0) return EntityRelationship::Neutral;
+	if (m_pNpcList[iNpcH] == 0) return EntityRelationship::Neutral;
 
-	if (m_pGame->m_pClientList[iRecvH] == 0) return 0;
-	if (m_pNpcList[iWhatH] == 0) return 0;
+	int npcSide = m_pNpcList[iNpcH]->m_cSide;
+	int viewerSide = m_pGame->m_pClientList[iViewerH]->m_cSide;
 
-	iRet = 0;
-	switch (m_pNpcList[iWhatH]->m_cSide) {
-	case 10: iRet |= 8; //Fixed, Original 15 
-	case 1:  iRet = (iRet | 4) | 2; //Fixed, Original 1 
-	case 2:  iRet |= 4; //Fixed, Orignal 8 
-	}
+	// Side 10 = always hostile (monsters, aggressive NPCs)
+	if (npcSide == 10) return EntityRelationship::Enemy;
 
-	return iRet;
-}
+	// NPC side 0 = neutral (townfolk, shopkeepers) or viewer has no faction
+	if (npcSide == 0 || viewerSide == 0) return EntityRelationship::Neutral;
 
-int CEntityManager::iGetNpcRelationship_SendEvent(int iNpcH, int iOpponentH)
-{
-	int iRet;
-
-	if (m_pGame->m_pClientList[iOpponentH] == 0) return 0;
-	if (m_pGame->m_pClientList[iOpponentH]->m_bIsInitComplete == false) return 0;
-
-	if (m_pNpcList[iNpcH] == 0) return 0;
-
-	iRet = 0;
-
-	if (m_pGame->m_pClientList[iOpponentH]->m_iPKCount != 0) {
-		if (m_pNpcList[iNpcH]->m_cSide == m_pGame->m_pClientList[iOpponentH]->m_cSide)
-			iRet = 7;
-		else iRet = 2;
-	}
-	else {
-		if (m_pNpcList[iNpcH]->m_cSide != m_pGame->m_pClientList[iOpponentH]->m_cSide) {
-			if (m_pNpcList[iNpcH]->m_cSide == 10)
-				iRet = 2;
-			else
-				if (m_pNpcList[iNpcH]->m_cSide == 0) iRet = 0;
-				else
-					if (m_pGame->m_pClientList[iOpponentH]->m_cSide == 0)
-						iRet = 0;
-					else iRet = 2;
-
-		}
-		else iRet = 1;
-	}
-
-	return iRet;
+	// Same faction = friendly, different = enemy
+	if (npcSide == viewerSide) return EntityRelationship::Friendly;
+	return EntityRelationship::Enemy;
 }
 
 void CEntityManager::NpcRequestAssistance(int iNpcH)
@@ -2203,7 +2172,7 @@ bool CEntityManager::_bNpcBehavior_ManaCollector(int iNpcH)
 	bool bRet;
 
 	if (m_pNpcList[iNpcH] == 0) return false;
-	if (m_pNpcList[iNpcH]->m_sAppr2 != 0) return false;
+	if (m_pNpcList[iNpcH]->m_appearance.HasSpecialState()) return false;
 
 	bRet = false;
 	for (dX = m_pNpcList[iNpcH]->m_sX - 5; dX <= m_pNpcList[iNpcH]->m_sX + 5; dX++)
@@ -2296,7 +2265,7 @@ bool CEntityManager::_bNpcBehavior_Detector(int iNpcH)
 	bool  bFlag = false;
 
 	if (m_pNpcList[iNpcH] == 0) return false;
-	if (m_pNpcList[iNpcH]->m_sAppr2 != 0) return false;
+	if (m_pNpcList[iNpcH]->m_appearance.HasSpecialState()) return false;
 
 	for (dX = m_pNpcList[iNpcH]->m_sX - 10; dX <= m_pNpcList[iNpcH]->m_sX + 10; dX++)
 		for (dY = m_pNpcList[iNpcH]->m_sY - 10; dY <= m_pNpcList[iNpcH]->m_sY + 10; dY++) {

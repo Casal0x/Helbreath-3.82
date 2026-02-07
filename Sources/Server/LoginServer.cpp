@@ -143,15 +143,12 @@ void LoginServer::GetCharList(string acc, char*& cp2, const std::vector<AccountD
 	for (const auto& entry : chars)
 	{
 		Push(cp2, entry.characterName, 10);
-		Push(cp2, entry.appr1);
-		Push(cp2, entry.appr2);
-		Push(cp2, entry.appr3);
-		Push(cp2, entry.appr4);
+		std::memcpy(cp2, &entry.appearance, sizeof(PlayerAppearance));
+		cp2 += sizeof(PlayerAppearance);
 		Push(cp2, entry.sex);
 		Push(cp2, entry.skin);
 		Push(cp2, entry.level);
 		Push(cp2, entry.exp);
-		Push(cp2, entry.apprColor);
 		Push(cp2, entry.mapName, 10);
 	}
 }
@@ -344,11 +341,11 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	state.deadPenaltyTime = 0;
 	state.partyId = 0;
 	state.gizonItemUpgradeLeft = 0;
-	state.appr1 = 1187;
-	state.appr2 = 0;
-	state.appr3 = 0;
-	state.appr4 = 0;
-	state.apprColor = 0;
+	state.appearance.Clear();
+	state.appearance.iUnderwearType = static_cast<uint8_t>(state.underwear);
+	state.appearance.iHairColor = static_cast<uint8_t>(state.hairColor);
+	state.appearance.iHairStyle = static_cast<uint8_t>(state.hairStyle);
+	state.appearance.iSkinColor = static_cast<uint8_t>(state.skin);
 
 	bool ok = InsertCharacterState(db, state);
 
@@ -476,11 +473,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	AccountDbCharacterSummary summary = {};
 	std::snprintf(summary.characterName, sizeof(summary.characterName), "%s", cName);
-	summary.appr1 = state.appr1;
-	summary.appr2 = state.appr2;
-	summary.appr3 = state.appr3;
-	summary.appr4 = state.appr4;
-	summary.apprColor = state.apprColor;
+	summary.appearance = state.appearance;
 	summary.sex = static_cast<uint16_t>(state.sex);
 	summary.skin = static_cast<uint16_t>(state.skin);
 	summary.level = static_cast<uint16_t>(state.level);

@@ -8,7 +8,7 @@
 #include <mmsystem.h>
 #include "EntityMotion.h"
 #include "AnimationState.h"
-#include "AppearanceData.h"
+#include "Appearance.h"
 #include "PlayerStatusData.h"
 
 class CTile

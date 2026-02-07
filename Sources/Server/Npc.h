@@ -8,6 +8,8 @@
 #include "CommonTypes.h"
 #include "Magic.h"
 #include "GameGeometry.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
 #define DEF_MAXWAYPOINTS			10
 
@@ -51,8 +53,8 @@ public:
 
 	short m_sType;
 	short m_sOriginalType;
-	short m_sAppr2;
-	int	  m_iStatus;
+	EntityAppearance m_appearance;
+	EntityStatus m_status;
 
 	uint32_t m_dwTime;
 	uint32_t m_dwActionTime;

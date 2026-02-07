@@ -345,7 +345,6 @@
     <ClInclude Include="CursorTarget.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerController.h" />
-    <ClInclude Include="AppearanceData.h" />
     <ClInclude Include="EntityRenderState.h" />
     <ClInclude Include="EquipmentIndices.h" />
     <ClInclude Include="RenderHelpers.h" />
@@ -382,7 +381,6 @@
     <ClInclude Include="Overlay_DevConsole.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppearanceData.cpp" />
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
     <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" />

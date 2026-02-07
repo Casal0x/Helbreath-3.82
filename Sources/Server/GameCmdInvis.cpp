@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "GameCmdInvis.h"
 #include "Game.h"
-#include "StatusFlags.h"
 #include <cstring>
 
 bool GameCmdInvis::Execute(CGame* pGame, int iClientH, const char* pArgs)

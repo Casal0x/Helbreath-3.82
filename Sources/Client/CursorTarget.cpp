@@ -63,7 +63,7 @@ void CursorTarget::BeginFrame()
     s_cursorType = CursorType::Arrow;
 }
 
-void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailable, bool isGetPointingMode)
+void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bool commandAvailable, bool isGetPointingMode)
 {
     auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
@@ -73,7 +73,7 @@ void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailabl
         // Spell targeting mode (100-199) - takes priority over everything
         if (commandType >= 100 && commandType < 200) {
             if (commandAvailable) {
-                if (s_focusedObject.valid && foeResult < 0)
+                if (s_focusedObject.valid && IsHostile(relationship))
                     s_cursorType = CursorType::SpellHostile;
                 else
                     s_cursorType = CursorType::SpellFriendly;
@@ -105,7 +105,7 @@ void CursorTarget::EndFrame(int foeResult, int commandType, bool commandAvailabl
     // Normal mode - show target cursor based on focus
     if (s_focusedObject.valid) {
         // Holding Control treats neutral targets as hostile (for force-attack)
-        if (foeResult < 0 || Input::IsCtrlDown())
+        if (IsHostile(relationship) || Input::IsCtrlDown())
             s_cursorType = CursorType::TargetHostile;
         else
             s_cursorType = CursorType::TargetNeutral;

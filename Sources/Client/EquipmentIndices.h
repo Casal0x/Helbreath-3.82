@@ -53,7 +53,7 @@ struct EquipmentIndices
 	// Calculate body index for NPC/mob. All equipment indices set to -1.
 	// npcPose: animation pose for the mob sprite
 	//   Body: DEF_SPRID_MOB + (ownerType-10)*8*7 + (npcPose*8)
-	// If sRawAppr2 != 0, caller should override body index and frame after calling this.
+	// If HasNpcSpecialState(), caller should override body index and frame after calling this.
 	static EquipmentIndices CalcNpc(const CEntityRenderState& state, int npcPose);
 
 	// Fill color fields from entity appearance, respecting detail level.

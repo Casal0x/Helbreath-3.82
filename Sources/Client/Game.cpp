@@ -2651,9 +2651,9 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 	int i;
 	const char* cp;
 	char ucHeader, cDir, cName[12], cItemColor;
-	short sTotal, sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4, sDynamicObjectType;
+	short sTotal, sX, sY, sType, sDynamicObjectType;
 	PlayerStatus iStatus;
-	int iApprColor;
+	PlayerAppearance playerAppearance;
 	uint16_t wObjectID;
 	uint16_t wDynamicObjectID;
 	short sItemID;
@@ -2686,12 +2686,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				wObjectID = obj->base.object_id;
 				sType = obj->base.type;
 				cDir = static_cast<char>(obj->base.dir);
-				sAppr1 = obj->appr1;
-				sAppr2 = obj->appr2;
-				sAppr3 = obj->appr3;
-				sAppr4 = obj->appr4;
-				iApprColor = obj->appr_color;
-				iStatus.Unpack(obj->status);
+				playerAppearance = obj->appearance;
+				iStatus = obj->status;
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
@@ -2703,15 +2699,13 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				wObjectID = obj->base.object_id;
 				sType = obj->base.type;
 				cDir = static_cast<char>(obj->base.dir);
-				sAppr1 = sAppr3 = sAppr4 = 0;
-				sAppr2 = obj->appr2;
-				iApprColor = 0;
-				iStatus.Unpack(obj->status);
+				playerAppearance.SetFromNpcAppearance(obj->appearance);
+				iStatus.SetFromEntityStatus(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		}
 		if (ucHeader & 0x02) // object ID
 		{
@@ -2724,12 +2718,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				wObjectID = obj->base.object_id;
 				sType = obj->base.type;
 				cDir = static_cast<char>(obj->base.dir);
-				sAppr1 = obj->appr1;
-				sAppr2 = obj->appr2;
-				sAppr3 = obj->appr3;
-				sAppr4 = obj->appr4;
-				iApprColor = obj->appr_color;
-				iStatus.Unpack(obj->status);
+				playerAppearance = obj->appearance;
+				iStatus = obj->status;
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectPlayer);
@@ -2741,15 +2731,13 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				wObjectID = obj->base.object_id;
 				sType = obj->base.type;
 				cDir = static_cast<char>(obj->base.dir);
-				sAppr1 = sAppr3 = sAppr4 = 0;
-				sAppr2 = obj->appr2;
-				iApprColor = 0;
-				iStatus.Unpack(obj->status);
+				playerAppearance.SetFromNpcAppearance(obj->appearance);
+				iStatus.SetFromEntityStatus(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, _appr, iStatus, cName); }
+			{ m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName); }
 		}
 		if (ucHeader & 0x04)
 		{
@@ -2776,10 +2764,10 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 void CGame::LogEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
-	short sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4;
+	short sX, sY, sType;
 	PlayerStatus iStatus;
 	char cDir, cName[12];
-	int iApprColor = 0;
+	PlayerAppearance playerAppearance;
 
 	const auto* base = hb::net::PacketCast<hb::net::PacketEventLogBase>(pData, sizeof(hb::net::PacketEventLogBase));
 	if (!base) return;
@@ -2795,26 +2783,21 @@ void CGame::LogEventHandler(char* pData)
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
 		memcpy(cName, pkt->name, sizeof(pkt->name));
-		sAppr1 = pkt->appr1;
-		sAppr2 = pkt->appr2;
-		sAppr3 = pkt->appr3;
-		sAppr4 = pkt->appr4;
-		iApprColor = pkt->appr_color;
-		iStatus.Unpack(pkt->status);
+		playerAppearance = pkt->appearance;
+		iStatus = pkt->status;
 	}
 	else 	// NPC
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogNpc>(pData, sizeof(hb::net::PacketEventLogNpc));
 		if (!pkt) return;
 		memcpy(cName, pkt->name, sizeof(pkt->name));
-		sAppr1 = sAppr3 = sAppr4 = 0;
-		sAppr2 = pkt->appr2;
-		iStatus.Unpack(pkt->status);
+		playerAppearance.SetFromNpcAppearance(pkt->appearance);
+		iStatus.SetFromEntityStatus(pkt->status);
 	}
 
 	switch (wEventType) {
 	case DEF_MSGTYPE_CONFIRM:
-		{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		switch (sType) {
 		case hb::owner::LightWarBeetle: // LWB
 		case hb::owner::GodsHandKnight: // GHK
@@ -2827,7 +2810,7 @@ void CGame::LogEventHandler(char* pData)
 		break;
 
 	case DEF_MSGTYPE_REJECT:
-		{ PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, _appr, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
 		break;
 	}
 
@@ -2963,7 +2946,7 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
+			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
@@ -3006,7 +2989,7 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
+			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
@@ -3117,7 +3100,7 @@ void CGame::LogResponseHandler(char* pData)
 			const auto& entry = entries[i];
 			m_pCharList[i] = std::make_unique<CCharInfo>();
 			memcpy(m_pCharList[i]->m_cName, entry.name, sizeof(entry.name));
-			m_pCharList[i]->m_appearance.Unpack(entry.appr1, entry.appr2, entry.appr3, entry.appr4, entry.appr_color);
+			m_pCharList[i]->m_appearance = entry.appearance;
 			m_pCharList[i]->m_sSex = entry.sex;
 			m_pCharList[i]->m_sSkinCol = entry.skin;
 			m_pCharList[i]->m_sLevel = entry.level;
@@ -4924,7 +4907,7 @@ void CGame::MeteorStrikeComing(int iCode)
 
 void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 {
-	if (_iGetFOE(m_entityState.m_status) < 0) // red crusade circle
+	if (IsHostile(m_entityState.m_status.iRelationship)) // red crusade circle
 	{
 		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, SpriteLib::DrawParams::Alpha(0.5f));
 	}
@@ -7002,26 +6985,6 @@ void CGame::NoticementHandler(char* pData)
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::Help, 0, 0, 0);
 }
 
-int CGame::_iGetFOE(const PlayerStatus& status)
-{
-	if (m_pPlayer->m_iPKCount != 0) return -1;
-	bool bPK = status.bPK;
-	bool bCitizen = status.bCitizen;
-	bool bAresden = status.bAresden;
-	bool bHunter = status.bHunter;
-	if (bPK == true) return -2;
-	if (bCitizen == false) return 0;
-	if (m_pPlayer->m_bCitizen == false) return 0;
-	if ((m_pPlayer->m_bAresden == true) && (bAresden == true)) return 1;
-	if ((m_pPlayer->m_bAresden == false) && (bAresden == false)) return 1;
-	if (m_bIsCrusadeMode == true) return -1;
-	else
-	{
-		if ((m_pPlayer->m_bHunter == false) && (bHunter == false)) return -1;
-		else return 0;
-	}
-}
-
 void CGame::_SetIlusionEffect(int iOwnerH)
 {
 	char cDir;
@@ -7496,18 +7459,12 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	}
 	else
 	{
-		switch (_iGetFOE(status)) {
-		case -2:
-		case -1:
+		if (IsHostile(status.iRelationship))
 			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
-			break;
-		case 0:
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
-			break;
-		case 1:
+		else if (IsFriendly(status.iRelationship))
 			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
-			break;
-		}
+		else
+			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
 	}
 	switch (status.iAngelPercent) {
 	case 0: break;
@@ -7538,7 +7495,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	case hb::owner::Devlin:
 	case hb::owner::Crops:
 	{
-		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
+		switch (m_entityState.m_appearance.iSubType) {
 		case 1:
 		case 2:
 		case 3:
@@ -7568,20 +7525,20 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 {
 	char cTxt[64], cTxt2[64];
 	uint8_t sR, sG, sB;
-	int i, iGuildIndex, iFOE, iAddY = 0;
+	int i, iGuildIndex, iAddY = 0;
 	bool bPK, bCitizen, bAresden, bHunter;
-	iFOE = _iGetFOE(status);
-	if (iFOE < 0)
+	auto relationship = status.iRelationship;
+	if (IsHostile(relationship))
 	{
 		sR = 255; sG = 0; sB = 0;
 	}
-	else if (iFOE == 0)
+	else if (IsFriendly(relationship))
 	{
-		sR = 50; sG = 50; sB = 255;
+		sR = 30; sG = 200; sB = 30;
 	}
 	else
 	{
-		sR = 30; sG = 200; sB = 30;
+		sR = 50; sG = 50; sB = 255;
 	}
 	std::memset(cTxt, 0, sizeof(cTxt));
 	std::memset(cTxt2, 0, sizeof(cTxt2));
@@ -7594,7 +7551,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_NAME_MERCENARY); //"Mercenary"
 			else
 			{
-				if (iFOE == -1) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
+				if (relationship == EntityRelationship::Enemy) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
 				else std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
 			}
 		}
@@ -7652,7 +7609,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		bCitizen = status.bCitizen;
 		bAresden = status.bAresden;
 		bHunter = status.bHunter;
-		if (m_bIsCrusadeMode == false || iFOE >= 0)
+		if (m_bIsCrusadeMode == false || !IsHostile(relationship))
 		{
 			if (FindGuildName(pName, &iGuildIndex) == true)
 			{
@@ -8195,7 +8152,7 @@ void CGame::ClearSkillUsingStatus()
 		AddEventList(CLEAR_SKILL_USING_STATUS1, 10);//"
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (m_pPlayer->m_playerAppearance.iIsWalking == 0)*/) {
+		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/) {
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		}
@@ -8411,19 +8368,19 @@ void CGame::GetNpcName(short sType, char* pName)
 	case hb::owner::Dummy: std::snprintf(pName, 21, "%s", NPC_NAME_DUMMY); break;
 	case hb::owner::EnergySphere: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSPHERE); break;
 	case hb::owner::ArrowGuardTower:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER_CK);
+		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER_CK);
 		else std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER);
 		break;
 	case hb::owner::CannonGuardTower:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER_CK);
+		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER_CK);
 		else std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER);
 		break;
 	case hb::owner::ManaCollector:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR_CK);
+		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR_CK);
 		else std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR);
 		break;
 	case hb::owner::Detector:
-		if (m_entityState.m_appearance.sRawAppr2 != 0) std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR_CK);
+		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR_CK);
 		else std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR);
 		break;
 	case hb::owner::EnergyShield: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSHIELD); break;
@@ -8452,7 +8409,7 @@ void CGame::GetNpcName(short sType, char* pName)
 	case hb::owner::Frost: std::snprintf(pName, 21, "%s", NPC_NAME_FROST); break;
 	case hb::owner::Crops:
 	{
-		switch ((m_entityState.m_appearance.sRawAppr2 & 0xFF00) >> 8) {
+		switch (m_entityState.m_appearance.iSubType) {
 		case 1:	std::snprintf(pName, 21, "%s", NPC_NAME_WATERMELON);	break;
 		case 2: std::snprintf(pName, 21, "%s", NPC_NAME_PUMPKIN); break;
 		case 3: std::snprintf(pName, 21, "%s", NPC_NAME_GARLIC); break;
@@ -8702,8 +8659,8 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_sPlayerY = pkt->y;
 			m_pPlayer->m_sPlayerType = pkt->type;
 			m_pPlayer->m_iPlayerDir = static_cast<char>(pkt->dir);
-			m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
-			m_pPlayer->m_playerStatus.Unpack(pkt->status);
+			m_pPlayer->m_playerAppearance = pkt->appearance;
+			m_pPlayer->m_playerStatus = pkt->status;
 			m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
 		}
 		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
@@ -9101,7 +9058,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && (sObjectType <= 6 || (m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID != 0 && m_pItemConfigList[m_pMapData->m_pData[m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX][m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY].m_sItemID]->m_sSprite != 0)))
 		{//if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && ( sObjectType <= 6 || m_pMapData->m_pData[15][15].m_sItemSprite != 0 )) {
 		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
-			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (m_pPlayer->m_playerAppearance.iIsWalking == 0)*/)
+			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
 			{
 				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
 				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
@@ -9507,7 +9464,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case hb::owner::Guard: // Guard
-							if ((_iGetFOE(iObjectStatus) >= 0) && (!m_pPlayer->m_bIsCombatMode))
+							if (!IsHostile(iObjectStatus.iRelationship) && (!m_pPlayer->m_bIsCombatMode))
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
 								tX = msX - 117;
@@ -9573,7 +9530,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						default: // Other mobs
-							if (_iGetFOE(iObjectStatus) >= 0) break;
+							if (!IsHostile(iObjectStatus.iRelationship)) break;
 							if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
 							absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
 							absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
@@ -9877,7 +9834,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					default: // All "normal mobs"
-						if (_iGetFOE(iObjectStatus) >= 0) break;
+						if (!IsHostile(iObjectStatus.iRelationship)) break;
 						if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
 						if ((absX <= 1) && (absY <= 1))
 						{
@@ -10520,8 +10477,8 @@ void CGame::InitDataResponseHandler(char* pData)
 	sX = pkt->pivot_x;
 	sY = pkt->pivot_y;
 	m_pPlayer->m_sPlayerType = pkt->player_type;
-	m_pPlayer->m_playerAppearance.Unpack(pkt->appr1, pkt->appr2, pkt->appr3, pkt->appr4, pkt->appr_color);
-	m_pPlayer->m_playerStatus.Unpack(pkt->status);
+	m_pPlayer->m_playerAppearance = pkt->appearance;
+	m_pPlayer->m_playerStatus = pkt->status;
 
 	//Snoopy MIM fix
 	if (m_pPlayer->m_playerStatus.bIllusionMovement)
@@ -10659,7 +10616,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	}
 
 	//v1.41
-	if (m_pPlayer->m_playerAppearance.iIsWalking != 0)
+	if (m_pPlayer->m_playerAppearance.bIsWalking)
 		m_pPlayer->m_bIsCombatMode = true;
 	else m_pPlayer->m_bIsCombatMode = false;
 
@@ -10683,17 +10640,18 @@ void CGame::InitDataResponseHandler(char* pData)
 void CGame::MotionEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
-	short sX, sY, sType, sAppr1, sAppr2, sAppr3, sAppr4, sV1, sV2, sV3, sPrevAppr2;
+	short sX, sY, sType, sV1, sV2, sV3;
 	PlayerStatus iStatus;
 	char cDir, cName[12];
-	int iApprColor, iLoc;
+	int iLoc;
+	PlayerAppearance playerAppearance;
+	bool bPrevCombatMode = false;
 	char    cTxt[120];
 	int i;
 	std::memset(cName, 0, sizeof(cName));
 	sX = -1;
 	sY = -1;
 	sV1 = sV2 = sV3 = 0;
-	iApprColor = 0;
 	iStatus.Clear();
 	iLoc = 0;
 	cDir = 0;
@@ -10721,12 +10679,8 @@ void CGame::MotionEventHandler(char* pData)
 			sType = pkt->type;
 			cDir = static_cast<char>(pkt->dir);
 			memcpy(cName, pkt->name, sizeof(pkt->name));
-			sAppr1 = pkt->appr1;
-			sAppr2 = pkt->appr2;
-			sAppr3 = pkt->appr3;
-			sAppr4 = pkt->appr4;
-			iApprColor = pkt->appr_color;
-			iStatus.Unpack(pkt->status);
+			playerAppearance = pkt->appearance;
+			iStatus = pkt->status;
 			iLoc = pkt->loc;
 		}
 		else 	// Npc or mob
@@ -10738,9 +10692,8 @@ void CGame::MotionEventHandler(char* pData)
 			sType = pkt->type;
 			cDir = static_cast<char>(pkt->dir);
 			memcpy(cName, pkt->name, sizeof(pkt->name));
-			sAppr1 = sAppr3 = sAppr4 = 0;
-			sAppr2 = pkt->appr2;
-			iStatus.Unpack(pkt->status);
+			playerAppearance.SetFromNpcAppearance(pkt->appearance);
+			iStatus.SetFromEntityStatus(pkt->status);
 			iLoc = pkt->loc;
 		}
 	}
@@ -10809,13 +10762,13 @@ void CGame::MotionEventHandler(char* pData)
 	if ((wEventType == DEF_OBJECTNULLACTION) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
 	{
 		m_pPlayer->m_sPlayerType = sType;
-		sPrevAppr2 = m_pPlayer->m_playerAppearance.sRawAppr2;
-		m_pPlayer->m_playerAppearance.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor);
+		bPrevCombatMode = m_pPlayer->m_playerAppearance.bIsWalking;
+		m_pPlayer->m_playerAppearance = playerAppearance;
 		m_pPlayer->m_playerStatus = iStatus;
 		m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
-		if ((sPrevAppr2 & 0xF000) == 0)
+		if (!bPrevCombatMode)
 		{
-			if ((sAppr2 & 0xF000) != 0)
+			if (playerAppearance.bIsWalking)
 			{
 				AddEventList(MOTION_EVENT_HANDLER1, 10);
 				m_pPlayer->m_bIsCombatMode = true;
@@ -10823,15 +10776,15 @@ void CGame::MotionEventHandler(char* pData)
 		}
 		else
 		{
-			if ((sAppr2 & 0xF000) == 0)
+			if (!playerAppearance.bIsWalking)
 			{
 				AddEventList(MOTION_EVENT_HANDLER2, 10);
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
+		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
 	}
-	else { PlayerAppearance _appr; _appr.Unpack(sAppr1, sAppr2, sAppr3, sAppr4, iApprColor); m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, _appr, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
+	else { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
 
 	switch (wEventType) {
 	case DEF_OBJECTMAGIC: // Casting
@@ -11282,7 +11235,7 @@ void CGame::UseMagic(int iMagicNo)
 		AddEventList(DLGBOX_CLICK_MAGIC2, 10);
 		return;
 	}
-	if (m_pPlayer->m_playerAppearance.iIsWalking == 0) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
+	if (!m_pPlayer->m_playerAppearance.bIsWalking) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
 	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMAGIC);
 	m_iCastingMagicType = iMagicNo;
 	m_sMagicShortCut = iMagicNo;

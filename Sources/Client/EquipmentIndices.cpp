@@ -29,7 +29,7 @@ EquipmentIndices EquipmentIndices::CalcPlayer(const CEntityRenderState& state, i
 	eq.iHairIndex   = HAIR + appr.iHairStyle * 15 + bodyPose;
 
 	// Body armor (hidden armor = no armor drawn)
-	if (appr.iHideArmor == 0 && appr.iArmorType != 0)
+	if (!appr.bHideArmor && appr.iArmorType != 0)
 		eq.iBodyArmorIndex = ARMOR + appr.iArmorType * 15 + bodyPose;
 	else
 		eq.iBodyArmorIndex = -1;

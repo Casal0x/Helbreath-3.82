@@ -11,21 +11,12 @@
 #include <array>
 #include <cstring>
 
-#include "AppearanceData.h"
+#include "Appearance.h"
 #include "PlayerStatusData.h"
 #include "OwnerType.h"
 
 // Maximum length for entity names
 constexpr int ENTITY_NAME_LENGTH = 12;
-
-// Entity relationship to the player (Friend or Enemy)
-enum class EEntityRelation : int8_t
-{
-    Hostile_PK = -2,    // Player Killer - always hostile
-    Hostile = -1,       // Enemy faction (in crusade) or player is PK
-    Neutral = 0,        // Not a citizen, or indeterminate
-    Friendly = 1        // Same faction as player
-};
 
 class CEntityRenderState
 {

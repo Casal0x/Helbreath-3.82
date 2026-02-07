@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "Appearance.h"
 
 struct sqlite3;
 
@@ -21,11 +22,7 @@ struct AccountDbCharacterData
     char accountName[11];
     char characterName[11];
     char createdAt[32];
-    short appr1;
-    short appr2;
-    short appr3;
-    short appr4;
-    uint32_t apprColor;
+    PlayerAppearance appearance;
     int level;
     uint32_t exp;
     char mapName[11];
@@ -50,11 +47,7 @@ struct AccountDbCharacterData
 struct AccountDbCharacterSummary
 {
     char characterName[11];
-    short appr1;
-    short appr2;
-    short appr3;
-    short appr4;
-    uint32_t apprColor;
+    PlayerAppearance appearance;
     uint16_t sex;
     uint16_t skin;
     uint16_t level;
@@ -129,11 +122,7 @@ struct AccountDbCharacterState
     int deadPenaltyTime;
     int partyId;
     int gizonItemUpgradeLeft;
-    short appr1;
-    short appr2;
-    short appr3;
-    short appr4;
-    uint32_t apprColor;
+    PlayerAppearance appearance;
 };
 
 struct AccountDbItemRow

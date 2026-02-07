@@ -133,7 +133,6 @@ public:
 	void ResponsePanningHandler(char * pData);
 	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
 	void _SetIlusionEffect(int iOwnerH);
-	int _iGetFOE(const PlayerStatus& status);
 	void NoticementHandler(char * pData);
 	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
 	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);

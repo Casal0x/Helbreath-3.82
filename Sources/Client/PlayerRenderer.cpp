@@ -26,7 +26,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 	state.m_iFrame = state.m_iFrame / 2;
 
 	// Calculate equipment indices — walking uses pose 1, standing uses pose 0
-	bool isWalking = state.m_appearance.iIsWalking != 0;
+	bool isWalking = state.m_appearance.bIsWalking;
 	int bodyPose = isWalking ? 1 : 0;
 	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
 	eq.CalcColors(state);
@@ -95,7 +95,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, i
 		return invalidRect;
 
 	// Calculate equipment indices — walking uses pose 3, standing uses pose 2
-	bool isWalking = state.m_appearance.iIsWalking != 0;
+	bool isWalking = state.m_appearance.bIsWalking;
 	int bodyPose = isWalking ? 3 : 2;
 	EquipmentIndices eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
 	eq.CalcColors(state);
@@ -242,7 +242,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 
 	// Attack poses depend on walking state and weapon type
 	EquipmentIndices eq;
-	if (state.m_appearance.iIsWalking != 0)
+	if (state.m_appearance.bIsWalking)
 	{
 		// Walking attack: body pose depends on weapon type (6 for one-hand, 7 for two-hand)
 		int iWeapon = state.m_appearance.iWeaponType;
@@ -320,7 +320,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 
 	// Same poses as OnAttack
 	EquipmentIndices eq;
-	if (state.m_appearance.iIsWalking != 0)
+	if (state.m_appearance.bIsWalking)
 	{
 		int iWeapon = state.m_appearance.iWeaponType;
 		int iAdd = ((iWeapon >= 40) && (iWeapon <= 59)) ? 7 : 6;
@@ -580,7 +580,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX,
 	if (cFrame < 4)
 	{
 		// Idle state — walking or standing, with weapon/shield
-		bool isWalking = state.m_appearance.iIsWalking != 0;
+		bool isWalking = state.m_appearance.bIsWalking;
 		int bodyPose = isWalking ? 1 : 0;
 		eq = EquipmentIndices::CalcPlayer(state, bodyPose, bodyPose, bodyPose);
 		equipFrameMul = 8;

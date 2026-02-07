@@ -26,11 +26,11 @@ SpriteLib::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int sX, int 
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, 0);
 	eq.CalcColors(state);
 
-	// Special frame from sRawAppr2
-	if (state.m_appearance.sRawAppr2 != 0)
+	// Special frame from NPC appearance
+	if (state.m_appearance.HasNpcSpecialState())
 	{
 		eq.iBodyIndex = DEF_SPRID_MOB + (state.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
-		state.m_iFrame = (state.m_appearance.sRawAppr2 & 0x00FF) - 1;
+		state.m_iFrame = state.m_appearance.iSpecialFrame - 1;
 	}
 
 	// Crusade FOE indicator
@@ -342,10 +342,10 @@ SpriteLib::BoundRect CNpcRenderer::DrawAttack(int indexX, int indexY, int sX, in
 
 	// NPC attack pose calculation with per-mob-type overrides
 	EquipmentIndices eq;
-	if (state.m_appearance.sRawAppr2 != 0)
+	if (state.m_appearance.HasNpcSpecialState())
 	{
 		eq = EquipmentIndices::CalcNpc(state, 4);
-		state.m_iFrame = state.m_appearance.sRawAppr2 - 1;
+		state.m_iFrame = state.m_appearance.iSpecialFrame - 1;
 	}
 	else if (state.m_sOwnerType == hb::owner::Wyvern || state.m_sOwnerType == hb::owner::FireWyvern)
 		eq = EquipmentIndices::CalcNpc(state, 0);
@@ -551,8 +551,8 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamage(int indexX, int indexY, int sX, in
 	if (cFrame < 4)
 	{
 		// Idle state — per-mob overrides
-		if (state.m_appearance.sRawAppr2 != 0)
-			npcPose = 4; // special frame from sRawAppr2
+		if (state.m_appearance.HasNpcSpecialState())
+			npcPose = 4; // special frame from NPC appearance
 		else if (state.m_sOwnerType == hb::owner::Wyvern) npcPose = 0;
 		else if (state.m_sOwnerType == hb::owner::McGaffin) npcPose = 0;
 		else if (state.m_sOwnerType == hb::owner::Perry) npcPose = 0;
@@ -569,7 +569,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamage(int indexX, int indexY, int sX, in
 	{
 		cFrame -= 4;
 		// Damage recoil state — per-mob overrides
-		if (state.m_appearance.sRawAppr2 != 0)
+		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
 		else if (state.m_sOwnerType == hb::owner::Wyvern) npcPose = 0;
 		else if (state.m_sOwnerType == hb::owner::McGaffin) npcPose = 0;
@@ -587,9 +587,9 @@ SpriteLib::BoundRect CNpcRenderer::DrawDamage(int indexX, int indexY, int sX, in
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
 	eq.CalcColors(state);
 
-	// Apply sRawAppr2 frame override
-	if (state.m_appearance.sRawAppr2 != 0)
-		cFrame = state.m_appearance.sRawAppr2 - 1;
+	// Apply NPC special frame override
+	if (state.m_appearance.HasNpcSpecialState())
+		cFrame = state.m_appearance.iSpecialFrame - 1;
 
 	state.m_iFrame = cFrame;
 
@@ -735,7 +735,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 
 	if (cFrame < 4)
 	{
-		if (state.m_appearance.sRawAppr2 != 0)
+		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
 		else if (state.m_sOwnerType == hb::owner::Wyvern) npcPose = 2;
 		else if (state.m_sOwnerType == hb::owner::FireWyvern) npcPose = 2;
@@ -746,7 +746,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 		else if (state.m_sOwnerType == hb::owner::Gate) npcPose = 2;
 		else npcPose = 0;
 
-		// Guard tower types: sRawAppr2==0 → cFrame=0
+		// Guard tower types: no special state → cFrame=0
 		switch (state.m_sOwnerType) {
 		case hb::owner::ArrowGuardTower:
 		case hb::owner::CannonGuardTower:
@@ -755,7 +755,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 		case hb::owner::EnergyShield:
 		case hb::owner::GrandMagicGenerator:
 		case hb::owner::ManaStone:
-			if (state.m_appearance.sRawAppr2 == 0) cFrame = 0;
+			if (!state.m_appearance.HasNpcSpecialState()) cFrame = 0;
 			break;
 		case hb::owner::Catapult: cFrame = 0; break;
 		}
@@ -767,7 +767,7 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 		default: cFrame -= 4; break;
 		}
 
-		if (state.m_appearance.sRawAppr2 != 0)
+		if (state.m_appearance.HasNpcSpecialState())
 			npcPose = 4;
 		else if (state.m_sOwnerType == hb::owner::Wyvern) npcPose = 2;
 		else if (state.m_sOwnerType == hb::owner::FireWyvern) npcPose = 2;
@@ -782,9 +782,9 @@ SpriteLib::BoundRect CNpcRenderer::DrawDying(int indexX, int indexY, int sX, int
 	EquipmentIndices eq = EquipmentIndices::CalcNpc(state, npcPose);
 	eq.CalcColors(state);
 
-	// Apply sRawAppr2 frame override
-	if (state.m_appearance.sRawAppr2 != 0)
-		cFrame = state.m_appearance.sRawAppr2 - 1;
+	// Apply NPC special frame override
+	if (state.m_appearance.HasNpcSpecialState())
+		cFrame = state.m_appearance.iSpecialFrame - 1;
 
 	state.m_iFrame = cFrame;
 

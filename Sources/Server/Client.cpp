@@ -105,12 +105,8 @@ CClient::CClient(asio::io_context& ctx)
 	m_cDir = 5; 
 	m_sType   = 0;
 	m_sOriginalType = 0;
-	m_sAppr1  = 0;
-	m_sAppr2  = 0;
-	m_sAppr3  = 0;
-	m_sAppr4  = 0;
-	m_iApprColor = 0; // v1.4
-	m_iStatus = 0;
+	m_appearance.Clear();
+	m_status.Clear();
 
 	m_cSex  = 0;
 	m_cSkin = 0;

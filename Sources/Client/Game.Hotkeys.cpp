@@ -218,7 +218,7 @@ void CGame::Hotkey_WhisperTarget()
 		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
 	}
 	else if (m_entityState.IsPlayer() && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
-		&& ((m_bIsCrusadeMode == false) || _iGetFOE(m_entityState.m_status) >= 0))
+		&& ((m_bIsCrusadeMode == false) || !IsHostile(m_entityState.m_status.iRelationship)))
 	{
 		std::snprintf(tempid, sizeof(tempid), "/to %s", m_entityState.m_cName.data());
 		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);

@@ -33,8 +33,8 @@ CNpc::CNpc(char * pName5)
 	
 	m_cAttribute = 0;
 	m_iAbsDamage = 0;
-	m_iStatus    = 0;
-	m_sAppr2     = 0;
+	m_status.Clear();
+	m_appearance.Clear();
 
 	m_iAttackRange    = 1;
 	m_cSpecialAbility = 0;

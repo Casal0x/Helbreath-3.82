@@ -400,11 +400,31 @@ bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string
         " character_name TEXT PRIMARY KEY,"
         " account_name TEXT NOT NULL,"
         " created_at TEXT NOT NULL,"
-        " appr1 INTEGER NOT NULL,"
-        " appr2 INTEGER NOT NULL,"
-        " appr3 INTEGER NOT NULL,"
-        " appr4 INTEGER NOT NULL,"
-        " appr_color INTEGER NOT NULL,"
+        " underwear_type INTEGER NOT NULL DEFAULT 0,"
+        " hair_color INTEGER NOT NULL DEFAULT 0,"
+        " hair_style INTEGER NOT NULL DEFAULT 0,"
+        " skin_color INTEGER NOT NULL DEFAULT 0,"
+        " shield_type INTEGER NOT NULL DEFAULT 0,"
+        " weapon_type INTEGER NOT NULL DEFAULT 0,"
+        " is_walking INTEGER NOT NULL DEFAULT 0,"
+        " arm_armor_type INTEGER NOT NULL DEFAULT 0,"
+        " helm_type INTEGER NOT NULL DEFAULT 0,"
+        " pants_type INTEGER NOT NULL DEFAULT 0,"
+        " armor_type INTEGER NOT NULL DEFAULT 0,"
+        " weapon_glare INTEGER NOT NULL DEFAULT 0,"
+        " shield_glare INTEGER NOT NULL DEFAULT 0,"
+        " effect_type INTEGER NOT NULL DEFAULT 0,"
+        " hide_armor INTEGER NOT NULL DEFAULT 0,"
+        " mantle_type INTEGER NOT NULL DEFAULT 0,"
+        " boots_type INTEGER NOT NULL DEFAULT 0,"
+        " weapon_color INTEGER NOT NULL DEFAULT 0,"
+        " shield_color INTEGER NOT NULL DEFAULT 0,"
+        " armor_color INTEGER NOT NULL DEFAULT 0,"
+        " mantle_color INTEGER NOT NULL DEFAULT 0,"
+        " arm_color INTEGER NOT NULL DEFAULT 0,"
+        " pants_color INTEGER NOT NULL DEFAULT 0,"
+        " boots_color INTEGER NOT NULL DEFAULT 0,"
+        " helm_color INTEGER NOT NULL DEFAULT 0,"
         " level INTEGER NOT NULL,"
         " exp INTEGER NOT NULL,"
         " map_name TEXT NOT NULL,"
@@ -652,7 +672,7 @@ bool ListCharacterSummaries(sqlite3* db, const char* accountName, std::vector<Ac
     }
 
     const char* sql =
-        "SELECT character_name, appr1, appr2, appr3, appr4, appr_color, gender, skin, level, exp, map_name "
+        "SELECT character_name, underwear_type, hair_color, hair_style, skin_color, shield_type, weapon_type, is_walking, arm_armor_type, helm_type, pants_type, armor_type, weapon_glare, shield_glare, effect_type, hide_armor, mantle_type, boots_type, weapon_color, shield_color, armor_color, mantle_color, arm_color, pants_color, boots_color, helm_color, gender, skin, level, exp, map_name "
         "FROM characters WHERE account_name = ? COLLATE NOCASE ORDER BY character_name;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -665,16 +685,36 @@ bool ListCharacterSummaries(sqlite3* db, const char* accountName, std::vector<Ac
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         AccountDbCharacterSummary row = {};
         CopyColumnText(stmt, 0, row.characterName, sizeof(row.characterName));
-        row.appr1 = static_cast<short>(sqlite3_column_int(stmt, 1));
-        row.appr2 = static_cast<short>(sqlite3_column_int(stmt, 2));
-        row.appr3 = static_cast<short>(sqlite3_column_int(stmt, 3));
-        row.appr4 = static_cast<short>(sqlite3_column_int(stmt, 4));
-        row.apprColor = static_cast<uint32_t>(sqlite3_column_int(stmt, 5));
-        row.sex = static_cast<uint16_t>(sqlite3_column_int(stmt, 6));
-        row.skin = static_cast<uint16_t>(sqlite3_column_int(stmt, 7));
-        row.level = static_cast<uint16_t>(sqlite3_column_int(stmt, 8));
-        row.exp = static_cast<uint32_t>(sqlite3_column_int(stmt, 9));
-        CopyColumnText(stmt, 10, row.mapName, sizeof(row.mapName));
+        row.appearance.iUnderwearType = static_cast<uint8_t>(sqlite3_column_int(stmt, 1));
+        row.appearance.iHairColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 2));
+        row.appearance.iHairStyle = static_cast<uint8_t>(sqlite3_column_int(stmt, 3));
+        row.appearance.iSkinColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 4));
+        row.appearance.iShieldType = static_cast<uint8_t>(sqlite3_column_int(stmt, 5));
+        row.appearance.iWeaponType = static_cast<uint8_t>(sqlite3_column_int(stmt, 6));
+        row.appearance.bIsWalking = static_cast<uint8_t>(sqlite3_column_int(stmt, 7));
+        row.appearance.iArmArmorType = static_cast<uint8_t>(sqlite3_column_int(stmt, 8));
+        row.appearance.iHelmType = static_cast<uint8_t>(sqlite3_column_int(stmt, 9));
+        row.appearance.iPantsType = static_cast<uint8_t>(sqlite3_column_int(stmt, 10));
+        row.appearance.iArmorType = static_cast<uint8_t>(sqlite3_column_int(stmt, 11));
+        row.appearance.iWeaponGlare = static_cast<uint8_t>(sqlite3_column_int(stmt, 12));
+        row.appearance.iShieldGlare = static_cast<uint8_t>(sqlite3_column_int(stmt, 13));
+        row.appearance.iEffectType = static_cast<uint8_t>(sqlite3_column_int(stmt, 14));
+        row.appearance.bHideArmor = static_cast<uint8_t>(sqlite3_column_int(stmt, 15));
+        row.appearance.iMantleType = static_cast<uint8_t>(sqlite3_column_int(stmt, 16));
+        row.appearance.iBootsType = static_cast<uint8_t>(sqlite3_column_int(stmt, 17));
+        row.appearance.iWeaponColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 18));
+        row.appearance.iShieldColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 19));
+        row.appearance.iArmorColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 20));
+        row.appearance.iMantleColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 21));
+        row.appearance.iArmColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 22));
+        row.appearance.iPantsColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 23));
+        row.appearance.iBootsColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 24));
+        row.appearance.iHelmColor = static_cast<uint8_t>(sqlite3_column_int(stmt, 25));
+        row.sex = static_cast<uint16_t>(sqlite3_column_int(stmt, 26));
+        row.skin = static_cast<uint16_t>(sqlite3_column_int(stmt, 27));
+        row.level = static_cast<uint16_t>(sqlite3_column_int(stmt, 28));
+        row.exp = static_cast<uint32_t>(sqlite3_column_int(stmt, 29));
+        CopyColumnText(stmt, 30, row.mapName, sizeof(row.mapName));
         outChars.push_back(row);
     }
 
@@ -699,7 +739,7 @@ bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharact
         "special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number, "
         "special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid, "
         "construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left, "
-        "appr1, appr2, appr3, appr4, appr_color "
+        "underwear_type, hair_color, hair_style, skin_color, shield_type, weapon_type, is_walking, arm_armor_type, helm_type, pants_type, armor_type, weapon_glare, shield_glare, effect_type, hide_armor, mantle_type, boots_type, weapon_color, shield_color, armor_color, mantle_color, arm_color, pants_color, boots_color, helm_color "
         "FROM characters WHERE character_name = ? COLLATE NOCASE;";
 
     sqlite3_stmt* stmt = nullptr;
@@ -777,11 +817,31 @@ bool LoadCharacterState(sqlite3* db, const char* characterName, AccountDbCharact
         outState.deadPenaltyTime = sqlite3_column_int(stmt, col++);
         outState.partyId = sqlite3_column_int(stmt, col++);
         outState.gizonItemUpgradeLeft = sqlite3_column_int(stmt, col++);
-        outState.appr1 = static_cast<short>(sqlite3_column_int(stmt, col++));
-        outState.appr2 = static_cast<short>(sqlite3_column_int(stmt, col++));
-        outState.appr3 = static_cast<short>(sqlite3_column_int(stmt, col++));
-        outState.appr4 = static_cast<short>(sqlite3_column_int(stmt, col++));
-        outState.apprColor = static_cast<uint32_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iUnderwearType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iHairColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iHairStyle = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iSkinColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iShieldType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iWeaponType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.bIsWalking = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iArmArmorType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iHelmType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iPantsType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iArmorType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iWeaponGlare = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iShieldGlare = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iEffectType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.bHideArmor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iMantleType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iBootsType = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iWeaponColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iShieldColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iArmorColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iMantleColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iArmColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iPantsColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iBootsColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
+        outState.appearance.iHelmColor = static_cast<uint8_t>(sqlite3_column_int(stmt, col++));
         ok = true;
     }
 
@@ -1038,9 +1098,12 @@ bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state)
         " quest_reward_type, quest_reward_amount, contribution, war_contribution, quest_completed, "
         " special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number, "
         " special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid, "
-        " construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left, "
-        " appr1, appr2, appr3, appr4, appr_color"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        " construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left,"
+        " underwear_type, hair_color, hair_style, skin_color, shield_type, weapon_type, is_walking,"
+        " arm_armor_type, helm_type, pants_type, armor_type, weapon_glare, shield_glare, effect_type,"
+        " hide_armor, mantle_type, boots_type, weapon_color, shield_color, armor_color, mantle_color,"
+        " arm_color, pants_color, boots_color, helm_color"
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1115,11 +1178,31 @@ bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state)
     ok &= (sqlite3_bind_int(stmt, col++, state.deadPenaltyTime) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.partyId) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, col++, state.gizonItemUpgradeLeft) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.appr1) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.appr2) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.appr3) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, state.appr4) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, col++, static_cast<int>(state.apprColor)) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iUnderwearType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iHairColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iHairStyle) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iSkinColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iShieldType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iWeaponType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.bIsWalking) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iArmArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iHelmType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iPantsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iWeaponGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iShieldGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iEffectType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.bHideArmor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iMantleType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iBootsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iWeaponColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iShieldColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iArmorColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iMantleColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iArmColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iPantsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iBootsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, col++, state.appearance.iHelmColor) == SQLITE_OK);
 
     if (ok) {
         ok = sqlite3_step(stmt) == SQLITE_DONE;
@@ -1432,10 +1515,14 @@ bool InsertCharacterRecord(sqlite3* db, const AccountDbCharacterData& data)
 
     const char* sql =
         "INSERT INTO characters("
-        " character_name, account_name, created_at, appr1, appr2, appr3, appr4, appr_color,"
+        " character_name, account_name, created_at,"
+        " underwear_type, hair_color, hair_style, skin_color, shield_type, weapon_type, is_walking,"
+        " arm_armor_type, helm_type, pants_type, armor_type, weapon_glare, shield_glare, effect_type,"
+        " hide_armor, mantle_type, boots_type, weapon_color, shield_color, armor_color, mantle_color,"
+        " arm_color, pants_color, boots_color, helm_color,"
         " level, exp, map_name, map_x, map_y, hp, mp, sp, str, vit, dex, intl, mag, chr,"
         " gender, skin, hairstyle, haircolor, underwear"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1450,11 +1537,31 @@ bool InsertCharacterRecord(sqlite3* db, const AccountDbCharacterData& data)
     ok &= PrepareAndBindText(&stmt, idx++, data.characterName);
     ok &= PrepareAndBindText(&stmt, idx++, data.accountName);
     ok &= PrepareAndBindText(&stmt, idx++, data.createdAt);
-    ok &= (sqlite3_bind_int(stmt, idx++, data.appr1) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, data.appr2) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, data.appr3) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, data.appr4) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, static_cast<int>(data.apprColor)) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iUnderwearType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iHairColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iHairStyle) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iSkinColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iShieldType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iWeaponType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.bIsWalking) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iArmArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iHelmType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iPantsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iWeaponGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iShieldGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iEffectType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.bHideArmor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iMantleType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iBootsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iWeaponColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iShieldColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iArmorColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iMantleColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iArmColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iPantsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iBootsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, data.appearance.iHelmColor) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, data.level) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, static_cast<int>(data.exp)) == SQLITE_OK);
     ok &= PrepareAndBindText(&stmt, idx++, data.mapName);
@@ -1553,8 +1660,11 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         " special_event_id, super_attack_left, fightzone_number, reserve_time, fightzone_ticket_number,"
         " special_ability_time, locked_map_name, locked_map_time, crusade_job, crusade_guid,"
         " construct_point, dead_penalty_time, party_id, gizon_item_upgrade_left,"
-        " appr1, appr2, appr3, appr4, appr_color"
-        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+        " underwear_type, hair_color, hair_style, skin_color, shield_type, weapon_type, is_walking,"
+        " arm_armor_type, helm_type, pants_type, armor_type, weapon_glare, shield_glare, effect_type,"
+        " hide_armor, mantle_type, boots_type, weapon_color, shield_color, armor_color, mantle_color,"
+        " arm_color, pants_color, boots_color, helm_color"
+        ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
 
     sqlite3_stmt* stmt = nullptr;
     if (sqlite3_prepare_v2(db, upsertSql, -1, &stmt, nullptr) != SQLITE_OK) {
@@ -1633,11 +1743,31 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iDeadPenaltyTime) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iPartyID) == SQLITE_OK);
     ok &= (sqlite3_bind_int(stmt, idx++, client->m_iGizonItemUpgradeLeft) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_sAppr1) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_sAppr2) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_sAppr3) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_sAppr4) == SQLITE_OK);
-    ok &= (sqlite3_bind_int(stmt, idx++, client->m_iApprColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iUnderwearType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iHairColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iHairStyle) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iSkinColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iShieldType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iWeaponType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.bIsWalking) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iArmArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iHelmType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iPantsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iArmorType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iWeaponGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iShieldGlare) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iEffectType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.bHideArmor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iMantleType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iBootsType) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iWeaponColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iShieldColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iArmorColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iMantleColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iArmColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iPantsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iBootsColor) == SQLITE_OK);
+    ok &= (sqlite3_bind_int(stmt, idx++, client->m_appearance.iHelmColor) == SQLITE_OK);
 
     if (!ok) {
         char logMsg[512] = {};

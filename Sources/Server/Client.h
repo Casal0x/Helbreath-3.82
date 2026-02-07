@@ -20,6 +20,8 @@
 #include <string>
 #include <set>
 #include "GameGeometry.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 using namespace std;
 
 #define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
@@ -87,12 +89,8 @@ public:
 	char  m_cDir;
 	short m_sType;
 	short m_sOriginalType;
-	short m_sAppr1;
-	short m_sAppr2;
-	short m_sAppr3;
-	short m_sAppr4;
-	int   m_iApprColor;
-	int   m_iStatus;
+	PlayerAppearance m_appearance;
+	PlayerStatus m_status;
 
 	uint32_t m_dwTime, m_dwHPTime, m_dwMPTime, m_dwSPTime, m_dwAutoSaveTime, m_dwHungerTime, m_dwWarmEffectTime;
 	// Player

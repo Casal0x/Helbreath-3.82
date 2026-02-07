@@ -295,7 +295,7 @@ bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv,
 
 		if (state.m_wObjectID == game.m_pPlayer->m_sPlayerObjectID)
 			bInv = true;
-		else if (game._iGetFOE(state.m_status) == 1)
+		else if (IsFriendly(state.m_status.iRelationship))
 			bInv = true;
 		else
 			return true; // Don't draw at all

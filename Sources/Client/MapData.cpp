@@ -7,7 +7,6 @@
 #include "OwnerType.h"
 #include "ObjectIDRange.h"
 #include "CommonTypes.h"
-#include "StatusFlags.h"
 #include "Benchmark.h"
 #include "EntityMotion.h"
 #include <cstring>
@@ -2604,7 +2603,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 							{
-								if (m_pData[dX][dY].m_appearance.iIsWalking != 0) // not Peace mode
+								if (m_pData[dX][dY].m_appearance.bIsWalking) // not Peace mode
 								{
 									if (m_pData[dX][dY].m_sV3 != 1) // autre que corp � corp
 									{
@@ -2663,7 +2662,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 4:
 						case 5:
 						case 6:
-							if (m_pData[dX][dY].m_appearance.iIsWalking != 0)
+							if (m_pData[dX][dY].m_appearance.bIsWalking)
 							{
 								sWeaponType = m_pData[dX][dY].m_appearance.iWeaponType;
 								if ((sWeaponType >= 1) && (sWeaponType <= 2))

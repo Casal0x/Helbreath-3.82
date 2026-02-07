@@ -44,7 +44,6 @@
 #include "BuildItem.h"
 #include "TeleportLoc.h"
 #include "GlobalDef.h"
-#include "StatusFlags.h"
 #include "TempNpcItem.h"
 #include "PartyManager.h"
 #include "IOServicePool.h"
@@ -480,7 +479,8 @@ public:
 	void _AdjustRareItemValue(CItem * pItem);
 	bool GenerateItemAttributes(CItem * pItem);
 	int RollAttributeValue();
-	int  iGetPlayerABSStatus(int iWhatH, int iRecvH);
+
+	EntityRelationship GetPlayerRelationship(int iOwnerH, int iViewerH);
 	void CheckSpecialEvent(int iClientH);
 	char _cGetSpecialAbility(int iKindSA);
 	void BuildItemHandler(int iClientH, char * pData);
@@ -1061,7 +1061,7 @@ private:
 public:
 	void RemoveCrusadeNpcs(void);
 	void RemoveCrusadeRecallTime(void);
-	int iGetPlayerABSStatus(int iClientH);
+
 	bool _bInitItemAttr(CItem * pItem, int iItemID);
 	void ReqCreateSlateHandler(int iClientH, char* pData);
 	void SetSlateFlag(int iClientH, short sType, bool bFlag);

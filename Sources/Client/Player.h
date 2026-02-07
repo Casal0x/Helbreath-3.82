@@ -5,7 +5,7 @@
 #include <array>
 #include "PlayerController.h"
 #include "NetConstants.h"
-#include "AppearanceData.h"
+#include "Appearance.h"
 #include "PlayerStatusData.h"
 #include "ActionID.h"
 

@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include "SpriteTypes.h"
-#include "AppearanceData.h"
+#include "Appearance.h"
 #include "PlayerStatusData.h"
 
 //=============================================================================
@@ -115,11 +115,11 @@ namespace CursorTarget {
     void BeginFrame();
 
     // Call at end of DrawObjects() to finalize cursor type
-    // foeResult: result of _iGetFOE(focusedStatus), <0 means hostile (or 0 if no focus)
+    // relationship: server-computed relationship of focused entity (Neutral if no focus)
     // commandType: m_iPointCommandType
     // commandAvailable: m_bCommandAvailable
     // isGetPointingMode: m_bIsGetPointingMode
-    void EndFrame(int foeResult, int commandType, bool commandAvailable, bool isGetPointingMode);
+    void EndFrame(EntityRelationship relationship, int commandType, bool commandAvailable, bool isGetPointingMode);
 
     //-------------------------------------------------------------------------
     // Object Testing (called during DrawObjects iteration)
@@ -165,7 +165,7 @@ namespace CursorTarget {
         short& outDataX, short& outDataY
     );
 
-    // Get focus status for FOE calculation
+    // Get focus status for relationship lookup
     const PlayerStatus& GetFocusStatus();
 
     //-------------------------------------------------------------------------

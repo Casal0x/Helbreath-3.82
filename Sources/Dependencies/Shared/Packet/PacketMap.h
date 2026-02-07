@@ -1,6 +1,8 @@
 #pragma once
 
 #include "PacketCommon.h"
+#include "../Appearance.h"
+#include "../PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -25,19 +27,15 @@ namespace net {
 
 	struct HB_PACKED PacketMapDataObjectPlayer {
 		PacketMapDataObjectBase base;
-		std::int16_t appr1;
-		std::int16_t appr2;
-		std::int16_t appr3;
-		std::int16_t appr4;
-		std::int32_t appr_color;
-		std::int32_t status;
+		PlayerAppearance appearance;
+		PlayerStatus status;
 		char name[10];
 	};
 
 	struct HB_PACKED PacketMapDataObjectNpc {
 		PacketMapDataObjectBase base;
-		std::int16_t appr2;
-		std::int32_t status;
+		EntityAppearance appearance;
+		EntityStatus status;
 		char name[5];
 	};
 
