@@ -36214,11 +36214,9 @@ void CGame::SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp)
 *********************************************************************************************************************/
 void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char cTmpName[DEF_NPCNAME];
-	int   iAngel;
+	int   iAngel, iItemID;
 	CItem* pItem;
 	int   iRet, iEraseReq;
-	char  cItemName[DEF_ITEMNAME];
 	if (m_pClientList[iClientH] == 0)					 return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	if (_iGetItemSpaceLeft(iClientH) == 0)
@@ -36228,68 +36226,67 @@ void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 	}
 	const auto* req = hb::net::PacketCast<hb::net::PacketRequestAngel>(pData, sizeof(hb::net::PacketRequestAngel));
 	if (!req) return;
-	std::memset(cTmpName, 0, sizeof(cTmpName));
-	std::memcpy(cTmpName, req->name, DEF_ITEMNAME - 1);
-	iAngel = req->angel_id; // 0x00 l a i
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "PC(%s) obtained an Angel (%d).   %s(%d %d)"
+	iAngel = req->angel_id;
+
+	if (m_pClientList[iClientH]->m_iGizonItemUpgradeLeft < 5) return;
+
+	switch (iAngel) {
+	case 1: iItemID = hb::item::ItemId::AngelicPandentSTR; break;
+	case 2: iItemID = hb::item::ItemId::AngelicPandentDEX; break;
+	case 3: iItemID = hb::item::ItemId::AngelicPandentINT; break;
+	case 4: iItemID = hb::item::ItemId::AngelicPandentMAG; break;
+	default:
+		PutLogList("Gail asked to create a wrong item!");
+		return;
+	}
+
+	std::snprintf(G_cTxt, sizeof(G_cTxt), "PC(%s) requesting Angel (%d, ItemID:%d).   %s(%d %d)"
 		, m_pClientList[iClientH]->m_cCharName
 		, iAngel
+		, iItemID
 		, m_pClientList[iClientH]->m_cMapName
 		, m_pClientList[iClientH]->m_sX
 		, m_pClientList[iClientH]->m_sY);
 	PutLogList(G_cTxt);
-	switch (iAngel) {
-	case 1: // STR
-		//iItemNbe = 1108;
-		std::snprintf(cItemName, sizeof(cItemName), "AngelicPandent(STR)");
-		break;
-	case 2: // DEX
-		//iItemNbe = 1109;
-		std::snprintf(cItemName, sizeof(cItemName), "AngelicPandent(DEX)");
-		break;
-	case 3: // INT
-		//iItemNbe = 1110;
-		std::snprintf(cItemName, sizeof(cItemName), "AngelicPandent(INT)");
-		break;
-	case 4: // MAG
-		//iItemNbe = 1111;
-		std::snprintf(cItemName, sizeof(cItemName), "AngelicPandent(MAG)");
-		break;
-	default:
-		PutLogList("Gail asked to create a wrong item!");
-		break;
-	}
-	// Them create the summonScroll
-	pItem = 0;
+
 	pItem = new CItem;
-	if (pItem == 0) return;
-	if ((_bInitItemAttr(pItem, cItemName)))
+	if ((_bInitItemAttr(pItem, iItemID)))
 	{
+		m_pClientList[iClientH]->m_iGizonItemUpgradeLeft -= 5;
+
 		pItem->SetTouchEffectType(TouchEffectType::UniqueOwner);
 		pItem->m_sTouchEffectValue1 = m_pClientList[iClientH]->m_sCharIDnum1;
 		pItem->m_sTouchEffectValue2 = m_pClientList[iClientH]->m_sCharIDnum2;
 		pItem->m_sTouchEffectValue3 = m_pClientList[iClientH]->m_sCharIDnum3;
 		if (_bAddClientItemList(iClientH, pItem, &iEraseReq))
 		{
+			if (m_pClientList[iClientH]->m_iCurWeightLoad < 0) m_pClientList[iClientH]->m_iCurWeightLoad = 0;
+
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "(*) Get Angel : Char(%s) Player-Majestic-Points(%d) Angel Obtained(ID:%d)", m_pClientList[iClientH]->m_cCharName, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, iItemID);
+			PutLogFileList(G_cTxt);
+
 			iRet = SendItemNotifyMsg(iClientH, DEF_NOTIFY_ITEMOBTAINED, pItem, 0);
+
+			iCalcTotalWeight(iClientH);
+
 			switch (iRet) {
 			case DEF_XSOCKEVENT_QUENEFULL:
 			case DEF_XSOCKEVENT_SOCKETERROR:
 			case DEF_XSOCKEVENT_CRITICALERROR:
 			case DEF_XSOCKEVENT_SOCKETCLOSED:
 				DeleteClient(iClientH, true, true);
-				break;
+				return;
 			}
+
+			SendNotifyMsg(0, iClientH, DEF_NOTIFY_GIZONITEMUPGRADELEFT, m_pClientList[iClientH]->m_iGizonItemUpgradeLeft, 0, 0, 0);
 		}
 		else
 		{
-			m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->bSetItem(m_pClientList[iClientH]->m_sX,
-				m_pClientList[iClientH]->m_sY, pItem);
-			SendEventToNearClient_TypeB(MSGID_EVENT_COMMON, DEF_COMMONTYPE_ITEMDROP, m_pClientList[iClientH]->m_cMapIndex,
-				m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY,
-				pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute); // v1.4			
-			iRet = SendItemNotifyMsg(iClientH, DEF_NOTIFY_CANNOTCARRYMOREITEM, 0, 0);
+			delete pItem;
 
+			iCalcTotalWeight(iClientH);
+
+			iRet = SendItemNotifyMsg(iClientH, DEF_NOTIFY_CANNOTCARRYMOREITEM, 0, 0);
 
 			switch (iRet) {
 			case DEF_XSOCKEVENT_QUENEFULL:
@@ -36297,14 +36294,15 @@ void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 			case DEF_XSOCKEVENT_CRITICALERROR:
 			case DEF_XSOCKEVENT_SOCKETCLOSED:
 				DeleteClient(iClientH, true, true);
-				break;
+				return;
 			}
 		}
 	}
 	else
 	{
+		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) GetAngelHandler: _bInitItemAttr failed for ItemID %d. Item not found in config.", iItemID);
+		PutLogList(G_cTxt);
 		delete pItem;
-		pItem = 0;
 	}
 }
 
