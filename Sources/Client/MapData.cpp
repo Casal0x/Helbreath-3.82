@@ -1618,7 +1618,6 @@ EXIT_SEARCH_LOOP:;
 			}
 			m_pData[dX][dY].m_animation.SetAction(static_cast<int8_t>(sAction), cDir,
 				maxFrame, frameTime, loop, static_cast<int8_t>(iFrame));
-			m_pData[dX][dY].m_animation.dwLastFrameTime = dwTime;
 
 			// Initialize smooth movement interpolation for movement actions
 			if (sAction == DEF_OBJECTMOVE || sAction == DEF_OBJECTRUN ||
@@ -1694,7 +1693,6 @@ EXIT_SEARCH_LOOP:;
 				m_pData[dX][dY].m_animation.SetAction(DEF_OBJECTSTOP, cDir,
 					maxFrame, frameTime, false);
 			}
-			m_pData[dX][dY].m_animation.dwLastFrameTime = dwTime;
 		}
 		m_pData[dX][dY].m_iChatMsg = iChatIndex;
 		if (localAppearance.iEffectType != 0)
@@ -2063,7 +2061,6 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pData[dX][dY].m_animation.SetAction(DEF_OBJECTSTOP,
 									m_pData[dX][dY].m_animation.cDir,
 									stopMaxFrame, stopFrameTime, stopLoop);
-								m_pData[dX][dY].m_animation.dwLastFrameTime = dwTime;
 							}
 							if (strncmp(m_pData[dX][dY].m_cOwnerName, cPlayerName, 10) == 0)
 							{
