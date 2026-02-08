@@ -79,6 +79,9 @@ struct HB_PACKED PlayerStatus
 	bool bCitizen;
 	bool bPK;
 
+	// AFK state (server-controlled)
+	bool bAfk;
+
 	bool HasAngelType() const
 	{
 		return bAngelSTR || bAngelDEX || bAngelINT || bAngelMAG;

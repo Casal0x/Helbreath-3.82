@@ -15,6 +15,8 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+#include "SpellAoE.h"
+#include "Magic.h"
 #include <string>
 #include <memory>
 
@@ -465,6 +467,10 @@ void Screen_OnGame::on_render()
     m_pGame->m_pEffectManager->DrawEffects();
     FrameTiming::EndProfile(ProfileStage::DrawEffects);
 
+#ifdef _DEBUG
+    DrawSpellTargetOverlay();
+#endif
+
     // Patching grid overlay (after effects, on top of everything for debug)
     DrawPatchingGrid();
 
@@ -611,6 +617,59 @@ void Screen_OnGame::RenderItemTooltip()
             TextLib::DrawText(GameFont::Default, m_sMsX, m_sMsY + 40, m_pGame->G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDescription));
         }
     }
+}
+
+//=============================================================================
+// DrawSpellTargetOverlay - Debug overlay showing spell AoE tiles (DEBUG ONLY)
+// Draws faint blue outlines on tiles that would be affected by the current spell
+// while the player is in targeting mode (m_bIsGetPointingMode).
+//=============================================================================
+void Screen_OnGame::DrawSpellTargetOverlay()
+{
+#ifndef _DEBUG
+    return;
+#else
+    if (!m_pGame->m_bIsGetPointingMode) return;
+    if (m_pGame->m_iPointCommandType < 100) return;
+
+    int magicId = m_pGame->m_iPointCommandType - 100;
+    if (magicId < 0 || magicId >= DEF_MAXMAGICTYPE) return;
+    if (!m_pGame->m_pMagicCfgList[magicId]) return;
+
+    CMagic* pMagic = m_pGame->m_pMagicCfgList[magicId].get();
+    if (pMagic->m_sType == 0) return;
+
+    int casterX = m_pGame->m_pPlayer->m_sPlayerX;
+    int casterY = m_pGame->m_pPlayer->m_sPlayerY;
+
+    // Mouse world tile (same formula as CommandProcessor call on line 383)
+    int targetX = ((m_sDivX + m_sPivotX) * 32 + m_sModX + m_sMsX - 17) / 32 + 1;
+    int targetY = ((m_sDivY + m_sPivotY) * 32 + m_sModY + m_sMsY - 17) / 32 + 1;
+
+    SpellAoEParams params;
+    params.magicType = pMagic->m_sType;
+    params.aoeRadiusX = pMagic->m_sAoERadiusX;
+    params.aoeRadiusY = pMagic->m_sAoERadiusY;
+    params.dynamicPattern = pMagic->m_sDynamicPattern;
+    params.dynamicRadius = pMagic->m_sDynamicRadius;
+
+    constexpr int MAX_TILES = 512;
+    SpellAoETile tiles[MAX_TILES];
+    int tileCount = SpellAoE::CalculateTiles(params,
+        casterX, casterY, targetX, targetY,
+        tiles, MAX_TILES);
+
+    if (tileCount <= 0) return;
+
+    constexpr int HALF_TILE = 16;
+    Color overlayColor(100, 180, 255, 60);
+
+    for (int i = 0; i < tileCount; i++) {
+        int sx = (tiles[i].x - (m_sDivX + m_sPivotX)) * 32 - m_sModX - HALF_TILE;
+        int sy = (tiles[i].y - (m_sDivY + m_sPivotY)) * 32 - m_sModY - HALF_TILE;
+        m_pGame->m_Renderer->DrawRectOutline(sx, sy, 32, 32, overlayColor);
+    }
+#endif
 }
 
 //=============================================================================

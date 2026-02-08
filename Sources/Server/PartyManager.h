@@ -37,7 +37,7 @@ public:
 
 	struct {
 		int  m_iPartyID, m_iIndex;
-		char m_cName[12];
+		char m_cName[DEF_CHARNAME];
 		uint32_t m_dwServerChangeTime;
 	} m_stMemberNameList[DEF_MAXPARTY];
 

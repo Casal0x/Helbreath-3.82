@@ -5,6 +5,7 @@
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 #include <windows.h>
 #include "CommonTypes.h"
+#include "GameGeometry.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -122,84 +123,10 @@ namespace CMisc
 		*pError = error;
 	}
 
-	static inline void GetPoint2(int x0, int y0, int x1, int y1, int * pX, int * pY, int * pError, int iCount)
+	// Forwards to shared implementation in GameGeometry.h
+	static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* pError, int iCount)
 	{
-		int dx, dy, x_inc, y_inc, error, index;
-		int iResultX, iResultY, iCnt = 0;
-
-
-		if ((x0 == x1) && (y0 == y1)) {
-			*pX = x0;
-			*pY = y0;
-			return;
-		}
-
-		error = *pError;
-
-		iResultX = x0;
-		iResultY = y0;
-
-		dx = x1-x0;
-		dy = y1-y0;
-
-		if(dx>=0)
-		{
-			x_inc = 1;
-		}
-		else
-		{
-			x_inc = -1;
-			dx = -dx;
-		}
-
-		if(dy>=0)
-		{
-			y_inc = 1;
-		}
-		else
-		{
-			y_inc = -1;
-			dy = -dy;
-		}
-
-		if(dx>dy)
-		{
-			for(index = 0; index <= dx; index++)
-			{
-				error += dy;
-				if(error > dx)
-				{
-					error -= dx;
-					iResultY += y_inc;
-				}
-				iResultX += x_inc;
-				iCnt++;
-				if (iCnt >= iCount)
-					goto CALC_OK;
-			}
-		}
-		else
-		{
-			for(index = 0; index <= dy; index++)
-			{
-				error += dx;
-				if(error > dy)
-				{
-					error -= dy;
-					iResultX += x_inc;
-				}
-				iResultY += y_inc;
-				iCnt++;
-				if (iCnt >= iCount)
-					goto CALC_OK;
-			}
-		}
-
-	CALC_OK:;
-
-		*pX = iResultX;
-		*pY = iResultY;
-		*pError = error;
+		::GetPoint2(x0, y0, x1, y1, pX, pY, pError, iCount);
 	}
 
 	static inline void GetDirPoint(char cDir, int * pX, int * pY)

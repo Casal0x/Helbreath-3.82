@@ -16,7 +16,7 @@ bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	}
 
 	// Extract character name (max 10 chars, first word only)
-	char cCharName[11] = {};
+	char cCharName[DEF_CHARNAME] = {};
 	size_t nameLen = std::strlen(pArgs);
 	if (nameLen > 10) nameLen = 10;
 	for (size_t i = 0; i < nameLen; i++)

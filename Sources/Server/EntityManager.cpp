@@ -1068,6 +1068,13 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 					break;
 				}
 
+				// Summoned NPCs never attack their own summoner
+				if (m_pNpcList[iNpcH]->m_bIsSummoned &&
+					m_pNpcList[iNpcH]->m_cFollowOwnerType == cOwnerType &&
+					m_pNpcList[iNpcH]->m_iFollowOwnerIndex == sOwner) {
+					goto SKIP_SEARCH;
+				}
+
 				if (m_pNpcList[iNpcH]->m_cSide < 10) {
 					// NPC
 					if (cTargetSide == 0) {
@@ -2345,7 +2352,7 @@ NEXT_STEP_SNFM1:
 
 	case DEF_OWNERTYPE_PLAYER:
 		for(int i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pGame->m_pClientList[i] != 0) && (memcmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, 10) == 0)) {
+			if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, DEF_CHARNAME - 1) == 0)) {
 				if (m_pGame->m_pClientList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
 				cFollowSide = m_pGame->m_pClientList[i]->m_cSide;
@@ -2779,7 +2786,7 @@ void CEntityManager::RemoveFromActiveList(int iEntityHandle)
 void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 {
 	int x, j, iNamingValue, iResult, iTotalMob;
-	char cNpcName[21], cName_Master[11], cName_Slave[11], cWaypoint[11];
+	char cNpcName[DEF_NPCNAME], cName_Master[11], cName_Slave[11], cWaypoint[11];
 	char cSA;
 	int  pX, pY, iMapLevel, iProbSA, iKindSA, iResultNum, iNpcID;
 	bool bMaster, bFirmBerserk, bIsSpecialEvent;
@@ -3716,7 +3723,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
     }
 
     int iNamingValue, pX, pY, iProbSA, iKindSA;
-    char cNpcName[21], cName_Master[11], cWaypoint[11];
+    char cNpcName[DEF_NPCNAME], cName_Master[11], cWaypoint[11];
     char cSA;
     bool bFirmBerserk;
 

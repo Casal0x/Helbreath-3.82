@@ -16,15 +16,15 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 			sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
 		pGame->m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = false;
 
-		char cName[11] = {};
+		char cName[DEF_CHARNAME] = {};
 		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_WHISPERMODEOFF, 0, 0, 0, cName);
 		return true;
 	}
 
 	// Extract player name (max 10 chars)
-	char cName[11] = {};
+	char cName[DEF_CHARNAME] = {};
 	size_t nameLen = std::strlen(pArgs);
-	if (nameLen > 10) nameLen = 10;
+	if (nameLen > DEF_CHARNAME - 1) nameLen = DEF_CHARNAME - 1;
 
 	// Copy only the first word (stop at space)
 	for (size_t i = 0; i < nameLen; i++)
@@ -39,11 +39,11 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
 
-	// Search for player on this server
+	// Search for player on this server (case-insensitive)
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
-			std::memcmp(pGame->m_pClientList[i]->m_cCharName, cName, 10) == 0)
+			_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, DEF_CHARNAME - 1) == 0)
 		{
 			// Can't whisper yourself
 			if (i == iClientH)
@@ -52,18 +52,15 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 			pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = i;
 			std::memset(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, 0,
 				sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
-			std::strcpy(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, cName);
+			std::strcpy(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName,
+				pGame->m_pClientList[i]->m_cCharName);
 			break;
 		}
 	}
 
 	if (pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex == -1)
 	{
-		// Player not found on local server - store name and mark as checking
-		std::memset(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, 0,
-			sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
-		std::strcpy(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName, cName);
-		pGame->m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = true;
+		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_PLAYERNOTONGAME, 0, 0, 0, cName);
 	}
 	else
 	{

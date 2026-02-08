@@ -316,6 +316,9 @@
     <ClInclude Include="Screen_OnGame.h">
       <Filter>Screens</Filter>
     </ClInclude>
+    <ClInclude Include="SpellAoE.h">
+      <Filter>Core</Filter>
+    </ClInclude>
     <ClInclude Include="Screen_Quit.h">
       <Filter>Screens</Filter>
     </ClInclude>
@@ -698,6 +701,9 @@
     </ClCompile>
     <ClCompile Include="Screen_OnGame.cpp">
       <Filter>Screens</Filter>
+    </ClCompile>
+    <ClCompile Include="SpellAoE.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Screen_Quit.cpp">
       <Filter>Screens</Filter>

@@ -1,6 +1,7 @@
-// GameGeometry.h: Shared geometry types for Client and Server
+// GameGeometry.h: Shared geometry types and algorithms for Client and Server
 //
 // Cross-platform point and rectangle types with optional Windows conversion helpers.
+// Also includes shared geometry algorithms (Bresenham line).
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -64,3 +65,79 @@ struct GameRectangle
     }
 #endif
 };
+
+// ============================================================================
+// Bresenham Line Algorithm
+// ============================================================================
+
+// Steps iCount pixels along the Bresenham line from (x0,y0) toward (x1,y1).
+// pError carries the accumulated error between calls for incremental stepping.
+// On return, *pX/*pY hold the resulting position.
+static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* pError, int iCount)
+{
+    int dx, dy, x_inc, y_inc, error, index;
+    int iResultX, iResultY, iCnt = 0;
+
+    if ((x0 == x1) && (y0 == y1)) {
+        *pX = x0;
+        *pY = y0;
+        return;
+    }
+
+    error = *pError;
+
+    iResultX = x0;
+    iResultY = y0;
+
+    dx = x1 - x0;
+    dy = y1 - y0;
+
+    if (dx >= 0) {
+        x_inc = 1;
+    }
+    else {
+        x_inc = -1;
+        dx = -dx;
+    }
+
+    if (dy >= 0) {
+        y_inc = 1;
+    }
+    else {
+        y_inc = -1;
+        dy = -dy;
+    }
+
+    if (dx > dy) {
+        for (index = 0; index <= dx; index++) {
+            error += dy;
+            if (error > dx) {
+                error -= dx;
+                iResultY += y_inc;
+            }
+            iResultX += x_inc;
+            iCnt++;
+            if (iCnt >= iCount)
+                goto GP2_DONE;
+        }
+    }
+    else {
+        for (index = 0; index <= dy; index++) {
+            error += dx;
+            if (error > dy) {
+                error -= dy;
+                iResultX += x_inc;
+            }
+            iResultY += y_inc;
+            iCnt++;
+            if (iCnt >= iCount)
+                goto GP2_DONE;
+        }
+    }
+
+GP2_DONE:;
+
+    *pX = iResultX;
+    *pY = iResultY;
+    *pError = error;
+}

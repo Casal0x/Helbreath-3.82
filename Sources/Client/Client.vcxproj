@@ -200,7 +200,7 @@
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>$(IntDir)</ProgramDataBaseFileName>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -360,6 +360,7 @@
     <ClInclude Include="GameFonts.h" />
     <ClInclude Include="IGameScreen.h" />
     <ClInclude Include="Screen_OnGame.h" />
+    <ClInclude Include="SpellAoE.h" />
     <ClInclude Include="Screen_MainMenu.h" />
     <ClInclude Include="Screen_Login.h" />
     <ClInclude Include="Screen_SelectCharacter.h" />
@@ -445,6 +446,7 @@
     <ClCompile Include="GameModeManager.cpp" />
     <ClCompile Include="IGameScreen.cpp" />
     <ClCompile Include="Screen_OnGame.cpp" />
+    <ClCompile Include="SpellAoE.cpp" />
     <ClCompile Include="Screen_MainMenu.cpp" />
     <ClCompile Include="Screen_Login.cpp" />
     <ClCompile Include="Screen_SelectCharacter.cpp" />

@@ -40,6 +40,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_dwLastMsgSize = 0;
 	m_dwLastFullObjectId = 0;
 	m_dwLastFullObjectTime = 0;
+	m_dwAfkActivityTime = 0;
 
 	m_iAngelicStr = m_iAngelicInt = m_iAngelicDex = m_iAngelicMag = 0;
 

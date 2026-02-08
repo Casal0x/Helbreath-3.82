@@ -22,6 +22,6 @@ public:
 	{
 	}
 
-	char m_cName[11];
+	char m_cName[DEF_CHARNAME];
 	int  m_iRank;
 };

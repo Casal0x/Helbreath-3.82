@@ -365,7 +365,8 @@ bool CGame::bAccept(class ASIOSocket* pXSock)
 			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
 				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
 				m_pClientList[i]->m_dwTime = m_pClientList[i]->m_dwHungerTime = m_pClientList[i]->m_dwExpStockTime =
-				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime = GameClock::GetTimeMS();
+				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime =
+				m_pClientList[i]->m_dwAfkActivityTime = GameClock::GetTimeMS();
 
 			pXSock->bAccept(m_pClientList[i]->m_pXSock);
 
@@ -475,7 +476,8 @@ bool CGame::bAcceptFromAsync(asio::ip::tcp::socket&& peer)
 			m_pClientList[i]->m_dwSPTime = m_pClientList[i]->m_dwMPTime =
 				m_pClientList[i]->m_dwHPTime = m_pClientList[i]->m_dwAutoSaveTime =
 				m_pClientList[i]->m_dwTime = m_pClientList[i]->m_dwHungerTime = m_pClientList[i]->m_dwExpStockTime =
-				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime = GameClock::GetTimeMS();
+				m_pClientList[i]->m_dwRecentAttackTime = m_pClientList[i]->m_dwAutoExpTime = m_pClientList[i]->m_dwSpeedHackCheckTime =
+				m_pClientList[i]->m_dwAfkActivityTime = GameClock::GetTimeMS();
 
 			m_pClientList[i]->m_pXSock->bAcceptFromSocket(std::move(peer));
 
@@ -1554,7 +1556,7 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 {
 	
-	char cCharName[11], cAccountName[11], cAccountPassword[11], cTxt[120];
+	char cCharName[DEF_CHARNAME], cAccountName[DEF_ACCOUNT_NAME], cAccountPassword[DEF_ACCOUNT_PASS], cTxt[120];
 	bool bIsObserverMode;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -1573,38 +1575,38 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 		pData, sizeof(hb::net::PacketRequestInitPlayer));
 	if (!req) return;
 
-	memcpy(cCharName, req->player, 10);
+	memcpy(cCharName, req->player, DEF_CHARNAME - 1);
 
 	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cCharName, 10);
+	memcpy(cTxt, cCharName, DEF_CHARNAME - 1);
 	ZeroMemory(cCharName, sizeof(cCharName));
-	memcpy(cCharName, cTxt, 10);
+	memcpy(cCharName, cTxt, DEF_CHARNAME - 1);
 
 	//testcode
 	if (strlen(cTxt) == 0) PutLogList("RIPH - cTxt: Char 0!");
 
-	memcpy(cAccountName, req->account, 10);
+	memcpy(cAccountName, req->account, DEF_ACCOUNT_NAME - 1);
 
 	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cAccountName, 10);
+	memcpy(cTxt, cAccountName, DEF_ACCOUNT_NAME - 1);
 	ZeroMemory(cAccountName, sizeof(cAccountName));
-	memcpy(cAccountName, cTxt, 10);
+	memcpy(cAccountName, cTxt, DEF_ACCOUNT_NAME - 1);
 
 	// Lowercase account name to match how it was stored during account creation
 	for (int ci = 0; ci < 10 && cAccountName[ci] != '\0'; ci++)
 		cAccountName[ci] = static_cast<char>(::tolower(static_cast<unsigned char>(cAccountName[ci])));
 
-	memcpy(cAccountPassword, req->password, 10);
+	memcpy(cAccountPassword, req->password, DEF_ACCOUNT_PASS - 1);
 
 	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cAccountPassword, 10);
+	memcpy(cTxt, cAccountPassword, DEF_ACCOUNT_PASS - 1);
 	ZeroMemory(cAccountPassword, sizeof(cAccountPassword));
-	memcpy(cAccountPassword, cTxt, 10);
+	memcpy(cAccountPassword, cTxt, DEF_ACCOUNT_PASS - 1);
 
 	bIsObserverMode = (req->is_observer != 0);
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (memcmp(m_pClientList[i]->m_cAccountName, cAccountName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (iClientH != i) && (_strnicmp(m_pClientList[i]->m_cAccountName, cAccountName, DEF_ACCOUNT_NAME - 1) == 0)) {
 			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
 				wsprintf(G_cTxt, "<%d> Duplicate account player! Deleted with data save : CharName(%s) AccntName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, m_pClientList[i]->m_cIPaddress);
 				PutLogList(G_cTxt);
@@ -1612,9 +1614,9 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 				DeleteClient(i, true, true, false);
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, 10);
-				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, 10);
-				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, 10);
+				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, DEF_CHARNAME - 1);
+				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, DEF_ACCOUNT_NAME - 1);
+				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, DEF_ACCOUNT_PASS - 1);
 
 				DeleteClient(iClientH, false, false, false);
 				return;
@@ -1622,7 +1624,7 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 		}
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (iClientH != i) && (memcmp(m_pClientList[i]->m_cCharName, cCharName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (iClientH != i) && (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, DEF_CHARNAME - 1) == 0)) {
 			if (memcmp(m_pClientList[i]->m_cAccountPassword, cAccountPassword, 10) == 0) {
 				wsprintf(G_cTxt, "<%d> Duplicate player! Deleted with data save : CharName(%s) IP(%s)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cIPaddress);
 				PutLogList(G_cTxt);
@@ -1630,18 +1632,18 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 				DeleteClient(i, true, true, false);
 			}
 			else {
-				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, 10);
-				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, 10);
-				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, 10);
+				memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, DEF_CHARNAME - 1);
+				memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, DEF_ACCOUNT_NAME - 1);
+				memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, DEF_ACCOUNT_PASS - 1);
 
 				DeleteClient(iClientH, false, false);
 				return;
 			}
 		}
 
-	memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, 10);
-	memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, 10);
-	memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, 10);
+	memcpy(m_pClientList[iClientH]->m_cCharName, cCharName, DEF_CHARNAME - 1);
+	memcpy(m_pClientList[iClientH]->m_cAccountName, cAccountName, DEF_ACCOUNT_NAME - 1);
+	memcpy(m_pClientList[iClientH]->m_cAccountPassword, cAccountPassword, DEF_ACCOUNT_PASS - 1);
 
 	m_pClientList[iClientH]->m_bIsObserverMode = bIsObserverMode;
 
@@ -1691,7 +1693,7 @@ void CGame::RequestInitPlayerHandler(int iClientH, char* pData, char cKey)
 // 05/22/2004 - Hypnotoad - sends client to proper location after dieing
 void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t dwMsgSize)
 {
-	char cPlayerName[11], cTxt[120];
+	char cPlayerName[DEF_CHARNAME], cTxt[120];
 	int sSummonPoints;
 	int iTotalItemA, iTotalItemB, iSize, iRet, iStats;
 	SYSTEMTIME SysTime;
@@ -1707,14 +1709,14 @@ void CGame::RequestInitDataHandler(int iClientH, char* pData, char cKey, size_t 
 	}
 
 	ZeroMemory(cPlayerName, sizeof(cPlayerName));
-	memcpy(cPlayerName, req->player, 10);
+	memcpy(cPlayerName, req->player, DEF_CHARNAME - 1);
 
 	ZeroMemory(cTxt, sizeof(cTxt)); // v1.4
-	memcpy(cTxt, cPlayerName, 10);
+	memcpy(cTxt, cPlayerName, DEF_CHARNAME - 1);
 	ZeroMemory(cPlayerName, sizeof(cPlayerName));
-	memcpy(cPlayerName, cTxt, 10);
+	memcpy(cPlayerName, cTxt, DEF_CHARNAME - 1);
 
-	if (memcmp(m_pClientList[iClientH]->m_cCharName, cPlayerName, 10) != 0) {
+	if (_strnicmp(m_pClientList[iClientH]->m_cCharName, cPlayerName, DEF_CHARNAME - 1) != 0) {
 		DeleteClient(iClientH, false, true);
 		return;
 	}
@@ -2328,6 +2330,11 @@ bool CGame::bSendClientMagicConfigs(int iClientH)
 			entry.intLimit = magic->m_sIntLimit;
 			entry.goldCost = magic->m_iGoldCost;
 			entry.isVisible = (magic->m_iGoldCost >= 0) ? 1 : 0;
+			entry.magicType = magic->m_sType;
+			entry.aoeRadiusX = magic->m_sValue2;
+			entry.aoeRadiusY = magic->m_sValue3;
+			entry.dynamicPattern = magic->m_sValue11;
+			entry.dynamicRadius = magic->m_sValue12;
 
 			entriesInPacket++;
 		}
@@ -2780,7 +2787,7 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 							iSize += sizeof(PlayerStatus);
 						}
 						// Name
-						memcpy(cp, m_pClientList[pTile->m_sOwner]->m_cCharName, 10);
+						memcpy(cp, m_pClientList[pTile->m_sOwner]->m_cCharName, DEF_CHARNAME - 1);
 						cp += 10;
 						iSize += 10;
 						break;
@@ -2855,7 +2862,7 @@ int CGame::iComposeInitMapData(short sX, short sY, int iClientH, char* pData)
 							iSize += sizeof(PlayerStatus);
 						}
 						// Name
-						memcpy(cp, m_pClientList[pTile->m_sDeadOwner]->m_cCharName, 10);
+						memcpy(cp, m_pClientList[pTile->m_sDeadOwner]->m_cCharName, DEF_CHARNAME - 1);
 						cp += 10;
 						iSize += 10;
 						break;
@@ -2957,6 +2964,16 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_LOG, DEF_MSGTYPE_REJECT, 0, 0, 0);
 
 		RemoveFromTarget(iClientH, DEF_OWNERTYPE_PLAYER);
+
+		// Delete all summoned NPCs belonging to this player
+		for (int i = 0; i < DEF_MAXNPCS; i++)
+			if (m_pNpcList[i] != 0) {
+				if ((m_pNpcList[i]->m_bIsSummoned) &&
+					(m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
+					(m_pNpcList[i]->m_cFollowOwnerType == DEF_OWNERTYPE_PLAYER)) {
+					m_pEntityManager->DeleteEntity(i);
+				}
+			}
 
 		for(int i = 1; i < DEF_MAXCLIENTS; i++)
 			if ((m_pClientList[i] != 0) && (m_pClientList[i]->m_iWhisperPlayerIndex == iClientH)) {
@@ -3098,7 +3115,7 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				*wp = iClientH;
 				cp += 2;
 
-				memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+				memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 				cp += 10;
 
 				wp = (uint16_t*)cp;
@@ -3129,7 +3146,7 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				*wp = iClientH;
 				cp += 2;
 
-				memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+				memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 				cp += 10;
 
 				wp = (uint16_t*)cp;
@@ -3158,7 +3175,7 @@ void CGame::DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogo
 				*wp = 0;
 				cp += 2;
 
-				memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+				memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 				cp += 10;
 
 				wp = (uint16_t*)cp;
@@ -3762,7 +3779,7 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 						iSize += sizeof(PlayerStatus);
 					}
 
-					memcpy(cp, m_pClientList[pTile->m_sOwner]->m_cCharName, 10);
+					memcpy(cp, m_pClientList[pTile->m_sOwner]->m_cCharName, DEF_CHARNAME - 1);
 					cp += 10;
 					iSize += 10;
 					break;
@@ -3840,7 +3857,7 @@ int CGame::iComposeMoveMapData(short sX, short sY, int iClientH, char cDir, char
 						iSize += sizeof(PlayerStatus);
 					}
 
-					memcpy(cp, m_pClientList[pTile->m_sDeadOwner]->m_cCharName, 10);
+					memcpy(cp, m_pClientList[pTile->m_sDeadOwner]->m_cCharName, DEF_CHARNAME - 1);
 					cp += 10;
 					iSize += 10;
 					break;
@@ -3968,6 +3985,16 @@ void CGame::CheckClientResponseTime()
 						m_pClientList[i]->m_cIPaddress);
 					PutLogList(G_cTxt);
 					s_dwLastIdleLog = dwTime;
+				}
+
+				// AFK detection: 3 minutes of no meaningful activity
+				constexpr uint32_t AFK_TIMEOUT_MS = 180000;
+				bool bWasAfk = m_pClientList[i]->m_status.bAfk;
+				bool bNowAfk = (dwTime - m_pClientList[i]->m_dwAfkActivityTime) > AFK_TIMEOUT_MS;
+				if (bWasAfk != bNowAfk) {
+					m_pClientList[i]->m_status.bAfk = bNowAfk;
+					SendEventToNearClient_TypeA(i, DEF_OWNERTYPE_PLAYER,
+						MSGID_EVENT_MOTION, DEF_OBJECTNULLACTION, 0, 0, 0);
 				}
 
 				m_pClientList[i]->m_iTimeLeft_Rating--;
@@ -4268,19 +4295,19 @@ void CGame::CheckClientResponseTime()
 
 void CGame::ResponsePlayerDataHandler(char* pData, uint32_t dwSize)
 {
-	char* cp, cCharName[11], cTxt[120];
+	char* cp, cCharName[DEF_CHARNAME], cTxt[120];
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, 10);
+	memcpy(cCharName, cp, DEF_CHARNAME - 1);
 	cp += 10;
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
 		if (m_pClientList[i] != 0) {
-			if (memcmp(m_pClientList[i]->m_cCharName, cCharName, 10) == 0) {
+			if (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, DEF_CHARNAME - 1) == 0) {
 				switch (header->msg_type) {
 				case DEF_LOGRESMSGTYPE_CONFIRM:
 					InitPlayerData(i, pData, dwSize);
@@ -4667,7 +4694,7 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 	//cp = (char *)(pData + DEF_INDEX2_MSGTYPE + 2);
 
 	//std::memset(cName, 0, sizeof(cName));
-	//memcpy(cName, cp, 10);
+	//memcpy(cName, cp, DEF_CHARNAME - 1);
 	//cp += 10;
 
 	////m_pClientList[iClientH]->m_cAccountStatus = *cp;
@@ -4825,7 +4852,7 @@ static void NormalizeItemName(const char* src, char* dst, size_t dstSize)
 bool CGame::_bInitItemAttr(CItem* pItem, const char* pItemName)
 {
 	
-	char cTmpName[21];
+	char cTmpName[DEF_NPCNAME];
 	char cNormalizedInput[21];
 	char cNormalizedConfig[21];
 
@@ -4969,7 +4996,7 @@ int CGame::SpawnMapNpcsFromDatabase(sqlite3* db, int iMapIndex)
 	sqlite3_bind_text(stmt, 1, m_pMapList[iMapIndex]->m_cName, -1, SQLITE_STATIC);
 
 	int npcCount = 0;
-	char cNpcName[24];
+	char cNpcName[DEF_NPCNAME];
 	char cNpcWaypointIndex[12];
 	char cNamePrefix;
 	char cNpcMoveType;
@@ -5115,7 +5142,7 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 	char* payload = reinterpret_cast<char*>(header) + sizeof(hb::net::PacketHeader);
 	char* message = payload + 15;
 
-	if (memcmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) return;
+	if (_strnicmp(pkt->name, m_pClientList[iClientH]->m_cCharName, strlen(m_pClientList[iClientH]->m_cCharName)) != 0) return;
 
 	if (m_pClientList[iClientH]->m_bIsObserverMode) return;
 
@@ -5249,6 +5276,11 @@ void CGame::ChatMsgHandler(int iClientH, char* pData, size_t dwMsgSize)
 		cSendMode = 20;
 
 		if (*cp == '#') cSendMode = 0;
+	}
+
+	// Refresh AFK timer for non-whisper chat (whispers don't break AFK)
+	if (cSendMode != 20) {
+		m_pClientList[iClientH]->m_dwAfkActivityTime = GameClock::GetTimeMS();
 	}
 
 	ChatLog::Get().Write(cSendMode, m_pClientList[iClientH]->m_cCharName,
@@ -5876,6 +5908,12 @@ void CGame::MsgProcess()
 			m_pClientList[iClientH]->m_dwLastMsgId = header->msg_id;
 			m_pClientList[iClientH]->m_dwLastMsgTime = dwTime;
 			m_pClientList[iClientH]->m_dwLastMsgSize = dwMsgSize;
+
+			// Update AFK activity timer for all messages except keepalive and chat
+			// (chat is handled separately in ChatMsgHandler to exclude whispers)
+			if (header->msg_id != MSGID_COMMAND_CHECKCONNECTION && header->msg_id != MSGID_COMMAND_CHATMSG) {
+				m_pClientList[iClientH]->m_dwAfkActivityTime = dwTime;
+			}
 
 			switch (header->msg_id) {
 
@@ -7185,16 +7223,16 @@ void CGame::ResponseCreateNewGuildHandler(char* pData, int iType)
 {
 	
 	uint16_t wResult;
-	char cCharName[11], cTxt[120];
+	char cCharName[DEF_CHARNAME], cTxt[120];
 	int iRet;
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	//cp = (char *)(pData + DEF_INDEX2_MSGTYPE + 2);
-	memcpy(cCharName, pData, 10);
+	memcpy(cCharName, pData, DEF_CHARNAME - 1);
 	//cp += 10;
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cCharName, 10) == 0) &&
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, DEF_CHARNAME - 1) == 0) &&
 			(m_pClientList[i]->m_iLevel >= 20) && (m_pClientList[i]->m_iCharisma >= 20)) {
 
 			//wp = (uint16_t *)(pData + DEF_INDEX2_MSGTYPE);
@@ -7298,7 +7336,7 @@ void CGame::RequestCreateNewGuildHandler(int iClientH, char* pData, size_t dwMsg
 
 			cp = (char*)cData;
 
-			memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+			memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 			cp += 10;
 
 			memcpy(cp, m_pClientList[iClientH]->m_cGuildName, 20);
@@ -7342,7 +7380,7 @@ void CGame::RequestDisbandGuildHandler(int iClientH, char* pData, size_t dwMsgSi
 
 		cp = (char*)(cData);
 
-		memcpy((char*)cp, m_pClientList[iClientH]->m_cCharName, 10);
+		memcpy((char*)cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 		cp += 10;
 
 		memcpy((char*)cp, m_pClientList[iClientH]->m_cGuildName, 20);
@@ -7356,16 +7394,16 @@ void CGame::ResponseDisbandGuildHandler(char* pData, int iType)
 {
 	
 	uint16_t wResult;
-	char cCharName[11], cTxt[120];
+	char cCharName[DEF_CHARNAME], cTxt[120];
 	int iRet;
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	//cp = (char *)(pData + DEF_INDEX2_MSGTYPE + 2);
-	memcpy(cCharName, pData, 10);
+	memcpy(cCharName, pData, DEF_CHARNAME - 1);
 	//cp += 10;
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cCharName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, DEF_CHARNAME - 1) == 0)) {
 
 			//wp = (uint16_t *)(pData + DEF_INDEX2_MSGTYPE);
 			switch (iType) {
@@ -7563,7 +7601,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 {
 	int iRet, iEraseReq;
 	short sOwnerH;
-	char cOwnerType, cCharName[21];
+	char cOwnerType, cCharName[DEF_CHARNAME];
 	CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -7626,7 +7664,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 		}
 		else {
 			if (cOwnerType == DEF_OWNERTYPE_PLAYER) {
-				memcpy(cCharName, m_pClientList[sOwnerH]->m_cCharName, 10);
+				memcpy(cCharName, m_pClientList[sOwnerH]->m_cCharName, DEF_CHARNAME - 1);
 
 				if (sOwnerH == iClientH) {
 					delete pItem;
@@ -7679,7 +7717,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 			}
 			else {
 				// NPC  .
-				memcpy(cCharName, m_pNpcList[sOwnerH]->m_cNpcName, 20);
+				memcpy(cCharName, m_pNpcList[sOwnerH]->m_cNpcName, DEF_NPCNAME - 1);
 
 				if (memcmp(m_pNpcList[sOwnerH]->m_cNpcName, "Howard", 6) == 0) {
 					// NPC     .
@@ -7758,7 +7796,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 			// . @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 			if (cOwnerType == DEF_OWNERTYPE_PLAYER) {
-				memcpy(cCharName, m_pClientList[sOwnerH]->m_cCharName, 10);
+				memcpy(cCharName, m_pClientList[sOwnerH]->m_cCharName, DEF_CHARNAME - 1);
 				pItem = m_pClientList[iClientH]->m_pItemList[sItemIndex];
 
 
@@ -7840,7 +7878,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 				}
 			}
 			else {
-				memcpy(cCharName, m_pNpcList[sOwnerH]->m_cNpcName, 20);
+				memcpy(cCharName, m_pNpcList[sOwnerH]->m_cNpcName, DEF_NPCNAME - 1);
 
 				if (memcmp(m_pNpcList[sOwnerH]->m_cNpcName, "Howard", 6) == 0) {
 					if (bSetItemToBankItem(iClientH, sItemIndex) == false) {
@@ -9573,7 +9611,7 @@ void CGame::JoinGuildApproveHandler(int iClientH, const char* pName)
 
 	// pName     .
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, pName, DEF_CHARNAME - 1) == 0)) {
 			if (memcmp(m_pClientList[i]->m_cLocation, m_pClientList[iClientH]->m_cLocation, 10) != 0) return;
 
 			std::memset(m_pClientList[i]->m_cGuildName, 0, sizeof(m_pClientList[i]->m_cGuildName));
@@ -9610,7 +9648,7 @@ void CGame::JoinGuildRejectHandler(int iClientH, const char* pName)
 
 	// pName     .
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, pName, DEF_CHARNAME - 1) == 0)) {
 
 			SendNotifyMsg(iClientH, i, DEF_COMMONTYPE_JOINGUILDREJECT, 0, 0, 0, 0);
 			return;
@@ -9626,7 +9664,7 @@ void CGame::DismissGuildApproveHandler(int iClientH, const char* pName)
 	if (m_pClientList[iClientH] == 0) return;
 	if (m_pClientList[iClientH]->m_bIsInitComplete == false) return;
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, pName, DEF_CHARNAME - 1) == 0)) {
 
 			//bSendMsgToLS(MSGID_REQUEST_UPDATEGUILDINFO_DELGUILDSMAN, i);
 			//_bItemLog(DEF_ITEMLOG_BANGUILD,i,(char *)0,0) ;
@@ -9656,7 +9694,7 @@ void CGame::DismissGuildRejectHandler(int iClientH, const char* pName)
 
 	// pName     .
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, pName, DEF_CHARNAME - 1) == 0)) {
 
 			SendNotifyMsg(iClientH, i, DEF_COMMONTYPE_DISMISSGUILDREJECT, 0, 0, 0, 0);
 			return;
@@ -9726,7 +9764,7 @@ int CGame::SetItemCountByID(int iClientH, short sItemID, uint32_t dwCount)
 
 void CGame::ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage)
 {
-	char cAttackerName[21];
+	char cAttackerName[DEF_NPCNAME];
 	short sAttackerWeapon;
 	int iExH;
 	bool  bIsSAattacked = false;
@@ -9773,19 +9811,29 @@ void CGame::ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType
 	// NPC    .
 	RemoveFromTarget(iClientH, DEF_OWNERTYPE_PLAYER);
 
+	// Delete all summoned NPCs belonging to this player
+	for (int i = 0; i < DEF_MAXNPCS; i++)
+		if (m_pNpcList[i] != 0) {
+			if ((m_pNpcList[i]->m_bIsSummoned) &&
+				(m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
+				(m_pNpcList[i]->m_cFollowOwnerType == DEF_OWNERTYPE_PLAYER)) {
+				m_pEntityManager->DeleteEntity(i);
+			}
+		}
+
 	std::memset(cAttackerName, 0, sizeof(cAttackerName));
 	switch (cAttackerType) {
 	case DEF_OWNERTYPE_PLAYER_INDIRECT:
 	case DEF_OWNERTYPE_PLAYER:
 		if (m_pClientList[iAttackerH] != 0)
-			memcpy(cAttackerName, m_pClientList[iAttackerH]->m_cCharName, 10);
+			memcpy(cAttackerName, m_pClientList[iAttackerH]->m_cCharName, DEF_CHARNAME - 1);
 		break;
 	case DEF_OWNERTYPE_NPC:
 		if (m_pNpcList[iAttackerH] != 0)
 #ifdef DEF_LOCALNPCNAME
 			std::snprintf(cAttackerName, sizeof(cAttackerName), "NPCNPCNPC@%d", m_pNpcList[iAttackerH]->m_sType);
 #else 
-			memcpy(cAttackerName, m_pNpcList[iAttackerH]->m_cNpcName, 20);
+			memcpy(cAttackerName, m_pNpcList[iAttackerH]->m_cNpcName, DEF_NPCNAME - 1);
 #endif
 		break;
 	default:
@@ -10085,7 +10133,7 @@ void CGame::ReleaseItemHandler(int iClientH, short sItemIndex, bool bNotice)
 bool CGame::_bInitNpcAttr(class CNpc* pNpc, char* pNpcName, short sClass, char cSA)
 {
 	int iTemp;
-	char cTmpName[21];
+	char cTmpName[DEF_NPCNAME];
 	double dV1, dV2, dV3;
 
 	std::memset(cTmpName, 0, sizeof(cTmpName));
@@ -10093,10 +10141,10 @@ bool CGame::_bInitNpcAttr(class CNpc* pNpc, char* pNpcName, short sClass, char c
 
 	for(int i = 0; i < DEF_MAXNPCTYPES; i++)
 		if (m_pNpcConfigList[i] != 0) {
-			if (memcmp(cTmpName, m_pNpcConfigList[i]->m_cNpcName, 20) == 0) {
+			if (memcmp(cTmpName, m_pNpcConfigList[i]->m_cNpcName, DEF_NPCNAME - 1) == 0) {
 				// NPC  .  .
 				std::memset(pNpc->m_cNpcName, 0, sizeof(pNpc->m_cNpcName));
-				memcpy(pNpc->m_cNpcName, m_pNpcConfigList[i]->m_cNpcName, 20);
+				memcpy(pNpc->m_cNpcName, m_pNpcConfigList[i]->m_cNpcName, DEF_NPCNAME - 1);
 
 				pNpc->m_sType = m_pNpcConfigList[i]->m_sType;
 
@@ -10388,7 +10436,7 @@ void CGame::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short
 				hb::net::PacketNotifyNewGuildsMan pkt{};
 				pkt.header.msg_id = MSGID_NOTIFY;
 				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pClientList[iClientH]->m_cCharName, 10);
+				memcpy(pkt.name, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
@@ -10398,7 +10446,7 @@ void CGame::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short
 				hb::net::PacketNotifyDismissGuildsMan pkt{};
 				pkt.header.msg_id = MSGID_NOTIFY;
 				pkt.header.msg_type = wNotifyMsgType;
-				memcpy(pkt.name, m_pClientList[iClientH]->m_cCharName, 10);
+				memcpy(pkt.name, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 				iRet = m_pClientList[i]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 			}
 			break;
@@ -10419,7 +10467,7 @@ void CGame::SendGuildMsg(int iClientH, uint16_t wNotifyMsgType, short sV1, short
 
 void CGame::GuildNotifyHandler(char* pData, size_t dwMsgSize)
 {
-	char* cp, cCharName[11], cGuildName[21];
+	char* cp, cCharName[DEF_CHARNAME], cGuildName[21];
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 	std::memset(cGuildName, 0, sizeof(cGuildName));
@@ -10428,7 +10476,7 @@ void CGame::GuildNotifyHandler(char* pData, size_t dwMsgSize)
 	if (!header) return;
 	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
 
-	memcpy(cCharName, cp, 10);
+	memcpy(cCharName, cp, DEF_CHARNAME - 1);
 	cp += 10;
 
 	memcpy(cGuildName, cp, 20);
@@ -10529,7 +10577,7 @@ int  _tmp_iMLevelPenalty[] = { 0,   5,   5,   8,   8,  10, 14, 28, 32, 36, 40 };
 void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool bItemEffect, int iV1, uint16_t targetObjectID)
 {
 	short sX, sY, sOwnerH, sMagicCircle, rx, ry, sLevelMagic;
-	char cDir, cOwnerType, cName[11], cItemName[DEF_ITEMNAME], cNpcWaypoint[11], cName_Master[11], cNpcName[21], cRemainItemColor, cScanMessage[256];
+	char cDir, cOwnerType, cName[DEF_CHARNAME], cItemName[DEF_ITEMNAME], cNpcWaypoint[11], cName_Master[DEF_CHARNAME], cNpcName[DEF_NPCNAME], cRemainItemColor, cScanMessage[256];
 	double dV1, dV2, dV3, dV4;
 	int iErr, iRet, iResult, iDiceRes, iNamingValue, iFollowersNum, iEraseReq, iWhetherBonus;
 	int tX, tY, iManaCost, iMagicAttr;
@@ -12167,7 +12215,7 @@ void CGame::PlayerMagicHandler(int iClientH, int dX, int dY, short sType, bool b
 						std::memset(cName_Master, 0, sizeof(cName_Master));
 						switch (cOwnerType) {
 						case DEF_OWNERTYPE_PLAYER:
-							memcpy(cName_Master, m_pClientList[sOwnerH]->m_cCharName, 10);
+							memcpy(cName_Master, m_pClientList[sOwnerH]->m_cCharName, DEF_CHARNAME - 1);
 							break;
 						case DEF_OWNERTYPE_NPC:
 							memcpy(cName_Master, m_pNpcList[sOwnerH]->m_cName, 5);
@@ -12921,6 +12969,16 @@ void CGame::RequestTeleportHandler(int iClientH, char* pData, char* cMapName, in
 
 	RemoveFromTarget(iClientH, DEF_OWNERTYPE_PLAYER);
 
+	// Delete all summoned NPCs belonging to this player
+	for (int i = 0; i < DEF_MAXNPCS; i++)
+		if (m_pNpcList[i] != 0) {
+			if ((m_pNpcList[i]->m_bIsSummoned) &&
+				(m_pNpcList[i]->m_iFollowOwnerIndex == iClientH) &&
+				(m_pNpcList[i]->m_cFollowOwnerType == DEF_OWNERTYPE_PLAYER)) {
+				m_pEntityManager->DeleteEntity(i);
+			}
+		}
+
 	m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->ClearOwner(13, iClientH, DEF_OWNERTYPE_PLAYER,
 		m_pClientList[iClientH]->m_sX,
 		m_pClientList[iClientH]->m_sY);
@@ -13554,7 +13612,7 @@ bool CGame::__bReadMapInfo(int iMapIndex)
 	size_t  dwFileSize, dwReadSize;
 	FILE* pFile;
 
-	char cName[6], cNpcName[21], cNpcMoveType, cNpcWaypointIndex[10], cNamePrefix;
+	char cName[6], cNpcName[DEF_NPCNAME], cNpcMoveType, cNpcWaypointIndex[10], cNamePrefix;
 	short sIPindex, dX, dY;
 
 	if (memcmp(m_pMapList[iMapIndex]->m_cName, "fightzone", 9) == 0)
@@ -20381,7 +20439,7 @@ int CGame::iCalcTotalWeight(int iClientH)
 void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dwSize)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[11], cBuff[256], cPlayerLocation[120];
+	char* token, cName[DEF_CHARNAME], cBuff[256], cPlayerLocation[120];
 	
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -20399,70 +20457,17 @@ void CGame::CheckAndNotifyPlayerConnection(int iClientH, char* pMsg, uint32_t dw
 		return;
 	}
 
-	if (strlen(token) > 10)
-		memcpy(cName, token, 10);
+	if (strlen(token) > DEF_CHARNAME - 1)
+		memcpy(cName, token, DEF_CHARNAME - 1);
 	else memcpy(cName, token, strlen(token));
 
 	// cName     .
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(cName, m_pClientList[i]->m_cCharName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(cName, m_pClientList[i]->m_cCharName, DEF_CHARNAME - 1) == 0)) {
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_PLAYERONGAME, 0, 0, 0, m_pClientList[i]->m_cCharName, 0, 0, 0, 0, 0, 0, cPlayerLocation);
 
 			return;
 		}
-
-}
-
-
-void CGame::ToggleWhisperPlayer(int iClientH, char* pMsg, size_t dwMsgSize)
-{
-	char   seps[] = "= \t\r\n";
-	char* token, cName[11], cBuff[256];
-	
-
-	if (m_pClientList[iClientH] == 0) return;
-	if (dwMsgSize <= 0) return;
-
-	std::memset(cName, 0, sizeof(cName));
-	std::memset(cBuff, 0, sizeof(cBuff));
-	memcpy(cBuff, pMsg, dwMsgSize);
-
-	token = strtok(cBuff, seps);
-	token = strtok(NULL, seps);
-
-	if (token == 0) {
-		m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
-		std::memset(m_pClientList[iClientH]->m_cWhisperPlayerName, 0, sizeof(m_pClientList[iClientH]->m_cWhisperPlayerName));
-		m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = false;
-		SendNotifyMsg(0, iClientH, DEF_NOTIFY_WHISPERMODEOFF, 0, 0, 0, cName);
-	}
-	else {
-		if (strlen(token) > 10)
-			memcpy(cName, token, 10);
-		else memcpy(cName, token, strlen(token));
-
-		m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
-
-		for(int i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cName, 10) == 0)) {
-				if (i == iClientH) {
-					return;
-				}
-				m_pClientList[iClientH]->m_iWhisperPlayerIndex = i;
-				std::memset(m_pClientList[iClientH]->m_cWhisperPlayerName, 0, sizeof(m_pClientList[iClientH]->m_cWhisperPlayerName));
-				strcpy(m_pClientList[iClientH]->m_cWhisperPlayerName, cName);
-				break;
-			}
-
-		if (m_pClientList[iClientH]->m_iWhisperPlayerIndex == -1) {
-			std::memset(m_pClientList[iClientH]->m_cWhisperPlayerName, 0, sizeof(m_pClientList[iClientH]->m_cWhisperPlayerName));
-			strcpy(m_pClientList[iClientH]->m_cWhisperPlayerName, cName);
-			m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = true;
-		}
-		else {
-			SendNotifyMsg(0, iClientH, DEF_NOTIFY_WHISPERMODEON, 0, 0, 0, m_pClientList[iClientH]->m_cWhisperPlayerName);
-		}
-	}
 
 }
 
@@ -20491,7 +20496,7 @@ void CGame::SetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 void CGame::GetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[11], cBuff[256], cBuff2[500];
+	char* token, cName[DEF_CHARNAME], cBuff[256], cBuff2[500];
 	
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -20506,12 +20511,12 @@ void CGame::GetPlayerProfile(int iClientH, char* pMsg, size_t dwMsgSize)
 
 	if (token != 0) {
 		// token
-		if (strlen(token) > 10)
-			memcpy(cName, token, 10);
+		if (strlen(token) > DEF_CHARNAME - 1)
+			memcpy(cName, token, DEF_CHARNAME - 1);
 		else memcpy(cName, token, strlen(token));
 
 		for(int i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cName, 10) == 0)) {
+			if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cName, DEF_CHARNAME - 1) == 0)) {
 
 				std::memset(cBuff2, 0, sizeof(cBuff2));
 				std::snprintf(cBuff2, sizeof(cBuff2), "%s Profile: %s", cName, m_pClientList[i]->m_cProfile);
@@ -21441,7 +21446,7 @@ bool CGame::bAnalyzeCriminalAction(int iClientH, short dX, short dY, bool bIsChe
 {
 	int   iNamingValue, tX, tY;
 	short sOwnerH;
-	char  cOwnerType, cName[11], cNpcName[21];
+	char  cOwnerType, cName[DEF_CHARNAME], cNpcName[DEF_NPCNAME];
 	char  cNpcWaypoint[11];
 
 	if (m_pClientList[iClientH] == 0) return false;
@@ -21605,7 +21610,7 @@ void CGame::CheckDayOrNightMode()
 void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dwMsgSize)
 {
 	char   seps[] = "= \t\r\n";
-	char* token, cName[11], cBuff[256];
+	char* token, cName[DEF_CHARNAME], cBuff[256];
 	
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -21630,12 +21635,12 @@ void CGame::SetPlayerReputation(int iClientH, char* pMsg, char cValue, size_t dw
 
 	if (token != 0) {
 		// token
-		if (strlen(token) > 10)
-			memcpy(cName, token, 10);
+		if (strlen(token) > DEF_CHARNAME - 1)
+			memcpy(cName, token, DEF_CHARNAME - 1);
 		else memcpy(cName, token, strlen(token));
 
 		for(int i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cName, 10) == 0)) {
+			if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cName, DEF_CHARNAME - 1) == 0)) {
 
 				if (i != iClientH) {
 					if (cValue == 0)
@@ -21748,19 +21753,19 @@ void CGame::NoticeHandler()
 
 void CGame::ResponseSavePlayerDataReplyHandler(char* pData, size_t dwMsgSize)
 {
-	char* cp, cCharName[11];
-	
+	char* cp, cCharName[DEF_CHARNAME];
+
 
 	std::memset(cCharName, 0, sizeof(cCharName));
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	cp = (char*)(pData + sizeof(hb::net::PacketHeader));
-	memcpy(cCharName, cp, 10);
+	memcpy(cCharName, cp, DEF_CHARNAME - 1);
 
 	for(int i = 0; i < DEF_MAXCLIENTS; i++)
 		if (m_pClientList[i] != 0) {
-			if (memcmp(m_pClientList[i]->m_cCharName, cCharName, 10) == 0) {
+			if (_strnicmp(m_pClientList[i]->m_cCharName, cCharName, DEF_CHARNAME - 1) == 0) {
 				SendNotifyMsg(0, i, DEF_NOTIFY_SERVERCHANGE, 0, 0, 0, 0);
 			}
 		}
@@ -21854,12 +21859,12 @@ void CGame::UserCommand_BanGuildsman(int iClientH, char* pData, size_t dwMsgSize
 	token = strtok(NULL, seps);
 
 	if (token != 0) {
-		if (strlen(token) > 10)
-			memcpy(cTargetName, token, 10);
+		if (strlen(token) > DEF_CHARNAME - 1)
+			memcpy(cTargetName, token, DEF_CHARNAME - 1);
 		else memcpy(cTargetName, token, strlen(token));
 
 		for(int i = 1; i < DEF_MAXCLIENTS; i++)
-			if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cTargetName, 10) == 0)) {
+			if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cCharName, cTargetName, DEF_CHARNAME - 1) == 0)) {
 
 				if (memcmp(m_pClientList[iClientH]->m_cGuildName, m_pClientList[i]->m_cGuildName, 20) != 0) {
 
@@ -21900,7 +21905,7 @@ void CGame::RequestCreateNewGuild(int iClientH, char* pData)
 	char cFileName[255];
 	char cTxt[500];
 	char cTxt2[100];
-	char cGuildMasterName[11], cGuildLocation[11], cDir[255], cGuildName[21];
+	char cGuildMasterName[DEF_CHARNAME], cGuildLocation[11], cDir[255], cGuildName[21];
 	char* cp;
 	uint32_t* dwp, dwGuildGUID;
 	SYSTEMTIME SysTime;
@@ -22013,7 +22018,7 @@ void CGame::RequestDisbandGuild(int iClientH, char* pData)
 	char cTemp[500];
 	char* cp;
 	char cFileName[255], cTxt[100], cDir[100];
-	char cGuildMasterName[11], cGuildName[21];
+	char cGuildMasterName[DEF_CHARNAME], cGuildName[21];
 	FILE* pFile;
 
 	if (m_pClientList[iClientH] == 0) return;
@@ -22643,7 +22648,7 @@ void CGame::ForceDisconnectAccount(char* pAccountName, uint16_t wCount)
 	
 
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
-		if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cAccountName, pAccountName, 10) == 0)) {
+		if ((m_pClientList[i] != 0) && (_strnicmp(m_pClientList[i]->m_cAccountName, pAccountName, DEF_ACCOUNT_NAME - 1) == 0)) {
 			std::snprintf(G_cTxt, sizeof(G_cTxt), "<%d> Force disconnect account: CharName(%s) AccntName(%s) Count(%d)", i, m_pClientList[i]->m_cCharName, m_pClientList[i]->m_cAccountName, wCount);
 			PutLogList(G_cTxt);
 
@@ -23686,7 +23691,7 @@ bool CGame::bDeleteMineral(int iIndex)
 
 void CGame::NpcTalkHandler(int iClientH, int iWho)
 {
-	char cRewardName[DEF_ITEMNAME], cTargetName[21];
+	char cRewardName[DEF_ITEMNAME], cTargetName[DEF_NPCNAME];
 	int iResMode, iQuestNum, iQuestType, iRewardType, iRewardAmount, iContribution, iX, iY, iRange, iTargetType, iTargetCount;
 
 	iQuestNum = 0;
@@ -24089,8 +24094,8 @@ void CGame::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, char* 
 		iTargetIndex = 0;
 		if (token != 0) {
 			// token
-			if (strlen(token) > 10)
-				memcpy(cTargetName, token, 10);
+			if (strlen(token) > DEF_CHARNAME - 1)
+				memcpy(cTargetName, token, DEF_CHARNAME - 1);
 			else memcpy(cTargetName, token, strlen(token));
 
 			// 2002.8.17
@@ -24098,7 +24103,7 @@ void CGame::SetSummonMobAction(int iClientH, int iMode, size_t dwMsgSize, char* 
 			{
 				// if ((m_pClientList[i] != 0) && (memcmp(m_pClientList[i]->m_cCharName, cTargetName, 10) == 0)) { // original
 				if ((m_pClientList[i] != 0) &&
-					(memcmp(m_pClientList[i]->m_cCharName, cTargetName, 10) == 0) &&
+					(_strnicmp(m_pClientList[i]->m_cCharName, cTargetName, DEF_CHARNAME - 1) == 0) &&
 					(strcmp(m_pClientList[iClientH]->m_cMapName, m_pClientList[i]->m_cMapName) == 0)) // adamas(map  .)
 				{
 					iTargetIndex = i;
@@ -24637,7 +24642,7 @@ void CGame::SetExchangeItem(int iClientH, int iItemIndex, int iAmount)
 
 	if ((m_pClientList[iClientH]->m_bIsExchangeMode) && (m_pClientList[iClientH]->m_iExchangeH != 0)) {
 		iExH = m_pClientList[iClientH]->m_iExchangeH;
-		if ((m_pClientList[iExH] == 0) || (memcmp(m_pClientList[iClientH]->m_cExchangeName, m_pClientList[iExH]->m_cCharName, 10) != 0)) {
+		if ((m_pClientList[iExH] == 0) || (_strnicmp(m_pClientList[iClientH]->m_cExchangeName, m_pClientList[iExH]->m_cCharName, DEF_CHARNAME - 1) != 0)) {
 
 		}
 		else {
@@ -24696,9 +24701,9 @@ void CGame::ConfirmExchangeItem(int iClientH)
 		if (iClientH == iExH) return;
 
 		if (m_pClientList[iExH] != 0) {
-			if ((memcmp(m_pClientList[iClientH]->m_cExchangeName, m_pClientList[iExH]->m_cCharName, 10) != 0) ||
+			if ((_strnicmp(m_pClientList[iClientH]->m_cExchangeName, m_pClientList[iExH]->m_cCharName, DEF_CHARNAME - 1) != 0) ||
 				(m_pClientList[iExH]->m_bIsExchangeMode != true) ||
-				(memcmp(m_pClientList[iExH]->m_cExchangeName, m_pClientList[iClientH]->m_cCharName, 10) != 0)) {
+				(_strnicmp(m_pClientList[iExH]->m_cExchangeName, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1) != 0)) {
 				_ClearExchangeStatus(iClientH);
 				_ClearExchangeStatus(iExH);
 				return;
@@ -25154,7 +25159,7 @@ void CGame::QuestAcceptedHandler(int iClientH)
 void CGame::_SendQuestContents(int iClientH)
 {
 	int iWho, iIndex, iQuestType, iContribution, iTargetType, iTargetCount, iX, iY, iRange, iQuestCompleted;
-	char cTargetName[21];
+	char cTargetName[DEF_NPCNAME];
 
 	if (m_pClientList[iClientH] == 0) return;
 
@@ -25175,7 +25180,7 @@ void CGame::_SendQuestContents(int iClientH)
 		iY = m_pQuestConfigList[iIndex]->m_sY;
 		iRange = m_pQuestConfigList[iIndex]->m_iRange;
 		std::memset(cTargetName, 0, sizeof(cTargetName));
-		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, 20);
+		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, DEF_NPCNAME - 1);
 		iQuestCompleted = (int)m_pClientList[iClientH]->m_bIsQuestCompleted;
 
 		SendNotifyMsg(0, iClientH, DEF_NOTIFY_QUESTCONTENTS, iWho, iQuestType, iContribution, 0,
@@ -25186,7 +25191,7 @@ void CGame::_SendQuestContents(int iClientH)
 void CGame::_CheckQuestEnvironment(int iClientH)
 {
 	int iIndex;
-	char cTargetName[21];
+	char cTargetName[DEF_NPCNAME];
 
 	if (m_pClientList[iClientH] == 0) return;
 
@@ -25217,7 +25222,7 @@ void CGame::_CheckQuestEnvironment(int iClientH)
 	case DEF_QUESTTYPE_MONSTERHUNT:
 	case DEF_QUESTTYPE_GOPLACE:
 		std::memset(cTargetName, 0, sizeof(cTargetName));
-		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, 20);
+		memcpy(cTargetName, m_pQuestConfigList[iIndex]->m_cTargetName, DEF_NPCNAME - 1);
 		if (memcmp(m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_cName, cTargetName, 10) == 0)
 			m_pClientList[iClientH]->m_bQuestMatchFlag_Loc = true;
 		else m_pClientList[iClientH]->m_bQuestMatchFlag_Loc = false;
@@ -26201,7 +26206,7 @@ void CGame::RequestNoticementHandler(int iClientH)
 void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
 {
 	int* ip, iLevel;
-	char* cp, cAccountName[11], cAccountPassword[11];
+	char* cp, cAccountName[11], cAccountPassword[DEF_ACCOUNT_PASS];
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
@@ -26210,10 +26215,10 @@ void CGame::RequestCheckAccountPasswordHandler(char* pData, size_t dwMsgSize)
 	std::memset(cAccountName, 0, sizeof(cAccountName));
 	std::memset(cAccountPassword, 0, sizeof(cAccountPassword));
 
-	memcpy(cAccountName, cp, 10);
+	memcpy(cAccountName, cp, DEF_ACCOUNT_NAME - 1);
 	cp += 10;
 
-	memcpy(cAccountPassword, cp, 10);
+	memcpy(cAccountPassword, cp, DEF_ACCOUNT_PASS - 1);
 	cp += 10;
 
 	ip = (int*)cp;
@@ -26620,7 +26625,7 @@ void CGame::JoinPartyHandler(int iClientH, int iV1, const char* pMemberName)
 			wp = (uint16_t*)cp;
 			*wp = iClientH;
 			cp += 2;
-			memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+			memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 			cp += 10;
 			wp = (uint16_t*)cp;
 			*wp = m_pClientList[iClientH]->m_iPartyID;
@@ -26939,7 +26944,7 @@ void CGame::AgingMapSectorInfo()
 bool CGame::__bSetConstructionKit(int iMapIndex, int dX, int dY, int iType, int iTimeCost, int iClientH)
 {
 	int iNamingValue, tX, tY;
-	char cNpcName[21], cName[21], cNpcWaypoint[11], cOwnerType;
+	char cNpcName[DEF_NPCNAME], cName[DEF_NPCNAME], cNpcWaypoint[11], cOwnerType;
 	short sOwnerH;
 
 	if ((m_bIsCrusadeMode == false) || (m_pClientList[iClientH]->m_iCrusadeDuty != 2)) return false;
@@ -27073,7 +27078,7 @@ void CGame::LocalEndCrusadeMode(int iWinnerSide)
 void CGame::CreateCrusadeStructures()
 {
 	int z, tX, tY, iNamingValue;
-	char cName[6], cNpcName[21], cNpcWayPoint[11];
+	char cName[6], cNpcName[DEF_NPCNAME], cNpcWayPoint[11];
 
 	std::memset(cName, 0, sizeof(cName));
 	std::memset(cNpcName, 0, sizeof(cNpcName));
@@ -27220,7 +27225,7 @@ void CGame::RequestSetGuildConstructLocHandler(int iClientH, int dX, int dY, int
 // New 14/05/2004 Changed
 void CGame::RequestSummonWarUnitHandler(int iClientH, int dX, int dY, char cType, char cNum, char cMode)
 {
-	char cName[6], cNpcName[21], cMapName[11], cNpcWayPoint[11], cOwnerType;
+	char cName[6], cNpcName[DEF_NPCNAME], cMapName[11], cNpcWayPoint[11], cOwnerType;
 	int x;
 	int iNamingValue, tX, tY;
 	int bRet;
@@ -28328,7 +28333,7 @@ int CGame::FindClientByName(const char* pName) const
 	{
 		if (m_pClientList[i] != nullptr && m_pClientList[i]->m_bIsInitComplete)
 		{
-			if (_strnicmp(m_pClientList[i]->m_cCharName, pName, 10) == 0)
+			if (_strnicmp(m_pClientList[i]->m_cCharName, pName, DEF_CHARNAME - 1) == 0)
 				return i;
 		}
 	}
@@ -30581,8 +30586,8 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 			return;
 		}
 
-		if (strlen(token) > 10) {
-			memcpy(cPlayerName, token, 10);
+		if (strlen(token) > DEF_CHARNAME - 1) {
+			memcpy(cPlayerName, token, DEF_CHARNAME - 1);
 		}
 		else {
 			memcpy(cPlayerName, token, strlen(token));
@@ -30590,7 +30595,7 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 
 		for(int i = 1; i < DEF_MAXCLIENTS; i++) {
 			if (m_pClientList[i] != 0) {
-				if (memcmp(cPlayerName, m_pClientList[i]->m_cCharName, 10) == 0) {
+				if (_strnicmp(cPlayerName, m_pClientList[i]->m_cCharName, DEF_CHARNAME - 1) == 0) {
 					if ((m_pClientList[iClientH]->m_cLocation) != (m_pClientList[i]->m_cLocation)) return;
 					std::memset(cMapName, 0, sizeof(cMapName));
 					strcpy(cMapName, m_pClientList[i]->m_cMapName);
@@ -30607,7 +30612,7 @@ void CGame::Command_YellowBall(int iClientH, char* pData, size_t dwMsgSize)
 
 void CGame::Command_RedBall(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char seps[] = "= \t\r\n", cName[21], cNpcName[21], cNpcWaypoint[11];
+	char seps[] = "= \t\r\n", cName[DEF_NPCNAME], cNpcName[DEF_NPCNAME], cNpcWaypoint[11];
 	int iNamingValue, tX, tY, x, iNpcID;
 	int iSoxH, iSoX;
 
@@ -30670,7 +30675,7 @@ void CGame::Command_BlueBall(int iClientH, char* pData, size_t dwMsgSize)
 
 {
 	char seps[] = "= \t\r\n";
-	char   cName_Master[10], cName_Slave[10], cNpcName[256], cWaypoint[11], cSA;
+	char   cName_Master[10], cName_Slave[10], cNpcName[DEF_NPCNAME], cWaypoint[11], cSA;
 	int    pX, pY, j, iNum, iNamingValue, iNpcID;
 	int x;
 	bool   bMaster;
@@ -31260,7 +31265,7 @@ void CGame::RequestCreatePartyHandler(int iClientH)
 	*wp = iClientH;
 	cp += 2;
 
-	memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+	memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 	cp += 10;
 
 	PartyOperation(cData);;
@@ -31291,7 +31296,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		cp += 2;
 
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, cp, 10);
+		memcpy(cName, cp, DEF_CHARNAME - 1);
 		cp += 10;
 
 		wp = (uint16_t*)cp;
@@ -31321,7 +31326,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		cp += 2;
 
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, cp, 10);
+		memcpy(cName, cp, DEF_CHARNAME - 1);
 		cp += 10;
 
 		if ((iClientH < 0) && (iClientH > DEF_MAXCLIENTS)) return;
@@ -31363,7 +31368,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		cp += 2;
 
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, cp, 10);
+		memcpy(cName, cp, DEF_CHARNAME - 1);
 		cp += 10;
 
 		wp = (uint16_t*)cp;
@@ -31382,7 +31387,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		cp += 2;
 
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, cp, 10);
+		memcpy(cName, cp, DEF_CHARNAME - 1);
 		cp += 10;
 
 		wp = (uint16_t*)cp;
@@ -31404,7 +31409,7 @@ void CGame::PartyOperationResultHandler(char* pData)
 		cp += 2;
 
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, cp, 10);
+		memcpy(cName, cp, DEF_CHARNAME - 1);
 		cp += 10;
 
 		wp = (uint16_t*)cp;
@@ -31679,7 +31684,7 @@ void CGame::RequestJoinPartyHandler(int iClientH, char* pData, size_t dwMsgSize)
 			wp = (uint16_t*)cp;
 			*wp = iClientH;
 			cp += 2;
-			memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+			memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 			cp += 10;
 			wp = (uint16_t*)cp;
 			*wp = m_pClientList[i]->m_iPartyID;
@@ -31710,7 +31715,7 @@ void CGame::RequestDismissPartyHandler(int iClientH)
 	wp = (uint16_t*)cp;
 	*wp = iClientH;
 	cp += 2;
-	memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+	memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 	cp += 10;
 	wp = (uint16_t*)cp;
 	*wp = m_pClientList[iClientH]->m_iPartyID;
@@ -31739,7 +31744,7 @@ void CGame::GetPartyInfoHandler(int iClientH)
 	wp = (uint16_t*)cp;
 	*wp = iClientH;
 	cp += 2;
-	memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+	memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 	cp += 10;
 	wp = (uint16_t*)cp;
 	*wp = m_pClientList[iClientH]->m_iPartyID;
@@ -31775,7 +31780,7 @@ void CGame::RequestDeletePartyHandler(int iClientH)
 		wp = (uint16_t*)cp;
 		*wp = iClientH;
 		cp += 2;
-		memcpy(cp, m_pClientList[iClientH]->m_cCharName, 10);
+		memcpy(cp, m_pClientList[iClientH]->m_cCharName, DEF_CHARNAME - 1);
 		cp += 10;
 		wp = (uint16_t*)cp;
 		*wp = m_pClientList[iClientH]->m_iPartyID;
@@ -31921,7 +31926,7 @@ void CGame::PartyOperation(char* pData)
 	cp += 2;
 
 	std::memset(cName, 0, sizeof(cName));
-	memcpy(cName, cp, 10);
+	memcpy(cName, cp, DEF_CHARNAME - 1);
 	cp += 10;
 
 	wp = (uint16_t*)cp;
@@ -32962,7 +32967,7 @@ bool CGame::bPlantSeedBag(int iMapIndex, int dX, int dY, int iItemEffectValue1, 
 {
 	int iNamingValue, tX, tY;
 	short sOwnerH;
-	char cOwnerType, cNpcName[21], cName[21], cNpcWaypointIndex[11];
+	char cOwnerType, cNpcName[DEF_NPCNAME], cName[DEF_NPCNAME], cNpcWaypointIndex[11];
 	int bRet;
 
 	if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->m_iTotalAgriculture >= 200) {
@@ -33305,7 +33310,7 @@ bool CGame::bCalculateEnduranceDecrement(short sTargetH, short sAttackerH, char 
 uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short sAttackerH, char cAttackerType, int tdX, int tdY, int iAttackMode, bool bNearAttack, bool bIsDash, bool bArrowUse)
 {
 	int    iAP_SM, iAP_L, iAttackerHitRatio, iTargetDefenseRatio, iDestHitRatio, iResult, iAP_Abs_Armor, iAP_Abs_Shield;
-	char   cAttackerName[21], cAttackerDir, cAttackerSide, cTargetDir, cProtect, cCropSkill, cFarmingSkill;
+	char   cAttackerName[DEF_NPCNAME], cAttackerDir, cAttackerSide, cTargetDir, cProtect, cCropSkill, cFarmingSkill;
 	short  sWeaponIndex, sAttackerWeapon, dX, dY, sX, sY, sAtkX, sAtkY, sTgtX, sTgtY;
 	uint32_t  dwTime;
 	uint16_t   wWeaponType;
@@ -33599,7 +33604,7 @@ uint32_t CGame::iCalculateAttackEffect(short sTargetH, char cTargetType, short s
 		iAttackerHitRatio = m_pNpcList[sAttackerH]->m_iHitRatio;
 
 		cAttackerDir = m_pNpcList[sAttackerH]->m_cDir;
-		memcpy(cAttackerName, m_pNpcList[sAttackerH]->m_cNpcName, 20);
+		memcpy(cAttackerName, m_pNpcList[sAttackerH]->m_cNpcName, DEF_NPCNAME - 1);
 
 		if (m_pNpcList[sAttackerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_BERSERK] != 0)
 			bIsAttackerBerserk = true;
@@ -35181,7 +35186,7 @@ bool CGame::bCheckHeldenianMap(int sAttackerH, int iMapIndex, char cType)
 
 void CGame::RequestHeldenianTeleport(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char cTmpName[21], * cp, cTxt[512], cMapName[11];
+	char cTmpName[DEF_NPCNAME], * cp, cTxt[512], cMapName[11];
 	short tX, tY, cLoc, * sp;
 	uint16_t wResult;
 	int iRet, iWhyReturn, iProcessed;
@@ -35280,7 +35285,7 @@ void CGame::GlobalStartHeldenianMode()
 void CGame::LocalStartHeldenianMode(short sV1, short sV2, uint32_t dwHeldenianGUID)
 {
 	int x, z, iNamingValue;
-	char cName[11], cTmp[21], cNpcWaypointIndex[10], cSide, cOwnerType;
+	char cName[DEF_CHARNAME], cTmp[21], cNpcWaypointIndex[10], cSide, cOwnerType;
 	short sOwnerH;
 	int bRet;
 	int dX, dY;
@@ -36209,7 +36214,7 @@ void CGame::SetAngelFlag(short sOwnerH, char cOwnerType, int iStatus, int iTemp)
 *********************************************************************************************************************/
 void CGame::GetAngelHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
-	char cTmpName[21];
+	char cTmpName[DEF_NPCNAME];
 	int   iAngel;
 	CItem* pItem;
 	int   iRet, iEraseReq;

@@ -24,8 +24,9 @@ public:
 
 private:
     void RenderItemTooltip();
-    void DrawTileGrid();      // Simple dark grid lines
-    void DrawPatchingGrid();  // Debug grid with zone colors
+    void DrawTileGrid();           // Simple dark grid lines
+    void DrawPatchingGrid();       // Debug grid with zone colors
+    void DrawSpellTargetOverlay(); // Spell AoE targeting overlay (debug only)
 
 private:
     // Screen-specific state (previously file-scope static variables)

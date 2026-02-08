@@ -80,6 +80,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
 
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
+
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -143,6 +146,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, i
 
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
+
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, fix_x, fix_y, dwTime);
 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
@@ -226,6 +232,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
 
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, fix_x, fix_y, dwTime);
+
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -295,6 +304,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
+
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
@@ -443,6 +455,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, sX + dx, sY + dy);
 
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX + dx, sY + dy, dwTime);
+
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -510,6 +525,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, 
 	// Chat message (always)
 	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
 
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
+
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -556,6 +574,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX
 
 	// Chat message (always)
 	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
@@ -628,6 +649,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX,
 
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, sX, sY);
+
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
@@ -703,6 +727,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int
 	// GM mode (always)
 	RenderHelpers::DrawGMEffect(m_game, state, fix_x, fix_y);
 
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, fix_x, fix_y, dwTime);
+
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
@@ -759,6 +786,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY, int sX, 
 
 	// Chat message (always)
 	RenderHelpers::UpdateChat(m_game, state, sX, sY, indexX, indexY);
+
+	// AFK indicator (local player only)
+	RenderHelpers::DrawAfkEffect(m_game, state, sX, sY, dwTime);
 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }

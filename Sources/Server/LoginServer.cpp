@@ -253,7 +253,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 
 	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
-		if (_strnicmp(entry.characterName, cName, 10) == 0) {
+		if (_strnicmp(entry.characterName, cName, DEF_CHARNAME - 1) == 0) {
 			SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
 			return;
 		}
@@ -529,7 +529,7 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	CloseAccountDatabase(db);
 
 	for (auto it = chars.begin(); it != chars.end();) {
-		if (_strnicmp(it->characterName, cName, 10) == 0) {
+		if (_strnicmp(it->characterName, cName, DEF_CHARNAME - 1) == 0) {
 			it = chars.erase(it);
 			continue;
 		}
@@ -713,21 +713,21 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 {
 	//	PutLogList("RequestEnterGame()");
 
-	char cName[11] = {};
+	char cName[DEF_CHARNAME] = {};
 	char cMapName[11] = {};
-	char cAcc[11] = {};
-	char cPass[11] = {};
+	char cAcc[DEF_ACCOUNT_NAME] = {};
+	char cPass[DEF_ACCOUNT_PASS] = {};
 	int lvl;
 	char ws_name[31] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::EnterGameRequest>(pData, sizeof(hb::net::EnterGameRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, 10);
+	std::memcpy(cName, req->character_name, DEF_CHARNAME - 1);
 	std::memcpy(cMapName, req->map_name, 10);
-	std::memcpy(cAcc, req->account_name, 10);
+	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPass, req->password, 10);
+	std::memcpy(cPass, req->password, DEF_ACCOUNT_PASS - 1);
 	lvl = req->level;
 	std::memcpy(ws_name, req->world_name, 10);
 

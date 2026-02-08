@@ -24,10 +24,20 @@
 #define DEF_MAGICTYPE_CONFUSE			16 
 #define DEF_MAGICTYPE_POISON			17 
 #define DEF_MAGICTYPE_BERSERK			18
+#define DEF_MAGICTYPE_DAMAGE_LINEAR		19
 #define DEF_MAGICTYPE_POLYMORPH			20
 #define DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT	21
-#define DEF_MAGICTYPE_TREMOR				22 
-#define DEF_MAGICTYPE_ICE					23 
+#define DEF_MAGICTYPE_TREMOR				22
+#define DEF_MAGICTYPE_ICE					23
+#define DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT_SPDOWN	25
+#define DEF_MAGICTYPE_ICE_LINEAR			26
+#define DEF_MAGICTYPE_DAMAGE_AREA_ARMOR_BREAK	28
+#define DEF_MAGICTYPE_CANCELLATION			29
+#define DEF_MAGICTYPE_DAMAGE_LINEAR_SPDOWN	30
+#define DEF_MAGICTYPE_INHIBITION			31
+#define DEF_MAGICTYPE_RESURRECTION			32
+#define DEF_MAGICTYPE_SCAN					33
+#define DEF_MAGICTYPE_HASTE				45
 
 class CMagic
 {
@@ -46,4 +56,9 @@ public:
 	// CLEROTH
 	int m_sValue4;
 	bool m_bIsVisible;
+	int m_sType = 0;          // DEF_MAGICTYPE_*
+	int m_sAoERadiusX = 0;    // AoE X radius in tiles (server m_sValue2)
+	int m_sAoERadiusY = 0;    // AoE Y radius in tiles (server m_sValue3)
+	int m_sDynamicPattern = 0; // Wall=1, Field=2 (server m_sValue11)
+	int m_sDynamicRadius = 0;  // Wall length / field radius (server m_sValue12)
 };

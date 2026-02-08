@@ -89,4 +89,7 @@ namespace RenderHelpers
 
 	// Draw GM mode crown effect.
 	void DrawGMEffect(CGame& game, const CEntityRenderState& state, int sX, int sY);
+
+	// Draw AFK indicator sprite above local player's head.
+	void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY, uint32_t dwTime);
 }

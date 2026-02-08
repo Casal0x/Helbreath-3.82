@@ -440,4 +440,27 @@ void DrawGMEffect(CGame& game, const CEntityRenderState& state, int sX, int sY)
 		game.m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
 }
 
+// -----------------------------------------------------------------------
+void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY, uint32_t dwTime)
+{
+	if (!state.IsPlayer()) return;
+	if (!state.m_status.bAfk) return;
+
+	// effect9.pak sprite 19 = m_pEffectSpr[66 + 19 = 85], 17 frames (0-16)
+	constexpr int AFK_SPRITE_INDEX = 85;
+	constexpr int AFK_MAX_FRAMES = 17;
+
+	// Random frame timing: 100-200ms per frame
+	static int s_iAfkFrame = 0;
+	static uint32_t s_dwNextFrameTime = 0;
+
+	if (dwTime >= s_dwNextFrameTime)
+	{
+		s_iAfkFrame = (s_iAfkFrame + 1) % AFK_MAX_FRAMES;
+		s_dwNextFrameTime = dwTime + 100 + (rand() % 101); // 100-200ms
+	}
+
+	game.m_pEffectSpr[AFK_SPRITE_INDEX]->Draw(sX + 56, sY+32, s_iAfkFrame, SpriteLib::DrawParams::Alpha(0.8f));
+}
+
 } // namespace RenderHelpers

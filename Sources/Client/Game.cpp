@@ -1364,6 +1364,11 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 		pMagic->m_sValue2 = entry.intLimit;
 		pMagic->m_sValue3 = (entry.goldCost >= 0) ? entry.goldCost : -entry.goldCost;
 		pMagic->m_bIsVisible = (entry.isVisible != 0);
+		pMagic->m_sType = entry.magicType;
+		pMagic->m_sAoERadiusX = entry.aoeRadiusX;
+		pMagic->m_sAoERadiusY = entry.aoeRadiusY;
+		pMagic->m_sDynamicPattern = entry.dynamicPattern;
+		pMagic->m_sDynamicRadius = entry.dynamicRadius;
 	}
 
 	// Log total count on last packet
@@ -3529,7 +3534,7 @@ void CGame::ChatMsgHandler(char* pData)
 
 	const char* cp = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
 	int iChatSlot = m_floatingText.AddChatText(cp, dwTime, iObjectID, m_pMapData.get(), sX, sY);
-	if (iChatSlot != 0) {
+	if (iChatSlot != 0 || cMsgType == 20) {
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
 				std::snprintf(cHeadMsg, sizeof(cHeadMsg), "%s:%s", cName, cp);

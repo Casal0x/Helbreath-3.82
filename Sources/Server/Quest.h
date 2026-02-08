@@ -54,7 +54,7 @@ public:
 
 	int m_iResponseMode;		// : 0(ok) 1(Accept/Decline) 2(Next)
 
-	char m_cTargetName[21];
+	char m_cTargetName[DEF_NPCNAME];
 	int  m_sX, m_sY, m_iRange;
 
 	int  m_iQuestID;

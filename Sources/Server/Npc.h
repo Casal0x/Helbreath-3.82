@@ -36,7 +36,7 @@ public:
 	// Auras
 	char m_pMagicConfigList[100];
 
-	char  m_cNpcName[21]; // NPC . ?
+	char  m_cNpcName[DEF_NPCNAME];
 
 	char  m_cName[6];
 	char  m_cMapIndex;

@@ -7,7 +7,9 @@
 #define DEF_MSGBUFFERSIZE	60000
 #define DEF_ITEMNAME		42
 
-// Account field sizes (buffer = wire size + null terminator)
+// Name and account field sizes (buffer = wire size + null terminator)
+#define DEF_CHARNAME        11   // 10 chars + null (wire size is 10)
+#define DEF_NPCNAME         21   // 20 chars + null (wire size is 20)
 #define DEF_ACCOUNT_NAME    11   // 10 chars + null (wire size is 10)
 #define DEF_ACCOUNT_PASS    11   // 10 chars + null (wire size is 10)
 #define DEF_ACCOUNT_EMAIL   51   // 50 chars + null

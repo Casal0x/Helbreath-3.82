@@ -18,7 +18,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Parse character name (first word)
-	char cCharName[11] = {};
+	char cCharName[DEF_CHARNAME] = {};
 	const char* p = pArgs;
 	int ci = 0;
 	while (*p != '\0' && *p != ' ' && *p != '\t' && ci < 10)

@@ -70,7 +70,7 @@ public:
 	CClient(asio::io_context& ctx);
 	virtual ~CClient();
 
-	char m_cCharName[DEF_ACCOUNT_NAME];
+	char m_cCharName[DEF_CHARNAME];
 	char m_cAccountName[DEF_ACCOUNT_NAME];
 	char m_cAccountPassword[DEF_ACCOUNT_PASS];
 
@@ -93,6 +93,7 @@ public:
 	PlayerStatus m_status;
 
 	uint32_t m_dwTime, m_dwHPTime, m_dwMPTime, m_dwSPTime, m_dwAutoSaveTime, m_dwHungerTime, m_dwWarmEffectTime;
+	uint32_t m_dwAfkActivityTime;
 	// Player
 
 	char m_cSex, m_cSkin, m_cHairStyle, m_cHairColor, m_cUnderwear;
@@ -240,7 +241,7 @@ public:
 
 	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
 	int   m_iExchangeH;					// Client ID to Exchanging with 
-	char  m_cExchangeName[11];			// Name of Client to Exchanging with 
+	char  m_cExchangeName[DEF_CHARNAME];	// Name of Client to Exchanging with
 	short m_sExchangeItemID[4];	// Item ID to validate exchange hasn't been tampered
 
 	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
@@ -351,14 +352,14 @@ public:
 	int m_iPartyID;
 	int m_iPartyStatus;
 	int m_iReqJoinPartyClientH;
-	char m_cReqJoinPartyName[12];
+	char m_cReqJoinPartyName[DEF_CHARNAME];
 
 	int   m_iPartyRank;										// Party . -1 . 1  . 12 ?
 	int   m_iPartyMemberCount;
 	int   m_iPartyGUID;										// v1.42 Party GUID
 	struct {
 	int  iIndex;
-	char cName[11];
+	char cName[DEF_CHARNAME];
 	} m_stPartyMemberName[DEF_MAXPARTYMEMBERS];
 
 	// New 07/05/2004
@@ -366,7 +367,7 @@ public:
 	int m_iDeadPenaltyTime;
 
 	// New 16/05/2004
-	char m_cWhisperPlayerName[11];
+	char m_cWhisperPlayerName[DEF_CHARNAME];
 	bool m_bIsInsideWarehouse;
 	bool m_bIsInsideWizardTower;
 	bool m_bIsInsideOwnTown;

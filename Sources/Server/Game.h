@@ -294,8 +294,8 @@ struct LoginClient
 };
 
 struct AdminEntry {
-	char m_cAccountName[11];
-	char m_cCharName[11];
+	char m_cAccountName[DEF_ACCOUNT_NAME];
+	char m_cCharName[DEF_CHARNAME];
 	char m_cApprovedIP[21];
 	int m_iAdminLevel = 1;
 };
@@ -562,7 +562,6 @@ public:
 	void ___RestorePlayerCharacteristics(int iClientH);
 	void GetPlayerProfile(int iClientH, char * pMsg, size_t dwMsgSize);
 	void SetPlayerProfile(int iClientH, char * pMsg, size_t dwMsgSize);
-	void ToggleWhisperPlayer(int iClientH, char * pMsg, size_t dwMsgSize);
 	void CheckAndNotifyPlayerConnection(int iClientH, char * pMsg, uint32_t dwSize);
 	int iCalcTotalWeight(int iClientH);
 	void ReqRepairItemCofirmHandler(int iClientH, char cItemID, const char * pString);
