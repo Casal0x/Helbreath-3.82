@@ -5422,7 +5422,7 @@ void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
 		}
 }
 
-std::unique_ptr<CMsg> CGame::CreateDamageMsg(short sDamage)
+std::unique_ptr<CMsg> CGame::CreateDamageMsg(short sDamage, bool bLastHit)
 {
 	char cTxt[64]{};
 	if (sDamage == DEF_DAMAGE_IMMUNE)
@@ -5444,7 +5444,10 @@ std::unique_ptr<CMsg> CGame::CreateDamageMsg(short sDamage)
 	}
 	if (sDamage > 0)
 	{
-		std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sDamage);
+		if (bLastHit && sDamage >= 12)
+			std::snprintf(cTxt, sizeof(cTxt), "-%dPts!", sDamage);
+		else
+			std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sDamage);
 		int iFontType;
 		if (sDamage < 12)		iFontType = 21;
 		else if (sDamage < 40)	iFontType = 22;
@@ -10832,7 +10835,7 @@ void CGame::MotionEventHandler(char* pData)
 		for (i = 1; i < DEF_MAXCHATMSGS; i++)
 			if (m_pChatMsgList[i] == 0)
 			{
-				m_pChatMsgList[i] = CreateDamageMsg(sV1);
+				m_pChatMsgList[i] = CreateDamageMsg(sV1, true);
 				if (!m_pChatMsgList[i]) return;
 				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
 				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
