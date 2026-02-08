@@ -15,6 +15,7 @@
 #include <SFML/OpenGL.hpp>
 #include <cmath>
 #include <cstring>
+#include <thread>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -34,6 +35,17 @@ SFMLRenderer::SFMLRenderer()
     , m_width(640)  // Default, updated in CreateRenderTextures
     , m_height(480) // Default, updated in CreateRenderTextures
     , m_fullscreen(false)
+    , m_bFullscreenStretch(false)
+    , m_iFpsLimit(0)
+    , m_bVSync(false)
+    , m_bSkipFrame(false)
+    , m_lastPresentTime(std::chrono::steady_clock::now())
+    , m_targetFrameDuration(std::chrono::steady_clock::duration::zero())
+    , m_fps(0)
+    , m_framesThisSecond(0)
+    , m_deltaTime(0.0)
+    , m_fpsAccumulator(0.0)
+    , m_lastPresentedFrameTime(std::chrono::steady_clock::now())
     , m_spriteAlphaDegree(1)
 {
     m_clipArea = GameRectangle(0, 0, m_width, m_height);
@@ -203,6 +215,36 @@ bool SFMLRenderer::IsFullscreen() const
     return m_fullscreen;
 }
 
+void SFMLRenderer::SetFullscreenStretch(bool stretch)
+{
+    m_bFullscreenStretch = stretch;
+}
+
+bool SFMLRenderer::IsFullscreenStretch() const
+{
+    return m_bFullscreenStretch;
+}
+
+void SFMLRenderer::SetFramerateLimit(int limit)
+{
+    m_iFpsLimit = limit;
+    if (limit > 0)
+        m_targetFrameDuration = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+            std::chrono::microseconds(1000000 / limit));
+    else
+        m_targetFrameDuration = std::chrono::steady_clock::duration::zero();
+}
+
+int SFMLRenderer::GetFramerateLimit() const
+{
+    return m_iFpsLimit;
+}
+
+void SFMLRenderer::SetVSyncMode(bool enabled)
+{
+    m_bVSync = enabled;
+}
+
 void SFMLRenderer::ChangeDisplayMode(NativeWindowHandle hWnd)
 {
     // Get the window through the Window factory
@@ -248,6 +290,21 @@ void SFMLRenderer::BeginFrame()
         (void)m_pRenderWindow->setActive(true);
     }
 
+    // Engine-owned frame limiting: skip this frame if not enough time has elapsed
+    // Unlimited (0) always renders; VSync uses monitor refresh rate as the target
+    if (m_iFpsLimit > 0)
+    {
+        auto now = std::chrono::steady_clock::now();
+        if ((now - m_lastPresentTime) < m_targetFrameDuration)
+        {
+            m_bSkipFrame = true;
+            // Sleep 1ms to avoid spinning the CPU (accurate with timeBeginPeriod(1))
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            return;
+        }
+    }
+    m_bSkipFrame = false;
+
     // Reset the view to ensure 1:1 pixel mapping (prevents edge artifacts)
     sf::View pixelView(sf::FloatRect({0.f, 0.f}, {static_cast<float>(m_width), static_cast<float>(m_height)}));
     m_backBuffer.setView(pixelView);
@@ -264,6 +321,9 @@ void SFMLRenderer::BeginFrame()
 
 void SFMLRenderer::EndFrame()
 {
+    if (m_bSkipFrame)
+        return;
+
     // Disable scissor test before presenting
     glDisable(GL_SCISSOR_TEST);
 
@@ -315,9 +375,9 @@ void SFMLRenderer::EndFrame()
         float scaleX = windowWidth / static_cast<float>(m_width);
         float scaleY = windowHeight / static_cast<float>(m_height);
 
-        if (m_fullscreen)
+        if (m_fullscreen && !m_bFullscreenStretch)
         {
-            // Fullscreen: use uniform scale with letterboxing to maintain aspect ratio
+            // Fullscreen letterbox: uniform scale to maintain aspect ratio
             float scale = (scaleY < scaleX) ? scaleY : scaleX;
 
             float destWidth = static_cast<float>(m_width) * scale;
@@ -330,7 +390,7 @@ void SFMLRenderer::EndFrame()
         }
         else
         {
-            // Windowed: stretch to fill window (all resolutions are 4:3)
+            // Windowed or fullscreen stretch: fill entire window
             backBufferSprite.setScale({scaleX, scaleY});
             backBufferSprite.setPosition({0.0f, 0.0f});
         }
@@ -345,14 +405,63 @@ void SFMLRenderer::EndFrame()
         const_cast<sf::Texture&>(m_backBuffer.getTexture()).setSmooth(false);
 
         m_pRenderWindow->display();
+
+        // Track frame metrics at the actual point of present
+        auto now = std::chrono::steady_clock::now();
+
+        if (m_iFpsLimit > 0)
+        {
+            // Advance deadline by exact target duration to prevent timing drift
+            // (snapping to 'now' would accumulate overshoot from sleep granularity)
+            m_lastPresentTime += m_targetFrameDuration;
+
+            // If we've fallen behind by more than one frame, snap to avoid catch-up burst
+            if ((now - m_lastPresentTime) >= m_targetFrameDuration)
+                m_lastPresentTime = now;
+        }
+
+        auto elapsed = std::chrono::duration<double>(now - m_lastPresentedFrameTime);
+        m_deltaTime = elapsed.count();
+        m_lastPresentedFrameTime = now;
+
+        m_framesThisSecond++;
+        m_fpsAccumulator += m_deltaTime;
+        if (m_fpsAccumulator >= 1.0)
+        {
+            m_fps = m_framesThisSecond;
+            m_framesThisSecond = 0;
+            m_fpsAccumulator -= 1.0;
+        }
     }
 }
 
 bool SFMLRenderer::EndFrameCheckLostSurface()
 {
+    if (m_bSkipFrame)
+        return false;
     EndFrame();
     // SFML doesn't have surface loss like DirectDraw
     return false;
+}
+
+bool SFMLRenderer::WasFramePresented() const
+{
+    return !m_bSkipFrame;
+}
+
+uint32_t SFMLRenderer::GetFPS() const
+{
+    return m_fps;
+}
+
+double SFMLRenderer::GetDeltaTime() const
+{
+    return m_deltaTime;
+}
+
+double SFMLRenderer::GetDeltaTimeMS() const
+{
+    return m_deltaTime * 1000.0;
 }
 
 void SFMLRenderer::DrawPixel(int x, int y, const Color& color)

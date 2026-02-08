@@ -99,6 +99,18 @@ public:
 	bool IsBorderlessEnabled() const { return m_bBorderless; }
 	void SetBorderlessEnabled(bool enabled);
 
+	// VSync
+	bool IsVSyncEnabled() const { return m_bVSync; }
+	void SetVSyncEnabled(bool enabled);
+
+	// FPS limit (0 = unlimited)
+	int GetFpsLimit() const { return m_iFpsLimit; }
+	void SetFpsLimit(int limit);
+
+	// Fullscreen stretch (false = letterbox, true = stretch to fill)
+	bool IsFullscreenStretchEnabled() const { return m_bFullscreenStretch; }
+	void SetFullscreenStretchEnabled(bool enabled);
+
 	// Quick Actions - always enabled (pickup during movement, 95% unlock, responsive stops)
 	bool IsQuickActionsEnabled() const { return true; }
 
@@ -151,6 +163,9 @@ private:
 	bool m_bFullscreen;
 	bool m_bCaptureMouse;
 	bool m_bBorderless;
+	bool m_bVSync;
+	int m_iFpsLimit;
+	bool m_bFullscreenStretch;
 	bool m_bTileGrid;
 	bool m_bPatchingGrid;
 

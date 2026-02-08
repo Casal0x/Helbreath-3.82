@@ -40,6 +40,7 @@ public:
 
     // Mouse wheel
     virtual int GetMouseWheelDelta() const override;
+    virtual void ResetMouseWheelDelta() override;
 
     // Modifier keys
     virtual bool IsShiftDown() const override;

@@ -85,6 +85,9 @@ void ConfigManager::SetDefaults()
 #endif
 	m_bCaptureMouse = true;
 	m_bBorderless = true;
+	m_bVSync = false;
+	m_iFpsLimit = 60;
+	m_bFullscreenStretch = false;
 	m_bTileGrid = false;     // Simple tile grid off by default
 	m_bPatchingGrid = false; // Patching debug grid off by default
 
@@ -301,6 +304,19 @@ bool ConfigManager::Load(const char* filename)
 			{
 				m_bPatchingGrid = display["patchingGrid"].get<bool>();
 			}
+			if (display.contains("vsync"))
+			{
+				m_bVSync = display["vsync"].get<bool>();
+			}
+			if (display.contains("fpsLimit"))
+			{
+				m_iFpsLimit = display["fpsLimit"].get<int>();
+				if (m_iFpsLimit < 0) m_iFpsLimit = 0;
+			}
+			if (display.contains("fullscreenStretch"))
+			{
+				m_bFullscreenStretch = display["fullscreenStretch"].get<bool>();
+			}
 		}
 
 		// Validate resolution to nearest 4:3 option
@@ -388,6 +404,9 @@ bool ConfigManager::Save(const char* filename)
 	j["display"]["borderless"] = m_bBorderless;
 	j["display"]["tileGrid"] = m_bTileGrid;
 	j["display"]["patchingGrid"] = m_bPatchingGrid;
+	j["display"]["vsync"] = m_bVSync;
+	j["display"]["fpsLimit"] = m_iFpsLimit;
+	j["display"]["fullscreenStretch"] = m_bFullscreenStretch;
 
 	std::ofstream file(filename);
 	if (!file.is_open())
@@ -709,6 +728,37 @@ void ConfigManager::SetPatchingGridEnabled(bool enabled)
 	if (m_bPatchingGrid != enabled)
 	{
 		m_bPatchingGrid = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetVSyncEnabled(bool enabled)
+{
+	if (m_bVSync != enabled)
+	{
+		m_bVSync = enabled;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetFpsLimit(int limit)
+{
+	if (limit < 0) limit = 0;
+	if (m_iFpsLimit != limit)
+	{
+		m_iFpsLimit = limit;
+		m_bDirty = true;
+		Save();
+	}
+}
+
+void ConfigManager::SetFullscreenStretchEnabled(bool enabled)
+{
+	if (m_bFullscreenStretch != enabled)
+	{
+		m_bFullscreenStretch = enabled;
 		m_bDirty = true;
 		Save();
 	}

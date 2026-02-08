@@ -9,6 +9,7 @@
 
 #include "DevConsole.h"
 #include "FrameTiming.h"
+#include "RendererFactory.h"
 
 #include <cstdio>
 #include <cstdarg>
@@ -92,7 +93,7 @@ void DevConsole::RegisterBuiltInCommands()
 
 	RegisterCommand("fps", [this](const char*) {
 		char buf[64];
-		sprintf_s(buf, "FPS: %u", FrameTiming::GetFPS());
+		sprintf_s(buf, "FPS: %u", Renderer::Get() ? Renderer::Get()->GetFPS() : 0);
 		Print(buf);
 	});
 }

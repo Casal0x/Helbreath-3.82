@@ -7,7 +7,6 @@
 #include "SFMLInput.h"
 #include "SFMLRenderer.h"
 #include "RendererFactory.h"
-#include "ConfigManager.h"
 #include "RenderConstants.h"
 #include <SFML/Window/Event.hpp>
 
@@ -21,7 +20,13 @@ SFMLWindow::SFMLWindow()
     , m_width(0)
     , m_height(0)
     , m_fullscreen(false)
+    , m_bFullscreenStretch(false)
     , m_borderless(true)
+    , m_bMouseCaptureEnabled(true)
+    , m_bVSync(false)
+    , m_iFpsLimit(0)
+    , m_windowedWidth(0)
+    , m_windowedHeight(0)
     , m_active(true)
     , m_open(false)
 {
@@ -39,8 +44,11 @@ bool SFMLWindow::Create(const WindowParams& params)
 
     m_width = params.width;
     m_height = params.height;
+    m_windowedWidth = params.width;
+    m_windowedHeight = params.height;
     m_fullscreen = params.fullscreen;
-    m_borderless = ConfigManager::Get().IsBorderlessEnabled();
+    m_borderless = params.borderless;
+    m_bMouseCaptureEnabled = params.mouseCaptureEnabled;
 
     // Create SFML window
     sf::VideoMode videoMode({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
@@ -74,13 +82,16 @@ bool SFMLWindow::Create(const WindowParams& params)
     }
 #endif
 
-    // Disable VSync by default (game has its own frame timing)
-    m_renderWindow.setVerticalSyncEnabled(false);
+
 
     // Hide the system mouse cursor (game draws its own cursor)
-    // Grab the cursor based on capture mouse setting
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
+    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
+
+    // Request 1ms timer resolution for accurate sleep-based frame limiting
+#ifdef _WIN32
+    timeBeginPeriod(1);
+#endif
 
     m_open = true;
     m_active = true;
@@ -96,6 +107,11 @@ void SFMLWindow::Destroy()
     {
         m_renderWindow.close();
     }
+
+    // Restore default timer resolution
+#ifdef _WIN32
+    timeEndPeriod(1);
+#endif
 
     m_hWnd = nullptr;
     m_open = false;
@@ -152,17 +168,17 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
     int windowWidth, windowHeight;
     if (fullscreen)
     {
-        // Use screen resolution for fullscreen
+        // Save windowed dimensions before going fullscreen
+        m_windowedWidth = m_width;
+        m_windowedHeight = m_height;
         windowWidth = GetSystemMetrics(SM_CXSCREEN);
         windowHeight = GetSystemMetrics(SM_CYSCREEN);
     }
     else
     {
-        // Use configured window size for windowed mode
-        windowWidth = ConfigManager::Get().GetWindowWidth();
-        windowHeight = ConfigManager::Get().GetWindowHeight();
-        if (windowWidth <= 0) windowWidth = LOGICAL_WIDTH();
-        if (windowHeight <= 0) windowHeight = LOGICAL_HEIGHT();
+        // Restore saved windowed dimensions
+        windowWidth = m_windowedWidth > 0 ? m_windowedWidth : LOGICAL_WIDTH();
+        windowHeight = m_windowedHeight > 0 ? m_windowedHeight : LOGICAL_HEIGHT();
     }
 
     // Recreate window with new mode
@@ -196,13 +212,11 @@ void SFMLWindow::SetFullscreen(bool fullscreen)
     }
 #endif
 
-    // Disable VSync (game has its own frame timing)
-    m_renderWindow.setVerticalSyncEnabled(false);
 
-    // Hide the system mouse cursor (game draws its own cursor)
-    // Grab the cursor based on capture mouse setting
+
+    // Reapply cursor settings
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
+    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
 
     // If switching to windowed mode, center the window
     if (!fullscreen)
@@ -243,10 +257,9 @@ void SFMLWindow::SetBorderless(bool borderless)
     }
 #endif
 
-    // Reapply settings
-    m_renderWindow.setVerticalSyncEnabled(false);
+
     m_renderWindow.setMouseCursorVisible(false);
-    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
+    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
 
     // Center the window
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);
@@ -308,7 +321,7 @@ void SFMLWindow::SetSize(int width, int height, bool center)
 
     // Re-apply mouse cursor grab to update grab boundaries to new window size
     m_renderWindow.setMouseCursorGrabbed(false);
-    m_renderWindow.setMouseCursorGrabbed(ConfigManager::Get().IsMouseCaptureEnabled());
+    m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
 }
 
 void SFMLWindow::Show()
@@ -336,9 +349,77 @@ void SFMLWindow::SetTitle(const char* title)
     }
 }
 
+void SFMLWindow::SetFramerateLimit(int limit)
+{
+    m_iFpsLimit = limit;
+    // Forward to renderer for engine-owned frame limiting
+    IRenderer* pRenderer = Renderer::Get();
+    if (pRenderer)
+        static_cast<SFMLRenderer*>(pRenderer)->SetFramerateLimit(limit);
+}
+
+int SFMLWindow::GetFramerateLimit() const
+{
+    return m_iFpsLimit;
+}
+
+void SFMLWindow::SetVSyncEnabled(bool enabled)
+{
+    m_bVSync = enabled;
+    IRenderer* pRenderer = Renderer::Get();
+    if (!pRenderer) return;
+
+    auto* pSFMLRenderer = static_cast<SFMLRenderer*>(pRenderer);
+
+    if (enabled)
+    {
+        // Query the monitor's refresh rate and use it as the FPS target
+        // This avoids SFML's blocking display() and keeps our engine-owned timing
+        int refreshRate = 60; // Safe fallback
+#ifdef _WIN32
+        DEVMODE devMode = {};
+        devMode.dmSize = sizeof(devMode);
+        if (EnumDisplaySettings(nullptr, ENUM_CURRENT_SETTINGS, &devMode))
+        {
+            if (devMode.dmDisplayFrequency > 0)
+                refreshRate = static_cast<int>(devMode.dmDisplayFrequency);
+        }
+#endif
+        pSFMLRenderer->SetVSyncMode(true);
+        pSFMLRenderer->SetFramerateLimit(refreshRate);
+    }
+    else
+    {
+        pSFMLRenderer->SetVSyncMode(false);
+        // Restore the user's FPS limit setting
+        pSFMLRenderer->SetFramerateLimit(m_iFpsLimit);
+    }
+}
+
+bool SFMLWindow::IsVSyncEnabled() const
+{
+    return m_bVSync;
+}
+
+void SFMLWindow::SetFullscreenStretch(bool stretch)
+{
+    m_bFullscreenStretch = stretch;
+}
+
+bool SFMLWindow::IsFullscreenStretch() const
+{
+    return m_bFullscreenStretch;
+}
+
 void SFMLWindow::SetMouseCursorVisible(bool visible)
 {
     m_renderWindow.setMouseCursorVisible(visible);
+}
+
+void SFMLWindow::SetMouseCaptureEnabled(bool enabled)
+{
+    m_bMouseCaptureEnabled = enabled;
+    m_renderWindow.setMouseCursorGrabbed(enabled);
 }
 
 void SFMLWindow::ShowMessageBox(const char* title, const char* message)
@@ -379,6 +460,8 @@ bool SFMLWindow::ProcessMessages()
             m_active = true;
             // Reactivate OpenGL context when focus is regained
             (void)m_renderWindow.setActive(true);
+            // Re-grab mouse cursor if capture is enabled
+            m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
             if (m_pEventHandler)
                 m_pEventHandler->OnActivate(true);
         }
@@ -489,6 +572,7 @@ void SFMLWindow::WaitForMessage()
         {
             m_active = true;
             (void)m_renderWindow.setActive(true);
+            m_renderWindow.setMouseCursorGrabbed(m_bMouseCaptureEnabled);
             if (m_pEventHandler)
                 m_pEventHandler->OnActivate(true);
         }
@@ -658,9 +742,9 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
     float mouseX = static_cast<float>(windowX);
     float mouseY = static_cast<float>(windowY);
 
-    if (m_fullscreen)
+    if (m_fullscreen && !m_bFullscreenStretch)
     {
-        // Fullscreen with letterboxing - need to account for scale and offset
+        // Fullscreen letterbox - account for uniform scale and offset
         float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH());
         float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT());
         float scale = (scaleY < scaleX) ? scaleY : scaleX;
@@ -670,13 +754,12 @@ void SFMLWindow::TransformMouseCoords(int windowX, int windowY, int& logicalX, i
         float offsetX = (windowWidth - destWidth) / 2.0f;
         float offsetY = (windowHeight - destHeight) / 2.0f;
 
-        // Transform from window coords to logical coords
         logicalX = static_cast<int>((mouseX - offsetX) / scale);
         logicalY = static_cast<int>((mouseY - offsetY) / scale);
     }
     else
     {
-        // Windowed mode - simple scaling
+        // Windowed or fullscreen stretch - independent axis scaling
         float scaleX = windowWidth / static_cast<float>(RENDER_LOGICAL_WIDTH());
         float scaleY = windowHeight / static_cast<float>(RENDER_LOGICAL_HEIGHT());
 

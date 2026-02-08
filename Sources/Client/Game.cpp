@@ -422,15 +422,13 @@ void CGame::DrawCursor()
 
 
 
-// RenderFrame: Centralized rendering frame wrapper
-// Handles: Update -> (skip check) -> Clear backbuffer -> Draw -> Fade overlay -> Flip
-// This centralizes surface operations that were previously scattered across all screen methods
-void CGame::RenderFrame()
+// UpdateFrame: Logic update — runs every iteration, decoupled from frame rate
+// Handles: audio, timers, network, game state transitions
+void CGame::UpdateFrame()
 {
 	AudioManager::Get().Update();
 
 	// Process timer and network events (must happen before any update logic)
-	// These were previously in UpdateScreen but need to run regardless of screen system
 	if (m_game_timer.check_and_reset()) {
 		OnTimer();
 	}
@@ -440,7 +438,7 @@ void CGame::RenderFrame()
 	// Update game mode transition state (fade in/out progress)
 	GameModeManager::Update();
 
-	// ============== Update Phase ==============
+	// Update game screens/overlays
 	FrameTiming::BeginProfile(ProfileStage::Update);
 	GameModeManager::UpdateScreens();
 	FrameTiming::EndProfile(ProfileStage::Update);
@@ -450,11 +448,24 @@ void CGame::RenderFrame()
 	{
 		GameModeManager::set_overlay<Overlay_DevConsole>();
 	}
+}
 
+// RenderFrame: Render only — gated by engine frame limiting
+// Handles: clear backbuffer -> draw -> fade overlay -> cursor -> flip
+void CGame::RenderFrame()
+{
 	// ============== Render Phase ==============
 	FrameTiming::BeginProfile(ProfileStage::ClearBuffer);
 	m_Renderer->BeginFrame();
 	FrameTiming::EndProfile(ProfileStage::ClearBuffer);
+
+	// Engine frame limiter decided to skip this frame — return early
+	// Prevents wasted draw calls and keeps behavior identical across all screens
+	if (!m_Renderer->WasFramePresented())
+		return;
+
+	// Mark frame as rendered so FrameTiming only accumulates profiling for real frames
+	FrameTiming::SetFrameRendered(true);
 
 	// Render screens/overlays (skipped during Switching phase)
 	if (GameModeManager::GetTransitionState() != TransitionState::Switching)
@@ -469,6 +480,49 @@ void CGame::RenderFrame()
 		m_Renderer->DrawRectFilled(0, 0, m_Renderer->GetWidth(), m_Renderer->GetHeight(), Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
 	}
 
+	// HUD metrics — drawn on all screens, on top of fade overlay
+	{
+		int iDisplayY = 100;
+
+		// FPS (engine-tracked, counted at actual present)
+		if (ConfigManager::Get().IsShowFpsEnabled())
+		{
+			std::snprintf(G_cTxt, sizeof(G_cTxt), "fps : %u", m_Renderer->GetFPS());
+			TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
+			iDisplayY += 14;
+		}
+
+		// Latency
+		if (ConfigManager::Get().IsShowLatencyEnabled())
+		{
+			if (m_iLatencyMs >= 0)
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : %d ms", m_iLatencyMs);
+			else
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : -- ms");
+			TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
+			iDisplayY += 14;
+		}
+
+		// Profiling stage breakdown
+		if (FrameTiming::IsProfilingEnabled())
+		{
+			iDisplayY += 4;
+			TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::Color(GameColors::UIProfileYellow));
+			iDisplayY += 14;
+
+			for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++)
+			{
+				ProfileStage stage = static_cast<ProfileStage>(i);
+				double avgMs = FrameTiming::GetProfileAvgTimeMS(stage);
+				int wholePart = static_cast<int>(avgMs);
+				int fracPart = static_cast<int>((avgMs - wholePart) * 100);
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
+				TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UINearWhite));
+				iDisplayY += 12;
+			}
+		}
+	}
+
 	// Cursor always on top - drawn LAST after everything including fade overlay
 	DrawCursor();
 
@@ -478,8 +532,9 @@ void CGame::RenderFrame()
 		RestoreSprites();
 	FrameTiming::EndProfile(ProfileStage::Flip);
 
-	// Count this as a displayed frame for FPS calculation
-	FrameTiming::CountDisplayedFrame();
+	// Reset scroll delta now that dialogs have consumed it this frame
+	// (scroll accumulates across skip frames until a rendered frame processes it)
+	Input::ResetMouseWheelDelta();
 }
 
 

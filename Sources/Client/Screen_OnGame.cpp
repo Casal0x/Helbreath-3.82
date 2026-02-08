@@ -544,39 +544,7 @@ void Screen_OnGame::on_render()
 
     FrameTiming::EndProfile(ProfileStage::DrawMisc);
 
-    // FPS and profiling display
-    int iDisplayY = 100;
-    if (ConfigManager::Get().IsShowFpsEnabled()) {
-        std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "fps : %u", FrameTiming::GetFPS());
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
-        iDisplayY += 14;
-    }
-
-    if (ConfigManager::Get().IsShowLatencyEnabled()) {
-        if (m_pGame->m_iLatencyMs >= 0)
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "latency : %d ms", m_pGame->m_iLatencyMs);
-        else
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "latency : -- ms");
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
-        iDisplayY += 14;
-    }
-
-    // Profiling display
-    if (FrameTiming::IsProfilingEnabled()) {
-        iDisplayY += 4;
-        TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::Color(GameColors::UIProfileYellow));
-        iDisplayY += 14;
-
-        for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++) {
-            ProfileStage stage = static_cast<ProfileStage>(i);
-            double avgMs = FrameTiming::GetProfileAvgTimeMS(stage);
-            int wholePart = static_cast<int>(avgMs);
-            int fracPart = static_cast<int>((avgMs - wholePart) * 100);
-            std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-            TextLib::DrawText(GameFont::Default, 10, iDisplayY, m_pGame->G_cTxt, TextLib::TextStyle::Color(GameColors::UINearWhite));
-            iDisplayY += 12;
-        }
-    }
+    // FPS, latency, and profiling display moved to RenderFrame (global, all screens)
 }
 
 void Screen_OnGame::RenderItemTooltip()

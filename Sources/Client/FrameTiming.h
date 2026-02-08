@@ -20,19 +20,13 @@ enum class ProfileStage {
 	COUNT             // Must be last
 };
 
-// FrameTiming: Per-frame timing metrics and profiling
+// FrameTiming: Per-frame delta timing and stage profiling
 //
-// Works alongside GameClock to provide frame-specific timing:
-//   - Delta time between frames
-//   - Accurate FPS calculation
-//   - Frame counting
-//   - Per-stage profiling
-//
-// GameClock provides: GetTimeMS() for general elapsed time
-// FrameTiming provides: Per-frame delta, FPS metrics, and profiling
+// FPS and frame counting are handled engine-side (IRenderer::GetFPS).
+// FrameTiming provides: Per-frame delta and per-stage profiling.
 //
 // Usage:
-//   FrameTiming::Initialize();  // Call once at startup (after GameClock::Initialize)
+//   FrameTiming::Initialize();  // Call once at startup
 //
 //   // In game loop:
 //   FrameTiming::BeginFrame();
@@ -40,7 +34,6 @@ enum class ProfileStage {
 //   FrameTiming::EndFrame();
 //
 //   double dt = FrameTiming::GetDeltaTime();  // Seconds since last frame
-//   uint32_t fps = FrameTiming::GetFPS();     // Current FPS
 //
 // Profiling Usage:
 //   FrameTiming::BeginProfile(ProfileStage::DrawObjects);
@@ -55,17 +48,15 @@ public:
 	static void Initialize();
 	static void BeginFrame();
 	static void EndFrame();
-	static void CountDisplayedFrame();   // Call only when frame is actually flipped
 
 	// Accessors
 	static double GetDeltaTime();        // Seconds since last frame
 	static double GetDeltaTimeMS();      // Milliseconds since last frame
-	static uint32_t GetFPS();            // Displayed frames per second
-	static uint64_t GetFrameCount();     // Total displayed frames
 
 	// Profiling
 	static void SetProfilingEnabled(bool enabled);
 	static bool IsProfilingEnabled();
+	static void SetFrameRendered(bool rendered);  // Call after skip check in RenderFrame
 	static void BeginProfile(ProfileStage stage);
 	static void EndProfile(ProfileStage stage);
 	static double GetProfileTimeMS(ProfileStage stage);     // Current frame time
@@ -80,17 +71,15 @@ private:
 	static TimePoint s_lastFrame;         // Previous frame start
 
 	static double s_deltaTime;            // Current delta in seconds
-	static double s_accumulator;          // Time accumulator for FPS calc
-	static uint32_t s_displayedThisSecond; // Displayed frames in current second
-	static uint32_t s_fps;                // Last calculated FPS (displayed)
-	static uint64_t s_totalDisplayed;     // Total displayed frame count
+	static double s_accumulator;          // Time accumulator for profile averaging
+	static uint32_t s_profileFrameCount;  // Frames accumulated for averaging
 
 	// Profiling data
 	static constexpr int STAGE_COUNT = static_cast<int>(ProfileStage::COUNT);
 	static bool s_profilingEnabled;
+	static bool s_bFrameRendered;  // True when RenderFrame actually presents
 	static TimePoint s_stageStart[STAGE_COUNT];
 	static double s_stageTimeMS[STAGE_COUNT];     // Current frame timing
 	static double s_stageAccumMS[STAGE_COUNT];    // Accumulated for averaging
 	static double s_stageAvgMS[STAGE_COUNT];      // Averaged timing (updated each second)
-	static uint32_t s_profileFrameCount;          // Frames accumulated for averaging
 };

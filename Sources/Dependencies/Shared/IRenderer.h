@@ -35,10 +35,21 @@ public:
     virtual bool IsFullscreen() const = 0;
     virtual void ChangeDisplayMode(NativeWindowHandle hWnd) = 0;
 
+    // ============== Scaling ==============
+    virtual void SetFullscreenStretch(bool stretch) = 0;
+    virtual bool IsFullscreenStretch() const = 0;
+
     // ============== Frame Management ==============
     virtual void BeginFrame() = 0;      // ClearBackBuffer
     virtual void EndFrame() = 0;        // Flip/Present
     virtual bool EndFrameCheckLostSurface() = 0;  // Flip and return true if surface lost
+    virtual bool WasFramePresented() const { return true; }  // False if frame was skipped by limiter
+
+    // ============== Frame Metrics ==============
+    // Tracked internally by the engine at the point of actual present
+    virtual uint32_t GetFPS() const { return 0; }
+    virtual double GetDeltaTime() const { return 0.0; }     // Seconds between presented frames
+    virtual double GetDeltaTimeMS() const { return 0.0; }   // Milliseconds between presented frames
 
     // ============== Primitive Rendering ==============
     // All rect-based primitives use (x, y, w, h) format, consistent with GameRectangle.

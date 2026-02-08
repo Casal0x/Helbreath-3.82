@@ -9,6 +9,8 @@
 #include "CommonTypes.h"  // For GameClock
 #include "FrameTiming.h"  // For FrameTiming::GetDeltaTime()
 #include "IInput.h"       // For Input::SetSuppressed
+#include "ConfigManager.h"
+#include "RendererFactory.h"
 
 // ============== Singleton ==============
 
@@ -220,6 +222,22 @@ void GameModeManager::ApplyScreenChange()
         if (m_pCurrentScreen)
         {
             m_pCurrentScreen->on_initialize();
+
+            // Game screen uses user's configured FPS limit;
+            // all other screens cap at 60 FPS (no reason to render menus faster)
+            IWindow* pWindow = Window::Get();
+            if (pWindow)
+            {
+                if (m_currentMode == GameMode::MainGame)
+                {
+                    pWindow->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
+                    pWindow->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
+                }
+                else
+                {
+                    pWindow->SetFramerateLimit(60);
+                }
+            }
         }
     }
 

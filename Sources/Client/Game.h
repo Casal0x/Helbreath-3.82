@@ -150,7 +150,8 @@ public:
 
 	void UseShortCut( int num );
 	void DrawCursor();
-	void RenderFrame();       // Clear backbuffer -> DrawScreen -> Flip (centralized)
+	void UpdateFrame();       // Logic update: audio, timers, network, game state (runs every iteration)
+	void RenderFrame();       // Render only: clear backbuffer -> draw -> flip (gated by frame limit)
 
 	// Legacy screen/overlay functions removed - migrated to Screen/Overlay classes:
 	// MakeSprite, MakeTileSpr, MakeEffectSpr, UpdateScreen_OnLoading, DrawScreen_OnLoadingProgress

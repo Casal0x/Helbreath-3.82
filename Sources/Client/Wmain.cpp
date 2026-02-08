@@ -37,7 +37,9 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     params.width = ConfigManager::Get().GetWindowWidth();
     params.height = ConfigManager::Get().GetWindowHeight();
     params.fullscreen = false;
+    params.borderless = ConfigManager::Get().IsBorderlessEnabled();
     params.centered = true;
+    params.mouseCaptureEnabled = ConfigManager::Get().IsMouseCaptureEnabled();
     params.nativeInstance = nativeInstance;
     params.iconResourceId = iconResourceId;
 
@@ -63,7 +65,16 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
         return 1;
     }
 
-    // Event loop
+    // Push display settings from ConfigManager to engine
+    // Must happen after bInit() which creates the renderer via Renderer::Set()
+    Window::Get()->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
+    Window::Get()->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
+    Window::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+    if (Renderer::Get())
+        Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+
+    // Event loop — UpdateFrame runs every iteration (decoupled from frame rate),
+    // RenderFrame is gated by the engine's frame limiter (VSync or FPS cap)
     IWindow* window = Window::Get();
     while (true)
     {
@@ -72,6 +83,10 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
         if (!window->ProcessMessages())
             break;
 
+        // Update always runs — logic, network, audio are never frame-limited
+        game->UpdateFrame();
+
+        // Render is gated by engine-owned frame limiting (BeginFrame sleeps when not time)
         FrameTiming::BeginFrame();
         game->RenderFrame();
         FrameTiming::EndFrame();

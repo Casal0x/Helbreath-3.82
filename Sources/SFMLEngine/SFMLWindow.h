@@ -40,8 +40,19 @@ public:
     void Hide() override;
     void SetTitle(const char* title) override;
 
+    // Frame Rate
+    void SetFramerateLimit(int limit) override;
+    int GetFramerateLimit() const override;
+    void SetVSyncEnabled(bool enabled) override;
+    bool IsVSyncEnabled() const override;
+
+    // Scaling
+    void SetFullscreenStretch(bool stretch) override;
+    bool IsFullscreenStretch() const override;
+
     // Cursor
     void SetMouseCursorVisible(bool visible) override;
+    void SetMouseCaptureEnabled(bool enabled) override;
 
     // Dialogs
     void ShowMessageBox(const char* title, const char* message) override;
@@ -72,7 +83,13 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
+    bool m_bFullscreenStretch;
     bool m_borderless;
+    bool m_bMouseCaptureEnabled;
+    bool m_bVSync;
+    int m_iFpsLimit;
+    int m_windowedWidth;
+    int m_windowedHeight;
     bool m_active;
     bool m_open;
 };

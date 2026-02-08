@@ -7,30 +7,24 @@ FrameTiming::TimePoint FrameTiming::s_lastFrame;
 
 double FrameTiming::s_deltaTime = 0.0;
 double FrameTiming::s_accumulator = 0.0;
-uint32_t FrameTiming::s_displayedThisSecond = 0;
-uint32_t FrameTiming::s_fps = 0;
-uint64_t FrameTiming::s_totalDisplayed = 0;
+uint32_t FrameTiming::s_profileFrameCount = 0;
 
 // Profiling static members
 bool FrameTiming::s_profilingEnabled = false;
+bool FrameTiming::s_bFrameRendered = false;
 FrameTiming::TimePoint FrameTiming::s_stageStart[FrameTiming::STAGE_COUNT];
 double FrameTiming::s_stageTimeMS[FrameTiming::STAGE_COUNT] = { 0 };
 double FrameTiming::s_stageAccumMS[FrameTiming::STAGE_COUNT] = { 0 };
 double FrameTiming::s_stageAvgMS[FrameTiming::STAGE_COUNT] = { 0 };
-uint32_t FrameTiming::s_profileFrameCount = 0;
 
 void FrameTiming::Initialize()
 {
 	s_lastFrame = Clock::now();
 	s_deltaTime = 0.0;
 	s_accumulator = 0.0;
-	s_displayedThisSecond = 0;
-	s_fps = 0;
-	s_totalDisplayed = 0;
-
-	// Initialize profiling
-	s_profilingEnabled = false;
 	s_profileFrameCount = 0;
+
+	s_profilingEnabled = false;
 	std::memset(s_stageTimeMS, 0, sizeof(s_stageTimeMS));
 	std::memset(s_stageAccumMS, 0, sizeof(s_stageAccumMS));
 	std::memset(s_stageAvgMS, 0, sizeof(s_stageAvgMS));
@@ -48,6 +42,7 @@ void FrameTiming::BeginFrame()
 	if (s_deltaTime > 0.25) s_deltaTime = 0.25;
 
 	// Reset per-frame profiling times
+	s_bFrameRendered = false;
 	if (s_profilingEnabled)
 	{
 		std::memset(s_stageTimeMS, 0, sizeof(s_stageTimeMS));
@@ -57,8 +52,8 @@ void FrameTiming::BeginFrame()
 
 void FrameTiming::EndFrame()
 {
-	// End total frame profiling
-	if (s_profilingEnabled)
+	// End total frame profiling — only count frames that were actually rendered
+	if (s_profilingEnabled && s_bFrameRendered)
 	{
 		EndProfile(ProfileStage::FrameTotal);
 
@@ -73,14 +68,11 @@ void FrameTiming::EndFrame()
 	s_lastFrame = s_frameStart;
 	s_accumulator += s_deltaTime;
 
-	// Update FPS and profile averages every second
+	// Update profile averages every second
 	if (s_accumulator >= 1.0)
 	{
-		s_fps = s_displayedThisSecond;
-		s_displayedThisSecond = 0;
-		s_accumulator -= 1.0;  // Preserve remainder for accuracy
+		s_accumulator -= 1.0;
 
-		// Calculate profile averages
 		if (s_profilingEnabled && s_profileFrameCount > 0)
 		{
 			for (int i = 0; i < STAGE_COUNT; i++)
@@ -93,13 +85,6 @@ void FrameTiming::EndFrame()
 	}
 }
 
-void FrameTiming::CountDisplayedFrame()
-{
-	// Called only when a frame is actually flipped/displayed
-	s_totalDisplayed++;
-	s_displayedThisSecond++;
-}
-
 double FrameTiming::GetDeltaTime()
 {
 	return s_deltaTime;
@@ -108,16 +93,6 @@ double FrameTiming::GetDeltaTime()
 double FrameTiming::GetDeltaTimeMS()
 {
 	return s_deltaTime * 1000.0;
-}
-
-uint32_t FrameTiming::GetFPS()
-{
-	return s_fps;
-}
-
-uint64_t FrameTiming::GetFrameCount()
-{
-	return s_totalDisplayed;
 }
 
 // Profiling implementation
@@ -137,6 +112,11 @@ void FrameTiming::SetProfilingEnabled(bool enabled)
 bool FrameTiming::IsProfilingEnabled()
 {
 	return s_profilingEnabled;
+}
+
+void FrameTiming::SetFrameRendered(bool rendered)
+{
+	s_bFrameRendered = rendered;
 }
 
 void FrameTiming::BeginProfile(ProfileStage stage)

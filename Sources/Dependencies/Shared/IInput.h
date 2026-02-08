@@ -125,8 +125,10 @@ public:
     virtual int GetMouseY() const = 0;
 
     // ============== Mouse Wheel ==============
-    // Returns accumulated delta since last frame
+    // Returns accumulated delta since last reset
     virtual int GetMouseWheelDelta() const = 0;
+    // Clear accumulated delta (called after a rendered frame consumes it)
+    virtual void ResetMouseWheelDelta() = 0;
 
     // ============== Modifier Keys ==============
     virtual bool IsShiftDown() const = 0;
@@ -178,6 +180,7 @@ namespace Input {
     inline int GetMouseX() { return Get()->GetMouseX(); }
     inline int GetMouseY() { return Get()->GetMouseY(); }
     inline int GetMouseWheelDelta() { return Get()->GetMouseWheelDelta(); }
+    inline void ResetMouseWheelDelta() { Get()->ResetMouseWheelDelta(); }
 
     // Modifier keys
     inline bool IsShiftDown() { return Get()->IsShiftDown(); }

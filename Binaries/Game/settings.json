@@ -16,12 +16,15 @@
         "captureMouse": false,
         "detailLevel": 2,
         "dialogTransparency": false,
+        "fpsLimit": 60,
         "fullscreen": false,
+        "fullscreenStretch": false,
         "patchingGrid": false,
         "runningMode": true,
         "showFps": true,
         "showLatency": true,
         "tileGrid": false,
+        "vsync": true,
         "zoomMap": true
     },
     "resolution": {

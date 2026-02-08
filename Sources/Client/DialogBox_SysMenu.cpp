@@ -95,6 +95,8 @@ DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
 	, m_iWideBoxHeight(0)
 	, m_iSmallBoxWidth(0)
 	, m_iSmallBoxHeight(0)
+	, m_iLargeBoxWidth(0)
+	, m_iLargeBoxHeight(0)
 {
 	SetDefaultRect(237 , 67 , 331, 303);
 }
@@ -106,6 +108,7 @@ void DialogBox_SysMenu::OnUpdate()
 	{
 		SpriteLib::SpriteRect wideRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(78);
 		SpriteLib::SpriteRect smallRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(79);
+		SpriteLib::SpriteRect largeRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(81);
 
 		// Only use if we got valid dimensions (not from NullSprite)
 		if (wideRect.width > 0 && wideRect.height > 0 && smallRect.width > 0 && smallRect.height > 0)
@@ -114,6 +117,8 @@ void DialogBox_SysMenu::OnUpdate()
 			m_iWideBoxHeight = wideRect.height;
 			m_iSmallBoxWidth = smallRect.width;
 			m_iSmallBoxHeight = smallRect.height;
+			m_iLargeBoxWidth = largeRect.width > 0 ? largeRect.width : 280;
+			m_iLargeBoxHeight = largeRect.height > 0 ? largeRect.height : 16;
 			m_bFrameSizesInitialized = true;
 		}
 	}
@@ -307,36 +312,106 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	int lineY = contentY + 5;
 	const int labelX = contentX + 5;
 
-	// All boxes align to the same right edge
+	// Right margin for box alignment
 	const int rightMargin = 8;
 	const int boxRightEdge = contentRight - rightMargin;
 
 	// Use cached dimensions or fallback values
+	const int largeBoxWidth = m_bFrameSizesInitialized ? m_iLargeBoxWidth : 280;
+	const int largeBoxHeight = m_bFrameSizesInitialized ? m_iLargeBoxHeight : 16;
 	const int wideBoxWidth = m_bFrameSizesInitialized ? m_iWideBoxWidth : 175;
 	const int wideBoxHeight = m_bFrameSizesInitialized ? m_iWideBoxHeight : 16;
 
-	// Wide boxes align to right edge, small boxes align to LEFT edge of wide boxes
-	const int wideBoxX = boxRightEdge - wideBoxWidth;
-	const int smallBoxX = wideBoxX;  // Left-align with wide box
+	// Right-align the large box, then left-align all smaller boxes to its left edge
+	const int largeBoxX = boxRightEdge - largeBoxWidth;
+	const int wideBoxX = largeBoxX;
+	const int smallBoxX = largeBoxX;
 
-	// Detail Level - single wide box with Low/Normal/High inside
+	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
+
+	// --- FPS Limit --- large box (frame 81) with 5 options (disabled when VSync is on)
+	const bool bVSyncOn = ConfigManager::Get().IsVSyncEnabled();
+	PutString(labelX, lineY, "FPS Limit:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "FPS Limit:", GameColors::UILabel);
+
+	const int fpsBoxY = lineY - 2;
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, largeBoxX, fpsBoxY, 81);
+
+	static const int s_FpsOptions[] = { 60, 100, 144, 240, 0 };
+	static const char* s_FpsLabels[] = { "60", "100", "144", "240", "Max" };
+	static const int s_NumFpsOptions = 5;
+	const int fpsRegionWidth = largeBoxWidth / s_NumFpsOptions;
+	const int currentFps = ConfigManager::Get().GetFpsLimit();
+
+	for (int i = 0; i < s_NumFpsOptions; i++)
+	{
+		int regionX = largeBoxX + (fpsRegionWidth * i);
+		bool bSelected = (currentFps == s_FpsOptions[i]);
+		bool bHover = !bVSyncOn && (msX >= regionX && msX < regionX + fpsRegionWidth && msY >= fpsBoxY && msY <= fpsBoxY + largeBoxHeight);
+
+		TextLib::TextMetrics fm = TextLib::GetTextRenderer()->MeasureText(s_FpsLabels[i]);
+		int tx = regionX + (fpsRegionWidth - fm.width) / 2;
+		int ty = fpsBoxY + (largeBoxHeight - fm.height) / 2;
+		PutString(tx, ty, s_FpsLabels[i], bVSyncOn ? GameColors::UIDisabled : (bSelected || bHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	}
+
+	lineY += 18;
+
+	// --- Aspect Ratio --- wide box (Letterbox / Widescreen), only enabled in fullscreen
+	PutString(labelX, lineY, "Aspect Ratio:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "Aspect Ratio:", GameColors::UILabel);
+
+	const int aspectBoxY = lineY - 2;
+	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, aspectBoxY, 78);
+
+	const bool bStretch = ConfigManager::Get().IsFullscreenStretchEnabled();
+	const int aspectRegionWidth = wideBoxWidth / 2;
+
+	const char* letterboxText = "Letterbox";
+	const char* widescreenText = "Widescreen";
+
+	int leftRegion = wideBoxX;
+	int rightRegion = wideBoxX + aspectRegionWidth;
+	bool letterHover = isFullscreen && (msX >= leftRegion && msX < rightRegion && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight);
+	bool wideHover = isFullscreen && (msX >= rightRegion && msX <= wideBoxX + wideBoxWidth && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight);
+
+	TextLib::TextMetrics lbm = TextLib::GetTextRenderer()->MeasureText(letterboxText);
+	TextLib::TextMetrics wsm = TextLib::GetTextRenderer()->MeasureText(widescreenText);
+	int lbx = leftRegion + (aspectRegionWidth - lbm.width) / 2;
+	int wsx = rightRegion + (aspectRegionWidth - wsm.width) / 2;
+	int aty = aspectBoxY + (wideBoxHeight - lbm.height) / 2;
+
+	if (!isFullscreen) {
+		PutString(lbx, aty, letterboxText, GameColors::UIDisabled);
+		PutString(wsx, aty, widescreenText, GameColors::UIDisabled);
+	} else {
+		PutString(lbx, aty, letterboxText, (!bStretch || letterHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+		PutString(wsx, aty, widescreenText, (bStretch || wideHover) ? GameColors::UIWhite : GameColors::UIDisabled);
+	}
+
+	lineY += 18;
+
+	// --- VSync ---
+	PutString(labelX, lineY, "VSync:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "VSync:", GameColors::UILabel);
+	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsVSyncEnabled(), msX, msY);
+
+	lineY += 18;
+
+	// --- Detail Level --- wide box with Low/Normal/High
 	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel);
 	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_DETAILLEVEL, GameColors::UILabel);
 
 	const int detailLevel = ConfigManager::Get().GetDetailLevel();
 	const int boxY = lineY - 2;
 
-	// Draw single wide background box
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, boxY, 78);
 
-	// Calculate text positions - evenly spaced inside the wide box (width / 3 regions)
 	const int regionWidth = wideBoxWidth / 3;
 
-	// Center text vertically in the box
 	TextLib::TextMetrics lowMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_LOW);
 	int textY = boxY + (wideBoxHeight - lowMetrics.height) / 2;
 
-	// Center each option horizontally within its region
 	TextLib::TextMetrics normMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_NORMAL);
 	TextLib::TextMetrics highMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_HIGH);
 
@@ -354,28 +429,21 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Dialog Transparency
+	// --- Dialog Transparency ---
 	PutString(labelX, lineY, "Transparency:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Transparency:", GameColors::UILabel);
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsDialogTransparencyEnabled(), msX, msY);
 
 	lineY += 18;
 
-	// Guide Map
-	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
-	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
-	DrawToggle(smallBoxX, lineY, m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap), msX, msY);
-
-	lineY += 18;
-
-	// Show FPS
+	// --- Show FPS ---
 	PutString(labelX, lineY, "Show FPS:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Show FPS:", GameColors::UILabel);
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsShowFpsEnabled(), msX, msY);
 
 	lineY += 18;
 
-	// Show Latency
+	// --- Show Latency ---
 	PutString(labelX, lineY, "Show Latency:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Show Latency:", GameColors::UILabel);
 	DrawToggle(smallBoxX, lineY, ConfigManager::Get().IsShowLatencyEnabled(), msX, msY);
@@ -398,20 +466,16 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	lineY += 18;
 #endif
 
-	// Display Mode - wide box showing current mode (clicking toggles)
+	// --- Display Mode --- wide box (Fullscreen / Windowed)
 	PutString(labelX, lineY, "Display Mode:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Display Mode:", GameColors::UILabel);
 
-	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 	const int modeBoxY = lineY - 2;
-
-	// Draw wide box for display mode
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, modeBoxY, 78);
 
 	bool modeHover = (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight);
 	const Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
 
-	// Show current mode text, centered horizontally and vertically
 	const char* modeText = isFullscreen ? "Fullscreen" : "Windowed";
 	TextLib::TextMetrics modeMetrics = TextLib::GetTextRenderer()->MeasureText(modeText);
 	int modeTextX = wideBoxX + (wideBoxWidth - modeMetrics.width) / 2;
@@ -420,7 +484,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Window Style - wide box showing Borderless/Bordered (disabled when fullscreen)
+	// --- Window Style --- wide box (Borderless / Bordered, disabled when fullscreen)
 	PutString(labelX, lineY, "Window Style:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Window Style:", GameColors::UILabel);
 
@@ -438,7 +502,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Resolution - wide box with centered text
+	// --- Resolution --- wide box with centered text (disabled when fullscreen)
 	PutString(labelX, lineY, "Resolution:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Resolution:", GameColors::UILabel);
 
@@ -456,14 +520,12 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	char resBuf[32];
 	snprintf(resBuf, sizeof(resBuf), "%dx%d", resWidth, resHeight);
 
-	// Draw wide background box
 	const int resBoxY = lineY - 2;
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, resBoxY, 78);
 
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
 	const Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
-	// Center the resolution text horizontally and vertically in the box
 	TextLib::TextMetrics resMetrics = TextLib::GetTextRenderer()->MeasureText(resBuf);
 	int resTextX = wideBoxX + (wideBoxWidth - resMetrics.width) / 2;
 	int resTextY = resBoxY + (wideBoxHeight - resMetrics.height) / 2;
@@ -635,6 +697,13 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 	PutString(labelX, lineY, "Capture Mouse:", GameColors::UILabel);
 	PutString(labelX + 1, lineY, "Capture Mouse:", GameColors::UILabel);
 	DrawToggle(valueX, lineY, ConfigManager::Get().IsMouseCaptureEnabled(), msX, msY);
+
+	lineY += 20;
+
+	// Guide Map toggle
+	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
+	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_GUIDEMAP, GameColors::UILabel);
+	DrawToggle(valueX, lineY, m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap), msX, msY);
 }
 
 // =============================================================================
@@ -773,36 +842,84 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 {
 	const int contentX = sX + CONTENT_X;
 	const int contentY = sY + CONTENT_Y;
-	const int contentRight = contentX + CONTENT_WIDTH;
 	int lineY = contentY + 5;
 
-	// Match draw positions - use fallback values if not initialized
+	// Match draw positions - right-align large box, left-align others to its left edge
+	const int contentRight = contentX + CONTENT_WIDTH;
 	const int rightMargin = 8;
 	const int boxRightEdge = contentRight - rightMargin;
+	const int largeBoxWidth = m_bFrameSizesInitialized ? m_iLargeBoxWidth : 280;
+	const int largeBoxHeight = m_bFrameSizesInitialized ? m_iLargeBoxHeight : 16;
 	const int wideBoxWidth = m_bFrameSizesInitialized ? m_iWideBoxWidth : 175;
 	const int wideBoxHeight = m_bFrameSizesInitialized ? m_iWideBoxHeight : 16;
-	const int wideBoxX = boxRightEdge - wideBoxWidth;
-	const int smallBoxX = wideBoxX;  // Left-align with wide box
-	const int regionWidth = wideBoxWidth / 3;
+	const int largeBoxX = boxRightEdge - largeBoxWidth;
+	const int wideBoxX = largeBoxX;
+	const int smallBoxX = largeBoxX;
 
-	// Detail Level clicks (single wide box with three regions)
+	const bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
+
+	// --- FPS Limit --- (disabled when VSync is on)
+	const bool bVSyncOn = ConfigManager::Get().IsVSyncEnabled();
+	const int fpsBoxY = lineY - 2;
+	static const int s_FpsOptions[] = { 60, 100, 144, 240, 0 };
+	static const int s_NumFpsOptions = 5;
+	const int fpsRegionWidth = largeBoxWidth / s_NumFpsOptions;
+
+	if (!bVSyncOn && msY >= fpsBoxY && msY <= fpsBoxY + largeBoxHeight && msX >= largeBoxX && msX <= largeBoxX + largeBoxWidth) {
+		int clickedRegion = (msX - largeBoxX) / fpsRegionWidth;
+		if (clickedRegion >= 0 && clickedRegion < s_NumFpsOptions) {
+			int newLimit = s_FpsOptions[clickedRegion];
+			ConfigManager::Get().SetFpsLimit(newLimit);
+			Window::Get()->SetFramerateLimit(newLimit);
+			PlaySoundEffect('E', 14, 5);
+			return true;
+		}
+	}
+
+	lineY += 18;
+
+	// --- Aspect Ratio --- (only enabled when fullscreen)
+	const int aspectBoxY = lineY - 2;
+	const int aspectRegionWidth = wideBoxWidth / 2;
+	if (isFullscreen && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth) {
+		bool bNewStretch = (msX >= wideBoxX + aspectRegionWidth);
+		ConfigManager::Get().SetFullscreenStretchEnabled(bNewStretch);
+		Window::Get()->SetFullscreenStretch(bNewStretch);
+		if (Renderer::Get())
+			Renderer::Get()->SetFullscreenStretch(bNewStretch);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- VSync toggle ---
+	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
+		bool enabled = ConfigManager::Get().IsVSyncEnabled();
+		ConfigManager::Get().SetVSyncEnabled(!enabled);
+		Window::Get()->SetVSyncEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 18;
+
+	// --- Detail Level --- wide box with three regions
 	const int boxY = lineY - 2;
+	const int regionWidth = wideBoxWidth / 3;
 	if (msY >= boxY && msY <= boxY + wideBoxHeight && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth) {
-		// Low region
 		if (msX < wideBoxX + regionWidth) {
 			ConfigManager::Get().SetDetailLevel(0);
 			AddEventList(NOTIFY_MSG_DETAIL_LEVEL_LOW, 10);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
-		// Normal region
 		if (msX < wideBoxX + (regionWidth * 2)) {
 			ConfigManager::Get().SetDetailLevel(1);
 			AddEventList(NOTIFY_MSG_DETAIL_LEVEL_MEDIUM, 10);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
-		// High region
 		ConfigManager::Get().SetDetailLevel(2);
 		AddEventList(NOTIFY_MSG_DETAIL_LEVEL_HIGH, 10);
 		PlaySoundEffect('E', 14, 5);
@@ -811,7 +928,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Dialog Transparency toggle
+	// --- Dialog Transparency toggle ---
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
 		ConfigManager::Get().SetDialogTransparencyEnabled(!enabled);
@@ -821,19 +938,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Guide Map toggle
-	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
-		if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap))
-			DisableDialogBox(DialogBoxId::GuideMap);
-		else
-			EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
-		PlaySoundEffect('E', 14, 5);
-		return true;
-	}
-
-	lineY += 18;
-
-	// Show FPS toggle
+	// --- Show FPS toggle ---
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsShowFpsEnabled();
 		ConfigManager::Get().SetShowFpsEnabled(!enabled);
@@ -843,7 +948,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Show Latency toggle
+	// --- Show Latency toggle ---
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsShowLatencyEnabled();
 		ConfigManager::Get().SetShowLatencyEnabled(!enabled);
@@ -875,10 +980,9 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	lineY += 18;
 #endif
 
-	// Display Mode toggle click (wide box, toggles between windowed/fullscreen)
+	// --- Display Mode toggle --- (wide box, toggles windowed/fullscreen)
 	const int modeBoxY = lineY - 2;
 	if (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight) {
-		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 		m_pGame->m_Renderer->SetFullscreen(!isFullscreen);
 		m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
 		Input::Get()->SetWindowActive(true);
@@ -890,26 +994,22 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// Window Style toggle click (wide box, only in windowed mode)
+	// --- Window Style toggle --- (wide box, only in windowed mode)
 	const int styleBoxY = lineY - 2;
-	{
-		bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
-		if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
-			bool borderless = ConfigManager::Get().IsBorderlessEnabled();
-			ConfigManager::Get().SetBorderlessEnabled(!borderless);
-			Window::SetBorderless(!borderless);
-			Input::Get()->SetWindowActive(true);
-			ConfigManager::Get().Save();
-			PlaySoundEffect('E', 14, 5);
-			return true;
-		}
+	if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
+		bool borderless = ConfigManager::Get().IsBorderlessEnabled();
+		ConfigManager::Get().SetBorderlessEnabled(!borderless);
+		Window::SetBorderless(!borderless);
+		Input::Get()->SetWindowActive(true);
+		ConfigManager::Get().Save();
+		PlaySoundEffect('E', 14, 5);
+		return true;
 	}
 
 	lineY += 18;
 
-	// Resolution click (wide box, only in windowed mode)
+	// --- Resolution click --- (wide box, only in windowed mode)
 	const int resBoxY = lineY - 2;
-	bool isFullscreen = m_pGame->m_Renderer->IsFullscreen();
 	if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight) {
 		CycleResolution();
 		PlaySoundEffect('E', 14, 5);
@@ -1047,7 +1147,19 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
 		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
-		Input::Get()->SetWindowActive(true);
+		Window::Get()->SetMouseCaptureEnabled(!enabled);
+		PlaySoundEffect('E', 14, 5);
+		return true;
+	}
+
+	lineY += 20;
+
+	// Guide Map toggle
+	if (IsInToggleArea(valueX, lineY, msX, msY)) {
+		if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap))
+			DisableDialogBox(DialogBoxId::GuideMap);
+		else
+			EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

@@ -22,7 +22,9 @@ struct WindowParams
     int width;
     int height;
     bool fullscreen;
+    bool borderless;
     bool centered;
+    bool mouseCaptureEnabled;
     NativeInstance nativeInstance;
     int iconResourceId;  // 0 for default
 };
@@ -55,8 +57,19 @@ public:
     virtual void Hide() = 0;
     virtual void SetTitle(const char* title) = 0;
 
+    // ============== Frame Rate ==============
+    virtual void SetFramerateLimit(int limit) = 0;  // 0 = unlimited
+    virtual int GetFramerateLimit() const = 0;
+    virtual void SetVSyncEnabled(bool enabled) = 0;
+    virtual bool IsVSyncEnabled() const = 0;
+
+    // ============== Scaling ==============
+    virtual void SetFullscreenStretch(bool stretch) = 0;
+    virtual bool IsFullscreenStretch() const = 0;
+
     // ============== Cursor ==============
     virtual void SetMouseCursorVisible(bool visible) = 0;
+    virtual void SetMouseCaptureEnabled(bool enabled) = 0;
 
     // ============== Dialogs ==============
     virtual void ShowMessageBox(const char* title, const char* message) = 0;

@@ -61,8 +61,10 @@ private:
 
 	// Cached frame dimensions (initialized on first update)
 	bool m_bFrameSizesInitialized;
-	int m_iWideBoxWidth;   // Frame 78 width
-	int m_iWideBoxHeight;  // Frame 78 height
-	int m_iSmallBoxWidth;  // Frame 79 width
-	int m_iSmallBoxHeight; // Frame 79 height
+	int m_iWideBoxWidth;    // Frame 78 width
+	int m_iWideBoxHeight;   // Frame 78 height
+	int m_iSmallBoxWidth;   // Frame 79 width
+	int m_iSmallBoxHeight;  // Frame 79 height
+	int m_iLargeBoxWidth;   // Frame 81 width
+	int m_iLargeBoxHeight;  // Frame 81 height
 };

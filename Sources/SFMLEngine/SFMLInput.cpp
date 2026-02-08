@@ -6,7 +6,6 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "SFMLInput.h"
-#include "ConfigManager.h"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <cstring>
 
@@ -69,11 +68,17 @@ void SFMLInput::SetRenderWindow(sf::RenderWindow* pWindow)
 
 void SFMLInput::BeginFrame()
 {
-    // Reset per-frame state
+    // Reset per-frame edge states (pressed/released)
+    // Note: m_wheelDelta is NOT reset here — it accumulates across skip frames
+    // and is cleared by ResetMouseWheelDelta() after a rendered frame consumes it
     std::memset(m_mousePressed, 0, sizeof(m_mousePressed));
     std::memset(m_mouseReleased, 0, sizeof(m_mouseReleased));
     std::memset(m_keyPressed, 0, sizeof(m_keyPressed));
     std::memset(m_keyReleased, 0, sizeof(m_keyReleased));
+}
+
+void SFMLInput::ResetMouseWheelDelta()
+{
     m_wheelDelta = 0;
 }
 
@@ -258,15 +263,7 @@ void SFMLInput::SetWindowActive(bool active)
 {
     m_active = active;
 
-    if (active)
-    {
-        if (m_pRenderWindow)
-        {
-            bool grab = ConfigManager::Get().IsMouseCaptureEnabled();
-            m_pRenderWindow->setMouseCursorGrabbed(grab);
-        }
-    }
-    else
+    if (!active)
     {
         ClearAllKeys();
     }

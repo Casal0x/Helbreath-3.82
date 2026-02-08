@@ -12,6 +12,7 @@
 #include <SFML/Graphics/RenderTexture.hpp>
 #include <vector>
 #include <string>
+#include <chrono>
 
 class SFMLRenderer : public IRenderer
 {
@@ -30,10 +31,20 @@ public:
     bool IsFullscreen() const override;
     void ChangeDisplayMode(NativeWindowHandle hWnd) override;
 
+    // Scaling
+    void SetFullscreenStretch(bool stretch) override;
+    bool IsFullscreenStretch() const override;
+
     // Frame Management
     void BeginFrame() override;
     void EndFrame() override;
     bool EndFrameCheckLostSurface() override;
+    bool WasFramePresented() const override;
+
+    // Frame Metrics
+    uint32_t GetFPS() const override;
+    double GetDeltaTime() const override;
+    double GetDeltaTimeMS() const override;
 
     // Primitive Rendering
     void DrawPixel(int x, int y, const Color& color) override;
@@ -130,6 +141,11 @@ public:
     // This also creates the render textures since they need an OpenGL context
     void SetRenderWindow(sf::RenderWindow* window);
 
+    // Engine-owned frame rate control (called from SFMLWindow)
+    void SetFramerateLimit(int limit);
+    int GetFramerateLimit() const;
+    void SetVSyncMode(bool enabled);
+
 private:
     // Initialize transparency tables with dummy values
     void InitDummyTables();
@@ -150,7 +166,22 @@ private:
     int m_width;
     int m_height;
     bool m_fullscreen;
+    bool m_bFullscreenStretch;
     GameRectangle m_clipArea;
+
+    // Engine-owned frame timing
+    int m_iFpsLimit;
+    bool m_bVSync;
+    bool m_bSkipFrame;
+    std::chrono::steady_clock::time_point m_lastPresentTime;
+    std::chrono::steady_clock::duration m_targetFrameDuration;
+
+    // Frame metrics (tracked at actual present)
+    uint32_t m_fps;
+    uint32_t m_framesThisSecond;
+    double m_deltaTime;
+    double m_fpsAccumulator;
+    std::chrono::steady_clock::time_point m_lastPresentedFrameTime;
 
     // Sprite alpha degree
     char m_spriteAlphaDegree;
