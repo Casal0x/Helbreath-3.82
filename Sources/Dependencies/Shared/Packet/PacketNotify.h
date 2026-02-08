@@ -652,6 +652,7 @@ namespace net {
 		int32_t intel;
 		int32_t mag;
 		int32_t chr;
+		uint8_t attack_delay;
 	};
 
 	struct HB_PACKED PacketNotifyQuestReward {
