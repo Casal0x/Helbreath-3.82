@@ -515,14 +515,16 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 
 	switch (Info().cMode) {
 	case 1:
-		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
+		if (Info().sV1 >= 0 && Info().sV1 < DEF_MAXITEMS)
+			m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
 		m_pGame->PlayGameSound('E', 29, 0);
 		break;
 
 	case 6:
-		m_pGame->m_bIsItemDisabled[Info().sV1] = false;
+		if (Info().sV1 >= 0 && Info().sV1 < DEF_MAXITEMS)
+			m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
 		m_pGame->PlayGameSound('E', 29, 0);
