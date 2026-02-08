@@ -54,6 +54,10 @@ public:
 	void SetPendingStopDir(char dir) { m_cPendingStopDir = dir; }
 	void ClearPendingStopDir() { m_cPendingStopDir = 0; }
 
+	// Attack animation cooldown (time-based minimum to match server validation)
+	uint32_t GetAttackEndTime() const { return m_dwAttackEndTime; }
+	void SetAttackEndTime(uint32_t time) { m_dwAttackEndTime = time; }
+
 	// Direction Calculation
 	// Returns direction 1-8 to move from (sX,sY) toward (dstX,dstY), or 0 if no valid move
 	// bMoveCheck: if true, considers previously blocked moves
@@ -88,4 +92,7 @@ private:
 
 	// Pending stop direction (applied when movement ends)
 	char m_cPendingStopDir;
+
+	// Earliest time player can act after an attack (prevents false positive server disconnects)
+	uint32_t m_dwAttackEndTime;
 };

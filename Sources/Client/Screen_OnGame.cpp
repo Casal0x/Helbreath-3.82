@@ -299,14 +299,31 @@ void Screen_OnGame::on_update()
     // Update frame counters and process commands
     int iUpdateRet = m_pGame->m_pMapData->iObjectFrameCounter(m_pGame->m_pPlayer->m_cPlayerName, m_pGame->m_Camera.GetX(), m_pGame->m_Camera.GetY());
     if (m_pGame->m_pEffectManager) m_pGame->m_pEffectManager->Update();
-    // Pipeline movement: allow next move command just before animation completes
-    // Uses EntityMotion progress (95%) instead of fixed time thresholds to avoid
-    // visible position snapping when the next tile's motion starts
+    // Command unlock logic — determines when the player can act again after an action.
+    // Three unlock paths, checked in priority order:
+    //
+    // 1. Movement pipeline (Quick Actions): unlocks at 95% move progress for smooth chaining.
+    //    Only applies to MOVE/RUN — attack commands always reset cmd to STOP after execution.
+    //
+    // 2. Rotation unlock: allows quick direction changes during STOP animation (100ms min).
+    //    Also serves as the primary unlock after attack/damage animations finish and
+    //    transition the tile to STOP. Respects the attack swing time floor.
+    //
+    // 3. Animation completion (iUpdateRet == 2): fires once when any animation finishes.
+    //    Respects the attack swing time floor.
+    //
+    // 4. Attack cooldown expiry: continuous per-frame check that catches the case where
+    //    path 3 fired before the attack time elapsed (e.g., short damage animation replaced
+    //    a longer attack). Only active when the current lock is from the attack itself
+    //    (cmdTime <= attackEnd), never for subsequent movement locks.
     if (!m_pGame->m_pPlayer->m_Controller.IsCommandAvailable()) {
         char cmd = m_pGame->m_pPlayer->m_Controller.GetCommand();
+
+        // Path 1: Movement pipeline — unlock at 95% motion progress for smooth chaining.
+        // cmd stays as MOVE/RUN during movement (not reset to STOP until destination reached).
+        // No attack end time check needed: movement can only start after attack cooldown expires.
         if (ConfigManager::Get().IsQuickActionsEnabled() &&
-            (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN ||
-            cmd == DEF_OBJECTDAMAGEMOVE || cmd == DEF_OBJECTATTACKMOVE)) {
+            (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN)) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
             if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
@@ -317,32 +334,50 @@ void Screen_OnGame::on_update()
                 }
             }
         }
-        // Fast rotation unlock: allow quick direction changes without waiting
-        // for the full STOP animation (840ms). Uses a short delay to prevent spam.
-        // BUT only if player is actually in STOP animation (not casting magic, attacking, etc.)
+        // Path 2: Rotation unlock + post-attack/damage unlock.
+        // After attack/magic/damage execution, cmd is always STOP. The tile animation
+        // transitions to STOP when the action animation finishes. Once both cmd and tile
+        // are STOP, unlock — but respect the attack swing time floor so interrupted attacks
+        // (damage replacing attack) don't unlock before the server's expected swing time.
         else if (cmd == DEF_OBJECTSTOP) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
             if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
                 int8_t animAction = m_pGame->m_pMapData->m_pData[dX][dY].m_animation.cAction;
-                // Only fast unlock for pure rotation (STOP animation), not after magic/attack
                 if (animAction == DEF_OBJECTSTOP) {
                     uint32_t cmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
-                    // cmdTime == 0 means just teleported/map changed, allow immediate actions
-                    if (cmdTime == 0 || (m_dwTime - cmdTime) >= 100) {
+                    uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
+                    if (cmdTime == 0 || ((m_dwTime - cmdTime) >= 100 &&
+                        (dwAttackEnd == 0 || m_dwTime >= dwAttackEnd))) {
                         m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
                         m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
                     }
                 }
             }
         }
+
+        // Path 4: Attack cooldown expiry — catches the case where the damage animation
+        // finished (iUpdateRet == 2 was blocked) but the tile hasn't transitioned to STOP
+        // yet (so path 2 can't fire). Only active when this lock is from the attack that
+        // set attackEnd (cmdTime <= attackEnd), not for subsequent movement locks.
+        uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
+        uint32_t dwCmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
+        if (dwAttackEnd != 0 && dwCmdTime <= dwAttackEnd && GameClock::GetTimeMS() >= dwAttackEnd) {
+            m_pGame->m_pPlayer->m_Controller.SetAttackEndTime(0);
+            m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
+            m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+        }
     }
 
-    // Fallback: animation-based unlock still works for non-movement actions
-    // and for the final step when the player stops
+    // Path 3: Animation completion — fires once when any animation finishes.
+    // Respects attack swing time floor to prevent early unlock from short damage animations.
     if (iUpdateRet == 2) {
-        m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-        m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+        uint32_t dwNow = GameClock::GetTimeMS();
+        uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
+        if (dwAttackEnd == 0 || dwNow >= dwAttackEnd) {
+            m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
+            m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+        }
     }
     m_pGame->CommandProcessor(m_sMsX, m_sMsY,
         ((m_sDivX + m_sPivotX) * 32 + m_sModX + m_sMsX - 17) / 32 + 1,

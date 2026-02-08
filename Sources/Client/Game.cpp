@@ -10134,6 +10134,17 @@ MOTION_COMMAND_PROCESS:;
 					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 				m_pPlayer->m_Controller.SetCommandAvailable(false);
 				m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+				// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
+				{
+					constexpr int ATTACK_FRAME_DURATIONS = 8;
+					int baseFrameTime = PlayerAnim::Attack.sFrameTime; // 78
+					int delay = m_pPlayer->m_playerStatus.iAttackDelay * 12;
+					if (m_pPlayer->m_playerStatus.bFrozen) delay += baseFrameTime >> 2;
+					if (m_pPlayer->m_playerStatus.bHaste)
+						delay -= static_cast<int>(PlayerAnim::Run.sFrameTime / 2.3);
+					int expectedSwingTime = ATTACK_FRAME_DURATIONS * (baseFrameTime + delay);
+					m_pPlayer->m_Controller.SetAttackEndTime(GameClock::GetTimeMS() + expectedSwingTime);
+				}
 			}
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			break;
@@ -10183,6 +10194,17 @@ MOTION_COMMAND_PROCESS:;
 						m_pPlayer->m_Controller.GetCommand(), m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 					m_pPlayer->m_Controller.SetCommandAvailable(false);
 					m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
+					// Compute expected swing duration (must match server's bCheckClientAttackFrequency formula)
+					{
+						constexpr int ATTACK_FRAME_DURATIONS = 8;
+						int baseFrameTime = PlayerAnim::Attack.sFrameTime; // 78
+						int delay = m_pPlayer->m_playerStatus.iAttackDelay * 12;
+						if (m_pPlayer->m_playerStatus.bFrozen) delay += baseFrameTime >> 2;
+						if (m_pPlayer->m_playerStatus.bHaste)
+							delay -= static_cast<int>(PlayerAnim::Run.sFrameTime / 2.3);
+						int expectedSwingTime = ATTACK_FRAME_DURATIONS * (baseFrameTime + delay);
+						m_pPlayer->m_Controller.SetAttackEndTime(GameClock::GetTimeMS() + expectedSwingTime);
+					}
 					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 				}
 			}

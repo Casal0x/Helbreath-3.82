@@ -25,6 +25,7 @@ void CPlayerController::Reset()
 	m_bIsPrevMoveBlocked = false;
 	m_cPlayerTurn = 0;
 	m_cPendingStopDir = 0;
+	m_dwAttackEndTime = 0;
 }
 
 char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dstY,
