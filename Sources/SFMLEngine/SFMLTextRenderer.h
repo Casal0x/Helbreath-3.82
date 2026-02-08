@@ -28,6 +28,7 @@ public:
     // Text measurement
     TextMetrics MeasureText(const char* text) const override;
     int GetFittingCharCount(const char* text, int maxWidth) const override;
+    int GetLineHeight() const override;
 
     // Drawing
     void DrawText(int x, int y, const char* text, const ::Color& color) override;

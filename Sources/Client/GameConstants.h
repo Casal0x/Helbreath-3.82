@@ -27,12 +27,6 @@ namespace game_limits {
     constexpr int socket_block_limit   = 300;
 }
 
-namespace chat_timeout {
-    constexpr uint32_t type_a = 4000;
-    constexpr uint32_t type_b = 500;
-    constexpr uint32_t type_c = 2000;
-}
-
 namespace ui_layout {
     constexpr int btn_size_x    = 74;
     constexpr int btn_size_y    = 20;
@@ -70,9 +64,6 @@ enum class ServerType : uint8_t {
 #define DEF_MAXWHISPERMSG       game_limits::max_whisper_msgs
 #define DEF_MAXCHATSCROLLMSGS   game_limits::max_chat_scroll_msgs
 #define DEF_MAXEFFECTS          game_limits::max_effects
-#define DEF_CHATTIMEOUT_A       chat_timeout::type_a
-#define DEF_CHATTIMEOUT_B       chat_timeout::type_b
-#define DEF_CHATTIMEOUT_C       chat_timeout::type_c
 #define DEF_MAXITEMS            game_limits::max_items
 #define DEF_MAXBANKITEMS        game_limits::max_bank_items
 #define DEF_MAXGUILDSMAN        game_limits::max_guildsmen

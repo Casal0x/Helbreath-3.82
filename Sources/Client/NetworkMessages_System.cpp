@@ -60,19 +60,8 @@ void HandleStatusText(CGame* pGame, char* pData)
 	if (!pkt) return;
 
 	// Display floating text above the local player's head (like "* Failed! *")
-	for (int i = 1; i < DEF_MAXCHATMSGS; i++)
-	{
-		if (pGame->m_pChatMsgList[i] == nullptr)
-		{
-			pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(22, const_cast<char*>(pkt->text), pGame->m_dwCurTime);
-			pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
-			if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false)
-			{
-				pGame->m_pChatMsgList[i].reset();
-			}
-			return;
-		}
-	}
+	pGame->m_floatingText.AddDamageText(DamageTextType::Medium, pkt->text, pGame->m_dwCurTime,
+		pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 }
 
 void HandleForceDisconn(CGame* pGame, char* pData)

@@ -155,10 +155,14 @@ IBitmapFont* GetBitmapFont(int fontId);
 // fontId: FONT_ID_DEFAULT for TTF, or game-defined bitmap font ID
 void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style);
 
-// Draw text aligned within a rectangle (x, y, width, height)
+// Draw text aligned within a rectangle (x, y, width, height) — single line, no wrapping
 // Use Align flags: Align::Left, Align::HCenter, Align::Right, Align::Top, Align::VCenter, Align::Bottom
 // Combine with bitwise OR: Align::HCenter | Align::VCenter, or use presets: Align::Center
 void DrawTextAligned(int fontId, int x, int y, int width, int height, const char* text,
+                     const TextStyle& style, Align alignment = Align::TopLeft);
+
+// Draw text with word-wrapping within a rectangle — splits long text into multiple lines
+void DrawTextWrapped(int fontId, int x, int y, int width, int height, const char* text,
                      const TextStyle& style, Align alignment = Align::TopLeft);
 
 // ============== Text Measurement ==============
@@ -168,6 +172,12 @@ TextMetrics MeasureText(int fontId, const char* text);
 
 // Get number of characters that fit within maxWidth pixels
 int GetFittingCharCount(int fontId, const char* text, int maxWidth);
+
+// Get line height for a font
+int GetLineHeight(int fontId);
+
+// Get pixel height of text after word-wrapping within maxWidth
+int MeasureWrappedTextHeight(int fontId, const char* text, int maxWidth);
 
 // ============== Batching ==============
 // For DDraw, text rendering requires DC acquisition. Wrap multiple text calls

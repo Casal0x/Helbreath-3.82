@@ -9,6 +9,8 @@
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include <vector>
+#include <string>
 
 namespace TextLib {
 
@@ -214,42 +216,141 @@ void DrawText(int fontId, int x, int y, const char* text, const TextStyle& style
 	}
 }
 
-void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
-                     const TextStyle& style, Align alignment)
+// ============== Word Wrap (cached, 32-entry ring) ==============
+
+static constexpr int WRAP_CACHE_SIZE = 32;
+
+struct WrapCacheEntry {
+	std::string text;
+	int fontId = -1;
+	int maxWidth = 0;
+	std::vector<std::string> lines;
+};
+
+static WrapCacheEntry s_wrapCache[WRAP_CACHE_SIZE];
+static int s_wrapCacheNext = 0;
+
+static const WrapCacheEntry* FindWrapCache(const char* text, int fontId, int maxWidth)
+{
+	for (int i = 0; i < WRAP_CACHE_SIZE; i++)
+	{
+		const auto& e = s_wrapCache[i];
+		if (e.fontId == fontId && e.maxWidth == maxWidth && e.text == text)
+			return &e;
+	}
+	return nullptr;
+}
+
+static WrapCacheEntry& AllocWrapCache()
+{
+	WrapCacheEntry& slot = s_wrapCache[s_wrapCacheNext];
+	s_wrapCacheNext = (s_wrapCacheNext + 1) % WRAP_CACHE_SIZE;
+	return slot;
+}
+
+static void WordWrap(int fontId, const char* text, int maxWidth, std::vector<std::string>& outLines)
+{
+	if (!text || !text[0]) {
+		outLines.emplace_back("");
+		return;
+	}
+
+	// Check cache
+	const WrapCacheEntry* cached = FindWrapCache(text, fontId, maxWidth);
+	if (cached) {
+		outLines = cached->lines;
+		return;
+	}
+
+	std::string textStr(text);
+
+	if (maxWidth <= 0) {
+		outLines.push_back(textStr);
+		auto& slot = AllocWrapCache();
+		slot = {textStr, fontId, maxWidth, outLines};
+		return;
+	}
+
+	// Check if entire text fits on one line
+	TextMetrics metrics = MeasureText(fontId, text);
+	if (metrics.width <= maxWidth) {
+		outLines.push_back(textStr);
+		auto& slot = AllocWrapCache();
+		slot = {textStr, fontId, maxWidth, outLines};
+		return;
+	}
+
+	const char* remaining = text;
+	while (*remaining)
+	{
+		// Check if remaining fits
+		if (MeasureText(fontId, remaining).width <= maxWidth) {
+			outLines.emplace_back(remaining);
+			break;
+		}
+
+		// Get max chars that fit
+		int fitCount = GetFittingCharCount(fontId, remaining, maxWidth);
+		if (fitCount <= 0) fitCount = 1;
+
+		// Scan backwards for last space within fitCount
+		int lastSpace = -1;
+		for (int i = fitCount - 1; i >= 0; i--) {
+			if (remaining[i] == ' ') {
+				lastSpace = i;
+				break;
+			}
+		}
+
+		if (lastSpace > 0) {
+			outLines.emplace_back(remaining, lastSpace);
+			remaining += lastSpace + 1; // skip the space
+		} else {
+			outLines.emplace_back(remaining, fitCount);
+			remaining += fitCount;
+		}
+	}
+
+	if (outLines.empty())
+		outLines.emplace_back("");
+
+	// Store in cache
+	auto& slot = AllocWrapCache();
+	slot = {textStr, fontId, maxWidth, outLines};
+}
+
+// ============== Single-line aligned draw (internal) ==============
+
+static void DrawTextAlignedSingleLine(int fontId, int rectX, int rectY, int rectWidth, int rectHeight,
+                                       const char* text, const TextStyle& style, Align alignment)
 {
 	if (!text || text[0] == '\0')
 		return;
 
-	// Extract horizontal and vertical components
 	uint8_t hAlign = alignment & Align::HMask;
 	uint8_t vAlign = alignment & Align::VMask;
 
 	if (IsBitmapFont(fontId))
 	{
-		// ============== Bitmap Font Aligned ==============
 		IBitmapFont* pFont = GetBitmapFont(fontId);
 		if (!pFont)
 			return;
 
-		// Measure text for alignment calculations
 		int textWidth = pFont->MeasureText(text);
-		int textHeight = 16;  // Approximate height for bitmap fonts
+		int textHeight = 16;
 
-		// Calculate X position based on horizontal alignment
 		int x = rectX;
 		if (hAlign == Align::HCenter)
 			x = rectX + (rectWidth - textWidth) / 2;
 		else if (hAlign == Align::Right)
 			x = rectX + rectWidth - textWidth;
 
-		// Calculate Y position based on vertical alignment
 		int y = rectY;
 		if (vAlign == Align::VCenter)
 			y = rectY + (rectHeight - textHeight) / 2;
 		else if (vAlign == Align::Bottom)
 			y = rectY + rectHeight - textHeight;
 
-		// Handle shadow styles
 		switch (style.shadow)
 		{
 			case ShadowStyle::Highlight:
@@ -260,50 +361,38 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 				break;
 			}
 			case ShadowStyle::DropShadow:
-			{
 				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
 				break;
-			}
 			case ShadowStyle::ThreePoint:
-			{
 				pFont->DrawText(x + 1, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
 				pFont->DrawText(x, y + 1, text, BitmapTextParams::ColorReplace(0, 0, 0));
 				pFont->DrawText(x + 1, y, text, BitmapTextParams::ColorReplace(0, 0, 0));
 				break;
-			}
 			default:
 				break;
 		}
 
-		// Draw main text
 		pFont->DrawText(x, y, text, StyleToBitmapParams(style));
 	}
 	else
 	{
-		// ============== TTF Font Aligned ==============
 		ITextRenderer* pRenderer = GetTextRenderer();
 		if (!pRenderer)
 			return;
 
-		// Set font size if specified
 		if (style.fontSize > 0)
 			pRenderer->SetFontSize(style.fontSize);
 
-		// Handle shadow styles with offset rectangles
 		switch (style.shadow)
 		{
 			case ShadowStyle::ThreePoint:
-			{
 				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				pRenderer->DrawTextAligned(rectX, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				pRenderer->DrawTextAligned(rectX + 1, rectY, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				break;
-			}
 			case ShadowStyle::DropShadow:
-			{
 				pRenderer->DrawTextAligned(rectX + 1, rectY + 1, rectWidth, rectHeight, text, ::Color::Black(), alignment);
 				break;
-			}
 			case ShadowStyle::Highlight:
 			{
 				uint8_t hr, hg, hb;
@@ -315,8 +404,53 @@ void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHe
 				break;
 		}
 
-		// Draw main aligned text
 		pRenderer->DrawTextAligned(rectX, rectY, rectWidth, rectHeight, text, style.color, alignment);
+	}
+}
+
+// ============== Public DrawTextAligned (single-line, no wrapping) ==============
+
+void DrawTextAligned(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
+                     const TextStyle& style, Align alignment)
+{
+	DrawTextAlignedSingleLine(fontId, rectX, rectY, rectWidth, rectHeight, text, style, alignment);
+}
+
+// ============== Public DrawTextWrapped (word-wrap + multi-line) ==============
+
+void DrawTextWrapped(int fontId, int rectX, int rectY, int rectWidth, int rectHeight, const char* text,
+                     const TextStyle& style, Align alignment)
+{
+	if (!text || text[0] == '\0')
+		return;
+
+	// Word-wrap into lines (cached)
+	std::vector<std::string> lines;
+	WordWrap(fontId, text, rectWidth, lines);
+
+	if (lines.size() <= 1) {
+		DrawTextAlignedSingleLine(fontId, rectX, rectY, rectWidth, rectHeight, text, style, alignment);
+		return;
+	}
+
+	// Multi-line layout
+	int lineHeight = GetLineHeight(fontId);
+	int totalTextHeight = static_cast<int>(lines.size()) * lineHeight;
+
+	uint8_t vAlign = alignment & Align::VMask;
+	Align lineAlign = static_cast<Align>((alignment & Align::HMask) | Align::Top);
+
+	int startY = rectY;
+	if (vAlign == Align::VCenter)
+		startY = rectY + (rectHeight - totalTextHeight) / 2;
+	else if (vAlign == Align::Bottom)
+		startY = rectY + rectHeight - totalTextHeight;
+
+	for (size_t i = 0; i < lines.size(); i++)
+	{
+		int lineY = startY + static_cast<int>(i) * lineHeight;
+		DrawTextAlignedSingleLine(fontId, rectX, lineY, rectWidth, lineHeight,
+		                          lines[i].c_str(), style, lineAlign);
 	}
 }
 
@@ -382,6 +516,29 @@ int GetFittingCharCount(int fontId, const char* text, int maxWidth)
 	}
 
 	return 0;
+}
+
+int GetLineHeight(int fontId)
+{
+	if (IsBitmapFont(fontId))
+		return 16; // Approximate height for bitmap fonts
+
+	ITextRenderer* pRenderer = GetTextRenderer();
+	if (pRenderer)
+		return pRenderer->GetLineHeight();
+
+	return 0;
+}
+
+int MeasureWrappedTextHeight(int fontId, const char* text, int maxWidth)
+{
+	if (!text || text[0] == '\0')
+		return 0;
+
+	std::vector<std::string> lines;
+	WordWrap(fontId, text, maxWidth, lines);
+
+	return static_cast<int>(lines.size()) * GetLineHeight(fontId);
 }
 
 } // namespace TextLib

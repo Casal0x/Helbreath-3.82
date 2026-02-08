@@ -114,7 +114,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleLevelUp(CGame* pGame, char* pData)
 	{
-		int i, iPrevLevel;
+		int iPrevLevel;
 		char cTxt[120];
 
 		iPrevLevel = pGame->m_pPlayer->m_iLevel;
@@ -149,20 +149,9 @@ namespace NetworkMessageHandlers {
 			break;
 		}
 
-		pGame->_RemoveChatMsgListByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
-
-		for (i = 1; i < DEF_MAXCHATMSGS; i++)
-			if (pGame->m_pChatMsgList[i] == 0) {
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), "%s", "Level up!");
-				pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(23, cTxt, pGame->m_dwCurTime);
-				pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
-
-				if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {
-					pGame->m_pChatMsgList[i].reset();
-					pGame->m_pChatMsgList[i].reset();
-				}
-				return;
-			}
+		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
+		pGame->m_floatingText.AddNotifyText(NotifyTextType::LevelUp, "Level up!", pGame->m_dwCurTime,
+			pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
+		return;
 	}
 } // namespace NetworkMessageHandlers

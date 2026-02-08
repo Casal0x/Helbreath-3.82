@@ -335,11 +335,9 @@ void UpdateChat(CGame& game, const CEntityRenderState& state,
 {
 	if (state.m_iChatIndex == 0) return;
 
-	if ((game.m_pChatMsgList[state.m_iChatIndex] != 0) &&
-	    (game.m_pChatMsgList[state.m_iChatIndex]->m_iObjectID == state.m_wObjectID))
+	if (game.m_floatingText.IsValid(state.m_iChatIndex, state.m_wObjectID))
 	{
-		game.m_pChatMsgList[state.m_iChatIndex]->m_sX = sX;
-		game.m_pChatMsgList[state.m_iChatIndex]->m_sY = sY;
+		game.m_floatingText.UpdatePosition(state.m_iChatIndex, static_cast<short>(sX), static_cast<short>(sY));
 	}
 	else
 	{

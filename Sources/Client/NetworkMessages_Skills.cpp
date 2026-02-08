@@ -86,52 +86,29 @@ namespace NetworkMessageHandlers {
 	{
 		short sSkillIndex, sValue;
 		char cTxt[120];
-		int i;
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySkill>(
 			pData, sizeof(hb::net::PacketNotifySkill));
 		if (!pkt) return;
 		sSkillIndex = static_cast<short>(pkt->skill_index);
 		sValue = static_cast<short>(pkt->skill_value);
-		pGame->_RemoveChatMsgListByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
+		pGame->m_floatingText.RemoveByObjectID(pGame->m_pPlayer->m_sPlayerObjectID);
 		if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel < sValue)
 		{
 			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SKILL1, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
 			pGame->AddEventList(cTxt, 10);
 			pGame->PlayGameSound('E', 23, 0);
-			for (i = 1; i < DEF_MAXCHATMSGS; i++)
-				if (pGame->m_pChatMsgList[i] == 0)
-				{
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), "%s +%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-					pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(20, cTxt, pGame->m_dwCurTime);
-					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
-					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false)
-					{
-						pGame->m_pChatMsgList[i].reset();
-						pGame->m_pChatMsgList[i].reset();
-					}
-					break;
-				}
+			std::snprintf(cTxt, sizeof(cTxt), "%s +%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
+			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt, pGame->m_dwCurTime,
+				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 		}
 		else if (pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel > sValue) {
 			std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_SKILL2, pGame->m_pSkillCfgList[sSkillIndex]->m_cName, pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel - sValue);
 			pGame->AddEventList(cTxt, 10);
 			pGame->PlayGameSound('E', 24, 0);
-			for (i = 1; i < DEF_MAXCHATMSGS; i++)
-				if (pGame->m_pChatMsgList[i] == 0)
-				{
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), "%s -%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
-					pGame->m_pChatMsgList[i] = std::make_unique<CMsg>(20, cTxt, pGame->m_dwCurTime);
-					pGame->m_pChatMsgList[i]->m_iObjectID = pGame->m_pPlayer->m_sPlayerObjectID;
-					if (pGame->m_pMapData->bSetChatMsgOwner(pGame->m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false)
-					{
-						pGame->m_pChatMsgList[i].reset();
-						pGame->m_pChatMsgList[i].reset();
-					}
-					break;
-				}
+			std::snprintf(cTxt, sizeof(cTxt), "%s -%d%%", pGame->m_pSkillCfgList[sSkillIndex]->m_cName, sValue - pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel);
+			pGame->m_floatingText.AddNotifyText(NotifyTextType::SkillChange, cTxt, pGame->m_dwCurTime,
+				pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pMapData.get());
 		}
 		pGame->m_pSkillCfgList[sSkillIndex]->m_iLevel = sValue;
 		pGame->m_pPlayer->m_iSkillMastery[sSkillIndex] = (unsigned char)sValue;

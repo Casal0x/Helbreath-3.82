@@ -188,8 +188,8 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	// Chat message
 	if (m_entityState.m_iChatIndex != 0)
 	{
-		if (m_pChatMsgList[m_entityState.m_iChatIndex] != 0)
-			DrawChatMsgBox(sX, sY, m_entityState.m_iChatIndex, false);
+		if (m_floatingText.IsOccupied(m_entityState.m_iChatIndex))
+			m_floatingText.DrawSingle(m_entityState.m_iChatIndex, sX, sY, m_dwCurTime, m_Renderer);
 		else
 			m_pMapData->ClearChatMsg(indexX, indexY);
 	}

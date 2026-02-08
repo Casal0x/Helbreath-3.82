@@ -473,7 +473,7 @@ void Screen_OnGame::on_render()
     FrameTiming::EndProfile(ProfileStage::DrawWeather);
 
     FrameTiming::BeginProfile(ProfileStage::DrawChat);
-    m_pGame->DrawChatMsgs(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT());
+    m_pGame->m_floatingText.DrawAll(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT(), m_pGame->m_dwCurTime, m_pGame->m_Renderer);
     FrameTiming::EndProfile(ProfileStage::DrawChat);
 
     m_pGame->WhetherObjectFrameCounter();

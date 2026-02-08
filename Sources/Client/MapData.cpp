@@ -1098,10 +1098,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				std::memset(m_pData[iX][iY].m_cOwnerName, 0, sizeof(m_pData[iX][iY].m_cOwnerName));
 				std::memset(pName, 0, strlen(pName));
 
-				if (m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iChatMsg])
-				{
-					m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iChatMsg].reset();
-				}
+				m_pGame->m_floatingText.Clear(m_pData[iX][iY].m_iChatMsg);
 				m_pData[iX][iY].m_iChatMsg = 0;
 				m_pData[iX][iY].m_iEffectType = 0;
 				m_iObjectIDcacheLocX[wObjectID] = 0;
@@ -1123,10 +1120,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 			{
 				m_pData[iX][iY].m_cDeadOwnerFrame = 0;
 				std::memset(pName, 0, strlen(pName));
-				if (m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iDeadChatMsg])
-				{
-					m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iDeadChatMsg].reset();
-				}
+				m_pGame->m_floatingText.Clear(m_pData[iX][iY].m_iDeadChatMsg);
 				m_pData[iX][iY].m_iDeadChatMsg = 0;
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1142,10 +1136,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					m_pData[iX][iY].m_sOwnerType = 0;
 					std::memset(m_pData[iX][iY].m_cOwnerName, 0, sizeof(m_pData[iX][iY].m_cOwnerName));
 					std::memset(pName, 0, strlen(pName));
-					if (m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iChatMsg])
-					{
-						m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iChatMsg].reset();
-					}
+					m_pGame->m_floatingText.Clear(m_pData[iX][iY].m_iChatMsg);
 					m_pData[iX][iY].m_iChatMsg = 0;
 					m_iObjectIDcacheLocX[wObjectID] = 0;
 					m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1157,10 +1148,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				{
 					m_pData[iX][iY].m_cDeadOwnerFrame = 0;
 					std::memset(pName, 0, strlen(pName));
-					if (m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iDeadChatMsg])
-					{
-						m_pGame->m_pChatMsgList[m_pData[iX][iY].m_iDeadChatMsg].reset();
-					}
+					m_pGame->m_floatingText.Clear(m_pData[iX][iY].m_iDeadChatMsg);
 					m_pData[iX][iY].m_iDeadChatMsg = 0;
 					m_iObjectIDcacheLocX[wObjectID] = 0;
 					m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -2088,10 +2076,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							m_pData[dX][dY].m_wObjectID = 0;
 							m_pData[dX][dY].m_sOwnerType = 0;
 							std::memset(m_pData[dX][dY].m_cOwnerName, 0, sizeof(m_pData[dX][dY].m_cOwnerName));
-							if (m_pGame->m_pChatMsgList[m_pData[dX][dY].m_iChatMsg])
-							{
-								m_pGame->m_pChatMsgList[m_pData[dX][dY].m_iChatMsg].reset();
-							}
+							m_pGame->m_floatingText.Clear(m_pData[dX][dY].m_iChatMsg);
 						}
 					}
 					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTSTOP) { // DEF_OBJECTSTOP = 1 // 00497334
@@ -4115,11 +4100,7 @@ SCMO_FULL_SEARCH:;
 
 void CMapData::ClearChatMsg(short sX, short sY)
 {
-	// v1.411
-	if (m_pGame->m_pChatMsgList[m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iChatMsg]) {
-		m_pGame->m_pChatMsgList[m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iChatMsg].reset();
-	}
-
+	m_pGame->m_floatingText.Clear(m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iChatMsg);
 	m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iChatMsg = 0;
 }
 

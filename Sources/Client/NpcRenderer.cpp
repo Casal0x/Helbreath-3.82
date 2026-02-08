@@ -1009,11 +1009,9 @@ SpriteLib::BoundRect CNpcRenderer::DrawDead(int indexX, int indexY, int sX, int 
 	// Chat message — uses ClearDeadChatMsg for dead entities
 	if (state.m_iChatIndex != 0)
 	{
-		if ((m_game.m_pChatMsgList[state.m_iChatIndex] != 0) &&
-			(m_game.m_pChatMsgList[state.m_iChatIndex]->m_iObjectID == state.m_wObjectID))
+		if (m_game.m_floatingText.IsValid(state.m_iChatIndex, state.m_wObjectID))
 		{
-			m_game.m_pChatMsgList[state.m_iChatIndex]->m_sX = sX;
-			m_game.m_pChatMsgList[state.m_iChatIndex]->m_sY = sY;
+			m_game.m_floatingText.UpdatePosition(state.m_iChatIndex, static_cast<short>(sX), static_cast<short>(sY));
 		}
 		else
 		{

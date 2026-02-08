@@ -147,6 +147,14 @@ int SFMLTextRenderer::GetFittingCharCount(const char* text, int maxWidth) const
     return 0;
 }
 
+int SFMLTextRenderer::GetLineHeight() const
+{
+    if (!m_fontLoaded)
+        return 0;
+
+    return static_cast<int>(m_font.getLineSpacing(m_fontSize));
+}
+
 void SFMLTextRenderer::DrawText(int x, int y, const char* text, const ::Color& color)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)

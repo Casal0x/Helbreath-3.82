@@ -344,7 +344,7 @@ void CGame::Quit()
 	for (auto& ch : m_pCharList) ch.reset();
 	for (auto& item : m_pItemList) item.reset();
 	for (auto& item : m_pBankList) item.reset();
-	for (auto& msg : m_pChatMsgList) msg.reset();
+	m_floatingText.ClearAll();
 	for (auto& msg : m_pChatScrollList) msg.reset();
 	for (auto& msg : m_pWhisperMsg) msg.reset();
 	for (auto& item : m_pItemForSaleList) item.reset();
@@ -1739,7 +1739,7 @@ void CGame::OnTimer()
 		if ((dwTime - m_dwCheckChatTime) > 2000)
 		{
 			m_dwCheckChatTime = m_dwTime;
-			ReleaseTimeoverChatMsg();
+			m_floatingText.ReleaseExpired(m_dwCurTime);
 			if (m_pPlayer->m_Controller.GetCommandCount() >= 6)
 			{
 				m_iNetLagCount++;
@@ -2080,9 +2080,7 @@ void CGame::InitGameSettings()
 
 	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
 
-	for (i = 0; i < DEF_MAXCHATMSGS; i++) {
-		if (m_pChatMsgList[i] != 0) m_pChatMsgList[i].reset();
-	}
+	m_floatingText.ClearAll();
 
 	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++) {
 		if (m_pChatScrollList[i] != 0) m_pChatScrollList[i].reset();
@@ -2814,7 +2812,7 @@ void CGame::LogEventHandler(char* pData)
 		break;
 	}
 
-	_RemoveChatMsgListByObjectID(wObjectID);
+	m_floatingText.RemoveByObjectID(wObjectID);
 }
 
 // MODERNIZED: No longer a window message handler - polls socket directly
@@ -3379,7 +3377,7 @@ void CGame::PutChatScrollList(char* pMsg, char cType)
 
 void CGame::ChatMsgHandler(char* pData)
 {
-	int i, iObjectID, iLoc;
+	int iObjectID, iLoc;
 	short sX, sY;
 	char cMsgType, cName[21], cTemp[100], cMsg[100], cTxt1[100], cTxt2[100];
 	uint32_t dwTime;
@@ -3472,18 +3470,11 @@ void CGame::ChatMsgHandler(char* pData)
 
 	m_Renderer->EndTextBatch();
 
-	_RemoveChatMsgListByObjectID(iObjectID);
+	m_floatingText.RemoveByObjectID(iObjectID);
 
 	const char* cp = pData + sizeof(hb::net::PacketCommandChatMsgHeader);
-	for (i = 1; i < DEF_MAXCHATMSGS; i++)
-		if (m_pChatMsgList[i] == 0) {
-			m_pChatMsgList[i] = std::make_unique<CMsg>(1, (char*)(cp), dwTime);
-			m_pChatMsgList[i]->m_iObjectID = iObjectID;
-
-			if (m_pMapData->bSetChatMsgOwner(iObjectID, sX, sY, i) == false) {
-				m_pChatMsgList[i].reset();
-			}
-
+	int iChatSlot = m_floatingText.AddChatText(cp, dwTime, iObjectID, m_pMapData.get(), sX, sY);
+	if (iChatSlot != 0) {
 			if ((cMsgType != 0) && (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) != true)) {
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
 				std::snprintf(cHeadMsg, sizeof(cHeadMsg), "%s:%s", cName, cp);
@@ -3503,35 +3494,6 @@ void CGame::ChatMsgHandler(char* pData)
 				}
 			}
 			return;
-		}
-}
-
-void CGame::ReleaseTimeoverChatMsg()
-{
-	uint32_t dwTime = GameClock::GetTimeMS();
-	for (int i = 1; i < DEF_MAXCHATMSGS; i++)
-		if (m_pChatMsgList[i] != 0) {
-
-			if ((m_pChatMsgList[i]->m_cType >= 1) && (m_pChatMsgList[i]->m_cType <= 20)) {
-				if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_A) {
-					m_pChatMsgList[i].reset();
-				}
-			}
-			else
-				if ((m_pChatMsgList[i]->m_cType >= 21) && (m_pChatMsgList[i]->m_cType <= 40)) {
-					if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_B) {
-						m_pChatMsgList[i].reset();
-					}
-				}
-				else
-					if ((m_pChatMsgList[i]->m_cType >= 41) && (m_pChatMsgList[i]->m_cType <= 60)) {
-						if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_C) {
-							m_pChatMsgList[i].reset();
-						}
-					}
-					else if ((dwTime - m_pChatMsgList[i]->m_dwTime) > DEF_CHATTIMEOUT_A) {
-						m_pChatMsgList[i].reset();
-					}
 		}
 }
 
@@ -4574,48 +4536,6 @@ int CGame::iGetTopDialogBoxIndex()
 	return 0;
 }
 
-void CGame::DrawChatMsgs(short sX, short sY, short dX, short dY)
-{
-	int i;
-
-	for (i = 0; i < DEF_MAXCHATMSGS; i++)
-		if (m_pChatMsgList[i] != 0)
-			if ((m_pChatMsgList[i]->m_sX >= sX) && (m_pChatMsgList[i]->m_sX <= dX) &&
-				(m_pChatMsgList[i]->m_sY >= sY) && (m_pChatMsgList[i]->m_sY <= dY)) {
-
-				switch (m_pChatMsgList[i]->m_cType) {
-				case hb::owner::GrandMagicGenerator:
-				case hb::owner::ManaStone:
-				case hb::owner::Guard:
-				case hb::owner::Amphis:
-				case hb::owner::ClayGolem:
-					DrawChatMsgBox(m_pChatMsgList[i]->m_sX, m_pChatMsgList[i]->m_sY, i, false);
-					break;
-				}
-			}
-
-	m_Renderer->BeginTextBatch();
-	for (i = 0; i < DEF_MAXCHATMSGS; i++)
-		if (m_pChatMsgList[i] != 0)
-			if ((m_pChatMsgList[i]->m_sX >= sX) && (m_pChatMsgList[i]->m_sX <= dX) &&
-				(m_pChatMsgList[i]->m_sY >= sY) && (m_pChatMsgList[i]->m_sY <= dY)) {
-
-				switch (m_pChatMsgList[i]->m_cType) {
-				case hb::owner::GrandMagicGenerator:
-				case hb::owner::ManaStone:
-				case hb::owner::Guard:
-				case hb::owner::Amphis:
-				case hb::owner::ClayGolem:
-					break;
-
-				case hb::owner::Howard:
-				default:
-					DrawChatMsgBox(m_pChatMsgList[i]->m_sX, m_pChatMsgList[i]->m_sY, i, true);
-					break;
-				}
-			}
-	m_Renderer->EndTextBatch();
-}
 
 void CGame::_LoadTextDlgContents(int cType)
 {
@@ -5180,184 +5100,6 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 
 // _Draw_UpdateScreen_OnCreateNewAccount removed - migrated to Screen_CreateAccount
 
-void CGame::DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC)
-{
-	char cMsg[100], cMsgA[22], cMsgB[22], cMsgC[22], * cp;
-	int  iRet, iLines, i, iSize, iSize2, iLoc, iFontSize;
-	uint32_t dwTime;
-	Color rgb;
-	bool bIsTrans;
-
-	std::memset(cMsg, 0, sizeof(cMsg));
-	std::memset(cMsgA, 0, sizeof(cMsgA));
-	std::memset(cMsgB, 0, sizeof(cMsgB));
-	std::memset(cMsgC, 0, sizeof(cMsgC));
-
-	dwTime = m_pChatMsgList[iChatIndex]->m_dwTime;
-	std::snprintf(cMsg, sizeof(cMsg), "%s", m_pChatMsgList[iChatIndex]->m_pMsg);
-	cp = (char*)cMsg;
-	iLines = 0;
-
-	rgb = GameColors::UIWhite;
-	switch (m_pChatMsgList[iChatIndex]->m_cType) {
-	case 1:
-		rgb = GameColors::UIWhite;
-		break;
-	case hb::owner::Howard:
-		rgb = GameColors::UIDmgYellow;
-		// �޽��� ǥ�ÿ� �����̰� �ɸ���.
-		if ((m_dwCurTime - dwTime) < 650) return;
-		else dwTime += 650;
-		break;
-	case hb::owner::GrandMagicGenerator:
-		rgb = GameColors::UIDmgRed;
-		break;
-
-	case hb::owner::ManaStone:
-		rgb = GameColors::UIDmgRed;
-		if ((m_dwCurTime - dwTime) < 650) return;
-		else dwTime += 650;
-		break;
-	}
-
-	if (strlen(cp) != 0) {
-		memcpy(cMsgA, cp, 20);
-
-		iRet = GetCharKind(cMsgA, 19);
-		if (iRet == CODE_HAN1) {
-			cMsgA[20] = cp[20];
-			cp++;
-		}
-		cp += 20;
-		iLines = 1;
-	}
-
-	if (strlen(cp) != 0) {
-		memcpy(cMsgB, cp, 20);
-
-		iRet = GetCharKind(cMsgB, 19);
-		if (iRet == CODE_HAN1) {
-			cMsgB[20] = cp[20];
-			cp++;
-		}
-		cp += 20;
-		iLines = 2;
-	}
-
-	if (strlen(cp) != 0) {
-		memcpy(cMsgC, cp, 20);
-
-		iRet = GetCharKind(cMsgC, 19);
-		if (iRet == CODE_HAN1) {
-			cMsgC[20] = cp[20];
-			cp++;
-		}
-		cp += 20;
-		iLines = 3;
-	}
-
-	iSize = 0;
-	for (i = 0; i < 20; i++)
-		if (cMsgA[i] != 0)
-
-			if ((unsigned char)cMsgA[i] >= 128) {
-				iSize += 5;	//6
-				i++;
-			}
-			else iSize += 4;
-
-	iLoc = m_dwCurTime - dwTime;
-	switch (m_pChatMsgList[iChatIndex]->m_cType) {
-	case hb::owner::Guard:
-	case hb::owner::Amphis:
-	case hb::owner::ClayGolem://...
-		if (iLoc > 80) iLoc = 10;
-		else iLoc = iLoc >> 3;
-		break;
-	default://
-		if (iLoc > 352) iLoc = 9;
-		else if (iLoc > 320) iLoc = 10;
-		else iLoc = iLoc >> 5;
-		break;
-	}
-
-	if (ConfigManager::Get().GetDetailLevel() == 0)
-		bIsTrans = false;
-	else bIsTrans = true;
-
-	switch (m_pChatMsgList[iChatIndex]->m_cType) {
-	case hb::owner::GrandMagicGenerator:
-	case hb::owner::ManaStone:
-		iSize2 = 0;
-		for (i = 0; i < 100; i++)
-			if (cMsg[i] != 0)
-				if ((unsigned char)cMsg[i] >= 128) {
-					iSize2 += 5;
-					i++;
-				}
-				else iSize2 += 4;
-		TextLib::DrawText(GameFont::SprFont3_0, sX - iSize2, sY - 65 - iLoc, cMsg, TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x).WithAdditive());
-		break;
-
-	case hb::owner::Guard:
-	case hb::owner::Amphis:
-	case hb::owner::ClayGolem:
-		iFontSize = 23 - (int)m_pChatMsgList[iChatIndex]->m_cType;
-		switch (iLines) {
-		case 1:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			break;
-		case 2:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			break;
-		case 3:
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 97 - iLoc, cMsgA, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 81 - iLoc, cMsgB, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			TextLib::DrawText(GameFont::SprFont3_0 + iFontSize, sX - iSize, sY - 65 - iLoc, cMsgC, bIsTrans ? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive() : TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive());
-			break;
-		}
-		break;
-
-	case hb::owner::Howard:
-	default:
-		if (bIsPreDC == false)
-			m_Renderer->BeginTextBatch();
-
-		int iTextWidth = m_Renderer->GetTextWidth(cMsg);
-
-		switch (iTextWidth / 160) {
-		case 0:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 65 - iLoc, 160, 65), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc + 1, 160, 65), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 65 - iLoc, 160, 65), cMsg, rgb);
-			break;
-
-		case 1:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 83 - iLoc, 160, 83), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc + 1, 160, 83), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 83 - iLoc, 160, 83), cMsg, rgb);
-			break;
-
-		case 2:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 101 - iLoc, 160, 101), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc + 1, 160, 101), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 101 - iLoc, 160, 101), cMsg, rgb);
-			break;
-
-		case 3:
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80 + 1, sY - 119 - iLoc, 160, 119), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc + 1, 160, 119), cMsg, Color::Black());
-			m_Renderer->DrawTextRect(GameRectangle(sX - 80, sY - 119 - iLoc, 160, 119), cMsg, rgb);
-			break;
-		}
-
-		if (bIsPreDC == false)
-			m_Renderer->EndTextBatch();
-		break;
-	}
-}
-
 void CGame::CivilRightAdmissionHandler(char* pData)
 {
 	uint16_t wResult;
@@ -5410,51 +5152,6 @@ void CGame::CivilRightAdmissionHandler(char* pData)
 		}
 		break;
 	}
-}
-
-void CGame::_RemoveChatMsgListByObjectID(int iObjectID)
-{
-	int i;
-
-	for (i = 1; i < DEF_MAXCHATMSGS; i++)
-		if ((m_pChatMsgList[i] != 0) && (m_pChatMsgList[i]->m_iObjectID == iObjectID)) {
-			m_pChatMsgList[i].reset();
-		}
-}
-
-std::unique_ptr<CMsg> CGame::CreateDamageMsg(short sDamage, bool bLastHit)
-{
-	char cTxt[64]{};
-	if (sDamage == DEF_DAMAGE_IMMUNE)
-	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", " * Immune *");
-		PlayGameSound('C', 17, 0);
-		return std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-	}
-	if (sDamage == DEF_MAGIC_FAILED)
-	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", " * Failed! *");
-		PlayGameSound('C', 17, 0);
-		return std::make_unique<CMsg>(22, cTxt, m_dwCurTime);
-	}
-	if (sDamage > 128)
-	{
-		std::snprintf(cTxt, sizeof(cTxt), "%s", "Critical!");
-		return std::make_unique<CMsg>(23, cTxt, m_dwCurTime);
-	}
-	if (sDamage > 0)
-	{
-		if (bLastHit && sDamage >= 12)
-			std::snprintf(cTxt, sizeof(cTxt), "-%dPts!", sDamage);
-		else
-			std::snprintf(cTxt, sizeof(cTxt), "-%dPts", sDamage);
-		int iFontType;
-		if (sDamage < 12)		iFontType = 21;
-		else if (sDamage < 40)	iFontType = 22;
-		else					iFontType = 23;
-		return std::make_unique<CMsg>(iFontType, cTxt, m_dwCurTime);
-	}
-	return nullptr;
 }
 
 void CGame::PlayGameSound(char cType, int iNum, int iDist, long lPan)
@@ -8702,7 +8399,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 	int    iRet;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	uint16_t wType = 0;
-	int i;//, iFOE;
+	//int iFOE;
 	char   cTxt[120];
 
 	char  pDstName[21];
@@ -10003,17 +9700,8 @@ MOTION_COMMAND_PROCESS:;
 				}
 			}
 
-			for (i = 1; i < DEF_MAXCHATMSGS; i++)
-				if (m_pChatMsgList[i] == 0)
-				{
-					m_pChatMsgList[i] = CreateDamageMsg(m_pPlayer->m_sDamageMoveAmount);
-					if (!m_pChatMsgList[i]) break;
-					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
-					if (m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i) == false) {
-						m_pChatMsgList[i].reset();
-					}
-					break;
-				}
+			m_floatingText.AddDamageFromValue(m_pPlayer->m_sDamageMoveAmount, false, m_dwCurTime,
+					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
 			m_pPlayer->m_sDamageMove = 0;
 			m_pPlayer->m_sDamageMoveAmount = 0;
 		}
@@ -10250,18 +9938,14 @@ MOTION_COMMAND_PROCESS:;
 			if (m_iPointCommandType >= 100 && m_iPointCommandType < 200)
 				m_bIsGetPointingMode = true;
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
-			_RemoveChatMsgListByObjectID(m_pPlayer->m_sPlayerObjectID);
-			for (i = 1; i < DEF_MAXCHATMSGS; i++)
-				if (m_pChatMsgList[i] == 0)
-				{
-					std::memset(cTxt, 0, sizeof(cTxt));
-					std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
-					m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, GameClock::GetTimeMS());
-					m_pChatMsgList[i]->m_iObjectID = m_pPlayer->m_sPlayerObjectID;
-					m_pMapData->bSetChatMsgOwner(m_pPlayer->m_sPlayerObjectID, -10, -10, i);
-					return;
-				}
-			break;
+			m_floatingText.RemoveByObjectID(m_pPlayer->m_sPlayerObjectID);
+			{
+				std::memset(cTxt, 0, sizeof(cTxt));
+				std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[m_iCastingMagicType]->m_cName);
+				m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt, GameClock::GetTimeMS(),
+					m_pPlayer->m_sPlayerObjectID, m_pMapData.get());
+			}
+			return;
 
 		default:
 			break;
@@ -10491,9 +10175,7 @@ void CGame::InitDataResponseHandler(char* pData)
 		std::memset(m_stGuildName[i].cGuildName, 0, sizeof(m_stGuildName[i].cGuildName));
 	}
 
-	for (i = 0; i < DEF_MAXCHATMSGS; i++) {
-		if (m_pChatMsgList[i] != 0) m_pChatMsgList[i].reset();
-	}
+	m_floatingText.ClearAll();
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseInitDataHeader>(
 		pData, sizeof(hb::net::PacketResponseInitDataHeader));
@@ -10672,7 +10354,6 @@ void CGame::MotionEventHandler(char* pData)
 	PlayerAppearance playerAppearance;
 	bool bPrevCombatMode = false;
 	char    cTxt[120];
-	int i;
 	std::memset(cName, 0, sizeof(cName));
 	sX = -1;
 	sY = -1;
@@ -10813,37 +10494,19 @@ void CGame::MotionEventHandler(char* pData)
 
 	switch (wEventType) {
 	case DEF_OBJECTMAGIC: // Casting
-		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
-
-		for (i = 1; i < DEF_MAXCHATMSGS; i++)
-			if (m_pChatMsgList[i] == 0)
-			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[sV1]->m_cName);
-				m_pChatMsgList[i] = std::make_unique<CMsg>(41, cTxt, m_dwCurTime);
-				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
-				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
-				{
-					m_pChatMsgList[i].reset();
-				}
-				return;
-			}
+		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+		{
+			std::memset(cTxt, 0, sizeof(cTxt));
+			std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[sV1]->m_cName);
+			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt, m_dwCurTime,
+				hb::objectid::ToRealID(wObjectID), m_pMapData.get());
+		}
 		break;
 
 	case DEF_OBJECTDYING:
-		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
-		for (i = 1; i < DEF_MAXCHATMSGS; i++)
-			if (m_pChatMsgList[i] == 0)
-			{
-				m_pChatMsgList[i] = CreateDamageMsg(sV1, true);
-				if (!m_pChatMsgList[i]) return;
-				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
-				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
-				{
-					m_pChatMsgList[i].reset();
-				}
-				return;
-			}
+		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+		m_floatingText.AddDamageFromValue(sV1, true, m_dwCurTime,
+			hb::objectid::ToRealID(wObjectID), m_pMapData.get());
 		break;
 
 	case DEF_OBJECTDAMAGE:
@@ -10857,20 +10520,9 @@ void CGame::MotionEventHandler(char* pData)
 			m_iPointCommandType = -1;
 			ClearSkillUsingStatus();
 		}
-		_RemoveChatMsgListByObjectID(hb::objectid::ToRealID(wObjectID));
-
-		for (i = 1; i < DEF_MAXCHATMSGS; i++)
-			if (m_pChatMsgList[i] == 0)
-			{
-				m_pChatMsgList[i] = CreateDamageMsg(sV1);
-				if (!m_pChatMsgList[i]) return;
-				m_pChatMsgList[i]->m_iObjectID = hb::objectid::ToRealID(wObjectID);
-				if (m_pMapData->bSetChatMsgOwner(hb::objectid::ToRealID(wObjectID), -10, -10, i) == false)
-				{
-					m_pChatMsgList[i].reset();
-				}
-				return;
-			}
+		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+		m_floatingText.AddDamageFromValue(sV1, false, m_dwCurTime,
+			hb::objectid::ToRealID(wObjectID), m_pMapData.get());
 		break;
 
 	case DEF_OBJECTATTACK:

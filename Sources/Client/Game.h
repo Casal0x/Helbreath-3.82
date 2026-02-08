@@ -57,6 +57,7 @@
 #include "PlayerRenderer.h"
 #include "NpcRenderer.h"
 #include "GameTimer.h"
+#include "FloatingTextManager.h"
 
 #include "GameConstants.h"
 
@@ -180,11 +181,8 @@ public:
 	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status);
 	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
-	void _RemoveChatMsgListByObjectID(int iObjectID);
-	std::unique_ptr<CMsg> CreateDamageMsg(short sDamage, bool bLastHit = false);
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
-	void DrawChatMsgs(short sX, short sY, short dX, short dY);
 	void RequestFullObjectData(uint16_t wObjectID);
 	bool bCheckImportantFile();
 	void EraseItem(char cItemID);
@@ -226,8 +224,6 @@ void _LoadShopMenuContents(char cType);
 	SpriteLib::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	void ClearGuildNameList();
 	void DrawBackground(short sDivX, short sModX, short sDivY, short sModY);
-	void DrawChatMsgBox(short sX, short sY, int iChatIndex, bool bIsPreDC);
-	void ReleaseTimeoverChatMsg();
 	void ChatMsgHandler(char * pData);
 	void ReleaseUnusedSprites();
 	void OnKeyUp(KeyCode key);
@@ -401,7 +397,7 @@ void _LoadShopMenuContents(char cType);
 	std::unique_ptr<IOServicePool> m_pIOPool;  // 0 threads = manual poll mode for client
 	std::unique_ptr<class ASIOSocket> m_pGSock;
 	std::unique_ptr<class ASIOSocket> m_pLSock;
-	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATMSGS> m_pChatMsgList;
+	CFloatingTextManager m_floatingText;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATSCROLLMSGS> m_pChatScrollList;
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXWHISPERMSG> m_pWhisperMsg;
 	std::unique_ptr<EffectManager> m_pEffectManager;

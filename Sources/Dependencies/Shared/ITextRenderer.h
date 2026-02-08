@@ -71,6 +71,7 @@ public:
     // Text measurement
     virtual TextMetrics MeasureText(const char* text) const = 0;
     virtual int GetFittingCharCount(const char* text, int maxWidth) const = 0;
+    virtual int GetLineHeight() const = 0;
 
     // Drawing
     virtual void DrawText(int x, int y, const char* text, const ::Color& color) = 0;

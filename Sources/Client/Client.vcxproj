@@ -342,6 +342,9 @@
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
     <ClInclude Include="WeatherManager.h" />
+    <ClInclude Include="FloatingTextTypes.h" />
+    <ClInclude Include="FloatingText.h" />
+    <ClInclude Include="FloatingTextManager.h" />
     <ClInclude Include="CursorTarget.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerController.h" />
@@ -503,6 +506,7 @@
     <ClCompile Include="ChatCommandManager.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
+    <ClCompile Include="FloatingTextManager.cpp" />
     <ClCompile Include="CursorTarget.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerController.cpp" />
