@@ -668,7 +668,7 @@ public:
 	void RemoveFromTarget(short sTargetH, char cTargetType, int iCode = 0);
 	bool bGetEmptyPosition(short * pX, short * pY, char cMapIndex);
 	char cGetNextMoveDir(short sX, short sY, short dstX, short dstY, char cMapIndex, char cTurn, int * pError);
-	int  iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, bool bResponse = true, bool bIsDash = false);
+	int  iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, uint32_t dwClientTime, bool bResponse = true, bool bIsDash = false);
 	void ChatMsgHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();

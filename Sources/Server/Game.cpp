@@ -1196,14 +1196,6 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 	const auto* base = hb::net::PacketCast<hb::net::PacketCommandMotionBase>(
 		pData, sizeof(hb::net::PacketCommandMotionBase));
 	if (!base) return;
-	/*m_pClientList[iClientH]->m_cConnectionCheck++;
-	if (m_pClientList[iClientH]->m_cConnectionCheck > 50) {
-		std::snprintf(G_cTxt, sizeof(G_cTxt), "Hex: (%s) Player: (%s) - removed 03203203h, vital to hack detection.", m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName);
-		PutHackLogFileList(G_cTxt);
-		DeleteClient(iClientH, true, true);
-		return;
-	}
-	*/
 	wCommand = base->header.msg_type;
 	sX = base->x;
 	sY = base->y;
@@ -1270,7 +1262,7 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 		iRet = iClientMotion_Move_Handler(iClientH, sX, sY, cDir, 0);
 		if ((iRet == 1) && (m_pClientList[iClientH] != 0)) {
 			SendEventToNearClient_TypeA(iClientH, DEF_OWNERTYPE_PLAYER, MSGID_EVENT_MOTION, DEF_OBJECTATTACKMOVE, 0, 0, 0);
-			iClientMotion_Attack_Handler(iClientH, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, dX, dY, wType, cDir, wTargetObjectID, false, true); // v1.4
+			iClientMotion_Attack_Handler(iClientH, m_pClientList[iClientH]->m_sX, m_pClientList[iClientH]->m_sY, dX, dY, wType, cDir, wTargetObjectID, dwClientTime, false, true); // v1.4
 		}
 		else if (iRet == 2) SendObjectMotionRejectMsg(iClientH);
 		if ((m_pClientList[iClientH] != 0) && (m_pClientList[iClientH]->m_iHP <= 0)) ClientKilledHandler(iClientH, 0, 0, 1); // v1.4
@@ -1280,7 +1272,7 @@ void CGame::ClientMotionHandler(int iClientH, char* pData)
 
 	case DEF_OBJECTATTACK:
 		_CheckAttackType(iClientH, &wType);
-		iRet = iClientMotion_Attack_Handler(iClientH, sX, sY, dX, dY, wType, cDir, wTargetObjectID); // v1.4
+		iRet = iClientMotion_Attack_Handler(iClientH, sX, sY, dX, dY, wType, cDir, wTargetObjectID, dwClientTime); // v1.4
 		if (iRet == 1) {
 			if (wType >= 20) {
 				m_pClientList[iClientH]->m_iSuperAttackLeft--;
@@ -1490,27 +1482,11 @@ int CGame::iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDi
 			DeleteClient(iClientH, true, true);
 			return 0;
 		}
-		/*if (m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->3CA18h ) {
-
-			.text:00406037                 mov     [ebp+var_C1C], 0
-			.text:0040603E                 xor     edx, edx
-			.text:00406040                 mov     [ebp+var_C1B], edx
-			.text:00406046                 mov     [ebp+var_C17], edx
-			.text:0040604C                 mov     [ebp+var_C13], dx
-
-			bRet = m_pMapList[m_pClientList[iClientH]->m_cMapIndex]->sub_4C0F20(dX, dY, cTemp, wV1, wV2);
-			if (bRet == 1) {
-				RequestTeleportHandler(iClientH, "2   ", cTemp, wV1, wV2);
-			}
-		}*/
 	}
 	else {
 		m_pClientList[iClientH]->m_bIsMoveBlocked = true;
 
-		if (bIsBlocked) {
-			m_pClientList[iClientH]->m_dwAttackLAT = 1050;
-		}
-		m_pClientList[iClientH]->m_dwAttackLAT = 1010;
+		m_pClientList[iClientH]->m_dwAttackLAT = 0;
 
 		wObjectID = (WORD)iClientH;
 		writer.Reset();
@@ -5456,7 +5432,7 @@ void CGame::ChatMsgHandlerGSM(int iMsgType, int iV1, char* pName, char* pData, s
 //						   - fixed attack unmoving object
 // Incomplete: 
 //			- Direction Bow damage disabled
-int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, bool bResponse, bool bIsDash)
+int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short dX, short dY, short wType, char cDir, uint16_t wTargetObjectID, uint32_t dwClientTime, bool bResponse, bool bIsDash)
 {
 	uint32_t dwTime, iExp;
 	int     iRet, tdX = 0, tdY = 0;
@@ -5477,6 +5453,7 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 	if (m_pClientList[iClientH]->m_iAttackMsgRecvCount >= 7) {
 		if (m_pClientList[iClientH]->m_dwAttackLAT != 0) {
 			// Compute expected time for 7 consecutive attacks from weapon speed and status.
+			// Uses client time to avoid false positives from TCP buffering/network jitter.
 			// Must match client-side animation timing (PlayerAnim::Attack: sMaxFrame=7, frames 0-7 = 8 durations @ 78ms base).
 			constexpr int ATTACK_FRAME_DURATIONS = 8;
 			constexpr int BASE_FRAME_TIME = 78;
@@ -5496,12 +5473,17 @@ int CGame::iClientMotion_Attack_Handler(int iClientH, short sX, short sY, short 
 			int batchThreshold = 7 * singleSwingTime - BATCH_TOLERANCE_MS;
 			if (batchThreshold < 2800) batchThreshold = 2800;
 
-			if ((dwTime - m_pClientList[iClientH]->m_dwAttackLAT) < static_cast<uint32_t>(batchThreshold)) {
+			uint32_t dwClientGap = dwClientTime - m_pClientList[iClientH]->m_dwAttackLAT;
+			if (dwClientGap < static_cast<uint32_t>(batchThreshold)) {
+				std::snprintf(G_cTxt, sizeof(G_cTxt), "Batch Swing Hack: (%s) Player: (%s) - 7 attacks in %ums, Min: %dms",
+					m_pClientList[iClientH]->m_cIPaddress, m_pClientList[iClientH]->m_cCharName,
+					dwClientGap, batchThreshold);
+				PutHackLogFileList(G_cTxt);
 				DeleteClient(iClientH, true, true, true);
 				return 0;
 			}
 		}
-		m_pClientList[iClientH]->m_dwAttackLAT = dwTime;
+		m_pClientList[iClientH]->m_dwAttackLAT = dwClientTime;
 		m_pClientList[iClientH]->m_iAttackMsgRecvCount = 0;
 	}
 
@@ -29528,10 +29510,6 @@ bool CGame::bCheckClientMagicFrequency(int iClientH, uint32_t dwClientTime)
 		if (m_pClientList[iClientH]->m_iSpellCount < 0)
 			m_pClientList[iClientH]->m_iSpellCount = 0;
 		m_pClientList[iClientH]->m_bMagicConfirm = false;
-
-		//testcode
-		//std::snprintf(G_cTxt, sizeof(G_cTxt), "Magic: %d", dwTimeGap);
-		//PutLogList(G_cTxt);
 	}
 
 	return false;
