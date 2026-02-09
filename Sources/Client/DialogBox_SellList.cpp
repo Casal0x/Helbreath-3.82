@@ -25,11 +25,11 @@ void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)
 	int iEmptyCount = 0;
 	DrawItemList(sX, sY, szX, msX, msY, iEmptyCount);
 
-	if (iEmptyCount == DEF_MAXSELLLIST) {
+	if (iEmptyCount == game_limits::max_sell_list) {
 		DrawEmptyListMessage(sX, sY, szX);
 	}
 
-	bool bHasItems = (iEmptyCount < DEF_MAXSELLLIST);
+	bool bHasItems = (iEmptyCount < game_limits::max_sell_list);
 	DrawButtons(sX, sY, msX, msY, bHasItems);
 }
 
@@ -37,7 +37,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 {
 	char cTxt[256], cStr1[64], cStr2[64], cStr3[64];
 
-	for (int i = 0; i < DEF_MAXSELLLIST; i++)
+	for (int i = 0; i < game_limits::max_sell_list; i++)
 	{
 		if (m_pGame->m_stSellItemList[i].iIndex != -1)
 		{
@@ -151,18 +151,18 @@ void DialogBox_SellList::DrawEmptyListMessage(short sX, short sY, short szX)
 void DialogBox_SellList::DrawButtons(short sX, short sY, short msX, short msY, bool bHasItems)
 {
 	// Sell button (only enabled when there are items)
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) &&
-		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY) && bHasItems)
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 39);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y) && bHasItems)
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 39);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 38);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 38);
 
 	// Cancel button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
-		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
 bool DialogBox_SellList::OnClick(short msX, short msY)
@@ -171,7 +171,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// Check if clicking on an item in the list to remove it
-	for (int i = 0; i < DEF_MAXSELLLIST; i++)
+	for (int i = 0; i < game_limits::max_sell_list; i++)
 	{
 		if ((msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15))
 		{
@@ -184,7 +184,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 				m_pGame->PlayGameSound('E', 14, 5);
 
 				// Compact the list
-				for (int x = 0; x < DEF_MAXSELLLIST - 1; x++)
+				for (int x = 0; x < game_limits::max_sell_list - 1; x++)
 				{
 					if (m_pGame->m_stSellItemList[x].iIndex == -1)
 					{
@@ -201,8 +201,8 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 	}
 
 	// Sell button
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) &&
-		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) &&
+		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_REQUEST_SELLITEMLIST, 0, 0, 0, 0, 0, 0);
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -211,8 +211,8 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 	}
 
 	// Cancel button
-	if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) &&
-		(msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + 154) && (msX <= sX + 154 + ui_layout::btn_size_x) &&
+		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->PlayGameSound('E', 14, 5);
 		DisableThisDialog();
@@ -231,7 +231,7 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return false;
 
 	// Check if item is already in sell list
-	for (int i = 0; i < DEF_MAXSELLLIST; i++)
+	for (int i = 0; i < game_limits::max_sell_list; i++)
 	{
 		if (m_pGame->m_stSellItemList[i].iIndex == cItemID)
 		{
@@ -279,7 +279,7 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	else
 	{
 		// Add single item to sell list
-		for (int i = 0; i < DEF_MAXSELLLIST; i++)
+		for (int i = 0; i < game_limits::max_sell_list; i++)
 		{
 			if (m_pGame->m_stSellItemList[i].iIndex == -1)
 			{

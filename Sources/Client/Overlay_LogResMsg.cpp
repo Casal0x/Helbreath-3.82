@@ -104,7 +104,7 @@ void Overlay_LogResMsg::on_update()
     // Check for OK button click
     if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             HandleDismiss();
             return;
@@ -294,8 +294,8 @@ void Overlay_LogResMsg::on_render()
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Draw OK button with hover effect
-    bool bHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + DEF_BTNSZX) &&
-                  (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    bool bHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + ui_layout::btn_size_x) &&
+                  (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bHover ? 1 : 0);
 
     // Render the appropriate message

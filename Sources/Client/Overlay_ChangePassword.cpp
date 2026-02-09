@@ -143,7 +143,7 @@ void Overlay_ChangePassword::HandleSubmit()
     m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
     // Create connection
-    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
     m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -245,8 +245,8 @@ void Overlay_ChangePassword::on_update()
         else if (Input::IsMouseInRect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
         else if (Input::IsMouseInRect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
         else if (Input::IsMouseInRect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
-        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY)) iClickedField = 5;
-        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY)) iClickedField = 6;
+        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 5;
+        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 6;
 
         switch (iClickedField)
         {
@@ -266,9 +266,9 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse hover for buttons
-    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY))
+    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 5;
-    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, DEF_BTNSZX, DEF_BTNSZY))
+    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 6;
 
     // Update input field focus

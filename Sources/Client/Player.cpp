@@ -19,7 +19,6 @@ void CPlayer::Reset()
     std::memset(m_cAccountPassword, 0, sizeof(m_cAccountPassword));
     std::memset(m_cGuildName, 0, sizeof(m_cGuildName));
     m_iGuildRank = 0;
-    m_iTotalGuildsMan = 0;
 
     // POSITION & MOVEMENT
     m_sPlayerX = 0;

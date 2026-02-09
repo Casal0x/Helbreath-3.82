@@ -52,12 +52,12 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE21, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel);
-			if ((msX >= sX + 200) && (msX <= sX + 200 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY))
+			if ((msX >= sX + 200) && (msX <= sX + 200 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y))
 				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			else
 				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		}
-		if ((msX >= sX + 450) && (msX <= sX + 450 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)
+		if ((msX >= sX + 450) && (msX <= sX + 450 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
 			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
@@ -193,7 +193,7 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 
 	switch (Info().cMode) {
 	case 1: // Not yet confirmed the exchange
-		if ((msX >= sX + 220) && (msX <= sX + 220 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)) {
+		if ((msX >= sX + 220) && (msX <= sX + 220 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)) {
 			// Exchange button
 			if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 				PlaySoundEffect('E', 14, 5);
@@ -204,7 +204,7 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 			}
 			return true;
 		}
-		if ((msX >= sX + 450) && (msX <= sX + 450 + DEF_BTNSZX) && (msY >= sY + 310) && (msY <= sY + 310 + DEF_BTNSZY)
+		if ((msX >= sX + 450) && (msX <= sX + 450 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false)) {
 			// Cancel button
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);

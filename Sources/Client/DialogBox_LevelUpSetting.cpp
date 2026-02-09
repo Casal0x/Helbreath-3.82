@@ -83,26 +83,26 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	            msX, msY, 222, (m_pGame->m_pPlayer->m_iCharisma < m_pGame->iMaxStats), (m_pGame->m_pPlayer->m_wLU_Char > 0));
 
 	// Close button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
-	    (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 
 	// Majestic button (only if no pending changes and no points left)
 	if ((m_pGame->m_pPlayer->m_wLU_Str == 0) && (m_pGame->m_pPlayer->m_wLU_Vit == 0) && (m_pGame->m_pPlayer->m_wLU_Dex == 0) &&
 	    (m_pGame->m_pPlayer->m_wLU_Int == 0) && (m_pGame->m_pPlayer->m_wLU_Mag == 0) && (m_pGame->m_pPlayer->m_wLU_Char == 0))
 	{
-		if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) &&
-		    (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+		    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
 			if (m_pGame->m_pPlayer->m_iLU_Point <= 0)
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 21);
+				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 21);
 		}
 		else
 		{
 			if (m_pGame->m_pPlayer->m_iLU_Point <= 0)
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 20);
+				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 20);
 		}
 	}
 }
@@ -193,8 +193,8 @@ bool DialogBox_LevelUpSetting::OnClick(short msX, short msY)
 		return true;
 
 	// Close/OK button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) &&
-	    (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
+	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		if (Info().sV1 != m_pGame->m_pPlayer->m_iLU_Point)
 			bSendCommand(MSGID_LEVELUPSETTINGS, 0, 0, 0, 0, 0, 0);
@@ -204,8 +204,8 @@ bool DialogBox_LevelUpSetting::OnClick(short msX, short msY)
 	}
 
 	// Majestic button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) &&
-	    (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
+	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		if ((m_pGame->m_iGizonItemUpgradeLeft > 0) && (m_pGame->m_pPlayer->m_iLU_Point <= 0) &&
 		    (m_pGame->m_pPlayer->m_wLU_Str == 0) && (m_pGame->m_pPlayer->m_wLU_Vit == 0) && (m_pGame->m_pPlayer->m_wLU_Dex == 0) &&

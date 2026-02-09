@@ -13,7 +13,7 @@ void EffectManager::DrawEffectLightsImpl()
 	int i, dX, dY, iDvalue;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	char  cTempFrame;
-	for (i = 0; i < DEF_MAXEFFECTS; i++)
+	for (i = 0; i < game_limits::max_effects; i++)
 		if (m_pEffectList[i] != 0) {
 			switch (m_pEffectList[i]->m_sType) {
 			case EffectType::NORMAL_HIT:

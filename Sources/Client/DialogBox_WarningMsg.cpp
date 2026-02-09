@@ -24,7 +24,7 @@ void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutString(sX + 30, sY + 110, DEF_MSG_WARNING5, GameColors::UIOrange);
 
 	// OK button
-	if ((msX >= sX + 122) && (msX <= sX + 125 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
+	if ((msX >= sX + 122) && (msX <= sX + 125 + ui_layout::btn_size_x) && (msY >= sY + 127) && (msY <= sY + 127 + ui_layout::btn_size_y))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 1);
 	else
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 0);
@@ -36,7 +36,7 @@ bool DialogBox_WarningMsg::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// OK button click
-	if ((msX >= sX + 120) && (msX <= sX + 120 + DEF_BTNSZX) && (msY >= sY + 127) && (msY <= sY + 127 + DEF_BTNSZY))
+	if ((msX >= sX + 120) && (msX <= sX + 120 + ui_layout::btn_size_x) && (msY >= sY + 127) && (msY <= sY + 127 + ui_layout::btn_size_y))
 	{
 		DisableThisDialog();
 		return true;

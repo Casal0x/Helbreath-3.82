@@ -408,7 +408,7 @@ void CGame::Hotkey_Simple_WhisperCycleUp()
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		int iTotalMsg = 0;
-		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
+		for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)
 		{
 			if (m_pWhisperMsg[i] != 0)
 			{
@@ -433,7 +433,7 @@ void CGame::Hotkey_Simple_WhisperCycleDown()
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
 		int iTotalMsg = 0;
-		for (int i = DEF_MAXWHISPERMSG - 1; i >= 0; i--)
+		for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)
 		{
 			if (m_pWhisperMsg[i] != 0)
 			{

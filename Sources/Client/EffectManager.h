@@ -41,6 +41,6 @@ private:
 	void DrawEffectLightsImpl();
 
 	CGame* m_pGame;
-	CEffect* m_pEffectList[DEF_MAXEFFECTS];
+	CEffect* m_pEffectList[game_limits::max_effects];
 	SpriteLib::SpriteCollection* m_pEffectSpr;  // Reference, not owned
 };

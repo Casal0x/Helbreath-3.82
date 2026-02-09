@@ -39,7 +39,6 @@ void Screen_OnGame::on_initialize()
     m_pGame->m_dwCheckConnTime = m_dwTime;
     m_pGame->m_dwCheckSprTime = m_dwTime;
     m_pGame->m_dwCheckChatTime = m_dwTime;
-    m_pGame->m_sFrameCount = 0;
     m_dwPrevChatTime = 0;
 
     if (AudioManager::Get().IsMusicEnabled())
@@ -172,14 +171,14 @@ void Screen_OnGame::on_update()
                                 m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETEXCHANGEITEM, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4, iAmount, 0, 0);
                                 break;
                             case 1001:
-                                for (i = 0; i < DEF_MAXSELLLIST; i++)
+                                for (i = 0; i < game_limits::max_sell_list; i++)
                                     if (m_pGame->m_stSellItemList[i].iIndex == -1) {
                                         m_pGame->m_stSellItemList[i].iIndex = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;
                                         m_pGame->m_stSellItemList[i].iAmount = iAmount;
                                         m_pGame->m_bIsItemDisabled[m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4] = true;
                                         break;
                                     }
-                                if (i == DEF_MAXSELLLIST) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME6, 10);
+                                if (i == game_limits::max_sell_list) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME6, 10);
                                 break;
                             case 1002:
                                 if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) m_pGame->AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);

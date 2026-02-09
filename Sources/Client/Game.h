@@ -81,20 +81,6 @@ public:
 	// Camera for viewport management
 	CCamera m_Camera;
 
-	struct {
-		char cName[DEF_ITEMNAME], cDesc[11];
-		int iCount;
-		uint32_t dwType;
-		uint32_t dwValue;
-	} m_stShards[13][17];
-
-	struct {
-		char cName[DEF_ITEMNAME], cDesc[11];
-		int iCount;
-		uint32_t dwType;
-		uint32_t dwValue;
-	} m_stFragments[13][17];
-
 	int m_iTeleportMapCount;
 	void ResponseTeleportList(char * pData);
 	void ResponseChargedTeleport(char * pData);
@@ -145,7 +131,6 @@ public:
 	bool _bDecodeBuildItemContents();
 	void GetNpcName(short sType, char * pName);
 
-	int m_iAgreeView;
 	void _LoadAgreementTextContents(char cType);
 
 	void UseShortCut( int num );
@@ -190,7 +175,6 @@ public:
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
-	bool _bGetIsStringIsNumber(char * pStr);
 void _LoadShopMenuContents(char cType);
 	void _RequestShopContents(int16_t npcType);
 	void ResponseShopContentsHandler(char* pData);
@@ -325,7 +309,7 @@ void _LoadShopMenuContents(char cType);
 	struct {
 		int iIndex;
 		int iAmount;
-	} m_stSellItemList[DEF_MAXSELLLIST];
+	} m_stSellItemList[game_limits::max_sell_list];
 
 	struct {
 		char cName[22];
@@ -347,7 +331,7 @@ void _LoadShopMenuContents(char cType);
 	struct {
 		short sX, sY, sBX;
 		char cStep;
-	} m_stWhetherObject[DEF_MAXWHETHEROBJECTS];
+	} m_stWhetherObject[game_limits::max_weather_objects];
 
 	struct {
 		bool bIsQuestCompleted;
@@ -377,7 +361,7 @@ void _LoadShopMenuContents(char cType);
 		int iGuildRank;
 		char cCharName[12];
 		char cGuildName[24];
-	} m_stGuildName[DEF_MAXGUILDNAMES];
+	} m_stGuildName[game_limits::max_guild_names];
 
 	struct {
 		int iIndex;
@@ -399,25 +383,25 @@ void _LoadShopMenuContents(char cType);
 	std::unique_ptr<class ASIOSocket> m_pGSock;
 	std::unique_ptr<class ASIOSocket> m_pLSock;
 	CFloatingTextManager m_floatingText;
-	std::array<std::unique_ptr<class CMsg>, DEF_MAXCHATSCROLLMSGS> m_pChatScrollList;
-	std::array<std::unique_ptr<class CMsg>, DEF_MAXWHISPERMSG> m_pWhisperMsg;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_chat_scroll_msgs> m_pChatScrollList;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_whisper_msgs> m_pWhisperMsg;
 	std::unique_ptr<EffectManager> m_pEffectManager;
 	std::unique_ptr<NetworkMessageManager> m_pNetworkMessageManager;
 	std::array<std::unique_ptr<class CItem>, hb::limits::MaxItems> m_pItemList;
 	std::array<std::unique_ptr<class CItem>, hb::limits::MaxBankItems> m_pBankList;
 	std::array<std::unique_ptr<class CMagic>, DEF_MAXMAGICTYPE> m_pMagicCfgList;
 	std::array<std::unique_ptr<class CSkill>, DEF_MAXSKILLTYPE> m_pSkillCfgList;
-	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList;
-	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList2;
-	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pAgreeMsgTextList;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pMsgTextList;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pMsgTextList2;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pAgreeMsgTextList;
 	std::unique_ptr<class CMsg> m_pExID;
 	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pBuildItemList;
 	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pDispBuildItemList;
 
-	std::array<std::unique_ptr<class CItem>, DEF_MAXMENUITEMS> m_pItemForSaleList;
+	std::array<std::unique_ptr<class CItem>, game_limits::max_menu_items> m_pItemForSaleList;
 	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
 	std::array<std::unique_ptr<class CCharInfo>, 4> m_pCharList;
-	std::array<std::unique_ptr<class CMsg>, DEF_MAXGAMEMSGS> m_pGameMsgList;
+	std::array<std::unique_ptr<class CMsg>, game_limits::max_game_msgs> m_pGameMsgList;
 
 	char * m_pInputBuffer;
 
@@ -465,8 +449,6 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 
 	bool m_bForceDisconn;
 
-	short m_sFrameCount;
-	short m_sFPS;
 	uint32_t m_dwFPStime;
 	int m_iLatencyMs;
 	uint32_t m_dwLastNetMsgId;
@@ -597,7 +579,6 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	int m_iHeldenianAresdenFlags;
 	int m_iHeldenianElvineFlags;
 	bool m_bIllusionMVT;
-	int m_iGameServerMode;
 	bool m_bIsXmas;
 	bool m_bUsingSlate;
 

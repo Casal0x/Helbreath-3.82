@@ -142,15 +142,15 @@ void DialogBox_CityHallMenu::DrawMode1_CitizenshipWarning(short sX, short sY, sh
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU26, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 230, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU27, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 18);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 3);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 2);
 }
 
 void DialogBox_CityHallMenu::DrawMode2_OfferingCitizenship(short sX, short sY, short szX)
@@ -162,10 +162,10 @@ void DialogBox_CityHallMenu::DrawMode3_CitizenshipSuccess(short sX, short sY, sh
 {
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU29, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
 void DialogBox_CityHallMenu::DrawMode4_CitizenshipFailed(short sX, short sY, short szX, short msX, short msY)
@@ -174,10 +174,10 @@ void DialogBox_CityHallMenu::DrawMode4_CitizenshipFailed(short sX, short sY, sho
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 100, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU31, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 115, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENuint32_t, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 1);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 0);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
 void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX, short msX, short msY)
@@ -189,15 +189,15 @@ void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX,
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU35, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 18);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 3);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 2);
 }
 
 void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, short msX, short msY)
@@ -287,15 +287,15 @@ void DialogBox_CityHallMenu::DrawMode8_CancelQuest(short sX, short sY, short szX
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU54, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU55, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 18);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 3);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 2);
 }
 
 void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short szX, short msX, short msY)
@@ -316,15 +316,15 @@ void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short 
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 224, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU67, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 252, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU68, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 18);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 3);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 2);
 }
 
 void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short szX, short msX, short msY)
@@ -346,7 +346,7 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 			m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, mapNameBuf);
 			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, m_pGame->m_stTeleportList[i].iCost);
 
-			if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
+			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
 			else
 				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, TextLib::TextStyle::Color(GameColors::UIMenuHighlight), TextLib::Align::TopCenter);
@@ -370,15 +370,15 @@ void DialogBox_CityHallMenu::DrawMode11_HeroItemConfirm(short sX, short sY, shor
 	TextLib::DrawTextAligned(GameFont::Default, sX + 1, sY + 125, (sX + szX) - (sX + 1), 15, m_pGame->m_cTakeHeroItemName, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 260, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46A, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
 
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 19);
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 18);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 18);
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 3);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 3);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 2);
+		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 2);
 }
 
 bool DialogBox_CityHallMenu::OnClick(short msX, short msY)
@@ -477,7 +477,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 {
 	// Yes button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_REQUEST_CIVILRIGHT, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 2;
@@ -486,7 +486,7 @@ bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short m
 	}
 
 	// No button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -499,7 +499,7 @@ bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short m
 bool DialogBox_CityHallMenu::OnClickMode3_4(short sX, short sY, short msX, short msY)
 {
 	// OK button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY > sY + DEF_BTNPOSY) && (msY < sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -511,7 +511,7 @@ bool DialogBox_CityHallMenu::OnClickMode3_4(short sX, short sY, short msX, short
 bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short msY)
 {
 	// Yes button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETREWARDMONEY, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
@@ -520,7 +520,7 @@ bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short m
 	}
 
 	// No button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -643,7 +643,7 @@ bool DialogBox_CityHallMenu::OnClickMode7(short sX, short sY, short msX, short m
 bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short msY)
 {
 	// Yes button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_CANCELQUEST, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
@@ -652,7 +652,7 @@ bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short m
 	}
 
 	// No button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -665,7 +665,7 @@ bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short m
 bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short msY)
 {
 	// Yes button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_HUNTMODE, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
@@ -674,7 +674,7 @@ bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short m
 	}
 
 	// No button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
@@ -690,7 +690,7 @@ bool DialogBox_CityHallMenu::OnClickMode10(short sX, short sY, short msX, short 
 	{
 		for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 		{
-			if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
+			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 			{
 				m_pGame->bSendCommand(MSGID_REQUEST_CHARGED_TELEPORT, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
 				m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::CityHallMenu);
@@ -704,7 +704,7 @@ bool DialogBox_CityHallMenu::OnClickMode10(short sX, short sY, short msX, short 
 bool DialogBox_CityHallMenu::OnClickMode11(short sX, short sY, short msX, short msY)
 {
 	// Yes button
-	if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETHEROMANTLE, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
@@ -713,7 +713,7 @@ bool DialogBox_CityHallMenu::OnClickMode11(short sX, short sY, short msX, short 
 	}
 
 	// No button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 7;
 		m_pGame->PlayGameSound('E', 14, 5);

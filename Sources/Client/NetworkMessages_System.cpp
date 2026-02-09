@@ -126,7 +126,7 @@ void HandleServerChange(CGame* pGame, char* pData)
 	{
 		pGame->m_pLSock.reset();
 	}
-	pGame->m_pLSock = std::make_unique<ASIOSocket>(pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+	pGame->m_pLSock = std::make_unique<ASIOSocket>(pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
 	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr, iWorldServerPort);
 	pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 

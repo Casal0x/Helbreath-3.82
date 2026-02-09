@@ -160,7 +160,7 @@ CGame::CGame()
 	std::memset(m_sItemDropID, 0, sizeof(m_sItemDropID));
 	m_bItemDrop = false;
 	m_bIsSpecial = false;
-	m_cWhisperIndex = DEF_MAXWHISPERMSG;
+	m_cWhisperIndex = game_limits::max_whisper_msgs;
 	std::memset(m_cMapName, 0, sizeof(m_cMapName));
 	std::memset(G_cTxt, 0, sizeof(G_cTxt));
 
@@ -191,7 +191,6 @@ CGame::CGame()
 	CursorTarget::ResetSelectionClickTime();
 
 	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
-	m_iGameServerMode = 2; // Snoopy: Default is INTERNET
 	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
 	m_sPendingShopType = 0;
 
@@ -560,7 +559,7 @@ void CGame::OnGameSocketEvent()
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-        ConnectionEstablishHandler(DEF_SERVERTYPE_GAME);
+        ConnectionEstablishHandler(static_cast<int>(ServerType::Game));
         break;
     }
 
@@ -730,7 +729,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		hb::net::PacketRequestSellItemList req{};
 		req.header.msg_id = dwMsgID;
 		req.header.msg_type = 0;
-		for (i = 0; i < DEF_MAXSELLLIST; i++) {
+		for (i = 0; i < game_limits::max_sell_list; i++) {
 			req.entries[i].index = static_cast<uint8_t>(m_stSellItemList[i].iIndex);
 			req.entries[i].amount = m_stSellItemList[i].iAmount;
 		}
@@ -1714,11 +1713,11 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 	ChangeGameMode(GameMode::WaitingResponse);
 
 	switch (cWhere) {
-	case DEF_SERVERTYPE_GAME:
+	case static_cast<int>(ServerType::Game):
 		bSendCommand(MSGID_REQUEST_INITPLAYER, 0, 0, 0, 0, 0, 0);
 		break;
 
-	case DEF_SERVERTYPE_LOG:
+	case static_cast<int>(ServerType::Log):
 		switch (m_dwConnectMode) {
 		case MSGID_REQUEST_LOGIN:
 			if (strlen(m_cWorldServerName) == 0) {
@@ -2052,7 +2051,7 @@ void CGame::CommonEventHandler(char* pData)
 
 void CGame::ClearGuildNameList()
 {
-	for (int i = 0; i < DEF_MAXGUILDNAMES; i++) {
+	for (int i = 0; i < game_limits::max_guild_names; i++) {
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
 		std::memset(m_stGuildName[i].cCharName, 0, sizeof(m_stGuildName[i].cCharName));
@@ -2120,7 +2119,7 @@ void CGame::InitGameSettings()
 
 	m_dwEnvEffectTime = GameClock::GetTimeMS();
 
-	for (i = 0; i < DEF_MAXGUILDNAMES; i++) {
+	for (i = 0; i < game_limits::max_guild_names; i++) {
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
 		std::memset(m_stGuildName[i].cCharName, 0, sizeof(m_stGuildName[i].cCharName));
@@ -2142,11 +2141,11 @@ void CGame::InitGameSettings()
 
 	m_floatingText.ClearAll();
 
-	for (i = 0; i < DEF_MAXCHATSCROLLMSGS; i++) {
+	for (i = 0; i < game_limits::max_chat_scroll_msgs; i++) {
 		if (m_pChatScrollList[i] != 0) m_pChatScrollList[i].reset();
 	}
 
-	for (i = 0; i < DEF_MAXWHISPERMSG; i++) {
+	for (i = 0; i < game_limits::max_whisper_msgs; i++) {
 		if (m_pWhisperMsg[i] != 0) m_pWhisperMsg[i].reset();
 	}
 
@@ -2154,7 +2153,6 @@ void CGame::InitGameSettings()
 
 	std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 	m_pPlayer->m_iGuildRank = -1;
-	m_pPlayer->m_iTotalGuildsMan = 0;
 
 	for (i = 0; i < 100; i++) {
 		m_stGuildOpList[i].cOpMode = 0;
@@ -2169,7 +2167,7 @@ void CGame::InitGameSettings()
 		m_stEventHistory2[i].dwTime = GameClock::GetTimeMS();
 	}
 
-	for (i = 0; i < DEF_MAXMENUITEMS; i++) {
+	for (i = 0; i < game_limits::max_menu_items; i++) {
 		if (m_pItemForSaleList[i] != 0) m_pItemForSaleList[i].reset();
 	}
 
@@ -2184,7 +2182,7 @@ void CGame::InitGameSettings()
 			m_pItemList[i].reset();
 		}
 
-	for (i = 0; i < DEF_MAXSELLLIST; i++) {
+	for (i = 0; i < game_limits::max_sell_list; i++) {
 		m_stSellItemList[i].iIndex = -1;
 		m_stSellItemList[i].iAmount = 0;
 	}
@@ -2200,7 +2198,7 @@ void CGame::InitGameSettings()
 	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
 		m_pPlayer->m_iSkillMastery[i] = 0;
 
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++) {
+	for (i = 0; i < game_limits::max_text_dlg_lines; i++) {
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
 
@@ -2555,7 +2553,7 @@ void CGame::_LoadShopMenuContents(char cType)
 void CGame::_RequestShopContents(int16_t npcType)
 {
 	// Clear existing shop items
-	for (int i = 0; i < DEF_MAXSELLLIST; i++) {
+	for (int i = 0; i < game_limits::max_sell_list; i++) {
 		if (m_pItemForSaleList[i] != nullptr) {
 			m_pItemForSaleList[i].reset();
 			m_pItemForSaleList[i].reset();
@@ -2584,12 +2582,12 @@ void CGame::ResponseShopContentsHandler(char* pData)
 
 	uint16_t itemCount = resp->itemCount;
 
-	if (itemCount > DEF_MAXMENUITEMS) {
-		itemCount = DEF_MAXMENUITEMS;
+	if (itemCount > game_limits::max_menu_items) {
+		itemCount = game_limits::max_menu_items;
 	}
 
 	// Clear existing shop items
-	for (int i = 0; i < DEF_MAXMENUITEMS; i++) {
+	for (int i = 0; i < game_limits::max_menu_items; i++) {
 		if (m_pItemForSaleList[i] != nullptr) {
 			m_pItemForSaleList[i].reset();
 			m_pItemForSaleList[i].reset();
@@ -2603,7 +2601,7 @@ void CGame::ResponseShopContentsHandler(char* pData)
 	int shopIndex = 0;
 	int skippedCount = 0;
 	int notFoundCount = 0;
-	for (uint16_t i = 0; i < itemCount && shopIndex < DEF_MAXMENUITEMS; i++) {
+	for (uint16_t i = 0; i < itemCount && shopIndex < game_limits::max_menu_items; i++) {
 		int16_t itemId = itemIds[i];
 		if (itemId <= 0 || itemId >= 5000) {
 			skippedCount++;
@@ -2669,14 +2667,6 @@ bool CGame::bCheckImportantFile()
 
 	CloseHandle(hFile);
 	return true;
-}
-
-bool CGame::_bGetIsStringIsNumber(char* pStr)
-{
-	if (!pStr || *pStr == '\0') return false;
-	int result;
-	auto [ptr, ec] = std::from_chars(pStr, pStr + strlen(pStr), result);
-	return ec == std::errc{} && *ptr == '\0';
 }
 
 void CGame::RequestFullObjectData(uint16_t wObjectID)
@@ -2898,7 +2888,7 @@ void CGame::OnLogSocketEvent()
         return;
 
     case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
-        ConnectionEstablishHandler(DEF_SERVERTYPE_LOG);
+        ConnectionEstablishHandler(static_cast<int>(ServerType::Log));
         break;
     }
 
@@ -3202,7 +3192,7 @@ void CGame::LogResponseHandler(char* pData)
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
 
-		m_pGSock = std::make_unique<ASIOSocket>(m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+		m_pGSock = std::make_unique<ASIOSocket>(m_pIOPool->GetContext(), game_limits::socket_block_limit);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
 		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 	}
@@ -3424,11 +3414,11 @@ void CGame::ReleaseUnusedSprites()
 
 void CGame::PutChatScrollList(char* pMsg, char cType)
 {
-	if (m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1] != 0)
+	if (m_pChatScrollList[game_limits::max_chat_scroll_msgs - 1] != 0)
 	{
-		m_pChatScrollList[DEF_MAXCHATSCROLLMSGS - 1].reset();
+		m_pChatScrollList[game_limits::max_chat_scroll_msgs - 1].reset();
 	}
-	for (int i = DEF_MAXCHATSCROLLMSGS - 2; i >= 0; i--)
+	for (int i = game_limits::max_chat_scroll_msgs - 2; i >= 0; i--)
 	{
 		m_pChatScrollList[i + 1] = std::move(m_pChatScrollList[i]);
 	}
@@ -4441,7 +4431,7 @@ void CGame::DisableDialogBox(int iBoxID)
 		break;
 
 	case DialogBoxId::SaleMenu:
-		for (i = 0; i < DEF_MAXMENUITEMS; i++)
+		for (i = 0; i < game_limits::max_menu_items; i++)
 			if (m_pItemForSaleList[i] != 0) {
 				m_pItemForSaleList[i].reset();
 			}
@@ -4510,7 +4500,7 @@ void CGame::DisableDialogBox(int iBoxID)
 		break;
 
 	case DialogBoxId::SellList:
-		for (i = 0; i < DEF_MAXSELLLIST; i++)
+		for (i = 0; i < game_limits::max_sell_list; i++)
 		{
 			if (m_stSellItemList[i].iIndex != -1) m_bIsItemDisabled[m_stSellItemList[i].iIndex] = false;
 			m_stSellItemList[i].iIndex = -1;
@@ -4599,7 +4589,7 @@ int CGame::iGetTopDialogBoxIndex()
 
 void CGame::_LoadTextDlgContents(int cType)
 {
-	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
@@ -4612,7 +4602,7 @@ void CGame::_LoadTextDlgContents(int cType)
 
 	std::string line;
 	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
+	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
 	{
 		if (!line.empty())
 		{
@@ -4624,7 +4614,7 @@ void CGame::_LoadTextDlgContents(int cType)
 
 int CGame::_iLoadTextDlgContents2(int iType)
 {
-	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList2[i] != 0)
 			m_pMsgTextList2[i].reset();
@@ -4637,7 +4627,7 @@ int CGame::_iLoadTextDlgContents2(int iType)
 
 	std::string line;
 	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
+	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
 	{
 		if (!line.empty())
 		{
@@ -4650,7 +4640,7 @@ int CGame::_iLoadTextDlgContents2(int iType)
 
 void CGame::_LoadGameMsgTextContents()
 {
-	for (int i = 0; i < DEF_MAXGAMEMSGS; i++)
+	for (int i = 0; i < game_limits::max_game_msgs; i++)
 	{
 		if (m_pGameMsgList[i] != 0)
 			m_pGameMsgList[i].reset();
@@ -4664,7 +4654,7 @@ void CGame::_LoadGameMsgTextContents()
 	int iIndex = 0;
 	size_t start = 0;
 	size_t end = 0;
-	while ((end = content.find_first_of(";\n", start)) != std::string::npos && iIndex < DEF_MAXGAMEMSGS)
+	while ((end = content.find_first_of(";\n", start)) != std::string::npos && iIndex < game_limits::max_game_msgs)
 	{
 		if (end > start)
 		{
@@ -4674,7 +4664,7 @@ void CGame::_LoadGameMsgTextContents()
 		}
 		start = end + 1;
 	}
-	if (start < content.size() && iIndex < DEF_MAXGAMEMSGS)
+	if (start < content.size() && iIndex < game_limits::max_game_msgs)
 	{
 		std::string token = content.substr(start);
 		if (!token.empty())
@@ -4976,7 +4966,7 @@ void CGame::CrusadeContributionResult(int iWarContribution)
 	int i;
 	char cTemp[120];
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
@@ -5039,7 +5029,7 @@ void CGame::CrusadeWarResult(int iWinnerSide)
 {
 	int i, iPlayerSide;
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
@@ -5363,9 +5353,9 @@ void CGame::DrawWhetherEffects()
 	case 2:
 	case 3: // rain
 		switch (m_cWhetherEffectType) {
-		case 1: sCnt = DEF_MAXWHETHEROBJECTS / 5; break;
-		case 2:	sCnt = DEF_MAXWHETHEROBJECTS / 2; break;
-		case 3:	sCnt = DEF_MAXWHETHEROBJECTS;     break;
+		case 1: sCnt = game_limits::max_weather_objects / 5; break;
+		case 2:	sCnt = game_limits::max_weather_objects / 2; break;
+		case 3:	sCnt = game_limits::max_weather_objects;     break;
 		}
 
 		for (i = 0; i < sCnt; i++)
@@ -5390,9 +5380,9 @@ void CGame::DrawWhetherEffects()
 	case 5:
 	case 6: // Snow
 		switch (m_cWhetherEffectType) {
-		case 4: sCnt = DEF_MAXWHETHEROBJECTS / 5; break;
-		case 5:	sCnt = DEF_MAXWHETHEROBJECTS / 2; break;
-		case 6:	sCnt = DEF_MAXWHETHEROBJECTS;     break;
+		case 4: sCnt = game_limits::max_weather_objects / 5; break;
+		case 5:	sCnt = game_limits::max_weather_objects / 2; break;
+		case 6:	sCnt = game_limits::max_weather_objects;     break;
 		}
 		for (i = 0; i < sCnt; i++)
 		{
@@ -5451,9 +5441,9 @@ void CGame::WhetherObjectFrameCounter()
 	case 2:
 	case 3: // Rain
 		switch (m_cWhetherEffectType) {
-		case 1: sCnt = DEF_MAXWHETHEROBJECTS / 5; break;
-		case 2:	sCnt = DEF_MAXWHETHEROBJECTS / 2; break;
-		case 3:	sCnt = DEF_MAXWHETHEROBJECTS;     break;
+		case 1: sCnt = game_limits::max_weather_objects / 5; break;
+		case 2:	sCnt = game_limits::max_weather_objects / 2; break;
+		case 3:	sCnt = game_limits::max_weather_objects;     break;
 		}
 		for (i = 0; i < sCnt; i++)
 		{
@@ -5488,9 +5478,9 @@ void CGame::WhetherObjectFrameCounter()
 	case 5:
 	case 6:
 		switch (m_cWhetherEffectType) {
-		case 4: sCnt = DEF_MAXWHETHEROBJECTS / 5; break;
-		case 5:	sCnt = DEF_MAXWHETHEROBJECTS / 2; break;
-		case 6:	sCnt = DEF_MAXWHETHEROBJECTS;     break;
+		case 4: sCnt = game_limits::max_weather_objects / 5; break;
+		case 5:	sCnt = game_limits::max_weather_objects / 2; break;
+		case 6:	sCnt = game_limits::max_weather_objects;     break;
 		}
 		for (i = 0; i < sCnt; i++)
 		{
@@ -5550,7 +5540,7 @@ void CGame::SetWhetherStatus(bool bStart, char cType)
 		if (AudioManager::Get().IsSoundEnabled() && (cType >= 1) && (cType <= 3))
 			AudioManager::Get().PlaySoundLoop(SoundType::Effect, 38);
 
-		for (int i = 0; i < DEF_MAXWHETHEROBJECTS; i++)
+		for (int i = 0; i < game_limits::max_weather_objects; i++)
 		{
 			m_stWhetherObject[i].sX = 1;
 			m_stWhetherObject[i].sBX = 1;
@@ -6827,7 +6817,7 @@ void CGame::CreateScreenShot()
 
 void CGame::_LoadAgreementTextContents(char cType)
 {
-	for (int i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pAgreeMsgTextList[i] != 0)
 			m_pAgreeMsgTextList[i].reset();
@@ -6840,7 +6830,7 @@ void CGame::_LoadAgreementTextContents(char cType)
 
 	std::string line;
 	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < DEF_TEXTDLGMAXLINES)
+	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
 	{
 		if (!line.empty())
 		{
@@ -7432,7 +7422,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 {
 	int i, iRet = 0;
 	uint32_t dwTmpTime;
-	for (i = 0; i < DEF_MAXGUILDNAMES; i++)
+	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
 		if (memcmp(m_stGuildName[i].cCharName, pName, 10) == 0)
 		{
@@ -7442,7 +7432,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 		}
 	}
 	dwTmpTime = m_stGuildName[0].dwRefTime;
-	for (i = 0; i < DEF_MAXGUILDNAMES; i++)
+	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
 		if (m_stGuildName[i].dwRefTime < dwTmpTime)
 		{
@@ -8499,8 +8489,8 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		m_pPlayer->m_bSuperAttackMode = true;
 	else m_pPlayer->m_bSuperAttackMode = false;
 
-	switch (static_cast<char>(CursorTarget::GetCursorStatus())) {
-	case DEF_CURSORSTATUS_NULL:
+	switch (CursorTarget::GetCursorStatus()) {
+	case CursorStatus::Null:
 		if (cLB != 0)
 		{
 			iRet = m_dialogBoxManager.HandleMouseDown(msX, msY);
@@ -8550,13 +8540,13 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			if (m_dialogBoxManager.HandleRightClick(msX, msY, dwTime)) return;
 		}
 		break;
-	case DEF_CURSORSTATUS_PRESSED:
+	case CursorStatus::Pressed:
 		if (cLB == 0) // Normal Click
 		{
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
 		}
 		break;
-	case DEF_CURSORSTATUS_SELECTED:
+		case CursorStatus::Selected:
 		if (cLB == 0)
 		{
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
@@ -8564,9 +8554,9 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			if (((m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) != true) || (CursorTarget::GetSelectedID() != 12))
 				&& ((m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) != true) || (CursorTarget::GetSelectedID() != 42)))
 			{
-				if (((dwTime - CursorTarget::GetSelectionClickTime()) < DEF_DOUBLECLICKTIME) 	// Double Click
-					&& (abs(msX - CursorTarget::GetSelectionClickX()) <= DEF_DOUBLECLICKTOLERANCE)
-					&& (abs(msY - CursorTarget::GetSelectionClickY()) <= DEF_DOUBLECLICKTOLERANCE))
+				if (((dwTime - CursorTarget::GetSelectionClickTime()) < input_config::double_click_time_ms) 	// Double Click
+					&& (abs(msX - CursorTarget::GetSelectionClickX()) <= input_config::double_click_tolerance)
+					&& (abs(msY - CursorTarget::GetSelectionClickY()) <= input_config::double_click_tolerance))
 				{
 					CursorTarget::ResetSelectionClickTime(); // Reset to prevent triple-click
 					m_dialogBoxManager.HandleDoubleClick(msX, msY);
@@ -8624,7 +8614,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			return;
 		}
 		break;
-	case DEF_CURSORSTATUS_DRAGGING:
+	case CursorStatus::Dragging:
 		if (cLB != 0)
 		{
 			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
@@ -8644,8 +8634,8 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		}
 		if (cLB == 0) {
 			CursorTarget::SetCursorStatus(CursorStatus::Null);
-			switch (static_cast<char>(CursorTarget::GetSelectedType())) {
-			case static_cast<char>(SelectedObjectType::DialogBox):
+			switch (CursorTarget::GetSelectedType()) {
+			case SelectedObjectType::DialogBox:
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 20))
 				{
@@ -8690,7 +8680,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				CursorTarget::ClearSelection();
 				break;
 
-			case static_cast<char>(SelectedObjectType::Item):
+			case SelectedObjectType::Item:
 				if (!m_dialogBoxManager.HandleDraggingItemRelease(msX, msY))
 				{
 					bItemDrop_ExternalScreen((char)CursorTarget::GetSelectedID(), msX, msY);
@@ -9114,8 +9104,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					{
 						switch (sObjectType) { 	// CLEROTH - NPC TALK
 						case hb::owner::ShopKeeper: // ShopKeeper-W�
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 1);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9126,13 +9114,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 15;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::Gandalf: // Gandlf
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 16, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9143,13 +9127,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 19;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::Howard: // Howard
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 14, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9164,13 +9144,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5 = m_sMCX;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::Tom: // Tom
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 2);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9185,13 +9161,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = m_wCommObjectID;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5 = m_sMCX;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::William: // William
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 13, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9202,13 +9174,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 25;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::Kennedy: // Kennedy
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 7, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9219,8 +9187,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 26;
-							/*	break;
-							}*/
 							break;
 
 						case hb::owner::Guard: // Guard
@@ -9273,8 +9239,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case hb::owner::Gail: // Snoopy: Gail
-							/*switch (cName[0]) {
-							case '1':*/
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 6, 0, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9285,8 +9249,6 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 90;
-							/*break;
-						}*/
 							break;
 
 						default: // Other mobs
@@ -10148,27 +10110,6 @@ void CGame::RequestTeleportAndWaitData()
 {
 	if (m_bIsTeleportRequested) return;
 
-	// Snoopy: removed that, Noob Dungeon is now at farm...
-	/*if (strcmp(m_cMapName, "aresden") == 0)
-	{	if ( ((m_pPlayer->m_sPlayerX == 188) && (m_pPlayer->m_sPlayerY == 105))  ||
-			 ((m_pPlayer->m_sPlayerX == 187) && (m_pPlayer->m_sPlayerY == 105))  ||
-			 ((m_pPlayer->m_sPlayerX == 187) && (m_pPlayer->m_sPlayerY == 106))  ||
-			 ((m_pPlayer->m_sPlayerX == 186) && (m_pPlayer->m_sPlayerY == 106))  ||
-			 ((m_pPlayer->m_sPlayerX == 186) && (m_pPlayer->m_sPlayerY == 107))  )
-		{	if ( (m_pPlayer->m_iLevel < 30) || (m_pPlayer->m_iLevel>80) )
-			{	AddEventList(REQUEST_TELEPORT_AND_WAIT_DATA1, 10);
-				return;
-	}	}	}
-	if (strcmp(m_cMapName, "elvine") == 0)
-	{	if ( ((m_pPlayer->m_sPlayerX == 218) && (m_pPlayer->m_sPlayerY == 109))  ||
-			 ((m_pPlayer->m_sPlayerX == 217) && (m_pPlayer->m_sPlayerY == 109))  ||
-			 ((m_pPlayer->m_sPlayerX == 217) && (m_pPlayer->m_sPlayerY == 110))  ||
-			 ((m_pPlayer->m_sPlayerX == 216) && (m_pPlayer->m_sPlayerY == 110))  ||
-			 ((m_pPlayer->m_sPlayerX == 216) && (m_pPlayer->m_sPlayerY == 111))  )
-		{	if ( (m_pPlayer->m_iLevel < 30) || (m_pPlayer->m_iLevel>80) )
-			{	AddEventList(REQUEST_TELEPORT_AND_WAIT_DATA1, 10);
-				return;
-	}	}	}*/
 	bSendCommand(MSGID_REQUEST_TELEPORT, 0, 0, 0, 0, 0, 0);
 	ChangeGameMode(GameMode::WaitingInitData);
 }
@@ -10219,7 +10160,7 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
 
-	for (i = 0; i < DEF_MAXWHETHEROBJECTS; i++)
+	for (i = 0; i < game_limits::max_weather_objects; i++)
 	{
 		m_stWhetherObject[i].sX = 0;
 		m_stWhetherObject[i].sBX = 0;
@@ -10227,7 +10168,7 @@ void CGame::InitDataResponseHandler(char* pData)
 		m_stWhetherObject[i].cStep = 0;
 	}
 
-	for (i = 0; i < DEF_MAXGUILDNAMES; i++)
+	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
 		m_stGuildName[i].dwRefTime = 0;
 		m_stGuildName[i].iGuildRank = -1;
@@ -10350,27 +10291,6 @@ void CGame::InitDataResponseHandler(char* pData)
 		|| (memcmp(m_cCurLocation, "dglv2", 5) == 0)
 		|| (memcmp(m_cCurLocation, "middled1n", 9) == 0))
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::WarningBattleArea, 0, 0, 0);
-
-	// Snoopy: removed for v351 compatibility. Maybe usefull later...
-	/*	bool bPrevSafe, bNowSafe;
-		if( memcmp( cPreCurLocation, m_cLocation, 3 ) == 0 )
-			bPrevSafe = true;
-		else bPrevSafe = false;
-
-		if( memcmp( m_cCurLocation, m_cLocation, 3 ) == 0 )
-			bNowSafe = true;
-		else bNowSafe = false;
-
-		if( memcmp( m_cCurLocation, "2nd", 3 ) == 0 ) bNowSafe = true;
-		if( m_pPlayer->m_iPKCount != 0 ) bNowSafe = false;
-
-		if( bPrevSafe )
-		{	if( bNowSafe == false ) SetTopMsg(DEF_MSG_DANGERZONE, 5);
-		}else
-		{	if( bNowSafe ) SetTopMsg(DEF_MSG_SAFEZONE, 5);
-		}*/
-
-		// ------------------------------------------------------------------------+
 
 	m_bIsServerChanging = false;
 
@@ -10605,7 +10525,7 @@ void CGame::GrandMagicResult(const char* pMapName, int iV1, int iV2, int iV3, in
 	int i, iTxtIdx = 0;
 	char cTemp[120];
 
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();
@@ -11259,7 +11179,7 @@ void CGame::ShowHeldenianVictory(short sSide)
 {
 	int i, iPlayerSide;
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Text);
-	for (i = 0; i < DEF_TEXTDLGMAXLINES; i++)
+	for (i = 0; i < game_limits::max_text_dlg_lines; i++)
 	{
 		if (m_pMsgTextList[i] != 0)
 			m_pMsgTextList[i].reset();

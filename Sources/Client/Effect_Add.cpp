@@ -41,7 +41,7 @@ void EffectManager::AddEffectImpl(EffectType sType, int sX, int sY, int dX, int 
 	short fixdist = sDist;
 	int fixpan = LOGICAL_WIDTH();
 
-	for (i = 0; i < DEF_MAXEFFECTS; i++)
+	for (i = 0; i < game_limits::max_effects; i++)
 		if (m_pEffectList[i] == 0)
 		{
 			m_pEffectList[i] = new class CEffect;

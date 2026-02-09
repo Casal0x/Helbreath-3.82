@@ -17,7 +17,7 @@ EffectManager::EffectManager(CGame* pGame)
 	: m_pGame(pGame)
 	, m_pEffectSpr(nullptr)
 {
-	for (int i = 0; i < DEF_MAXEFFECTS; i++)
+	for (int i = 0; i < game_limits::max_effects; i++)
 		m_pEffectList[i] = nullptr;
 }
 
@@ -36,7 +36,7 @@ void EffectManager::SetEffectSprites(SpriteLib::SpriteCollection& effectSpr)
 // Listo
 void EffectManager::ClearAllEffects()
 {
-	for (int i = 0; i < DEF_MAXEFFECTS; i++)
+	for (int i = 0; i < game_limits::max_effects; i++)
 	{
 		if (m_pEffectList[i] != nullptr)
 		{

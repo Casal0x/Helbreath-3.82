@@ -41,33 +41,4 @@ enum class ServerType : uint8_t {
     Log  = 2
 };
 
-// Backward compatibility aliases (old code compiles unchanged)
-#define DEF_BTNSZX              ui_layout::btn_size_x
-#define DEF_BTNSZY              ui_layout::btn_size_y
-#define DEF_LBTNPOSX            ui_layout::left_btn_x
-#define DEF_RBTNPOSX            ui_layout::right_btn_x
-#define DEF_BTNPOSY             ui_layout::btn_y
-#define DEF_SOCKETBLOCKLIMIT    game_limits::socket_block_limit
-#define DEF_MAXSPRITES          game_limits::max_sprites
-#define DEF_MAXTILES            game_limits::max_tiles
-#define DEF_MAXEFFECTSPR        game_limits::max_effect_sprites
-#define DEF_MAXSOUNDEFFECTS     game_limits::max_sound_effects
-#define DEF_MAXCHATMSGS         game_limits::max_chat_msgs
-#define DEF_MAXWHISPERMSG       game_limits::max_whisper_msgs
-#define DEF_MAXCHATSCROLLMSGS   game_limits::max_chat_scroll_msgs
-#define DEF_MAXEFFECTS          game_limits::max_effects
-#define DEF_MAXMENUITEMS        game_limits::max_menu_items
-#define DEF_TEXTDLGMAXLINES     game_limits::max_text_dlg_lines
 // DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h (shared)
-#define DEF_MAXWHETHEROBJECTS   game_limits::max_weather_objects
-#define DEF_MAXGAMEMSGS         game_limits::max_game_msgs
-#define DEF_MAXGUILDNAMES       game_limits::max_guild_names
-#define DEF_MAXSELLLIST         game_limits::max_sell_list
-#define DEF_CURSORSTATUS_NULL       0
-#define DEF_CURSORSTATUS_PRESSED    1
-#define DEF_CURSORSTATUS_SELECTED   2
-#define DEF_CURSORSTATUS_DRAGGING   3
-#define DEF_DOUBLECLICKTIME         input_config::double_click_time_ms
-#define DEF_DOUBLECLICKTOLERANCE    input_config::double_click_tolerance
-#define DEF_SERVERTYPE_GAME         static_cast<int>(ServerType::Game)
-#define DEF_SERVERTYPE_LOG          static_cast<int>(ServerType::Log)

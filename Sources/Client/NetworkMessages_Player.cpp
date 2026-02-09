@@ -98,11 +98,11 @@ namespace NetworkMessageHandlers {
 		if (bActive == true)
 		{
 			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE1, cName);
-			if (pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1] != 0) {
-				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
-				pGame->m_pWhisperMsg[DEF_MAXWHISPERMSG - 1].reset();
+			if (pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1] != 0) {
+				pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1].reset();
+				pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1].reset();
 			}
-			for (int i = DEF_MAXWHISPERMSG - 2; i >= 0; i--) {
+			for (int i = game_limits::max_whisper_msgs - 2; i >= 0; i--) {
 				pGame->m_pWhisperMsg[i + 1] = std::move(pGame->m_pWhisperMsg[i]);
 				pGame->m_pWhisperMsg[i].reset();
 			}

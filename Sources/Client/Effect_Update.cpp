@@ -21,7 +21,7 @@ void EffectManager::UpdateEffectsImpl()
 	long lPan;
 	dwTime = m_pGame->m_dwCurTime;
 	dwTime += m_pGame->m_pMapData->m_dwFrameAdjustTime;
-	for (i = 0; i < DEF_MAXEFFECTS; i++)
+	for (i = 0; i < game_limits::max_effects; i++)
 		if (m_pEffectList[i] != 0) {
 			if ((dwTime - m_pEffectList[i]->m_dwTime) > m_pEffectList[i]->m_dwFrameTime)
 			{

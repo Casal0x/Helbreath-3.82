@@ -49,13 +49,13 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY >= sY + 28) && (msY <= sY + 140))
 		{
 			double d1 = (double)(msY - (sY + 28));
-			double d2 = ((DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES) * d1) / (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-			info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES - (int)d2;
+			double d2 = ((game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES) * d1) / (double)DEF_CHAT_SCROLLBAR_HEIGHT;
+			info.sView = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES - (int)d2;
 		}
 
 		// Scroll to top button
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 18) && (msY < sY + 28))
-			info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
+			info.sView = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES;
 
 		// Scroll to bottom button
 		if ((msX >= sX + 336) && (msX <= sX + 361) && (msY > sY + 140) && (msY < sY + 163))
@@ -69,15 +69,15 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 	// Clamp scroll view (must be after all scroll modifications)
 	if (info.sView < 0)
 		info.sView = 0;
-	if (info.sView > DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES)
-		info.sView = DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES;
+	if (info.sView > game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES)
+		info.sView = game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES;
 }
 
 void DialogBox_ChatHistory::DrawScrollBar(short sX, short sY)
 {
 	double d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
 	double d2 = (double)DEF_CHAT_SCROLLBAR_HEIGHT;
-	double d3 = (d1 * d2) / (DEF_MAXCHATSCROLLMSGS - DEF_CHAT_VISIBLE_LINES);
+	double d3 = (d1 * d2) / (game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES);
 	int iPointerLoc = (int)d3;
 	iPointerLoc = DEF_CHAT_SCROLLBAR_HEIGHT - iPointerLoc;
 	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 346, sY + 33 + iPointerLoc, 7);
@@ -90,7 +90,7 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 	for (int i = 0; i < DEF_CHAT_VISIBLE_LINES; i++)
 	{
 		int iIndex = i + sView;
-		if (iIndex < 0 || iIndex >= DEF_MAXCHATSCROLLMSGS) continue;
+		if (iIndex < 0 || iIndex >= game_limits::max_chat_scroll_msgs) continue;
 		if (m_pGame->m_pChatScrollList[iIndex] != nullptr)
 		{
 			int iYPos = sY + 127 - i * 13;

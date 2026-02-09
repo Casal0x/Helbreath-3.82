@@ -27,5 +27,4 @@
 // Gateway Messages
 // ============================================================================
 
-#define MSGID_GATEWAY_CURRENTCONN					0x3B000000  // Definition only, not actively used
 #define MSGID_GETMINIMUMLOADGATEWAY					0x3B1890EA

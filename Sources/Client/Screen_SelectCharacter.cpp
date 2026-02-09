@@ -86,7 +86,7 @@ void Screen_SelectCharacter::on_update()
                 {
                     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
                     m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-                    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+                    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                     m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                     m_pGame->ChangeGameMode(GameMode::Connecting);
@@ -203,7 +203,7 @@ void Screen_SelectCharacter::on_update()
                         {
                             m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
                             m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-                            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+                            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                             m_pGame->ChangeGameMode(GameMode::Connecting);
@@ -237,7 +237,7 @@ void Screen_SelectCharacter::on_update()
                     if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true) {
                         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
                         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
-                        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+                        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                         m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
                         m_pGame->ChangeGameMode(GameMode::Connecting);

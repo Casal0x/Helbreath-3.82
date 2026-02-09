@@ -2335,24 +2335,6 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 33, sDist, lPan);
 							break;
-							/*	case hb::owner::IceGolem: // IceGolem particulier a la v2.20, absent de la v3.51
-								if ( (m_pData[dX][dY].m_animation.cCurrentFrame == 1) )
-								{	m_pGame->PlayGameSound('M', 33, sDist, lPan);
-									switch (m_pData[dX][dY].m_animation.cDir) {
-									case 1 : dx = 0; dy = -1; break;
-									case 2 : dy = -1; dx = 1; break;
-									case 3 : dx = 1; dy = 0; break;
-									case 4 : dx = 1; dy = 1; break;
-									case 5 : dx = 0; dy = 1; break;
-									case 6 : dy = 1; dx = -1; break;
-									case 7 : dx = -1; dy = 0; break;
-									case 8 : dx = -1; dy = -1; break;
-									}
-									//m_pGame->m_pEffectManager->AddEffect( 75, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, dx, dy, 0 );
-									//m_pGame->m_pEffectManager->AddEffect( 76, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, dx, dy, 0 );
-									//m_pGame->m_pEffectManager->AddEffect( 77, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, dx, dy, 0 );
-								}
-								break;*/
 
 						case hb::owner::FireWyvern: // Snoopy: Fite-Wyvern
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))

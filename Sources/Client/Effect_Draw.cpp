@@ -14,7 +14,7 @@ void EffectManager::DrawEffectsImpl()
 	int i, dX, dY, iDvalue, tX, tY, rX, rY, rX2, rY2, rX3, rY3, rX4, rY4, rX5, rY5, iErr;
 	char  cTempFrame;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	for (i = 0; i < DEF_MAXEFFECTS; i++)
+	for (i = 0; i < game_limits::max_effects; i++)
 		if ((m_pEffectList[i] != 0) && (m_pEffectList[i]->m_cFrame >= 0))
 		{
 			switch (m_pEffectList[i]->m_sType) {

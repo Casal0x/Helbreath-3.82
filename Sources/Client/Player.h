@@ -74,7 +74,6 @@ public:
     char m_cAccountPassword[DEF_ACCOUNT_PASS];
     char m_cGuildName[DEF_GUILDNAME_LENGTH];
     int m_iGuildRank;
-    int m_iTotalGuildsMan;
 
     // POSITION & MOVEMENT
     short m_sPlayerX, m_sPlayerY;

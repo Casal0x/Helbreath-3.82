@@ -51,10 +51,10 @@ void Overlay_QueryDeleteCharacter::on_update()
         PlayGameSound('E', 14, 5);
 
         // Yes button - confirm deletion
-        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             // Create login socket and initiate delete request
-            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
             m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
@@ -68,7 +68,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, DEF_BTNSZX, DEF_BTNSZY))
+        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             clear_overlay();
             return;
@@ -129,13 +129,13 @@ void Overlay_QueryDeleteCharacter::on_render()
     PutAlignedString(dlgX + 16, dlgX + 291, dlgY + 95, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER2);
 
     // Yes button with hover effect
-    bool bYesHover = (msX >= dlgX + 38) && (msX <= dlgX + 38 + DEF_BTNSZX) &&
-                     (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    bool bYesHover = (msX >= dlgX + 38) && (msX <= dlgX + 38 + ui_layout::btn_size_x) &&
+                     (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 38, dlgY + 119, bYesHover ? 19 : 18);
 
     // No button with hover effect
-    bool bNoHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + DEF_BTNSZX) &&
-                    (msY >= dlgY + 119) && (msY <= dlgY + 119 + DEF_BTNSZY);
+    bool bNoHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + ui_layout::btn_size_x) &&
+                    (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bNoHover ? 3 : 2);
 
     DrawVersion();

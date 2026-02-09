@@ -40,7 +40,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     int iCost, iDiscountCost, iDiscountRatio;
     double dTmp1, dTmp2, dTmp3;
 
-    for (int i = 0; i < DEF_MAXMENUITEMS; i++)
+    for (int i = 0; i < game_limits::max_menu_items; i++)
         if (m_pGame->m_pItemForSaleList[i] != 0) iTotalLines++;
 
     if (iTotalLines > 13) {
@@ -82,7 +82,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
 
     // Draw item names
     for (int i = 0; i < 13; i++)
-        if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) &&
+        if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < game_limits::max_menu_items) &&
             (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
             std::memset(cTemp, 0, sizeof(cTemp));
             m_pGame->GetItemName(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get(), cTemp, cStr2, cStr3);
@@ -94,7 +94,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
 
     // Draw prices
     for (int i = 0; i < 13; i++)
-        if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < DEF_MAXMENUITEMS) &&
+        if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < game_limits::max_menu_items) &&
             (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
             iDiscountRatio = ((m_pGame->m_pPlayer->m_iCharisma - 10) / 4);
             dTmp1 = (double)iDiscountRatio;
@@ -190,13 +190,13 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     DrawQuantitySelector(sX, sY, msX, msY, msZ);
 
     // Draw buttons
-    if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 31);
-    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, sY + DEF_BTNPOSY, 30);
+    if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 31);
+    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 30);
 
-    if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 17);
-    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + DEF_BTNPOSY, 16);
+    if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
+        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
 void DialogBox_Shop::DrawWeaponStats(short sX, short sY, int iItemIndex, bool& bFlagRedShown)
@@ -518,7 +518,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     }
 
     // Purchase button
-    if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
+    if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
         if ((50 - m_pGame->_iGetTotalItemNum()) < m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3) {
             m_pGame->AddEventList(DLGBOX_CLICK_SHOP1, 10);//"ou cannot buy anything because your bag is full."
         }
@@ -537,7 +537,7 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     }
 
     // Cancel button
-    if ((msX >= sX + 154) && (msX <= sX + 154 + DEF_BTNSZX) && (msY >= sY + DEF_BTNPOSY) && (msY <= sY + DEF_BTNPOSY + DEF_BTNSZY)) {
+    if ((msX >= sX + 154) && (msX <= sX + 154 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
         m_pGame->PlayGameSound('E', 14, 5);

@@ -188,10 +188,10 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX + 1, sX + 257, sY + 267, cTxt);
 
 	// Alchemy button
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 285) && (msY <= sY + 285 + DEF_BTNSZY))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 285, 49, false, dialogTrans);
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 285) && (msY <= sY + 285 + ui_layout::btn_size_y))
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + 285, 49, false, dialogTrans);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, sY + 285, 48, false, dialogTrans);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + 285, 48, false, dialogTrans);
 }
 
 bool DialogBox_Magic::OnClick(short msX, short msY)
@@ -237,7 +237,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 	if ((msX >= sX + 218) && (msX <= sX + 239) && (msY >= sY + 240) && (msY <= sY + 268))
 		Info().sView = 9;
 
-	if ((msX >= sX + DEF_RBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 285) && (msY <= sY + 285 + DEF_BTNSZY))
+	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 285) && (msY <= sY + 285 + ui_layout::btn_size_y))
 	{
 		if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
 		else

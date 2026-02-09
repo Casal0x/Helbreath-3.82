@@ -18,13 +18,13 @@ void DialogBox_Resurrect::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutString(sX + 80, sY + 35, "Will you revive here?", GameColors::UIMagicBlue);
 
 	// Yes button
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
 	else
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
 
 	// No button
-	if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+	if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
 	else
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
@@ -36,7 +36,7 @@ bool DialogBox_Resurrect::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// Yes button
-	if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 	{
 		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_YES, 0, 0, 0, 0, 0, nullptr, 0);
 		DisableThisDialog();
@@ -44,7 +44,7 @@ bool DialogBox_Resurrect::OnClick(short msX, short msY)
 	}
 
 	// No button
-	if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+	if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 	{
 		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_NO, 0, 0, 0, 0, 0, nullptr, 0);
 		DisableThisDialog();

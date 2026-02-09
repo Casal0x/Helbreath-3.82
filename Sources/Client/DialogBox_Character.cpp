@@ -132,8 +132,8 @@ void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 void DialogBox_Character::DrawHoverButton(int sX, int sY, int btnX, int btnY,
 	short msX, short msY, int hoverFrame, int normalFrame)
 {
-	bool bHover = (msX >= sX + btnX) && (msX <= sX + btnX + DEF_BTNSZX) &&
-	              (msY >= sY + btnY) && (msY <= sY + btnY + DEF_BTNSZY);
+	bool bHover = (msX >= sX + btnX) && (msX <= sX + btnX + ui_layout::btn_size_x) &&
+	              (msY >= sY + btnY) && (msY <= sY + btnY + ui_layout::btn_size_y);
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + btnX, sY + btnY,
 		bHover ? hoverFrame : normalFrame, false, dialogTrans);
@@ -426,21 +426,21 @@ bool DialogBox_Character::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// Quest button
-	if ((msX >= sX + 15) && (msX <= sX + 15 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
+	if ((msX >= sX + 15) && (msX <= sX + 15 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
 		EnableDialogBox(DialogBoxId::Quest, 1, 0, 0);
 		DisableThisDialog();
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
 	// Party button
-	if ((msX >= sX + 98) && (msX <= sX + 98 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
+	if ((msX >= sX + 98) && (msX <= sX + 98 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
 		EnableDialogBox(DialogBoxId::Party, 0, 0, 0);
 		DisableThisDialog();
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
 	// LevelUp button
-	if ((msX >= sX + 180) && (msX <= sX + 180 + DEF_BTNSZX) && (msY >= sY + 340) && (msY <= sY + 340 + DEF_BTNSZY)) {
+	if ((msX >= sX + 180) && (msX <= sX + 180 + ui_layout::btn_size_x) && (msY >= sY + 340) && (msY <= sY + 340 + ui_layout::btn_size_y)) {
 		EnableDialogBox(DialogBoxId::LevelUpSetting, 0, 0, 0);
 		DisableThisDialog();
 		PlaySoundEffect('E', 14, 5);

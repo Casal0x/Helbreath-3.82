@@ -21,13 +21,13 @@ void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB
 		PutString(sX + 36, sY + 30, "Do you really want to exchange?", GameColors::UIMagicBlue);
 
 		// Yes button
-		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+		if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
 		else
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
 
 		// No button
-		if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+		if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
 		else
 			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
@@ -49,7 +49,7 @@ bool DialogBox_ConfirmExchange::OnClick(short msX, short msY)
 	{
 	case 1: // Not yet confirmed the exchange
 		// Yes button
-		if ((msX >= sX + 30) && (msX <= sX + 30 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+		if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 		{
 			if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1))
 			{
@@ -65,7 +65,7 @@ bool DialogBox_ConfirmExchange::OnClick(short msX, short msY)
 		}
 
 		// No button
-		if ((msX >= sX + 170) && (msX <= sX + 170 + DEF_BTNSZX) && (msY >= sY + 55) && (msY <= sY + 55 + DEF_BTNSZY))
+		if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 		{
 			DisableThisDialog();
 			DisableDialogBox(DialogBoxId::Exchange);

@@ -115,26 +115,6 @@ bool ConfigManager::Load(const char* filename)
 	{
 		json j = json::parse(file);
 
-		// Server settings
-		if (j.contains("server"))
-		{
-			auto& server = j["server"];
-			if (server.contains("address"))
-			{
-				//std::string addr = server["address"].get<std::string>();
-				//std::strncpy(DEF_SERVER_IP, addr.c_str(), sizeof(DEF_SERVER_IP) - 1);
-				//DEF_SERVER_IP[sizeof(DEF_SERVER_IP) - 1] = '\0';
-			}
-			if (server.contains("port"))
-			{
-				//DEF_SERVER_PORT = server["port"].get<int>();
-			}
-			if (server.contains("gamePort"))
-			{
-				//DEF_GSERVER_PORT = server["gamePort"].get<int>();
-			}
-		}
-
 		// Shortcuts
 		if (j.contains("shortcuts"))
 		{

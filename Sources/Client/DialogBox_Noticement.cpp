@@ -43,7 +43,7 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// OK button (same position for both modes)
-	if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
+	if ((msX >= sX + 210) && (msX <= sX + 210 + ui_layout::btn_size_x) && (msY > sY + 127) && (msY < sY + 127 + ui_layout::btn_size_y))
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 1);
 	else
 		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 0);
@@ -55,7 +55,7 @@ bool DialogBox_Noticement::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// OK button
-	if ((msX >= sX + 210) && (msX <= sX + 210 + DEF_BTNSZX) && (msY > sY + 127) && (msY < sY + 127 + DEF_BTNSZY))
+	if ((msX >= sX + 210) && (msX <= sX + 210 + ui_layout::btn_size_x) && (msY > sY + 127) && (msY < sY + 127 + ui_layout::btn_size_y))
 	{
 		PlaySoundEffect('E', 14, 5);
 		DisableThisDialog();

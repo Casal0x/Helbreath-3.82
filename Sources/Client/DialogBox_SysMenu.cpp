@@ -282,22 +282,22 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 
 	// Log-Out / Continue button (left side)
 	if (m_pGame->m_cLogOutCount == -1) {
-		bool bHover = (msX >= sX + DEF_LBTNPOSX && msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX &&
-			msY >= buttonY && msY <= buttonY + DEF_BTNSZY);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, buttonY, bHover ? 9 : 8);
+		bool bHover = (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, buttonY, bHover ? 9 : 8);
 	}
 	else {
-		bool bHover = (msX >= sX + DEF_LBTNPOSX && msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX &&
-			msY >= buttonY && msY <= buttonY + DEF_BTNSZY);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_LBTNPOSX, buttonY, bHover ? 7 : 6);
+		bool bHover = (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, buttonY, bHover ? 7 : 6);
 	}
 
 	// Restart button (right side, only when dead)
 	if ((m_pGame->m_pPlayer->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1))
 	{
-		bool bHover = (msX >= sX + DEF_RBTNPOSX && msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX &&
-			msY >= buttonY && msY <= buttonY + DEF_BTNSZY);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + DEF_RBTNPOSX, buttonY, bHover ? 37 : 36);
+		bool bHover = (msX >= sX + ui_layout::right_btn_x && msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x &&
+			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
+		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, buttonY, bHover ? 37 : 36);
 	}
 }
 
@@ -800,8 +800,8 @@ bool DialogBox_SysMenu::OnClickGeneral(short sX, short sY, short msX, short msY)
 	int buttonY = contentBottom - 30;
 
 	// Log-Out / Continue button
-	if (msX >= sX + DEF_LBTNPOSX && msX <= sX + DEF_LBTNPOSX + DEF_BTNSZX &&
-		msY >= buttonY && msY <= buttonY + DEF_BTNSZY)
+	if (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
+		msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y)
 	{
 		if (!m_pGame->m_bForceDisconn)
 		{
@@ -821,8 +821,8 @@ bool DialogBox_SysMenu::OnClickGeneral(short sX, short sY, short msX, short msY)
 	// Restart button (only when dead)
 	if ((m_pGame->m_pPlayer->m_iHP <= 0) && (m_pGame->m_cRestartCount == -1))
 	{
-		if (msX >= sX + DEF_RBTNPOSX && msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX &&
-			msY >= buttonY && msY <= buttonY + DEF_BTNSZY)
+		if (msX >= sX + ui_layout::right_btn_x && msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x &&
+			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y)
 		{
 			m_pGame->m_cRestartCount = 5;
 			m_pGame->m_dwRestartCountTime = GameClock::GetTimeMS();

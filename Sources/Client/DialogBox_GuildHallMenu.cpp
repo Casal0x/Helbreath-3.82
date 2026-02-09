@@ -51,7 +51,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 				std::memset(cTxt, 0, sizeof(cTxt));
 				m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, cTxt);
 				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
-				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
+				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIWhite);
 				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIMenuHighlight);
 			}
@@ -203,7 +203,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		{
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
-				if ((msX >= sX + DEF_LBTNPOSX) && (msX <= sX + DEF_RBTNPOSX + DEF_BTNSZX) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
+				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 				{
 					bSendCommand(MSGID_REQUEST_HELDENIAN_TP, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
 					DisableDialogBox(DialogBoxId::GuildHallMenu);

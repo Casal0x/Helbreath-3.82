@@ -201,7 +201,7 @@ void Screen_CreateAccount::_submit_create_account()
         m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
         // Connection logic
-        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), DEF_SOCKETBLOCKLIMIT);
+        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort);
         m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
 
