@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -65,7 +65,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <!-- Win32 paths -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
@@ -78,7 +78,7 @@
     <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\SFML\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);</LibraryPath>
   </PropertyGroup>
-  <!-- x64 paths -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)$(Configuration)_x64\</OutDir>
     <IntDir>$(Configuration)_x64\</IntDir>
@@ -91,7 +91,7 @@
     <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\SFML\lib_x64;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);</LibraryPath>
   </PropertyGroup>
-  <!-- Win32 Release compile -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -113,7 +113,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
-  <!-- Win32 Debug compile -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -134,7 +134,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
-  <!-- x64 Release compile -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -156,7 +156,7 @@
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
   </ItemDefinitionGroup>
-  <!-- x64 Debug compile -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -187,10 +187,8 @@
     <ClInclude Include="SFMLTextRenderer.h" />
     <ClInclude Include="SFMLBitmapFont.h" />
     <ClInclude Include="SFMLInput.h" />
-  </ItemGroup>
+  <ClInclude Include="..\Dependencies\Shared\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\IInput.h" /><ClInclude Include="..\Dependencies\Shared\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\TextLib.h" /></ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Dependencies\Shared\ISpriteFactory.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\TextLib.cpp" />
     <ClCompile Include="SFMLRenderer.cpp" />
     <ClCompile Include="SFMLTexture.cpp" />
     <ClCompile Include="SFMLWindow.cpp" />
@@ -200,8 +198,8 @@
     <ClCompile Include="SFMLBitmapFont.cpp" />
     <ClCompile Include="SFMLInput.cpp" />
     <ClCompile Include="RendererFactory.cpp" />
-  </ItemGroup>
-  <!-- Win32 Debug post-build -->
+  <ClCompile Include="..\Dependencies\Shared\ISpriteFactory.cpp" /><ClCompile Include="..\Dependencies\Shared\TextLib.cpp" /></ItemGroup>
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PostBuildEvent>
       <Command>xcopy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)Dependencies\Client\Libs\"
@@ -209,14 +207,14 @@ xcopy /Y "$(OutDir)$(TargetName).pdb" "$(SolutionDir)Dependencies\Client\Libs\"<
       <Message>Copying $(TargetName) to Dependencies\Client\Libs</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <!-- Win32 Release post-build -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <PostBuildEvent>
       <Command>xcopy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)Dependencies\Client\Libs\"</Command>
       <Message>Copying $(TargetName) to Dependencies\Client\Libs</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <!-- x64 Debug post-build -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <PostBuildEvent>
       <Command>xcopy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)Dependencies\Client\Libs\x64\"
@@ -224,7 +222,7 @@ xcopy /Y "$(OutDir)$(TargetName).pdb" "$(SolutionDir)Dependencies\Client\Libs\x6
       <Message>Copying $(TargetName) to Dependencies\Client\Libs\x64</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <!-- x64 Release post-build -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PostBuildEvent>
       <Command>xcopy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(SolutionDir)Dependencies\Client\Libs\x64\"</Command>

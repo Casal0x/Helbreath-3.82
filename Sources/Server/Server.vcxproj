@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="Current">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -65,7 +65,7 @@
   <PropertyGroup>
     <_ProjectFileVersion>17.0.35527.80</_ProjectFileVersion>
   </PropertyGroup>
-  <!-- Win32 paths -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
@@ -80,7 +80,7 @@
     <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
-  <!-- x64 paths -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Configuration)_x64\</OutDir>
     <IntDir>$(Configuration)_x64\</IntDir>
@@ -95,7 +95,7 @@
     <IncludePath>$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Server\Includes;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
     <LibraryPath>$(SolutionDir)Dependencies\Server\Libs;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
-  <!-- Win32 Release build settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -144,7 +144,7 @@
       <Culture>0x0412</Culture>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- Win32 Debug build settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -187,7 +187,7 @@
       <Culture>0x0412</Culture>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- x64 Release build settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
@@ -236,7 +236,7 @@
       <Culture>0x0412</Culture>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- x64 Debug build settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -314,7 +314,6 @@
     <ClInclude Include="UserMessages.h" />
     <ClInclude Include="version.h" />
     <ClInclude Include="winmain.h" />
-    <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h" />
     <ClInclude Include="ServerConsole.h" />
     <ClInclude Include="ServerCommand.h" />
     <ClInclude Include="CmdHelp.h" />
@@ -339,7 +338,7 @@
     <ClInclude Include="CmdSetAdmin.h" />
     <ClInclude Include="CmdSetCmdLevel.h" />
     <ClInclude Include="PasswordHash.h" />
-  </ItemGroup>
+  <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h" /><ClInclude Include="..\Dependencies\Shared\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\AdminLevel.h" /><ClInclude Include="..\Dependencies\Shared\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\CRC32.h" /><ClInclude Include="..\Dependencies\Shared\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\ConcurrentMsgQueue.h" /><ClInclude Include="..\Dependencies\Shared\DynamicObjectID.h" /><ClInclude Include="..\Dependencies\Shared\EntityRelationship.h" /><ClInclude Include="..\Dependencies\Shared\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\IInput.h" /><ClInclude Include="..\Dependencies\Shared\IOServicePool.h" /><ClInclude Include="..\Dependencies\Shared\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\Item\Item.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" /><ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" /><ClInclude Include="..\Dependencies\Shared\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\NetConstants.h" /><ClInclude Include="..\Dependencies\Shared\NetMessages.h" /><ClInclude Include="..\Dependencies\Shared\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCalcSocket.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCommon.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketConfigCache.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketEvent.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHeaders.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHelpers.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketItemConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLogin.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLoginResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMagicConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMap.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMotion.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketNotify.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketRequest.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketShop.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketSkillConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\SharedPackets.h" /><ClInclude Include="..\Dependencies\Shared\PlayerStatusData.h" /><ClInclude Include="..\Dependencies\Shared\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\SharedCalculations.h" /><ClInclude Include="..\Dependencies\Shared\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\TextLib.h" /></ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccountSqliteStore.cpp" />
     <ClCompile Include="Client.cpp" />
@@ -356,8 +355,6 @@
     <ClCompile Include="Quest.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="wmain.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
     <ClCompile Include="ServerConsole.cpp" />
     <ClCompile Include="ServerCommand.cpp" />
     <ClCompile Include="CmdHelp.cpp" />
@@ -381,7 +378,7 @@
     <ClCompile Include="GameCmdInvis.cpp" />
     <ClCompile Include="CmdSetAdmin.cpp" />
     <ClCompile Include="CmdSetCmdLevel.cpp" />
-  </ItemGroup>
+  <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" /><ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" /></ItemGroup>
   <ItemGroup>
     <Image Include="logo.bmp" />
   </ItemGroup>

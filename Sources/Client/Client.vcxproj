@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -27,7 +27,7 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <!-- Configuration Properties -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v143</PlatformToolset>
@@ -55,7 +55,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <!-- Property Sheets -->
+  
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.Cpp.UpgradeFromVC60.props" />
@@ -71,7 +71,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <!-- Paths for SFML configurations -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
@@ -92,7 +92,7 @@
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <!-- x64 SFML paths -->
+  
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)Sources\SFMLEngine;$(SolutionDir)Dependencies\Shared;$(SolutionDir)Dependencies\Client\Includes;$(SolutionDir)Dependencies\SFML\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
@@ -113,7 +113,7 @@
     <LocalDebuggerWorkingDirectory>$(SolutionDir)..\Binaries\Game</LocalDebuggerWorkingDirectory>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <!-- Debug-SFML Build Settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -148,7 +148,7 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- Release-SFML Build Settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -187,7 +187,7 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- Debug-SFML x64 Build Settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -221,7 +221,7 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <!-- Release-SFML x64 Build Settings -->
+  
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -334,10 +334,7 @@
     <ClInclude Include="SpriteID.h" />
     <ClInclude Include="Tile.h" />
     <ClInclude Include="TileSpr.h" />
-    <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h" />
     <ClInclude Include="ConfigManager.h" />
-    <ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" />
-    <ClInclude Include="..\Dependencies\Shared\GameGeometry.h" />
     <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
@@ -383,11 +380,10 @@
     <ClInclude Include="Overlay_WaitInitData.h" />
     <ClInclude Include="DevConsole.h" />
     <ClInclude Include="Overlay_DevConsole.h" />
-  </ItemGroup>
+  <ClInclude Include="..\Dependencies\Shared\ASIOSocket.h" /><ClInclude Include="..\Dependencies\Shared\ActionID.h" /><ClInclude Include="..\Dependencies\Shared\AdminLevel.h" /><ClInclude Include="..\Dependencies\Shared\Appearance.h" /><ClInclude Include="..\Dependencies\Shared\BitmapFontFactory.h" /><ClInclude Include="..\Dependencies\Shared\CRC32.h" /><ClInclude Include="..\Dependencies\Shared\ColorUtils.h" /><ClInclude Include="..\Dependencies\Shared\ConcurrentMsgQueue.h" /><ClInclude Include="..\Dependencies\Shared\DynamicObjectID.h" /><ClInclude Include="..\Dependencies\Shared\EntityRelationship.h" /><ClInclude Include="..\Dependencies\Shared\GameGeometry.h" /><ClInclude Include="..\Dependencies\Shared\IBitmapFont.h" /><ClInclude Include="..\Dependencies\Shared\IInput.h" /><ClInclude Include="..\Dependencies\Shared\IOServicePool.h" /><ClInclude Include="..\Dependencies\Shared\IRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ISprite.h" /><ClInclude Include="..\Dependencies\Shared\ISpriteFactory.h" /><ClInclude Include="..\Dependencies\Shared\ITextRenderer.h" /><ClInclude Include="..\Dependencies\Shared\ITexture.h" /><ClInclude Include="..\Dependencies\Shared\IWindow.h" /><ClInclude Include="..\Dependencies\Shared\Item\Item.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemAttributes.h" /><ClInclude Include="..\Dependencies\Shared\Item\ItemEnums.h" /><ClInclude Include="..\Dependencies\Shared\Item\SharedItem.h" /><ClInclude Include="..\Dependencies\Shared\NativeTypes.h" /><ClInclude Include="..\Dependencies\Shared\NetConstants.h" /><ClInclude Include="..\Dependencies\Shared\NetMessages.h" /><ClInclude Include="..\Dependencies\Shared\NullSprite.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCalcSocket.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketCommon.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketConfigCache.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketEvent.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHeaders.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketHelpers.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketItemConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLogin.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketLoginResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMagicConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMap.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketMotion.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketNotify.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketRequest.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketResponse.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketShop.h" /><ClInclude Include="..\Dependencies\Shared\Packet\PacketSkillConfig.h" /><ClInclude Include="..\Dependencies\Shared\Packet\SharedPackets.h" /><ClInclude Include="..\Dependencies\Shared\PlayerStatusData.h" /><ClInclude Include="..\Dependencies\Shared\PrimitiveTypes.h" /><ClInclude Include="..\Dependencies\Shared\RenderConstants.h" /><ClInclude Include="..\Dependencies\Shared\RendererFactory.h" /><ClInclude Include="..\Dependencies\Shared\ResolutionConfig.h" /><ClInclude Include="..\Dependencies\Shared\SharedCalculations.h" /><ClInclude Include="..\Dependencies\Shared\SpriteCollection.h" /><ClInclude Include="..\Dependencies\Shared\SpriteLoader.h" /><ClInclude Include="..\Dependencies\Shared\SpriteTypes.h" /><ClInclude Include="..\Dependencies\Shared\TextLib.h" /></ItemGroup>
   <ItemGroup>
     <ClCompile Include="CommonTypes.cpp" />
     <ClCompile Include="ConfigManager.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" />
     <ClCompile Include="LocalCacheManager.cpp" />
     <ClCompile Include="DialogBoxManager.cpp" />
     <ClCompile Include="IDialogBox.cpp" />
@@ -502,8 +498,6 @@
     <ClCompile Include="MapData.cpp" />
     <ClCompile Include="Wmain.cpp" />
     <ClCompile Include="GameWindowHandler.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" />
-    <ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
@@ -513,14 +507,14 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerController.cpp" />
     <ClCompile Include="Camera.cpp" />
-  </ItemGroup>
+  <ClCompile Include="..\Dependencies\Shared\ASIOSocket.cpp" /><ClCompile Include="..\Dependencies\Shared\IOServicePool.cpp" /><ClCompile Include="..\Dependencies\Shared\ResolutionConfig.cpp" /></ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Game.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />
   </ItemGroup>
-  <!-- Project References - Conditional based on configuration -->
+  
   <ItemGroup Condition="$(Configuration.Contains('SFML'))">
     <ProjectReference Include="..\SFMLEngine\SFMLEngine.vcxproj">
       <Project>{C4A8D9E2-5D3F-4C8B-9F2E-3D4E5F6A8B9C}</Project>
