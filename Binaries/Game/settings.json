@@ -3,11 +3,11 @@
         "ambientEnabled": true,
         "ambientVolume": 15,
         "masterEnabled": true,
-        "masterVolume": 44,
+        "masterVolume": 42,
         "musicEnabled": false,
         "musicVolume": 16,
         "soundEnabled": true,
-        "soundVolume": 14,
+        "soundVolume": 20,
         "uiEnabled": true,
         "uiVolume": 14
     },
@@ -26,10 +26,6 @@
         "tileGrid": false,
         "vsync": true,
         "zoomMap": true
-    },
-    "resolution": {
-        "height": 600,
-        "width": 800
     },
     "server": {
         "address": "199.187.160.239",

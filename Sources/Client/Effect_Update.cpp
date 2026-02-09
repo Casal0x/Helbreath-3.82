@@ -768,7 +768,7 @@ void EffectManager::UpdateEffectsImpl()
 						delete m_pEffectList[i];
 						m_pEffectList[i] = 0;
 					}
-					else /*if (m_pEffectList[i]->m_cFrame == 1)*/
+					else
 					{
 						AddEffectImpl(EffectType::BLIZZARD_PROJECTILE, m_pEffectList[i]->m_sX, m_pEffectList[i]->m_sY,
 							m_pEffectList[i]->m_dX * 32 + (rand() % 120) - 60, m_pEffectList[i]->m_dY * 32 + (rand() % 120) - 60, 0);

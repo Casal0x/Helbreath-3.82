@@ -11,22 +11,23 @@
 //
 // Window resolution (display size) is separate and can scale the base resolution.
 
+// Hard-coded base resolution — change these to switch between 640x480 and 800x600
+static constexpr int BASE_RESOLUTION_WIDTH  = 800;
+static constexpr int BASE_RESOLUTION_HEIGHT = 600;
+
 class ResolutionConfig
 {
 public:
-	// Initialize with base and window resolution - must be called before Get()
-	// baseWidth/baseHeight: logical game resolution (640x480 or 800x600)
+	// Initialize with window resolution - must be called before Get()
+	// Base resolution is compile-time constant (BASE_RESOLUTION_WIDTH x BASE_RESOLUTION_HEIGHT)
 	// windowWidth/windowHeight: actual window size for centering calculations
-	static void Initialize(int baseWidth, int baseHeight, int windowWidth, int windowHeight);
+	static void Initialize(int windowWidth, int windowHeight);
 
 	// Get the singleton instance (must call Initialize first)
 	static ResolutionConfig& Get();
 
 	// Update window size (for when window is resized)
 	void SetWindowSize(int windowWidth, int windowHeight);
-
-	// Update base resolution (requires game restart for full effect, but updates calculations)
-	void SetBaseResolution(int baseWidth, int baseHeight);
 
 	// Logical resolution (render target size)
 	int LogicalWidth() const { return m_width; }
@@ -88,10 +89,10 @@ private:
 
 	void RecalculateScreenOffset();
 
-	int m_width = 640;
-	int m_height = 480;
-	int m_windowWidth = 640;
-	int m_windowHeight = 480;
+	int m_width = BASE_RESOLUTION_WIDTH;
+	int m_height = BASE_RESOLUTION_HEIGHT;
+	int m_windowWidth = BASE_RESOLUTION_WIDTH;
+	int m_windowHeight = BASE_RESOLUTION_HEIGHT;
 	int m_screenX = 0;
 	int m_screenY = 0;
 

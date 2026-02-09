@@ -2,20 +2,10 @@
 
 bool ResolutionConfig::s_bInitialized = false;
 
-void ResolutionConfig::Initialize(int baseWidth, int baseHeight, int windowWidth, int windowHeight)
+void ResolutionConfig::Initialize(int windowWidth, int windowHeight)
 {
-	// Validate base resolution - only 640x480 or 800x600 are valid
-	if (baseWidth == 800 && baseHeight == 600)
-	{
-		Get().m_width = 800;
-		Get().m_height = 600;
-	}
-	else
-	{
-		// Default to 640x480 for any other value
-		Get().m_width = 640;
-		Get().m_height = 480;
-	}
+	Get().m_width = BASE_RESOLUTION_WIDTH;
+	Get().m_height = BASE_RESOLUTION_HEIGHT;
 
 	// Store window size and calculate screen offset
 	Get().m_windowWidth = windowWidth;
@@ -38,22 +28,6 @@ void ResolutionConfig::SetWindowSize(int windowWidth, int windowHeight)
 	RecalculateScreenOffset();
 }
 
-void ResolutionConfig::SetBaseResolution(int baseWidth, int baseHeight)
-{
-	// Validate base resolution - only 640x480 or 800x600 are valid
-	if (baseWidth == 800 && baseHeight == 600)
-	{
-		m_width = 800;
-		m_height = 600;
-	}
-	else
-	{
-		// Default to 640x480 for any other value
-		m_width = 640;
-		m_height = 480;
-	}
-	RecalculateScreenOffset();
-}
 
 void ResolutionConfig::RecalculateScreenOffset()
 {

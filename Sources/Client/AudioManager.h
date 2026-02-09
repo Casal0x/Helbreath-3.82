@@ -138,13 +138,19 @@ private:
 	std::array<DecodedSound, AUDIO_MAX_EFFECT_SOUNDS> m_effectSounds = {};
 
 	// Active sound pool for concurrent playback
+	static const int MAX_INSTANCES_PER_SOUND = 2;
+
 	struct ActiveSound {
 		ma_audio_buffer_ref bufferRef;
 		ma_sound sound;
+		SoundType type = SoundType::Character;
+		int index = 0;
+		uint32_t startOrder = 0;
 		bool inUse = false;
 		bool soundInitialized = false;
 	};
 	std::array<ActiveSound, AUDIO_MAX_ACTIVE_SOUNDS> m_activeSounds;
+	uint32_t m_dwSoundOrder = 0;
 
 	// Background music sound (still uses resource manager - single file, streamed)
 	ma_sound m_bgmSound;

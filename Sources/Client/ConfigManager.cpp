@@ -91,10 +91,6 @@ void ConfigManager::SetDefaults()
 	m_bTileGrid = false;     // Simple tile grid off by default
 	m_bPatchingGrid = false; // Patching debug grid off by default
 
-	// Base resolution defaults to 640x480
-	m_baseResolutionWidth = 640;
-	m_baseResolutionHeight = 480;
-
 	m_bDirty = false;
 }
 
@@ -216,43 +212,6 @@ bool ConfigManager::Load(const char* filename)
 			if (window.contains("height"))
 			{
 				m_windowHeight = Clamp(window["height"].get<int>(), 480, 2160);
-			}
-		}
-
-		// Resolution settings (base resolution for rendering)
-		if (j.contains("resolution"))
-		{
-			auto& resolution = j["resolution"];
-			// Support both old "base" format and new separate width/height
-			if (resolution.contains("width") && resolution.contains("height"))
-			{
-				int w = resolution["width"].get<int>();
-				int h = resolution["height"].get<int>();
-				if (w == 800 && h == 600)
-				{
-					m_baseResolutionWidth = 800;
-					m_baseResolutionHeight = 600;
-				}
-				else
-				{
-					m_baseResolutionWidth = 640;
-					m_baseResolutionHeight = 480;
-				}
-			}
-			else if (resolution.contains("base"))
-			{
-				// Legacy format support
-				std::string base = resolution["base"].get<std::string>();
-				if (base == "800x600")
-				{
-					m_baseResolutionWidth = 800;
-					m_baseResolutionHeight = 600;
-				}
-				else
-				{
-					m_baseResolutionWidth = 640;
-					m_baseResolutionHeight = 480;
-				}
 			}
 		}
 
@@ -387,10 +346,6 @@ bool ConfigManager::Save(const char* filename)
 	// Window settings
 	j["window"]["width"] = m_windowWidth;
 	j["window"]["height"] = m_windowHeight;
-
-	// Resolution settings (separate width/height as requested)
-	j["resolution"]["width"] = m_baseResolutionWidth;
-	j["resolution"]["height"] = m_baseResolutionHeight;
 
 	// Display/Detail settings
 	j["display"]["showFps"] = m_bShowFPS;
@@ -680,34 +635,6 @@ void ConfigManager::SetBorderlessEnabled(bool enabled)
 	if (m_bBorderless != enabled)
 	{
 		m_bBorderless = enabled;
-		m_bDirty = true;
-		Save();
-	}
-}
-
-void ConfigManager::SetBaseResolution(int width, int height)
-{
-	// Only accept valid base resolutions
-	int newWidth, newHeight;
-	if (width == 800 && height == 600)
-	{
-		newWidth = 800;
-		newHeight = 600;
-	}
-	else
-	{
-		newWidth = 640;
-		newHeight = 480;
-	}
-
-	if (m_baseResolutionWidth != newWidth || m_baseResolutionHeight != newHeight)
-	{
-		m_baseResolutionWidth = newWidth;
-		m_baseResolutionHeight = newHeight;
-
-		// Update ResolutionConfig so all resolution-dependent calculations update
-		ResolutionConfig::Get().SetBaseResolution(newWidth, newHeight);
-
 		m_bDirty = true;
 		Save();
 	}

@@ -7583,7 +7583,7 @@ void CGame::GiveItemHandler(int iClientH, short sItemIndex, int iAmount, short d
 {
 	int iRet, iEraseReq;
 	short sOwnerH;
-	char cOwnerType, cCharName[DEF_CHARNAME];
+	char cOwnerType, cCharName[DEF_NPCNAME];
 	CItem* pItem;
 
 	if (m_pClientList[iClientH] == 0) return;

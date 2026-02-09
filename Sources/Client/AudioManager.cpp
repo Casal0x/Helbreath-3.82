@@ -1,4 +1,5 @@
 #include "AudioManager.h"
+#include "ResolutionConfig.h"
 #include <cstdlib>
 #include <format>
 
@@ -297,16 +298,42 @@ void AudioManager::PlayGameSound(SoundType type, int index, int distance, int pa
 	// Calculate volume based on distance
 	float volume = 1.0f;
 
-	// Distance attenuation (reduce by 10% per distance unit, max 10 units)
+	// Distance attenuation — derive max audible range from resolution
+	// Center-to-edge is ViewCenterTileX/Y; add a few tiles beyond screen edge
 	if (distance > 0)
 	{
-		if (distance > 10) distance = 10;
-		volume *= (1.0f - (distance * 0.1f));
+		const auto& res = ResolutionConfig::Get();
+		int maxDist = std::max(res.ViewCenterTileX(), res.ViewCenterTileY()) + 4;
+		if (maxDist < 10) maxDist = 10;
+		if (distance >= maxDist)
+			return;
+		volume *= (1.0f - (static_cast<float>(distance) / maxDist));
 	}
 
 	// Don't play if too quiet
 	if (volume < 0.01f)
 		return;
+
+	// Limit concurrent instances of the same sound — stop oldest if at cap
+	int instanceCount = 0;
+	ActiveSound* pOldest = nullptr;
+	for (auto& active : m_activeSounds)
+	{
+		if (active.inUse && active.soundInitialized && active.type == type && active.index == index
+			&& ma_sound_is_playing(&active.sound))
+		{
+			instanceCount++;
+			if (pOldest == nullptr || active.startOrder < pOldest->startOrder)
+				pOldest = &active;
+		}
+	}
+	if (instanceCount >= MAX_INSTANCES_PER_SOUND && pOldest != nullptr)
+	{
+		ma_sound_stop(&pOldest->sound);
+		ma_sound_uninit(&pOldest->sound);
+		pOldest->soundInitialized = false;
+		pOldest->inUse = false;
+	}
 
 	// Find a free slot in the active sound pool
 	ActiveSound* pSlot = nullptr;
@@ -352,6 +379,9 @@ void AudioManager::PlayGameSound(SoundType type, int index, int distance, int pa
 
 	pSlot->inUse = true;
 	pSlot->soundInitialized = true;
+	pSlot->type = type;
+	pSlot->index = index;
+	pSlot->startOrder = ++m_dwSoundOrder;
 
 	// Set volume for this instance
 	ma_sound_set_volume(&pSlot->sound, volume);

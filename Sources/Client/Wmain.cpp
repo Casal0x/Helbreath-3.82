@@ -24,8 +24,6 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     ConfigManager::Get().Load();
 
     ResolutionConfig::Initialize(
-        ConfigManager::Get().GetBaseResolutionWidth(),
-        ConfigManager::Get().GetBaseResolutionHeight(),
         ConfigManager::Get().GetWindowWidth(),
         ConfigManager::Get().GetWindowHeight()
     );
