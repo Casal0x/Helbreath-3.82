@@ -361,12 +361,23 @@ void Screen_OnGame::on_update()
         // finished (iUpdateRet == 2 was blocked) but the tile hasn't transitioned to STOP
         // yet (so path 2 can't fire). Only active when this lock is from the attack that
         // set attackEnd (cmdTime <= attackEnd), not for subsequent movement locks.
+        // Also skip if a damage animation is currently playing — the player must wait
+        // for the damage stun to finish even if attackEndTime has expired.
         uint32_t dwAttackEnd = m_pGame->m_pPlayer->m_Controller.GetAttackEndTime();
         uint32_t dwCmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
         if (dwAttackEnd != 0 && dwCmdTime <= dwAttackEnd && GameClock::GetTimeMS() >= dwAttackEnd) {
-            m_pGame->m_pPlayer->m_Controller.SetAttackEndTime(0);
-            m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
-            m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+            int dX4 = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
+            int dY4 = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
+            bool bDamageAnimPlaying = false;
+            if (dX4 >= 0 && dX4 < MAPDATASIZEX && dY4 >= 0 && dY4 < MAPDATASIZEY) {
+                int8_t animAction = m_pGame->m_pMapData->m_pData[dX4][dY4].m_animation.cAction;
+                bDamageAnimPlaying = (animAction == DEF_OBJECTDAMAGE || animAction == DEF_OBJECTDAMAGEMOVE);
+            }
+            if (!bDamageAnimPlaying) {
+                m_pGame->m_pPlayer->m_Controller.SetAttackEndTime(0);
+                m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
+                m_pGame->m_pPlayer->m_Controller.SetCommandTime(0);
+            }
         }
     }
 

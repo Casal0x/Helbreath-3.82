@@ -10518,14 +10518,6 @@ void CGame::MotionEventHandler(char* pData)
 			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-			// Lock the controller until the damage animation finishes.
-			// Without this, quick actions allows immediate movement after being hit.
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
-			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-			// Clear attack end time so Path 4 (attack cooldown expiry) doesn't
-			// unlock the controller before the damage animation finishes.
-			m_pPlayer->m_Controller.SetAttackEndTime(0);
 		}
 		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
 		m_floatingText.AddDamageFromValue(sV1, false, m_dwCurTime,
