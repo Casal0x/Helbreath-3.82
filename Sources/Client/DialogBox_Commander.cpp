@@ -327,7 +327,7 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		if (szX != 0)
 		{
-			for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+			for (i = 0; i < hb::limits::MaxCrusadeStructures; i++)
 				if (m_pGame->m_stCrusadeStructureInfo[i].cType != 0)
 				{
 					dV1 = (double)MapSzX;

@@ -124,7 +124,7 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY32);
 
 		int iNth = 0;
-		for (int i = 0; i <= DEF_MAXPARTYMEMBERS; i++) {
+		for (int i = 0; i <= hb::limits::MaxPartyMembers; i++) {
 			if (strlen(m_pGame->m_stPartyMemberNameList[i].cName) != 0) {
 				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->m_stPartyMemberNameList[i].cName);
 				iNth++;

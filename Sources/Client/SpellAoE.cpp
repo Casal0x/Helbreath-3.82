@@ -81,9 +81,9 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// Linear spells: Bresenham line (steps 2-9) with cross pattern,
 	// plus a rectangular area at the destination point
 	// =================================================================
-	case DEF_MAGICTYPE_DAMAGE_LINEAR:
-	case DEF_MAGICTYPE_ICE_LINEAR:
-	case DEF_MAGICTYPE_DAMAGE_LINEAR_SPDOWN:
+	case hb::magic::DamageLinear:
+	case hb::magic::IceLinear:
+	case hb::magic::DamageLinearSpDown:
 	{
 		// Line trace with cross pattern at each step
 		for (int i = 2; i < 10; i++) {
@@ -115,11 +115,11 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// Area spells with center damage: rectangular AoE + center hit
 	// Server: center tile gets m_sValue4/5/6, area gets m_sValue7/8/9
 	// =================================================================
-	case DEF_MAGICTYPE_DAMAGE_AREA:
-	case DEF_MAGICTYPE_SPDOWN_AREA:
-	case DEF_MAGICTYPE_SPUP_AREA:
-	case DEF_MAGICTYPE_TREMOR:
-	case DEF_MAGICTYPE_ICE:
+	case hb::magic::DamageArea:
+	case hb::magic::SpDownArea:
+	case hb::magic::SpUpArea:
+	case hb::magic::Tremor:
+	case hb::magic::Ice:
 	{
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		if (radiusX > 0 || radiusY > 0) {
@@ -131,9 +131,9 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Area spells WITHOUT center damage (no-spot)
 	// =================================================================
-	case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT:
-	case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT_SPDOWN:
-	case DEF_MAGICTYPE_DAMAGE_AREA_ARMOR_BREAK:
+	case hb::magic::DamageAreaNoSpot:
+	case hb::magic::DamageAreaNoSpotSpDown:
+	case hb::magic::DamageAreaArmorBreak:
 	{
 		if (radiusX > 0 || radiusY > 0) {
 			count = AddArea(outTiles, count, outMax, targetX, targetY, radiusX, radiusY);
@@ -148,7 +148,7 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// CREATE_DYNAMIC: Firewall, Firefield, Spikefield, Poison Cloud
 	// Pattern depends on m_sValue11: 1=wall, 2=field
 	// =================================================================
-	case DEF_MAGICTYPE_CREATE_DYNAMIC:
+	case hb::magic::CreateDynamic:
 	{
 		int dynRadius = params.dynamicRadius;
 		if (dynRadius <= 0) dynRadius = 1;
@@ -189,7 +189,7 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Confuse (Mass Illusion etc.) — uses AoE radius, affects area
 	// =================================================================
-	case DEF_MAGICTYPE_CONFUSE:
+	case hb::magic::Confuse:
 	{
 		if (radiusX > 0 || radiusY > 0) {
 			count = AddArea(outTiles, count, outMax, targetX, targetY, radiusX, radiusY);
@@ -202,29 +202,29 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Single target spells — just the target tile
 	// =================================================================
-	case DEF_MAGICTYPE_DAMAGE_SPOT:
-	case DEF_MAGICTYPE_HPUP_SPOT:
-	case DEF_MAGICTYPE_SPDOWN_SPOT:
-	case DEF_MAGICTYPE_SPUP_SPOT:
-	case DEF_MAGICTYPE_HOLDOBJECT:
-	case DEF_MAGICTYPE_POSSESSION:
-	case DEF_MAGICTYPE_POISON:
-	case DEF_MAGICTYPE_INHIBITION:
-	case DEF_MAGICTYPE_CANCELLATION:
-	case DEF_MAGICTYPE_BERSERK:
-	case DEF_MAGICTYPE_PROTECT:
-	case DEF_MAGICTYPE_POLYMORPH:
-	case DEF_MAGICTYPE_RESURRECTION:
-	case DEF_MAGICTYPE_SCAN:
-	case DEF_MAGICTYPE_INVISIBILITY:
-	case DEF_MAGICTYPE_HASTE:
+	case hb::magic::DamageSpot:
+	case hb::magic::HpUpSpot:
+	case hb::magic::SpDownSpot:
+	case hb::magic::SpUpSpot:
+	case hb::magic::HoldObject:
+	case hb::magic::Possession:
+	case hb::magic::Poison:
+	case hb::magic::Inhibition:
+	case hb::magic::Cancellation:
+	case hb::magic::Berserk:
+	case hb::magic::Protect:
+	case hb::magic::Polymorph:
+	case hb::magic::Resurrection:
+	case hb::magic::Scan:
+	case hb::magic::Invisibility:
+	case hb::magic::Haste:
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		break;
 
 	// Self/utility spells — show target tile as a simple indicator
-	case DEF_MAGICTYPE_TELEPORT:
-	case DEF_MAGICTYPE_SUMMON:
-	case DEF_MAGICTYPE_CREATE:
+	case hb::magic::Teleport:
+	case hb::magic::Summon:
+	case hb::magic::Create:
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		break;
 

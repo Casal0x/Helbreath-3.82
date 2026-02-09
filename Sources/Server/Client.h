@@ -26,13 +26,7 @@ using namespace std;
 
 #define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
 
-#define DEF_MAXITEMS		50
-#define DEF_MAXBANKITEMS	1000 // Hard cap - soft limit is m_iMaxBankItems (default 200)
-#define DEF_MAXGUILDSMAN	128
-
 // DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h
-
-#define DEF_MAXPARTYMEMBERS	9
 
 #define DEF_SPECABLTYTIMESEC	1200
 
@@ -141,7 +135,7 @@ public:
 	{
 		char index;
 		short price;
-	} m_stRepairAll[DEF_MAXITEMS];
+	} m_stRepairAll[hb::limits::MaxItems];
 
 	char m_cAttackDiceThrow_SM;
 	char m_cAttackDiceRange_SM;
@@ -150,11 +144,11 @@ public:
 	char m_cAttackBonus_SM;
 	char m_cAttackBonus_L;
 
-	CItem * m_pItemList[DEF_MAXITEMS];
-	GamePoint m_ItemPosList[DEF_MAXITEMS];
-	CItem * m_pItemInBankList[DEF_MAXBANKITEMS];
+	CItem * m_pItemList[hb::limits::MaxItems];
+	GamePoint m_ItemPosList[hb::limits::MaxItems];
+	CItem * m_pItemInBankList[hb::limits::MaxBankItems];
 	
-	bool  m_bIsItemEquipped[DEF_MAXITEMS];
+	bool  m_bIsItemEquipped[hb::limits::MaxItems];
 	short m_sItemEquipmentStatus[hb::item::DEF_MAXITEMEQUIPPOS];
 	char  m_cArrowIndex;		// ?   .  -1( )
 
@@ -332,7 +326,7 @@ public:
 		char cType;
 		char cSide;
 		short sX, sY;
-	} m_stCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
+	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
 	int m_iCSIsendPoint;
 
 	char m_cSendingMapName[11];
@@ -360,7 +354,7 @@ public:
 	struct {
 	int  iIndex;
 	char cName[DEF_CHARNAME];
-	} m_stPartyMemberName[DEF_MAXPARTYMEMBERS];
+	} m_stPartyMemberName[hb::limits::MaxPartyMembers];
 
 	// New 07/05/2004
 	uint32_t m_dwLastActionTime;

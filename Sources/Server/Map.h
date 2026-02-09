@@ -247,7 +247,7 @@ public:
 		char cType;			// NULL   .
 		char cSide;
 		short sX, sY;
-	} m_stCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
+	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
 	int m_iTotalCrusadeStructures;
 	bool m_bIsEnergySphereAutoCreation;
 private:

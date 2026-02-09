@@ -1822,17 +1822,17 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 
 	switch (cWhere) {
 	case 0:
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 			if (m_cItemOrder[i] == cItemID)
 				m_cItemOrder[i] = -1;
 
-		for (i = 1; i < DEF_MAXITEMS; i++)
+		for (i = 1; i < hb::limits::MaxItems; i++)
 			if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1)) {
 				m_cItemOrder[i - 1] = m_cItemOrder[i];
 				m_cItemOrder[i] = -1;
 			}
 
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 			if (m_cItemOrder[i] == -1) {
 				m_cItemOrder[i] = cItemID;
 				return;
@@ -2179,7 +2179,7 @@ void CGame::InitGameSettings()
 		m_dialogBoxManager.Info(i).bIsScrollSelected = false;
 	}
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) {
 			m_pItemList[i].reset();
 		}
@@ -2189,7 +2189,7 @@ void CGame::InitGameSettings()
 		m_stSellItemList[i].iAmount = 0;
 	}
 
-	for (i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0) {
 			m_pBankList[i].reset();
 		}
@@ -2211,7 +2211,7 @@ void CGame::InitGameSettings()
 			m_pAgreeMsgTextList[i].reset();
 	}
 
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
+	for (i = 0; i < hb::limits::MaxPartyMembers; i++) {
 		m_stPartyMember[i].cStatus = 0;
 		std::memset(m_stPartyMember[i].cName, 0, sizeof(m_stPartyMember[i].cName));
 	}
@@ -2252,7 +2252,7 @@ void CGame::InitGameSettings()
 	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
 	m_bIsTeleportRequested = false;
-	for (i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+	for (i = 0; i < hb::limits::MaxCrusadeStructures; i++)
 	{
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
@@ -2281,7 +2281,7 @@ void CGame::InitGameSettings()
 	m_bIsXmas = false;
 	m_iTotalPartyMember = 0;
 	m_iPartyStatus = 0;
-	for (i = 0; i < DEF_MAXPARTYMEMBERS; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+	for (i = 0; i < hb::limits::MaxPartyMembers; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
 	m_iGizonItemUpgradeLeft = 0;
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
 }
@@ -3603,13 +3603,13 @@ void CGame::InitItemList(char* pData)
 	int     i, iAngelValue;
 	uint16_t cTotalItems;
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		m_cItemOrder[i] = -1;
 
 	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
 		m_sItemEquipmentStatus[i] = -1;
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		m_bIsItemDisabled[i] = false;
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketResponseItemListHeader>(
@@ -3617,13 +3617,13 @@ void CGame::InitItemList(char* pData)
 	if (!header) return;
 	cTotalItems = header->item_count;
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0)
 		{
 			m_pItemList[i].reset();
 		}
 
-	for (i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
@@ -3670,7 +3670,7 @@ void CGame::InitItemList(char* pData)
 	const auto* bank_header = reinterpret_cast<const hb::net::PacketResponseBankItemListHeader*>(itemEntries + cTotalItems);
 	cTotalItems = bank_header->bank_item_count;
 
-	for (i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
@@ -3705,8 +3705,8 @@ void CGame::InitItemList(char* pData)
 
 	// Diagnostic: count what was loaded
 	int nItems = 0, nBank = 0, nMagic = 0, nSkills = 0;
-	for (i = 0; i < DEF_MAXITEMS; i++) if (m_pItemList[i]) nItems++;
-	for (i = 0; i < DEF_MAXBANKITEMS; i++) if (m_pBankList[i]) nBank++;
+	for (i = 0; i < hb::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
+	for (i = 0; i < hb::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
 	for (i = 0; i < DEF_MAXMAGICTYPE; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
 	for (i = 0; i < DEF_MAXSKILLTYPE; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
 	DevConsole::Get().Printf("[INIT] InitItemList: %d items, %d bank, %d magic, %d skills",
@@ -4282,7 +4282,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		{
 			int iSoX, iSoM;
 			iSoX = iSoM = 0;
-			for (i = 0; i < DEF_MAXITEMS; i++)
+			for (i = 0; i < hb::limits::MaxItems; i++)
 				if (m_pItemList[i] != 0)
 				{
 					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
@@ -4492,7 +4492,7 @@ void CGame::DisableDialogBox(int iBoxID)
 		{
 			// Re-enable item before clearing the slot
 			int sItemID = m_stDialogBoxExchangeInfo[i].sItemID;
-			if (sItemID >= 0 && sItemID < DEF_MAXITEMS && m_bIsItemDisabled[sItemID])
+			if (sItemID >= 0 && sItemID < hb::limits::MaxItems && m_bIsItemDisabled[sItemID])
 				m_bIsItemDisabled[sItemID] = false;
 
 			std::memset(m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr1));
@@ -4527,7 +4527,7 @@ void CGame::DisableDialogBox(int iBoxID)
 	{
 		auto& info = m_dialogBoxManager.Info(DialogBoxId::Slates);
 		auto clearSlot = [&](int idx) {
-			if (idx >= 0 && idx < DEF_MAXITEMS) m_bIsItemDisabled[idx] = false;
+			if (idx >= 0 && idx < hb::limits::MaxItems) m_bIsItemDisabled[idx] = false;
 		};
 		clearSlot(info.sV1);
 		clearSlot(info.sV2);
@@ -4717,7 +4717,7 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 	}
 
 	if (bIsLastData == true) {
-		while (sIndex < DEF_MAXCRUSADESTRUCTURES) {
+		while (sIndex < hb::limits::MaxCrusadeStructures) {
 			m_stCrusadeStructureInfo[sIndex].cType = 0;
 			m_stCrusadeStructureInfo[sIndex].sX = 0;
 			m_stCrusadeStructureInfo[sIndex].sY = 0;
@@ -5239,7 +5239,7 @@ bool CGame::_bCheckItemByType(ItemType type)
 {
 	int i;
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) {
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && pCfg->GetItemType() == type) return true;
@@ -5275,7 +5275,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 {
 	int i;
 	uint16_t wWeaponType;
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5283,7 +5283,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 				|| (pCfg->GetEquipPos() == EquipPos::TwoHand)))
 				return true;
 		}
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5304,7 +5304,7 @@ int CGame::_iCalcTotalWeight()
 	int i, iWeight, iCnt, iTemp;
 	iCnt = 0;
 	iWeight = 0;
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0)
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5330,7 +5330,7 @@ int CGame::_iGetTotalItemNum()
 {
 	int i, iCnt;
 	iCnt = 0;
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) iCnt++;
 	return iCnt;
 }
@@ -5752,7 +5752,7 @@ int CGame::_iGetBankItemCount()
 	int i, iCnt;
 
 	iCnt = 0;
-	for (i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0) iCnt++;
 
 	return iCnt;
@@ -5760,7 +5760,7 @@ int CGame::_iGetBankItemCount()
 
 bool CGame::_bDecodeBuildItemContents()
 {
-	for (int i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxBuildItems; i++)
 	{
 		if (m_pBuildItemList[i] != 0)
 			m_pBuildItemList[i].reset();
@@ -5778,15 +5778,15 @@ bool CGame::_bCheckBuildItemStatus()
 {
 	int iIndex, i, j, iMatch, iCount;
 	char cTempName[DEF_ITEMNAME];
-	int  iItemCount[DEF_MAXITEMS];
+	int  iItemCount[hb::limits::MaxItems];
 
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBuildItems; i++)
 		if (m_pDispBuildItemList[i] != 0)
 		{
 			m_pDispBuildItemList[i].reset();
 		}
 	iIndex = 0;
-	for (i = 0; i < DEF_MAXBUILDITEMS; i++)
+	for (i = 0; i < hb::limits::MaxBuildItems; i++)
 		if (m_pBuildItemList[i] != 0)
 		{	// Skill-Limit
 			if (m_pPlayer->m_iSkillMastery[13] >= m_pBuildItemList[i]->m_iSkillLimit)
@@ -5815,7 +5815,7 @@ bool CGame::_bCheckBuildItemStatus()
 				m_pDispBuildItemList[iIndex]->m_iSkillLimit = m_pBuildItemList[i]->m_iSkillLimit;
 
 				// ItemCount
-				for (j = 0; j < DEF_MAXITEMS; j++)
+				for (j = 0; j < hb::limits::MaxItems; j++)
 					if (m_pItemList[j] != 0)
 						iItemCount[j] = m_pItemList[j]->m_dwCount;
 					else iItemCount[j] = 0;
@@ -5827,7 +5827,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0) {
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
 							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
@@ -5849,7 +5849,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
@@ -5872,7 +5872,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
@@ -5895,7 +5895,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
@@ -5919,7 +5919,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
@@ -5943,7 +5943,7 @@ bool CGame::_bCheckBuildItemStatus()
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < DEF_MAXITEMS; j++)
+					for (j = 0; j < hb::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
@@ -7113,7 +7113,7 @@ void CGame::RetrieveItemHandler(char* pData)
 			{
 				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
 				m_pBankList[cBankItemIndex].reset();
-				for (j = 0; j <= DEF_MAXBANKITEMS - 2; j++)
+				for (j = 0; j <= hb::limits::MaxBankItems - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
@@ -7128,7 +7128,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				short nX, nY;
 				nX = 40;
 				nY = 30;
-				for (j = 0; j < DEF_MAXITEMS; j++)
+				for (j = 0; j < hb::limits::MaxItems; j++)
 				{
 					if ((m_pItemList[j] != 0) && (m_pItemList[j]->m_sIDnum == m_pBankList[cBankItemIndex]->m_sIDnum))
 					{
@@ -7142,7 +7142,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				m_pItemList[cItemIndex]->m_sY = nY;
 				bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cItemIndex, nX, nY, 0, 0);
 
-				for (j = 0; j < DEF_MAXITEMS; j++)
+				for (j = 0; j < hb::limits::MaxItems; j++)
 					if (m_cItemOrder[j] == -1)
 					{
 						m_cItemOrder[j] = cItemIndex;
@@ -7151,7 +7151,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				m_bIsItemEquipped[cItemIndex] = false;
 				m_bIsItemDisabled[cItemIndex] = false;
 				// m_pBankList[cBankItemIndex] already moved above
-				for (j = 0; j <= DEF_MAXBANKITEMS - 2; j++)
+				for (j = 0; j <= hb::limits::MaxBankItems - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
@@ -7186,10 +7186,10 @@ void CGame::EraseItem(char cItemID)
 	if (cItemID == m_sRecentShortCut)
 		m_sRecentShortCut = -1;
 	// ItemOrder
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 		if (m_cItemOrder[i] == cItemID)
 			m_cItemOrder[i] = -1;
-	for (i = 1; i < DEF_MAXITEMS; i++)
+	for (i = 1; i < hb::limits::MaxItems; i++)
 		if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1))
 		{
 			m_cItemOrder[i - 1] = m_cItemOrder[i];
@@ -7317,7 +7317,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		}
 		if (m_iPartyStatus != 0)
 		{
-			for (i = 0; i < DEF_MAXPARTYMEMBERS; i++)
+			for (i = 0; i < hb::limits::MaxPartyMembers; i++)
 			{
 				if (strcmp(m_stPartyMemberNameList[i].cName, pName) == 0)
 				{
@@ -10908,7 +10908,7 @@ int CGame::iGetManaCost(int iMagicNo)
 	int i, iManaSave, iManaCost;
 	iManaSave = 0;
 	if (iMagicNo < 0 || iMagicNo >= 100) return 1;
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if (m_pItemList[i] == 0) continue;
 		if (m_bIsItemEquipped[i] == true)

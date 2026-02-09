@@ -58,7 +58,7 @@ namespace NetworkMessageHandlers {
 			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1);
 
 			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank) == true)
-				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = DEF_MAXBANKITEMS - 12;
+				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = hb::limits::MaxBankItems - 12;
 			pGame->AddEventList(cTxt, 10);
 		}
 	}

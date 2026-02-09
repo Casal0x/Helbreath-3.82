@@ -50,3 +50,23 @@
 
 // Extra tiles beyond screen edge for entity broadcast (prevents pop-in/out)
 #define DEF_VIEWRANGE_BUFFER 3
+
+// Message buffer layout offsets
+namespace hb {
+namespace net {
+	constexpr int MessageOffsetId   = 0;
+	constexpr int MessageOffsetType = 4;
+} // namespace net
+} // namespace hb
+
+// Game limits (authoritative values shared between client and server)
+namespace hb {
+namespace limits {
+	constexpr int MaxItems              = 50;
+	constexpr int MaxBankItems          = 1000;
+	constexpr int MaxGuildsmen          = 128;
+	constexpr int MaxBuildItems         = 300;
+	constexpr int MaxPartyMembers       = 9;
+	constexpr int MaxCrusadeStructures  = 300;
+} // namespace limits
+} // namespace hb

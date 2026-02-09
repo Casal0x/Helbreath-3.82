@@ -53,7 +53,7 @@ namespace NetworkMessageHandlers {
 
 		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
+			for (i = 0; i < hb::limits::MaxItems; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
@@ -62,7 +62,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		short nX, nY;
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -77,7 +77,7 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
@@ -92,7 +92,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
 				pGame->m_pItemList[i]->m_dwAttribute = 0;
 
-				for (j = 0; j < DEF_MAXITEMS; j++)
+				for (j = 0; j < hb::limits::MaxItems; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
 						pGame->m_cItemOrder[j] = i;
 						return;
@@ -152,7 +152,7 @@ namespace NetworkMessageHandlers {
 
 		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
+			for (i = 0; i < hb::limits::MaxItems; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
@@ -162,7 +162,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		short nX, nY;
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -177,7 +177,7 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < DEF_MAXITEMS; i++)
+		for (i = 0; i < hb::limits::MaxItems; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
@@ -195,7 +195,7 @@ namespace NetworkMessageHandlers {
 
 				pGame->_bCheckBuildItemStatus();
 
-				for (j = 0; j < DEF_MAXITEMS; j++)
+				for (j = 0; j < hb::limits::MaxItems; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
 						pGame->m_cItemOrder[j] = i;
 						return;
@@ -235,7 +235,7 @@ namespace NetworkMessageHandlers {
 
 		// Create individual items in separate slots (no Consume/Arrow merge)
 		short nX = 40, nY = 30;
-		for (int i = 0; i < DEF_MAXITEMS; i++)
+		for (int i = 0; i < hb::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -248,7 +248,7 @@ namespace NetworkMessageHandlers {
 		int iCreated = 0;
 		for (int n = 0; n < iTotalCount; n++)
 		{
-			for (int i = 0; i < DEF_MAXITEMS; i++)
+			for (int i = 0; i < hb::limits::MaxItems; i++)
 			{
 				if (pGame->m_pItemList[i] == 0)
 				{
@@ -267,7 +267,7 @@ namespace NetworkMessageHandlers {
 					pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
 					pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
 
-					for (int j = 0; j < DEF_MAXITEMS; j++)
+					for (int j = 0; j < hb::limits::MaxItems; j++)
 					{
 						if (pGame->m_cItemOrder[j] == -1)
 						{
@@ -1032,7 +1032,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPosList>(
 			pData, sizeof(hb::net::PacketNotifyItemPosList));
 		if (!pkt) return;
-		for (i = 0; i < DEF_MAXITEMS; i++) {
+		for (i = 0; i < hb::limits::MaxItems; i++) {
 			sX = pkt->positions[i * 2];
 			sY = pkt->positions[i * 2 + 1];
 			if (pGame->m_pItemList[i] != 0) {

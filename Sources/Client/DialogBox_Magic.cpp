@@ -161,7 +161,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Equipment magic bonus
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if (m_pGame->m_pItemList[i] == 0) continue;
 		if (m_pGame->m_bIsItemEquipped[i] == true)
@@ -242,7 +242,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 		if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
 		else
 		{
-			for (i = 0; i < DEF_MAXITEMS; i++)
+			for (i = 0; i < hb::limits::MaxItems; i++)
 			{
 				if (m_pGame->m_pItemList[i] == 0) continue;
 				CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[i]->m_sIDnum);

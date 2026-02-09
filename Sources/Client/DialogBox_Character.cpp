@@ -142,7 +142,7 @@ void DialogBox_Character::DrawHoverButton(int sX, int sY, int btnX, int btnY,
 void DialogBox_Character::BuildEquipStatusArray(char (&cEquipPoiStatus)[DEF_MAXITEMEQUIPPOS]) const
 {
 	std::memset(cEquipPoiStatus, -1, sizeof(cEquipPoiStatus));
-	for (int i = 0; i < DEF_MAXITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if (m_pGame->m_pItemList[i] != nullptr && m_pGame->m_bIsItemEquipped[i])
 		{

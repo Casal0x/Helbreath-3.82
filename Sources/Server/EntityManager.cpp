@@ -373,7 +373,7 @@ int CEntityManager::CreateEntity(
                 m_pNpcList[i]->m_dwSummonedTime = GameClock::GetTimeMS();
 
             if (bFirmBerserk) {
-                m_pNpcList[i]->m_cMagicEffectStatus[DEF_MAGICTYPE_BERSERK] = 1;
+                m_pNpcList[i]->m_cMagicEffectStatus[hb::magic::Berserk] = 1;
                 m_pNpcList[i]->m_status.bBerserk = true;
             }
 
@@ -771,7 +771,7 @@ void CEntityManager::ProcessEntities()
             dwActionTime = m_pNpcList[i]->m_dwActionTime;
         }
 
-        if (m_pNpcList[i]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] != 0)
+        if (m_pNpcList[i]->m_cMagicEffectStatus[hb::magic::Ice] != 0)
             dwActionTime += (dwActionTime / 2);
 
         if ((dwTime - m_pNpcList[i]->m_dwTime) > dwActionTime) {
@@ -876,7 +876,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 	if (m_pNpcList[iNpcH]->m_bIsKilled) return;
 	if ((m_pNpcList[iNpcH]->m_bIsSummoned) &&
 		(m_pNpcList[iNpcH]->m_iSummonControlMode == 1)) return;
-	if (m_pNpcList[iNpcH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0) return;
+	if (m_pNpcList[iNpcH]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0) return;
 
 	switch (m_pNpcList[iNpcH]->m_cActionLimit) {
 	case 2:
@@ -1043,7 +1043,7 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 						dY = m_pGame->m_pClientList[sOwner]->m_sY;
 						cTargetSide = m_pGame->m_pClientList[sOwner]->m_cSide;
 						iPKCount = m_pGame->m_pClientList[sOwner]->m_iPKCount;
-						iInv = m_pGame->m_pClientList[sOwner]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY];
+						iInv = m_pGame->m_pClientList[sOwner]->m_cMagicEffectStatus[hb::magic::Invisibility];
 					}
 					break;
 
@@ -1056,7 +1056,7 @@ void CEntityManager::TargetSearch(int iNpcH, short* pTarget, char* pTargetType)
 						dY = m_pNpcList[sOwner]->m_sY;
 						cTargetSide = m_pNpcList[sOwner]->m_cSide;
 						iPKCount = 0;
-						iInv = m_pNpcList[sOwner]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY];
+						iInv = m_pNpcList[sOwner]->m_cMagicEffectStatus[hb::magic::Invisibility];
 
 						if (m_pNpcList[iNpcH]->m_sType == 21) {
 							if (m_pGame->_iCalcPlayerNum(m_pNpcList[sOwner]->m_cMapIndex, dX, dY, 2) != 0) {
@@ -1118,7 +1118,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 	uint32_t dwTime = GameClock::GetTimeMS();
 
 	if (m_pNpcList[iNpcH] == 0) return;
-	if (m_pNpcList[iNpcH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0) return;
+	if (m_pNpcList[iNpcH]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0) return;
 	if (m_pNpcList[iNpcH]->m_bIsKilled) return;
 
 	switch (m_pNpcList[iNpcH]->m_cActionLimit) {
@@ -1373,7 +1373,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 				if (m_pNpcList[iNpcH]->m_iAILevel >= 2) {
 					switch (m_pNpcList[iNpcH]->m_cTargetType) {
 					case DEF_OWNERTYPE_PLAYER:
-						if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_PROTECT] == 2) {
+						if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Protect] == 2) {
 							if ((abs(sX - dX) > m_pNpcList[iNpcH]->m_iAttackRange) || (abs(sY - dY) > m_pNpcList[iNpcH]->m_iAttackRange)) {
 								m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 								m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
@@ -1381,11 +1381,11 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							}
 							else goto NBA_CHASE;
 						}
-						if ((iMagicType == 35) && (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0)) goto NBA_CHASE;
+						if ((iMagicType == 35) && (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0)) goto NBA_CHASE;
 						break;
 
 					case DEF_OWNERTYPE_NPC:
-						if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_PROTECT] == 2) {
+						if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Protect] == 2) {
 							if ((abs(sX - dX) > m_pNpcList[iNpcH]->m_iAttackRange) || (abs(sY - dY) > m_pNpcList[iNpcH]->m_iAttackRange)) {
 								m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 								m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
@@ -1393,7 +1393,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							}
 							else goto NBA_CHASE;
 						}
-						if ((iMagicType == 35) && (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0)) goto NBA_CHASE;
+						if ((iMagicType == 35) && (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0)) goto NBA_CHASE;
 						break;
 					}
 				}
@@ -1467,12 +1467,12 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							NpcMagicHandler(iNpcH, dX, dY, 57);
 						if ((m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_iHP > 0) &&
 							(m_pGame->bCheckResistingIceSuccess(m_pNpcList[iNpcH]->m_cDir, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, m_pNpcList[iNpcH]->m_iMagicHitRatio) == false)) {
-							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] == 0) {
-								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] = 1;
+							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] == 0) {
+								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_ICE, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, 0, 0, 0, 1, 0, 0);
-								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_NOTIFY_MAGICEFFECTON, DEF_MAGICTYPE_ICE, 1, 0, 0);
+								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_NOTIFY_MAGICEFFECTON, hb::magic::Ice, 1, 0, 0);
 							}
 						}
 						break;
@@ -1483,10 +1483,10 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							NpcMagicHandler(iNpcH, dX, dY, 57);
 						if ((m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_iHP > 0) &&
 							(m_pGame->bCheckResistingIceSuccess(m_pNpcList[iNpcH]->m_cDir, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, m_pNpcList[iNpcH]->m_iMagicHitRatio) == false)) {
-							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] == 0) {
-								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] = 1;
+							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] == 0) {
+								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_ICE, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, 0, 0, 0, 1, 0, 0);
 							}
 						}
@@ -1498,12 +1498,12 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 						if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex] == 0) goto NBA_BREAK1;
 						if ((m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_iHP > 0) &&
 							(m_pGame->bCheckResistingIceSuccess(m_pNpcList[iNpcH]->m_cDir, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, m_pNpcList[iNpcH]->m_iMagicHitRatio) == false)) {
-							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] == 0) {
-								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] = 1;
+							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] == 0) {
+								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_ICE, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_PLAYER, 0, 0, 0, 1, 0, 0);
-								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_NOTIFY_MAGICEFFECTON, DEF_MAGICTYPE_ICE, 1, 0, 0);
+								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_NOTIFY_MAGICEFFECTON, hb::magic::Ice, 1, 0, 0);
 							}
 						}
 						break;
@@ -1512,10 +1512,10 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 						if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex] == 0) goto NBA_BREAK1;
 						if ((m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_iHP > 0) &&
 							(m_pGame->bCheckResistingIceSuccess(m_pNpcList[iNpcH]->m_cDir, m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, m_pNpcList[iNpcH]->m_iMagicHitRatio) == false)) {
-							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] == 0) {
-								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[DEF_MAGICTYPE_ICE] = 1;
+							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] == 0) {
+								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_ICE, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, DEF_OWNERTYPE_NPC, 0, 0, 0, 1, 0, 0);
 							}
 						}
@@ -1825,7 +1825,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 
 	if (m_pGame->m_pMagicConfigList[sType]->m_dwDelayTime == 0) {
 		switch (m_pGame->m_pMagicConfigList[sType]->m_sType) {
-		case DEF_MAGICTYPE_INVISIBILITY:
+		case hb::magic::Invisibility:
 			switch (m_pGame->m_pMagicConfigList[sType]->m_sValue4) {
 			case 1:
 				m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
@@ -1833,27 +1833,27 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 				switch (cOwnerType) {
 				case DEF_OWNERTYPE_PLAYER:
 					if (m_pGame->m_pClientList[sOwnerH] == 0) goto NMH_NOEFFECT;
-					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) goto NMH_NOEFFECT;
-					m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
+					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) goto NMH_NOEFFECT;
+					m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
 					m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, true);
 					m_pGame->RemoveFromTarget(sOwnerH, DEF_OWNERTYPE_PLAYER);
 					break;
 
 				case DEF_OWNERTYPE_NPC:
 					if (m_pNpcList[sOwnerH] == 0) goto NMH_NOEFFECT;
-					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) goto NMH_NOEFFECT;
-					m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
+					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) goto NMH_NOEFFECT;
+					m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
 					m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, true);
 					// NPC    .
 					m_pGame->RemoveFromTarget(sOwnerH, DEF_OWNERTYPE_NPC);
 					break;
 				}
 
-				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_INVISIBILITY, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
+				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::Invisibility, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
 					sOwnerH, cOwnerType, 0, 0, 0, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 
 				if (cOwnerType == DEF_OWNERTYPE_PLAYER)
-					m_pGame->SendNotifyMsg(0, sOwnerH, DEF_NOTIFY_MAGICEFFECTON, DEF_MAGICTYPE_INVISIBILITY, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
+					m_pGame->SendNotifyMsg(0, sOwnerH, DEF_NOTIFY_MAGICEFFECTON, hb::magic::Invisibility, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 				break;
 
 			case 2:
@@ -1865,22 +1865,22 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 							switch (cOwnerType) {
 							case DEF_OWNERTYPE_PLAYER:
 								if (m_pGame->m_pClientList[sOwnerH] == 0) goto NMH_NOEFFECT;
-								if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) {
+								if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) {
 									if (m_pGame->m_pClientList[sOwnerH]->m_sType != 66) {
-										m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
+										m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = 0;
 										m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, false);
-										m_pGame->bRemoveFromDelayEventList(sOwnerH, cOwnerType, DEF_MAGICTYPE_INVISIBILITY);
+										m_pGame->bRemoveFromDelayEventList(sOwnerH, cOwnerType, hb::magic::Invisibility);
 									}
 								}
 								break;
 
 							case DEF_OWNERTYPE_NPC:
 								if (m_pNpcList[sOwnerH] == 0) goto NMH_NOEFFECT;
-								if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) {
+								if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) {
 									if (m_pGame->m_pClientList[sOwnerH]->m_sType != 66) {
-										m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
+										m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = 0;
 										m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, false);
-										m_pGame->bRemoveFromDelayEventList(sOwnerH, cOwnerType, DEF_MAGICTYPE_INVISIBILITY);
+										m_pGame->bRemoveFromDelayEventList(sOwnerH, cOwnerType, hb::magic::Invisibility);
 									}
 								}
 								break;
@@ -1891,36 +1891,36 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			}
 			break;
 
-		case DEF_MAGICTYPE_HOLDOBJECT:
+		case hb::magic::HoldObject:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false) {
 
 				switch (cOwnerType) {
 				case DEF_OWNERTYPE_PLAYER:
 					if (m_pGame->m_pClientList[sOwnerH] == 0) goto NMH_NOEFFECT;
-					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0) goto NMH_NOEFFECT;
+					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0) goto NMH_NOEFFECT;
 					if (m_pGame->m_pClientList[sOwnerH]->m_iAddPR >= 500) goto NMH_NOEFFECT;
-					m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
+					m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::HoldObject] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
 					break;
 
 				case DEF_OWNERTYPE_NPC:
 					if (m_pNpcList[sOwnerH] == 0) goto NMH_NOEFFECT;
 					if (m_pNpcList[sOwnerH]->m_cMagicLevel >= 6) goto NMH_NOEFFECT;
-					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] != 0) goto NMH_NOEFFECT;
-					m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_HOLDOBJECT] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
+					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::HoldObject] != 0) goto NMH_NOEFFECT;
+					m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::HoldObject] = (char)m_pGame->m_pMagicConfigList[sType]->m_sValue4;
 					break;
 				}
 
-				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, DEF_MAGICTYPE_HOLDOBJECT, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
+				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::magic::HoldObject, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
 					sOwnerH, cOwnerType, 0, 0, 0, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 
 				if (cOwnerType == DEF_OWNERTYPE_PLAYER)
-					m_pGame->SendNotifyMsg(0, sOwnerH, DEF_NOTIFY_MAGICEFFECTON, DEF_MAGICTYPE_HOLDOBJECT, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
+					m_pGame->SendNotifyMsg(0, sOwnerH, DEF_NOTIFY_MAGICEFFECTON, hb::magic::HoldObject, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 			}
 			break;
 
 
-		case DEF_MAGICTYPE_DAMAGE_LINEAR:
+		case hb::magic::DamageLinear:
 			sX = m_pNpcList[iNpcH]->m_sX;
 			sY = m_pNpcList[iNpcH]->m_sY;
 
@@ -2018,7 +2018,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			}
 			break;
 
-		case DEF_MAGICTYPE_DAMAGE_SPOT:
+		case hb::magic::DamageSpot:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 				m_pGame->Effect_Damage_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6 + iWhetherBonus, true, iMagicAttr);
@@ -2031,12 +2031,12 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 			}
 			break;
 
-		case DEF_MAGICTYPE_HPUP_SPOT:
+		case hb::magic::HpUpSpot:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			m_pGame->Effect_HpUp_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6);
 			break;
 
-		case DEF_MAGICTYPE_DAMAGE_AREA:
+		case hb::magic::DamageArea:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 				m_pGame->Effect_Damage_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6 + iWhetherBonus, true, iMagicAttr);
@@ -2063,7 +2063,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 				}
 			break;
 
-		case DEF_MAGICTYPE_DAMAGE_AREA_NOSPOT:
+		case hb::magic::DamageAreaNoSpot:
 			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
 				for(int ix = dX - m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix <= dX + m_pGame->m_pMagicConfigList[sType]->m_sValue2; ix++) {
 					m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
@@ -2079,7 +2079,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 				}
 			break;
 
-		case DEF_MAGICTYPE_SPDOWN_AREA:
+		case hb::magic::SpDownArea:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			if (m_pGame->bCheckResistingMagicSuccess(m_pNpcList[iNpcH]->m_cDir, sOwnerH, cOwnerType, iResult) == false)
 				m_pGame->Effect_SpDown_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6);
@@ -2091,7 +2091,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 				}
 			break;
 
-		case DEF_MAGICTYPE_SPUP_AREA:
+		case hb::magic::SpUpArea:
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, dX, dY);
 			m_pGame->Effect_SpUp_Spot(iNpcH, DEF_OWNERTYPE_NPC, sOwnerH, cOwnerType, m_pGame->m_pMagicConfigList[sType]->m_sValue4, m_pGame->m_pMagicConfigList[sType]->m_sValue5, m_pGame->m_pMagicConfigList[sType]->m_sValue6);
 			for(int iy = dY - m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy <= dY + m_pGame->m_pMagicConfigList[sType]->m_sValue3; iy++)
@@ -2294,15 +2294,15 @@ bool CEntityManager::_bNpcBehavior_Detector(int iNpcH)
 			if ((cSide != 0) && (cSide != m_pNpcList[iNpcH]->m_cSide)) {
 				switch (cOwnerType) {
 				case DEF_OWNERTYPE_PLAYER:
-					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) {
-						m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
+					if (m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) {
+						m_pGame->m_pClientList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = 0;
 						m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, false);
 					}
 					break;
 
 				case DEF_OWNERTYPE_NPC:
-					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] != 0) {
-						m_pNpcList[sOwnerH]->m_cMagicEffectStatus[DEF_MAGICTYPE_INVISIBILITY] = 0;
+					if (m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] != 0) {
+						m_pNpcList[sOwnerH]->m_cMagicEffectStatus[hb::magic::Invisibility] = 0;
 						m_pGame->SetInvisibilityFlag(sOwnerH, cOwnerType, false);
 					}
 					break;

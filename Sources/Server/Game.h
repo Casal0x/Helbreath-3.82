@@ -52,7 +52,6 @@
 #define DEF_MAXMAPS					100
 #define DEF_MAXAGRICULTURE			200
 #define DEF_MAXNPCTYPES				200
-#define DEF_MAXBUILDITEMS			300
 #define DEF_SERVERSOCKETBLOCKLIMIT	300
 #define DEF_MAXBANNED				500
 #define DEF_MAXADMINS				50
@@ -865,7 +864,7 @@ public:
 	
 	int   m_iAutoRebootingCount;
 
-	class CBuildItem * m_pBuildItemList[DEF_MAXBUILDITEMS];
+	class CBuildItem * m_pBuildItemList[hb::limits::MaxBuildItems];
 
 	char * m_pNoticementData;
 	uint32_t  m_dwNoticementDataSize;
@@ -882,7 +881,7 @@ public:
 		char cType;			
 		int  dX, dY;		
 
-	} m_stCrusadeStructures[DEF_MAXCRUSADESTRUCTURES];
+	} m_stCrusadeStructures[hb::limits::MaxCrusadeStructures];
 
 	
 	int m_iCollectedMana[3];
@@ -901,7 +900,7 @@ public:
 		char cType;		
 		char cSide;		
 		short sX, sY;	
-	} m_stMiddleCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
+	} m_stMiddleCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
 
 	struct {
 		char m_cBannedIPaddress[21];

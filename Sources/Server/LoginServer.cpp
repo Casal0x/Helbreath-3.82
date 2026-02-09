@@ -417,7 +417,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	std::vector<AccountDbIndexedValue> positionsX;
 	std::vector<AccountDbIndexedValue> positionsY;
 	std::vector<AccountDbIndexedValue> equips;
-	for(int i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < hb::limits::MaxItems; i++) {
 		AccountDbIndexedValue posX = {};
 		AccountDbIndexedValue posY = {};
 		AccountDbIndexedValue equip = {};

@@ -2080,7 +2080,7 @@ bool SaveBuildItemConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXBUILDITEMS; i++) {
+    for(int i = 0; i < hb::limits::MaxBuildItems; i++) {
         if (game->m_pBuildItemList[i] == nullptr) {
             continue;
         }
@@ -2124,7 +2124,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXBUILDITEMS; i++) {
+    for(int i = 0; i < hb::limits::MaxBuildItems; i++) {
         delete game->m_pBuildItemList[i];
         game->m_pBuildItemList[i] = nullptr;
     }
@@ -2144,7 +2144,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int buildId = sqlite3_column_int(stmt, col++);
-        if (buildId < 0 || buildId >= DEF_MAXBUILDITEMS) {
+        if (buildId < 0 || buildId >= hb::limits::MaxBuildItems) {
             continue;
         }
 
@@ -2217,7 +2217,7 @@ bool SaveCrusadeConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+    for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
         const auto& entry = game->m_stCrusadeStructures[i];
         if (entry.cType == 0 || entry.cMapName[0] == 0) {
             continue;
@@ -2251,7 +2251,7 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+    for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
         std::memset(game->m_stCrusadeStructures[i].cMapName, 0, sizeof(game->m_stCrusadeStructures[i].cMapName));
         game->m_stCrusadeStructures[i].cType = 0;
         game->m_stCrusadeStructures[i].dX = 0;
@@ -2270,7 +2270,7 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int structureId = sqlite3_column_int(stmt, col++);
-        if (structureId < 0 || structureId >= DEF_MAXCRUSADESTRUCTURES) {
+        if (structureId < 0 || structureId >= hb::limits::MaxCrusadeStructures) {
             continue;
         }
         CopyColumnText(stmt, col++, game->m_stCrusadeStructures[structureId].cMapName,

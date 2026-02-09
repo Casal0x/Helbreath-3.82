@@ -448,7 +448,7 @@ bool DialogBox_ItemUpgrade::OnClick(short msX, short msY)
         {
             m_pGame->PlayGameSound('E', 14, 5);
             int iSoX = 0, iSoM = 0;
-            for (int i = 0; i < DEF_MAXITEMS; i++)
+            for (int i = 0; i < hb::limits::MaxItems; i++)
                 if (m_pGame->m_pItemList[i] != 0)
                 {
                     if ((m_pGame->m_pItemList[i]->m_sSprite == 6) && (m_pGame->m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;

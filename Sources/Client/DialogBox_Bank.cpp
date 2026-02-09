@@ -47,7 +47,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 	for (int i = 0; i < Info().sV1; i++) {
 		int itemIndex = i + Info().sView;
-		if ((itemIndex < DEF_MAXBANKITEMS) && (m_pGame->m_pBankList[itemIndex] != 0)) {
+		if ((itemIndex < hb::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
 			m_pGame->GetItemName(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
@@ -66,7 +66,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 	// Count total items for scrollbar
 	int iTotalLines = 0;
-	for (int i = 0; i < DEF_MAXBANKITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxBankItems; i++)
 		if (m_pGame->m_pBankList[i] != 0) iTotalLines++;
 
 	DrawScrollbar(sX, sY, iTotalLines, msX, msY, msZ, cLB);
@@ -204,7 +204,7 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 		for (int i = 0; i < Info().sV1; i++) {
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				int itemIndex = Info().sView + i;
-				if ((itemIndex < DEF_MAXBANKITEMS) && (m_pGame->m_pBankList[itemIndex] != 0)) {
+				if ((itemIndex < hb::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
 					if (m_pGame->_iGetTotalItemNum() >= 50) {
 						AddEventList(DLGBOX_CLICK_BANK1, 10);
 						return true;

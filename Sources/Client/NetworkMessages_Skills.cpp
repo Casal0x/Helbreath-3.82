@@ -142,7 +142,7 @@ namespace NetworkMessageHandlers {
 		sMagicEffect = static_cast<short>(pkt->effect);
 		sOwnerH = static_cast<short>(pkt->owner);
 		switch (sMagicType) {
-		case DEF_MAGICTYPE_PROTECT:
+		case hb::magic::Protect:
 			switch (sMagicEffect) {
 			case 1: // "You are completely protected from arrows!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON1, 10);
@@ -160,7 +160,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_HOLDOBJECT:
+		case hb::magic::HoldObject:
 			switch (sMagicEffect) {
 			case 1: // "You were bounded by a Hold Person spell! Unable to move!"
 				pGame->m_pPlayer->m_bParalyze = true;
@@ -173,7 +173,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_INVISIBILITY:
+		case hb::magic::Invisibility:
 			switch (sMagicEffect) {
 			case 1: // "You are now invisible, no one can see you!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON6, 10);
@@ -181,7 +181,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_CONFUSE:
+		case hb::magic::Confuse:
 			switch (sMagicEffect) {
 			case 1:	// Confuse Language "No one understands you because of language confusion magic!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON7, 10);
@@ -204,12 +204,12 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_POISON:
+		case hb::magic::Poison:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON10, 10);
 			pGame->m_pPlayer->m_bIsPoisoned = true;
 			break;
 
-		case DEF_MAGICTYPE_BERSERK:
+		case hb::magic::Berserk:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON11, 10);
@@ -217,7 +217,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_POLYMORPH:
+		case hb::magic::Polymorph:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON12, 10);
@@ -225,7 +225,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_ICE:
+		case hb::magic::Ice:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON13, 10);
 			break;
 		}
@@ -240,7 +240,7 @@ namespace NetworkMessageHandlers {
 		sMagicType = static_cast<short>(pkt->magic_type);
 		sMagicEffect = static_cast<short>(pkt->effect);
 		switch (sMagicType) {
-		case DEF_MAGICTYPE_PROTECT:
+		case hb::magic::Protect:
 			switch (sMagicEffect) {
 			case 1: // "Protection from arrows has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF1, 10);
@@ -258,7 +258,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_HOLDOBJECT:
+		case hb::magic::HoldObject:
 			switch (sMagicEffect) {
 			case 1:	// "Hold person magic effect has vanished."
 				pGame->m_pPlayer->m_bParalyze = false;
@@ -272,7 +272,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_INVISIBILITY:
+		case hb::magic::Invisibility:
 			switch (sMagicEffect) {
 			case 1:	// "Invisibility magic effect has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF6, 10);
@@ -280,7 +280,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_CONFUSE:
+		case hb::magic::Confuse:
 			switch (sMagicEffect) {
 			case 1:	// "Language confuse magic effect has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF7, 10);
@@ -300,12 +300,12 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_POISON:
+		case hb::magic::Poison:
 			if (pGame->m_pPlayer->m_bIsPoisoned) pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
 			pGame->m_pPlayer->m_bIsPoisoned = false;
 			break;
 
-		case DEF_MAGICTYPE_BERSERK:
+		case hb::magic::Berserk:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF11, 10);
@@ -313,7 +313,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_POLYMORPH:
+		case hb::magic::Polymorph:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF12, 10);
@@ -321,7 +321,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case DEF_MAGICTYPE_ICE:
+		case hb::magic::Ice:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF13, 10);
 			break;
 		}

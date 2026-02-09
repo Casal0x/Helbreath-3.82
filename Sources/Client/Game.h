@@ -307,7 +307,7 @@ void _LoadShopMenuContents(char cType);
 	{
 		char index;
 		short price;
-	} m_stRepairAll[DEF_MAXITEMS];
+	} m_stRepairAll[hb::limits::MaxItems];
 
 	bool _ItemDropHistory(short sItemID);
 	CGame();
@@ -359,17 +359,17 @@ void _LoadShopMenuContents(char cType);
 	struct {
 		char cStatus;
 		char cName[12];
-	} m_stPartyMember[DEF_MAXPARTYMEMBERS];
+	} m_stPartyMember[hb::limits::MaxPartyMembers];
 
 	struct {
 		short sX, sY;
 		char cType;
 		char cSide;
-	} m_stCrusadeStructureInfo[DEF_MAXCRUSADESTRUCTURES];
+	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
 
 	struct {
 		char cName[12];
-	} m_stPartyMemberNameList[DEF_MAXPARTYMEMBERS+1];
+	} m_stPartyMemberNameList[hb::limits::MaxPartyMembers+1];
 
 	// v2.171 2002-6-14
 	struct {
@@ -403,16 +403,16 @@ void _LoadShopMenuContents(char cType);
 	std::array<std::unique_ptr<class CMsg>, DEF_MAXWHISPERMSG> m_pWhisperMsg;
 	std::unique_ptr<EffectManager> m_pEffectManager;
 	std::unique_ptr<NetworkMessageManager> m_pNetworkMessageManager;
-	std::array<std::unique_ptr<class CItem>, DEF_MAXITEMS> m_pItemList;
-	std::array<std::unique_ptr<class CItem>, DEF_MAXBANKITEMS> m_pBankList;
+	std::array<std::unique_ptr<class CItem>, hb::limits::MaxItems> m_pItemList;
+	std::array<std::unique_ptr<class CItem>, hb::limits::MaxBankItems> m_pBankList;
 	std::array<std::unique_ptr<class CMagic>, DEF_MAXMAGICTYPE> m_pMagicCfgList;
 	std::array<std::unique_ptr<class CSkill>, DEF_MAXSKILLTYPE> m_pSkillCfgList;
 	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList;
 	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pMsgTextList2;
 	std::array<std::unique_ptr<class CMsg>, DEF_TEXTDLGMAXLINES> m_pAgreeMsgTextList;
 	std::unique_ptr<class CMsg> m_pExID;
-	std::array<std::unique_ptr<class CBuildItem>, DEF_MAXBUILDITEMS> m_pBuildItemList;
-	std::array<std::unique_ptr<class CBuildItem>, DEF_MAXBUILDITEMS> m_pDispBuildItemList;
+	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pBuildItemList;
+	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pDispBuildItemList;
 
 	std::array<std::unique_ptr<class CItem>, DEF_MAXMENUITEMS> m_pItemForSaleList;
 	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
@@ -444,8 +444,8 @@ void _LoadShopMenuContents(char cType);
 
 	//v2.183 Hunter Mode - Moved to CPlayer
 
-std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
-	std::array<bool, DEF_MAXITEMS> m_bIsItemDisabled{};
+std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
+	std::array<bool, hb::limits::MaxItems> m_bIsItemDisabled{};
 	bool m_bIsGetPointingMode;
 	bool m_bWaitForNewClick;  // After magic cast, ignore held click until released
 	uint32_t m_dwMagicCastTime;  // Timestamp when magic was cast (for post-cast delay)
@@ -517,7 +517,7 @@ std::array<bool, DEF_MAXITEMS> m_bIsItemEquipped{};
 	char m_cEdit[4];
 	char G_cTxt[128];
 	char m_cBGMmapName[12];
-	char m_cItemOrder[DEF_MAXITEMS];
+	char m_cItemOrder[hb::limits::MaxItems];
 	char m_cAmountString[12];
 	char m_cLogOutCount;
 	char m_cRestartCount;

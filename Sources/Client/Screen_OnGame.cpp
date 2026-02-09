@@ -524,7 +524,7 @@ void Screen_OnGame::on_render()
     // Item tooltip on cursor
     short iTooltipItemID = CursorTarget::GetSelectedID();
     if ((CursorTarget::GetSelectedType() == SelectedObjectType::Item) &&
-        (iTooltipItemID >= 0) && (iTooltipItemID < DEF_MAXITEMS) &&
+        (iTooltipItemID >= 0) && (iTooltipItemID < hb::limits::MaxItems) &&
         (m_pGame->m_pItemList[iTooltipItemID] != 0))
     {
         RenderItemTooltip();

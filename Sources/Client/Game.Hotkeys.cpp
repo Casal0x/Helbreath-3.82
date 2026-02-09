@@ -245,7 +245,7 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 		AddEventList(USE_RED_POTION2, 10);
 		return;
 	}
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
@@ -260,7 +260,7 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 		}
 	}
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
@@ -291,7 +291,7 @@ void CGame::Hotkey_Simple_UseManaPotion()
 		return;
 	}
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
@@ -306,7 +306,7 @@ void CGame::Hotkey_Simple_UseManaPotion()
 		}
 	}
 
-	for (i = 0; i < DEF_MAXITEMS; i++)
+	for (i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{

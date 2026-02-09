@@ -65,7 +65,7 @@ CClient::CClient(asio::io_context& ctx)
 
 	//50Cent - Repair All
 	totalItemRepair = 0;
-	for(int i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < hb::limits::MaxItems; i++) {
 		m_stRepairAll[i].index = 0;
 		m_stRepairAll[i].price = 0;
 	}
@@ -74,7 +74,7 @@ CClient::CClient(asio::io_context& ctx)
 		m_sItemEquipmentStatus[i] = -1;
 	
 	// Initialize item list 
-	for(int i = 0; i < DEF_MAXITEMS; i++) {
+	for(int i = 0; i < hb::limits::MaxItems; i++) {
 		m_pItemList[i]       = 0;
 		m_ItemPosList[i].x   = 40;
 		m_ItemPosList[i].y   = 30;
@@ -83,7 +83,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_cArrowIndex = -1;
 
 	// Initialize item list.
-	for(int i = 0; i < DEF_MAXBANKITEMS; i++) {
+	for(int i = 0; i < hb::limits::MaxBankItems; i++) {
 		m_pItemInBankList[i] = 0;
 	}
 
@@ -202,7 +202,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID        = 0;
 
-	for(int i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
+	for(int i = 0; i < hb::limits::MaxPartyMembers; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}*/
@@ -285,7 +285,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_dwCrusadeGUID = 0;
 	m_dwHeldenianGUID = 0;
 
-	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+	for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
 		m_stCrusadeStructureInfo[i].sX = 0;
@@ -324,7 +324,7 @@ CClient::~CClient()
 	if (m_pXSock != 0)
 		delete m_pXSock;
 
-	for(int i = 0; i < DEF_MAXITEMS; i++)
+	for(int i = 0; i < hb::limits::MaxItems; i++)
 	{
 		if (m_pItemList[i] != 0) {
 			delete m_pItemList[i];
@@ -332,7 +332,7 @@ CClient::~CClient()
 		}
 	}
 
-	for(int i = 0; i < DEF_MAXBANKITEMS; i++)
+	for(int i = 0; i < hb::limits::MaxBankItems; i++)
 	{
 		if (m_pItemInBankList[i] != 0) {
 			delete m_pItemInBankList[i];
@@ -351,7 +351,7 @@ bool CClient::bCreateNewParty()
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID = (rand() % 999999) + GameClock::GetTimeMS();
 
-	for(int i = 0; i < DEF_MAXPARTYMEMBERS; i++) {
+	for(int i = 0; i < hb::limits::MaxPartyMembers; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}

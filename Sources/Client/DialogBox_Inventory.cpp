@@ -76,7 +76,7 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX, sY, 0);
 
 	// Draw all inventory items
-	for (int i = 0; i < DEF_MAXITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxItems; i++)
 	{
 		int itemIdx = m_pGame->m_cItemOrder[i];
 		if (itemIdx == -1) continue;
@@ -149,7 +149,7 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 		else
 		{
 			// Look for manufacturing hammer
-			for (int i = 0; i < DEF_MAXITEMS; i++)
+			for (int i = 0; i < hb::limits::MaxItems; i++)
 			{
 				CItem* pItem = m_pGame->m_pItemList[i].get();
 				if (pItem == nullptr) continue;
@@ -177,10 +177,10 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 // Helper: Find the clicked inventory item
 char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
 {
-	for (int i = 0; i < DEF_MAXITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxItems; i++)
 	{
-		if (m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i] == -1) continue;
-		char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+		if (m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i] == -1) continue;
+		char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
 		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
 
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
@@ -428,9 +428,9 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 	short sY = Info().sY;
 
 	// Check items in reverse order (topmost first)
-	for (int i = 0; i < DEF_MAXITEMS; i++)
+	for (int i = 0; i < hb::limits::MaxItems; i++)
 	{
-		char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+		char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
 		if (cItemID == -1) continue;
 
 		CItem* pItem = m_pGame->m_pItemList[cItemID].get();
@@ -525,11 +525,11 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 	// Shift+drop: move all items with the same name to this position
 	if (Input::IsShiftDown())
 	{
-		for (int i = 0; i < DEF_MAXITEMS; i++)
+		for (int i = 0; i < hb::limits::MaxItems; i++)
 		{
-			if (m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i] != -1)
+			if (m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i] != -1)
 			{
-				char cItemID = m_pGame->m_cItemOrder[DEF_MAXITEMS - 1 - i];
+				char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
 				if (m_pGame->m_pItemList[cItemID] != nullptr &&
 					m_pGame->m_pItemList[cItemID]->m_sIDnum == m_pGame->m_pItemList[cSelectedID]->m_sIDnum)
 				{

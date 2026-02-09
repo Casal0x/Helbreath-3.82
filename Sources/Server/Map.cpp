@@ -145,7 +145,7 @@ CMap::CMap(class CGame* pGame)
 	m_iTotalStrikePoints = 0;
 	m_bIsDisabled = false;
 
-	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++) {
+	for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
 		m_stCrusadeStructureInfo[i].sX = 0;
@@ -781,7 +781,7 @@ bool CMap::bAddCrusadeStructureInfo(char cType, short sX, short sY, char cSide)
 {
 	
 
-	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+	for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++)
 		if (m_stCrusadeStructureInfo[i].cType == 0) {
 			m_stCrusadeStructureInfo[i].cType = cType;
 			m_stCrusadeStructureInfo[i].cSide = cSide;
@@ -825,7 +825,7 @@ bool CMap::bRemoveCrusadeStructureInfo(short sX, short sY)
 {
 	
 
-	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES; i++)
+	for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++)
 		if ((m_stCrusadeStructureInfo[i].sX == sX) && (m_stCrusadeStructureInfo[i].sY == sY)) {
 			m_stCrusadeStructureInfo[i].cType = 0;
 			m_stCrusadeStructureInfo[i].cSide = 0;
@@ -838,7 +838,7 @@ bool CMap::bRemoveCrusadeStructureInfo(short sX, short sY)
 
 RCSI_REARRANGE:;
 
-	for(int i = 0; i < DEF_MAXCRUSADESTRUCTURES - 1; i++)
+	for(int i = 0; i < hb::limits::MaxCrusadeStructures - 1; i++)
 		if ((m_stCrusadeStructureInfo[i].cType == 0) && (m_stCrusadeStructureInfo[i + 1].cType != 0)) {
 			m_stCrusadeStructureInfo[i].cType = m_stCrusadeStructureInfo[i + 1].cType;
 			m_stCrusadeStructureInfo[i].cSide = m_stCrusadeStructureInfo[i + 1].cSide;
