@@ -9372,6 +9372,7 @@ void CGame::SendNotifyMsg(int iFromH, int iToH, uint16_t wMsgType, uint32_t sV1,
 		pkt.intel = m_pClientList[iToH]->m_iInt;
 		pkt.mag = m_pClientList[iToH]->m_iMag;
 		pkt.chr = m_pClientList[iToH]->m_iCharisma;
+		pkt.attack_delay = m_pClientList[iToH]->m_status.iAttackDelay;
 		iRet = m_pClientList[iToH]->m_pXSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 		break;
 	}

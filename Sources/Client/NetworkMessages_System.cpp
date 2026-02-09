@@ -91,6 +91,7 @@ void HandleSettingSuccess(CGame* pGame, char* pData)
 	pGame->m_pPlayer->m_iInt = pkt->intel;
 	pGame->m_pPlayer->m_iMag = pkt->mag;
 	pGame->m_pPlayer->m_iCharisma = pkt->chr;
+	pGame->m_pPlayer->m_playerStatus.iAttackDelay = pkt->attack_delay;
 	std::snprintf(cTxt, sizeof(cTxt), "Your stat has been changed.");
 	pGame->AddEventList(cTxt, 10);
 	// CLEROTH - LU
