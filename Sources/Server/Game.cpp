@@ -15388,15 +15388,7 @@ bool CGame::bCheckLevelUp(int iClientH)
 				if (m_pClientList[iClientH]->m_bIsPlayerCivil)
 					ForceChangePlayMode(iClientH, true);
 
-			// centu - max hp,mp,sp when level up
-			m_pClientList[iClientH]->m_iHP = iGetMaxHP(iClientH);
-			m_pClientList[iClientH]->m_iMP = iGetMaxMP(iClientH);
-			m_pClientList[iClientH]->m_iSP = iGetMaxSP(iClientH);
-			SendNotifyMsg(0, iClientH, DEF_NOTIFY_HP, 0, 0, 0, 0);
-			SendNotifyMsg(0, iClientH, DEF_NOTIFY_MP, 0, 0, 0, 0);
-			SendNotifyMsg(0, iClientH, DEF_NOTIFY_SP, 0, 0, 0, 0);
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_SUPERATTACKLEFT, 0, 0, 0, 0);
-
 			SendNotifyMsg(0, iClientH, DEF_NOTIFY_LEVELUP, 0, 0, 0, 0);
 
 			m_pClientList[iClientH]->m_iNextLevelExp = m_iLevelExpTable[m_pClientList[iClientH]->m_iLevel + 1]; //iGetLevelExp(m_pClientList[iClientH]->m_iLevel + 1);
