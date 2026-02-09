@@ -113,8 +113,8 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	switch (eq.iShieldGlare) {
 	case 0: break;
 	case 1:
-		game.m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Alpha(0.5f));
-		// fallthrough (intentional — original code)
+		// GM sprite (m_pEffectSpr[45]) is only drawn by DrawGMEffect when bGMMode is true
+		// fallthrough to case 2 for green-tinted additive shield overlay
 	case 2: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
 	case 3: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
 	}

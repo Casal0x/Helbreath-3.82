@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Packet/PacketCommon.h"
+#include "Item/ItemEnums.h"
 #include <cstdint>
 #include <cstring>
 
@@ -75,3 +76,57 @@ struct HB_PACKED PlayerAppearance
 };
 
 HB_PACK_END
+
+// Apply a single equipped item's visual data to an appearance struct.
+// Shared between client and server to keep appearance computation in sync.
+inline void ApplyEquipAppearance(PlayerAppearance& appearance, hb::item::EquipPos pos, int apprValue, int itemColor)
+{
+	using namespace hb::item;
+	switch (pos) {
+	case EquipPos::Head:
+		appearance.iHelmType = static_cast<uint8_t>(apprValue);
+		appearance.iHelmColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::Body:
+		if (apprValue >= 100) {
+			appearance.iArmorType = static_cast<uint8_t>(apprValue - 100);
+			appearance.bHideArmor = true;
+		} else {
+			appearance.iArmorType = static_cast<uint8_t>(apprValue);
+			appearance.bHideArmor = false;
+		}
+		appearance.iArmorColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::Arms:
+		appearance.iArmArmorType = static_cast<uint8_t>(apprValue);
+		appearance.iArmColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::Pants:
+		appearance.iPantsType = static_cast<uint8_t>(apprValue);
+		appearance.iPantsColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::Leggings:
+		appearance.iBootsType = static_cast<uint8_t>(apprValue);
+		appearance.iBootsColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::LeftHand:
+		appearance.iShieldType = static_cast<uint8_t>(apprValue);
+		appearance.iShieldColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::RightHand:
+	case EquipPos::TwoHand:
+		appearance.iWeaponType = static_cast<uint8_t>(apprValue);
+		appearance.iWeaponColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::Back:
+		appearance.iMantleType = static_cast<uint8_t>(apprValue);
+		appearance.iMantleColor = static_cast<uint8_t>(itemColor);
+		break;
+	case EquipPos::FullBody:
+		appearance.iArmorType = static_cast<uint8_t>(apprValue);
+		appearance.iMantleColor = 0;
+		break;
+	default:
+		break;
+	}
+}

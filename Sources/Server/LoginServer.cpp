@@ -184,6 +184,19 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 		return LogIn::NoAcc;
 	}
 
+	// Compute equipment appearance from equipped items for each character
+	for (auto& entry : chars) {
+		std::vector<AccountDbEquippedItem> equippedItems;
+		if (LoadEquippedItemAppearances(db, entry.characterName, equippedItems)) {
+			for (const auto& item : equippedItems) {
+				if (item.itemId > 0 && item.itemId < DEF_MAXITEMTYPES && G_pGame->m_pItemConfigList[item.itemId] != nullptr) {
+					auto* config = G_pGame->m_pItemConfigList[item.itemId];
+					ApplyEquipAppearance(entry.appearance, config->GetEquipPos(), config->m_cApprValue, item.itemColor);
+				}
+			}
+		}
+	}
+
 	CloseAccountDatabase(db);
 	PutLogList("Account Login!");
 	return LogIn::Ok;

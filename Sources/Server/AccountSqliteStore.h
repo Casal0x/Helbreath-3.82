@@ -168,6 +168,12 @@ struct AccountDbIndexedValue
     int value;
 };
 
+struct AccountDbEquippedItem
+{
+    int itemId;
+    int itemColor;
+};
+
 class CClient;
 
 bool EnsureAccountDatabase(const char* accountName, sqlite3** outDb, std::string& outPath);
@@ -182,6 +188,7 @@ bool LoadCharacterItemEquips(sqlite3* db, const char* characterName, std::vector
 bool LoadCharacterMagicMastery(sqlite3* db, const char* characterName, std::vector<AccountDbIndexedValue>& outMastery);
 bool LoadCharacterSkillMastery(sqlite3* db, const char* characterName, std::vector<AccountDbIndexedValue>& outMastery);
 bool LoadCharacterSkillSSN(sqlite3* db, const char* characterName, std::vector<AccountDbIndexedValue>& outValues);
+bool LoadEquippedItemAppearances(sqlite3* db, const char* characterName, std::vector<AccountDbEquippedItem>& outItems);
 bool InsertCharacterState(sqlite3* db, const AccountDbCharacterState& state);
 bool InsertCharacterItems(sqlite3* db, const char* characterName, const std::vector<AccountDbItemRow>& items);
 bool InsertCharacterBankItems(sqlite3* db, const char* characterName, const std::vector<AccountDbBankItemRow>& items);

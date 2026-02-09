@@ -6919,78 +6919,19 @@ bool CGame::bEquipItemHandler(int iClientH, short sItemIndex, bool bNotify)
 	m_pClientList[iClientH]->m_sItemEquipmentStatus[ToInt(cEquipPos)] = sItemIndex;
 	m_pClientList[iClientH]->m_bIsItemEquipped[sItemIndex] = true;
 
-	switch (cEquipPos) {
+	ApplyEquipAppearance(
+		m_pClientList[iClientH]->m_appearance,
+		cEquipPos,
+		m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue,
+		m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor);
 
-	case EquipPos::Head:
-		m_pClientList[iClientH]->m_appearance.iHelmType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iHelmColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::Pants:
-		m_pClientList[iClientH]->m_appearance.iPantsType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iPantsColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::Leggings:
-		m_pClientList[iClientH]->m_appearance.iBootsType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iBootsColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::Body:
-		if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue < 100) {
-			m_pClientList[iClientH]->m_appearance.iArmorType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-			m_pClientList[iClientH]->m_appearance.bHideArmor = false;
-		}
-		else {
-			m_pClientList[iClientH]->m_appearance.iArmorType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue - 100;
-			m_pClientList[iClientH]->m_appearance.bHideArmor = true;
-		}
-		m_pClientList[iClientH]->m_appearance.iArmorColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::Arms:
-		m_pClientList[iClientH]->m_appearance.iArmArmorType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iArmColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::LeftHand:
-		m_pClientList[iClientH]->m_appearance.iShieldType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iShieldColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::RightHand:
-		m_pClientList[iClientH]->m_appearance.iWeaponType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iWeaponColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		{
-			int speed = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cSpeed;
-			speed -= ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 13);
-			if (speed < 0) speed = 0;
-			m_pClientList[iClientH]->m_status.iAttackDelay = static_cast<uint8_t>(speed);
-		}
+	// Weapon-specific: compute attack delay and reset combo
+	if (cEquipPos == EquipPos::RightHand || cEquipPos == EquipPos::TwoHand) {
+		int speed = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cSpeed;
+		speed -= ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 13);
+		if (speed < 0) speed = 0;
+		m_pClientList[iClientH]->m_status.iAttackDelay = static_cast<uint8_t>(speed);
 		m_pClientList[iClientH]->m_iComboAttackCount = 0;
-		break;
-
-	case EquipPos::TwoHand:
-		m_pClientList[iClientH]->m_appearance.iWeaponType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iWeaponColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		{
-			int speed = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cSpeed;
-			speed -= ((m_pClientList[iClientH]->m_iStr + m_pClientList[iClientH]->m_iAngelicStr) / 13);
-			if (speed < 0) speed = 0;
-			m_pClientList[iClientH]->m_status.iAttackDelay = static_cast<uint8_t>(speed);
-		}
-		m_pClientList[iClientH]->m_iComboAttackCount = 0;
-		break;
-
-	case EquipPos::Back:
-		m_pClientList[iClientH]->m_appearance.iMantleType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iMantleColor = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cItemColor;
-		break;
-
-	case EquipPos::FullBody:
-		m_pClientList[iClientH]->m_appearance.iArmorType = m_pClientList[iClientH]->m_pItemList[sItemIndex]->m_cApprValue;
-		m_pClientList[iClientH]->m_appearance.iMantleColor = 0;
-		break;
 	}
 
 	if (m_pClientList[iClientH]->m_pItemList[sItemIndex]->GetItemEffectType() == ItemEffectType::AttackSpecAbility) {
