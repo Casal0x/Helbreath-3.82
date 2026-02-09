@@ -53,6 +53,7 @@ public:
 
 	short m_sType;
 	short m_sOriginalType;
+	short m_iNpcConfigId;
 	EntityAppearance m_appearance;
 	EntityStatus m_status;
 

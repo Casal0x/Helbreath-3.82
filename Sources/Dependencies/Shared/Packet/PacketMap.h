@@ -21,12 +21,12 @@ namespace net {
 
 	struct HB_PACKED PacketMapDataObjectBase {
 		std::uint16_t object_id;
-		std::int16_t type;
-		std::uint8_t dir;
 	};
 
 	struct HB_PACKED PacketMapDataObjectPlayer {
 		PacketMapDataObjectBase base;
+		std::int16_t type;
+		std::uint8_t dir;
 		PlayerAppearance appearance;
 		PlayerStatus status;
 		char name[10];
@@ -34,6 +34,8 @@ namespace net {
 
 	struct HB_PACKED PacketMapDataObjectNpc {
 		PacketMapDataObjectBase base;
+		std::int16_t config_id;
+		std::uint8_t dir;
 		EntityAppearance appearance;
 		EntityStatus status;
 		char name[5];

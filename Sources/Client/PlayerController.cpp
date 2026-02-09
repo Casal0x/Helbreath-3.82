@@ -2,10 +2,7 @@
 #include "PlayerController.h"
 #include "MapData.h"
 #include "Misc.h"
-
-// Direction offset lookup tables (index 0 unused, directions 1-8)
-const char CPlayerController::DIR_OFFSET_X[9] = { 0, 0, 1, 1, 1, 0, -1, -1, -1 };
-const char CPlayerController::DIR_OFFSET_Y[9] = { 0, -1, -1, 0, 1, 1, 1, 0, -1 };
+#include "DirectionHelpers.h"
 
 CPlayerController::CPlayerController()
 {
@@ -51,8 +48,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 		{
 			cTmpDir = i;
 			if (cTmpDir > 8) cTmpDir -= 8;
-			aX = DIR_OFFSET_X[cTmpDir];
-			aY = DIR_OFFSET_Y[cTmpDir];
+			aX = hb::direction::OffsetX[cTmpDir];
+			aY = hb::direction::OffsetY[cTmpDir];
 			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
 			{
 				m_bIsPrevMoveBlocked = false;
@@ -74,8 +71,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 		{
 			cTmpDir = i;
 			if (cTmpDir < 1) cTmpDir += 8;
-			aX = DIR_OFFSET_X[cTmpDir];
-			aY = DIR_OFFSET_Y[cTmpDir];
+			aX = hb::direction::OffsetX[cTmpDir];
+			aY = hb::direction::OffsetY[cTmpDir];
 			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
 			{
 				m_bIsPrevMoveBlocked = false;
@@ -108,16 +105,7 @@ void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapDa
 	{
 		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
 		if (cDir == 0) break;
-		switch (cDir) {
-		case 1: sY--;       break;
-		case 2: sX++; sY--; break;
-		case 3: sX++;       break;
-		case 4: sX++; sY++; break;
-		case 5: sY++;       break;
-		case 6: sX--; sY++; break;
-		case 7: sX--;       break;
-		case 8: sX--; sY--; break;
-		}
+		hb::direction::ApplyOffset(cDir, sX, sY);
 		sCnt1++;
 		if (sCnt1 > 30) break;
 	}
@@ -131,16 +119,7 @@ void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapDa
 	{
 		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
 		if (cDir == 0) break;
-		switch (cDir) {
-		case 1: sY--;       break;
-		case 2: sX++; sY--; break;
-		case 3: sX++;       break;
-		case 4: sX++; sY++; break;
-		case 5: sY++;       break;
-		case 6: sX--; sY++; break;
-		case 7: sX--;       break;
-		case 8: sX--; sY--; break;
-		}
+		hb::direction::ApplyOffset(cDir, sX, sY);
 		sCnt2++;
 		if (sCnt2 > 30) break;
 	}

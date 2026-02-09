@@ -383,6 +383,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iDataY = dY = indexY - mapMinY;
 					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wDeadObjectID;
 					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sDeadOwnerType;
+					m_entityState.m_sNpcConfigId = m_pMapData->m_pData[dX][dY].m_sDeadNpcConfigId;
 					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_cDeadDir;
 					m_entityState.m_appearance = m_pMapData->m_pData[dX][dY].m_deadAppearance;
 					m_entityState.m_iFrame = m_pMapData->m_pData[dX][dY].m_cDeadOwnerFrame;
@@ -474,6 +475,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					m_entityState.m_iDataY = dY = indexY - mapMinY;
 					m_entityState.m_wObjectID = m_pMapData->m_pData[dX][dY].m_wObjectID;
 					m_entityState.m_sOwnerType = m_pMapData->m_pData[dX][dY].m_sOwnerType;
+					m_entityState.m_sNpcConfigId = m_pMapData->m_pData[dX][dY].m_sNpcConfigId;
 					m_entityState.m_iAction = m_pMapData->m_pData[dX][dY].m_animation.cAction;
 					m_entityState.m_status = m_pMapData->m_pData[dX][dY].m_status;
 					m_entityState.m_iDir = m_pMapData->m_pData[dX][dY].m_animation.cDir;

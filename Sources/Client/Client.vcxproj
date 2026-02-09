@@ -350,8 +350,8 @@
     <ClInclude Include="RenderHelpers.h" />
     <ClInclude Include="PlayerRenderer.h" />
     <ClInclude Include="NpcRenderer.h" />
-    <ClInclude Include="OwnerType.h" />
-    <ClInclude Include="ObjectIDRange.h" />
+    <ClInclude Include="$(SolutionDir)Dependencies\Shared\OwnerType.h" />
+    <ClInclude Include="$(SolutionDir)Dependencies\Shared\ObjectIDRange.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="GameModeManager.h" />
     <ClInclude Include="GameFonts.h" />

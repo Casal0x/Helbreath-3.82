@@ -13,9 +13,7 @@
 #include "GameGeometry.h"
 
 
-#define DEF_OWNERTYPE_PLAYER			1
-#define DEF_OWNERTYPE_NPC				2
-#define DEF_OWNERTYPE_PLAYER_INDIRECT	3
+#include "OwnerClass.h"
 
 // for Client Data
 #define DEF_MAPDATASIZEX		30
@@ -118,18 +116,20 @@ public:
 
 	bool  m_bIsFixedDayMode;
 
-	struct {		    
+	struct {
 		bool bDefined;
 		char cType;				// 1:RANDOMAREA   2:RANDOMWAYPOINT
-		
+
 		char cWaypoint[10];     // RANDOMWAYPOINT
 		GameRectangle rcRect;			// RANDOMAREA
-		
+
 		int  iTotalActiveMob;
-		int  iMobType;
+		int  iNpcConfigId;
 		int  iMaxMobs;
 		int  iCurMobs;
-		
+		int  iProbSA;
+		int  iKindSA;
+
 	} m_stSpotMobGenerator[DEF_MAXSPOTMOBGENERATOR];
 
 	GamePoint m_WaypointList[DEF_MAXWAYPOINTCFG];

@@ -885,6 +885,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		req.itemConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Items);
 		req.magicConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Magic);
 		req.skillConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Skills);
+		req.npcConfigHash = LocalCacheManager::Get().GetHash(ConfigCacheType::Npcs);
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
@@ -1449,6 +1450,88 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 	return true;
 }
 
+bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
+{
+	LocalCacheManager::Get().AccumulatePacket(ConfigCacheType::Npcs, pData, dwMsgSize);
+
+	constexpr size_t headerSize = sizeof(hb::net::PacketNpcConfigHeader);
+	constexpr size_t entrySize = sizeof(hb::net::PacketNpcConfigEntry);
+
+	if (dwMsgSize < headerSize) {
+		DevConsole::Get().Printf("[NPCCFG] Decode FAIL: size %u < header %u", dwMsgSize, (uint32_t)headerSize);
+		return false;
+	}
+
+	const auto* pktHeader = reinterpret_cast<const hb::net::PacketNpcConfigHeader*>(pData);
+	uint16_t npcCount = pktHeader->npcCount;
+	uint16_t totalNpcs = pktHeader->totalNpcs;
+
+	if (dwMsgSize < headerSize + (npcCount * entrySize)) {
+		DevConsole::Get().Printf("[NPCCFG] Decode FAIL: size %u < needed %u (count=%u entry=%u)",
+			dwMsgSize, (uint32_t)(headerSize + npcCount * entrySize), npcCount, (uint32_t)entrySize);
+		return false;
+	}
+
+	const auto* entries = reinterpret_cast<const hb::net::PacketNpcConfigEntry*>(pData + headerSize);
+
+	for (uint16_t i = 0; i < npcCount; i++) {
+		const auto& entry = entries[i];
+		int npcId = entry.npcId;
+		int npcType = entry.npcType;
+
+		// Store by npc_id (primary key)
+		if (npcId >= 0 && npcId < DEF_MAXNPCCONFIGS) {
+			m_npcConfigList[npcId].npcType = static_cast<short>(npcType);
+			std::memset(m_npcConfigList[npcId].name, 0, sizeof(m_npcConfigList[npcId].name));
+			std::snprintf(m_npcConfigList[npcId].name, sizeof(m_npcConfigList[npcId].name), "%s", entry.name);
+			m_npcConfigList[npcId].valid = true;
+		}
+
+		// Update type->name reverse map (last config per type wins)
+		if (npcType >= 0 && npcType < 120) {
+			std::memset(m_cNpcNameByType[npcType], 0, DEF_NPCNAME);
+			std::snprintf(m_cNpcNameByType[npcType], DEF_NPCNAME, "%s", entry.name);
+		}
+	}
+
+	// Track raw entries received across packets
+	if (pktHeader->packetIndex == 0) m_iNpcConfigsReceived = 0;
+	m_iNpcConfigsReceived += npcCount;
+
+	if (m_iNpcConfigsReceived >= totalNpcs && !LocalCacheManager::Get().IsReplaying()) {
+		if (LocalCacheManager::Get().FinalizeAndSave(ConfigCacheType::Npcs)) {
+			DevConsole::Get().Printf("[NPCCFG] Downloaded %d NPC configs, cached", m_iNpcConfigsReceived);
+		} else {
+			DevConsole::Get().Printf("[NPCCFG] Downloaded %d NPC configs", m_iNpcConfigsReceived);
+		}
+	}
+
+	return true;
+}
+
+const char* CGame::GetNpcConfigName(short sType) const
+{
+	if (sType >= 0 && sType < 120 && m_cNpcNameByType[sType][0] != '\0') {
+		return m_cNpcNameByType[sType];
+	}
+	return "Unknown";
+}
+
+const char* CGame::GetNpcConfigNameById(short npcConfigId) const
+{
+	if (npcConfigId >= 0 && npcConfigId < DEF_MAXNPCCONFIGS && m_npcConfigList[npcConfigId].valid) {
+		return m_npcConfigList[npcConfigId].name;
+	}
+	return "Unknown";
+}
+
+short CGame::ResolveNpcType(short npcConfigId) const
+{
+	if (npcConfigId >= 0 && npcConfigId < DEF_MAXNPCCONFIGS && m_npcConfigList[npcConfigId].valid)
+		return m_npcConfigList[npcConfigId].npcType;
+	return 0;
+}
+
 void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 {
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
@@ -1465,13 +1548,14 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 
 		struct ReplayCtx { CGame* game; };
 		ReplayCtx ctx{ this };
-		bool bNeedItems = false, bNeedMagic = false, bNeedSkills = false;
+		bool bNeedItems = false, bNeedMagic = false, bNeedSkills = false, bNeedNpcs = false;
 
 		// Clear config arrays before replay so verification is accurate
 		// (stale entries from previous login would cause false positives)
 		for (auto& item : m_pItemConfigList) item.reset();
 		for (auto& magic : m_pMagicCfgList) magic.reset();
 		for (auto& skill : m_pSkillCfgList) skill.reset();
+		for (auto& npc : m_npcConfigList) { npc.valid = false; std::memset(npc.name, 0, sizeof(npc.name)); }
 
 		if (cachePkt->itemCacheValid) {
 			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Items,
@@ -1552,8 +1636,34 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			bNeedSkills = true;
 		}
 
-		if (bNeedItems || bNeedMagic || bNeedSkills) {
-			_RequestConfigsFromServer(bNeedItems, bNeedMagic, bNeedSkills);
+		if (cachePkt->npcCacheValid) {
+			bool bReplayOk = LocalCacheManager::Get().ReplayFromCache(ConfigCacheType::Npcs,
+				[](char* p, uint32_t s, void* c) -> bool {
+					return static_cast<ReplayCtx*>(c)->game->_bDecodeNpcConfigFileContents(p, s);
+				}, &ctx);
+			bool bHasNpcs = false;
+			if (bReplayOk) {
+				for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
+			}
+			if (bReplayOk && bHasNpcs) {
+				m_eConfigRetry[3] = ConfigRetryLevel::None;
+				DevConsole::Get().Printf("[NPCCFG] Loaded from cache");
+			} else {
+				DevConsole::Get().Printf("[NPCCFG] Cache replay %s, requesting from server",
+					bReplayOk ? "decoded 0 entries" : "failed");
+				LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
+				m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
+				bNeedNpcs = true;
+			}
+		} else {
+			DevConsole::Get().Printf("[NPCCFG] Cache outdated, requesting from server");
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
+			m_eConfigRetry[3] = ConfigRetryLevel::ServerRequested;
+			bNeedNpcs = true;
+		}
+
+		if (bNeedItems || bNeedMagic || bNeedSkills || bNeedNpcs) {
+			_RequestConfigsFromServer(bNeedItems, bNeedMagic, bNeedSkills, bNeedNpcs);
 			m_dwConfigRequestTime = GameClock::GetTimeMS();
 		} else {
 			m_bConfigsReady = true;
@@ -1578,6 +1688,12 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Magic);
 		if (reloadPkt->reloadSkills)
 			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Skills);
+		if (reloadPkt->reloadNpcs) {
+			LocalCacheManager::Get().ResetAccumulator(ConfigCacheType::Npcs);
+			m_npcConfigList.fill({});
+			std::memset(m_cNpcNameByType, 0, sizeof(m_cNpcNameByType));
+			m_iNpcConfigsReceived = 0;
+		}
 
 		SetTopMsg((char*)"Administration kicked off a config reload, some lag may occur.", 5);
 	}
@@ -1596,6 +1712,11 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	case MSGID_SKILLCONFIGURATIONCONTENTS:
 		_bDecodeSkillConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[2] = ConfigRetryLevel::None;
+		_CheckConfigsReadyAndEnterGame();
+		break;
+	case MSGID_NPCCONFIGURATIONCONTENTS:
+		_bDecodeNpcConfigFileContents(pData, dwMsgSize);
+		m_eConfigRetry[3] = ConfigRetryLevel::None;
 		_CheckConfigsReadyAndEnterGame();
 		break;
 	case MSGID_RESPONSE_CHARGED_TELEPORT:
@@ -1873,7 +1994,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					memcpy(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, cName, 10);
 				else
 				{
-					GetNpcName(sType, m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
 				}
 				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
 			}
@@ -1923,7 +2044,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					GetNpcName(sType, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
 					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
 					break;
 
@@ -1945,7 +2066,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					GetNpcName(sType, m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
 					break;
 
 				default:
@@ -2700,6 +2821,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 	const char* cp;
 	char ucHeader, cDir, cName[12], cItemColor;
 	short sTotal, sX, sY, sType, sDynamicObjectType;
+	short npcConfigId = -1;
 	PlayerStatus iStatus;
 	PlayerAppearance playerAppearance;
 	uint16_t wObjectID;
@@ -2732,8 +2854,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
 				wObjectID = obj->base.object_id;
-				sType = obj->base.type;
-				cDir = static_cast<char>(obj->base.dir);
+				sType = obj->type;
+				cDir = static_cast<char>(obj->dir);
 				playerAppearance = obj->appearance;
 				iStatus = obj->status;
 				std::memset(cName, 0, sizeof(cName));
@@ -2745,15 +2867,16 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cp, sizeof(hb::net::PacketMapDataObjectNpc));
 				if (!obj) return;
 				wObjectID = obj->base.object_id;
-				sType = obj->base.type;
-				cDir = static_cast<char>(obj->base.dir);
+				npcConfigId = obj->config_id;
+				sType = ResolveNpcType(npcConfigId);
+				cDir = static_cast<char>(obj->dir);
 				playerAppearance.SetFromNpcAppearance(obj->appearance);
 				iStatus.SetFromEntityStatus(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
 		}
 		if (ucHeader & 0x02) // object ID
 		{
@@ -2764,8 +2887,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
 				wObjectID = obj->base.object_id;
-				sType = obj->base.type;
-				cDir = static_cast<char>(obj->base.dir);
+				sType = obj->type;
+				cDir = static_cast<char>(obj->dir);
 				playerAppearance = obj->appearance;
 				iStatus = obj->status;
 				std::memset(cName, 0, sizeof(cName));
@@ -2777,15 +2900,16 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectNpc>(cp, sizeof(hb::net::PacketMapDataObjectNpc));
 				if (!obj) return;
 				wObjectID = obj->base.object_id;
-				sType = obj->base.type;
-				cDir = static_cast<char>(obj->base.dir);
+				npcConfigId = obj->config_id;
+				sType = ResolveNpcType(npcConfigId);
+				cDir = static_cast<char>(obj->dir);
 				playerAppearance.SetFromNpcAppearance(obj->appearance);
 				iStatus.SetFromEntityStatus(obj->status);
 				std::memset(cName, 0, sizeof(cName));
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName); }
+			{ m_pMapData->bSetDeadOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, npcConfigId); }
 		}
 		if (ucHeader & 0x04)
 		{
@@ -2813,6 +2937,7 @@ void CGame::LogEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
 	short sX, sY, sType;
+	short npcConfigId = -1;
 	PlayerStatus iStatus;
 	char cDir, cName[12];
 	PlayerAppearance playerAppearance;
@@ -2823,13 +2948,13 @@ void CGame::LogEventHandler(char* pData)
 	wObjectID = base->object_id;
 	sX = base->x;
 	sY = base->y;
-	sType = base->type;
-	cDir = static_cast<char>(base->dir);
 	std::memset(cName, 0, sizeof(cName));
 	if (hb::objectid::IsPlayerID(wObjectID))
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
+		sType = pkt->type;
+		cDir = static_cast<char>(pkt->dir);
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		playerAppearance = pkt->appearance;
 		iStatus = pkt->status;
@@ -2838,6 +2963,9 @@ void CGame::LogEventHandler(char* pData)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogNpc>(pData, sizeof(hb::net::PacketEventLogNpc));
 		if (!pkt) return;
+		npcConfigId = pkt->config_id;
+		sType = ResolveNpcType(npcConfigId);
+		cDir = static_cast<char>(pkt->dir);
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 		playerAppearance.SetFromNpcAppearance(pkt->appearance);
 		iStatus.SetFromEntityStatus(pkt->status);
@@ -2845,7 +2973,7 @@ void CGame::LogEventHandler(char* pData)
 
 	switch (wEventType) {
 	case DEF_MSGTYPE_CONFIRM:
-		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
 		switch (sType) {
 		case hb::owner::LightWarBeetle: // LWB
 		case hb::owner::GodsHandKnight: // GHK
@@ -2858,7 +2986,7 @@ void CGame::LogEventHandler(char* pData)
 		break;
 
 	case DEF_MSGTYPE_REJECT:
-		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0); }
+		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
 		break;
 	}
 
@@ -6599,6 +6727,9 @@ bool CGame::_EnsureConfigLoaded(int type)
 	case 2: // Skills
 		for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bLoaded = true; break; } }
 		break;
+	case 3: // Npcs
+		for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bLoaded = true; break; } }
+		break;
 	}
 
 	if (bLoaded) {
@@ -6606,7 +6737,7 @@ bool CGame::_EnsureConfigLoaded(int type)
 		return true;
 	}
 
-	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG" };
+	const char* configNames[] = { "ITEMCFG", "MAGICCFG", "SKILLCFG", "NPCCFG" };
 
 	switch (m_eConfigRetry[type]) {
 	case ConfigRetryLevel::None:
@@ -6620,7 +6751,7 @@ bool CGame::_EnsureConfigLoaded(int type)
 
 	case ConfigRetryLevel::CacheTried:
 		DevConsole::Get().Printf("[%s] Retry: requesting from server", configNames[type]);
-		_RequestConfigsFromServer(type == 0, type == 1, type == 2);
+		_RequestConfigsFromServer(type == 0, type == 1, type == 2, type == 3);
 		m_eConfigRetry[type] = ConfigRetryLevel::ServerRequested;
 		m_dwConfigRequestTime = GameClock::GetTimeMS();
 		return false;
@@ -6662,11 +6793,16 @@ bool CGame::_TryReplayCacheForConfig(int type)
 			[](char* p, uint32_t s, void* c) -> bool {
 				return static_cast<ReplayCtx*>(c)->game->_bDecodeSkillConfigFileContents(p, s);
 			}, &ctx);
+	case 3:
+		return LocalCacheManager::Get().ReplayFromCache(cacheType,
+			[](char* p, uint32_t s, void* c) -> bool {
+				return static_cast<ReplayCtx*>(c)->game->_bDecodeNpcConfigFileContents(p, s);
+			}, &ctx);
 	}
 	return false;
 }
 
-void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills)
+void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills, bool bNpcs)
 {
 	if (!m_pGSock) return;
 	hb::net::PacketRequestConfigData pkt{};
@@ -6675,6 +6811,7 @@ void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills)
 	pkt.requestItems = bItems ? 1 : 0;
 	pkt.requestMagic = bMagic ? 1 : 0;
 	pkt.requestSkills = bSkills ? 1 : 0;
+	pkt.requestNpcs = bNpcs ? 1 : 0;
 	m_pGSock->iSendMsg(reinterpret_cast<char*>(&pkt), sizeof(pkt));
 }
 
@@ -6682,13 +6819,14 @@ void CGame::_CheckConfigsReadyAndEnterGame()
 {
 	if (m_bConfigsReady) return;
 
-	// Check if all three config types have at least one entry loaded
-	bool bHasItems = false, bHasMagic = false, bHasSkills = false;
+	// Check if all four config types have at least one entry loaded
+	bool bHasItems = false, bHasMagic = false, bHasSkills = false, bHasNpcs = false;
 	for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
 	for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
 	for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+	for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
 
-	if (bHasItems && bHasMagic && bHasSkills) {
+	if (bHasItems && bHasMagic && bHasSkills && bHasNpcs) {
 		DevConsole::Get().Printf("[CONFIG] All configs loaded from server, entering game");
 		m_bConfigsReady = true;
 		if (m_bInitDataReady) {
@@ -6811,33 +6949,6 @@ void CGame::CreateScreenShot()
 		}
 	}
 	AddEventList(NOTIFYMSG_CREATE_SCREENSHOT2, 10);
-}
-
-// _bDraw_OnCreateNewCharacter removed - migrated to Screen_CreateNewCharacter
-
-void CGame::_LoadAgreementTextContents(char cType)
-{
-	for (int i = 0; i < game_limits::max_text_dlg_lines; i++)
-	{
-		if (m_pAgreeMsgTextList[i] != 0)
-			m_pAgreeMsgTextList[i].reset();
-	}
-
-	std::string fileName = std::format("contents\\\\contents{}.txt", static_cast<int>(cType));
-
-	std::ifstream file(fileName);
-	if (!file) return;
-
-	std::string line;
-	int iIndex = 0;
-	while (std::getline(file, line) && iIndex < game_limits::max_text_dlg_lines)
-	{
-		if (!line.empty())
-		{
-			m_pAgreeMsgTextList[iIndex] = std::make_unique<CMsg>(0, line.c_str(), 0);
-			iIndex++;
-		}
-	}
 }
 
 
@@ -7191,12 +7302,40 @@ void CGame::EraseItem(char cItemID)
 	m_bIsItemDisabled[cItemID] = false;
 }
 
-void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus& status)
+void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus& status, short npcConfigId)
 {
 	char cTxt[32], cTxt2[64];
 	std::memset(cTxt, 0, sizeof(cTxt));
 	std::memset(cTxt2, 0, sizeof(cTxt2));
-	GetNpcName(sOwnerType, cTxt);
+
+	// Name lookup: prefer config_id (direct), fall back to type-based lookup
+	auto npcName = [&]() -> const char* {
+		if (npcConfigId >= 0) return GetNpcConfigNameById(npcConfigId);
+		return GetNpcConfigName(sOwnerType);
+	};
+
+	// Crop subtypes override the base "Crop" name from config
+	if (sOwnerType == hb::owner::Crops) {
+		static const char* cropNames[] = {
+			"Crop", "WaterMelon", "Pumpkin", "Garlic", "Barley", "Carrot",
+			"Radish", "Corn", "Chinese Bell Flower", "Melone", "Tomato",
+			"Grapes", "Blue Grape", "Mushroom", "Ginseng"
+		};
+		int sub = m_entityState.m_appearance.iSubType;
+		if (sub >= 1 && sub <= 14)
+			std::snprintf(cTxt, sizeof(cTxt), "%s", cropNames[sub]);
+		else
+			std::snprintf(cTxt, sizeof(cTxt), "%s", npcName());
+	}
+	// Crusade structure kit suffix
+	else if ((sOwnerType == hb::owner::ArrowGuardTower || sOwnerType == hb::owner::CannonGuardTower ||
+			  sOwnerType == hb::owner::ManaCollector || sOwnerType == hb::owner::Detector) &&
+			 m_entityState.m_appearance.HasNpcSpecialState()) {
+		std::snprintf(cTxt, sizeof(cTxt), "%s Kit", npcName());
+	}
+	else {
+		std::snprintf(cTxt, sizeof(cTxt), "%s", npcName());
+	}
 	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
 	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
 	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
@@ -7298,7 +7437,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		if (m_bIsCrusadeMode == false) std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
 		else
 		{
-			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", NPC_NAME_MERCENARY); //"Mercenary"
+			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", GetNpcConfigName(hb::owner::Barbarian));
 			else
 			{
 				if (relationship == EntityRelationship::Enemy) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
@@ -7947,7 +8086,7 @@ void CGame::NpcTalkHandler(char* pData)
 		switch (sType) {
 		case 1: //Monster Hunt
 			std::memset(cTemp, 0, sizeof(cTemp));
-			GetNpcName(iTargetType, cTemp);
+			std::snprintf(cTemp, DEF_NPCNAME, "%s", GetNpcConfigName(iTargetType));
 			std::memset(cTxt, 0, sizeof(cTxt));
 			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, iTargetCount, cTemp);
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
@@ -8086,133 +8225,6 @@ void CGame::NpcTalkHandler(char* pData)
 		}
 	}
 }
-
-void CGame::GetNpcName(short sType, char* pName)
-{
-	switch (sType)
-	{
-	case hb::owner::Slime: std::snprintf(pName, 21, "%s", NPC_NAME_SLIME); break;
-	case hb::owner::Skeleton: std::snprintf(pName, 21, "%s", NPC_NAME_SKELETON); break;
-	case hb::owner::StoneGolem: std::snprintf(pName, 21, "%s", NPC_NAME_STONEGOLEM); break;
-	case hb::owner::Cyclops: std::snprintf(pName, 21, "%s", NPC_NAME_CYCLOPS); break;
-	case hb::owner::OrcMage: std::snprintf(pName, 21, "%s", NPC_NAME_ORC); break;
-	case hb::owner::ShopKeeper: std::snprintf(pName, 21, "%s", NPC_NAME_SHOP_KEEPER); break;
-	case hb::owner::GiantAnt: std::snprintf(pName, 21, "%s", NPC_NAME_GIANTANT); break;
-	case hb::owner::Scorpion: std::snprintf(pName, 21, "%s", NPC_NAME_GIANTSCORPION); break;
-	case hb::owner::Zombie: std::snprintf(pName, 21, "%s", NPC_NAME_ZOMBIE); break;
-	case hb::owner::Gandalf: std::snprintf(pName, 21, "%s", NPC_NAME_MAGICIAN); break;
-	case hb::owner::Howard: std::snprintf(pName, 21, "%s", NPC_NAME_WAREHOUSE_KEEPER); break;
-	case hb::owner::Guard: std::snprintf(pName, 21, "%s", NPC_NAME_GUARD); break;
-	case hb::owner::Amphis: std::snprintf(pName, 21, "%s", NPC_NAME_SNAKE); break;
-	case hb::owner::ClayGolem: std::snprintf(pName, 21, "%s", NPC_NAME_CLAYGOLEM); break;
-	case hb::owner::Tom: std::snprintf(pName, 21, "%s", NPC_NAME_BLACKSMITH_KEEPER); break;
-	case hb::owner::William: std::snprintf(pName, 21, "%s", NPC_NAME_CITYHALL_OFFICER); break;
-	case hb::owner::Kennedy: std::snprintf(pName, 21, "%s", NPC_NAME_GUILDHALL_OFFICER); break;
-	case hb::owner::Hellhound: std::snprintf(pName, 21, "%s", NPC_NAME_HELHOUND); break;
-	case hb::owner::Troll: std::snprintf(pName, 21, "%s", NPC_NAME_TROLL); break;
-	case hb::owner::Ogre: std::snprintf(pName, 21, "%s", NPC_NAME_OGRE); break;
-	case hb::owner::Liche: std::snprintf(pName, 21, "%s", NPC_NAME_LICHE); break;
-	case hb::owner::Demon: std::snprintf(pName, 21, "%s", NPC_NAME_DEMON); break;
-	case hb::owner::Unicorn: std::snprintf(pName, 21, "%s", NPC_NAME_UNICORN); break;
-	case hb::owner::WereWolf: std::snprintf(pName, 21, "%s", NPC_NAME_WEREWOLF); break;
-	case hb::owner::Dummy: std::snprintf(pName, 21, "%s", NPC_NAME_DUMMY); break;
-	case hb::owner::EnergySphere: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSPHERE); break;
-	case hb::owner::ArrowGuardTower:
-		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER_CK);
-		else std::snprintf(pName, 21, "%s", NPC_NAME_ARROWGUARDTOWER);
-		break;
-	case hb::owner::CannonGuardTower:
-		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER_CK);
-		else std::snprintf(pName, 21, "%s", NPC_NAME_CANNONGUARDTOWER);
-		break;
-	case hb::owner::ManaCollector:
-		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR_CK);
-		else std::snprintf(pName, 21, "%s", NPC_NAME_MANACOLLECTOR);
-		break;
-	case hb::owner::Detector:
-		if (m_entityState.m_appearance.HasNpcSpecialState()) std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR_CK);
-		else std::snprintf(pName, 21, "%s", NPC_NAME_DETECTOR);
-		break;
-	case hb::owner::EnergyShield: std::snprintf(pName, 21, "%s", NPC_NAME_ENERGYSHIELD); break;
-	case hb::owner::GrandMagicGenerator: std::snprintf(pName, 21, "%s", NPC_NAME_GRANDMAGICGENERATOR); break;
-	case hb::owner::ManaStone: std::snprintf(pName, 21, "%s", NPC_NAME_MANASTONE); break;
-	case hb::owner::LightWarBeetle: std::snprintf(pName, 21, "%s", NPC_NAME_LIGHTWARBEETLE); break;
-	case hb::owner::GodsHandKnight: std::snprintf(pName, 21, "%s", NPC_NAME_GODSHANDKNIGHT); break;
-	case hb::owner::GodsHandKnightCK: std::snprintf(pName, 21, "%s", NPC_NAME_GODSHANDKNIGHT_CK); break;
-	case hb::owner::TempleKnight: std::snprintf(pName, 21, "%s", NPC_NAME_TEMPLEKNIGHT); break;
-	case hb::owner::BattleGolem: std::snprintf(pName, 21, "%s", NPC_NAME_BATTLEGOLEM); break;
-	case hb::owner::Stalker: std::snprintf(pName, 21, "%s", NPC_NAME_STALKER); break;
-	case hb::owner::HellClaw: std::snprintf(pName, 21, "%s", NPC_NAME_HELLCLAW); break;
-	case hb::owner::TigerWorm: std::snprintf(pName, 21, "%s", NPC_NAME_TIGERWORM); break;
-	case hb::owner::Catapult: std::snprintf(pName, 21, "%s", NPC_NAME_CATAPULT); break;
-	case hb::owner::Gargoyle: std::snprintf(pName, 21, "%s", NPC_NAME_GARGOYLE); break;
-	case hb::owner::Beholder: std::snprintf(pName, 21, "%s", NPC_NAME_BEHOLDER); break;
-	case hb::owner::DarkElf: std::snprintf(pName, 21, "%s", NPC_NAME_DARKELF); break;
-	case hb::owner::Bunny: std::snprintf(pName, 21, "%s", NPC_NAME_RABBIT); break;
-	case hb::owner::Cat: std::snprintf(pName, 21, "%s", NPC_NAME_CAT); break;
-	case hb::owner::GiantFrog: std::snprintf(pName, 21, "%s", NPC_NAME_FROG); break;
-	case hb::owner::MountainGiant: std::snprintf(pName, 21, "%s", NPC_NAME_MOUNTAIN_GIANT); break;
-	case hb::owner::Ettin: std::snprintf(pName, 21, "%s", NPC_NAME_ETTIN); break;
-	case hb::owner::CannibalPlant: std::snprintf(pName, 21, "%s", NPC_NAME_CANNIBAL); break;
-	case hb::owner::Rudolph: std::snprintf(pName, 21, "%s", NPC_NAME_RUDOLPH); break;
-	case hb::owner::DireBoar: std::snprintf(pName, 21, "%s", NPC_NAME_DIREBOAR); break;
-	case hb::owner::Frost: std::snprintf(pName, 21, "%s", NPC_NAME_FROST); break;
-	case hb::owner::Crops:
-	{
-		switch (m_entityState.m_appearance.iSubType) {
-		case 1:	std::snprintf(pName, 21, "%s", NPC_NAME_WATERMELON);	break;
-		case 2: std::snprintf(pName, 21, "%s", NPC_NAME_PUMPKIN); break;
-		case 3: std::snprintf(pName, 21, "%s", NPC_NAME_GARLIC); break;
-		case 4: std::snprintf(pName, 21, "%s", NPC_NAME_BARLEY); break;
-		case 5:	std::snprintf(pName, 21, "%s", NPC_NAME_CARROT); break;
-		case 6: std::snprintf(pName, 21, "%s", NPC_NAME_RADISH); break;
-		case 7: std::snprintf(pName, 21, "%s", NPC_NAME_CORN); break;
-		case 8: std::snprintf(pName, 21, "%s", NPC_NAME_BFLOWER); break;
-		case 9: std::snprintf(pName, 21, "%s", NPC_NAME_MELON); break;
-		case hb::owner::Slime: std::snprintf(pName, 21, "%s", NPC_NAME_TOMATO); break;
-		case hb::owner::Skeleton: std::snprintf(pName, 21, "%s", NPC_NAME_GRAPPE); break;
-		case hb::owner::StoneGolem: std::snprintf(pName, 21, "%s", NPC_NAME_BLUEGRAPPE); break;
-		case hb::owner::Cyclops: std::snprintf(pName, 21, "%s", NPC_NAME_MUSHROM); break;
-		case hb::owner::OrcMage: std::snprintf(pName, 21, "%s", NPC_NAME_GINSENG); break;
-		default: std::snprintf(pName, 21, "%s", NPC_NAME_CROP); break;
-		}
-	}
-	break;
-	case hb::owner::IceGolem: std::snprintf(pName, 21, "%s", NPC_NAME_ICEGOLEM); break;
-	case hb::owner::Wyvern: std::snprintf(pName, 21, "%s", NPC_NAME_WYVERN); break;
-	case hb::owner::McGaffin: std::snprintf(pName, 21, "%s", NPC_NAME_MCGAFFIN); break;
-	case hb::owner::Perry: std::snprintf(pName, 21, "%s", NPC_NAME_PERRY); break;
-	case hb::owner::Devlin: std::snprintf(pName, 21, "%s", NPC_NAME_DEVLIN); break;
-
-	case hb::owner::Dragon: std::snprintf(pName, 21, "%s", NPC_NAME_DRAGON); break;
-	case hb::owner::Centaur: std::snprintf(pName, 21, "%s", NPC_NAME_CENTAUR); break;
-	case hb::owner::ClawTurtle: std::snprintf(pName, 21, "%s", NPC_NAME_CLAWTUR); break;
-	case hb::owner::FireWyvern: std::snprintf(pName, 21, "%s", NPC_NAME_FIREWYV); break;
-	case hb::owner::GiantCrayfish: std::snprintf(pName, 21, "%s", NPC_NAME_GICRAYF); break;
-	case hb::owner::GiLizard: std::snprintf(pName, 21, "%s", NPC_NAME_GILIZAR); break;
-	case hb::owner::GiTree: std::snprintf(pName, 21, "%s", NPC_NAME_GITREE); break;
-	case hb::owner::MasterOrc: std::snprintf(pName, 21, "%s", NPC_NAME_MASTORC); break;
-	case hb::owner::Minaus: std::snprintf(pName, 21, "%s", NPC_NAME_MINAUS); break;
-	case hb::owner::Nizie: std::snprintf(pName, 21, "%s", NPC_NAME_NIZIE); break;
-
-	case hb::owner::Tentocle: std::snprintf(pName, 21, "%s", NPC_NAME_TENTOCL); break;
-	case hb::owner::Abaddon: std::snprintf(pName, 21, "%s", NPC_NAME_ABADDON); break;
-	case hb::owner::Sorceress: std::snprintf(pName, 21, "%s", NPC_NAME_SORCERS); break;
-	case hb::owner::ATK: std::snprintf(pName, 21, "%s", NPC_NAME_ATK); break;
-	case hb::owner::MasterElf: std::snprintf(pName, 21, "%s", NPC_NAME_MASTELF); break;
-	case hb::owner::DSK: std::snprintf(pName, 21, "%s", NPC_NAME_DSK); break;
-	case hb::owner::HBT: std::snprintf(pName, 21, "%s", NPC_NAME_HBT); break;
-	case hb::owner::CT: std::snprintf(pName, 21, "%s", NPC_NAME_CT); break;
-	case hb::owner::Barbarian: std::snprintf(pName, 21, "%s", NPC_NAME_BARBAR); break;
-	case hb::owner::AGC: std::snprintf(pName, 21, "%s", NPC_NAME_AGC); break;
-	case hb::owner::Gail: std::snprintf(pName, 21, "%s", NPC_NAME_GAIL); break;
-	case hb::owner::Gate: std::snprintf(pName, 21, "%s", NPC_NAME_GATE); break;
-
-		// CLEROTH - NEW MONSTERS
-	case hb::owner::AirElemental: std::snprintf(pName, 21, "%s", NPC_NAME_AIRLEMENTAL); break;
-	}
-}
-
 
 void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 {
@@ -10328,6 +10340,7 @@ void CGame::MotionEventHandler(char* pData)
 {
 	WORD wEventType, wObjectID;
 	short sX, sY, sType, sV1, sV2, sV3;
+	short npcConfigId = -1;
 	PlayerStatus iStatus;
 	char cDir, cName[12];
 	int iLoc;
@@ -10375,7 +10388,8 @@ void CGame::MotionEventHandler(char* pData)
 			if (!pkt) return;
 			sX = pkt->x;
 			sY = pkt->y;
-			sType = pkt->type;
+			npcConfigId = pkt->config_id;
+			sType = ResolveNpcType(npcConfigId);
 			cDir = static_cast<char>(pkt->dir);
 			memcpy(cName, pkt->name, sizeof(pkt->name));
 			playerAppearance.SetFromNpcAppearance(pkt->appearance);
@@ -10468,9 +10482,9 @@ void CGame::MotionEventHandler(char* pData)
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
+		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
 	}
-	else { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc); }
+	else { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
 
 	switch (wEventType) {
 	case DEF_OBJECTMAGIC: // Casting
@@ -10499,6 +10513,11 @@ void CGame::MotionEventHandler(char* pData)
 			m_bIsGetPointingMode = false;
 			m_iPointCommandType = -1;
 			ClearSkillUsingStatus();
+			// Lock the controller until the damage animation finishes.
+			// Without this, quick actions allows immediate movement after being hit.
+			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommandAvailable(false);
+			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 		}
 		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
 		m_floatingText.AddDamageFromValue(sV1, false, m_dwCurTime,

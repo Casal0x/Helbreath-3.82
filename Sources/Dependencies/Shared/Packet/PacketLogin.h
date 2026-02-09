@@ -97,5 +97,23 @@ namespace net {
 		char world_name[30];
 	};
 	HB_PACK_END
+
+	HB_PACK_BEGIN
+	// Enter game response: server IP + port + server name (sent to login client)
+	struct HB_PACKED EnterGameResponseData {
+		char server_ip[16];
+		std::uint16_t server_port;
+		char server_name[20];
+	};
+	HB_PACK_END
+
+	HB_PACK_BEGIN
+	// Test log / account verify payload (after PacketHeader)
+	struct HB_PACKED TestLogPayload {
+		char account_name[DEF_ACCOUNT_NAME - 1];
+		char account_password[DEF_ACCOUNT_PASS - 1];
+		std::int32_t level;
+	};
+	HB_PACK_END
 }
 }

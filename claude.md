@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (Win32/x86 only). Server v2.24b.
+Helbreath 3.82 - Classic MMORPG client-server in C++ for Windows (x64). Server v2.24b.
 
 ## Critical Rules
 
@@ -29,11 +29,10 @@ powershell.exe -ExecutionPolicy Bypass -File "C:\Users\ShadowEvil\source\Repos3\
 
 ```
 Sources/
-├── Helbreath.sln              # VS 2022 solution (4 projects)
+├── Helbreath.sln              # VS 2022 solution (3 projects)
 ├── build.ps1                  # Build script
 ├── Client/                    # Game client (~250 files)
-├── Server/                    # Game server (~75 files)
-├── DDrawEngine/               # DirectDraw 7 renderer (static lib)
+├── Server/                    # Game server (~100 files)
 ├── SFMLEngine/                # SFML 3.x renderer (static lib)
 └── Dependencies/
     ├── Shared/                # Interfaces, packets, items, formulas
@@ -62,16 +61,16 @@ PLANS/                         # Implementation plans for significant changes
 
 `CGame` is the central coordinator holding all managers, sprites, sockets, and state.
 
-- **Rendering:** `IRenderer`/`ISprite`/`ITexture` abstraction. Two backends: DDrawEngine (CPU), SFMLEngine (GPU). 640x480 logical resolution. `RendererFactory` selects backend at compile time.
-- **Screens:** `IGameScreen` base (`on_initialize/update/render/uninitialize`). `GameModeManager` singleton manages 10 screens + 11 overlays with fade transitions.
-- **Dialogs:** `IDialogBox` base (`OnDraw/OnClick/OnDoubleClick/OnPress/OnItemDrop`). `DialogBoxManager` manages 41 dialog types with z-ordering.
-- **Input:** `InputManager` singleton - frame-based key/mouse state (pressed/released/down).
+- **Rendering:** `IRenderer`/`ISprite`/`ITexture` abstraction. Single backend: SFMLEngine (GPU). 800x600 logical resolution.
+- **Screens:** `IGameScreen` base (`on_initialize/update/render/uninitialize`). `GameModeManager` singleton manages 11 screens + 11 overlays with fade transitions.
+- **Dialogs:** `IDialogBox` base (`OnDraw/OnClick/OnDoubleClick/OnPress/OnItemDrop`). `DialogBoxManager` manages 42 dialog types with z-ordering.
+- **Input:** `HotkeyManager` singleton - keyboard shortcuts with Ctrl/Shift/Alt modifiers. Screen/dialog handlers for mouse/key events.
 - **Audio:** `AudioManager` singleton using miniaudio. 5-channel volume, 32 concurrent sounds, positional audio.
 - **Camera:** `CCamera` with smooth interpolation, world-to-screen conversion, shake effects.
 - **Player:** `CPlayer` holds stats, skills, magic mastery, equipment, party/guild state.
 - **Chat:** `ChatCommandManager` singleton with `ChatCommand` base class.
 - **Effects:** `EffectManager` - 300 max active effects, separate draw/light passes.
-- **Networking:** `XSocket` async TCP. `NetworkMessageManager` routes messages. Dual sockets: game + log server.
+- **Networking:** `ASIOSocket` async TCP. `NetworkMessageManager` routes messages to 18+ handler files. Dual sockets: game + login server.
 
 ### Server
 
@@ -93,31 +92,30 @@ PLANS/                         # Implementation plans for significant changes
 Must stay synchronized between client and server:
 
 - **Interfaces:** IRenderer, ISprite, ISpriteFactory, ITexture, ITextRenderer, IBitmapFont, IWindow, IInput
-- **Protocol:** `NetMessages.h` (message IDs), `NetConstants.h` (buffer sizes), `ActionID.h` (object states), `Packet/*.h` (packed structs)
-- **Items:** `Item/Item.h` (unified CItem), `Item/ItemEnums.h` (EquipPos, ItemType, effects)
+- **Protocol:** `NetMessages.h` (message IDs), `NetConstants.h` (buffer sizes, `hb::limits::`, `hb::net::`), `ActionID.h` (object states), `Packet/*.h` (22 packed structs)
+- **Items:** `Item/Item.h` (unified CItem), `Item/ItemEnums.h` (EquipPos, ItemType, effects), `Item/ItemAttributes.h`, `Item/SharedItem.h`
 - **Formulas:** `SharedCalculations.h` (MaxHP/MP/SP/Load, LevelExp) - must match on both sides
 - **Text:** `TextLib.h` (unified text API with font IDs, shadow styles, RAII batching)
 - **Sprites:** `SpriteLoader.h` (PAK loading), `SpriteTypes.h` (DrawParams, BlendMode)
+- **Graphics:** `PrimitiveTypes.h` (Color struct, BlendMode enum), `ResolutionConfig.h` (800x600 base)
+- **Constants:** `MagicTypes.h` (`hb::magic::` namespace), `AdminLevel.h`, `EntityRelationship.h`
+- **Networking:** `ASIOSocket.h/.cpp` (ASIO TCP), `IOServicePool.h/.cpp`, `ConcurrentMsgQueue.h`
 
 ## Rendering Pipeline
 
-**Frame Loop** (`CGame::RenderFrame`):
-1. `BeginFrame()` → 2. `GameModeManager::Render()` → 3. `DialogBoxManager::DrawDialogBoxs()` → 4. `DrawFadeOverlay()` → 5. `DrawCursor()` → 6. `EndFrame()`
+**Game Loop** (split update/render):
+- `UpdateFrame()`: Audio, timers, network, game state (runs every iteration)
+- `RenderFrame()`: Clear backbuffer → `GameModeManager::Render()` → `DialogBoxManager::DrawDialogBoxs()` → `DrawFadeOverlay()` → `DrawCursor()` → `EndFrame()` (gated by frame limit)
 
-**DC Management (DDraw only) - Critical:**
-- `_GetBackBufferDC()` locks surface + acquires DC. `_ReleaseBackBufferDC()` releases both.
-- DC locks surface - sprite drawing requires unlocked surface.
-- Text calls must wrap in `BeginTextBatch()`/`EndTextBatch()` pairs.
-
-**Renderer Implementations:**
-| Interface | DDraw | SFML |
-|-----------|-------|------|
-| IRenderer | DDrawRenderer → DXC_ddraw | SFMLRenderer |
-| ISprite | DDrawSprite (CPU blend) | SFMLSprite (GPU blend) |
-| ITextRenderer | DDrawTextRenderer (GDI) | SFMLTextRenderer |
-| IWindow | Win32Window | SFMLWindow |
-| IInput | Win32Input | SFMLInput |
-| IBitmapFont | DDrawBitmapFont | SFMLBitmapFont |
+**SFML Renderer Implementations:**
+| Interface | Implementation |
+|-----------|---------------|
+| IRenderer | SFMLRenderer (sf::RenderTexture back buffer) |
+| ISprite | SFMLSprite (GPU blend) |
+| ITextRenderer | SFMLTextRenderer |
+| IWindow | SFMLWindow |
+| IInput | SFMLInput |
+| IBitmapFont | SFMLBitmapFont |
 
 ## Workflow
 

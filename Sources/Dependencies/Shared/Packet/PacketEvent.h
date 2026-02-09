@@ -33,12 +33,12 @@ namespace net {
 		std::uint16_t object_id;
 		std::int16_t x;
 		std::int16_t y;
-		std::int16_t type;
-		std::uint8_t dir;
 	};
 
 	struct HB_PACKED PacketEventLogPlayer {
 		PacketEventLogBase base;
+		std::int16_t type;
+		std::uint8_t dir;
 		char name[10];
 		PlayerAppearance appearance;
 		PlayerStatus status;
@@ -46,6 +46,8 @@ namespace net {
 
 	struct HB_PACKED PacketEventLogNpc {
 		PacketEventLogBase base;
+		std::int16_t config_id;
+		std::uint8_t dir;
 		char name[5];
 		EntityAppearance appearance;
 		EntityStatus status;
@@ -75,7 +77,7 @@ namespace net {
 		std::uint16_t object_id;
 		std::int16_t x;
 		std::int16_t y;
-		std::int16_t type;
+		std::int16_t config_id;
 		std::uint8_t dir;
 		char name[5];
 		EntityAppearance appearance;

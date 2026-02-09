@@ -147,7 +147,7 @@ void Screen_OnGame::on_update()
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
                                 std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-                                m_pGame->GetNpcName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
+                                std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
                                 break;
                             case 15: case 24:
                                 m_pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView, m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3);
@@ -160,7 +160,7 @@ void Screen_OnGame::on_update()
                                 if ((tY + 100) > LOGICAL_MAX_Y()) tY = LOGICAL_MAX_Y() - 100;
                                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sX = tX; m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
                                 std::memset(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-                                m_pGame->GetNpcName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3, m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr);
+                                std::snprintf(m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", m_pGame->GetNpcConfigName(m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV3));
                                 break;
                             case 1000:
                                 if (m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) m_pGame->m_stDialogBoxExchangeInfo[0].sItemID = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sV4;

@@ -9,10 +9,6 @@ public:
 	CPlayerController();
 	void Reset();
 
-	// Direction offset lookup tables
-	static const char DIR_OFFSET_X[9];
-	static const char DIR_OFFSET_Y[9];
-
 	// Destination
 	void SetDestination(short x, short y) { m_sDestX = x; m_sDestY = y; }
 	void MoveDestination(short dx, short dy) { m_sDestX += dx; m_sDestY += dy; }

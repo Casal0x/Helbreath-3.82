@@ -42,8 +42,8 @@ void CmdReload::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Send reload notification to clients first (shows top bar message)
-	if (bItems || bMagic || bSkills)
-		pGame->SendConfigReloadNotification(bItems, bMagic, bSkills);
+	if (bItems || bMagic || bSkills || bNpcs)
+		pGame->SendConfigReloadNotification(bItems, bMagic, bSkills, bNpcs);
 
 	// Reload configs from database
 	if (bItems)  pGame->ReloadItemConfigs();
@@ -52,6 +52,6 @@ void CmdReload::Execute(CGame* pGame, const char* pArgs)
 	if (bNpcs)   pGame->ReloadNpcConfigs();
 
 	// Stream updated config data to clients
-	if (bItems || bMagic || bSkills)
-		pGame->PushConfigReloadToClients(bItems, bMagic, bSkills);
+	if (bItems || bMagic || bSkills || bNpcs)
+		pGame->PushConfigReloadToClients(bItems, bMagic, bSkills, bNpcs);
 }

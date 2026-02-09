@@ -26,6 +26,7 @@
 #include "ActionID_Server.h"
 #include "UserMessages.h"
 #include "NetMessages.h"
+#include "Packet/PacketMap.h"
 #include "ServerMessages.h"
 #include "MessageIndex.h"
 #include "Misc.h"
@@ -313,6 +314,7 @@ public:
 	bool bSendClientItemConfigs(int iClientH);
 	bool bSendClientMagicConfigs(int iClientH);
 	bool bSendClientSkillConfigs(int iClientH);
+	bool bSendClientNpcConfigs(int iClientH);
 	const DropTable* GetDropTable(int id) const;
 
 	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
@@ -340,8 +342,8 @@ public:
 	void ReloadMagicConfigs();
 	void ReloadSkillConfigs();
 	void ReloadNpcConfigs();
-	void SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills);
-	void PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills);
+	void SendConfigReloadNotification(bool bItems, bool bMagic, bool bSkills, bool bNpcs);
+	void PushConfigReloadToClients(bool bItems, bool bMagic, bool bSkills, bool bNpcs);
 
 	//void UpdateHeldenianStatus();
 	void GlobalEndHeldenianMode();
@@ -440,7 +442,6 @@ public:
 	void GetHeroMantleHandler(int iClientH, int iItemID, const char * pString);
 	
 	bool bCheckMagicInt(int iClientH);
-	bool bChangeState(char cStateChange, char* cStr, char *cVit,char *cDex,char *cInt,char *cMag,char *cChar);
 	void StateChangeHandler(int iClientH, char * pData, size_t dwMsgSize);
 	
 	void SetPoisonFlag(short sOwnerH, char cOwnerType, bool bStatus);
@@ -614,7 +615,6 @@ public:
 	void TimeManaPointsUp(int iClientH);
 	void TimeStaminarPointsUp(int iClientH);
 	void Quit();
-	bool __bReadMapInfo(int iMapIndex);
 	void TrainSkillResponse(bool bSuccess, int iClientH, int iSkillNum, int iSkillLevel);
 	int _iGetMagicNumber(char * pMagicName, int * pReqInt, int * pCost);
 	void RequestStudyMagicHandler(int iClientH, const char * pName, bool bIsPurchase = true);
@@ -629,7 +629,8 @@ public:
 	void TimeHitPointsUp(int iClientH);
 	void OnStartGameSignal();
 	uint32_t iDice(uint32_t iThrow, uint32_t iRange);
-	bool _bInitNpcAttr(class CNpc * pNpc, char * pNpcName, short sClass, char cSA);
+	bool _bInitNpcAttr(class CNpc * pNpc, int iNpcConfigId, short sClass, char cSA);
+	int GetNpcConfigIdByName(const char * pNpcName) const;
 	void ReleaseItemHandler(int iClientH, short sItemIndex, bool bNotice);
 	void ClientKilledHandler(int iClientH, int iAttackerH, char cAttackerType, short sDamage);
 	int  SetItemCount(int iClientH, int iItemIndex, uint32_t dwCount);
@@ -671,11 +672,9 @@ public:
 	void ChatMsgHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();
-	int bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0, bool bBypassMobLimit = false);
+	int bCreateNewNpc(int iNpcConfigId, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0, bool bBypassMobLimit = false);
 	//bool bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sX, short sY);
 	int SpawnMapNpcsFromDatabase(struct sqlite3* db, int iMapIndex);
-	bool _bReadMapInfoFiles(int iMapIndex);
-	
 	bool _bGetIsStringIsNumber(char * pStr);
 	bool _bInitItemAttr(CItem * pItem, const char * pItemName);
 	void GameProcess();
@@ -689,6 +688,8 @@ public:
 	void SendEventToNearClient_TypeA(short sOwnerH, char cOwnerType, uint32_t dwMsgID, uint16_t wMsgType, short sV1, short sV2, short sV3);
 	void DeleteClient(int iClientH, bool bSave, bool bNotify, bool bCountLogout = true, bool bForceCloseConn = false);
 	int  iComposeInitMapData(short sX, short sY, int iClientH, char * pData);
+	void FillPlayerMapObject(hb::net::PacketMapDataObjectPlayer& obj, short sOwnerH, int iViewerH);
+	void FillNpcMapObject(hb::net::PacketMapDataObjectNpc& obj, short sOwnerH, int iViewerH);
 	void RequestInitDataHandler(int iClientH, char * pData, char cKey, size_t dwMsgSize = 0);
 	void RequestInitPlayerHandler(int iClientH, char * pData, char cKey);
 	int iClientMotion_Move_Handler(int iClientH, short sX, short sY, char cDir, char cMoveType);
@@ -789,7 +790,7 @@ public:
 	class CQuest  * m_pQuestConfigList[DEF_MAXQUESTTYPE];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
 
-	uint32_t m_dwConfigHash[3]{};
+	uint32_t m_dwConfigHash[4]{};
 	void ComputeConfigHashes();
 
 	class ASIOSocket* _lsock;

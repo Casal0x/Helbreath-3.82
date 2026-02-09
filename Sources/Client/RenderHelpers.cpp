@@ -325,7 +325,7 @@ void DrawName(CGame& game, const CEntityRenderState& state, int sX, int sY)
 		if (state.IsPlayer())
 			game.DrawObjectName(sX, sY, const_cast<char*>(state.m_cName.data()), state.m_status, state.m_wObjectID);
 		else
-			game.DrawNpcName(sX, sY, state.m_sOwnerType, state.m_status);
+			game.DrawNpcName(sX, sY, state.m_sOwnerType, state.m_status, state.m_sNpcConfigId);
 	}
 }
 

@@ -26,7 +26,6 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	if (iAmount < 1) iAmount = 1;
 	if (iAmount > 50) iAmount = 50;
 
-	char* pNpcName = pGame->m_pNpcConfigList[iNpcID]->m_cNpcName;
 	char* pMapName = pGame->m_pMapList[pGame->m_pClientList[iClientH]->m_cMapIndex]->m_cName;
 	int iSpawned = 0;
 
@@ -39,7 +38,7 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		int tY = pGame->m_pClientList[iClientH]->m_sY;
 
 		// bIsSummoned=false so NPCs give EXP/drops, bBypassMobLimit=true so they don't count toward map limit
-		if (pGame->bCreateNewNpc(pNpcName, cUniqueName, pMapName, 0, 0, DEF_MOVETYPE_RANDOM,
+		if (pGame->bCreateNewNpc(iNpcID, cUniqueName, pMapName, 0, 0, DEF_MOVETYPE_RANDOM,
 			&tX, &tY, nullptr, nullptr, 0, -1, false, false, false, false, 0, true))
 		{
 			iSpawned++;
@@ -47,7 +46,7 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	}
 
 	char buf[128];
-	std::snprintf(buf, sizeof(buf), "Spawned %d x %s (ID: %d).", iSpawned, pNpcName, iNpcID);
+	std::snprintf(buf, sizeof(buf), "Spawned %d x %s (ID: %d).", iSpawned, pGame->m_pNpcConfigList[iNpcID]->m_cNpcName, iNpcID);
 	pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, buf);
 
 	return true;

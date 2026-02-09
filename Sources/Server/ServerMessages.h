@@ -51,7 +51,6 @@
 // Server loads game configuration files and sends to clients
 // ============================================================================
 
-#define MSGID_NPCCONFIGURATIONCONTENTS				0x0FA314DA
 #define MSGID_SKILLCONFIGURATIONCONTENTS			0x0FA314E1
 #define MSGID_PORTIONCONFIGURATIONCONTENTS			0x0FA314DE
 #define MSGID_QUESTCONFIGURATIONCONTENTS			0x0FA40001

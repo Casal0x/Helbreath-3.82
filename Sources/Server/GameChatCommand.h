@@ -12,6 +12,7 @@ public:
 	virtual ~GameChatCommand() = default;
 	virtual const char* GetName() const = 0;
 	virtual int GetDefaultLevel() const { return 0; }
+	virtual bool RequiresGMMode() const { return GetDefaultLevel() > 0; }
 	virtual bool Execute(CGame* pGame, int iClientH, const char* pArgs) = 0;
 };
 

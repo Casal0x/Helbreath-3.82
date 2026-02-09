@@ -27,35 +27,13 @@ void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short msX, 
 {
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
 
-	switch (Info().sV3) {
-	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, GameColors::UIWhite);
-		break;
-	case 19:
-		PutString(sX + 33, sY + 23, NPC_NAME_MAGICIAN, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_MAGICIAN, GameColors::UIWhite);
-		break;
-	case 20:
-		PutString(sX + 33, sY + 23, NPC_NAME_WAREHOUSE_KEEPER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_WAREHOUSE_KEEPER, GameColors::UIWhite);
-		break;
-	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UIWhite);
-		break;
-	case 25:
-		PutString(sX + 33, sY + 23, NPC_NAME_CITYHALL_OFFICER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_CITYHALL_OFFICER, GameColors::UIWhite);
-		break;
-	case 26:
-		PutString(sX + 33, sY + 23, NPC_NAME_GUILDHALL_OFFICER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_GUILDHALL_OFFICER, GameColors::UIWhite);
-		break;
-	case 90:
+	if (Info().sV3 == 90) {
 		PutString(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel);
 		PutString(sX + 33 - 1, sY + 23 - 1, "Heldenian staff officer", GameColors::UIWhite);
-		break;
+	}
+	else {
+		PutString(sX + 33, sY + 23, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UILabel);
+		PutString(sX + 33 - 1, sY + 23 - 1, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UIWhite);
 	}
 
 	if (Info().sV3 == 25) {
@@ -148,28 +126,8 @@ void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, 
 {
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
 
-	switch (Info().sV3) {
-	case 21:
-		PutString(sX + 35, sY + 25, NPC_NAME_GUARD, GameColors::UILabel);
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_GUARD, GameColors::UIWhite);
-		break;
-	case 32:
-		PutString(sX + 35, sY + 25, NPC_NAME_UNICORN, GameColors::UILabel);
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_UNICORN, GameColors::UIWhite);
-		break;
-	case 67:
-		PutString(sX + 35, sY + 25, NPC_NAME_MCGAFFIN, GameColors::UILabel);
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_MCGAFFIN, GameColors::UIWhite);
-		break;
-	case 68:
-		PutString(sX + 35, sY + 25, NPC_NAME_PERRY, GameColors::UILabel);
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_PERRY, GameColors::UIWhite);
-		break;
-	case 69:
-		PutString(sX + 35, sY + 25, NPC_NAME_DEVLIN, GameColors::UILabel);
-		PutString(sX + 35 - 1, sY + 25 - 1, NPC_NAME_DEVLIN, GameColors::UIWhite);
-		break;
-	}
+	PutString(sX + 35, sY + 25, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UILabel);
+	PutString(sX + 35 - 1, sY + 25 - 1, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UIWhite);
 
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) {
 		DrawHighlightedText(sX + 125, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY25, msX, msY, sX + 125, sX + 180, sY + 55, sY + 70);
@@ -180,17 +138,12 @@ void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short 
 {
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
 
-	switch (Info().sV3) {
-	case 15:
-		PutString(sX + 33, sY + 23, NPC_NAME_SHOP_KEEPER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_SHOP_KEEPER, GameColors::UIWhite);
-		break;
-	case 24:
-		PutString(sX + 33, sY + 23, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UILabel);
-		PutString(sX + 33 - 1, sY + 23 - 1, NPC_NAME_BLACKSMITH_KEEPER, GameColors::UIWhite);
-		// Repair All button
+	PutString(sX + 33, sY + 23, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UILabel);
+	PutString(sX + 33 - 1, sY + 23 - 1, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UIWhite);
+
+	if (Info().sV3 == 24) {
+		// Repair All button (Blacksmith only)
 		DrawHighlightedText(sX + 155, sY + 22, DRAW_DIALOGBOX_NPCACTION_QUERY49, msX, msY, sX + 155, sX + 210, sY + 22, sY + 37);
-		break;
 	}
 
 	// Trade

@@ -29,6 +29,7 @@ CNpc::CNpc(char * pName5)
 	m_bIsKilled   = false;
 
 	m_sOriginalType      = 0;
+	m_iNpcConfigId       = -1;
 	m_iSummonControlMode = 0;
 	
 	m_cAttribute = 0;
@@ -54,6 +55,8 @@ CNpc::CNpc(char * pName5)
 	m_iNpcItemType = 0;
 	m_iNpcItemMax = 0;
 	m_iDropTableId = 0;
+
+	std::memset(m_cNpcName, 0, sizeof(m_cNpcName));
 
 	// OPTIMIZATION FIX #3: Initialize previous position for delta detection
 	m_sPrevX = -1;

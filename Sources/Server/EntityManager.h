@@ -34,7 +34,7 @@ public:
     /**
      * Create a new NPC entity.
      *
-     * @param pNpcName - Config name (e.g., "Slime", "Orc")
+     * @param iNpcConfigId - Index into m_pNpcConfigList[]
      * @param pName - Unique ID (e.g., "_A0001")
      * @param pMapName - Map to spawn on
      * @param sClass - Movement class
@@ -53,7 +53,7 @@ public:
      * @return NPC handle (1-4999) or -1 on failure
      */
     int CreateEntity(
-        char* pNpcName, char* pName, char* pMapName,
+        int iNpcConfigId, char* pName, char* pMapName,
         short sClass, char cSA, char cMoveType,
         int* poX, int* poY,
         char* pWaypointList, GameRectangle* pArea,
@@ -237,7 +237,7 @@ private:
     /**
      * Initialize NPC attributes from configuration.
      */
-    bool InitEntityAttributes(CNpc* pNpc, const char* pNpcName, short sClass, char cSA);
+    bool InitEntityAttributes(CNpc* pNpc, int iNpcConfigId, short sClass, char cSA);
 
     /**
      * Find first available entity slot.

@@ -8,7 +8,8 @@ enum class ConfigCacheType : uint8_t
 	Items  = 0,
 	Magic  = 1,
 	Skills = 2,
-	COUNT  = 3
+	Npcs   = 3,
+	COUNT  = 4
 };
 
 class LocalCacheManager
@@ -57,8 +58,8 @@ private:
 		bool active;
 	};
 
-	CacheState  m_state[3]{};
-	Accumulator m_accum[3]{};
+	CacheState  m_state[4]{};
+	Accumulator m_accum[4]{};
 	bool m_bIsReplaying = false;
 
 	const char* _GetFilename(ConfigCacheType type) const;

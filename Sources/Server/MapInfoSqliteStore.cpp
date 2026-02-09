@@ -215,8 +215,10 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		" tile_w INTEGER NOT NULL DEFAULT 0,"
 		" tile_h INTEGER NOT NULL DEFAULT 0,"
 		" waypoints TEXT NOT NULL DEFAULT '',"
-		" mob_type INTEGER NOT NULL,"
+		" npc_config_id INTEGER NOT NULL,"
 		" max_mobs INTEGER NOT NULL,"
+		" prob_sa INTEGER NOT NULL DEFAULT 15,"
+		" kind_sa INTEGER NOT NULL DEFAULT 1,"
 		" PRIMARY KEY (map_name, generator_index),"
 		" FOREIGN KEY (map_name) REFERENCES maps(map_name) ON DELETE CASCADE"
 		");"
@@ -341,7 +343,7 @@ bool EnsureMapInfoDatabase(sqlite3** outDb, std::string& outPath, bool* outCreat
 		"CREATE TABLE IF NOT EXISTS map_npcs ("
 		" id INTEGER PRIMARY KEY AUTOINCREMENT,"
 		" map_name TEXT NOT NULL,"
-		" npc_name TEXT NOT NULL CHECK(length(npc_name) <= 20),"
+		" npc_config_id INTEGER NOT NULL,"
 		" move_type INTEGER NOT NULL,"
 		" waypoint_list TEXT NOT NULL DEFAULT '',"
 		" name_prefix TEXT NOT NULL DEFAULT '' CHECK(length(name_prefix) <= 1),"
@@ -659,7 +661,7 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 
 	const char* sql =
 		"SELECT generator_index, generator_type, tile_x, tile_y, tile_w, tile_h,"
-		" waypoints, mob_type, max_mobs"
+		" waypoints, npc_config_id, max_mobs, prob_sa, kind_sa"
 		" FROM map_spot_mob_generators WHERE map_name = ? COLLATE NOCASE ORDER BY generator_index;";
 
 	sqlite3_stmt* stmt = nullptr;
@@ -686,8 +688,10 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 		CopyColumnText(stmt, 6, waypointStr, sizeof(waypointStr));
 		ParseWaypointList(waypointStr, pMap->m_stSpotMobGenerator[idx].cWaypoint, 10);
 
-		pMap->m_stSpotMobGenerator[idx].iMobType = sqlite3_column_int(stmt, 7);
+		pMap->m_stSpotMobGenerator[idx].iNpcConfigId = sqlite3_column_int(stmt, 7);
 		pMap->m_stSpotMobGenerator[idx].iMaxMobs = sqlite3_column_int(stmt, 8);
+		pMap->m_stSpotMobGenerator[idx].iProbSA = sqlite3_column_int(stmt, 9);
+		pMap->m_stSpotMobGenerator[idx].iKindSA = sqlite3_column_int(stmt, 10);
 		pMap->m_stSpotMobGenerator[idx].iCurMobs = 0;
 		pMap->m_stSpotMobGenerator[idx].iTotalActiveMob = 0;
 	}

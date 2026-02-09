@@ -40,7 +40,7 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", NPC_NAME_CITYHALL_OFFICER); break;
+			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;
@@ -50,7 +50,7 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 50 + 45, cTxt, GameColors::UILabel);
 
 			std::memset(cTemp, 0, sizeof(cTemp));
-			m_pGame->GetNpcName(m_pGame->m_stQuest.sTargetType, cTemp);
+			std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(m_pGame->m_stQuest.sTargetType));
 			std::memset(cTxt, 0, sizeof(cTxt));
 			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, m_pGame->m_stQuest.sTargetCount, cTemp);
 			PutAlignedString(sX, sX + szX, sY + 50 + 60, cTxt, GameColors::UILabel);
@@ -89,7 +89,7 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", NPC_NAME_CITYHALL_OFFICER); break;
+			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;

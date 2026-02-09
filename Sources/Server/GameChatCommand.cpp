@@ -74,6 +74,13 @@ bool GameChatCommandManager::ProcessCommand(int iClientH, const char* pMessage, 
 					int iPlayerLevel = m_pGame->m_pClientList[iClientH]->m_iAdminLevel;
 					if (iPlayerLevel < iRequiredLevel)
 						return false;
+
+					// Admin commands require GM mode to be active (except /gm itself)
+					if (cmd->RequiresGMMode() && !m_pGame->m_pClientList[iClientH]->m_bIsGMMode)
+					{
+						m_pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "You must enable GM mode first (/gm on).");
+						return true;
+					}
 				}
 
 				LogCommand(iClientH, pMessage);

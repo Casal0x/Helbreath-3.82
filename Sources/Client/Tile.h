@@ -20,9 +20,11 @@ public:
 		m_wDeadObjectID = 0;
 
 		m_sOwnerType = 0;
+		m_sNpcConfigId = -1;
 		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
 
 		m_sDeadOwnerType = 0;
+		m_sDeadNpcConfigId = -1;
 		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
 
 		m_cDeadOwnerFrame = -1;
@@ -60,8 +62,10 @@ public:
 	inline CTile()
 	{
 		m_sOwnerType = 0;
+		m_sNpcConfigId = -1;
 		ZeroMemory(m_cOwnerName, sizeof(m_cOwnerName));
 		m_sDeadOwnerType = 0;
+		m_sDeadNpcConfigId = -1;
 		ZeroMemory(m_cDeadOwnerName, sizeof(m_cDeadOwnerName));
 		m_cDeadOwnerFrame     = -1;
 
@@ -96,9 +100,11 @@ public:
 	WORD  m_wObjectID;
 
 	short m_sOwnerType;							// +B2C
+	short m_sNpcConfigId;						// NPC config index (for name lookup, -1 if player)
 	PlayerStatus m_status;
 
 	short m_sDeadOwnerType;						// +B3C
+	short m_sDeadNpcConfigId;					// Dead NPC config index
 
 	PlayerStatus m_deadStatus;
 	short m_sV1;

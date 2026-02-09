@@ -745,7 +745,6 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	std::memcpy(ws_name, req->world_name, 10);
 
 	char cData[112] = {};
-	char* cp2 = cData;
 	if (string(ws_name) != WORLDNAMELS)
 	{
 		//SendEventToWLS(ENTERGAMERESTYPE_REJECT, ENTERGAMERESTYPE_REJECT, 0, 0, h);
@@ -772,21 +771,13 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 		}
 	}
 
-	cp2 = (char*)cData; //outgoing messag - to Client
+	hb::net::EnterGameResponseData enterResp{};
+	std::memcpy(enterResp.server_ip, G_pGame->m_cGameListenIP, sizeof(enterResp.server_ip));
+	enterResp.server_port = static_cast<uint16_t>(G_pGame->m_iGameListenPort);
+	std::snprintf(enterResp.server_name, sizeof(enterResp.server_name), "%s", WORLDNAMELS2);
 
-	memcpy(cp2, (char*)G_pGame->m_cGameListenIP, 16);
-	cp2 += 16;
-
-	auto wp = (uint16_t*)cp2;
-	*wp = (uint16_t)G_pGame->m_iGameListenPort;
-	cp2 += 2;
-
-	char sv_name[21] = {};
-	std::snprintf(sv_name, sizeof(sv_name), "%s", WORLDNAMELS2);
-	memcpy(cp2, sv_name, 20);
-	cp2 += 20;
-
-	SendLoginMsg(DEF_ENTERGAMERESTYPE_CONFIRM, DEF_ENTERGAMERESTYPE_CONFIRM, cData, 38, h);
+	std::memcpy(cData, &enterResp, sizeof(enterResp));
+	SendLoginMsg(DEF_ENTERGAMERESTYPE_CONFIRM, DEF_ENTERGAMERESTYPE_CONFIRM, cData, sizeof(enterResp), h);
 }
 
 

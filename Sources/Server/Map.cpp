@@ -466,7 +466,6 @@ bool CMap::_bDecodeMapDataFileContents()
 	char* token, * context, cReadMode;
 	char seps[] = "= \t\r\n";
 	class CTile* pTile;
-	short* sp;
 
 	std::memset(cMapFileName, 0, sizeof(cMapFileName));
 	strcat(cMapFileName, "mapdata\\");
@@ -535,8 +534,9 @@ bool CMap::_bDecodeMapDataFileContents()
 			}
 			else pTile->m_bIsFarm = false;
 
-			sp = (short*)&cTemp[0];
-			if (*sp == 19) {
+			short sTileId;
+			std::memcpy(&sTileId, &cTemp[0], sizeof(short));
+			if (sTileId == 19) {
 				pTile->m_bIsWater = true;
 			}
 			else pTile->m_bIsWater = false;

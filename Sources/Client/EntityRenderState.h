@@ -27,6 +27,7 @@ public:
     {
         m_wObjectID = 0;
         m_sOwnerType = 0;
+        m_sNpcConfigId = -1;
         m_appearance.Clear();
         m_status.Clear();
         m_iAction = 0;
@@ -61,6 +62,7 @@ public:
     // Identification
     uint16_t m_wObjectID;       // Entity's unique object ID
     short m_sOwnerType;         // Entity type (player/mob/NPC type ID)
+    short m_sNpcConfigId;       // NPC config index (-1 if player or unknown)
 
     // Unpacked appearance (named fields extracted from sAppr1-4 at packet reception)
     PlayerAppearance m_appearance;

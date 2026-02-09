@@ -25,6 +25,7 @@
 // Mastery array sizes (must match client and server)
 #define DEF_MAXMAGICTYPE    100
 #define DEF_MAXSKILLTYPE    60
+#define DEF_MAXNPCCONFIGS   200
 
 // Default max player level (server may override via GameConfigs.db)
 #define DEF_PLAYERMAXLEVEL  180

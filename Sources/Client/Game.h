@@ -129,22 +129,14 @@ public:
 	bool _bCheckCurrentBuildItemStatus();
 	bool _bCheckBuildItemStatus();
 	bool _bDecodeBuildItemContents();
-	void GetNpcName(short sType, char * pName);
-
-	void _LoadAgreementTextContents(char cType);
+	const char* GetNpcConfigName(short sType) const;
+	const char* GetNpcConfigNameById(short npcConfigId) const;
+	short ResolveNpcType(short npcConfigId) const;
 
 	void UseShortCut( int num );
 	void DrawCursor();
 	void UpdateFrame();       // Logic update: audio, timers, network, game state (runs every iteration)
 	void RenderFrame();       // Render only: clear backbuffer -> draw -> flip (gated by frame limit)
-
-	// Legacy screen/overlay functions removed - migrated to Screen/Overlay classes:
-	// MakeSprite, MakeTileSpr, MakeEffectSpr, UpdateScreen_OnLoading, DrawScreen_OnLoadingProgress
-	// Screen_Quit, Screen_Loading, Screen_CreateNewAccount, Screen_SelectCharacter,
-	// Screen_CreateNewCharacter, Screen_MainMenu, Screen_Login, Screen_OnGame,
-	// Overlay_WaitingResponse, Overlay_Connecting, Overlay_QueryForceLogin,
-	// Overlay_QueryDeleteCharacter, Overlay_LogResMsg, Overlay_ChangePassword,
-	// Overlay_VersionNotMatch, Overlay_ConnectionLost, Overlay_Msg, Overlay_WaitInitData
 
 	void NpcTalkHandler(char * pData);
 	int  _iGetWeaponSkillType();
@@ -164,7 +156,7 @@ public:
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
 	bool _bCheckItemByType(hb::item::ItemType type);
-	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status);
+	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status, short npcConfigId = -1);
 	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _LoadTextDlgContents(int cType);
@@ -543,9 +535,15 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	bool _bDecodeItemConfigFileContents(char* pData, uint32_t dwMsgSize);
 	bool _bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize);
 	bool _bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize);
+	bool _bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize);
+
+	struct NpcConfig { short npcType = 0; char name[DEF_NPCNAME]{}; bool valid = false; };
+	std::array<NpcConfig, DEF_MAXNPCCONFIGS> m_npcConfigList{};   // indexed by npc_id
+	char m_cNpcNameByType[120][DEF_NPCNAME]{};                    // type->name reverse map (last config wins)
+	int m_iNpcConfigsReceived = 0;
 
 	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
-	ConfigRetryLevel m_eConfigRetry[3]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2)
+	ConfigRetryLevel m_eConfigRetry[4]{};  // indexed by ConfigCacheType (Items=0, Magic=1, Skills=2, Npcs=3)
 	uint32_t m_dwConfigRequestTime = 0;
 	static constexpr uint32_t CONFIG_REQUEST_TIMEOUT_MS = 10000;
 
@@ -554,12 +552,13 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 
 	bool _EnsureConfigLoaded(int type);
 	bool _TryReplayCacheForConfig(int type);
-	void _RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills);
+	void _RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills, bool bNpcs = false);
 	void _CheckConfigsReadyAndEnterGame();
 
 	bool EnsureItemConfigsLoaded()  { return _EnsureConfigLoaded(0); }
 	bool EnsureMagicConfigsLoaded() { return _EnsureConfigLoaded(1); }
 	bool EnsureSkillConfigsLoaded() { return _EnsureConfigLoaded(2); }
+	bool EnsureNpcConfigsLoaded()   { return _EnsureConfigLoaded(3); }
 
 	short m_sItemDropID[25];
 

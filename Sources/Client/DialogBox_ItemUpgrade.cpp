@@ -515,7 +515,7 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 
 	switch (Info().cMode) {
 	case 1:
-		if (Info().sV1 >= 0 && Info().sV1 < DEF_MAXITEMS)
+		if (Info().sV1 >= 0 && Info().sV1 < hb::limits::MaxItems)
 			m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
@@ -523,7 +523,7 @@ bool DialogBox_ItemUpgrade::OnItemDrop(short msX, short msY)
 		break;
 
 	case 6:
-		if (Info().sV1 >= 0 && Info().sV1 < DEF_MAXITEMS)
+		if (Info().sV1 >= 0 && Info().sV1 < hb::limits::MaxItems)
 			m_pGame->m_bIsItemDisabled[Info().sV1] = false;
 		Info().sV1 = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
