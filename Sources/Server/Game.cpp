@@ -13606,47 +13606,6 @@ bool CGame::bCheckMagicInt(int iClientH)
 	return true;
 }
 
-// 2003-04-14      ...
-//  bChangeState(char cStateChange 
-//  		  ,char* cStr, char *cVit,char *cDex,char *cInt,char *cMag,char *cChar)
-// desc		 ::      ...
-// return value :: BOOL 0(FASLE)    ...
-//  date		 :: [2003-04-14] 
-bool CGame::bChangeState(char cStateChange, char* cStr, char* cVit, char* cDex, char* cInt, char* cMag, char* cChar)
-{
-	if (cStateChange == DEF_STR)
-	{
-		*cStr += 1;
-	}
-	else if (cStateChange == DEF_VIT)
-	{
-		*cVit += 1;
-	}
-	else if (cStateChange == DEF_DEX)
-	{
-		*cDex += 1;
-	}
-	else if (cStateChange == DEF_INT)
-	{
-		*cInt += 1;
-	}
-	else if (cStateChange == DEF_MAG)
-	{
-		*cMag += 1;
-	}
-	else if (cStateChange == DEF_CHR)
-	{
-		*cChar += 1;
-	}
-	else
-	{
-// ::MessageBox(0, " ? -  ?","debug", MB_ICONEXCLAMATION | MB_YESNO) ;
-		return 0;
-	}
-
-	return cStateChange;
-}
-
 void CGame::LevelUpSettingsHandler(int iClientH, char* pData, size_t dwMsgSize)
 {
 	int iTotalSetting = 0;
