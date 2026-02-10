@@ -19,7 +19,7 @@ $Platform = "x64"
 
 $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$msbuildPath = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe"
+$msbuildPath = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
 $solutionPath = Join-Path $scriptDir "Helbreath.sln"
 
 # Configuration string matches the solution configs (Debug|x64, Release|x64)

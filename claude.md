@@ -11,6 +11,36 @@ powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Confi
 - Output: `Sources\Debug\Game_SFML_x64.exe` (client), `Sources\Debug\Server.exe` (server).
 - Platform is x64. Solution: `Sources\Helbreath.sln`. C++17 server, C++20 client.
 - 78 LNK4099 warnings (missing SFML/freetype PDBs) are cosmetic - ignore them.
+- MSBuild path in `build.ps1` may need updating per machine (Community vs BuildTools edition).
+
+## Transformation Workflow: Backup-Script-Build
+
+**This is the mandatory workflow for ALL code transformations (refactors, renames, define conversions, etc.). Never deviate.**
+
+**IMPORTANT: Never use git commands (commit, stash, checkout, etc.). The user handles all git operations. Backups use `.bak` files.**
+
+1. **Start from clean build** — current code compiles with 0 errors before starting.
+2. **Write ONE script** in `Scripts/` that performs the complete transformation for one phase. Scripts never go in the project root.
+3. **Script creates `.bak` backups**: Before modifying any file, the script copies it to `<filename>.bak` in the same directory. This is the safety net.
+4. **Run the script**.
+5. **Build immediately**: `powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target All -Config Debug`
+6. **If errors**: Restore all `.bak` files to their originals (overwrite the broken versions). Analyze what went wrong **in the script itself**, fix the script, re-run from step 4.
+7. **Never write a second "fix" script** — cascading patches cause cascading corruption. Always fix the original script and re-run cleanly.
+8. **Once 0 errors**: Delete all `.bak` files — this is your "commit". Move to next phase.
+
+### Why This Matters
+- `.bak` files let you revert without touching git — the user controls all commits.
+- Fixing the script (not the output) produces **reproducible, correct transformations**.
+- Restoring from `.bak` before re-running ensures each attempt starts from a known-good state.
+- One script per phase keeps the change atomic and reviewable.
+- Building after every script run catches problems immediately while context is fresh.
+
+### Regex Safety Rules (Learned from Prior Failures)
+- **NEVER** use `::TypeName` as a regex pattern — it matches inside prefixed names (`sf::Color` → `sfhb::shared::types::Color`).
+- **NEVER** replace inside `#define` macro names — `#define DEF_X` cannot become `#define hb::shared::X`.
+- **PREFER** explicit `content.replace("exact_old", "exact_new")` over regex for known patterns.
+- **ALWAYS** order replacements longest-first to avoid partial matches (`DEF_OBJECTMOVE_CONFIRM` before `DEF_OBJECTMOVE`).
+- **TEST** the script on 2-3 files first when dealing with regex patterns.
 
 ## Solution Structure (3 projects)
 - **Client** (`Sources/Client/`) - Game client. Depends on SFMLEngine.
