@@ -342,3 +342,4 @@ PLANS/
 # Temporary files
 tmpclaude*cwd
 nul
+/Scripts
