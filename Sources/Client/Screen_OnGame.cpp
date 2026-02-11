@@ -1,14 +1,19 @@
-// Screen_OnGame.cpp: Main gameplay screen implementation
+﻿// Screen_OnGame.cpp: Main gameplay screen implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Screen_OnGame.h"
 #include "Game.h"
+#include "EventListManager.h"
+#include "TextInputManager.h"
+#include "InventoryManager.h"
 #include "GameModeManager.h"
 #include "CommonTypes.h"
 #include "FrameTiming.h"
 #include "AudioManager.h"
 #include "WeatherManager.h"
+#include "ChatManager.h"
+#include "ItemNameFormatter.h"
 #include "ConfigManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -76,17 +81,12 @@ void Screen_OnGame::on_update()
     // Sync manager singletons with game state
     AudioManager::Get().SetListenerPosition(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 
-    WeatherType currentWeather = WeatherManager::FromLegacyWeather(m_pGame->m_cWhetherStatus);
-    if (WeatherManager::Get().GetCurrentWeather() != currentWeather)
-    {
-        WeatherManager::Get().SetWeatherImmediate(currentWeather);
-    }
 
     // Enter key handling
     if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
     {
         if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::GuildMenu)) {
-            m_pGame->EndInputString();
+            TextInputManager::Get().EndInput();
             if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return;
             if (strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") != 0) {
                 m_pGame->bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
@@ -94,7 +94,7 @@ void Screen_OnGame::on_update()
             }
         }
         else if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ItemDropExternal)) {
-            m_pGame->EndInputString();
+            TextInputManager::Get().EndInput();
 
             if (m_pGame->m_bSkillUsingStatus == true) {
                 m_pGame->AddEventList(UPDATE_SCREEN_ONGAME1, 10);
@@ -190,7 +190,7 @@ void Screen_OnGame::on_update()
                                 if (i == game_limits::max_sell_list) m_pGame->AddEventList(UPDATE_SCREEN_ONGAME6, 10);
                                 break;
                             case 1002:
-                                if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) m_pGame->AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
+                                if (InventoryManager::Get().GetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) m_pGame->AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
                                 else {
                                     CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1]->m_sIDnum);
                                     if (pCfg) m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV1, iAmount, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6, pCfg->m_cName, m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
@@ -222,29 +222,29 @@ void Screen_OnGame::on_update()
         }
         else
         {
-            if (!m_pGame->m_bInputStatus) {
+            if (!TextInputManager::Get().IsActive()) {
                 switch (m_pGame->m_cBackupChatMsg[0]) {
                 case '!': case '@': case '#': case '$': case '^':
                     std::memset(m_pGame->m_cChatMsg, 0, sizeof(m_pGame->m_cChatMsg));
                     m_pGame->m_cChatMsg[0] = m_pGame->m_cBackupChatMsg[0];
-                    m_pGame->StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
                     break;
                 default:
-                    m_pGame->StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
-                    m_pGame->ClearInputString();
+                    TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_pGame->m_cChatMsg), m_pGame->m_cChatMsg);
+                    TextInputManager::Get().ClearInput();
                     break;
                 }
             }
             else {
-                m_pGame->EndInputString();
+                TextInputManager::Get().EndInput();
                 std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
-                m_pGame->ReceiveString((char*)m_pGame->G_cTxt);
+                TextInputManager::Get().ReceiveString((char*)m_pGame->G_cTxt);
                 std::memset(m_pGame->m_cBackupChatMsg, 0, sizeof(m_pGame->m_cBackupChatMsg));
                 std::snprintf(m_pGame->m_cBackupChatMsg, sizeof(m_pGame->m_cBackupChatMsg), "%s", m_pGame->G_cTxt);
                 if ((m_pGame->m_dwCurTime - m_dwPrevChatTime) >= 700) {
                     m_dwPrevChatTime = m_pGame->m_dwCurTime;
                     if (strlen(m_pGame->G_cTxt) > 0) {
-                        if (!m_pGame->m_bShout && m_pGame->G_cTxt[0] == '!') {
+                        if (!ChatManager::Get().IsShoutEnabled() && m_pGame->G_cTxt[0] == '!') {
                             m_pGame->AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
                         }
                         else {
@@ -494,14 +494,14 @@ void Screen_OnGame::on_render()
     DrawPatchingGrid();
 
     FrameTiming::BeginProfile(ProfileStage::DrawWeather);
-    m_pGame->DrawWhetherEffects();
+    WeatherManager::Get().Draw();
     FrameTiming::EndProfile(ProfileStage::DrawWeather);
 
     FrameTiming::BeginProfile(ProfileStage::DrawChat);
     m_pGame->m_floatingText.DrawAll(-100, 0, LOGICAL_WIDTH(), LOGICAL_HEIGHT(), m_pGame->m_dwCurTime, m_pGame->m_Renderer);
     FrameTiming::EndProfile(ProfileStage::DrawChat);
 
-    m_pGame->WhetherObjectFrameCounter();
+    WeatherManager::Get().Update(m_pGame->m_dwCurTime);
 
     // Apocalypse map effects
     if (m_pGame->m_cMapIndex == 26) {
@@ -530,15 +530,15 @@ void Screen_OnGame::on_render()
     FrameTiming::EndProfile(ProfileStage::DrawDialogs);
 
     FrameTiming::BeginProfile(ProfileStage::DrawMisc);
-    if (m_pGame->m_bInputStatus) {
+    if (TextInputManager::Get().IsActive()) {
         if (((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::GuildMenu) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)) ||
             ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true) && (m_pGame->m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))) {
         }
         else m_pGame->m_Renderer->DrawRectFilled(0, LOGICAL_HEIGHT() - 69, LOGICAL_MAX_X(), 18, hb::shared::render::Color::Black(128));
-        m_pGame->ShowReceivedString();
+        TextInputManager::Get().ShowInput();
     }
 
-    m_pGame->ShowEventList(m_pGame->m_dwCurTime);
+    EventListManager::Get().ShowEvents(m_pGame->m_dwCurTime);
 
     // Item tooltip on cursor
     short iTooltipItemID = CursorTarget::GetSelectedID();
@@ -597,10 +597,10 @@ void Screen_OnGame::RenderItemTooltip()
 
     char cStr1[64], cStr2[64], cStr3[64];
     int iLoc;
-    m_pGame->GetItemName(item, cStr1, cStr2, cStr3);
+    ItemNameFormatter::Get().Format(item, cStr1, cStr2, cStr3);
     iLoc = 0;
     if (strlen(cStr1) != 0) {
-        if (m_pGame->m_bIsSpecial) hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
+        if (ItemNameFormatter::Get().IsSpecial()) hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
         else hb::shared::text::DrawText(GameFont::Default, m_sMsX, m_sMsY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
         iLoc += 15;
     }

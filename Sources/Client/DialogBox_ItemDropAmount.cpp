@@ -1,5 +1,6 @@
-#include "DialogBox_ItemDropAmount.h"
+﻿#include "DialogBox_ItemDropAmount.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -23,7 +24,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode)
 	{
 	case 1:
-		m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 		if (strlen(Info().cStr) == 0)
 			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);
@@ -43,7 +44,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 20:
-		m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 		if (strlen(Info().cStr) == 0)
 			std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_QUERY_DROP_ITEM_AMOUNT1, cStr1);

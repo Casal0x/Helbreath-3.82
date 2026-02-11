@@ -1,4 +1,4 @@
-#ifdef _WIN32
+﻿#ifdef _WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -33,6 +33,16 @@
 #include "ConfigManager.h"
 #include "AudioManager.h"
 #include "WeatherManager.h"
+#include "ChatManager.h"
+#include "ItemNameFormatter.h"
+#include "CombatSystem.h"
+#include "InventoryManager.h"
+#include "MagicCastingSystem.h"
+#include "BuildItemManager.h"
+#include "ShopManager.h"
+#include "TeleportManager.h"
+#include "TextInputManager.h"
+#include "EventListManager.h"
 #include "ChatCommandManager.h"
 #include "HotkeyManager.h"
 #include "DevConsole.h"
@@ -151,7 +161,6 @@ CGame::CGame()
 	, m_npcRenderer(*this)
 {
 	m_pIOPool = std::make_unique<hb::shared::net::IOServicePool>(0);  // 0 threads = manual poll mode
-	m_pInputBuffer = nullptr;
 	m_Renderer = nullptr;
 	m_dialogBoxManager.Initialize(this);
 	m_dialogBoxManager.InitializeDialogBoxes();
@@ -167,13 +176,18 @@ CGame::CGame()
 	m_iItemDropCnt = 0;
 	std::memset(m_sItemDropID, 0, sizeof(m_sItemDropID));
 	m_bItemDrop = false;
-	m_bIsSpecial = false;
-	m_cWhisperIndex = game_limits::max_whisper_msgs;
 	std::memset(m_cMapName, 0, sizeof(m_cMapName));
 	std::memset(G_cTxt, 0, sizeof(G_cTxt));
 
 	// Initialize CPlayer first since it's used below
 	m_pPlayer = std::make_unique<CPlayer>();
+	CombatSystem::Get().SetPlayer(*m_pPlayer);
+	InventoryManager::Get().SetGame(this);
+	MagicCastingSystem::Get().SetGame(this);
+	BuildItemManager::Get().SetGame(this);
+	ShopManager::Get().SetGame(this);
+	TeleportManager::Get().SetGame(this);
+	EventListManager::Get().SetGame(this);
 	m_pPlayer->m_sPlayerX = 0;
 	m_pPlayer->m_sPlayerY = 0;
 	m_pPlayer->m_Controller.ResetCommandCount();
@@ -204,18 +218,14 @@ CGame::CGame()
 
 	std::memset(m_cLogServerAddr, 0, sizeof(m_cLogServerAddr));
 	// m_pItemForSaleList defaults to nullptr (std::array<std::unique_ptr<T>, N>)
-	m_sPendingShopType = 0;
 
 	// Dialog boxes now self-initialize via SetDefaultRect() in their constructors
 	// Dialogs without classes (GiveItem) are initialized in DialogBoxManager::InitDefaults()
 
 	m_iTimeLeftSecAccount = 0;
 	m_iTimeLeftSecIP = 0;
-	m_bWhisper = true;
-	m_bShout = true;
 
 	// Initialize char arrays that were previously zero-initialized by HEAP_ZERO_MEMORY
-	std::memset(m_cEdit, 0, sizeof(m_cEdit));
 	std::memset(m_cMsg, 0, sizeof(m_cMsg));
 	std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
 	std::memset(m_cBackupChatMsg, 0, sizeof(m_cBackupChatMsg));
@@ -284,7 +294,7 @@ bool CGame::bInit()
 		return false;
 	}
 
-	if (_bDecodeBuildItemContents() == false)
+	if (BuildItemManager::Get().LoadRecipes() == false)
 	{
 		hb::shared::render::Window::ShowError("ERROR2", "File checksum error! Get Update again please!");
 		return false;
@@ -317,6 +327,8 @@ bool CGame::bInit()
 
 	// AudioManager initialized in bInit() with HWND
 	WeatherManager::Get().Initialize();
+	ChatManager::Get().Initialize();
+	ItemNameFormatter::Get().SetItemConfigs(m_pItemConfigList);
 	LocalCacheManager::Get().Initialize();
 
 #ifdef _DEBUG
@@ -333,6 +345,7 @@ void CGame::Quit()
 
 	// Shutdown manager singletons
 	WeatherManager::Get().Shutdown();
+	ChatManager::Get().Shutdown();
 	AudioManager::Get().Shutdown();
 	ConfigManager::Get().Shutdown();
 
@@ -356,17 +369,12 @@ void CGame::Quit()
 	for (auto& item : m_pItemList) item.reset();
 	for (auto& item : m_pBankList) item.reset();
 	m_floatingText.ClearAll();
-	for (auto& msg : m_pChatScrollList) msg.reset();
-	for (auto& msg : m_pWhisperMsg) msg.reset();
-	for (auto& item : m_pItemForSaleList) item.reset();
 	for (auto& magic : m_pMagicCfgList) magic.reset();
 	for (auto& skill : m_pSkillCfgList) skill.reset();
 	for (auto& msg : m_pMsgTextList) msg.reset();
 	for (auto& msg : m_pMsgTextList2) msg.reset();
 	for (auto& msg : m_pAgreeMsgTextList) msg.reset();
 	m_pExID.reset();
-	for (auto& item : m_pBuildItemList) item.reset();
-	for (auto& item : m_pDispBuildItemList) item.reset();
 	for (auto& msg : m_pGameMsgList) msg.reset();
 
 	// Clean up single pointers (unique_ptr handles null checks automatically)
@@ -936,7 +944,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	break;
 
 	case MsgId::CommandChatMsg:
-		if (m_bIsTeleportRequested == true) return false;
+		if (TeleportManager::Get().IsRequested()) return false;
 		if (pString == 0) return false;
 
 		// to Game Server
@@ -959,7 +967,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		break;
 
 	case MsgId::CommandCommon:
-		if (m_bIsTeleportRequested == true) return false;
+		if (TeleportManager::Get().IsRequested()) return false;
 		switch (wCommand) {
 		case CommonType::BuildItem:
 		{
@@ -1130,7 +1138,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 
-	m_bIsTeleportRequested = true;
+	TeleportManager::Get().SetRequested(true);
 	break;
 
 	case MsgId::RequestCivilRight:
@@ -1188,7 +1196,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	break;
 
 	default:
-		if (m_bIsTeleportRequested == true) return false;
+		if (TeleportManager::Get().IsRequested()) return false;
 		if ((wCommand == Type::Attack) || (wCommand == Type::AttackMove))
 		{
 			hb::net::PacketCommandMotionAttack req{};
@@ -1732,15 +1740,15 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		_CheckConfigsReadyAndEnterGame();
 		break;
 	case ClientMsgId::ResponseChargedTeleport:
-		ResponseChargedTeleport(pData);
+		TeleportManager::Get().HandleChargedTeleport(pData);
 		break;
 
 	case ClientMsgId::ResponseTeleportList:
-		ResponseTeleportList(pData);
+		TeleportManager::Get().HandleTeleportList(pData);
 		break;
 
 	case ClientMsgId::ResponseHeldenianTpList: // Snoopy Heldenian TP
-		ResponseHeldenianTeleportList(pData);
+		TeleportManager::Get().HandleHeldenianTeleportList(pData);
 		break;
 
 	case MsgId::ResponseNoticement:
@@ -1822,7 +1830,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		break;
 
 	case MSGID_RESPONSE_SHOP_CONTENTS:
-		ResponseShopContentsHandler(pData);
+		ShopManager::Get().HandleResponse(pData);
 		break;
 
 	case MsgId::CommandCheckConnection:
@@ -1948,38 +1956,13 @@ void CGame::OnTimer()
 	}
 }
 
-void CGame::_SetItemOrder(char cWhere, char cItemID)
-{
-	int i;
-
-	switch (cWhere) {
-	case 0:
-		for (i = 0; i < hb::shared::limits::MaxItems; i++)
-			if (m_cItemOrder[i] == cItemID)
-				m_cItemOrder[i] = -1;
-
-		for (i = 1; i < hb::shared::limits::MaxItems; i++)
-			if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1)) {
-				m_cItemOrder[i - 1] = m_cItemOrder[i];
-				m_cItemOrder[i] = -1;
-			}
-
-		for (i = 0; i < hb::shared::limits::MaxItems; i++)
-			if (m_cItemOrder[i] == -1) {
-				m_cItemOrder[i] = cItemID;
-				return;
-			}
-		break;
-	}
-}
-
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
 	char  cName[hb::shared::limits::ItemNameLen];
 	short sType, tX, tY;
 	hb::shared::entity::PlayerStatus iStatus;
 
-	if (bCheckItemOperationEnabled(cItemID) == false) return;
+	if (InventoryManager::Get().CheckItemOperationEnabled(cItemID) == false) return;
 
 	if ((m_sMCX != 0) && (m_sMCY != 0) && (abs(m_pPlayer->m_sPlayerX - m_sMCX) <= 8) && (abs(m_pPlayer->m_sPlayerY - m_sMCY) <= 8))
 	{
@@ -2200,8 +2183,6 @@ void CGame::InitGameSettings()
 	m_pPlayer->m_Controller.SetCommandTime(0);
 	m_dwCheckConnectionTime = 0;
 
-	m_bInputStatus = false;
-	m_pInputBuffer = 0;
 
 	m_Camera.SetShake(0);
 
@@ -2227,8 +2208,6 @@ void CGame::InitGameSettings()
 	m_bItemUsingStatus = false;
 	m_bUsingSlate = false;
 
-	m_bIsWhetherEffect = false;
-	m_cWhetherEffectType = 0;
 
 	m_iDownSkillIndex = -1;
 	m_dialogBoxManager.Info(DialogBoxId::Skill).bFlag = false;
@@ -2274,13 +2253,9 @@ void CGame::InitGameSettings()
 
 	m_floatingText.ClearAll();
 
-	for (i = 0; i < game_limits::max_chat_scroll_msgs; i++) {
-		if (m_pChatScrollList[i] != 0) m_pChatScrollList[i].reset();
-	}
+	ChatManager::Get().ClearMessages();
 
-	for (i = 0; i < game_limits::max_whisper_msgs; i++) {
-		if (m_pWhisperMsg[i] != 0) m_pWhisperMsg[i].reset();
-	}
+	ChatManager::Get().ClearWhispers();
 
 	std::memset(m_cLocation, 0, sizeof(m_cLocation));
 
@@ -2292,17 +2267,7 @@ void CGame::InitGameSettings()
 		std::memset(m_stGuildOpList[i].cName, 0, sizeof(m_stGuildOpList[i].cName));
 	}
 
-	for (i = 0; i < 6; i++) {
-		std::memset(m_stEventHistory[i].cTxt, 0, sizeof(m_stEventHistory[i].cTxt));
-		m_stEventHistory[i].dwTime = GameClock::GetTimeMS();
 
-		std::memset(m_stEventHistory2[i].cTxt, 0, sizeof(m_stEventHistory2[i].cTxt));
-		m_stEventHistory2[i].dwTime = GameClock::GetTimeMS();
-	}
-
-	for (i = 0; i < game_limits::max_menu_items; i++) {
-		if (m_pItemForSaleList[i] != 0) m_pItemForSaleList[i].reset();
-	}
 
 	for (i = 0; i < 41; i++) {
 		m_dialogBoxManager.Info(i).bFlag = false;
@@ -2349,14 +2314,12 @@ void CGame::InitGameSettings()
 
 	m_pPlayer->m_iLU_Point = 0;
 	m_pPlayer->m_wLU_Str = m_pPlayer->m_wLU_Vit = m_pPlayer->m_wLU_Dex = m_pPlayer->m_wLU_Int = m_pPlayer->m_wLU_Mag = m_pPlayer->m_wLU_Char = 0;
-	m_cWhetherStatus = 0;
 	m_cLogOutCount = -1;
 	m_dwLogOutCountTime = 0;
 	m_pPlayer->m_iSuperAttackLeft = 0;
 	m_pPlayer->m_bSuperAttackMode = false;
 	m_iFightzoneNumber = 0;
 	std::memset(m_cBGMmapName, 0, sizeof(m_cBGMmapName));
-	m_dwWOFtime = 0;
 	m_stQuest.sWho = 0;
 	m_stQuest.sQuestType = 0;
 	m_stQuest.sContribution = 0;
@@ -2382,7 +2345,6 @@ void CGame::InitGameSettings()
 	m_pPlayer->m_iSpecialAbilityTimeLeftSec = 0;
 	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
-	m_bIsTeleportRequested = false;
 	for (i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 	{
 		m_stCrusadeStructureInfo[i].cType = 0;
@@ -2397,8 +2359,7 @@ void CGame::InitGameSettings()
 	m_dwTopMsgTime = 0;
 	m_pPlayer->m_iConstructionPoint = 0;
 	m_pPlayer->m_iWarContribution = 0;
-	std::memset(m_cTeleportMapName, 0, sizeof(m_cTeleportMapName));
-	m_iTeleportLocX = m_iTeleportLocY = -1;
+	TeleportManager::Get().Reset();
 	std::memset(m_cConstructMapName, 0, sizeof(m_cConstructMapName));
 	m_pPlayer->m_iConstructLocX = m_pPlayer->m_iConstructLocY = -1;
 
@@ -2560,36 +2521,19 @@ void CGame::_ShiftGuildOperationList()
 		}
 }
 
+void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
+{
+	m_dialogBoxManager.EnableDialogBox(iBoxID, cType, sV1, sV2, pString);
+}
+
+void CGame::DisableDialogBox(int iBoxID)
+{
+	m_dialogBoxManager.DisableDialogBox(iBoxID);
+}
+
 void CGame::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 {
-	int i;
-	if ((bDupAllow == false) && (strcmp(m_stEventHistory[5].cTxt, pTxt) == 0)) return;
-	if (cColor == 10)
-	{
-		for (i = 1; i < 6; i++)
-		{
-			std::snprintf(m_stEventHistory2[i - 1].cTxt, sizeof(m_stEventHistory2[i - 1].cTxt), "%s", m_stEventHistory2[i].cTxt);
-			m_stEventHistory2[i - 1].cColor = m_stEventHistory2[i].cColor;
-			m_stEventHistory2[i - 1].dwTime = m_stEventHistory2[i].dwTime;
-		}
-		std::memset(m_stEventHistory2[5].cTxt, 0, sizeof(m_stEventHistory2[5].cTxt));
-		std::snprintf(m_stEventHistory2[5].cTxt, sizeof(m_stEventHistory2[5].cTxt), "%s", pTxt);
-		m_stEventHistory2[5].cColor = cColor;
-		m_stEventHistory2[5].dwTime = m_dwCurTime;
-	}
-	else
-	{
-		for (i = 1; i < 6; i++)
-		{
-			std::snprintf(m_stEventHistory[i - 1].cTxt, sizeof(m_stEventHistory[i - 1].cTxt), "%s", m_stEventHistory[i].cTxt);
-			m_stEventHistory[i - 1].cColor = m_stEventHistory[i].cColor;
-			m_stEventHistory[i - 1].dwTime = m_stEventHistory[i].dwTime;
-		}
-		std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
-		std::snprintf(m_stEventHistory[5].cTxt, sizeof(m_stEventHistory[5].cTxt), "%s", pTxt);
-		m_stEventHistory[5].cColor = cColor;
-		m_stEventHistory[5].dwTime = m_dwCurTime;
-	}
+	EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
 }
 
 int _iAttackerHeight[] = { 0, 35, 35,35,35,35,35, 0,0,0,
@@ -2676,118 +2620,6 @@ int _iAttackerHeight[] = { 0, 35, 35,35,35,35,35, 0,0,0,
 35, // ncp 90 Gail
 35  // Gate 91
 };
-
-void CGame::_LoadShopMenuContents(char cType)
-{
-	// Request shop contents from server using NPC type
-	_RequestShopContents(static_cast<int16_t>(cType));
-}
-
-void CGame::_RequestShopContents(int16_t npcType)
-{
-	// Clear existing shop items
-	for (int i = 0; i < game_limits::max_sell_list; i++) {
-		if (m_pItemForSaleList[i] != nullptr) {
-			m_pItemForSaleList[i].reset();
-			m_pItemForSaleList[i].reset();
-		}
-	}
-
-	// Build and send shop request packet
-	char cData[sizeof(hb::net::PacketShopRequest)];
-	std::memset(cData, 0, sizeof(cData));
-
-	auto* req = reinterpret_cast<hb::net::PacketShopRequest*>(cData);
-	req->header.msg_id = MSGID_REQUEST_SHOP_CONTENTS;
-	req->header.msg_type = MsgType::Confirm;
-	req->npcType = npcType;
-
-	m_pGSock->iSendMsg(cData, sizeof(hb::net::PacketShopRequest));
-}
-
-void CGame::ResponseShopContentsHandler(char* pData)
-{
-	const auto* resp = hb::net::PacketCast<hb::net::PacketShopResponseHeader>(
-		pData, sizeof(hb::net::PacketShopResponseHeader));
-	if (!resp) {
-		return;
-	}
-
-	uint16_t itemCount = resp->itemCount;
-
-	if (itemCount > game_limits::max_menu_items) {
-		itemCount = game_limits::max_menu_items;
-	}
-
-	// Clear existing shop items
-	for (int i = 0; i < game_limits::max_menu_items; i++) {
-		if (m_pItemForSaleList[i] != nullptr) {
-			m_pItemForSaleList[i].reset();
-			m_pItemForSaleList[i].reset();
-		}
-	}
-
-	// Get item IDs from packet (they follow the header)
-	const int16_t* itemIds = reinterpret_cast<const int16_t*>(pData + sizeof(hb::net::PacketShopResponseHeader));
-
-	// Populate shop list from item configs
-	int shopIndex = 0;
-	int skippedCount = 0;
-	int notFoundCount = 0;
-	for (uint16_t i = 0; i < itemCount && shopIndex < game_limits::max_menu_items; i++) {
-		int16_t itemId = itemIds[i];
-		if (itemId <= 0 || itemId >= 5000) {
-			skippedCount++;
-			continue;
-		}
-		if (m_pItemConfigList[itemId] == nullptr) {
-			notFoundCount++;
-			skippedCount++;
-			continue;
-		}
-
-		// Create new item for shop based on config
-		m_pItemForSaleList[shopIndex] = std::make_unique<CItem>();
-		CItem* pItem = m_pItemForSaleList[shopIndex].get();
-		CItem* pConfig = m_pItemConfigList[itemId].get();
-
-		// Copy item data from config
-		pItem->m_sIDnum = itemId;
-		std::memcpy(pItem->m_cName, pConfig->m_cName, sizeof(pItem->m_cName));
-		pItem->m_cItemType = pConfig->m_cItemType;
-		pItem->m_cEquipPos = pConfig->m_cEquipPos;
-		pItem->m_sSprite = pConfig->m_sSprite;
-		pItem->m_sSpriteFrame = pConfig->m_sSpriteFrame;
-		pItem->m_wPrice = pConfig->m_wPrice;
-		pItem->m_wWeight = pConfig->m_wWeight;
-		pItem->m_sItemEffectValue1 = pConfig->m_sItemEffectValue1;
-		pItem->m_sItemEffectValue2 = pConfig->m_sItemEffectValue2;
-		pItem->m_sItemEffectValue3 = pConfig->m_sItemEffectValue3;
-		pItem->m_sItemEffectValue4 = pConfig->m_sItemEffectValue4;
-		pItem->m_sItemEffectValue5 = pConfig->m_sItemEffectValue5;
-		pItem->m_sItemEffectValue6 = pConfig->m_sItemEffectValue6;
-		pItem->m_wMaxLifeSpan = pConfig->m_wMaxLifeSpan;
-		pItem->m_sLevelLimit = pConfig->m_sLevelLimit;
-		pItem->m_cGenderLimit = pConfig->m_cGenderLimit;
-		pItem->m_sSpecialEffect = pConfig->m_sSpecialEffect;
-		pItem->m_cSpeed = pConfig->m_cSpeed;
-
-		shopIndex++;
-	}
-
-	printf("[SHOP] Populated: %d items added, %d skipped (%d not found in config list)\n", shopIndex, skippedCount, notFoundCount);
-
-	// Only show shop dialog if we have items and there was a pending request
-	if (shopIndex > 0 && m_sPendingShopType != 0) {
-		// Enable the SaleMenu dialog - this will call EnableDialogBox which sets up the dialog
-		EnableDialogBox(static_cast<int>(DialogBoxId::SaleMenu), m_sPendingShopType, 0, 0, nullptr);
-		m_sPendingShopType = 0;  // Clear pending request
-	} else if (m_sPendingShopType != 0) {
-		// No items available - show message to user
-		AddEventList("This shop has no items available.", 10);
-		m_sPendingShopType = 0;
-	}
-}
 
 bool CGame::bCheckImportantFile()
 {
@@ -3552,19 +3384,6 @@ void CGame::ReleaseUnusedSprites()
 	AudioManager::Get().Update();
 }
 
-void CGame::PutChatScrollList(char* pMsg, char cType)
-{
-	if (m_pChatScrollList[game_limits::max_chat_scroll_msgs - 1] != 0)
-	{
-		m_pChatScrollList[game_limits::max_chat_scroll_msgs - 1].reset();
-	}
-	for (int i = game_limits::max_chat_scroll_msgs - 2; i >= 0; i--)
-	{
-		m_pChatScrollList[i + 1] = std::move(m_pChatScrollList[i]);
-	}
-	m_pChatScrollList[0] = std::make_unique<CMsg>(1, pMsg, cType);
-}
-
 void CGame::ChatMsgHandler(char* pData)
 {
 	int iObjectID, iLoc;
@@ -3599,11 +3418,11 @@ void CGame::ChatMsgHandler(char* pData)
 	if ((cMsgType == 0) || (cMsgType == 2) || (cMsgType == 3))
 	{
 	}
-	if (!m_bWhisper)
+	if (!ChatManager::Get().IsWhisperEnabled())
 	{
 		if (cMsgType == 20) return;
 	}
-	if (!m_bShout)
+	if (!ChatManager::Get().IsShoutEnabled())
 	{
 		if (cMsgType == 2 || cMsgType == 3) return;
 	}
@@ -3621,7 +3440,7 @@ void CGame::ChatMsgHandler(char* pData)
 		// GetTextLength returns how many chars fit; if all fit, no wrapping needed
 		if (iLoc >= msgLen)
 		{
-			PutChatScrollList(cMsg, cMsgType);
+			ChatManager::Get().AddMessage(cMsg, cMsgType);
 			bFlag = true;
 		}
 		else if (iLoc > 0)
@@ -3633,7 +3452,7 @@ void CGame::ChatMsgHandler(char* pData)
 			{
 				std::memset(cTemp, 0, sizeof(cTemp));
 				memcpy(cTemp, cMsg, iLoc);
-				PutChatScrollList(cTemp, cMsgType);
+				ChatManager::Get().AddMessage(cTemp, cMsgType);
 				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc);
 				std::memset(cMsg, 0, sizeof(cMsg));
@@ -3643,7 +3462,7 @@ void CGame::ChatMsgHandler(char* pData)
 			{
 				std::memset(cTemp, 0, sizeof(cTemp));
 				memcpy(cTemp, cMsg, iLoc + 1);
-				PutChatScrollList(cTemp, cMsgType);
+				ChatManager::Get().AddMessage(cTemp, cMsgType);
 				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", cMsg + iLoc + 1);
 				std::memset(cMsg, 0, sizeof(cMsg));
@@ -3653,7 +3472,7 @@ void CGame::ChatMsgHandler(char* pData)
 		else
 		{
 			// Edge case: even a single char doesn't fit, add anyway to avoid infinite loop
-			PutChatScrollList(cMsg, cMsgType);
+			ChatManager::Get().AddMessage(cMsg, cMsgType);
 			bFlag = true;
 		}
 	}
@@ -3669,16 +3488,7 @@ void CGame::ChatMsgHandler(char* pData)
 				std::memset(cHeadMsg, 0, sizeof(cHeadMsg));
 				std::snprintf(cHeadMsg, sizeof(cHeadMsg), "%s:%s", cName, cp);
 				if (cMsgType == 10) {
-					// GM broadcast: route to top-left event area instead of bottom status area
-					for (int j = 1; j < 6; j++) {
-						std::snprintf(m_stEventHistory[j - 1].cTxt, sizeof(m_stEventHistory[j - 1].cTxt), "%s", m_stEventHistory[j].cTxt);
-						m_stEventHistory[j - 1].cColor = m_stEventHistory[j].cColor;
-						m_stEventHistory[j - 1].dwTime = m_stEventHistory[j].dwTime;
-					}
-					std::memset(m_stEventHistory[5].cTxt, 0, sizeof(m_stEventHistory[5].cTxt));
-					std::snprintf(m_stEventHistory[5].cTxt, sizeof(m_stEventHistory[5].cTxt), "%s", cHeadMsg);
-					m_stEventHistory[5].cColor = cMsgType;
-					m_stEventHistory[5].dwTime = m_dwCurTime;
+					EventListManager::Get().AddEventTop(cHeadMsg, cMsgType);
 				} else {
 					AddEventList(cHeadMsg, cMsgType);
 				}
@@ -3724,7 +3534,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 	if (m_bIsCrusadeMode)
 	{
 		if (m_pPlayer->m_iConstructLocX != -1) DrawNewDialogBox(InterfaceNdCrusade, m_pPlayer->m_iConstructLocX * 32 - m_Camera.GetX(), m_pPlayer->m_iConstructLocY * 32 - m_Camera.GetY(), 41);
-		if (m_iTeleportLocX != -1) DrawNewDialogBox(InterfaceNdCrusade, m_iTeleportLocX * 32 - m_Camera.GetX(), m_iTeleportLocY * 32 - m_Camera.GetY(), 42);
+		if (TeleportManager::Get().GetLocX() != -1) DrawNewDialogBox(InterfaceNdCrusade, TeleportManager::Get().GetLocX() * 32 - m_Camera.GetX(), TeleportManager::Get().GetLocY() * 32 - m_Camera.GetY(), 42);
 	}
 }
 
@@ -4043,7 +3853,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		int btnW = 42;
 		int btnH = 41;
 
-		bool bMastered = (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100);
+		bool bMastered = (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100);
 
 		// Draw additive overlay sprite at combat icon position only when ALT is held
 		if (hb::shared::input::IsAltDown() && bMastered)
@@ -4077,642 +3887,6 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 		m_pSprite[ItemEquipPivotPoint + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
 		m_pSprite[ItemEquipPivotPoint + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
-}
-
-void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
-{
-	int i;
-	short sX, sY;
-
-	switch (iBoxID) {
-	case DialogBoxId::RepairAll: //50Cent - Repair all
-		m_dialogBoxManager.Info(DialogBoxId::RepairAll).cMode = cType;
-		break;
-	case DialogBoxId::SaleMenu:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) == false)
-		{
-			switch (cType) {
-			case 0:
-				break;
-			default:
-				// Check if shop items are already loaded (called from ResponseShopContentsHandler)
-				if (m_pItemForSaleList[0] != nullptr) {
-					// Items already loaded - just show the dialog
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV1 = cType;
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = 0;
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView = 0;
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).bFlag = true;
-					m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
-				} else {
-					// Request contents from server - dialog will be shown when response arrives
-					m_sPendingShopType = cType;
-					_LoadShopMenuContents(cType);
-				}
-				break;
-			}
-		}
-		break;
-
-	case DialogBoxId::LevelUpSetting: // levelup diag
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::LevelUpSetting) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX + 20;
-			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY + 20;
-			m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sV1 = m_pPlayer->m_iLU_Point;
-		}
-		break;
-
-	case DialogBoxId::Magic: // Magic Dialog
-		break;
-
-	case DialogBoxId::ItemDropConfirm:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView = cType;
-		}
-		break;
-
-	case DialogBoxId::WarningBattleArea:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::WarningBattleArea) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sView = cType;
-		}
-		break;
-
-	case DialogBoxId::GuildMenu:
-		if (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1) {
-			sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
-			sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
-			EndInputString();
-			StartInputString(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
-		}
-		break;
-
-	case DialogBoxId::ItemDropExternal: // demande quantit�
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == false)
-		{
-			m_dialogBoxManager.Info(iBoxID).cMode = 1;
-			m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView = cType;
-			EndInputString();
-			std::memset(m_cAmountString, 0, sizeof(m_cAmountString));
-			std::snprintf(m_cAmountString, sizeof(m_cAmountString), "%d", sV1);
-			sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
-			sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-			StartInputString(sX + 40, sY + 57, 11, m_cAmountString, false);
-		}
-		else
-		{
-			if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1)
-			{
-				sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
-				sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-				EndInputString();
-				StartInputString(sX + 40, sY + 57, 11, m_cAmountString, false);
-			}
-		}
-		break;
-
-	case DialogBoxId::Text:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Text) == false)
-		{
-			switch (cType) {
-			case 0:
-				m_dialogBoxManager.Info(DialogBoxId::Text).cMode = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Text).sView = 0;
-				break;
-			default:
-				_LoadTextDlgContents(cType);
-				m_dialogBoxManager.Info(DialogBoxId::Text).cMode = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Text).sView = 0;
-				break;
-			}
-		}
-		break;
-
-	case DialogBoxId::SystemMenu:
-		break;
-
-	case DialogBoxId::NpcActionQuery: // Talk to npc or unicorn
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1] = false;
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV1 = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV2 = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 =
-				m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV4 = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV5 = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV6 = 0;
-			m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sView = 0;
-			m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1 = sV1;
-			m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV2 = sV2;
-		}
-		break;
-
-	case DialogBoxId::NpcTalk:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::NpcTalk).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sView = 0;
-			m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV1 = _iLoadTextDlgContents2(sV1 + 20);
-			m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV2 = sV1 + 20;
-		}
-		break;
-
-	case DialogBoxId::Map:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Map) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Map).sV1 = sV1;
-			m_dialogBoxManager.Info(DialogBoxId::Map).sV2 = sV2;
-
-			m_dialogBoxManager.Info(DialogBoxId::Map).sSizeX = 290;
-			m_dialogBoxManager.Info(DialogBoxId::Map).sSizeY = 290;
-		}
-		break;
-
-	case DialogBoxId::SellOrRepair:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV1 = sV1;		// ItemID
-			m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sV2 = sV2;
-			if (cType == 2)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sX = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX;
-				m_dialogBoxManager.Info(DialogBoxId::SellOrRepair).sY = m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY;
-			}
-		}
-		break;
-
-	case DialogBoxId::Skill:
-		break;
-
-	case DialogBoxId::Fishing:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Fishing) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::Fishing).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::Fishing).sV1 = sV1;
-			m_dialogBoxManager.Info(DialogBoxId::Fishing).sV2 = sV2;
-			m_bSkillUsingStatus = true;
-		}
-		break;
-
-	case DialogBoxId::Noticement:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Noticement) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Noticement).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::Noticement).sV1 = sV1;
-			m_dialogBoxManager.Info(DialogBoxId::Noticement).sV2 = sV2;
-		}
-		break;
-
-	case DialogBoxId::Manufacture:
-		switch (cType) {
-		case DialogBoxId::CharacterInfo:
-		case DialogBoxId::Inventory: //
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == false)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode = cType;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0] = 0;
-				m_bSkillUsingStatus = true;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeX = 195;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeY = 215;
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			}
-			break;
-
-		case DialogBoxId::Magic:	//
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == false)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sView = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode = cType;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0] = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[1] = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[4] = 0;
-				m_bSkillUsingStatus = true;
-				_bCheckBuildItemStatus();
-				//m_dialogBoxManager.Info(DialogBoxId::Manufacture).sX = 0;
-				//m_dialogBoxManager.Info(DialogBoxId::Manufacture).sY = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeX = 270;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeY = 381;
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			}
-			break;
-
-		case DialogBoxId::WarningBattleArea:
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == false)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode = cType;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[2] = sV1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[3] = sV2;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeX = 270;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeY = 381;
-				m_bSkillUsingStatus = true;
-				_bCheckBuildItemStatus();
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			}
-			break;
-			// Crafting
-		case DialogBoxId::GuildMenu:
-		case DialogBoxId::GuildOperation:
-			if (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == false)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cMode = cType;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0] = 0;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[1] = 0;
-				m_bSkillUsingStatus = true;
-				//_bCheckCraftItemStatus();
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeX = 195;
-				m_dialogBoxManager.Info(DialogBoxId::Manufacture).sSizeY = 215;
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			}
-			break;
-		}
-		break;
-
-	case DialogBoxId::Exchange: // Snoopy: 7 mar 06 (multitrade) case rewriten
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::Exchange).cMode = cType;
-			for (i = 0; i < 8; i++)
-			{
-				std::memset(m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr1));
-				std::memset(m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr2));
-				m_stDialogBoxExchangeInfo[i].sV1 = -1;
-				m_stDialogBoxExchangeInfo[i].sV2 = -1;
-				m_stDialogBoxExchangeInfo[i].sV3 = -1;
-				m_stDialogBoxExchangeInfo[i].sV4 = -1;
-				m_stDialogBoxExchangeInfo[i].sV5 = -1;
-				m_stDialogBoxExchangeInfo[i].sV6 = -1;
-				m_stDialogBoxExchangeInfo[i].sV7 = -1;
-				m_stDialogBoxExchangeInfo[i].dwV1 = 0;
-			}
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		}
-		break;
-
-	case DialogBoxId::ConfirmExchange: // Snoopy: 7 mar 06 (MultiTrade) Confirmation dialog
-		break;
-
-	case DialogBoxId::Quest:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Quest) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Quest).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::Quest).sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX + 20;
-			m_dialogBoxManager.Info(DialogBoxId::Quest).sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY + 20;
-		}
-		break;
-
-	case DialogBoxId::Party:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Party) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Party).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::Party).sX = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sX + 20;
-			m_dialogBoxManager.Info(DialogBoxId::Party).sY = m_dialogBoxManager.Info(DialogBoxId::CharacterInfo).sY + 20;
-		}
-		break;
-
-	case DialogBoxId::CrusadeJob:
-		if ((m_pPlayer->m_iHP <= 0) || (m_pPlayer->m_bCitizen == false)) return;
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::CrusadeJob) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sX = 360 ;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sY = 65 ;
-			m_dialogBoxManager.Info(DialogBoxId::CrusadeJob).sV1 = sV1;
-		}
-		break;
-
-	case DialogBoxId::ItemUpgrade:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
-		}
-		else if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemUpgrade) == false)
-		{
-			int iSoX, iSoM;
-			iSoX = iSoM = 0;
-			for (i = 0; i < hb::shared::limits::MaxItems; i++)
-				if (m_pItemList[i] != 0)
-				{
-					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
-					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 129)) iSoM++;
-				}
-			if ((iSoX > 0) || (iSoM > 0))
-			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 6; // Stone upgrade
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2 = iSoX;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3 = iSoM;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
-			}
-			else if (m_iGizonItemUpgradeLeft > 0)
-			{
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).cMode = 1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV2 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV3 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 = -1;
-				m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
-			}
-			else
-			{
-				AddEventList(DRAW_DIALOGBOX_ITEMUPGRADE30, 10); // "Stone of Xelima or Merien is not present."
-				return;
-			}
-		}
-		break;
-
-	case DialogBoxId::MagicShop:
-		if (m_dialogBoxManager.IsEnabled(iBoxID) == false) {
-			if (m_pPlayer->m_iSkillMastery[4] == 0) {
-				m_dialogBoxManager.DisableDialogBox(DialogBoxId::MagicShop);
-				m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcTalk, 0, 480, 0);
-				return;
-			}
-			else {
-				m_dialogBoxManager.Info(iBoxID).cMode = 0;
-				m_dialogBoxManager.Info(iBoxID).sView = 0;
-			}
-		}
-		break;
-
-	case DialogBoxId::Bank:
-		EndInputString();
-		if (m_dialogBoxManager.IsEnabled(iBoxID) == false) {
-			m_dialogBoxManager.Info(iBoxID).cMode = 0;
-			m_dialogBoxManager.Info(iBoxID).sView = 0;
-			m_dialogBoxManager.EnableDialogBox(DialogBoxId::Inventory, 0, 0, 0);
-		}
-		break;
-
-	case DialogBoxId::Slates: // Slates
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Slates) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sView = 0;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).cMode = cType;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV1 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV2 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV3 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV4 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV5 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sV6 = -1;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).cStr[0] = 0;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).cStr[1] = 0;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).cStr[4] = 0;
-
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeX = 180;
-			m_dialogBoxManager.Info(DialogBoxId::Slates).sSizeY = 183;
-
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::ItemDropExternal);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcActionQuery);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
-			m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
-		}
-		break;
-	case DialogBoxId::ChangeStatsMajestic:
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChangeStatsMajestic) == false) {
-			m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sX = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sX + 10;
-			m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sY = m_dialogBoxManager.Info(DialogBoxId::LevelUpSetting).sY + 10;
-			m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).cMode = 0;
-			m_dialogBoxManager.Info(DialogBoxId::ChangeStatsMajestic).sView = 0;
-			m_pPlayer->m_wLU_Str = m_pPlayer->m_wLU_Vit = m_pPlayer->m_wLU_Dex = 0;
-			m_pPlayer->m_wLU_Int = m_pPlayer->m_wLU_Mag = m_pPlayer->m_wLU_Char = 0;
-			m_bSkillUsingStatus = false;
-		}
-		break;
-	case DialogBoxId::Resurrect: // Snoopy: Resurection
-		if (m_dialogBoxManager.IsEnabled(DialogBoxId::Resurrect) == false)
-		{
-			m_dialogBoxManager.Info(DialogBoxId::Resurrect).sX = 185;
-			m_dialogBoxManager.Info(DialogBoxId::Resurrect).sY = 100;
-			m_dialogBoxManager.Info(DialogBoxId::Resurrect).cMode = 0;
-			m_dialogBoxManager.Info(DialogBoxId::Resurrect).sView = 0;
-			m_bSkillUsingStatus = false;
-		}
-		break;
-
-	default:
-		EndInputString();
-		if (m_dialogBoxManager.IsEnabled(iBoxID) == false) {
-			m_dialogBoxManager.Info(iBoxID).cMode = 0;
-			m_dialogBoxManager.Info(iBoxID).sView = 0;
-		}
-		break;
-	}
-	// Bounds-check dialog positions, but skip the HudPanel which has a fixed position at the bottom
-	if (iBoxID != DialogBoxId::HudPanel)
-	{
-		if (m_dialogBoxManager.IsEnabled(iBoxID) == false)
-		{
-			// Clamp dialog positions to ensure they stay visible on screen
-			int maxX = LOGICAL_WIDTH() - 20;
-			int maxY = LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT() - 20;
-			if (m_dialogBoxManager.Info(iBoxID).sY > maxY) m_dialogBoxManager.Info(iBoxID).sY = maxY;
-			if (m_dialogBoxManager.Info(iBoxID).sX > maxX) m_dialogBoxManager.Info(iBoxID).sX = maxX;
-			if ((m_dialogBoxManager.Info(iBoxID).sX + m_dialogBoxManager.Info(iBoxID).sSizeX) < 10) m_dialogBoxManager.Info(iBoxID).sX += 20;
-			if ((m_dialogBoxManager.Info(iBoxID).sY + m_dialogBoxManager.Info(iBoxID).sSizeY) < 10) m_dialogBoxManager.Info(iBoxID).sY += 20;
-		}
-	}
-	m_dialogBoxManager.SetEnabled(iBoxID, true);
-	if (pString != 0) std::snprintf(m_dialogBoxManager.Info(iBoxID).cStr, sizeof(m_dialogBoxManager.Info(iBoxID).cStr), "%s", pString);
-	//Snoopy: 39->59
-	for (i = 0; i < 59; i++)
-		if (m_dialogBoxManager.OrderAt(i) == iBoxID) m_dialogBoxManager.SetOrderAt(i, 0);
-	//Snoopy: 39->59
-	for (i = 1; i < 59; i++)
-		if ((m_dialogBoxManager.OrderAt(i - 1) == 0) && (m_dialogBoxManager.OrderAt(i) != 0)) {
-			m_dialogBoxManager.SetOrderAt(i - 1, m_dialogBoxManager.OrderAt(i));
-			m_dialogBoxManager.SetOrderAt(i, 0);
-		}
-	//Snoopy: 39->59
-	for (i = 0; i < 59; i++)
-		if (m_dialogBoxManager.OrderAt(i) == 0) {
-			m_dialogBoxManager.SetOrderAt(i, static_cast<char>(iBoxID));
-			return;
-		}
-}
-
-void CGame::DisableDialogBox(int iBoxID)
-{
-	int i;
-
-	switch (iBoxID) {
-	case DialogBoxId::ItemDropConfirm:
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropConfirm).sView] = false;
-		break;
-
-	case DialogBoxId::WarningBattleArea:
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::WarningBattleArea).sView] = false;
-		break;
-
-	case DialogBoxId::GuildMenu:
-		if (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1)
-			EndInputString();
-		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 0;
-		break;
-
-	case DialogBoxId::SaleMenu:
-		for (i = 0; i < game_limits::max_menu_items; i++)
-			if (m_pItemForSaleList[i] != 0) {
-				m_pItemForSaleList[i].reset();
-			}
-		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 = 0;
-		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4 = 0; // v1.4
-		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV5 = 0;
-		m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = 0;
-		break;
-
-	case DialogBoxId::Bank:
-		if (m_dialogBoxManager.Info(DialogBoxId::Bank).cMode < 0) return;
-		break;
-
-	case DialogBoxId::ItemDropExternal:
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1) {
-			EndInputString();
-			m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sView] = false;
-		}
-		break;
-
-	case DialogBoxId::NpcActionQuery: // v1.4
-		m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV1] = false;
-		break;
-
-	case DialogBoxId::NpcTalk:
-		if (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV2 == 500)
-		{
-			bSendCommand(MsgId::CommandCommon, CommonType::GetMagicAbility, 0, 0, 0, 0, 0);
-		}
-		break;
-
-	case DialogBoxId::Fishing:
-		m_bSkillUsingStatus = false;
-		break;
-
-	case DialogBoxId::Manufacture:
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1] = false;
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2] = false;
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3] = false;
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4] = false;
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5] = false;
-		if (m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6 != -1) m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6] = false;
-		m_bSkillUsingStatus = false;
-		break;
-
-	case DialogBoxId::Exchange: //Snoopy: 7 mar 06 (multiTrade) case rewriten
-		for (i = 0; i < 8; i++)
-		{
-			// Re-enable item before clearing the slot
-			int sItemID = m_stDialogBoxExchangeInfo[i].sItemID;
-			if (sItemID >= 0 && sItemID < hb::shared::limits::MaxItems && m_bIsItemDisabled[sItemID])
-				m_bIsItemDisabled[sItemID] = false;
-
-			std::memset(m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr1));
-			std::memset(m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr2));
-			m_stDialogBoxExchangeInfo[i].sV1 = -1;
-			m_stDialogBoxExchangeInfo[i].sV2 = -1;
-			m_stDialogBoxExchangeInfo[i].sV3 = -1;
-			m_stDialogBoxExchangeInfo[i].sV4 = -1;
-			m_stDialogBoxExchangeInfo[i].sV5 = -1;
-			m_stDialogBoxExchangeInfo[i].sV6 = -1;
-			m_stDialogBoxExchangeInfo[i].sV7 = -1;
-			m_stDialogBoxExchangeInfo[i].sItemID = -1;
-			m_stDialogBoxExchangeInfo[i].dwV1 = 0;
-		}
-		break;
-
-	case DialogBoxId::SellList:
-		for (i = 0; i < game_limits::max_sell_list; i++)
-		{
-			if (m_stSellItemList[i].iIndex != -1) m_bIsItemDisabled[m_stSellItemList[i].iIndex] = false;
-			m_stSellItemList[i].iIndex = -1;
-			m_stSellItemList[i].iAmount = 0;
-		}
-		break;
-
-	case DialogBoxId::ItemUpgrade:
-		if (m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1 != -1)
-			m_bIsItemDisabled[m_dialogBoxManager.Info(DialogBoxId::ItemUpgrade).sV1] = false;
-		break;
-
-	case DialogBoxId::Slates:
-	{
-		auto& info = m_dialogBoxManager.Info(DialogBoxId::Slates);
-		auto clearSlot = [&](int idx) {
-			if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_bIsItemDisabled[idx] = false;
-		};
-		clearSlot(info.sV1);
-		clearSlot(info.sV2);
-		clearSlot(info.sV3);
-		clearSlot(info.sV4);
-	}
-
-		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr));
-		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr2, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr2));
-		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr3, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr3));
-		std::memset(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr4, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Slates).cStr4));
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV1 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV2 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV3 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV4 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV5 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV6 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV9 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV10 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV11 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV12 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV13 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).sV14 = -1;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).dwV1 = 0;
-		m_dialogBoxManager.Info(DialogBoxId::Slates).dwV2 = 0;
-		break;
-
-	case DialogBoxId::ChangeStatsMajestic:
-		m_pPlayer->m_wLU_Str = 0;
-		m_pPlayer->m_wLU_Vit = 0;
-		m_pPlayer->m_wLU_Dex = 0;
-		m_pPlayer->m_wLU_Int = 0;
-		m_pPlayer->m_wLU_Mag = 0;
-		m_pPlayer->m_wLU_Char = 0;
-		break;
-
-	}
-
-	// Call OnDisable for migrated dialogs
-	if (auto* pDlg = m_dialogBoxManager.GetDialogBox(iBoxID))
-		pDlg->OnDisable();
-
-	m_dialogBoxManager.SetEnabled(iBoxID, false);
-	// Snoopy: 39->59
-	for (i = 0; i < 59; i++)
-		if (m_dialogBoxManager.OrderAt(i) == iBoxID)
-			m_dialogBoxManager.SetOrderAt(i, 0);
-
-	// Snoopy: 39->59
-	for (i = 1; i < 59; i++)
-		if ((m_dialogBoxManager.OrderAt(i - 1) == 0) && (m_dialogBoxManager.OrderAt(i) != 0))
-		{
-			m_dialogBoxManager.SetOrderAt(i - 1, m_dialogBoxManager.OrderAt(i));
-			m_dialogBoxManager.SetOrderAt(i, 0);
-		}
 }
 
 int CGame::iGetTopDialogBoxIndex()
@@ -4855,121 +4029,6 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 			sIndex++;
 		}
 	}
-}
-
-bool CGame::GetText(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
-{
-	size_t len;
-	if (m_pInputBuffer == 0) return false;
-
-#ifndef WM_CHAR
-#define WM_CHAR 0x0102
-#endif
-
-	switch (msg) {
-	case WM_CHAR:
-		if (wparam == 8)
-		{
-			if (strlen(m_pInputBuffer) > 0)
-			{
-				len = strlen(m_pInputBuffer);
-				switch (GetCharKind(m_pInputBuffer, static_cast<int>(len) - 1)) {
-				case 1:
-					m_pInputBuffer[len - 1] = 0;
-					break;
-				case 2:
-				case 3:
-					m_pInputBuffer[len - 2] = 0;
-					m_pInputBuffer[len - 1] = 0;
-					break;
-				}
-				std::memset(m_cEdit, 0, sizeof(m_cEdit));
-			}
-		}
-		else if ((wparam != 9) && (wparam != 13) && (wparam != 27))
-		{
-			len = strlen(m_pInputBuffer);
-			if (len >= static_cast<size_t>(m_cInputMaxLen) - 1) return false;
-			m_pInputBuffer[len] = wparam & 0xff;
-			m_pInputBuffer[len + 1] = 0;
-		}
-		return true;
-	}
-	return false;
-}
-
-int CGame::GetCharKind(char* str, int index)
-{
-	int kind = 1;
-	do
-	{
-		if (kind == 2) kind = 3;
-		else
-		{
-			if ((unsigned char)*str < 128) kind = 1;
-			else kind = 2;
-		}
-		str++;
-		index--;
-	} while (index >= 0);
-	return kind;
-}
-
-void CGame::ShowReceivedString(bool bIsHide)
-{
-	// Safety check: m_pInputBuffer may not be initialized yet
-	if (m_pInputBuffer == nullptr) return;
-
-	std::memset(G_cTxt, 0, sizeof(G_cTxt));
-
-	std::snprintf(G_cTxt, sizeof(G_cTxt), "%s", m_pInputBuffer);
-	if ((m_cEdit[0] != 0) && (strlen(m_pInputBuffer) + strlen(m_cEdit) + 1 <= m_cInputMaxLen))
-	{
-		std::snprintf(G_cTxt + strlen(m_pInputBuffer), sizeof(G_cTxt) - strlen(m_pInputBuffer), "%s", m_cEdit);
-	}
-
-	if (bIsHide == true)
-	{
-		for (unsigned char i = 0; i < strlen(G_cTxt); i++)
-			if (G_cTxt[i] != 0) G_cTxt[i] = '*';
-	}
-
-	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
-
-	hb::shared::text::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InputNormal));
-}
-
-void CGame::ClearInputString()
-{
-	if (m_pInputBuffer != 0)	std::memset(m_pInputBuffer, 0, sizeof(m_pInputBuffer));
-	std::memset(m_cEdit, 0, sizeof(m_cEdit));
-}
-
-void CGame::StartInputString(int sX, int sY, unsigned char iLen, char* pBuffer, bool bIsHide)
-{
-	m_bInputStatus = true;
-	m_iInputX = sX;
-	m_iInputY = sY;
-	m_pInputBuffer = pBuffer;
-	std::memset(m_cEdit, 0, sizeof(m_cEdit));
-	m_cInputMaxLen = iLen;
-}
-
-void CGame::EndInputString()
-{
-	m_bInputStatus = false;
-	size_t len = strlen(m_cEdit);
-	if (len > 0)
-	{
-		m_cEdit[len] = 0;
-		std::snprintf(m_pInputBuffer + strlen(m_pInputBuffer), m_cInputMaxLen - strlen(m_pInputBuffer), "%s", m_cEdit);
-		std::memset(m_cEdit, 0, sizeof(m_cEdit));
-	}
-}
-
-void CGame::ReceiveString(char* pString)
-{
-	std::snprintf(pString, m_cInputMaxLen, "%s", m_pInputBuffer);
 }
 
 void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey, bool bIsTrans)
@@ -5429,40 +4488,9 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 	return false;
 }
 
-int CGame::_iCalcTotalWeight()
-{
-	int i, iWeight, iCnt, iTemp;
-	iCnt = 0;
-	iWeight = 0;
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pItemList[i] != 0)
-		{
-			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
-			if (pCfg && ((pCfg->GetItemType() == ItemType::Consume)
-				|| (pCfg->GetItemType() == ItemType::Arrow)))
-			{
-				iTemp = pCfg->m_wWeight * m_pItemList[i]->m_dwCount;
-				if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::Gold) iTemp = iTemp / 20;
-				iWeight += iTemp;
-			}
-			else if (pCfg) iWeight += pCfg->m_wWeight;
-			iCnt++;
-		}
-
-	return iWeight;
-}
 uint32_t CGame::iGetLevelExp(int iLevel)
 {
 	return hb::shared::calc::CalculateLevelExp(iLevel);
-}
-
-int CGame::_iGetTotalItemNum()
-{
-	int i, iCnt;
-	iCnt = 0;
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_pItemList[i] != 0) iCnt++;
-	return iCnt;
 }
 
 bool CGame::bCheckExID(char* pName)
@@ -5474,627 +4502,6 @@ bool CGame::bCheckExID(char* pName)
 	memcpy(cTxt, m_pExID->m_pMsg, strlen(m_pExID->m_pMsg));
 	if (memcmp(cTxt, pName, 10) == 0) return true;
 	else return false;
-}
-
-void CGame::DrawWhetherEffects()
-{
-#define MAXNUM 1000
-	static int ix1[MAXNUM];
-	static int iy2[MAXNUM];
-	static int iFrame[MAXNUM];
-	static int iNum = 0;
-	int i;
-	short dX, dY, sCnt;
-	char cTempFrame;
-	uint32_t dwTime = m_dwCurTime;
-
-	switch (m_cWhetherEffectType) {
-	case 1:
-	case 2:
-	case 3: // rain
-		switch (m_cWhetherEffectType) {
-		case 1: sCnt = game_limits::max_weather_objects / 5; break;
-		case 2:	sCnt = game_limits::max_weather_objects / 2; break;
-		case 3:	sCnt = game_limits::max_weather_objects;     break;
-		}
-
-		for (i = 0; i < sCnt; i++)
-		{
-			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 20) && (m_stWhetherObject[i].sX != 0))
-			{
-				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
-				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
-				cTempFrame = 16 + (m_stWhetherObject[i].cStep / 6);
-				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
-			}
-			else if ((m_stWhetherObject[i].cStep >= 20) && (m_stWhetherObject[i].cStep < 25) && (m_stWhetherObject[i].sX != 0))
-			{
-				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
-				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
-				m_pEffectSpr[11]->Draw(dX, dY, m_stWhetherObject[i].cStep, hb::shared::sprite::DrawParams::Alpha(0.5f));
-			}
-		}
-		break;
-
-	case 4:
-	case 5:
-	case 6: // Snow
-		switch (m_cWhetherEffectType) {
-		case 4: sCnt = game_limits::max_weather_objects / 5; break;
-		case 5:	sCnt = game_limits::max_weather_objects / 2; break;
-		case 6:	sCnt = game_limits::max_weather_objects;     break;
-		}
-		for (i = 0; i < sCnt; i++)
-		{
-			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 80))
-			{
-				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
-				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
-
-				// Snoopy: Snow on lower bar
-				if (dY >= 460)
-				{
-					cTempFrame = 39 + (m_stWhetherObject[i].cStep / 20) * 3;
-					dX = m_stWhetherObject[i].sBX;
-					dY = 426;
-				}
-				else cTempFrame = 39 + (m_stWhetherObject[i].cStep / 20) * 3 + (rand() % 3);
-
-				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
-
-				if (m_bIsXmas == true)
-				{
-					if (dY == 478 - 53)
-					{
-						ix1[iNum] = dX;
-						iy2[iNum] = dY + (rand() % 5);
-						iFrame[iNum] = cTempFrame;
-						iNum++;
-					}
-					if (iNum >= MAXNUM) iNum = 0;
-				}
-			}
-		}
-		if (m_bIsXmas == true)
-		{
-			for (i = 0; i <= MAXNUM; i++)
-			{
-				if (iy2[i] > 10) m_pEffectSpr[11]->Draw(ix1[i], iy2[i], iFrame[i], hb::shared::sprite::DrawParams::Alpha(0.5f));
-			}
-		}
-		break;
-	}
-}
-
-void CGame::WhetherObjectFrameCounter()
-{
-	int i;
-	short sCnt;
-	char  cAdd;
-	uint32_t dwTime = m_dwCurTime;
-
-	if ((dwTime - m_dwWOFtime) < 30) return;
-	m_dwWOFtime = dwTime;
-
-	switch (m_cWhetherEffectType) {
-	case 1:
-	case 2:
-	case 3: // Rain
-		switch (m_cWhetherEffectType) {
-		case 1: sCnt = game_limits::max_weather_objects / 5; break;
-		case 2:	sCnt = game_limits::max_weather_objects / 2; break;
-		case 3:	sCnt = game_limits::max_weather_objects;     break;
-		}
-		for (i = 0; i < sCnt; i++)
-		{
-			m_stWhetherObject[i].cStep++;
-			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 20))
-			{
-				cAdd = (40 - m_stWhetherObject[i].cStep);
-				if (cAdd < 0) cAdd = 0;
-				m_stWhetherObject[i].sY = m_stWhetherObject[i].sY + cAdd;
-				if (cAdd != 0)
-					m_stWhetherObject[i].sX = m_stWhetherObject[i].sX - 1;
-			}
-			else if (m_stWhetherObject[i].cStep >= 25)
-			{
-				if (m_bIsWhetherEffect == false)
-				{
-					m_stWhetherObject[i].sX = 0;
-					m_stWhetherObject[i].sY = 0;
-					m_stWhetherObject[i].cStep = 30;
-				}
-				else
-				{
-					m_stWhetherObject[i].sX = (m_pMapData->m_sPivotX * 32) + ((rand() % 940) - 200) + 300;
-					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH()) - LOGICAL_HEIGHT()) + 240;
-					m_stWhetherObject[i].cStep = -1 * (rand() % 10);
-				}
-			}
-		}
-		break;
-
-	case 4:
-	case 5:
-	case 6:
-		switch (m_cWhetherEffectType) {
-		case 4: sCnt = game_limits::max_weather_objects / 5; break;
-		case 5:	sCnt = game_limits::max_weather_objects / 2; break;
-		case 6:	sCnt = game_limits::max_weather_objects;     break;
-		}
-		for (i = 0; i < sCnt; i++)
-		{
-			m_stWhetherObject[i].cStep++;
-			if ((m_stWhetherObject[i].cStep >= 0) && (m_stWhetherObject[i].cStep < 80))
-			{
-				cAdd = (80 - m_stWhetherObject[i].cStep) / 10;
-				if (cAdd < 0) cAdd = 0;
-				m_stWhetherObject[i].sY = m_stWhetherObject[i].sY + cAdd;
-
-				//Snoopy: Snow on lower bar
-				if (m_stWhetherObject[i].sY > (426 + m_Camera.GetY()))
-				{
-					m_stWhetherObject[i].sY = 470 + m_Camera.GetY();
-					if ((rand() % 10) != 2) m_stWhetherObject[i].cStep--;
-					if (m_stWhetherObject[i].sBX == 0) m_stWhetherObject[i].sBX = m_stWhetherObject[i].sX - m_Camera.GetX();
-
-				}
-				else m_stWhetherObject[i].sX += 1 - (rand() % 3);
-			}
-			else if (m_stWhetherObject[i].cStep >= 80)
-			{
-				if (m_bIsWhetherEffect == false)
-				{
-					m_stWhetherObject[i].sX = 0;
-					m_stWhetherObject[i].sY = 0;
-					m_stWhetherObject[i].sBX = 0;
-					m_stWhetherObject[i].cStep = 80;
-				}
-				else
-				{
-					m_stWhetherObject[i].sX = (m_pMapData->m_sPivotX * 32) + ((rand() % 940) - 200) + 300;
-					m_stWhetherObject[i].sY = (m_pMapData->m_sPivotY * 32) + ((rand() % LOGICAL_WIDTH()) - LOGICAL_HEIGHT()) + LOGICAL_HEIGHT();
-					m_stWhetherObject[i].cStep = -1 * (rand() % 10);
-					m_stWhetherObject[i].sBX = 0;
-				}
-			}
-		}
-		break;
-	}
-}
-
-void CGame::SetWhetherStatus(bool bStart, char cType)
-{
-	SYSTEMTIME SysTime;
-	GetLocalTime(&SysTime);
-
-	// Always stop weather sounds first when changing weather
-	AudioManager::Get().StopSound(SoundType::Effect, 38);
-
-	if (bStart == true)
-	{
-		m_bIsWhetherEffect = true;
-		m_cWhetherEffectType = cType;
-
-		// Rain sound (types 1-3)
-		if (AudioManager::Get().IsSoundEnabled() && (cType >= 1) && (cType <= 3))
-			AudioManager::Get().PlaySoundLoop(SoundType::Effect, 38);
-
-		for (int i = 0; i < game_limits::max_weather_objects; i++)
-		{
-			m_stWhetherObject[i].sX = 1;
-			m_stWhetherObject[i].sBX = 1;
-			m_stWhetherObject[i].sY = 1;
-			m_stWhetherObject[i].cStep = -1 * (rand() % 40);
-		}
-
-		// Snow BGM (types 4-6)
-		if (cType >= 4 && cType <= 6)
-		{
-			if (AudioManager::Get().IsMusicEnabled()) StartBGM();
-		}
-	}
-	else
-	{
-		m_bIsWhetherEffect = false;
-		m_cWhetherEffectType = 0;
-	}
-}
-
-void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType)
-{
-	int j, iErr, pX1, pY1, iX1, iY1, tX, tY;
-	char cDir;
-	pX1 = iX1 = tX = sX;
-	pY1 = iY1 = tY = sY;
-
-	for (j = 0; j < 100; j++)
-	{
-		switch (cType) {
-		case 1:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, hb::shared::render::Color(15, 15, 20), hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
-
-			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
-
-			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
-			break;
-
-		case 2:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, hb::shared::render::Color(GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 128), hb::shared::render::BlendMode::Additive);
-			break;
-		}
-		iErr = 0;
-		CMisc::GetPoint(sX, sY, dX, dY, &tX, &tY, &iErr, j * 10);
-		pX1 = iX1;
-		pY1 = iY1;
-		cDir = CMisc::cGetNextMoveDir(iX1, iY1, tX, tY);
-		switch (cDir) {
-		case 1:	rY -= 5; break;
-		case 2: rY -= 5; rX += 5; break;
-		case 3:	rX += 5; break;
-		case 4: rX += 5; rY += 5; break;
-		case 5: rY += 5; break;
-		case 6: rX -= 5; rY += 5; break;
-		case 7: rX -= 5; break;
-		case 8: rX -= 5; rY -= 5; break;
-		}
-		if (rX < -20) rX = -20;
-		if (rX > 20) rX = 20;
-		if (rY < -20) rY = -20;
-		if (rY > 20) rY = 20;
-		iX1 = iX1 + rX;
-		iY1 = iY1 + rY;
-		if ((abs(tX - dX) < 5) && (abs(tY - dY) < 5)) break;
-	}
-	switch (cType) {
-	case 1:
-		m_pEffectSpr[6]->Draw(iX1, iY1, (rand() % 2), hb::shared::sprite::DrawParams::Alpha(0.75f));
-		break;
-	}
-}
-
-// Snoopy: added StormBlade
-int CGame::_iGetAttackType()
-{
-	uint16_t wWeaponType;
-	wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
-	if (wWeaponType == 0)
-	{
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[5] >= 100)) return 20;
-		else return 1;		// Boxe
-	}
-	else if ((wWeaponType >= 1) && (wWeaponType <= 2))
-	{
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[7] >= 100)) return 21;
-		else return 1;		//Dag, SS
-	}
-	else if ((wWeaponType > 2) && (wWeaponType < 20))
-	{
-		if ((wWeaponType == 7) || (wWeaponType == 18)) // Added Kloness Esterk
-		{
-			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[9] >= 100)) return 22;
-			else return 1;  // Esterk
-		}
-		else if (wWeaponType == 15)
-		{
-			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 30;
-			else return 5;  // StormBlade
-		}
-		else
-		{
-			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
-			else return 1;	// LongSwords
-		}
-	}
-	else if ((wWeaponType >= 20) && (wWeaponType <= 29))
-	{
-		if (wWeaponType == 29) {
-			// Type 29 is a Long Sword variant
-			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
-			else return 1;		// LS
-		}
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[10] >= 100)) return 24;
-		else return 1;		// Axes
-	}
-	else if ((wWeaponType >= 30) && (wWeaponType <= 33))
-	{
-		if (wWeaponType == 33) {
-			// Type 33 is a Long Sword variant
-			if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[8] >= 100)) return 23;
-			else return 1;		// LS
-		}
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[14] >= 100)) return 26;
-		else return 1;		// Hammers
-	}
-	else if ((wWeaponType >= 34) && (wWeaponType < 40))
-	{
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[21] >= 100)) return 27;
-		else return 1;		// Wands
-	}
-	else if (wWeaponType >= 40)
-	{
-		if ((m_pPlayer->m_iSuperAttackLeft > 0) && (m_pPlayer->m_bSuperAttackMode == true) && (m_pPlayer->m_iSkillMastery[6] >= 100)) return 25;
-		else return 2;		// Bows
-	}
-	return 0;
-}
-
-int CGame::_iGetWeaponSkillType()
-{
-	uint16_t wWeaponType;
-	wWeaponType = m_pPlayer->m_playerAppearance.iWeaponType;
-	if (wWeaponType == 0)
-	{
-		return 5; // Openhand
-	}
-	else if ((wWeaponType >= 1) && (wWeaponType < 3))
-	{
-		return 7; // SS
-	}
-	else if ((wWeaponType >= 3) && (wWeaponType < 20))
-	{
-		if ((wWeaponType == 7) || (wWeaponType == 18)) // Esterk or KlonessEsterk
-			return 9; // Fencing
-		else return 8; // LS
-	}
-	else if ((wWeaponType >= 20) && (wWeaponType < 29))
-	{
-		return 10; // Axe (20..28)
-	}
-	else if ((wWeaponType >= 30) && (wWeaponType < 33))
-	{
-		return 14; // Hammer (30,31,32)
-	}
-	else if ((wWeaponType >= 34) && (wWeaponType < 40))
-	{
-		return 21; // Wand
-	}
-	else if (wWeaponType >= 40)
-	{
-		return 6;  // Bow
-	}
-	else if ((wWeaponType == 29) || (wWeaponType == 33))
-	{
-		return 8;  // LS LightingBlade || BlackShadow
-	}
-	return 1; // Fishing !
-}
-
-bool CGame::CanSuperAttack()
-{
-	return m_pPlayer->m_iSuperAttackLeft > 0
-		&& m_pPlayer->m_bSuperAttackMode
-		&& m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] >= 100;
-}
-
-int CGame::_iGetBankItemCount()
-{
-	int i, iCnt;
-
-	iCnt = 0;
-	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
-		if (m_pBankList[i] != 0) iCnt++;
-
-	return iCnt;
-}
-
-bool CGame::_bDecodeBuildItemContents()
-{
-	for (int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-	{
-		if (m_pBuildItemList[i] != 0)
-			m_pBuildItemList[i].reset();
-	}
-
-	std::ifstream file("contents\\\\BItemcfg.txt");
-	if (!file) return false;
-
-	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-	return __bDecodeBuildItemContents(content);
-}
-
-bool CGame::_bCheckBuildItemStatus()
-{
-	int iIndex, i, j, iMatch, iCount;
-	char cTempName[hb::shared::limits::ItemNameLen];
-	int  iItemCount[hb::shared::limits::MaxItems];
-
-	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		if (m_pDispBuildItemList[i] != 0)
-		{
-			m_pDispBuildItemList[i].reset();
-		}
-	iIndex = 0;
-	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
-		if (m_pBuildItemList[i] != 0)
-		{	// Skill-Limit
-			if (m_pPlayer->m_iSkillMastery[13] >= m_pBuildItemList[i]->m_iSkillLimit)
-			{
-				iMatch = 0;
-				m_pDispBuildItemList[iIndex] = std::make_unique<CBuildItem>();
-				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, hb::shared::limits::ItemNameLen - 1);
-
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
-
-				m_pDispBuildItemList[iIndex]->m_iElementCount[1] = m_pBuildItemList[i]->m_iElementCount[1];
-				m_pDispBuildItemList[iIndex]->m_iElementCount[2] = m_pBuildItemList[i]->m_iElementCount[2];
-				m_pDispBuildItemList[iIndex]->m_iElementCount[3] = m_pBuildItemList[i]->m_iElementCount[3];
-				m_pDispBuildItemList[iIndex]->m_iElementCount[4] = m_pBuildItemList[i]->m_iElementCount[4];
-				m_pDispBuildItemList[iIndex]->m_iElementCount[5] = m_pBuildItemList[i]->m_iElementCount[5];
-				m_pDispBuildItemList[iIndex]->m_iElementCount[6] = m_pBuildItemList[i]->m_iElementCount[6];
-
-				m_pDispBuildItemList[iIndex]->m_iSprH = m_pBuildItemList[i]->m_iSprH;
-				m_pDispBuildItemList[iIndex]->m_iSprFrame = m_pBuildItemList[i]->m_iSprFrame;
-				m_pDispBuildItemList[iIndex]->m_iMaxSkill = m_pBuildItemList[i]->m_iMaxSkill;
-				m_pDispBuildItemList[iIndex]->m_iSkillLimit = m_pBuildItemList[i]->m_iSkillLimit;
-
-				// ItemCount
-				for (j = 0; j < hb::shared::limits::MaxItems; j++)
-					if (m_pItemList[j] != 0)
-						iItemCount[j] = m_pItemList[j]->m_dwCount;
-					else iItemCount[j] = 0;
-
-				// Element1
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[1];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0) {
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[1] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP2;
-							}
-						}
-				}
-
-			CBIS_STEP2:;
-				// Element2
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[2];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0)
-						{
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[2] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP3;
-							}
-						}
-				}
-
-			CBIS_STEP3:;
-				// Element3
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[3];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0)
-						{
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[3] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP4;
-							}
-						}
-				}
-
-			CBIS_STEP4:;
-				// Element4 �˻�
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[4];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0)
-						{
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[4] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP5;
-							}
-						}
-				}
-
-			CBIS_STEP5:;
-
-				// Element5
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[5];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0)
-						{
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[5] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP6;
-							}
-						}
-				}
-
-			CBIS_STEP6:;
-
-				// Element6
-				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
-				iCount = m_pBuildItemList[i]->m_iElementCount[6];
-				if (iCount == 0) iMatch++;
-				else
-				{
-					for (j = 0; j < hb::shared::limits::MaxItems; j++)
-						if (m_pItemList[j] != 0)
-						{
-							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
-								(iItemCount[j] > 0))
-							{
-								iMatch++;
-								m_pDispBuildItemList[iIndex]->m_bElementFlag[6] = true;
-								iItemCount[j] -= iCount;
-								goto CBIS_STEP7;
-							}
-						}
-				}
-
-			CBIS_STEP7:;
-
-				if (iMatch == 6) m_pDispBuildItemList[iIndex]->m_bBuildEnabled = true;
-				iIndex++;
-			}
-		}
-	return true;
 }
 
 bool CGame::_ItemDropHistory(short sItemID)
@@ -6138,585 +4545,6 @@ bool CGame::_ItemDropHistory(short sItemID)
 		}
 	}
 	return true;
-}
-
-bool CGame::__bDecodeBuildItemContents(const std::string& buffer)
-{
-	constexpr std::string_view seps = "= ,\t\n";
-	char cReadModeA = 0;
-	char cReadModeB = 0;
-	int iIndex = 0;
-
-	auto copyToCharArray = [](char* dest, size_t destSize, const std::string& src) {
-		std::memset(dest, 0, destSize);
-		size_t copyLen = std::min(src.length(), destSize - 1);
-		std::memcpy(dest, src.c_str(), copyLen);
-	};
-
-	size_t start = 0;
-	while (start < buffer.size())
-	{
-		size_t end = buffer.find_first_of(seps, start);
-		if (end == std::string::npos) end = buffer.size();
-
-		if (end > start)
-		{
-			std::string token = buffer.substr(start, end - start);
-
-			if (cReadModeA != 0)
-			{
-				switch (cReadModeA) {
-				case 1:
-					switch (cReadModeB) {
-					case 1:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cName, sizeof(m_pBuildItemList[iIndex]->m_cName), token);
-						cReadModeB = 2;
-						break;
-					case 2:
-						m_pBuildItemList[iIndex]->m_iSkillLimit = std::stoi(token);
-						cReadModeB = 3;
-						break;
-					case 3:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName1, sizeof(m_pBuildItemList[iIndex]->m_cElementName1), token);
-						cReadModeB = 4;
-						break;
-					case 4:
-						m_pBuildItemList[iIndex]->m_iElementCount[1] = std::stoi(token);
-						cReadModeB = 5;
-						break;
-					case 5:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName2, sizeof(m_pBuildItemList[iIndex]->m_cElementName2), token);
-						cReadModeB = 6;
-						break;
-					case 6:
-						m_pBuildItemList[iIndex]->m_iElementCount[2] = std::stoi(token);
-						cReadModeB = 7;
-						break;
-					case 7:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName3, sizeof(m_pBuildItemList[iIndex]->m_cElementName3), token);
-						cReadModeB = 8;
-						break;
-					case 8:
-						m_pBuildItemList[iIndex]->m_iElementCount[3] = std::stoi(token);
-						cReadModeB = 9;
-						break;
-					case 9:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName4, sizeof(m_pBuildItemList[iIndex]->m_cElementName4), token);
-						cReadModeB = 10;
-						break;
-					case 10:
-						m_pBuildItemList[iIndex]->m_iElementCount[4] = std::stoi(token);
-						cReadModeB = 11;
-						break;
-					case 11:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName5, sizeof(m_pBuildItemList[iIndex]->m_cElementName5), token);
-						cReadModeB = 12;
-						break;
-					case 12:
-						if (token == "xxx")
-							m_pBuildItemList[iIndex]->m_iElementCount[5] = 0;
-						else
-							m_pBuildItemList[iIndex]->m_iElementCount[5] = std::stoi(token);
-						cReadModeB = 13;
-						break;
-					case 13:
-						copyToCharArray(m_pBuildItemList[iIndex]->m_cElementName6, sizeof(m_pBuildItemList[iIndex]->m_cElementName6), token);
-						cReadModeB = 14;
-						break;
-					case 14:
-						if(token == "xxx")
-							m_pBuildItemList[iIndex]->m_iElementCount[6] = 0;
-						else
-							m_pBuildItemList[iIndex]->m_iElementCount[6] = std::stoi(token);
-						cReadModeB = 15;
-						break;
-					case 15:
-						m_pBuildItemList[iIndex]->m_iSprH = std::stoi(token);
-						cReadModeB = 16;
-						break;
-					case 16:
-						m_pBuildItemList[iIndex]->m_iSprFrame = std::stoi(token);
-						cReadModeB = 17;
-						break;
-					case 17:
-						m_pBuildItemList[iIndex]->m_iMaxSkill = std::stoi(token);
-						cReadModeA = 0;
-						cReadModeB = 0;
-						iIndex++;
-						break;
-					}
-					break;
-				}
-			}
-			else
-			{
-				if (token.starts_with("BuildItem"))
-				{
-					cReadModeA = 1;
-					cReadModeB = 1;
-					m_pBuildItemList[iIndex] = std::make_unique<CBuildItem>();
-				}
-			}
-		}
-		start = end + 1;
-	}
-	return (cReadModeA == 0) && (cReadModeB == 0);
-}
-
-bool CGame::_bCheckCurrentBuildItemStatus()
-{
-	int i, iCount2, iMatch, iIndex, iItemIndex[7];
-	int iCount;
-	int iItemCount[7];
-	char cTempName[hb::shared::limits::ItemNameLen];
-	bool bItemFlag[7];
-
-	iIndex = m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
-
-	if (m_pBuildItemList[iIndex] == 0) return false;
-
-	iItemIndex[1] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1;
-	iItemIndex[2] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV2;
-	iItemIndex[3] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV3;
-	iItemIndex[4] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV4;
-	iItemIndex[5] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV5;
-	iItemIndex[6] = m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV6;
-
-	for (i = 1; i <= 6; i++)
-		if (iItemIndex[i] != -1)
-			iItemCount[i] = m_pItemList[iItemIndex[i]]->m_dwCount;
-		else iItemCount[i] = 0;
-	iMatch = 0;
-	for (i = 1; i <= 6; i++) bItemFlag[i] = false;
-
-	// Element1
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[1];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP2;
-			}
-		}
-	}
-
-CCBIS_STEP2:;
-
-	// Element2
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[2];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP3;
-			}
-		}
-	}
-
-CCBIS_STEP3:;
-
-	// Element3
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[3];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP4;
-			}
-		}
-	}
-
-CCBIS_STEP4:;
-
-	// Element4
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[4];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP5;
-			}
-		}
-	}
-
-CCBIS_STEP5:;
-
-	// Element5
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[5];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP6;
-			}
-		}
-	}
-
-CCBIS_STEP6:;
-
-	// Element6
-	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
-	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[6];
-	if (iCount == 0) iMatch++;
-	else
-	{
-		for (i = 1; i <= 6; i++)
-		{
-			if (iItemIndex[i] == -1) continue;
-			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
-				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
-				(iItemCount[i] > 0) && (bItemFlag[i] == false))
-			{
-				iMatch++;
-				iItemCount[i] -= iCount;
-				bItemFlag[i] = true;
-				goto CCBIS_STEP7;
-			}
-		}
-	}
-
-CCBIS_STEP7:;
-
-	iCount = 0;
-	for (i = 1; i <= 6; i++)
-		if (m_pDispBuildItemList[iIndex]->m_iElementCount[i] != 0) iCount++;
-	iCount2 = 0;
-	for (i = 1; i <= 6; i++)
-		if (iItemIndex[i] != -1) iCount2++;
-	if ((iMatch == 6) && (iCount == iCount2)) return true;
-	return false;
-}
-
-void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
-{
-	char cTxt[256], cTxt2[256];
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
-
-	m_bIsSpecial = false;
-	std::memset(pStr1, 0, 64);
-	std::memset(pStr2, 0, 64);
-	std::memset(pStr3, 0, 64);
-
-	CItem* pCfg = GetItemConfig(pItem->m_sIDnum);
-	if (!pCfg) {
-		std::snprintf(pStr1, 64, "%s", "Unknown Item");
-		return;
-	}
-
-	const char* cName = pCfg->GetDisplayName();
-
-	if (hb::shared::item::IsSpecialItem(pItem->m_sIDnum)) m_bIsSpecial = true;
-
-	if ((pItem->m_dwAttribute & 0x00000001) != 0)
-	{
-		m_bIsSpecial = true;
-		std::snprintf(pStr1, 64, "%s", cName);
-		if (pCfg->GetItemType() == ItemType::Material)
-			std::snprintf(pStr2, 64, GET_ITEM_NAME1, pItem->m_sItemSpecEffectValue2);
-		else
-		{
-			if (pCfg->GetEquipPos() == EquipPos::LeftFinger)
-			{
-				std::snprintf(pStr2, 64, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2);
-			}
-			else
-			{
-				std::snprintf(pStr2, 64, GET_ITEM_NAME2, pItem->m_sItemSpecEffectValue2 + 100);
-			}
-		}
-	}
-	else
-	{
-		if (pItem->m_dwCount == 1)
-			std::snprintf(G_cTxt, sizeof(G_cTxt), "%s", cName);
-		else std::snprintf(G_cTxt, sizeof(G_cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, pItem->m_dwCount, cName);
-		std::snprintf(pStr1, 64, "%s", G_cTxt);
-	}
-
-	if ((pItem->m_dwAttribute & 0x00F0F000) != 0)
-	{
-		m_bIsSpecial = true;
-		dwType1 = (pItem->m_dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (pItem->m_dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (pItem->m_dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (pItem->m_dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME3);   break;
-			case 2: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME4);   break;
-			case 3: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME5);   break;
-			case 4: break;
-			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME6);   break;
-			case 6: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME7);   break;
-			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8);   break;
-			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9);   break;
-			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10);  break;
-			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
-			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
-			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
-			}
-			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
-			std::memset(pStr1, 0, 64);
-			std::snprintf(pStr1, 64, "%s", cTxt);
-
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME14, dwValue1); break;
-			case 2: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME15, dwValue1 * 5); break;
-			case 3: break;
-			case 4: break;
-			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME16); break;
-			case 6: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
-			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
-			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
-			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
-			}
-			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
-
-			if (dwType2 != 0) {
-				std::memset(cTxt, 0, sizeof(cTxt));
-				switch (dwType2) {
-				case 1:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME24, dwValue2 * 7); break;
-				case 2:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME25, dwValue2 * 7); break;
-				case 3:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME26, dwValue2 * 7); break;
-				case 4:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME27, dwValue2 * 7); break;
-				case 5:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME28, dwValue2 * 7); break;
-				case 6:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME29, dwValue2 * 7); break;
-				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7); break;
-				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3); break;
-				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3); break;
-				case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);   break;
-				case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
-				}
-				std::snprintf(pStr3, 64, "%s", cTxt);
-			}
-		}
-	}
-
-	dwValue3 = (pItem->m_dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
-	{
-		if (pStr1[strlen(pStr1) - 2] == '+')
-		{
-			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
-			std::memset(cTxt2, 0, sizeof(cTxt2));
-			std::snprintf(cTxt2, sizeof(cTxt2), "%s+%d", cTxt, dwValue3);
-			std::memset(pStr1, 0, 64);
-			std::snprintf(pStr1, 64, "%s", cTxt2);
-		}
-		else
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "+%d", dwValue3);
-			std::snprintf(pStr1 + strlen(pStr1), 64 - strlen(pStr1), "%s", cTxt);
-		}
-	}
-
-	// Display mana save effect if present
-	auto effectType = pCfg->GetItemEffectType();
-	int iManaSaveValue = 0;
-	if (effectType == hb::shared::item::ItemEffectType::AttackManaSave)
-	{
-		iManaSaveValue = pCfg->m_sItemEffectValue4;
-	}
-	else if (effectType == hb::shared::item::ItemEffectType::AddEffect &&
-	         pCfg->m_sItemEffectValue1 == hb::shared::item::ToInt(hb::shared::item::AddEffectType::ManaSave))
-	{
-		iManaSaveValue = pCfg->m_sItemEffectValue2;
-	}
-
-	if (iManaSaveValue > 0)
-	{
-		m_bIsSpecial = true;
-		std::memset(cTxt, 0, sizeof(cTxt));
-		std::snprintf(cTxt, sizeof(cTxt), "Mana Save +%d%%", iManaSaveValue);
-		// Add to pStr2 if empty, otherwise pStr3
-		if (pStr2[0] == '\0')
-			std::snprintf(pStr2, 64, "%s", cTxt);
-		else if (pStr3[0] == '\0')
-			std::snprintf(pStr3, 64, "%s", cTxt);
-	}
-}
-
-void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* pStr2, char* pStr3)
-{
-	char cTxt[256], cTxt2[256];
-	uint32_t dwType1, dwType2, dwValue1, dwValue2, dwValue3;
-
-	m_bIsSpecial = false;
-	std::memset(pStr1, 0, 64);
-	std::memset(pStr2, 0, 64);
-	std::memset(pStr3, 0, 64);
-
-	// Look up item config by ID to get display name (m_cName now contains display names)
-	const char* cName = nullptr;
-	if (sItemId > 0 && sItemId < 5000 && m_pItemConfigList[sItemId] != nullptr) {
-		cName = m_pItemConfigList[sItemId]->m_cName;
-	}
-	if (cName == nullptr || cName[0] == '\0') {
-		// Fallback to "Unknown Item" if no display name found
-		std::snprintf(pStr1, 64, "%s", "Unknown Item");
-		return;
-	}
-	std::snprintf(pStr1, 64, "%s", cName);
-
-	if ((dwAttribute & 0x00F0F000) != 0)
-	{
-		m_bIsSpecial = true;
-		dwType1 = (dwAttribute & 0x00F00000) >> 20;
-		dwValue1 = (dwAttribute & 0x000F0000) >> 16;
-		dwType2 = (dwAttribute & 0x0000F000) >> 12;
-		dwValue2 = (dwAttribute & 0x00000F00) >> 8;
-		if (dwType1 != 0)
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME3); break;
-			case 2: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME4); break;
-			case 3: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME5); break;
-			case 4: break;
-			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME6); break;
-			case 6: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME7); break;
-			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8); break;
-			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9); break;
-			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10); break;
-			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
-			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
-			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
-			}
-			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
-			std::memset(pStr1, 0, 64);
-			std::snprintf(pStr1, 64, "%s", cTxt);
-
-			std::memset(cTxt, 0, sizeof(cTxt));
-			switch (dwType1) {
-			case 1: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME14, dwValue1); break;
-			case 2: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME15, dwValue1 * 5); break;
-			case 3: break;
-			case 4: break;
-			case 5: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME16); break;
-			case 6: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME17, dwValue1 * 4); break;
-			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
-			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
-			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
-			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
-			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
-			}
-			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
-
-			if (dwType2 != 0)
-			{
-				std::memset(cTxt, 0, sizeof(cTxt));
-				switch (dwType2) {
-				case 1:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME24, dwValue2 * 7);  break;
-				case 2:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME25, dwValue2 * 7);  break;
-				case 3:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME26, dwValue2 * 7);  break;
-				case 4:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME27, dwValue2 * 7);  break;
-				case 5:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME28, dwValue2 * 7);  break;
-				case 6:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME29, dwValue2 * 7);  break;
-				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7);  break;
-				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3);  break;
-				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);    break;
-				case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
-				}
-				std::snprintf(pStr3, 64, "%s", cTxt);
-			}
-		}
-	}
-
-	dwValue3 = (dwAttribute & 0xF0000000) >> 28;
-	if (dwValue3 > 0)
-	{
-		if (pStr1[strlen(pStr1) - 2] == '+')
-		{
-			dwValue3 = atoi((char*)(pStr1 + strlen(pStr1) - 1)) + dwValue3;
-			std::memset(cTxt, 0, sizeof(cTxt));
-			memcpy(cTxt, pStr1, strlen(pStr1) - 2);
-			std::memset(cTxt2, 0, sizeof(cTxt2));
-			std::snprintf(cTxt2, sizeof(cTxt2), "%s+%d", cTxt, dwValue3);
-			std::memset(pStr1, 0, 64);
-			std::snprintf(pStr1, 64, "%s", cTxt2);
-		}
-		else
-		{
-			std::memset(cTxt, 0, sizeof(cTxt));
-			std::snprintf(cTxt, sizeof(cTxt), "+%d", dwValue3);
-			std::snprintf(pStr1 + strlen(pStr1), 64 - strlen(pStr1), "%s", cTxt);
-		}
-	}
 }
 
 CItem* CGame::GetItemConfig(int iItemID) const
@@ -7150,10 +4978,10 @@ void CGame::OnKeyDown(KeyCode _key)
 			}
 		}
 		// Only Enter key activates chat input - not every key press
-		else if (_key == KeyCode::Enter && (m_bInputStatus == false) && (!hb::shared::input::IsAltDown()))
+		else if (_key == KeyCode::Enter && (TextInputManager::Get().IsActive() == false) && (!hb::shared::input::IsAltDown()))
 		{
-			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
-			ClearInputString();
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+			TextInputManager::Get().ClearInput();
 		}
 	}
 }
@@ -7214,7 +5042,7 @@ void CGame::RetrieveItemHandler(char* pData)
 		if (m_pBankList[cBankItemIndex] != 0) {
 			// v1.42
 			char cStr1[64], cStr2[64], cStr3[64];
-			GetItemName(m_pBankList[cBankItemIndex].get(), cStr1, cStr2, cStr3);
+			ItemNameFormatter::Get().Format(m_pBankList[cBankItemIndex].get(), cStr1, cStr2, cStr3);
 
 			std::memset(cTxt, 0, sizeof(cTxt));
 			std::snprintf(cTxt, sizeof(cTxt), RETIEVE_ITEM_HANDLER4, cStr1);//""You took out %s."
@@ -7275,43 +5103,6 @@ void CGame::RetrieveItemHandler(char* pData)
 		}
 	}
 	m_dialogBoxManager.Info(DialogBoxId::Bank).cMode = 0;
-}
-
-void CGame::EraseItem(char cItemID)
-{
-	int i;
-	char cStr1[64], cStr2[64], cStr3[64];
-	std::memset(cStr1, 0, sizeof(cStr1));
-	std::memset(cStr2, 0, sizeof(cStr2));
-	std::memset(cStr3, 0, sizeof(cStr3));
-	for (i = 0; i < 6; i++)
-	{
-		if (m_sShortCut[i] == cItemID)
-		{
-			GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-			if (i < 3) std::snprintf(G_cTxt, sizeof(G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 1);
-			else std::snprintf(G_cTxt, sizeof(G_cTxt), ERASE_ITEM, cStr1, cStr2, cStr3, i + 7);
-			AddEventList(G_cTxt, 10);
-			m_sShortCut[i] = -1;
-		}
-	}
-
-	if (cItemID == m_sRecentShortCut)
-		m_sRecentShortCut = -1;
-	// ItemOrder
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-		if (m_cItemOrder[i] == cItemID)
-			m_cItemOrder[i] = -1;
-	for (i = 1; i < hb::shared::limits::MaxItems; i++)
-		if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1))
-		{
-			m_cItemOrder[i - 1] = m_cItemOrder[i];
-			m_cItemOrder[i] = -1;
-		}
-	// ItemList
-	m_pItemList[cItemID].reset();
-	m_bIsItemEquipped[cItemID] = false;
-	m_bIsItemDisabled[cItemID] = false;
 }
 
 void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId)
@@ -7983,69 +5774,6 @@ bool CGame::bCheckLocalChatCommand(const char* pMsg)
 	return ChatCommandManager::Get().ProcessCommand(pMsg);
 }
 
-bool CGame::bCheckItemOperationEnabled(char cItemID)
-{
-	if (m_pItemList[cItemID] == 0) return false;
-	if (m_pPlayer->m_Controller.GetCommand() < 0) return false;
-	if (m_bIsTeleportRequested == true) return false;
-	if (m_bIsItemDisabled[cItemID] == true) return false;
-
-	if ((m_pItemList[cItemID]->m_sSpriteFrame == 155) && (m_bUsingSlate == true))
-	{
-		if ((m_cMapIndex == 35) || (m_cMapIndex == 36) || (m_cMapIndex == 37))
-		{
-			AddEventList(DEF_MSG_NOTIFY_SLATE_WRONG_MAP, 10); // "You cannot use it right here."
-			return false;
-		}
-		AddEventList(DEF_MSG_NOTIFY_SLATE_ALREADYUSING, 10); // Already Using Another Slate
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropExternal) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::NpcActionQuery) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Manufacture) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Exchange) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SellList) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ItemDropConfirm) == true)
-	{
-		AddEventList(BCHECK_ITEM_OPERATION_ENABLE1, 10);
-		return false;
-	}
-
-	return true;
-}
-
 void CGame::ClearSkillUsingStatus()
 {
 	if (m_bSkillUsingStatus == true)
@@ -8287,7 +6015,7 @@ void CGame::StartBGM()
 	// Determine track name based on current location
 	const char* trackName = "MainTm";
 
-	if ((m_bIsXmas == true) && (m_cWhetherEffectType >= 4))
+	if ((m_bIsXmas == true) && (WeatherManager::Get().IsSnowing()))
 	{
 		trackName = "Carol";
 	}
@@ -8467,20 +6195,12 @@ void CGame::MotionResponseHandler(char* pData)
 
 void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB)
 {
-	char   cDir, absX, absY, cName[12];
-	short  sX, sY, sObjectType, tX, tY;
-	hb::shared::entity::PlayerStatus iObjectStatus;
-	int    iRet;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	uint16_t wType = 0;
-	//int iFOE;
-	char   cTxt[120];
+	int iRet;
+	short sX, sY;
+	char cDir;
 
-	char  pDstName[21];
-	short sDstOwnerType;
-	hb::shared::entity::PlayerStatus iDstOwnerStatus;
-
-	bool  bGORet;
 	// Fixed by Snoopy
 	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
 	{
@@ -8608,7 +6328,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		}
 		else 			// v2.05 01-11-30
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
+			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
 
 			if ((CursorTarget::GetPrevX() != msX) || (CursorTarget::GetPrevY() != msY))
 			{
@@ -8622,26 +6342,26 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 7) && (m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode == 1))
 				{
-					EndInputString();
+					TextInputManager::Get().EndInput();
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 20;
 				}
 				// Query Drop Item Amount
 				if ((CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox) &&
 					(CursorTarget::GetSelectedID() == 17) && (m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode == 1))
 				{
-					EndInputString();
+					TextInputManager::Get().EndInput();
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 20;
 				}
 				return;
 			}
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(wType); return; }
 			return;
 		}
 		break;
 	case CursorStatus::Dragging:
 		if (cLB != 0)
 		{
-			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) goto CP_SKIPMOUSEBUTTONSTATUS;
+			if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0)) break;
 			if (CursorTarget::GetSelectedType() == SelectedObjectType::DialogBox)
 			{
 				// HudPanel is fixed and cannot be moved
@@ -8653,7 +6373,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			}
 			CursorTarget::SetPrevPosition(msX, msY);
 
-			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) { ProcessMotionCommands(wType); return; }
 			return;
 		}
 		if (cLB == 0) {
@@ -8665,7 +6385,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				{
 					sX = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::GuildMenu).sY;
-					StartInputString(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
+					TextInputManager::Get().StartInput(sX + 75, sY + 140, 21, m_pPlayer->m_cGuildName);
 					m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 1;
 				}
 
@@ -8674,7 +6394,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				{	// Query Drop Item Amount
 					sX = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sX;
 					sY = m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).sY;
-					StartInputString(sX + 40, sY + 57, 11, m_cAmountString);
+					TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_cAmountString);
 					m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cMode = 1;
 				}
 
@@ -8721,7 +6441,6 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 		break;
 	}
 
-CP_SKIPMOUSEBUTTONSTATUS:;
 	// Allow clicks to be responsive even if command not yet available
 	if (m_pPlayer->m_Controller.IsCommandAvailable() == false)
 	{
@@ -8802,15 +6521,37 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	if (m_pPlayer->m_sDamageMove != 0)
 	{
 		m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
-		goto MOTION_COMMAND_PROCESS;
+		ProcessMotionCommands(wType); return;
 	}
 
 	if ((m_pMapData->bIsTeleportLoc(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY) == true) && (m_pPlayer->m_Controller.GetCommandCount() == 0))
 		RequestTeleportAndWaitData();
 
 	// indexX, indexY
-	if (cLB != 0) // Mouse Left button
+
+	if (cLB != 0)
 	{
+		if (ProcessLeftClick(msX, msY, indexX, indexY, dwTime, wType)) return;
+	}
+	else if (cRB != 0)
+	{
+		if (ProcessRightClick(msX, msY, indexX, indexY, dwTime, wType)) return;
+	}
+
+	ProcessMotionCommands(wType);
+}
+
+bool CGame::ProcessLeftClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
+{
+	char cName[12];
+	short sX, sY, sObjectType, tX, tY;
+	hb::shared::entity::PlayerStatus iObjectStatus;
+	char cDir, absX, absY;
+	char pDstName[21];
+	short sDstOwnerType;
+	hb::shared::entity::PlayerStatus iDstOwnerStatus;
+	bool bGORet;
+
 		if (m_bIsGetPointingMode == true)
 		{
 			if ((m_sMCX != 0) || (m_sMCY != 0))
@@ -8821,11 +6562,11 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			m_bIsGetPointingMode = false;
 			m_dwMagicCastTime = dwTime;  // Track when magic was cast
-			return;
+			return true;
 		}
 
 		// Delay after magic cast before allowing held-click actions
-		if (m_dwMagicCastTime > 0 && (dwTime - m_dwMagicCastTime) < 750) return;
+		if (m_dwMagicCastTime > 0 && (dwTime - m_dwMagicCastTime) < 750) return true;
 
 		m_pMapData->bGetOwner(m_sMCX, m_sMCY - 1, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID); // v1.4
 		//m_pMapData->m_pData[dX][dY].m_sItemSprite
@@ -8846,30 +6587,30 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if (hb::shared::input::IsCtrlDown() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-					if (iObjectStatus.bInvisibility) return;
-					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
+					if (iObjectStatus.bInvisibility) return true;
+					if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return true;
 					absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
 					absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 					if ((absX <= 1) && (absY <= 1))
 					{
-						wType = _iGetAttackType();
+						wType = CombatSystem::Get().GetAttackType();
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 						&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 					{
-						wType = _iGetAttackType();
+						wType = CombatSystem::Get().GetAttackType();
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else // Pas au corp � corp
 					{
-						switch (_iGetWeaponSkillType()) {
+						switch (CombatSystem::Get().GetWeaponSkillType()) {
 						case 6: // Bow
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							break;
 
 						case 5: // OpenHand
@@ -8878,10 +6619,10 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							{
 								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 								{
-									if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
+									if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 									{
 										m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -8909,38 +6650,38 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 8: // LS
-							if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
-								&& (_iGetAttackType() != 30)) // Crit without StormBlade
+							if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+								&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade
 							{
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
-							else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
-								&& (_iGetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
+							else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+								&& (CombatSystem::Get().GetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
 							{
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 3) && (absY <= 3)
-								&& (_iGetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
+								&& (CombatSystem::Get().GetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
 							{
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Swing
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
-									&& (_iGetAttackType() != 5)) // no Dash possible with StormBlade
+									&& (CombatSystem::Get().GetAttackType() != 5)) // no Dash possible with StormBlade
 								{
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
-										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
+										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = _iGetAttackType();
+											wType = CombatSystem::Get().GetAttackType();
 										}
 										else
 										{
@@ -8969,18 +6710,18 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case 9: // Fencing
-							if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
+							if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = _iGetAttackType();
+											wType = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -9006,11 +6747,11 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							break;
 
 						case hb::shared::owner::Slime: // Axe
-							if ((absX <= 2) && (absY <= 2) && CanSuperAttack())
+							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack())
 							{
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 							}
 							else
 							{
@@ -9018,10 +6759,10 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								{
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
-										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
+										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100)
 										{
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = _iGetAttackType();
+											wType = CombatSystem::Get().GetAttackType();
 										}
 										else
 										{
@@ -9049,17 +6790,17 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 						case hb::shared::owner::OrcMage: // Hammer
-							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = _iGetAttackType();
+											wType = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -9084,17 +6825,17 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 						case hb::shared::owner::Guard: // Wand
-							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+							if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
 									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
-										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
+										if (m_pPlayer->m_iSkillMastery[CombatSystem::Get().GetWeaponSkillType()] == 100) {
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
-											wType = _iGetAttackType();
+											wType = CombatSystem::Get().GetAttackType();
 										}
 										else {
 											m_pPlayer->m_Controller.SetCommand(Type::Run);
@@ -9282,24 +7023,24 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 							if ((absX <= 1) && (absY <= 1))
 							{
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 								&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 							{
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Normal hit from a range.
 							{
-								switch (_iGetWeaponSkillType()) {
+								switch (CombatSystem::Get().GetWeaponSkillType()) {
 								case 6: // Bow
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 									break;
 
 								case 5: // Boxe
@@ -9313,30 +7054,30 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case 8: // LS
-									if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
-										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
+									if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+										&& (CombatSystem::Get().GetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
-									else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
-										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
+									else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+										&& (CombatSystem::Get().GetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else if ((absX <= 3) && (absY <= 3)
-										&& (_iGetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
+										&& (CombatSystem::Get().GetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
 									{
 										m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -9350,13 +7091,13 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case 9: // Fencing
-									if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
+									if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack())
 									{
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else
 									{
@@ -9370,12 +7111,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									break;
 
 								case hb::shared::owner::Slime: //
-									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -9387,12 +7128,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									break;
 								case hb::shared::owner::OrcMage: //
-									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -9404,12 +7145,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									}
 									break;
 								case hb::shared::owner::Guard: //
-									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+									if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-										wType = _iGetAttackType();
+										wType = CombatSystem::Get().GetAttackType();
 									}
 									else {
 										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
@@ -9445,9 +7186,20 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 			}
 		}
-	}
-	else if (cRB != 0) // Mouse Right button
-	{
+	return false;
+}
+
+bool CGame::ProcessRightClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType)
+{
+	char cName[12];
+	short sX, sY, sObjectType, tX, tY;
+	hb::shared::entity::PlayerStatus iObjectStatus;
+	char cDir, absX, absY;
+	char pDstName[21];
+	short sDstOwnerType;
+	hb::shared::entity::PlayerStatus iDstOwnerStatus;
+	bool bGORet;
+
 		// Right click on self = pickup (Quick Actions feature)
 		if (ConfigManager::Get().IsQuickActionsEnabled() &&
 			memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
@@ -9455,7 +7207,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		{
 			m_pPlayer->m_Controller.SetCommand(Type::GetItem);
 			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
-			goto MOTION_COMMAND_PROCESS;
+			return false;
 		}
 		else
 		{
@@ -9466,41 +7218,41 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				m_bIsGetPointingMode = false;
 				AddEventList(COMMAND_PROCESSOR1, 10);
 			}
-			if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return;
-			if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return;
+			if (m_pPlayer->m_Controller.IsCommandAvailable() == false) return true;
+			if (m_pPlayer->m_Controller.GetCommandCount() >= 6) return true;
 
 			if ((m_sMCX != 0) && (m_sMCY != 0))
 			{
 				absX = abs(m_pPlayer->m_sPlayerX - m_sMCX);
 				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
-				if (absX == 0 && absY == 0) return;
+				if (absX == 0 && absY == 0) return true;
 
 			if (hb::shared::input::IsCtrlDown() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
-				if (iObjectStatus.bInvisibility) return;
-				if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return;
+				if (iObjectStatus.bInvisibility) return true;
+				if ((sObjectType == 15) || (sObjectType == 20) || (sObjectType == 24)) return true;
 
 				if ((absX <= 1) && (absY <= 1))
 				{
-					wType = _iGetAttackType();
+					wType = CombatSystem::Get().GetAttackType();
 					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 					&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 				{
-					wType = _iGetAttackType();
+					wType = CombatSystem::Get().GetAttackType();
 					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else
 				{
-					switch (_iGetWeaponSkillType()) {
+					switch (CombatSystem::Get().GetWeaponSkillType()) {
 					case 6: // Bow
 						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-						wType = _iGetAttackType();
+						wType = CombatSystem::Get().GetAttackType();
 						break;
 
 					case 5: // Boxe
@@ -9508,57 +7260,57 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						break;
 
 					case 8: // LS
-						if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
-							&& (_iGetAttackType() != 30)) // without StormBlade by Snoopy
+						if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+							&& (CombatSystem::Get().GetAttackType() != 30)) // without StormBlade by Snoopy
 						{
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
-						else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
-							&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
+						else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+							&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
 						{
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 3) && (absY <= 3)
-							&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
+							&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
 						{
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						break;
 
 					case 9: // Fencing
-						if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
+						if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 						}
 						break;
 
 					case hb::shared::owner::Slime: //
-						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 						}
 						break;
 
 					case hb::shared::owner::OrcMage: //
-						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 						}
 						break;
 					case hb::shared::owner::Guard: //
-						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+						if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 						}
 						break;
 					}
@@ -9584,24 +7336,24 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						if ((sObjectType >= 1) && (sObjectType <= 6) && (m_pPlayer->m_bForceAttack == false)) break;
 						if ((absX <= 1) && (absY <= 1))
 						{
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 							&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 						{
-							wType = _iGetAttackType();
+							wType = CombatSystem::Get().GetAttackType();
 							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else //
 						{
-							switch (_iGetWeaponSkillType()) {
+							switch (CombatSystem::Get().GetWeaponSkillType()) {
 							case 6: // Bow
 								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-								wType = _iGetAttackType();
+								wType = CombatSystem::Get().GetAttackType();
 								break;
 
 							case 5: // Boxe
@@ -9609,56 +7361,56 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								break;
 
 							case 8: // LS
-								if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
-									&& (_iGetAttackType() != 30)) // crit without StormBlade by Snoopy
+								if ((absX <= 3) && (absY <= 3) && CombatSystem::Get().CanSuperAttack()
+									&& (CombatSystem::Get().GetAttackType() != 30)) // crit without StormBlade by Snoopy
 								{
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
-								else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
-									&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
+								else if ((absX <= 5) && (absY <= 5) && CombatSystem::Get().CanSuperAttack()
+									&& (CombatSystem::Get().GetAttackType() == 30)) // with stormBlade crit by Snoopy
 								{
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else if ((absX <= 3) && (absY <= 3)
-									&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
+									&& (CombatSystem::Get().GetAttackType() == 5)) // with stormBlade no crit by Snoopy
 								{
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								break;
 
 							case 9: // fencing
-								if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
+								if ((absX <= 4) && (absY <= 4) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 								}
 								break;
 
 							case hb::shared::owner::Slime: //
-								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							case hb::shared::owner::OrcMage: // hammer
-								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							case hb::shared::owner::Guard: // wand
-								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
+								if ((absX <= 2) && (absY <= 2) && CombatSystem::Get().CanSuperAttack()) {
 									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
-									wType = _iGetAttackType();
+									wType = CombatSystem::Get().GetAttackType();
 								}
 								break;
 							}
@@ -9671,9 +7423,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		else
 		{
 			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
-			if (m_pPlayer->m_iHP <= 0) return;
-			if (cDir == 0) return;
-			if (m_pPlayer->m_iPlayerDir == cDir) return;
+			if (m_pPlayer->m_iHP <= 0) return true;
+			if (cDir == 0) return true;
+			if (m_pPlayer->m_iPlayerDir == cDir) return true;
 			ClearSkillUsingStatus();
 			m_pPlayer->m_iPlayerDir = cDir;
 			bSendCommand(MsgId::CommandMotion, Type::Stop, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
@@ -9685,12 +7437,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				10);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
-			return;
+			return true;
 		}
 		} // close else block for "not clicking on self"
-	}
+	return false;
+}
 
-MOTION_COMMAND_PROCESS:;
+void CGame::ProcessMotionCommands(uint16_t wType)
+{
+	char cDir;
+	char pDstName[21];
+	short sDstOwnerType;
+	hb::shared::entity::PlayerStatus iDstOwnerStatus;
+	bool bGORet;
+	char cTxt[120];
+
 
 	if (m_pPlayer->m_Controller.GetCommand() != Type::Stop)
 	{
@@ -9999,140 +7760,11 @@ MOTION_COMMAND_PROCESS:;
 	}
 }
 
-void CGame::ResponseTeleportList(char* pData)
-{
-	int i;
-#ifdef _DEBUG
-	AddEventList("Teleport ???", 10);
-#endif
-	const auto* header = hb::net::PacketCast<hb::net::PacketResponseTeleportListHeader>(
-		pData, sizeof(hb::net::PacketResponseTeleportListHeader));
-	if (!header) return;
-	const auto* entries = reinterpret_cast<const hb::net::PacketResponseTeleportListEntry*>(
-		pData + sizeof(hb::net::PacketResponseTeleportListHeader));
-	m_iTeleportMapCount = header->count;
-	for (i = 0; i < m_iTeleportMapCount; i++)
-	{
-		m_stTeleportList[i].iIndex = entries[i].index;
-		std::memset(m_stTeleportList[i].mapname, 0, sizeof(m_stTeleportList[i].mapname));
-		memcpy(m_stTeleportList[i].mapname, entries[i].map_name, 10);
-		m_stTeleportList[i].iX = entries[i].x;
-		m_stTeleportList[i].iY = entries[i].y;
-		m_stTeleportList[i].iCost = entries[i].cost;
-	}
-}
-
-void CGame::ResponseChargedTeleport(char* pData)
-{
-	short sRejectReason = 0;
-	const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseChargedTeleport>(
-		pData, sizeof(hb::net::PacketResponseChargedTeleport));
-	if (!pkt) return;
-	sRejectReason = pkt->reason;
-
-#ifdef _DEBUG
-	AddEventList("charged teleport ?", 10);
-#endif
-
-	switch (sRejectReason) {
-	case 1:
-		AddEventList(RESPONSE_CHARGED_TELEPORT1, 10);
-		break;
-	case 2:
-		AddEventList(RESPONSE_CHARGED_TELEPORT2, 10);
-		break;
-	case 3:
-		AddEventList(RESPONSE_CHARGED_TELEPORT3, 10);
-		break;
-	case 4:
-		AddEventList(RESPONSE_CHARGED_TELEPORT4, 10);
-		break;
-	case 5:
-		AddEventList(RESPONSE_CHARGED_TELEPORT5, 10);
-		break;
-	case 6:
-		AddEventList(RESPONSE_CHARGED_TELEPORT6, 10);
-		break;
-	default:
-		AddEventList(RESPONSE_CHARGED_TELEPORT7, 10);
-	}
-}
-
-
-
-
 // _Draw_OnLogin removed - migrated to Screen_Login
-
-void CGame::ShowEventList(uint32_t dwTime)
-{
-	int i;
-	int baseY = EVENTLIST2_BASE_Y();
-	m_Renderer->BeginTextBatch();
-	for (i = 0; i < 6; i++)
-		if ((dwTime - m_stEventHistory[i].dwTime) < 5000)
-		{
-			switch (m_stEventHistory[i].cColor) {
-			case 0:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
-				break;
-			case 1:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
-				break;
-			case 2:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
-				break;
-			case 3:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
-				break;
-			case 4:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
-				break;
-			case hb::shared::owner::Slime:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
-				break;
-			case hb::shared::owner::Howard:
-				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
-				break;
-			}
-		}
-
-	for (i = 0; i < 6; i++)
-		if ((dwTime - m_stEventHistory2[i].dwTime) < 5000)
-		{
-			switch (m_stEventHistory2[i].cColor) {
-			case 0:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
-				break;
-			case 1:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
-				break;
-			case 2:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
-				break;
-			case 3:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
-				break;
-			case 4:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
-				break;
-			case hb::shared::owner::Slime:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
-				break;
-			case hb::shared::owner::Howard:
-				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
-				break;
-			}
-		}
-	if (m_bSkillUsingStatus == true)
-	{
-		hb::shared::text::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
-	}
-	m_Renderer->EndTextBatch();
-}
 
 void CGame::RequestTeleportAndWaitData()
 {
-	if (m_bIsTeleportRequested) return;
+	if (TeleportManager::Get().IsRequested()) return;
 
 	bSendCommand(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
 	ChangeGameMode(GameMode::WaitingInitData);
@@ -10173,7 +7805,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_iPointCommandType = -1;
 	m_iIlusionOwnerH = 0;
 	m_cIlusionOwnerType = 0;
-	m_bIsTeleportRequested = false;
+	TeleportManager::Get().SetRequested(false);
 	m_pPlayer->m_bIsConfusion = false;
 	m_bSkillUsingStatus = false;
 
@@ -10184,13 +7816,7 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	if (m_pEffectManager) m_pEffectManager->ClearAllEffects();
 
-	for (i = 0; i < game_limits::max_weather_objects; i++)
-	{
-		m_stWhetherObject[i].sX = 0;
-		m_stWhetherObject[i].sBX = 0;
-		m_stWhetherObject[i].sY = 0;
-		m_stWhetherObject[i].cStep = 0;
-	}
+	WeatherManager::Get().ResetParticles();
 
 	for (i = 0; i < game_limits::max_guild_names; i++)
 	{
@@ -10245,14 +7871,15 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	G_cSpriteAlphaDegree = static_cast<char>(pkt->sprite_alpha);
 
-	m_cWhetherStatus = static_cast<char>(pkt->weather_status);
+	WeatherManager::Get().SetWeatherStatus(static_cast<char>(pkt->weather_status));
 	switch (G_cSpriteAlphaDegree) { //Snoopy:  Xmas bulbs
 		// Will be sent by server if DayTime is 3 (and a snowy weather)
 	case 1:	m_bIsXmas = false; break;
 	case 2: m_bIsXmas = false; break;
 	case 3: // Snoopy Special night with chrismas bulbs
-		if (m_cWhetherStatus > 3) m_bIsXmas = true;
+		if (WeatherManager::Get().GetWeatherStatus() > 3) m_bIsXmas = true;
 		else m_bIsXmas = false;
+		WeatherManager::Get().SetXmas(m_bIsXmas);
 		G_cSpriteAlphaDegree = 2;
 		break;
 	}
@@ -10265,9 +7892,16 @@ void CGame::InitDataResponseHandler(char* pData)
 
 	cp = reinterpret_cast<const char*>(pData) + sizeof(hb::net::PacketResponseInitDataHeader);
 
-	if (m_cWhetherStatus != 0)
-		SetWhetherStatus(true, m_cWhetherStatus);
-	else SetWhetherStatus(false, m_cWhetherStatus);
+	{
+		char ws = WeatherManager::Get().GetWeatherStatus();
+		if (ws != 0)
+		{
+			WeatherManager::Get().SetWeather(true, ws);
+			if (ws >= 4 && ws <= 6 && AudioManager::Get().IsMusicEnabled())
+				StartBGM();
+		}
+		else WeatherManager::Get().SetWeather(false, 0);
+	}
 
 	std::memset(cMapFileName, 0, sizeof(cMapFileName));
 	std::snprintf(cMapFileName + strlen(cMapFileName), sizeof(cMapFileName) - strlen(cMapFileName), "%s", "mapdata\\");
@@ -10819,7 +8453,7 @@ void CGame::UseShortCut(int num)
 				std::memset(cStr2, 0, sizeof(cStr2));
 				std::memset(cStr3, 0, sizeof(cStr3));
 
-				GetItemName(m_pItemList[m_sShortCut[num]].get(), cStr1, cStr2, cStr3);
+				ItemNameFormatter::Get().Format(m_pItemList[m_sShortCut[num]].get(), cStr1, cStr2, cStr3);
 				std::snprintf(G_cTxt, sizeof(G_cTxt), MSG_SHORTCUT4, cStr1, cStr2, cStr3, index);// (%s %s %s) [F%d]
 				AddEventList(G_cTxt, 10);
 			}
@@ -10848,226 +8482,10 @@ void CGame::UseShortCut(int num)
 		}
 		else if (m_sShortCut[num] < 100)
 		{
-			ItemEquipHandler((char)m_sShortCut[num]);
+			InventoryManager::Get().EquipItem((char)m_sShortCut[num]);
 		}
-		else if (m_sShortCut[num] >= 100) UseMagic(m_sShortCut[num] - 100);
+		else if (m_sShortCut[num] >= 100) MagicCastingSystem::Get().BeginCast(m_sShortCut[num] - 100);
 	}
-}
-
-int CGame::iGetManaCost(int iMagicNo)
-{
-	int i, iManaSave, iManaCost;
-	iManaSave = 0;
-	if (iMagicNo < 0 || iMagicNo >= 100) return 1;
-	for (i = 0; i < hb::shared::limits::MaxItems; i++)
-	{
-		if (m_pItemList[i] == 0) continue;
-		if (m_bIsItemEquipped[i] == true)
-		{
-			// Data-driven mana save calculation using ItemEffectType
-			auto effectType = m_pItemList[i]->GetItemEffectType();
-			switch (effectType)
-			{
-			case hb::shared::item::ItemEffectType::AttackManaSave:
-				// Weapons with mana save: value stored in m_sItemEffectValue4
-				iManaSave += m_pItemList[i]->m_sItemEffectValue4;
-				break;
-
-			case hb::shared::item::ItemEffectType::AddEffect:
-				// AddEffect with sub-type ManaSave (necklaces, etc.)
-				if (m_pItemList[i]->m_sItemEffectValue1 == hb::shared::item::ToInt(hb::shared::item::AddEffectType::ManaSave))
-				{
-					iManaSave += m_pItemList[i]->m_sItemEffectValue2;
-				}
-				break;
-
-			default:
-				break;
-			}
-		}
-	}
-	// Mana save max = 80%
-	if (iManaSave > 80) iManaSave = 80;
-	iManaCost = m_pMagicCfgList[iMagicNo]->m_sValue1;
-	if (m_pPlayer->m_bIsSafeAttackMode) iManaCost += (iManaCost / 2) - (iManaCost / 10);
-	if (iManaSave > 0)
-	{
-		double dV1 = (double)iManaSave;
-		double dV2 = (double)(dV1 / 100.0f);
-		double dV3 = (double)iManaCost;
-		dV1 = dV2 * dV3;
-		dV2 = dV3 - dV1;
-		iManaCost = (int)dV2;
-	}
-	if (iManaCost < 1) iManaCost = 1;
-	return iManaCost;
-}
-
-void CGame::UseMagic(int iMagicNo)
-{
-	if (!EnsureMagicConfigsLoaded()) return;
-	if (iMagicNo < 0 || iMagicNo >= 100) return;
-	if ((m_pPlayer->m_iMagicMastery[iMagicNo] == 0) || (m_pMagicCfgList[iMagicNo] == 0)) return;
-
-	// Casting
-	if (m_pPlayer->m_iHP <= 0) return;
-	if (m_bIsGetPointingMode == true) return;
-	if (iGetManaCost(iMagicNo) > m_pPlayer->m_iMP) return;
-	if (_bIsItemOnHand() == true)
-	{
-		AddEventList(DLGBOX_CLICK_MAGIC1, 10);
-		return;
-	}
-	if (m_bSkillUsingStatus == true)
-	{
-		AddEventList(DLGBOX_CLICK_MAGIC2, 10);
-		return;
-	}
-	if (!m_pPlayer->m_playerAppearance.bIsWalking) bSendCommand(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
-	m_pPlayer->m_Controller.SetCommand(Type::Magic);
-	m_iCastingMagicType = iMagicNo;
-	m_sMagicShortCut = iMagicNo;
-	m_sRecentShortCut = iMagicNo + 100;
-	m_iPointCommandType = iMagicNo + 100;
-	//m_bIsGetPointingMode = true;
-	m_dialogBoxManager.DisableDialogBox(DialogBoxId::Magic);
-}
-
-void CGame::ReleaseEquipHandler(char cEquipPos)
-{
-	char cStr1[64], cStr2[64], cStr3[64];
-	if (m_sItemEquipmentStatus[cEquipPos] < 0) return;
-	// Remove Angelic Stats
-	CItem* pCfgEq = GetItemConfig(m_pItemList[m_sItemEquipmentStatus[cEquipPos]]->m_sIDnum);
-	if ((cEquipPos >= 11)
-		&& (pCfgEq && pCfgEq->GetItemType() == ItemType::Equip))
-	{
-		short sItemID = m_sItemEquipmentStatus[cEquipPos];
-		if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-			m_pPlayer->m_iAngelicStr = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-			m_pPlayer->m_iAngelicDex = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-			m_pPlayer->m_iAngelicInt = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-			m_pPlayer->m_iAngelicMag = 0;
-	}
-
-	GetItemName(m_pItemList[m_sItemEquipmentStatus[cEquipPos]].get(), cStr1, cStr2, cStr3);
-	std::snprintf(G_cTxt, sizeof(G_cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
-	AddEventList(G_cTxt, 10);
-	m_bIsItemEquipped[m_sItemEquipmentStatus[cEquipPos]] = false;
-	m_sItemEquipmentStatus[cEquipPos] = -1;
-}
-
-void CGame::ItemEquipHandler(char cItemID)
-{
-	if (bCheckItemOperationEnabled(cItemID) == false) return;
-	if (m_bIsItemEquipped[cItemID] == true) return;
-	CItem* pCfg = GetItemConfig(m_pItemList[cItemID]->m_sIDnum);
-	if (!pCfg) return;
-	if (pCfg->GetEquipPos() == EquipPos::None)
-	{
-		AddEventList(BITEMDROP_CHARACTER3, 10);//"The item is not available."
-		return;
-	}
-	if (m_pItemList[cItemID]->m_wCurLifeSpan == 0)
-	{
-		AddEventList(BITEMDROP_CHARACTER1, 10); //"The item is exhausted. Fix it to use it."
-		return;
-	}
-	if (pCfg->m_wWeight / 100 > m_pPlayer->m_iStr + m_pPlayer->m_iAngelicStr)
-	{
-		AddEventList(BITEMDROP_CHARACTER2, 10);
-		return;
-	}
-	if (((m_pItemList[cItemID]->m_dwAttribute & 0x00000001) == 0) && (pCfg->m_sLevelLimit > m_pPlayer->m_iLevel))
-	{
-		AddEventList(BITEMDROP_CHARACTER4, 10);
-		return;
-	}
-	if (m_bSkillUsingStatus == true)
-	{
-		AddEventList(BITEMDROP_CHARACTER5, 10);
-		return;
-	}
-	if (pCfg->m_cGenderLimit != 0)
-	{
-		switch (m_pPlayer->m_sPlayerType) {
-		case 1:
-		case 2:
-		case 3:
-			if (pCfg->m_cGenderLimit != 1)
-			{
-				AddEventList(BITEMDROP_CHARACTER6, 10);
-				return;
-			}
-			break;
-		case 4:
-		case 5:
-		case 6:
-			if (pCfg->m_cGenderLimit != 2)
-			{
-				AddEventList(BITEMDROP_CHARACTER7, 10);
-				return;
-			}
-			break;
-		}
-	}
-
-	bSendCommand(MsgId::CommandCommon, CommonType::EquipItem, 0, cItemID, 0, 0, 0);
-	m_sRecentShortCut = cItemID;
-	ReleaseEquipHandler(pCfg->m_cEquipPos);
-	switch (pCfg->GetEquipPos()) {
-	case EquipPos::Head:
-	case EquipPos::Body:
-	case EquipPos::Arms:
-	case EquipPos::Pants:
-	case EquipPos::Leggings:
-	case EquipPos::Back:
-		ReleaseEquipHandler(ToInt(EquipPos::FullBody));
-		break;
-	case EquipPos::FullBody:
-		ReleaseEquipHandler(ToInt(EquipPos::Head));
-		ReleaseEquipHandler(ToInt(EquipPos::Body));
-		ReleaseEquipHandler(ToInt(EquipPos::Arms));
-		ReleaseEquipHandler(ToInt(EquipPos::Pants));
-		ReleaseEquipHandler(ToInt(EquipPos::Leggings));
-		ReleaseEquipHandler(ToInt(EquipPos::Back));
-		break;
-	case EquipPos::LeftHand:
-	case EquipPos::RightHand:
-		ReleaseEquipHandler(ToInt(EquipPos::TwoHand));
-		break;
-	case EquipPos::TwoHand:
-		ReleaseEquipHandler(ToInt(EquipPos::RightHand));
-		ReleaseEquipHandler(ToInt(EquipPos::LeftHand));
-		break;
-	}
-
-	m_sItemEquipmentStatus[pCfg->m_cEquipPos] = cItemID;
-	m_bIsItemEquipped[cItemID] = true;
-
-	// Add Angelic Stats
-	if ((pCfg->GetItemType() == ItemType::Equip)
-		&& (pCfg->m_cEquipPos >= 11))
-	{
-		int iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-		if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
-			m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
-			m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
-			m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
-			m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
-	}
-
-	char cStr1[64], cStr2[64], cStr3[64];
-	GetItemName(m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
-	std::snprintf(G_cTxt, sizeof(G_cTxt), BITEMDROP_CHARACTER9, cStr1);
-	AddEventList(G_cTxt, 10);
-	PlayGameSound('E', 28, 0);
 }
 
 /*********************************************************************************************************************
@@ -11287,28 +8705,6 @@ void CGame::ShowHeldenianVictory(short sSide)
 **  void 	ResponseHeldenianTeleportList(char *pData)									(  Snoopy )					**
 **  description			: Gail's TP																					**
 **********************************************************************************************************************/
-void CGame::ResponseHeldenianTeleportList(char* pData)
-{
-	int i;
-#ifdef _DEBUG
-	AddEventList("Teleport ???", 10);
-#endif
-	const auto* header = hb::net::PacketCast<hb::net::PacketResponseTeleportListHeader>(
-		pData, sizeof(hb::net::PacketResponseTeleportListHeader));
-	if (!header) return;
-	const auto* entries = reinterpret_cast<const hb::net::PacketResponseTeleportListEntry*>(
-		pData + sizeof(hb::net::PacketResponseTeleportListHeader));
-	m_iTeleportMapCount = header->count;
-	for (i = 0; i < m_iTeleportMapCount; i++)
-	{
-		m_stTeleportList[i].iIndex = entries[i].index;
-		std::memset(m_stTeleportList[i].mapname, 0, sizeof(m_stTeleportList[i].mapname));
-		memcpy(m_stTeleportList[i].mapname, entries[i].map_name, 10);
-		m_stTeleportList[i].iX = entries[i].x;
-		m_stTeleportList[i].iY = entries[i].y;
-		m_stTeleportList[i].iCost = entries[i].cost;
-	}
-}
 /*********************************************************************************************************************
 **  bool DKGlare(int iWeaponIndex, int iWeaponIndex, int *iWeaponGlare)	( Snoopy )									**
 **  description			: test glowing condition for DK set															**
@@ -11334,36 +8730,36 @@ void CGame::DKGlare(int iWeaponColor, int iWeaponIndex, int* iWeaponGlare)
 void CGame::Abaddon_corpse(int sX, int sY)
 {
 	int ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir, ir, 1);
-	_DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir + 2, ir, 2);
-	_DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir - 2, ir, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir + 2, ir, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 30, 0, sX + 30, sY - 10, ir - 2, ir, 2);
 	ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir, ir, 1);
-	_DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir + 2, ir, 2);
-	_DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir - 2, ir, 2);
+	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir + 2, ir, 2);
+	WeatherManager::Get().DrawThunderEffect(sX - 20, 0, sX - 20, sY - 35, ir - 2, ir, 2);
 	ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir, ir, 1);
-	_DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir + 2, ir + 2, 2);
-	_DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir - 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir + 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX - 10, 0, sX - 10, sY + 30, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir, ir, 1);
-	_DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir + 2, ir + 2, 2);
-	_DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir - 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir + 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 50, 0, sX + 50, sY + 35, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir, ir, 1);
-	_DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir + 2, ir + 2, 2);
-	_DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir - 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir + 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 65, 0, sX + 65, sY - 5, ir - 2, ir + 2, 2);
 	ir = (rand() % 20) - 10;
-	_DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir, ir, 1);
-	_DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir + 2, ir + 2, 2);
-	_DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir - 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir, ir, 1);
+	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir + 2, ir + 2, 2);
+	WeatherManager::Get().DrawThunderEffect(sX + 45, 0, sX + 45, sY - 50, ir - 2, ir + 2, 2);
 
 	for (int x = sX - 50; x <= sX + 100; x += rand() % 35)
 	{
 		for (int y = sY - 30; y <= sY + 50; y += rand() % 45)
 		{
 			ir = (rand() % 20) - 10;
-			_DrawThunderEffect(x, 0, x, y, ir, ir, 2);
+			WeatherManager::Get().DrawThunderEffect(x, 0, x, y, ir, ir, 2);
 		}
 	}
 }

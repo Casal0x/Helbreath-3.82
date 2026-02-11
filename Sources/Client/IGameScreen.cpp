@@ -1,8 +1,10 @@
-// IGameScreen.cpp: Implementation of IGameScreen helper methods
+﻿// IGameScreen.cpp: Implementation of IGameScreen helper methods
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "IGameScreen.h"
+#include "EventListManager.h"
+#include "TextInputManager.h"
 #include "Game.h"
 #include "GameModeManager.h"
 #include "GameFonts.h"
@@ -63,29 +65,29 @@ void IGameScreen::PlayGameSound(char cType, int iNum, int iDist, long lPan)
 
 void IGameScreen::AddEventList(const char* pTxt, char cColor, bool bDupAllow)
 {
-    m_pGame->AddEventList(const_cast<char*>(pTxt), cColor, bDupAllow);
+    EventListManager::Get().AddEvent(pTxt, cColor, bDupAllow);
 }
 
 // ============== Input String Helpers ==============
 
 void IGameScreen::StartInputString(int sX, int sY, unsigned char iLen, char* pBuffer, bool bIsHide)
 {
-    m_pGame->StartInputString(sX, sY, iLen, pBuffer, bIsHide);
+    TextInputManager::Get().StartInput(sX, sY, iLen, pBuffer, bIsHide);
 }
 
 void IGameScreen::EndInputString()
 {
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
 }
 
 void IGameScreen::ClearInputString()
 {
-    m_pGame->ClearInputString();
+    TextInputManager::Get().ClearInput();
 }
 
 void IGameScreen::ShowReceivedString(bool bIsHide)
 {
-    m_pGame->ShowReceivedString(bIsHide);
+    TextInputManager::Get().ShowInput(bIsHide);
 }
 
 // ============== Timing Helper ==============

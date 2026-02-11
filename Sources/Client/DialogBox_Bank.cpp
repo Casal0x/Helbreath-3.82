@@ -1,6 +1,8 @@
-#include "DialogBox_Bank.h"
+﻿#include "DialogBox_Bank.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "IInput.h"
 #include "lan_eng.h"
 
@@ -50,7 +52,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 	for (int i = 0; i < Info().sV1; i++) {
 		int itemIndex = i + Info().sView;
 		if ((itemIndex < hb::shared::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
-			m_pGame->GetItemName(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
+			ItemNameFormatter::Get().Format(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				bFlag = true;
@@ -58,7 +60,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 				DrawItemDetails(sX, sY, szX, itemIndex, iLoc);
 			}
 			else {
-				if (m_pGame->m_bIsSpecial)
+				if (ItemNameFormatter::Get().IsSpecial())
 					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIItemName_Special);
 				else
 					PutAlignedString(sX, sX + szX, sY + 110 + i * 15, cStr1, GameColors::UIBlack);
@@ -91,9 +93,9 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	CItem* pCfg = m_pGame->GetItemConfig(pItem->m_sIDnum);
 	if (pCfg == nullptr) return;
 
-	m_pGame->GetItemName(pItem, cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(pItem, cStr1, cStr2, cStr3);
 
-	if (m_pGame->m_bIsSpecial)
+	if (ItemNameFormatter::Get().IsSpecial())
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIItemName_Special);
 	else
 		PutAlignedString(sX + 70, sX + szX, sY + iLoc, cStr1, GameColors::UIWhite);
@@ -207,7 +209,7 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				int itemIndex = Info().sView + i;
 				if ((itemIndex < hb::shared::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
-					if (m_pGame->_iGetTotalItemNum() >= 50) {
+					if (InventoryManager::Get().GetTotalItemCount() >= 50) {
 						AddEventList(DLGBOX_CLICK_BANK1, 10);
 						return true;
 					}
@@ -280,7 +282,7 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 	else
 	{
 		// Single item - deposit directly
-		if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1))
+		if (InventoryManager::Get().GetBankItemCount() >= (m_pGame->iMaxBankItems - 1))
 			AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 		else
 			bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, giveInfo.sV1, 1,

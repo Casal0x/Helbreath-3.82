@@ -1,4 +1,5 @@
 #include "DialogBox_ChatHistory.h"
+#include "ChatManager.h"
 #include "ConfigManager.h"
 #include "Game.h"
 #include "IInput.h"
@@ -92,12 +93,13 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 	{
 		int iIndex = i + sView;
 		if (iIndex < 0 || iIndex >= game_limits::max_chat_scroll_msgs) continue;
-		if (m_pGame->m_pChatScrollList[iIndex] != nullptr)
+		CMsg* pChatMsg = ChatManager::Get().GetMessage(iIndex);
+		if (pChatMsg != nullptr)
 		{
 			int iYPos = sY + 127 - i * 13;
-			char* pMsg = m_pGame->m_pChatScrollList[iIndex]->m_pMsg;
+			char* pMsg = pChatMsg->m_pMsg;
 
-			switch (m_pGame->m_pChatScrollList[iIndex]->m_dwTime)
+			switch (pChatMsg->m_dwTime)
 			{
 			case 0:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite)); break; // Normal
 			case 1:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIGuildGreen)); break; // Green

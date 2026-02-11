@@ -1,5 +1,8 @@
-#include "DialogBox_Shop.h"
+﻿#include "DialogBox_Shop.h"
 #include "Game.h"
+#include "ShopManager.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "IInput.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -43,7 +46,7 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     double dTmp1, dTmp2, dTmp3;
 
     for (int i = 0; i < game_limits::max_menu_items; i++)
-        if (m_pGame->m_pItemForSaleList[i] != 0) iTotalLines++;
+        if (ShopManager::Get().GetItemList()[i] != 0) iTotalLines++;
 
     if (iTotalLines > 13) {
         d1 = (double)m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView;
@@ -85,9 +88,9 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     // Draw item names
     for (int i = 0; i < 13; i++)
         if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < game_limits::max_menu_items) &&
-            (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
+            (ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
             std::memset(cTemp, 0, sizeof(cTemp));
-            m_pGame->GetItemName(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get(), cTemp, cStr2, cStr3);
+            ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView].get(), cTemp, cStr2, cStr3);
             if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79)) {
                 hb::shared::text::DrawTextAligned(GameFont::Default, sX + 10, sY + i * 18 + 65, (sX + 190) - (sX + 10), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
             }
@@ -97,18 +100,18 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
     // Draw prices
     for (int i = 0; i < 13; i++)
         if (((i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView) < game_limits::max_menu_items) &&
-            (m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
+            (ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView] != 0)) {
             iDiscountRatio = ((m_pGame->m_pPlayer->m_iCharisma - 10) / 4);
             dTmp1 = (double)iDiscountRatio;
             dTmp2 = dTmp1 / 100.0f;
-            dTmp1 = (double)m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice;
+            dTmp1 = (double)ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice;
             dTmp3 = dTmp1 * dTmp2;
             iDiscountCost = (int)dTmp3;
-            iCost = (int)(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
+            iCost = (int)(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
             iCost = iCost - iDiscountCost;
 
-            if (iCost < static_cast<int>(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2))
-                iCost = static_cast<int>(m_pGame->m_pItemForSaleList[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2) - 1;
+            if (iCost < static_cast<int>(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2))
+                iCost = static_cast<int>(ShopManager::Get().GetItemList()[i + m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView]->m_wPrice / 2) - 1;
 
             std::memset(cTemp, 0, sizeof(cTemp));
             std::snprintf(cTemp, sizeof(cTemp), "%6d", iCost);
@@ -123,14 +126,14 @@ int DialogBox_Shop::CalculateDiscountedPrice(int iItemIndex)
     int iDiscountRatio = ((m_pGame->m_pPlayer->m_iCharisma - 10) / 4);
     double dTmp1 = (double)iDiscountRatio;
     double dTmp2 = dTmp1 / 100.0f;
-    dTmp1 = (double)m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice;
+    dTmp1 = (double)ShopManager::Get().GetItemList()[iItemIndex]->m_wPrice;
     double dTmp3 = dTmp1 * dTmp2;
     int iDiscountCost = (int)dTmp3;
-    int iCost = (int)(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
+    int iCost = (int)(ShopManager::Get().GetItemList()[iItemIndex]->m_wPrice * ((100 + m_pGame->m_cDiscount) / 100.));
     iCost = iCost - iDiscountCost;
 
-    if (iCost < static_cast<int>(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2))
-        iCost = static_cast<int>(m_pGame->m_pItemForSaleList[iItemIndex]->m_wPrice / 2) - 1;
+    if (iCost < static_cast<int>(ShopManager::Get().GetItemList()[iItemIndex]->m_wPrice / 2))
+        iCost = static_cast<int>(ShopManager::Get().GetItemList()[iItemIndex]->m_wPrice / 2) - 1;
 
     return iCost;
 }
@@ -143,10 +146,10 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     bool bFlagStatLow = false;
     bool bFlagRedShown = false;
 
-    m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame);
+    m_pGame->m_pSprite[ItemPackPivotPoint + ShopManager::Get().GetItemList()[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, ShopManager::Get().GetItemList()[iItemIndex]->m_sSpriteFrame);
 
     std::memset(cTemp, 0, sizeof(cTemp));
-    m_pGame->GetItemName(m_pGame->m_pItemForSaleList[iItemIndex].get(), cTemp, cStr2, cStr3);
+    ItemNameFormatter::Get().Format(ShopManager::Get().GetItemList()[iItemIndex].get(), cTemp, cStr2, cStr3);
 
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 50, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 50, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
@@ -162,11 +165,11 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP7, iCost); //": %d Gold"
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 98, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    int iWeight = m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100;
+    int iWeight = ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100;
     std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP8, iWeight); //": %d Stone"
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 113, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    switch (m_pGame->m_pItemForSaleList[iItemIndex]->GetEquipPos()) {
+    switch (ShopManager::Get().GetItemList()[iItemIndex]->GetEquipPos()) {
     case EquipPos::RightHand:
     case EquipPos::TwoHand:
         DrawWeaponStats(sX, sY, iItemIndex, bFlagRedShown);
@@ -213,35 +216,35 @@ void DialogBox_Shop::DrawWeaponStats(short sX, short sY, int iItemIndex, bool& b
     hb::shared::text::DrawText(GameFont::Default, sX + 40, sY + 175, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawText(GameFont::Default, sX + 41, sY + 175, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue3 != 0) {
-        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue2,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue3);
+    if (ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue3 != 0) {
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (S-M)", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue1,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue2,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue3);
     }
     else {
-        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (S-M)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue2);
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (S-M)", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue1,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue2);
     }
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue6 != 0) {
-        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue6);
+    if (ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue6 != 0) {
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d+%d (L)", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue4,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue6);
     }
     else {
-        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (L)", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4,
-            m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
+        std::snprintf(cTemp, sizeof(cTemp), ": %dD%d (L)", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue4,
+            ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
     }
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 160, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    iTemp = m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100;
-    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed == 0) std::snprintf(cTemp, sizeof(cTemp), ": 0(10~10)");
-    else std::snprintf(cTemp, sizeof(cTemp), ": %d(%d ~ %d)", m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed, iTemp, m_pGame->m_pItemForSaleList[iItemIndex]->m_cSpeed * 13);
+    iTemp = ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100;
+    if (ShopManager::Get().GetItemList()[iItemIndex]->m_cSpeed == 0) std::snprintf(cTemp, sizeof(cTemp), ": 0(10~10)");
+    else std::snprintf(cTemp, sizeof(cTemp), ": %d(%d ~ %d)", ShopManager::Get().GetItemList()[iItemIndex]->m_cSpeed, iTemp, ShopManager::Get().GetItemList()[iItemIndex]->m_cSpeed * 13);
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 175, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+    if ((ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100));
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter); // *Your STR should be at least %d to use this item."
         bFlagRedShown = true;
@@ -255,11 +258,11 @@ void DialogBox_Shop::DrawShieldStats(short sX, short sY, int iItemIndex, bool& b
     std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP12); // "Defence"
     hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
+    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue1);
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+    if ((ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100));
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter); // "*Your STR should be at least %d to use this item."
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         bFlagRedShown = true;
@@ -273,14 +276,14 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
     std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP12); // "Defence"
     hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
     hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue1);
+    std::snprintf(cTemp, sizeof(cTemp), ": +%d%%", ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue1);
     hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 145, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
     bFlagStatLow = false;
 
-    switch (m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue4) {
+    switch (ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue4) {
     case 10://"Available for above Str %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP15, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iStr >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP15, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iStr >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -291,8 +294,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 11: // "Available for above Dex %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP16, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iDex >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP16, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iDex >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -303,8 +306,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 12: // "Available for above Vit %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP17, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iVit >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP17, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iVit >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -315,8 +318,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 13: // "Available for above Int %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP18, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iInt >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP18, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iInt >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -327,8 +330,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 14: // "Available for above Mag %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP19, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iMag >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP19, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iMag >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -339,8 +342,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         }
         break;
     case 15: // "Available for above Chr %d"
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP20, m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5);
-        if (m_pGame->m_pPlayer->m_iCharisma >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sItemEffectValue5) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP20, ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5);
+        if (m_pGame->m_pPlayer->m_iCharisma >= ShopManager::Get().GetItemList()[iItemIndex]->m_sItemEffectValue5) {
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 160, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
             hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 160, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
         }
@@ -354,8 +357,8 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         break;
     }
 
-    if ((m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
-        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (m_pGame->m_pItemForSaleList[iItemIndex]->m_wWeight / 100));
+    if ((ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100) > m_pGame->m_pPlayer->m_iStr) {
+        std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP11, (ShopManager::Get().GetItemList()[iItemIndex]->m_wWeight / 100));
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 288, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 288, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter); // "*Your STR should be at least %d to use this item."
         bFlagRedShown = true;
@@ -366,14 +369,14 @@ void DialogBox_Shop::DrawArmorStats(short sX, short sY, int iItemIndex, bool& bF
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         bFlagRedShown = true;
     }
-    else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(M)") != 0)
+    else if ((strstr(ShopManager::Get().GetItemList()[iItemIndex]->m_cName, "(M)") != 0)
         && (m_pGame->m_pPlayer->m_sPlayerType > 3)) {
         std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP22); // "(Warning!) only for male."
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 26, sY + 258, (sX + 241) - (sX + 26), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
         bFlagRedShown = true;
     }
-    else if ((strstr(m_pGame->m_pItemForSaleList[iItemIndex]->m_cName, "(W)") != 0)
+    else if ((strstr(ShopManager::Get().GetItemList()[iItemIndex]->m_cName, "(W)") != 0)
         && (m_pGame->m_pPlayer->m_sPlayerType <= 3)) {
         std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP23); // "(Warning!) only for female."
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 25, sY + 258, (sX + 240) - (sX + 25), 15, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed), hb::shared::text::Align::TopCenter);
@@ -386,18 +389,18 @@ void DialogBox_Shop::DrawLevelRequirement(short sX, short sY, int iItemIndex, bo
 {
     char cTemp[255];
 
-    if (m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit != 0) {
+    if (ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit != 0) {
         std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP24); // "Level"
-        if (m_pGame->m_pPlayer->m_iLevel >= m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit) {
+        if (m_pGame->m_pPlayer->m_iLevel >= ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit) {
             hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
             hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
+            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit);
             hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));// ": above %d"
         }
         else {
             hb::shared::text::DrawText(GameFont::Default, sX + 90, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
             hb::shared::text::DrawText(GameFont::Default, sX + 91, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UILabel));
-            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, m_pGame->m_pItemForSaleList[iItemIndex]->m_sLevelLimit);
+            std::snprintf(cTemp, sizeof(cTemp), DRAW_DIALOGBOX_SHOP25, ShopManager::Get().GetItemList()[iItemIndex]->m_sLevelLimit);
             hb::shared::text::DrawText(GameFont::Default, sX + 140, sY + 190, cTemp, hb::shared::text::TextStyle::Color(GameColors::UIWarningRed));// ": above %d"
             if (bFlagRedShown == false) {
                 std::snprintf(cTemp, sizeof(cTemp), "%s", DRAW_DIALOGBOX_SHOP26); // "(Warning!) Your level is too low for this item."
@@ -424,8 +427,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
 
     }
 
-    if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 > (50 - m_pGame->_iGetTotalItemNum()))
-        m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - m_pGame->_iGetTotalItemNum());
+    if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 > (50 - InventoryManager::Get().GetTotalItemCount()))
+        m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - InventoryManager::Get().GetTotalItemCount());
     if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 < 1)
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = 1;
 
@@ -470,13 +473,13 @@ bool DialogBox_Shop::OnClickItemList(short sX, short sY, short msX, short msY)
 {
     for (int i = 0; i < 13; i++)
         if ((msX >= sX + 20) && (msX <= sX + 220) && (msY >= sY + i * 18 + 65) && (msY <= sY + i * 18 + 79)) {
-            if (m_pGame->_iGetTotalItemNum() >= 50) {
+            if (InventoryManager::Get().GetTotalItemCount() >= 50) {
                 m_pGame->AddEventList(DLGBOX_CLICK_SHOP1, 10);//"You cannot buy anything because your bag is full."
                 return true;
             }
 
             m_pGame->PlayGameSound('E', 14, 5);
-            if (m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i] != 0)
+            if (ShopManager::Get().GetItemList()[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i] != 0)
                 m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sView + i + 1;
             return true;
         }
@@ -490,8 +493,8 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     // +10 quantity button
     if ((msX >= sX + 145) && (msX <= sX + 162) && (msY >= sY + 209) && (msY <= sY + 230)) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 += 10;
-        if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - m_pGame->_iGetTotalItemNum()))
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - m_pGame->_iGetTotalItemNum());
+        if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - InventoryManager::Get().GetTotalItemCount()))
+            m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - InventoryManager::Get().GetTotalItemCount());
         return true;
     }
 
@@ -506,8 +509,8 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
     // +1 quantity button
     if ((msX >= sX + 163) && (msX <= sX + 180) && (msY >= sY + 209) && (msY <= sY + 230)) {
         m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3++;
-        if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - m_pGame->_iGetTotalItemNum()))
-            m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - m_pGame->_iGetTotalItemNum());
+        if (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 >= (50 - InventoryManager::Get().GetTotalItemCount()))
+            m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3 = (50 - InventoryManager::Get().GetTotalItemCount());
         return true;
     }
 
@@ -521,12 +524,12 @@ bool DialogBox_Shop::OnClickItemDetails(short sX, short sY, short msX, short msY
 
     // Purchase button
     if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-        if ((50 - m_pGame->_iGetTotalItemNum()) < m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3) {
+        if ((50 - InventoryManager::Get().GetTotalItemCount()) < m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sV3) {
             m_pGame->AddEventList(DLGBOX_CLICK_SHOP1, 10);//"ou cannot buy anything because your bag is full."
         }
         else {
             std::memset(cTemp, 0, sizeof(cTemp));
-            CItem* pShopItem = m_pGame->m_pItemForSaleList[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1].get();
+            CItem* pShopItem = ShopManager::Get().GetItemList()[m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode - 1].get();
             std::snprintf(cTemp, sizeof(cTemp), "%s", pShopItem->m_cName);
             // Send item ID in iV2 for reliable item lookup on server
             int iItemId = pShopItem->m_sIDnum;

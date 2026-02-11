@@ -1,5 +1,6 @@
-#include "DialogBox_SellOrRepair.h"
+﻿#include "DialogBox_SellOrRepair.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
 #include "lan_eng.h"
@@ -50,11 +51,11 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
 
-		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
 		if (Info().sV4 == 1) std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
 		else std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM1, Info().sV4, cTemp);
 
-		if (m_pGame->m_bIsSpecial)
+		if (ItemNameFormatter::Get().IsSpecial())
 		{
 			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
 			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);
@@ -104,9 +105,9 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		std::memset(cTemp, 0, sizeof(cTemp));
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
-		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cTemp, cStr2, cStr3);
 		std::snprintf(cTxt, sizeof(cTxt), "%s", cTemp);
-		if (m_pGame->m_bIsSpecial)
+		if (ItemNameFormatter::Get().IsSpecial())
 		{
 			PutAlignedString(sX + 25, sX + 240, sY + 60, cTxt, GameColors::UIItemName_Special);
 			PutAlignedString(sX + 25 + 1, sX + 240 + 1, sY + 60, cTxt, GameColors::UIItemName_Special);

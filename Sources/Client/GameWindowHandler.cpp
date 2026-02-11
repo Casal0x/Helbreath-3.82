@@ -1,10 +1,11 @@
-// GameWindowHandler.cpp: hb::shared::render::Window event handler adapter for CGame
+﻿// GameWindowHandler.cpp: hb::shared::render::Window event handler adapter for CGame
 //
 // Routes window events to CGame and hb::shared::input::
 //////////////////////////////////////////////////////////////////////
 
 #include "GameWindowHandler.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "IInput.h"
 #include "RendererFactory.h"
 #include "ISpriteFactory.h"
@@ -262,7 +263,7 @@ bool GameWindowHandler::OnTextInput(hb::shared::types::NativeWindowHandle hWnd, 
 
     if (m_pGame)
     {
-        return m_pGame->GetText(hWnd, message, wParam, lParam) != 0;
+        return TextInputManager::Get().HandleChar(hWnd, message, wParam, lParam) != 0;
     }
     return false;
 }

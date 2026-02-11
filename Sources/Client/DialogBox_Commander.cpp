@@ -1,5 +1,6 @@
-#include "DialogBox_Commander.h"
+﻿#include "DialogBox_Commander.h"
 #include "Game.h"
+#include "TeleportManager.h"
 #include "lan_eng.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
@@ -358,14 +359,14 @@ void DialogBox_Commander::OnDraw(short msX, short msY, short msZ, char cLB)
 						break;
 					}
 				}
-			if (m_pGame->m_iTeleportLocX != -1)
+			if (TeleportManager::Get().GetLocX() != -1)
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iTeleportLocX;
+				dV2 = (double)TeleportManager::Get().GetLocX();
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iTeleportLocY;
+				dV2 = (double)TeleportManager::Get().GetLocY();
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				if ((Info().cMode == 1) && (tY >= 30) && (tY <= 494))
@@ -443,11 +444,11 @@ bool DialogBox_Commander::OnClick(short msX, short msY)
 		}
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			if (m_pGame->m_iTeleportLocX == -1)
+			if (TeleportManager::Get().GetLocX() == -1)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
-			else if (strcmp(m_pGame->m_cMapName, m_pGame->m_cTeleportMapName) == 0)
+			else if (strcmp(m_pGame->m_cMapName, TeleportManager::Get().GetMapName()) == 0)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}

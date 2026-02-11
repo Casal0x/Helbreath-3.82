@@ -1,5 +1,6 @@
-#include "DialogBox_Soldier.h"
+﻿#include "DialogBox_Soldier.h"
 #include "Game.h"
+#include "TeleportManager.h"
 #include "lan_eng.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
@@ -42,12 +43,12 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 0: // Main dlg, Map
-		if (m_pGame->m_iTeleportLocX != -1)
+		if (TeleportManager::Get().GetLocX() != -1)
 		{
 			char locationBuf[128];
 			std::memset(cMapName, 0, sizeof(cMapName));
-			m_pGame->GetOfficialMapName(m_pGame->m_cTeleportMapName, cMapName);
-			snprintf(locationBuf, sizeof(locationBuf), DRAW_DIALOGBOX_SOLDIER1, cMapName, m_pGame->m_iTeleportLocX, m_pGame->m_iTeleportLocY);
+			m_pGame->GetOfficialMapName(TeleportManager::Get().GetMapName(), cMapName);
+			snprintf(locationBuf, sizeof(locationBuf), DRAW_DIALOGBOX_SOLDIER1, cMapName, TeleportManager::Get().GetLocX(), TeleportManager::Get().GetLocY());
 			PutAlignedString(sX, sX + szX, sY + 40, locationBuf);
 		}
 		else PutAlignedString(sX, sX + szX, sY + 40, DRAW_DIALOGBOX_SOLDIER2);
@@ -163,14 +164,14 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 						break;
 					}
 				}
-			if (m_pGame->m_iTeleportLocX != -1)
+			if (TeleportManager::Get().GetLocX() != -1)
 			{
 				dV1 = (double)MapSzX;
-				dV2 = (double)m_pGame->m_iTeleportLocX;
+				dV2 = (double)TeleportManager::Get().GetLocX();
 				dV3 = (dV2 * (double)szX) / dV1;
 				tX = (int)dV3;
 				dV1 = (double)MapSzY;
-				dV2 = (double)m_pGame->m_iTeleportLocY;
+				dV2 = (double)TeleportManager::Get().GetLocY();
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
 				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
@@ -222,11 +223,11 @@ bool DialogBox_Soldier::OnClick(short msX, short msY)
 	case 0: // Main dlg
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			if (m_pGame->m_iTeleportLocX == -1)
+			if (TeleportManager::Get().GetLocX() == -1)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[15]->m_pMsg, 5);
 			}
-			else if (strcmp(m_pGame->m_cMapName, m_pGame->m_cTeleportMapName) == 0)
+			else if (strcmp(m_pGame->m_cMapName, TeleportManager::Get().GetMapName()) == 0)
 			{
 				m_pGame->SetTopMsg(m_pGame->m_pGameMsgList[16]->m_pMsg, 5);
 			}

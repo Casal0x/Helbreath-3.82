@@ -1,6 +1,8 @@
-#include "DialogBox_Inventory.h"
+﻿#include "DialogBox_Inventory.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "IInput.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
@@ -218,13 +220,13 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	char cItemID = FindClickedItem(msX, msY, sX, sY);
 	if (cItemID == -1) return false;
 
-	m_pGame->_SetItemOrder(0, cItemID);
+	InventoryManager::Get().SetItemOrder(0, cItemID);
 
 	CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
 	if (pCfg == nullptr) return false;
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 
 	// Check if at repair shop
 	if (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SaleMenu) &&
@@ -266,7 +268,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 		pCfg->GetItemType() == ItemType::Arrow ||
 		pCfg->GetItemType() == ItemType::Eat)
 	{
-		if (!m_pGame->bCheckItemOperationEnabled(cItemID)) return true;
+		if (!InventoryManager::Get().CheckItemOperationEnabled(cItemID)) return true;
 
 		// Check damage cooldown for scrolls
 		if ((m_pGame->m_dwCurTime - m_pGame->m_dwDamagedTime) < 10000)
@@ -461,7 +463,7 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 			if (m_pGame->m_pSprite[spriteIdx]->CheckCollision(itemDrawX, itemDrawY, pCfg->m_sSpriteFrame, msX, msY))
 			{
 				// Bring item to top of order
-				m_pGame->_SetItemOrder(0, cItemID);
+				InventoryManager::Get().SetItemOrder(0, cItemID);
 
 				// Handle pointing mode (using items on other items)
 				bool bHandledPointing = false;
@@ -555,7 +557,7 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 
 		char cStr1[64], cStr2[64], cStr3[64];
 		char cTxt[120];
-		m_pGame->GetItemName(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cSelectedID].get(), cStr1, cStr2, cStr3);
 		std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 		AddEventList(cTxt, 10);
 

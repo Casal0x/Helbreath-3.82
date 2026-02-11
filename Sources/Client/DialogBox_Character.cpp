@@ -1,7 +1,9 @@
-#include "DialogBox_Character.h"
+﻿#include "DialogBox_Character.h"
 #include "ConfigManager.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "lan_eng.h"
 #include "SharedCalculations.h"
 
@@ -269,7 +271,7 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX + 180, sX + 250, sY + 208, valueBuf, GameColors::UILabel);
 
 	// Max Load
-	int iTotalWeight = m_pGame->_iCalcTotalWeight();
+	int iTotalWeight = InventoryManager::Get().CalcTotalWeight();
 	snprintf(valueBuf, sizeof(valueBuf), "%d/%d", (iTotalWeight / 100), iMaxLoad);
 	PutAlignedString(sX + 180, sX + 250, sY + 240, valueBuf, GameColors::UILabel);
 
@@ -497,7 +499,7 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 		if (m_pGame->m_bIsItemEquipped[cItemID])
 		{
 			char cStr1[64], cStr2[64], cStr3[64];
-			m_pGame->GetItemName(pItem, cStr1, cStr2, cStr3);
+			ItemNameFormatter::Get().Format(pItem, cStr1, cStr2, cStr3);
 			std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
 			std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 			AddEventList(m_pGame->G_cTxt, 10);
@@ -558,6 +560,6 @@ PressResult DialogBox_Character::OnPress(short msX, short msY)
 
 bool DialogBox_Character::OnItemDrop(short msX, short msY)
 {
-	m_pGame->ItemEquipHandler((char)CursorTarget::GetSelectedID());
+	InventoryManager::Get().EquipItem((char)CursorTarget::GetSelectedID());
 	return true;
 }

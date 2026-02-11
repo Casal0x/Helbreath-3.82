@@ -1,6 +1,7 @@
-#include "DialogBox_SellList.h"
+﻿#include "DialogBox_SellList.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
@@ -47,7 +48,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 			std::memset(cStr1, 0, sizeof(cStr1));
 			std::memset(cStr2, 0, sizeof(cStr2));
 			std::memset(cStr3, 0, sizeof(cStr3));
-			m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
+			ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
 
 			bool bHover = (msX > sX + 25) && (msX < sX + 250) && (msY >= sY + 55 + i * 15) && (msY <= sY + 55 + 14 + i * 15);
 
@@ -59,7 +60,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 
 				if (bHover)
 					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIWhite);
-				else if (m_pGame->m_bIsSpecial)
+				else if (ItemNameFormatter::Get().IsSpecial())
 					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
 				else
 					PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
@@ -100,7 +101,7 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 				{
 					if ((strlen(cStr2) == 0) && (strlen(cStr3) == 0))
 					{
-						if (m_pGame->m_bIsSpecial)
+						if (ItemNameFormatter::Get().IsSpecial())
 							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
 						else
 							PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
@@ -115,14 +116,14 @@ void DialogBox_SellList::DrawItemList(short sX, short sY, short szX, short msX, 
 							else
 								std::snprintf(cTxt, sizeof(cTxt), "%s(%s%s)", cStr1, cStr2, cStr3);
 
-							if (m_pGame->m_bIsSpecial)
+							if (ItemNameFormatter::Get().IsSpecial())
 								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UIItemName_Special);
 							else
 								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cTxt, GameColors::UILabel);
 						}
 						else
 						{
-							if (m_pGame->m_bIsSpecial)
+							if (ItemNameFormatter::Get().IsSpecial())
 								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UIItemName_Special);
 							else
 								PutAlignedString(sX, sX + szX, sY + 55 + i * 15, cStr1, GameColors::UILabel);
@@ -254,7 +255,7 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	{
 		std::memset(m_pGame->G_cTxt, 0, sizeof(m_pGame->G_cTxt));
 		char cStr1[64], cStr2[64], cStr3[64];
-		m_pGame->GetItemName(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pGame->m_pItemList[cItemID].get(), cStr1, cStr2, cStr3);
 		std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), NOTIFYMSG_CANNOT_SELL_ITEM2, cStr1);
 		AddEventList(m_pGame->G_cTxt, 10);
 		return false;

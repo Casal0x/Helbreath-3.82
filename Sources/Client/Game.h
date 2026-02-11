@@ -1,4 +1,4 @@
-// Game.h: interface for the CGame class.
+﻿// Game.h: interface for the CGame class.
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -85,18 +85,11 @@ public:
 	// Camera for viewport management
 	CCamera m_Camera;
 
-	int m_iTeleportMapCount;
-	void ResponseTeleportList(char * pData);
-	void ResponseChargedTeleport(char * pData);
 
-	void ItemEquipHandler(char cItemID);
-	void ReleaseEquipHandler(char cEquipPos);
 
 	void ReadSettings();
 	void WriteSettings();
 
-	int  iGetManaCost(int iMagicNo);
-	void UseMagic(int iMagicNo);
 	bool FindGuildName(char* pName, int* ipIndex);
 	void bItemDrop_ExternalScreen(char cItemID, short msX, short msY);
 	void CreateScreenShot();
@@ -112,27 +105,15 @@ public:
 	void DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoColorKey = false, bool bIsTrans = false);
 	void AddMapStatusInfo(const char* pData, bool bIsLastData);
 	void _RequestMapStatus(const char* pMapName, int iMode);
-	int  GetCharKind(char *str, int index);
-	void ReceiveString(char * pString);
-	void EndInputString();
-	void ClearInputString();
-	void ShowReceivedString(bool bIsHide = false);
-	bool GetText(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
 
 	void ResponsePanningHandler(char * pData);
-	void StartInputString(int sX, int sY, unsigned char iLen, char * pBuffer, bool bIsHide = false);
 	void _SetIlusionEffect(int iOwnerH);
 	void NoticementHandler(char * pData);
-	void GetItemName(short sItemId, uint32_t dwAttribute, char *pStr1, char *pStr2, char *pStr3);
-	void GetItemName(class CItem * pItem, char * pStr1, char * pStr2, char * pStr3);
 	CItem* GetItemConfig(int iItemID) const;
 	short FindItemIdByName(const char* cItemName);
 	void _LoadGameMsgTextContents();
-	bool _bCheckCurrentBuildItemStatus();
-	bool _bCheckBuildItemStatus();
-	bool _bDecodeBuildItemContents();
 	const char* GetNpcConfigName(short sType) const;
 	const char* GetNpcConfigNameById(short npcConfigId) const;
 	short ResolveNpcType(short npcConfigId) const;
@@ -143,14 +124,8 @@ public:
 	void RenderFrame();       // Render only: clear backbuffer -> draw -> flip (gated by frame limit)
 
 	void NpcTalkHandler(char * pData);
-	int  _iGetWeaponSkillType();
 	void SetCameraShakingEffect(short sDist, int iMul = 0);
 	void ClearSkillUsingStatus();
-	bool bCheckItemOperationEnabled(char cItemID);
-	void _DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, char cType);
-	void SetWhetherStatus(bool bStart, char cType);
-	void WhetherObjectFrameCounter();
-	void DrawWhetherEffects();
 	bool bCheckExID(char * pName);
 	bool bCheckLocalChatCommand(const char* pMsg);
 	char GetOfficialMapName(char * pMapName, char * pName);
@@ -167,18 +142,12 @@ public:
 	int  _iLoadTextDlgContents2(int iType);
 	void RequestFullObjectData(uint16_t wObjectID);
 	bool bCheckImportantFile();
-	void EraseItem(char cItemID);
 	void RetrieveItemHandler(char * pData);
 	void CivilRightAdmissionHandler(char * pData);
 	void _Draw_CharacterBody(short sX, short sY, short sType);
-void _LoadShopMenuContents(char cType);
-	void _RequestShopContents(int16_t npcType);
-	void ResponseShopContentsHandler(char* pData);
-	void PutChatScrollList(char * pMsg, char cType);
 	void RequestTeleportAndWaitData();
 	void PointCommandHandler(int indexX, int indexY, char cItemID = -1);
 	void AddEventList(const char* pTxt, char cColor = 0, bool bDupAllow = true);
-	void ShowEventList(uint32_t dwTime);
 	void _ShiftGuildOperationList();
 	void _PutGuildOperationList(char * pName, char cOpMode);
 	void DisbandGuildResponseHandler(char * pData);
@@ -186,7 +155,6 @@ void _LoadShopMenuContents(char cType);
 	void CreateNewGuildResponseHandler(char * pData);
 	void InitGameSettings();
 	void CommonEventHandler(char * pData);
-	void _SetItemOrder(char cWhere, char cItemID);
 	int iGetTopDialogBoxIndex();
 	void DisableDialogBox(int iBoxID);
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
@@ -225,6 +193,9 @@ void _LoadShopMenuContents(char cType);
 	bool bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1, int iV2, int iV3, const char* pString, int iV4 = 0); // v1.4
 	void RestoreSprites();
 	void CommandProcessor(short msX, short msY, short indexX, short indexY, char cLB, char cRB);
+	bool ProcessLeftClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType);
+	bool ProcessRightClick(short msX, short msY, short indexX, short indexY, uint32_t dwTime, uint16_t& wType);
+	void ProcessMotionCommands(uint16_t wType);
 	void OnGameSocketEvent();  // MODERNIZED: Polls socket instead of handling window messages
 	void OnKeyDown(KeyCode key);
 	void RegisterHotkeys();
@@ -265,17 +236,11 @@ void _LoadShopMenuContents(char cType);
 	bool bInit();
 
 	void ReserveFightzoneResponseHandler(char * pData);
-	int _iGetAttackType();
-	bool CanSuperAttack();
-	bool __bDecodeBuildItemContents(const std::string& buffer);
-	int _iGetBankItemCount();
-	int _iGetTotalItemNum();
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	//Snoopy: added function:
 	int bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
 	void ShowHeldenianVictory(short sSide);
-	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
 	void Abaddon_corpse(int sX, int sY);
 	void DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwTime);
@@ -316,22 +281,8 @@ void _LoadShopMenuContents(char cType);
 		char cOpMode;
 	} m_stGuildOpList[100];
 
-	struct {
-		uint32_t dwTime;
-		char  cColor;
-		char  cTxt[96];
-	} m_stEventHistory[6];
 
-	struct {
-		uint32_t dwTime;
-		char  cColor;
-		char  cTxt[96];
-	} m_stEventHistory2[6];
 
-	struct {
-		short sX, sY, sBX;
-		char cStep;
-	} m_stWhetherObject[game_limits::max_weather_objects];
 
 	struct {
 		bool bIsQuestCompleted;
@@ -363,13 +314,6 @@ void _LoadShopMenuContents(char cType);
 		char cGuildName[24];
 	} m_stGuildName[game_limits::max_guild_names];
 
-	struct {
-		int iIndex;
-		char mapname[12];
-		int iX;
-		int iY;
-		int iCost;
-	} m_stTeleportList[20];
 
 	class hb::shared::render::IRenderer* m_Renderer;  // Abstract renderer interface
 	std::unique_ptr<hb::shared::sprite::ISpriteFactory> m_pSpriteFactory;  // Sprite factory for creating sprites
@@ -383,8 +327,6 @@ void _LoadShopMenuContents(char cType);
 	std::unique_ptr<class hb::shared::net::ASIOSocket> m_pGSock;
 	std::unique_ptr<class hb::shared::net::ASIOSocket> m_pLSock;
 	CFloatingTextManager m_floatingText;
-	std::array<std::unique_ptr<class CMsg>, game_limits::max_chat_scroll_msgs> m_pChatScrollList;
-	std::array<std::unique_ptr<class CMsg>, game_limits::max_whisper_msgs> m_pWhisperMsg;
 	std::unique_ptr<EffectManager> m_pEffectManager;
 	std::unique_ptr<NetworkMessageManager> m_pNetworkMessageManager;
 	std::array<std::unique_ptr<class CItem>, hb::shared::limits::MaxItems> m_pItemList;
@@ -395,15 +337,10 @@ void _LoadShopMenuContents(char cType);
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pMsgTextList2;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pAgreeMsgTextList;
 	std::unique_ptr<class CMsg> m_pExID;
-	std::array<std::unique_ptr<class CBuildItem>, hb::shared::limits::MaxBuildItems> m_pBuildItemList;
-	std::array<std::unique_ptr<class CBuildItem>, hb::shared::limits::MaxBuildItems> m_pDispBuildItemList;
 
-	std::array<std::unique_ptr<class CItem>, game_limits::max_menu_items> m_pItemForSaleList;
-	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
 	std::array<std::unique_ptr<class CCharInfo>, 4> m_pCharList;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_game_msgs> m_pGameMsgList;
 
-	char * m_pInputBuffer;
 
 	uint32_t m_dwConnectMode;
 	std::vector<char> m_pendingLoginPacket;
@@ -413,7 +350,6 @@ void _LoadShopMenuContents(char cType);
 	uint32_t m_dwCheckConnectionTime;
 	int  m_dwLogOutCountTime;//was DWORD
 	uint32_t m_dwRestartCountTime;
-	uint32_t m_dwWOFtime; //v1.4
 	uint32_t m_dwObserverCamTime;
 	uint32_t m_dwDamagedTime;
 	uint32_t m_dwSpecialAbilitySettingTime;
@@ -435,16 +371,12 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	uint32_t m_dwMagicCastTime;  // Timestamp when magic was cast (for post-cast delay)
 	bool m_bSkillUsingStatus;
 	bool m_bItemUsingStatus;
-	bool m_bIsWhetherEffect;
 	bool m_bIsObserverMode, m_bIsObserverCommanded;
 		bool m_bIsFirstConn;
 	bool m_bIsServerChanging = false;
 	bool m_bIsCrusadeMode;
-		bool m_bInputStatus;
-	bool m_bIsSpecial;
 
 	bool m_bIsF1HelpWindowEnabled;
-	bool m_bIsTeleportRequested;
 	bool m_bHideLocalCursor;
 
 	bool m_bForceDisconn;
@@ -469,7 +401,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	int m_iDownSkillIndex;
 
 	int m_iIlusionOwnerH;
-		int m_iInputX, m_iInputY;
 	short m_sRecentShortCut;
 	std::array<short, 6> m_sShortCut{}; // Snoopy: 6 shortcuts
 		int m_iDrawFlag;
@@ -481,7 +412,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	int m_iBlockYear, m_iBlockMonth, m_iBlockDay;
 	unsigned char m_iTopMsgLastSec;
 				int m_iNetLagCount;
-	int m_iTeleportLocX, m_iTeleportLocY;
 	int m_iTotalPartyMember;
 	int m_iPartyStatus;
 	int m_iGizonItemUpgradeLeft;
@@ -495,8 +425,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	uint16_t m_wCommObjectID;
 	uint16_t m_wLastAttackTargetID;
 	uint16_t m_wEnterGameType;
-	unsigned char m_cInputMaxLen;
-	char m_cEdit[4];
 	char G_cTxt[128];
 	char m_cBGMmapName[12];
 	char m_cItemOrder[hb::shared::limits::MaxItems];
@@ -510,7 +438,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 	char m_cOverlayMessage;      // Message code (replaces m_cMsg[1] for overlay)
 	uint32_t m_dwOverlayStartTime;  // When overlay was shown
 
-	char m_cWhisperIndex;
 			char m_cMsg[200];
 	char m_cLocation[12];
 	char m_cCurLocation[12];
@@ -526,8 +453,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 
 			char m_cWorldServerName[32];
 	char m_cMenuDir, m_cMenuDirCnt, m_cMenuFrame;
-	char m_cWhetherEffectType;
-	char m_cWhetherStatus;
 	char m_cIlusionOwnerType;
 	char m_cName_IE[12];
 	char m_cLoading;
@@ -535,7 +460,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 
 	char m_cStatusMapName[12];
 	char m_cTopMsg[64];
-	char m_cTeleportMapName[12];
 	char m_cConstructMapName[12];
 	char m_cGameServerName[22]; //  Gateway
 
@@ -572,8 +496,6 @@ std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
 
 	hb::shared::geometry::GameRectangle m_rcPlayerRect, m_rcBodyRect;
 
-	bool m_bWhisper;
-	bool m_bShout;
 
 	bool m_bItemDrop;
 	int  m_iItemDropCnt;

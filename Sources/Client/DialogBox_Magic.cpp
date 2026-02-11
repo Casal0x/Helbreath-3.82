@@ -1,11 +1,13 @@
-#include "DialogBox_Magic.h"
+﻿#include "DialogBox_Magic.h"
 #include "ConfigManager.h"
 #include "Game.h"
+#include "MagicCastingSystem.h"
 #include "GameFonts.h"
 #include "IInput.h"
 #include "Misc.h"
 #include "TextLibExt.h"
 #include "lan_eng.h"
+#include "WeatherManager.h"
 
 using namespace hb::shared::item;
 using namespace hb::client::sprite_id;
@@ -64,7 +66,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 			std::snprintf(cTxt, sizeof(cTxt), "%s", m_pGame->m_pMagicCfgList[iCPivot + i]->m_cName);
 			CMisc::ReplaceString(cTxt, '-', ' ');
 
-			iManaCost = m_pGame->iGetManaCost(iCPivot + i);
+			iManaCost = MagicCastingSystem::Get().GetManaCost(iCPivot + i);
 
 			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
@@ -153,7 +155,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Weather modifier
-	switch (m_pGame->m_cWhetherStatus)
+	switch (WeatherManager::Get().GetWeatherStatus())
 	{
 	case 0: break;
 	case 1: iResult = iResult - (iResult / 24); break;
@@ -210,7 +212,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 		{
 			if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 18 + iYloc))
 			{
-				m_pGame->UseMagic(iCPivot + i);
+				MagicCastingSystem::Get().BeginCast(iCPivot + i);
 				PlaySoundEffect('E', 14, 5);
 				return true;
 			}

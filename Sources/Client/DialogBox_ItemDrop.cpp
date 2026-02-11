@@ -1,5 +1,6 @@
-#include "DialogBox_ItemDrop.h"
+﻿#include "DialogBox_ItemDrop.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "lan_eng.h"
 
 using namespace hb::shared::net;
@@ -19,13 +20,13 @@ void DialogBox_ItemDrop::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
 
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sView].get(), cStr1, cStr2, cStr3);
 
 	if (strlen(Info().cStr) == 0)
 		std::snprintf(cTxt, sizeof(cTxt), "%s", cStr1);
 
 	// Item name (green if special, blue otherwise)
-	if (m_pGame->m_bIsSpecial)
+	if (ItemNameFormatter::Get().IsSpecial())
 	{
 		PutString(sX + 35, sY + 20, cTxt, GameColors::UIItemName_Special);
 		PutString(sX + 36, sY + 20, cTxt, GameColors::UIItemName_Special);

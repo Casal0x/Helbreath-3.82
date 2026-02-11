@@ -1,4 +1,4 @@
-#include "DialogBoxManager.h"
+﻿#include "DialogBoxManager.h"
 #include "IDialogBox.h"
 #include "DialogBox_WarningMsg.h"
 #include "DialogBox_Resurrect.h"
@@ -43,7 +43,13 @@
 #include "DialogBox_SellOrRepair.h"
 #include "DialogBox_Manufacture.h"
 #include "Game.h"
+#include "lan_eng.h"
+#include "BuildItemManager.h"
+#include "ShopManager.h"
+#include "TextInputManager.h"
 #include "CursorTarget.h"
+
+using namespace hb::shared::net;
 
 DialogBoxManager::DialogBoxManager(CGame* game)
 	: m_game(game)
@@ -422,9 +428,476 @@ void DialogBoxManager::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 
 void DialogBoxManager::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pString)
 {
-	if (!m_game) return;
-	m_game->EnableDialogBox(iBoxID, cType, sV1, sV2, pString);
+	int i;
+	short sX, sY;
+
+	switch (iBoxID) {
+	case DialogBoxId::RepairAll: //50Cent - Repair all
+		Info(DialogBoxId::RepairAll).cMode = cType;
+		break;
+	case DialogBoxId::SaleMenu:
+		if (IsEnabled(DialogBoxId::SaleMenu) == false)
+		{
+			switch (cType) {
+			case 0:
+				break;
+			default:
+				// Check if shop items are already loaded (called from ResponseShopContentsHandler)
+				if (ShopManager::Get().HasItems()) {
+					// Items already loaded - just show the dialog
+					Info(DialogBoxId::SaleMenu).sV1 = cType;
+					Info(DialogBoxId::SaleMenu).cMode = 0;
+					Info(DialogBoxId::SaleMenu).sView = 0;
+					Info(DialogBoxId::SaleMenu).bFlag = true;
+					Info(DialogBoxId::SaleMenu).sV3 = 1;
+				} else {
+					// Request contents from server - dialog will be shown when response arrives
+					ShopManager::Get().SetPendingShopType(cType);
+					ShopManager::Get().RequestShopMenu(cType);
+				}
+				break;
+			}
+		}
+		break;
+
+	case DialogBoxId::LevelUpSetting: // levelup diag
+		if (IsEnabled(DialogBoxId::LevelUpSetting) == false)
+		{
+			Info(DialogBoxId::LevelUpSetting).sX = Info(DialogBoxId::CharacterInfo).sX + 20;
+			Info(DialogBoxId::LevelUpSetting).sY = Info(DialogBoxId::CharacterInfo).sY + 20;
+			Info(DialogBoxId::LevelUpSetting).sV1 = m_game->m_pPlayer->m_iLU_Point;
+		}
+		break;
+
+	case DialogBoxId::Magic: // Magic Dialog
+		break;
+
+	case DialogBoxId::ItemDropConfirm:
+		if (IsEnabled(DialogBoxId::ItemDropConfirm) == false) {
+			Info(DialogBoxId::ItemDropConfirm).sView = cType;
+		}
+		break;
+
+	case DialogBoxId::WarningBattleArea:
+		if (IsEnabled(DialogBoxId::WarningBattleArea) == false) {
+			Info(DialogBoxId::WarningBattleArea).sView = cType;
+		}
+		break;
+
+	case DialogBoxId::GuildMenu:
+		if (Info(DialogBoxId::GuildMenu).cMode == 1) {
+			sX = Info(DialogBoxId::GuildMenu).sX;
+			sY = Info(DialogBoxId::GuildMenu).sY;
+			TextInputManager::Get().EndInput();
+			TextInputManager::Get().StartInput(sX + 75, sY + 140, 21, m_game->m_pPlayer->m_cGuildName);
+		}
+		break;
+
+	case DialogBoxId::ItemDropExternal: // demande quantit�
+		if (IsEnabled(DialogBoxId::ItemDropExternal) == false)
+		{
+			Info(iBoxID).cMode = 1;
+			Info(DialogBoxId::ItemDropExternal).sView = cType;
+			TextInputManager::Get().EndInput();
+			std::memset(m_game->m_cAmountString, 0, sizeof(m_game->m_cAmountString));
+			std::snprintf(m_game->m_cAmountString, sizeof(m_game->m_cAmountString), "%d", sV1);
+			sX = Info(DialogBoxId::ItemDropExternal).sX;
+			sY = Info(DialogBoxId::ItemDropExternal).sY;
+			TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_game->m_cAmountString, false);
+		}
+		else
+		{
+			if (Info(DialogBoxId::ItemDropExternal).cMode == 1)
+			{
+				sX = Info(DialogBoxId::ItemDropExternal).sX;
+				sY = Info(DialogBoxId::ItemDropExternal).sY;
+				TextInputManager::Get().EndInput();
+				TextInputManager::Get().StartInput(sX + 40, sY + 57, 11, m_game->m_cAmountString, false);
+			}
+		}
+		break;
+
+	case DialogBoxId::Text:
+		if (IsEnabled(DialogBoxId::Text) == false)
+		{
+			switch (cType) {
+			case 0:
+				Info(DialogBoxId::Text).cMode = 0;
+				Info(DialogBoxId::Text).sView = 0;
+				break;
+			default:
+				m_game->_LoadTextDlgContents(cType);
+				Info(DialogBoxId::Text).cMode = 0;
+				Info(DialogBoxId::Text).sView = 0;
+				break;
+			}
+		}
+		break;
+
+	case DialogBoxId::SystemMenu:
+		break;
+
+	case DialogBoxId::NpcActionQuery: // Talk to npc or unicorn
+		m_game->m_bIsItemDisabled[Info(DialogBoxId::NpcActionQuery).sV1] = false;
+		if (IsEnabled(DialogBoxId::NpcActionQuery) == false)
+		{
+			Info(DialogBoxId::SaleMenu).sV1 = Info(DialogBoxId::SaleMenu).sV2 = Info(DialogBoxId::SaleMenu).sV3 =
+				Info(DialogBoxId::SaleMenu).sV4 = Info(DialogBoxId::SaleMenu).sV5 = Info(DialogBoxId::SaleMenu).sV6 = 0;
+			Info(DialogBoxId::NpcActionQuery).cMode = cType;
+			Info(DialogBoxId::NpcActionQuery).sView = 0;
+			Info(DialogBoxId::NpcActionQuery).sV1 = sV1;
+			Info(DialogBoxId::NpcActionQuery).sV2 = sV2;
+		}
+		break;
+
+	case DialogBoxId::NpcTalk:
+		if (IsEnabled(DialogBoxId::NpcTalk) == false)
+		{
+			Info(DialogBoxId::NpcTalk).cMode = cType;
+			Info(DialogBoxId::NpcTalk).sView = 0;
+			Info(DialogBoxId::NpcTalk).sV1 = m_game->_iLoadTextDlgContents2(sV1 + 20);
+			Info(DialogBoxId::NpcTalk).sV2 = sV1 + 20;
+		}
+		break;
+
+	case DialogBoxId::Map:
+		if (IsEnabled(DialogBoxId::Map) == false) {
+			Info(DialogBoxId::Map).sV1 = sV1;
+			Info(DialogBoxId::Map).sV2 = sV2;
+
+			Info(DialogBoxId::Map).sSizeX = 290;
+			Info(DialogBoxId::Map).sSizeY = 290;
+		}
+		break;
+
+	case DialogBoxId::SellOrRepair:
+		if (IsEnabled(DialogBoxId::SellOrRepair) == false) {
+			Info(DialogBoxId::SellOrRepair).cMode = cType;
+			Info(DialogBoxId::SellOrRepair).sV1 = sV1;		// ItemID
+			Info(DialogBoxId::SellOrRepair).sV2 = sV2;
+			if (cType == 2)
+			{
+				Info(DialogBoxId::SellOrRepair).sX = Info(DialogBoxId::SaleMenu).sX;
+				Info(DialogBoxId::SellOrRepair).sY = Info(DialogBoxId::SaleMenu).sY;
+			}
+		}
+		break;
+
+	case DialogBoxId::Skill:
+		break;
+
+	case DialogBoxId::Fishing:
+		if (IsEnabled(DialogBoxId::Fishing) == false)
+		{
+			Info(DialogBoxId::Fishing).cMode = cType;
+			Info(DialogBoxId::Fishing).sV1 = sV1;
+			Info(DialogBoxId::Fishing).sV2 = sV2;
+			m_game->m_bSkillUsingStatus = true;
+		}
+		break;
+
+	case DialogBoxId::Noticement:
+		if (IsEnabled(DialogBoxId::Noticement) == false) {
+			Info(DialogBoxId::Noticement).cMode = cType;
+			Info(DialogBoxId::Noticement).sV1 = sV1;
+			Info(DialogBoxId::Noticement).sV2 = sV2;
+		}
+		break;
+
+	case DialogBoxId::Manufacture:
+		switch (cType) {
+		case DialogBoxId::CharacterInfo:
+		case DialogBoxId::Inventory: //
+			if (IsEnabled(DialogBoxId::Manufacture) == false)
+			{
+				Info(DialogBoxId::Manufacture).cMode = cType;
+				Info(DialogBoxId::Manufacture).sV1 = -1;
+				Info(DialogBoxId::Manufacture).sV2 = -1;
+				Info(DialogBoxId::Manufacture).sV3 = -1;
+				Info(DialogBoxId::Manufacture).sV4 = -1;
+				Info(DialogBoxId::Manufacture).sV5 = -1;
+				Info(DialogBoxId::Manufacture).sV6 = -1;
+				Info(DialogBoxId::Manufacture).cStr[0] = 0;
+				m_game->m_bSkillUsingStatus = true;
+				Info(DialogBoxId::Manufacture).sSizeX = 195;
+				Info(DialogBoxId::Manufacture).sSizeY = 215;
+				DisableDialogBox(DialogBoxId::ItemDropExternal);
+				DisableDialogBox(DialogBoxId::NpcActionQuery);
+				DisableDialogBox(DialogBoxId::SellOrRepair);
+			}
+			break;
+
+		case DialogBoxId::Magic:	//
+			if (IsEnabled(DialogBoxId::Manufacture) == false)
+			{
+				Info(DialogBoxId::Manufacture).sView = 0;
+				Info(DialogBoxId::Manufacture).cMode = cType;
+				Info(DialogBoxId::Manufacture).sV1 = -1;
+				Info(DialogBoxId::Manufacture).sV2 = -1;
+				Info(DialogBoxId::Manufacture).sV3 = -1;
+				Info(DialogBoxId::Manufacture).sV4 = -1;
+				Info(DialogBoxId::Manufacture).sV5 = -1;
+				Info(DialogBoxId::Manufacture).sV6 = -1;
+				Info(DialogBoxId::Manufacture).cStr[0] = 0;
+				Info(DialogBoxId::Manufacture).cStr[1] = 0;
+				Info(DialogBoxId::Manufacture).cStr[4] = 0;
+				m_game->m_bSkillUsingStatus = true;
+				BuildItemManager::Get().UpdateAvailableRecipes();
+				//Info(DialogBoxId::Manufacture).sX = 0;
+				//Info(DialogBoxId::Manufacture).sY = 0;
+				Info(DialogBoxId::Manufacture).sSizeX = 270;
+				Info(DialogBoxId::Manufacture).sSizeY = 381;
+				DisableDialogBox(DialogBoxId::ItemDropExternal);
+				DisableDialogBox(DialogBoxId::NpcActionQuery);
+				DisableDialogBox(DialogBoxId::SellOrRepair);
+			}
+			break;
+
+		case DialogBoxId::WarningBattleArea:
+			if (IsEnabled(DialogBoxId::Manufacture) == false)
+			{
+				Info(DialogBoxId::Manufacture).cMode = cType;
+				Info(DialogBoxId::Manufacture).cStr[2] = sV1;
+				Info(DialogBoxId::Manufacture).cStr[3] = sV2;
+				Info(DialogBoxId::Manufacture).sSizeX = 270;
+				Info(DialogBoxId::Manufacture).sSizeY = 381;
+				m_game->m_bSkillUsingStatus = true;
+				BuildItemManager::Get().UpdateAvailableRecipes();
+				DisableDialogBox(DialogBoxId::ItemDropExternal);
+				DisableDialogBox(DialogBoxId::NpcActionQuery);
+				DisableDialogBox(DialogBoxId::SellOrRepair);
+			}
+			break;
+			// Crafting
+		case DialogBoxId::GuildMenu:
+		case DialogBoxId::GuildOperation:
+			if (IsEnabled(DialogBoxId::Manufacture) == false)
+			{
+				Info(DialogBoxId::Manufacture).cMode = cType;
+				Info(DialogBoxId::Manufacture).sV1 = -1;
+				Info(DialogBoxId::Manufacture).sV2 = -1;
+				Info(DialogBoxId::Manufacture).sV3 = -1;
+				Info(DialogBoxId::Manufacture).sV4 = -1;
+				Info(DialogBoxId::Manufacture).sV5 = -1;
+				Info(DialogBoxId::Manufacture).sV6 = -1;
+				Info(DialogBoxId::Manufacture).cStr[0] = 0;
+				Info(DialogBoxId::Manufacture).cStr[1] = 0;
+				m_game->m_bSkillUsingStatus = true;
+				//_bCheckCraftItemStatus();
+				Info(DialogBoxId::Manufacture).sSizeX = 195;
+				Info(DialogBoxId::Manufacture).sSizeY = 215;
+				DisableDialogBox(DialogBoxId::ItemDropExternal);
+				DisableDialogBox(DialogBoxId::NpcActionQuery);
+				DisableDialogBox(DialogBoxId::SellOrRepair);
+			}
+			break;
+		}
+		break;
+
+	case DialogBoxId::Exchange: // Snoopy: 7 mar 06 (multitrade) case rewriten
+		if (IsEnabled(DialogBoxId::Exchange) == false)
+		{
+			Info(DialogBoxId::Exchange).cMode = cType;
+			for (i = 0; i < 8; i++)
+			{
+				std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr1));
+				std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr2));
+				m_game->m_stDialogBoxExchangeInfo[i].sV1 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV2 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV3 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV4 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV5 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV6 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].sV7 = -1;
+				m_game->m_stDialogBoxExchangeInfo[i].dwV1 = 0;
+			}
+			DisableDialogBox(DialogBoxId::ItemDropExternal);
+			DisableDialogBox(DialogBoxId::NpcActionQuery);
+			DisableDialogBox(DialogBoxId::SellOrRepair);
+			DisableDialogBox(DialogBoxId::Manufacture);
+		}
+		break;
+
+	case DialogBoxId::ConfirmExchange: // Snoopy: 7 mar 06 (MultiTrade) Confirmation dialog
+		break;
+
+	case DialogBoxId::Quest:
+		if (IsEnabled(DialogBoxId::Quest) == false) {
+			Info(DialogBoxId::Quest).cMode = cType;
+			Info(DialogBoxId::Quest).sX = Info(DialogBoxId::CharacterInfo).sX + 20;
+			Info(DialogBoxId::Quest).sY = Info(DialogBoxId::CharacterInfo).sY + 20;
+		}
+		break;
+
+	case DialogBoxId::Party:
+		if (IsEnabled(DialogBoxId::Party) == false) {
+			Info(DialogBoxId::Party).cMode = cType;
+			Info(DialogBoxId::Party).sX = Info(DialogBoxId::CharacterInfo).sX + 20;
+			Info(DialogBoxId::Party).sY = Info(DialogBoxId::CharacterInfo).sY + 20;
+		}
+		break;
+
+	case DialogBoxId::CrusadeJob:
+		if ((m_game->m_pPlayer->m_iHP <= 0) || (m_game->m_pPlayer->m_bCitizen == false)) return;
+		if (IsEnabled(DialogBoxId::CrusadeJob) == false)
+		{
+			Info(DialogBoxId::CrusadeJob).cMode = cType;
+			Info(DialogBoxId::CrusadeJob).sX = 360 ;
+			Info(DialogBoxId::CrusadeJob).sY = 65 ;
+			Info(DialogBoxId::CrusadeJob).sV1 = sV1;
+		}
+		break;
+
+	case DialogBoxId::ItemUpgrade:
+		if (IsEnabled(DialogBoxId::ItemUpgrade) == false)
+		{
+			Info(DialogBoxId::ItemUpgrade).cMode = cType;
+			Info(DialogBoxId::ItemUpgrade).sV1 = -1;
+			Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
+		}
+		else if (IsEnabled(DialogBoxId::ItemUpgrade) == false)
+		{
+			int iSoX, iSoM;
+			iSoX = iSoM = 0;
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
+				if (m_game->m_pItemList[i] != 0)
+				{
+					if ((m_game->m_pItemList[i]->m_sSprite == 6) && (m_game->m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
+					if ((m_game->m_pItemList[i]->m_sSprite == 6) && (m_game->m_pItemList[i]->m_sSpriteFrame == 129)) iSoM++;
+				}
+			if ((iSoX > 0) || (iSoM > 0))
+			{
+				Info(DialogBoxId::ItemUpgrade).cMode = 6; // Stone upgrade
+				Info(DialogBoxId::ItemUpgrade).sV2 = iSoX;
+				Info(DialogBoxId::ItemUpgrade).sV3 = iSoM;
+				Info(DialogBoxId::ItemUpgrade).sV1 = -1;
+				Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
+			}
+			else if (m_game->m_iGizonItemUpgradeLeft > 0)
+			{
+				Info(DialogBoxId::ItemUpgrade).cMode = 1;
+				Info(DialogBoxId::ItemUpgrade).sV2 = -1;
+				Info(DialogBoxId::ItemUpgrade).sV3 = -1;
+				Info(DialogBoxId::ItemUpgrade).sV1 = -1;
+				Info(DialogBoxId::ItemUpgrade).dwV1 = 0;
+			}
+			else
+			{
+				m_game->AddEventList(DRAW_DIALOGBOX_ITEMUPGRADE30, 10); // "Stone of Xelima or Merien is not present."
+				return;
+			}
+		}
+		break;
+
+	case DialogBoxId::MagicShop:
+		if (IsEnabled(iBoxID) == false) {
+			if (m_game->m_pPlayer->m_iSkillMastery[4] == 0) {
+				DisableDialogBox(DialogBoxId::MagicShop);
+				EnableDialogBox(DialogBoxId::NpcTalk, 0, 480, 0);
+				return;
+			}
+			else {
+				Info(iBoxID).cMode = 0;
+				Info(iBoxID).sView = 0;
+			}
+		}
+		break;
+
+	case DialogBoxId::Bank:
+		TextInputManager::Get().EndInput();
+		if (IsEnabled(iBoxID) == false) {
+			Info(iBoxID).cMode = 0;
+			Info(iBoxID).sView = 0;
+			EnableDialogBox(DialogBoxId::Inventory, 0, 0, 0);
+		}
+		break;
+
+	case DialogBoxId::Slates: // Slates
+		if (IsEnabled(DialogBoxId::Slates) == false) {
+			Info(DialogBoxId::Slates).sView = 0;
+			Info(DialogBoxId::Slates).cMode = cType;
+			Info(DialogBoxId::Slates).sV1 = -1;
+			Info(DialogBoxId::Slates).sV2 = -1;
+			Info(DialogBoxId::Slates).sV3 = -1;
+			Info(DialogBoxId::Slates).sV4 = -1;
+			Info(DialogBoxId::Slates).sV5 = -1;
+			Info(DialogBoxId::Slates).sV6 = -1;
+			Info(DialogBoxId::Slates).cStr[0] = 0;
+			Info(DialogBoxId::Slates).cStr[1] = 0;
+			Info(DialogBoxId::Slates).cStr[4] = 0;
+
+			Info(DialogBoxId::Slates).sSizeX = 180;
+			Info(DialogBoxId::Slates).sSizeY = 183;
+
+			DisableDialogBox(DialogBoxId::ItemDropExternal);
+			DisableDialogBox(DialogBoxId::NpcActionQuery);
+			DisableDialogBox(DialogBoxId::SellOrRepair);
+			DisableDialogBox(DialogBoxId::Manufacture);
+		}
+		break;
+	case DialogBoxId::ChangeStatsMajestic:
+		if (IsEnabled(DialogBoxId::ChangeStatsMajestic) == false) {
+			Info(DialogBoxId::ChangeStatsMajestic).sX = Info(DialogBoxId::LevelUpSetting).sX + 10;
+			Info(DialogBoxId::ChangeStatsMajestic).sY = Info(DialogBoxId::LevelUpSetting).sY + 10;
+			Info(DialogBoxId::ChangeStatsMajestic).cMode = 0;
+			Info(DialogBoxId::ChangeStatsMajestic).sView = 0;
+			m_game->m_pPlayer->m_wLU_Str = m_game->m_pPlayer->m_wLU_Vit = m_game->m_pPlayer->m_wLU_Dex = 0;
+			m_game->m_pPlayer->m_wLU_Int = m_game->m_pPlayer->m_wLU_Mag = m_game->m_pPlayer->m_wLU_Char = 0;
+			m_game->m_bSkillUsingStatus = false;
+		}
+		break;
+	case DialogBoxId::Resurrect: // Snoopy: Resurection
+		if (IsEnabled(DialogBoxId::Resurrect) == false)
+		{
+			Info(DialogBoxId::Resurrect).sX = 185;
+			Info(DialogBoxId::Resurrect).sY = 100;
+			Info(DialogBoxId::Resurrect).cMode = 0;
+			Info(DialogBoxId::Resurrect).sView = 0;
+			m_game->m_bSkillUsingStatus = false;
+		}
+		break;
+
+	default:
+		TextInputManager::Get().EndInput();
+		if (IsEnabled(iBoxID) == false) {
+			Info(iBoxID).cMode = 0;
+			Info(iBoxID).sView = 0;
+		}
+		break;
+	}
+	// Bounds-check dialog positions, but skip the HudPanel which has a fixed position at the bottom
+	if (iBoxID != DialogBoxId::HudPanel)
+	{
+		if (IsEnabled(iBoxID) == false)
+		{
+			// Clamp dialog positions to ensure they stay visible on screen
+			int maxX = LOGICAL_WIDTH() - 20;
+			int maxY = LOGICAL_HEIGHT() - ICON_PANEL_HEIGHT() - 20;
+			if (Info(iBoxID).sY > maxY) Info(iBoxID).sY = maxY;
+			if (Info(iBoxID).sX > maxX) Info(iBoxID).sX = maxX;
+			if ((Info(iBoxID).sX + Info(iBoxID).sSizeX) < 10) Info(iBoxID).sX += 20;
+			if ((Info(iBoxID).sY + Info(iBoxID).sSizeY) < 10) Info(iBoxID).sY += 20;
+		}
+	}
+	SetEnabled(iBoxID, true);
+	if (pString != 0) std::snprintf(Info(iBoxID).cStr, sizeof(Info(iBoxID).cStr), "%s", pString);
+	//Snoopy: 39->59
+	for (i = 0; i < 59; i++)
+		if (OrderAt(i) == iBoxID) SetOrderAt(i, 0);
+	//Snoopy: 39->59
+	for (i = 1; i < 59; i++)
+		if ((OrderAt(i - 1) == 0) && (OrderAt(i) != 0)) {
+			SetOrderAt(i - 1, OrderAt(i));
+			SetOrderAt(i, 0);
+		}
+	//Snoopy: 39->59
+	for (i = 0; i < 59; i++)
+		if (OrderAt(i) == 0) {
+			SetOrderAt(i, static_cast<char>(iBoxID));
+			return;
+		}
 }
+
 
 void DialogBoxManager::EnableDialogBox(DialogBoxId::Type id, int cType, int sV1, int sV2, char* pString)
 {
@@ -433,9 +906,165 @@ void DialogBoxManager::EnableDialogBox(DialogBoxId::Type id, int cType, int sV1,
 
 void DialogBoxManager::DisableDialogBox(int iBoxID)
 {
-	if (!m_game) return;
-	m_game->DisableDialogBox(iBoxID);
+	int i;
+
+	switch (iBoxID) {
+	case DialogBoxId::ItemDropConfirm:
+		m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemDropConfirm).sView] = false;
+		break;
+
+	case DialogBoxId::WarningBattleArea:
+		m_game->m_bIsItemDisabled[Info(DialogBoxId::WarningBattleArea).sView] = false;
+		break;
+
+	case DialogBoxId::GuildMenu:
+		if (Info(DialogBoxId::GuildMenu).cMode == 1)
+			TextInputManager::Get().EndInput();
+		Info(DialogBoxId::GuildMenu).cMode = 0;
+		break;
+
+	case DialogBoxId::SaleMenu:
+		ShopManager::Get().ClearItems();
+		Info(DialogBoxId::GiveItem).sV3 = 0;
+		Info(DialogBoxId::GiveItem).sV4 = 0; // v1.4
+		Info(DialogBoxId::GiveItem).sV5 = 0;
+		Info(DialogBoxId::GiveItem).sV6 = 0;
+		break;
+
+	case DialogBoxId::Bank:
+		if (Info(DialogBoxId::Bank).cMode < 0) return;
+		break;
+
+	case DialogBoxId::ItemDropExternal:
+		if (Info(DialogBoxId::ItemDropExternal).cMode == 1) {
+			TextInputManager::Get().EndInput();
+			m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemDropExternal).sView] = false;
+		}
+		break;
+
+	case DialogBoxId::NpcActionQuery: // v1.4
+		m_game->m_bIsItemDisabled[Info(DialogBoxId::NpcActionQuery).sV1] = false;
+		break;
+
+	case DialogBoxId::NpcTalk:
+		if (Info(DialogBoxId::NpcTalk).sV2 == 500)
+		{
+			m_game->bSendCommand(MsgId::CommandCommon, CommonType::GetMagicAbility, 0, 0, 0, 0, 0);
+		}
+		break;
+
+	case DialogBoxId::Fishing:
+		m_game->m_bSkillUsingStatus = false;
+		break;
+
+	case DialogBoxId::Manufacture:
+		if (Info(DialogBoxId::Manufacture).sV1 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV1] = false;
+		if (Info(DialogBoxId::Manufacture).sV2 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV2] = false;
+		if (Info(DialogBoxId::Manufacture).sV3 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV3] = false;
+		if (Info(DialogBoxId::Manufacture).sV4 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV4] = false;
+		if (Info(DialogBoxId::Manufacture).sV5 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV5] = false;
+		if (Info(DialogBoxId::Manufacture).sV6 != -1) m_game->m_bIsItemDisabled[Info(DialogBoxId::Manufacture).sV6] = false;
+		m_game->m_bSkillUsingStatus = false;
+		break;
+
+	case DialogBoxId::Exchange: //Snoopy: 7 mar 06 (multiTrade) case rewriten
+		for (i = 0; i < 8; i++)
+		{
+			// Re-enable item before clearing the slot
+			int sItemID = m_game->m_stDialogBoxExchangeInfo[i].sItemID;
+			if (sItemID >= 0 && sItemID < hb::shared::limits::MaxItems && m_game->m_bIsItemDisabled[sItemID])
+				m_game->m_bIsItemDisabled[sItemID] = false;
+
+			std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr1));
+			std::memset(m_game->m_stDialogBoxExchangeInfo[i].cStr2, 0, sizeof(m_game->m_stDialogBoxExchangeInfo[i].cStr2));
+			m_game->m_stDialogBoxExchangeInfo[i].sV1 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV2 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV3 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV4 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV5 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV6 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sV7 = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].sItemID = -1;
+			m_game->m_stDialogBoxExchangeInfo[i].dwV1 = 0;
+		}
+		break;
+
+	case DialogBoxId::SellList:
+		for (i = 0; i < game_limits::max_sell_list; i++)
+		{
+			if (m_game->m_stSellItemList[i].iIndex != -1) m_game->m_bIsItemDisabled[m_game->m_stSellItemList[i].iIndex] = false;
+			m_game->m_stSellItemList[i].iIndex = -1;
+			m_game->m_stSellItemList[i].iAmount = 0;
+		}
+		break;
+
+	case DialogBoxId::ItemUpgrade:
+		if (Info(DialogBoxId::ItemUpgrade).sV1 != -1)
+			m_game->m_bIsItemDisabled[Info(DialogBoxId::ItemUpgrade).sV1] = false;
+		break;
+
+	case DialogBoxId::Slates:
+	{
+		auto& info = Info(DialogBoxId::Slates);
+		auto clearSlot = [&](int idx) {
+			if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_game->m_bIsItemDisabled[idx] = false;
+		};
+		clearSlot(info.sV1);
+		clearSlot(info.sV2);
+		clearSlot(info.sV3);
+		clearSlot(info.sV4);
+	}
+
+		std::memset(Info(DialogBoxId::Slates).cStr, 0, sizeof(Info(DialogBoxId::Slates).cStr));
+		std::memset(Info(DialogBoxId::Slates).cStr2, 0, sizeof(Info(DialogBoxId::Slates).cStr2));
+		std::memset(Info(DialogBoxId::Slates).cStr3, 0, sizeof(Info(DialogBoxId::Slates).cStr3));
+		std::memset(Info(DialogBoxId::Slates).cStr4, 0, sizeof(Info(DialogBoxId::Slates).cStr4));
+		Info(DialogBoxId::Slates).sV1 = -1;
+		Info(DialogBoxId::Slates).sV2 = -1;
+		Info(DialogBoxId::Slates).sV3 = -1;
+		Info(DialogBoxId::Slates).sV4 = -1;
+		Info(DialogBoxId::Slates).sV5 = -1;
+		Info(DialogBoxId::Slates).sV6 = -1;
+		Info(DialogBoxId::Slates).sV9 = -1;
+		Info(DialogBoxId::Slates).sV10 = -1;
+		Info(DialogBoxId::Slates).sV11 = -1;
+		Info(DialogBoxId::Slates).sV12 = -1;
+		Info(DialogBoxId::Slates).sV13 = -1;
+		Info(DialogBoxId::Slates).sV14 = -1;
+		Info(DialogBoxId::Slates).dwV1 = 0;
+		Info(DialogBoxId::Slates).dwV2 = 0;
+		break;
+
+	case DialogBoxId::ChangeStatsMajestic:
+		m_game->m_pPlayer->m_wLU_Str = 0;
+		m_game->m_pPlayer->m_wLU_Vit = 0;
+		m_game->m_pPlayer->m_wLU_Dex = 0;
+		m_game->m_pPlayer->m_wLU_Int = 0;
+		m_game->m_pPlayer->m_wLU_Mag = 0;
+		m_game->m_pPlayer->m_wLU_Char = 0;
+		break;
+
+	}
+
+	// Call OnDisable for migrated dialogs
+	if (auto* pDlg = GetDialogBox(iBoxID))
+		pDlg->OnDisable();
+
+	SetEnabled(iBoxID, false);
+	// Snoopy: 39->59
+	for (i = 0; i < 59; i++)
+		if (OrderAt(i) == iBoxID)
+			SetOrderAt(i, 0);
+
+	// Snoopy: 39->59
+	for (i = 1; i < 59; i++)
+		if ((OrderAt(i - 1) == 0) && (OrderAt(i) != 0))
+		{
+			SetOrderAt(i - 1, OrderAt(i));
+			SetOrderAt(i, 0);
+		}
 }
+
 
 void DialogBoxManager::DisableDialogBox(DialogBoxId::Type id)
 {

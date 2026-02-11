@@ -1,6 +1,7 @@
-#include "DialogBox_ItemUpgrade.h"
+﻿#include "DialogBox_ItemUpgrade.h"
 #include "CursorTarget.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -111,7 +112,7 @@ void DialogBox_ItemUpgrade::DrawItemPreview(int sX, int sY, int iItemIndex)
     std::memset(cStr1, 0, sizeof(cStr1));
     std::memset(cStr2, 0, sizeof(cStr2));
     std::memset(cStr3, 0, sizeof(cStr3));
-    m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
+    ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
@@ -198,7 +199,7 @@ void DialogBox_ItemUpgrade::DrawMode2_InProgress(int sX, int sY)
         std::memset(cStr1, 0, sizeof(cStr1));
         std::memset(cStr2, 0, sizeof(cStr2));
         std::memset(cStr3, 0, sizeof(cStr3));
-        m_pGame->GetItemName(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
+        ItemNameFormatter::Get().Format(m_pGame->m_pItemList[iItemIndex].get(), cStr1, cStr2, cStr3);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 230 + 20, (sX + 248) - (sX + 24), 15, cStr1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 245 + 20, (sX + 248) - (sX + 24), 15, cStr2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 260 + 20, (sX + 248) - (sX + 24), 15, cStr3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);

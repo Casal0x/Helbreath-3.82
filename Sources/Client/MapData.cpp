@@ -13,6 +13,7 @@
 #include <cstring>
 #include <cstdio>
 #include <string_view>
+#include "WeatherManager.h"
 
 
 
@@ -2395,7 +2396,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								case 7: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_animation.cCurrentFrame); break;
 								case 8: dx = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_animation.cCurrentFrame); dy = cFrameMoveDots * (cTotalFrame - m_pData[dX][dY].m_animation.cCurrentFrame); break;
 								}
-								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
+								if (WeatherManager::Get().IsRaining())
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								else m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT, (m_sPivotX + dX) * 32 + dx, (m_sPivotY + dY) * 32 + dy, 0, 0, 0, 0);
 								if ((((m_pData[dX][dY].m_appearance.iWeaponGlare | m_pData[dX][dY].m_appearance.iShieldGlare) != 0) || (m_pData[dX][dY].m_status.bGMMode)) && (!m_pData[dX][dY].m_status.bInvisibility))
@@ -2455,7 +2456,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							else if (m_pData[dX][dY].m_animation.cCurrentFrame == 4) // vu comme case 4
 							{
-								if ((m_pGame->m_cWhetherEffectType >= 1) && (m_pGame->m_cWhetherEffectType <= 3))
+								if (WeatherManager::Get().IsRaining())
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + ((rand() % 20) - 10), (m_sPivotY + dY) * 32 + ((rand() % 20) - 10), 0, 0, 0, 0);
 									m_pGame->m_pEffectManager->AddEffect(EffectType::FOOTPRINT_RAIN, (m_sPivotX + dX) * 32 + ((rand() % 20) - 10), (m_sPivotY + dY) * 32 + ((rand() % 20) - 10), 0, 0, 0, 0);

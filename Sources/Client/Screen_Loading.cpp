@@ -13,6 +13,7 @@
 #include "SpriteID.h"
 #include "GlobalDef.h"
 #include "AudioManager.h"
+#include "WeatherManager.h"
 #include "SpriteLoader.h"
 using namespace hb::client::sprite_id;
 
@@ -887,6 +888,8 @@ void Screen_Loading::LoadStage_Effects()
 
     // Initialize EffectManager with loaded sprites
     m_pGame->m_pEffectManager->SetEffectSprites(m_pGame->m_pEffectSpr);
+    WeatherManager::Get().SetDependencies(*m_pGame->m_Renderer, m_pGame->m_pEffectSpr, m_pGame->m_Camera);
+    WeatherManager::Get().SetMapData(m_pGame->m_pMapData.get());
 
     // Load all sound effects
     AudioManager::Get().LoadSounds();

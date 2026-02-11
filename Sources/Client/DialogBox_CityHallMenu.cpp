@@ -1,5 +1,6 @@
-#include "DialogBox_CityHallMenu.h"
+﻿#include "DialogBox_CityHallMenu.h"
 #include "Game.h"
+#include "TeleportManager.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -335,7 +336,7 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 	char mapNameBuf[120];
 	char teleportBuf[128];
 
-	if (m_pGame->m_iTeleportMapCount > 0)
+	if (TeleportManager::Get().GetMapCount() > 0)
 	{
 		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 50, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU70, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
@@ -343,11 +344,11 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 110, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU72, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 		hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, hb::shared::text::TextStyle::WithShadow(GameColors::UILabel));
 
-		for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
+		for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 		{
 			std::memset(mapNameBuf, 0, sizeof(mapNameBuf));
-			m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, mapNameBuf);
-			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, m_pGame->m_stTeleportList[i].iCost);
+			m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname, mapNameBuf);
+			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, TeleportManager::Get().GetList()[i].iCost);
 
 			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
@@ -355,7 +356,7 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIMenuHighlight), hb::shared::text::Align::TopCenter);
 		}
 	}
-	else if (m_pGame->m_iTeleportMapCount == -1)
+	else if (TeleportManager::Get().GetMapCount() == -1)
 	{
 		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU73, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 150, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU74, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
@@ -459,7 +460,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 10;
-		m_pGame->m_iTeleportMapCount = -1;
+		TeleportManager::Get().SetMapCount(-1);
 		m_pGame->bSendCommand(ClientMsgId::RequestTeleportList, 0, 0, 0, 0, 0, 0);
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
@@ -689,13 +690,13 @@ bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short m
 
 bool DialogBox_CityHallMenu::OnClickMode10(short sX, short sY, short msX, short msY)
 {
-	if (m_pGame->m_iTeleportMapCount > 0)
+	if (TeleportManager::Get().GetMapCount() > 0)
 	{
-		for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
+		for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 		{
 			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 			{
-				m_pGame->bSendCommand(ClientMsgId::RequestChargedTeleport, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
+				m_pGame->bSendCommand(ClientMsgId::RequestChargedTeleport, 0, 0, TeleportManager::Get().GetList()[i].iIndex, 0, 0, 0);
 				m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::CityHallMenu);
 				return true;
 			}

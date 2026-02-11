@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+﻿<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="15.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -328,6 +328,8 @@
     <ClInclude Include="MapData.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="ChatMsg.h" />
+    <ClInclude Include="ChatManager.h" />
+    <ClInclude Include="ItemNameFormatter.h" />
     <ClInclude Include="ClientMessages.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skill.h" />
@@ -338,6 +340,14 @@
     <ClInclude Include="LocalCacheManager.h" />
     <ClInclude Include="AudioManager.h" />
     <ClInclude Include="ChatCommandManager.h" />
+    <ClInclude Include="CombatSystem.h" />
+    <ClInclude Include="InventoryManager.h" />
+    <ClInclude Include="MagicCastingSystem.h" />
+    <ClInclude Include="BuildItemManager.h" />
+    <ClInclude Include="ShopManager.h" />
+    <ClInclude Include="TeleportManager.h" />
+    <ClInclude Include="TextInputManager.h" />
+    <ClInclude Include="EventListManager.h" />
     <ClInclude Include="WeatherManager.h" />
     <ClInclude Include="FloatingTextTypes.h" />
     <ClInclude Include="FloatingText.h" />
@@ -508,6 +518,16 @@
     <ClCompile Include="GameWindowHandler.cpp" />
     <ClCompile Include="AudioManager.cpp" />
     <ClCompile Include="ChatCommandManager.cpp" />
+    <ClCompile Include="CombatSystem.cpp" />
+    <ClCompile Include="InventoryManager.cpp" />
+    <ClCompile Include="MagicCastingSystem.cpp" />
+    <ClCompile Include="BuildItemManager.cpp" />
+    <ClCompile Include="ShopManager.cpp" />
+    <ClCompile Include="TeleportManager.cpp" />
+    <ClCompile Include="TextInputManager.cpp" />
+    <ClCompile Include="EventListManager.cpp" />
+    <ClCompile Include="ChatManager.cpp" />
+    <ClCompile Include="ItemNameFormatter.cpp" />
     <ClCompile Include="miniaudio_impl.cpp" />
     <ClCompile Include="WeatherManager.cpp" />
     <ClCompile Include="FloatingTextManager.cpp" />

@@ -1,4 +1,7 @@
-#include "Game.h"
+﻿#include "Game.h"
+#include "BuildItemManager.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -194,7 +197,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
 				pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
 
-				pGame->_bCheckBuildItemStatus();
+				BuildItemManager::Get().UpdateAvailableRecipes();
 
 				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
@@ -283,7 +286,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		if (iCreated > 0)
-			pGame->_bCheckBuildItemStatus();
+			BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
 	void HandleItemLifeSpanEnd(CGame* pGame, char* pData)
@@ -298,7 +301,7 @@ namespace NetworkMessageHandlers {
 		sItemIndex = static_cast<short>(pkt->item_index);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMLIFE_SPANEND1, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_sItemEquipmentStatus[pGame->m_pItemList[sItemIndex]->m_cEquipPos] = -1;
@@ -320,7 +323,7 @@ namespace NetworkMessageHandlers {
 		sItemIndex = static_cast<short>(pkt->item_index);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 		std::snprintf(cTxt, sizeof(cTxt), ITEM_EQUIPMENT_RELEASED, cStr1);
 		pGame->AddEventList(cTxt, 10);
 		pGame->m_bIsItemEquipped[sItemIndex] = false;
@@ -369,7 +372,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cTxt, 0, sizeof(cTxt));
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[sItemIndex]->m_sIDnum);
 
@@ -416,8 +419,8 @@ namespace NetworkMessageHandlers {
 		pGame->AddEventList(cTxt, 10);
 
 		if (bIsUseItemResult == true) pGame->m_bItemUsingStatus = false;
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		InventoryManager::Get().EraseItem((char)sItemIndex);
+		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
 	void HandleDropItemFin_EraseItem(CGame* pGame, char* pData)
@@ -433,7 +436,7 @@ namespace NetworkMessageHandlers {
 		iAmount = static_cast<int>(pkt->amount);
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 
 		std::memset(cTxt, 0, sizeof(cTxt));
 		if (pGame->m_bIsItemEquipped[sItemIndex] == true)
@@ -457,8 +460,8 @@ namespace NetworkMessageHandlers {
 			}
 		}
 		pGame->AddEventList(cTxt, 10);
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		InventoryManager::Get().EraseItem((char)sItemIndex);
+		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
 	void HandleGiveItemFin_EraseItem(CGame* pGame, char* pData)
@@ -502,8 +505,8 @@ namespace NetworkMessageHandlers {
 			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_GIVEITEMFIN_ERASEITEM8, iAmount, cStr1, cName);
 		}
 		pGame->AddEventList(cTxt, 10);
-		pGame->EraseItem((char)sItemIndex);
-		pGame->_bCheckBuildItemStatus();
+		InventoryManager::Get().EraseItem((char)sItemIndex);
+		BuildItemManager::Get().UpdateAvailableRecipes();
 	}
 
 	void HandleItemRepaired(CGame* pGame, char* pData)
@@ -520,7 +523,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_pItemList[dwItemID]->m_wCurLifeSpan = (WORD)dwLife;
 		pGame->m_bIsItemDisabled[dwItemID] = false;
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[dwItemID].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[dwItemID].get(), cStr1, cStr2, cStr3);
 
 		std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMREPAIRED1, cStr1);
 
@@ -599,7 +602,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cStr1, 0, sizeof(cStr1));
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
 
 		switch (wV2) {
 		case 1:
@@ -627,7 +630,7 @@ namespace NetworkMessageHandlers {
 		std::memset(cStr1, 0, sizeof(cStr1));
 		std::memset(cStr2, 0, sizeof(cStr2));
 		std::memset(cStr3, 0, sizeof(cStr3));
-		pGame->GetItemName(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[wV1].get(), cStr1, cStr2, cStr3);
 
 		switch (wV2) {
 		case 1:
@@ -667,7 +670,7 @@ namespace NetworkMessageHandlers {
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
 		char cStr1[64], cStr2[64], cStr3[64];
-		pGame->GetItemName(pGame->m_pItemList[wItemIndex].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(pGame->m_pItemList[wItemIndex].get(), cStr1, cStr2, cStr3);
 		if (iAmount == 1) std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_GIVE_ITEM2, cStr1, cName);
 		else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_CANNOT_GIVE_ITEM1, iAmount, cStr1, cName);
 
@@ -687,7 +690,7 @@ namespace NetworkMessageHandlers {
 
 		if (pGame->m_pItemList[sItemIndex] != 0) {
 			char cStr1[64], cStr2[64], cStr3[64];
-			pGame->GetItemName(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
+			ItemNameFormatter::Get().Format(pGame->m_pItemList[sItemIndex].get(), cStr1, cStr2, cStr3);
 			if (sItemColor != -1) {
 				pGame->m_pItemList[sItemIndex]->m_cItemColor = (char)sItemColor;
 				std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMCOLOR_CHANGE1, cStr1);

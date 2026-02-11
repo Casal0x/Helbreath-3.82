@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "ChatManager.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -98,16 +99,7 @@ namespace NetworkMessageHandlers {
 		if (bActive == true)
 		{
 			snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE1, cName);
-			if (pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1] != 0) {
-				pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1].reset();
-				pGame->m_pWhisperMsg[game_limits::max_whisper_msgs - 1].reset();
-			}
-			for (int i = game_limits::max_whisper_msgs - 2; i >= 0; i--) {
-				pGame->m_pWhisperMsg[i + 1] = std::move(pGame->m_pWhisperMsg[i]);
-				pGame->m_pWhisperMsg[i].reset();
-			}
-			pGame->m_pWhisperMsg[0] = std::make_unique<CMsg>(0, cName, 0);
-			pGame->m_cWhisperIndex = 0;
+			ChatManager::Get().AddWhisperTarget(cName);
 		}
 		else snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_WHISPERMODE2);
 

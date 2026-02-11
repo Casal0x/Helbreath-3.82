@@ -1,5 +1,6 @@
-#include "DialogBox_GuildMenu.h"
+﻿#include "DialogBox_GuildMenu.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
@@ -368,8 +369,8 @@ bool DialogBox_GuildMenu::OnClickMode0(short sX, short sY, short msX, short msY)
 		if (m_pGame->m_pPlayer->m_iCharisma < 20) return false;
 		if (m_pGame->m_pPlayer->m_iLevel < 20) return false;
 		if (m_pGame->m_bIsCrusadeMode) return false;
-		m_pGame->EndInputString();
-		m_pGame->StartInputString(sX + 75, sY + 140, 21, m_pGame->m_pPlayer->m_cGuildName);
+		TextInputManager::Get().EndInput();
+		TextInputManager::Get().StartInput(sX + 75, sY + 140, 21, m_pGame->m_pPlayer->m_cGuildName);
 		Info().cMode = 1;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -421,7 +422,7 @@ bool DialogBox_GuildMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 		if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return false;
 		bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
 		Info().cMode = 2;
-		m_pGame->EndInputString();
+		TextInputManager::Get().EndInput();
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
@@ -429,7 +430,7 @@ bool DialogBox_GuildMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 	// Cancel button
 	if ((msX >= sX + 154) && (msX <= sX + 154 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
 		Info().cMode = 0;
-		m_pGame->EndInputString();
+		TextInputManager::Get().EndInput();
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

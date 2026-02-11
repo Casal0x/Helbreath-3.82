@@ -206,7 +206,7 @@ namespace NetworkMessageHandlers {
 	void HandleConstructionPoint(CGame* pGame, char* pData);
 
 	// System
-	void HandleWhetherChange(CGame* pGame, char* pData);
+	void HandleWeatherChange(CGame* pGame, char* pData);
 	void HandleTimeChange(CGame* pGame, char* pData);
 	void HandleNoticeMsg(CGame* pGame, char* pData);
 	void HandleStatusText(CGame* pGame, char* pData);
@@ -455,7 +455,7 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 		case Notify::ServerShutdown: NetworkMessageHandlers::HandleServerShutdown(m_pGame, pData); return true;
 
 		// System (Generic)
-		case Notify::WhetherChange: NetworkMessageHandlers::HandleWhetherChange(m_pGame, pData); return true;
+		case Notify::WhetherChange: NetworkMessageHandlers::HandleWeatherChange(m_pGame, pData); return true;
 		case Notify::TimeChange: NetworkMessageHandlers::HandleTimeChange(m_pGame, pData); return true;
 		case Notify::NoticeMsg: NetworkMessageHandlers::HandleNoticeMsg(m_pGame, pData); return true;
 		case Notify::StatusText: NetworkMessageHandlers::HandleStatusText(m_pGame, pData); return true;

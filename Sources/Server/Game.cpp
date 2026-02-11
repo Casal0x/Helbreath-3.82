@@ -4385,10 +4385,21 @@ void CGame::InitPlayerData(int iClientH, char* pData, uint32_t dwSize)
 		}
 	}
 
-	if (m_pClientList[iClientH]->m_iQuest != 0) {
-		cQuestRemain = (m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest]->m_iMaxCount - m_pClientList[iClientH]->m_iCurQuestCount);
-		SendNotifyMsg(0, iClientH, Notify::QuestCounter, cQuestRemain, 0, 0, 0);
-		m_pQuestManager->_bCheckIsQuestCompleted(iClientH);
+	if (m_pClientList[iClientH]->m_iQuest > 0) {
+		// Validate quest number to prevent out-of-bounds access
+		if(m_pClientList[iClientH]->m_iQuest >= hb::server::config::MaxQuestType || !m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest])
+		{
+			m_pClientList[iClientH]->m_iQuest = 0;
+			m_pClientList[iClientH]->m_iCurQuestCount = 0;
+			m_pClientList[iClientH]->m_iQuestRewardAmount = 0;
+			m_pClientList[iClientH]->m_iQuestRewardType = 0;
+			m_pClientList[iClientH]->m_bIsQuestCompleted = false;
+		}
+		else {
+			cQuestRemain = (m_pQuestManager->m_pQuestConfigList[m_pClientList[iClientH]->m_iQuest]->m_iMaxCount - m_pClientList[iClientH]->m_iCurQuestCount);
+			SendNotifyMsg(0, iClientH, Notify::QuestCounter, cQuestRemain, 0, 0, 0);
+			m_pQuestManager->_bCheckIsQuestCompleted(iClientH);
+		}
 	}
 
 

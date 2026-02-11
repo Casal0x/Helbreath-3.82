@@ -1,5 +1,6 @@
 #include "DialogBox_SysMenu.h"
 #include "Game.h"
+#include "ChatManager.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
 #include "AudioManager.h"
@@ -676,14 +677,14 @@ void DialogBox_SysMenu::DrawSystemTab(short sX, short sY, short msX, short msY)
 	// Whisper toggle
 	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel);
 	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_WHISPER, GameColors::UILabel);
-	DrawToggle(valueX, lineY, m_pGame->m_bWhisper, msX, msY);
+	DrawToggle(valueX, lineY, ChatManager::Get().IsWhisperEnabled(), msX, msY);
 
 	lineY += 20;
 
 	// Shout toggle
 	PutString(labelX, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel);
 	PutString(labelX + 1, lineY, DRAW_DIALOGBOX_SYSMENU_SHOUT, GameColors::UILabel);
-	DrawToggle(valueX, lineY, m_pGame->m_bShout, msX, msY);
+	DrawToggle(valueX, lineY, ChatManager::Get().IsShoutEnabled(), msX, msY);
 
 	lineY += 20;
 
@@ -1104,12 +1105,12 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 
 	// Whisper toggle
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
-		if (m_pGame->m_bWhisper) {
-			m_pGame->m_bWhisper = false;
+		if (ChatManager::Get().IsWhisperEnabled()) {
+			ChatManager::Get().SetWhisperEnabled(false);
 			AddEventList(BCHECK_LOCAL_CHAT_COMMAND7, 10);
 		}
 		else {
-			m_pGame->m_bWhisper = true;
+			ChatManager::Get().SetWhisperEnabled(true);
 			AddEventList(BCHECK_LOCAL_CHAT_COMMAND6, 10);
 		}
 		PlaySoundEffect('E', 14, 5);
@@ -1120,12 +1121,12 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 
 	// Shout toggle
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
-		if (m_pGame->m_bShout) {
-			m_pGame->m_bShout = false;
+		if (ChatManager::Get().IsShoutEnabled()) {
+			ChatManager::Get().SetShoutEnabled(false);
 			AddEventList(BCHECK_LOCAL_CHAT_COMMAND9, 10);
 		}
 		else {
-			m_pGame->m_bShout = true;
+			ChatManager::Get().SetShoutEnabled(true);
 			AddEventList(BCHECK_LOCAL_CHAT_COMMAND8, 10);
 		}
 		PlaySoundEffect('E', 14, 5);

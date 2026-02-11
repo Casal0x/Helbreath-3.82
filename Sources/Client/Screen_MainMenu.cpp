@@ -1,9 +1,10 @@
-// Screen_MainMenu.cpp: Main Menu Screen implementation
+﻿// Screen_MainMenu.cpp: Main Menu Screen implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Screen_MainMenu.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -28,7 +29,7 @@ void Screen_MainMenu::on_initialize()
     // Actually, let's keep it safe.
     m_pGame->m_pSprite.remove(InterfaceNdLoading);
     
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
 
     m_cCurFocus = 1;
     m_cMaxFocus = 3;

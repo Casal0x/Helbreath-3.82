@@ -1,5 +1,6 @@
-#include "DialogBox_GuildHallMenu.h"
+﻿#include "DialogBox_GuildHallMenu.h"
 #include "Game.h"
+#include "TeleportManager.h"
 #include "lan_eng.h"
 #include "GlobalDef.h"
 #include "SpriteID.h"
@@ -45,21 +46,21 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 1: // TP diag
-		if (m_pGame->m_iTeleportMapCount > 0)
+		if (TeleportManager::Get().GetMapCount() > 0)
 		{
 			char teleportBuf[128];
 			hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, hb::shared::text::TextStyle::WithShadow(GameColors::UILabel));
-			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
+			for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
-				m_pGame->GetOfficialMapName(m_pGame->m_stTeleportList[i].mapname, cTxt);
-				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, m_pGame->m_stTeleportList[i].iCost);
+				m_pGame->GetOfficialMapName(TeleportManager::Get().GetList()[i].mapname, cTxt);
+				snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, cTxt, TeleportManager::Get().GetList()[i].iCost);
 				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 					PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIWhite);
 				else PutAlignedString(sX, sX + szX, sY + 130 + i * 15, teleportBuf, GameColors::UIMenuHighlight);
 			}
 		}
-		else if (m_pGame->m_iTeleportMapCount == -1)
+		else if (TeleportManager::Get().GetMapCount() == -1)
 		{
 			PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_CITYHALL_MENU73, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 150, DRAW_DIALOGBOX_CITYHALL_MENU74, GameColors::UILabel);
@@ -180,7 +181,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
 		{
 			Info().cMode = 1;
-			m_pGame->m_iTeleportMapCount = -1;
+			TeleportManager::Get().SetMapCount(-1);
 			bSendCommand(ClientMsgId::RequestHeldenianTpList, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 		}
@@ -202,13 +203,13 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		break;
 
 	case 1: // TP now
-		if (m_pGame->m_iTeleportMapCount > 0)
+		if (TeleportManager::Get().GetMapCount() > 0)
 		{
-			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
+			for (int i = 0; i < TeleportManager::Get().GetMapCount(); i++)
 			{
 				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 				{
-					bSendCommand(ClientMsgId::RequestHeldenianTp, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
+					bSendCommand(ClientMsgId::RequestHeldenianTp, 0, 0, TeleportManager::Get().GetList()[i].iIndex, 0, 0, 0);
 					DisableDialogBox(DialogBoxId::GuildHallMenu);
 					return false;
 				}

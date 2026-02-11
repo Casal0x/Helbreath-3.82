@@ -1,4 +1,5 @@
-#include "Game.h"
+﻿#include "Game.h"
+#include "TeleportManager.h"
 #include "NetworkMessageManager.h"
 #include "Packet/SharedPackets.h"
 #include "lan_eng.h"
@@ -132,10 +133,8 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyTCLoc>(
 			pData, sizeof(hb::net::PacketNotifyTCLoc));
 		if (!pkt) return;
-		pGame->m_iTeleportLocX = pkt->dest_x;
-		pGame->m_iTeleportLocY = pkt->dest_y;
-		std::memset(pGame->m_cTeleportMapName, 0, sizeof(pGame->m_cTeleportMapName));
-		memcpy(pGame->m_cTeleportMapName, pkt->teleport_map, sizeof(pkt->teleport_map));
+		TeleportManager::Get().SetLocation(pkt->dest_x, pkt->dest_y);
+		TeleportManager::Get().SetMapName(pkt->teleport_map, sizeof(pkt->teleport_map));
 		pGame->m_pPlayer->m_iConstructLocX = pkt->construct_x;
 		pGame->m_pPlayer->m_iConstructLocY = pkt->construct_y;
 		std::memset(pGame->m_cConstructMapName, 0, sizeof(pGame->m_cConstructMapName));

@@ -1,5 +1,6 @@
-#include "DialogBox_Fishing.h"
+﻿#include "DialogBox_Fishing.h"
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "GameFonts.h"
 #include "GlobalDef.h"
 #include "TextLibExt.h"
@@ -23,7 +24,7 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
 
 	char cStr1[64], cStr2[64], cStr3[64];
-	m_pGame->GetItemName(m_pGame->FindItemIdByName(Info().cStr), 0, cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->FindItemIdByName(Info().cStr), 0, cStr1, cStr2, cStr3);
 
 	switch (Info().cMode)
 	{

@@ -1,9 +1,10 @@
-// Screen_Login.cpp: Login Screen Implementation
+﻿// Screen_Login.cpp: Login Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Screen_Login.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -29,7 +30,7 @@ void Screen_Login::on_initialize()
     // Set current mode for code that checks GameModeManager::GetMode()
     GameModeManager::SetCurrentMode(GameMode::Login);
 
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
     m_cPrevFocus = 1;
     m_cCurFocus = 1;
     m_cMaxFocus = 4;
@@ -38,13 +39,13 @@ void Screen_Login::on_initialize()
     std::memset(m_cLoginName, 0, sizeof(m_cLoginName));
     std::memset(m_cLoginPassword, 0, sizeof(m_cLoginPassword));
     
-    m_pGame->StartInputString(234, 222, 11, m_cLoginName);
-    m_pGame->ClearInputString();
+    TextInputManager::Get().StartInput(234, 222, 11, m_cLoginName);
+    TextInputManager::Get().ClearInput();
 }
 
 void Screen_Login::on_uninitialize()
 {
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
 }
 
 void Screen_Login::on_update()
@@ -131,20 +132,20 @@ void Screen_Login::on_update()
     if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
-        m_pGame->EndInputString();
+        TextInputManager::Get().EndInput();
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
     if (m_cPrevFocus != m_cCurFocus)
     {
-         m_pGame->EndInputString();
+         TextInputManager::Get().EndInput();
         switch (m_cCurFocus) {
         case 1:
-            m_pGame->StartInputString(234, 222, 11, m_cLoginName);
+            TextInputManager::Get().StartInput(234, 222, 11, m_cLoginName);
             break;
         case 2:
-            m_pGame->StartInputString(234, 245, 11, m_cLoginPassword, true);
+            TextInputManager::Get().StartInput(234, 245, 11, m_cLoginPassword, true);
             break;
         case 3:
         case 4:
@@ -170,7 +171,7 @@ void Screen_Login::on_update()
         else if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
             if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
-                m_pGame->EndInputString();
+                TextInputManager::Get().EndInput();
                 std::memset(m_pGame->m_pPlayer->m_cAccountName, 0, sizeof(m_pGame->m_pPlayer->m_cAccountName));
                 std::memset(m_pGame->m_pPlayer->m_cAccountPassword, 0, sizeof(m_pGame->m_pPlayer->m_cAccountPassword));
                 std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
@@ -242,10 +243,10 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
     if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
 
     if (m_cCurFocus == 1)
-        m_pGame->ShowReceivedString();
+        TextInputManager::Get().ShowInput();
     else
         if (m_cCurFocus == 2)
-            m_pGame->ShowReceivedString(true);
+            TextInputManager::Get().ShowInput(true);
 
     if (bFlag == true)
     {

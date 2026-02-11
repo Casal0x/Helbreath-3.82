@@ -1,4 +1,7 @@
-#include "Game.h"
+﻿#include "Game.h"
+#include "TextInputManager.h"
+#include "MagicCastingSystem.h"
+#include "ChatManager.h"
 #include "AudioManager.h"
 #include "ConfigManager.h"
 #include "HotkeyManager.h"
@@ -57,7 +60,7 @@ void CGame::RegisterHotkeys()
 
 void CGame::Hotkey_ToggleForceAttack()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_pPlayer->m_bForceAttack)
@@ -74,7 +77,7 @@ void CGame::Hotkey_ToggleForceAttack()
 
 void CGame::Hotkey_CycleDetailLevel()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	int detailLevel = ConfigManager::Get().GetDetailLevel();
@@ -96,7 +99,7 @@ void CGame::Hotkey_CycleDetailLevel()
 
 void CGame::Hotkey_ToggleHelp()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
@@ -110,7 +113,7 @@ void CGame::Hotkey_ToggleHelp()
 
 void CGame::Hotkey_ToggleDialogTransparency()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
@@ -119,7 +122,7 @@ void CGame::Hotkey_ToggleDialogTransparency()
 
 void CGame::Hotkey_ToggleSystemMenu()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
@@ -138,7 +141,7 @@ void CGame::Hotkey_ToggleGuideMap()
 
 void CGame::Hotkey_ToggleRunningMode()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
@@ -156,7 +159,7 @@ void CGame::Hotkey_ToggleRunningMode()
 
 void CGame::Hotkey_ToggleSoundAndMusic()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	if (AudioManager::Get().IsMusicEnabled())
@@ -192,7 +195,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 
 void CGame::Hotkey_WhisperTarget()
 {
-	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || TextInputManager::Get().IsActive()) {
 		return;
 	}
 	char tempid[100], cLB, cRB;
@@ -213,9 +216,12 @@ void CGame::Hotkey_WhisperTarget()
 	{
 		char cBuff[64];
 		int i = (139 - msY + sY) / 13;
-		if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView] == 0) return;
-		if (m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg[0] == ' ') i++;
-		std::snprintf(cBuff, sizeof(cBuff), "%s", m_pChatScrollList[i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView]->m_pMsg);
+		int iMsgIdx = i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView;
+		CMsg* pChatMsg = ChatManager::Get().GetMessage(iMsgIdx);
+		if (pChatMsg == nullptr) return;
+		if (pChatMsg->m_pMsg[0] == ' ') { i++; pChatMsg = ChatManager::Get().GetMessage(i + m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sView); }
+		if (pChatMsg == nullptr) return;
+		std::snprintf(cBuff, sizeof(cBuff), "%s", pChatMsg->m_pMsg);
 		char* sep = std::strchr(cBuff, ':');
 		if (sep) *sep = '\0';
 		std::snprintf(tempid, sizeof(tempid), "/to %s", cBuff);
@@ -229,9 +235,9 @@ void CGame::Hotkey_WhisperTarget()
 	}
 	else
 	{
-		EndInputString();
+		TextInputManager::Get().EndInput();
 		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to ");
-		StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 	}
 }
 
@@ -333,19 +339,19 @@ void CGame::Hotkey_Simple_LoadBackupChat()
 	{
 		return;
 	}
-	if ((!m_bInputStatus) && (m_cBackupChatMsg[0] != '!') && (m_cBackupChatMsg[0] != '~') && (m_cBackupChatMsg[0] != '^') &&
+	if ((!TextInputManager::Get().IsActive()) && (m_cBackupChatMsg[0] != '!') && (m_cBackupChatMsg[0] != '~') && (m_cBackupChatMsg[0] != '^') &&
 		(m_cBackupChatMsg[0] != '@'))
 	{
 		std::memset(m_cChatMsg, 0, sizeof(m_cChatMsg));
 		std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "%s", m_cBackupChatMsg);
-		StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 	}
 }
 
 void CGame::Hotkey_Simple_UseMagicShortcut()
 {
 	if (GameModeManager::GetMode() != GameMode::MainGame) return;
-	UseMagic(m_sMagicShortCut);
+	MagicCastingSystem::Get().BeginCast(m_sMagicShortCut);
 }
 
 void CGame::Hotkey_Simple_ToggleCharacterInfo()
@@ -385,7 +391,7 @@ void CGame::Hotkey_Simple_ToggleChatHistory()
 
 void CGame::Hotkey_Simple_ToggleSystemMenu()
 {
-	if (m_bInputStatus) return;
+	if (TextInputManager::Get().IsActive()) return;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
 		m_dialogBoxManager.EnableDialogBox(DialogBoxId::SystemMenu, 0, 0, 0);
 	else m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
@@ -411,22 +417,13 @@ void CGame::Hotkey_Simple_WhisperCycleUp()
 	m_cArrowPressed = 1;
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		int iTotalMsg = 0;
-		for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)
-		{
-			if (m_pWhisperMsg[i] != 0)
-			{
-				iTotalMsg = i;
-				break;
-			}
-		}
-		m_cWhisperIndex++;
-		if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-		if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-			EndInputString();
-			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		ChatManager::Get().CycleWhisperUp();
+		int idx = ChatManager::Get().GetWhisperIndex();
+		const char* name = ChatManager::Get().GetWhisperTargetName(idx);
+		if (name != nullptr) {
+			TextInputManager::Get().EndInput();
+			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", name);
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 		}
 	}
 }
@@ -436,22 +433,13 @@ void CGame::Hotkey_Simple_WhisperCycleDown()
 	m_cArrowPressed = 3;
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		int iTotalMsg = 0;
-		for (int i = game_limits::max_whisper_msgs - 1; i >= 0; i--)
-		{
-			if (m_pWhisperMsg[i] != 0)
-			{
-				iTotalMsg = i;
-				break;
-			}
-		}
-		m_cWhisperIndex--;
-		if (m_cWhisperIndex < 0) m_cWhisperIndex = iTotalMsg;
-		if (m_cWhisperIndex > iTotalMsg) m_cWhisperIndex = 0;
-		if (m_pWhisperMsg[m_cWhisperIndex] != 0) {
-			EndInputString();
-			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", m_pWhisperMsg[m_cWhisperIndex]->m_pMsg);
-			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
+		ChatManager::Get().CycleWhisperDown();
+		int idx = ChatManager::Get().GetWhisperIndex();
+		const char* name = ChatManager::Get().GetWhisperTargetName(idx);
+		if (name != nullptr) {
+			TextInputManager::Get().EndInput();
+			std::snprintf(m_cChatMsg, sizeof(m_cChatMsg), "/to %s", name);
+			TextInputManager::Get().StartInput(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 		}
 	}
 }
@@ -525,7 +513,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 	int i = 0;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	if (GameModeManager::GetMode() != GameMode::MainGame) return;
-	if (m_bInputStatus) return;
+	if (TextInputManager::Get().IsActive()) return;
 	if (m_pPlayer->m_bIsSpecialAbilityEnabled == true)
 	{
 		if (m_pPlayer->m_iSpecialAbilityType != 0) {
@@ -578,7 +566,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 
 void CGame::Hotkey_Simple_ZoomIn()
 {
-	if (m_bInputStatus == false)
+	if (TextInputManager::Get().IsActive() == false)
 	{
 		ConfigManager::Get().SetZoomMapEnabled(true);
 	}
@@ -586,7 +574,7 @@ void CGame::Hotkey_Simple_ZoomIn()
 
 void CGame::Hotkey_Simple_ZoomOut()
 {
-	if (m_bInputStatus == false)
+	if (TextInputManager::Get().IsActive() == false)
 	{
 		ConfigManager::Get().SetZoomMapEnabled(false);
 	}

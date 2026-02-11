@@ -1,6 +1,7 @@
 #include "Game.h"
 #include "GameModeManager.h"
 #include "AudioManager.h"
+#include "WeatherManager.h"
 
 extern char G_cSpriteAlphaDegree;
 
@@ -15,16 +16,21 @@ extern char G_cSpriteAlphaDegree;
 using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
 
-void HandleWhetherChange(CGame* pGame, char* pData)
+void HandleWeatherChange(CGame* pGame, char* pData)
 {
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyWhetherChange>(
 		pData, sizeof(hb::net::PacketNotifyWhetherChange));
 	if (!pkt) return;
-	pGame->m_cWhetherStatus = static_cast<char>(pkt->status);
+	char weather_status = static_cast<char>(pkt->status);
+	WeatherManager::Get().SetWeatherStatus(weather_status);
 
-	if (pGame->m_cWhetherStatus != 0)
-		pGame->SetWhetherStatus(true, pGame->m_cWhetherStatus);
-	else pGame->SetWhetherStatus(false, 0);
+	if (weather_status != 0)
+	{
+		WeatherManager::Get().SetWeather(true, weather_status);
+		if (weather_status >= 4 && weather_status <= 6 && AudioManager::Get().IsMusicEnabled())
+			pGame->StartBGM();
+	}
+	else WeatherManager::Get().SetWeather(false, 0);
 }
 
 void HandleTimeChange(CGame* pGame, char* pData)
@@ -37,8 +43,9 @@ void HandleTimeChange(CGame* pGame, char* pData)
 	case 1:	pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 32, 0); break;
 	case 2: pGame->m_bIsXmas = false; pGame->PlayGameSound('E', 31, 0); break;
 	case 3: // Snoopy Special night with chrismas bulbs
-		if (pGame->m_cWhetherEffectType > 3) pGame->m_bIsXmas = true;
+		if (WeatherManager::Get().IsSnowing()) pGame->m_bIsXmas = true;
 		else pGame->m_bIsXmas = false;
+		WeatherManager::Get().SetXmas(pGame->m_bIsXmas);
 		pGame->PlayGameSound('E', 31, 0);
 		G_cSpriteAlphaDegree = 2; break;
 	}

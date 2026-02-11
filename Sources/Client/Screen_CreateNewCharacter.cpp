@@ -1,9 +1,10 @@
-// Screen_CreateNewCharacter.cpp: Create New Character Screen Implementation
+﻿// Screen_CreateNewCharacter.cpp: Create New Character Screen Implementation
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Screen_CreateNewCharacter.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -60,13 +61,13 @@ void Screen_CreateNewCharacter::on_initialize()
     m_pGame->m_cArrowPressed = 0;
     m_dwNewCharMTime = GameClock::GetTimeMS();
     std::memset(m_cNewCharName, 0, sizeof(m_cNewCharName));
-    m_pGame->StartInputString(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
-    m_pGame->ClearInputString();
+    TextInputManager::Get().StartInput(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
+    TextInputManager::Get().ClearInput();
 }
 
 void Screen_CreateNewCharacter::on_uninitialize()
 {
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
 }
 
 void Screen_CreateNewCharacter::on_update()
@@ -85,10 +86,10 @@ void Screen_CreateNewCharacter::on_update()
 
     // Handle focus change for input string
     if (m_cNewCharPrevFocus != m_cCurFocus) {
-        m_pGame->EndInputString();
+        TextInputManager::Get().EndInput();
         switch (m_cCurFocus) {
         case 1:
-            m_pGame->StartInputString(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
+            TextInputManager::Get().StartInput(193 + 4 + OX, 65 + 45 + OY, 11, m_cNewCharName);
             break;
         }
         m_cNewCharPrevFocus = m_cCurFocus;
@@ -453,7 +454,7 @@ void Screen_CreateNewCharacter::on_render()
     else
         m_pGame->m_pSprite[InterfaceNdButton]->Draw(230 + OX, 445 + OY, 63);
 
-    m_pGame->ShowReceivedString();
+    TextInputManager::Get().ShowInput();
 
     // Character preview
     switch (m_pGame->m_pPlayer->m_iGender) {

@@ -1,5 +1,7 @@
-#include "DialogBox_NpcActionQuery.h"
+﻿#include "DialogBox_NpcActionQuery.h"
 #include "Game.h"
+#include "InventoryManager.h"
+#include "ItemNameFormatter.h"
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
@@ -68,7 +70,7 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
 
@@ -87,7 +89,7 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -113,7 +115,7 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 	std::memset(cStr3, 0, sizeof(cStr3));
 
 	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
-	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
+	ItemNameFormatter::Get().Format(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -303,7 +305,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 8) && (absY <= 8)) {
-				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
+				if (InventoryManager::Get().GetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
 					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 				}
 				else if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);

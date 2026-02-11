@@ -1,5 +1,6 @@
-#include "Screen_CreateAccount.h"
+﻿#include "Screen_CreateAccount.h"
 #include "Game.h"
+#include "TextInputManager.h"
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
@@ -44,7 +45,7 @@ void Screen_CreateAccount::on_initialize()
     // Set current mode for code that checks GameModeManager::GetMode()
     GameModeManager::SetCurrentMode(GameMode::CreateNewAccount);
 
-    m_pGame->EndInputString();
+    TextInputManager::Get().EndInput();
 
     m_cNewAcctPrevFocus = 1;
     m_cNewAcctPrevLB = 0;
@@ -54,8 +55,8 @@ void Screen_CreateAccount::on_initialize()
 
     _clear_fields();
 
-    m_pGame->StartInputString(427, 84, 11, m_cNewAcctName);
-    m_pGame->ClearInputString();
+    TextInputManager::Get().StartInput(427, 84, 11, m_cNewAcctName);
+    TextInputManager::Get().ClearInput();
 }
 
 void Screen_CreateAccount::on_uninitialize()
@@ -90,14 +91,14 @@ void Screen_CreateAccount::on_update()
     // Handle focus change - switch input field
     if (m_cNewAcctPrevFocus != m_cCurFocus)
     {
-        m_pGame->EndInputString();
+        TextInputManager::Get().EndInput();
         switch (m_cCurFocus) {
-        case 1: m_pGame->StartInputString(427, 84, 11, m_cNewAcctName); break;
-        case 2: m_pGame->StartInputString(427, 106, 11, m_cNewAcctPassword, true); break;
-        case 3: m_pGame->StartInputString(427, 129, 11, m_cNewAcctConfirm, true); break;
-        case 4: m_pGame->StartInputString(311, 48 + 190 - 25 + 2, 49, m_cEmail); break;
+        case 1: TextInputManager::Get().StartInput(427, 84, 11, m_cNewAcctName); break;
+        case 2: TextInputManager::Get().StartInput(427, 106, 11, m_cNewAcctPassword, true); break;
+        case 3: TextInputManager::Get().StartInput(427, 129, 11, m_cNewAcctConfirm, true); break;
+        case 4: TextInputManager::Get().StartInput(311, 48 + 190 - 25 + 2, 49, m_cEmail); break;
         }
-        m_pGame->EndInputString();
+        TextInputManager::Get().EndInput();
         m_cNewAcctPrevFocus = m_cCurFocus;
     }
 
@@ -270,9 +271,9 @@ void Screen_CreateAccount::on_render()
 
     // Show active input string
     if ((m_cCurFocus == 2) || (m_cCurFocus == 3))
-        m_pGame->ShowReceivedString(true);
+        TextInputManager::Get().ShowInput(true);
     else if ((m_cCurFocus == 1) || (m_cCurFocus == 4))
-        m_pGame->ShowReceivedString();
+        TextInputManager::Get().ShowInput();
 
     // Draw input field values with validation coloring
     auto validStyle = hb::shared::text::TextStyle::WithShadow(GameColors::InputValid);

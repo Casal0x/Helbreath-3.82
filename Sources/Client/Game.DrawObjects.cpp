@@ -1,8 +1,9 @@
-// Game.DrawObjects.cpp: CGame partial implementation — DrawObjects coordinator + dispatchers
+﻿// Game.DrawObjects.cpp: CGame partial implementation — DrawObjects coordinator + dispatchers
 //
 //////////////////////////////////////////////////////////////////////
 
 #include "Game.h"
+#include "ItemNameFormatter.h"
 #include "RenderHelpers.h"
 #include "EntityRenderState.h"
 #include "ConfigManager.h"
@@ -965,12 +966,12 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 	if (sItemSelectedID != -1) {
 		char cStr1[64], cStr2[64], cStr3[64];
 		int  iLoc;
-		GetItemName(m_pItemConfigList[sItemSelectedID].get(), cStr1, cStr2, cStr3);
+		ItemNameFormatter::Get().Format(m_pItemConfigList[sItemSelectedID].get(), cStr1, cStr2, cStr3);
 
 		iLoc = 0;
 		if (strlen(cStr1) != 0)
 		{
-			if (m_bIsSpecial)
+			if (ItemNameFormatter::Get().IsSpecial())
 				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
 			else
 				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
