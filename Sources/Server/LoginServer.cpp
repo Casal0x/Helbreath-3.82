@@ -14,6 +14,7 @@ using namespace std;
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 
 using namespace hb::shared::net;
+using namespace hb::server::config;
 namespace sock = hb::shared::net::socket;
 extern char	G_cData50000[50000];
 //extern void PutLogList(char* cMsg);
@@ -191,7 +192,7 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 		std::vector<AccountDbEquippedItem> equippedItems;
 		if (LoadEquippedItemAppearances(db, entry.characterName, equippedItems)) {
 			for (const auto& item : equippedItems) {
-				if (item.itemId > 0 && item.itemId < DEF_MAXITEMTYPES && G_pGame->m_pItemConfigList[item.itemId] != nullptr) {
+				if (item.itemId > 0 && item.itemId < MaxItemTypes && G_pGame->m_pItemConfigList[item.itemId] != nullptr) {
 					auto* config = G_pGame->m_pItemConfigList[item.itemId];
 					hb::shared::entity::ApplyEquipAppearance(entry.appearance, config->GetEquipPos(), config->m_cApprValue, item.itemColor);
 				}
@@ -347,7 +348,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	state.fightzoneNumber = 0;
 	state.reserveTime = 0;
 	state.fightzoneTicketNumber = 0;
-	state.specialAbilityTime = DEF_SPECABLTYTIMESEC;
+	state.specialAbilityTime = SpecialAbilityTimeSec;
 	std::snprintf(state.lockedMapName, sizeof(state.lockedMapName), "NONE");
 	state.lockedMapTime = 0;
 	state.crusadeJob = 0;
@@ -593,8 +594,8 @@ void LoginServer::ChangePassword(int h, char* pData)
 		return;
 	}
 
-	char newSalt[DEF_PASSWORD_SALT_HEX] = {};
-	char newHash[DEF_PASSWORD_HASH_HEX] = {};
+	char newSalt[PasswordHash::SaltHexLen] = {};
+	char newHash[PasswordHash::HashHexLen] = {};
 	if (!PasswordHash::GenerateSalt(newSalt, sizeof(newSalt)) ||
 		!PasswordHash::HashPassword(cNewPw, newSalt, newHash, sizeof(newHash))) {
 		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
@@ -656,8 +657,8 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	AccountDbAccountData data = {};
 	std::snprintf(data.name, sizeof(data.name), "%s", cName);
 
-	char salt[DEF_PASSWORD_SALT_HEX] = {};
-	char hash[DEF_PASSWORD_HASH_HEX] = {};
+	char salt[PasswordHash::SaltHexLen] = {};
+	char hash[PasswordHash::HashHexLen] = {};
 	if (!PasswordHash::GenerateSalt(salt, sizeof(salt)) ||
 		!PasswordHash::HashPassword(cPassword, salt, hash, sizeof(hash))) {
 		CloseAccountDatabase(db);
@@ -761,7 +762,7 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	if (status != LogIn::Ok)
 		return;
 
-	for(int i = 0; i < DEF_MAXCLIENTS; i++)
+	for(int i = 0; i < MaxClients; i++)
 	{
 		if (!G_pGame->m_pClientList[i])
 			continue;

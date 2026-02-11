@@ -9,6 +9,7 @@ using namespace hb::shared::net;
 using namespace hb::shared::item;
 
 using hb::shared::item::EquipPos;
+using namespace hb::client::sprite_id;
 
 // Draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
 // Collision checks iterate in reverse so topmost-drawn item has highest click priority.
@@ -80,7 +81,7 @@ static EquipPos FindHoverSlot(CGame* pGame, const EquipSlotLayout* slots, int sl
 		CItem* pCfg = pGame->GetItemConfig(pGame->m_pItemList[itemIdx]->m_sIDnum);
 		if (pCfg == nullptr) continue;
 
-		if (pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + pCfg->m_sSprite + spriteOffset]->CheckCollision(
+		if (pGame->m_pSprite[ItemEquipPivotPoint + pCfg->m_sSprite + spriteOffset]->CheckCollision(
 			sX + slots[i].offsetX, sY + slots[i].offsetY, pCfg->m_sSpriteFrame, msX, msY))
 		{
 			return slots[i].equipPos;
@@ -108,7 +109,7 @@ void DialogBox_Character::DrawEquippedItem(hb::shared::item::EquipPos equipPos, 
 	// Select color array based on item type (weapons use different colors)
 	const hb::shared::render::Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
+	auto pSprite = m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + spriteOffset];
 
 	if (!bDisabled)
 	{
@@ -136,7 +137,7 @@ void DialogBox_Character::DrawHoverButton(int sX, int sY, int btnX, int btnY,
 	bool bHover = (msX >= sX + btnX) && (msX <= sX + btnX + ui_layout::btn_size_x) &&
 	              (msY >= sY + btnY) && (msY <= sY + btnY + ui_layout::btn_size_y);
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + btnX, sY + btnY,
+	DrawNewDialogBox(InterfaceNdButton, sX + btnX, sY + btnY,
 		bHover ? hoverFrame : normalFrame, false, dialogTrans);
 }
 
@@ -186,7 +187,7 @@ char DialogBox_Character::FindEquipItemAtPoint(short msX, short msY, short sX, s
 		short sSprH = pCfg->m_sSprite;
 		short sFrame = pCfg->m_sSpriteFrame;
 
-		if (m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset]->CheckCollision(
+		if (m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + spriteOffset]->CheckCollision(
 			sX + slots[i].offsetX, sY + slots[i].offsetY, sFrame, msX, msY))
 		{
 			return static_cast<char>(itemIdx);
@@ -204,7 +205,7 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	char cCollison = -1;
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 0, false, dialogTrans);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 0, false, dialogTrans);
 
 	// Player name and PK/contribution
 	char cTxt2[64];
@@ -313,17 +314,17 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	const char* cEquipPoiStatus, char& cCollison)
 {
 	// Base body
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 1);
+	m_pGame->m_pSprite[ItemEquipPivotPoint + 0]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 1);
 
 	// Hair (if no helmet)
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_pGame->m_pSprite[ItemEquipPivotPoint + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
+	m_pGame->m_pSprite[ItemEquipPivotPoint + 19]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
 
 	// Find topmost hovered slot (reverse scan) before drawing
 	EquipPos hoverSlot = FindHoverSlot(m_pGame, MaleEquipSlots, static_cast<int>(std::size(MaleEquipSlots)),
@@ -350,9 +351,9 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 			if (sSprH == 8) // Angel staff
 			{
 				if (!m_pGame->m_bIsItemDisabled[itemIdx])
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
+					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 				else
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 	}
@@ -362,17 +363,17 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	const char* cEquipPoiStatus, char& cCollison)
 {
 	// Base body (female uses +40 offset from male sprites)
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 4);
+	m_pGame->m_pSprite[ItemEquipPivotPoint + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_sPlayerType - 4);
 
 	// Hair (if no helmet) - female hair is at +18+40 = +58
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_pGame->m_pSprite[ItemEquipPivotPoint + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
-	m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
+	m_pGame->m_pSprite[ItemEquipPivotPoint + 19 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iUnderwearType);
 
 	// Check for skirt in pants slot (sprite 12, frame 0 = skirt)
 	bool bSkirt = false;
@@ -413,9 +414,9 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 			if (sSprH == 8) // Angel staff
 			{
 				if (!m_pGame->m_bIsItemDisabled[itemIdx])
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
+					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 				else
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
+					m_pGame->m_pSprite[ItemEquipPivotPoint + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 	}

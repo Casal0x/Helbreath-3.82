@@ -8,6 +8,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
@@ -30,7 +31,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 
 	int drawX = baseX + ITEM_OFFSET_X + pItem->m_sX;
 	int drawY = baseY + ITEM_OFFSET_Y + pItem->m_sY;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite];
+	auto pSprite = m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite];
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
@@ -74,7 +75,7 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX, sY, 0);
+	DrawNewDialogBox(InterfaceNdInventory, sX, sY, 0);
 
 	// Draw all inventory items
 	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
@@ -103,14 +104,14 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 	if ((msX >= sX + BTN_UPGRADE_X1) && (msX <= sX + BTN_UPGRADE_X2) &&
 	    (msY >= sY + BTN_Y1) && (msY <= sY + BTN_Y2))
 	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + BTN_UPGRADE_X1, sY + BTN_Y1, 1);
+		DrawNewDialogBox(InterfaceNdInventory, sX + BTN_UPGRADE_X1, sY + BTN_Y1, 1);
 	}
 
 	// Manufacture button hover
 	if ((msX >= sX + BTN_MANUFACTURE_X1) && (msX <= sX + BTN_MANUFACTURE_X2) &&
 	    (msY >= sY + BTN_Y1) && (msY <= sY + BTN_Y2))
 	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + BTN_MANUFACTURE_X1, sY + BTN_Y1, 2);
+		DrawNewDialogBox(InterfaceNdInventory, sX + BTN_MANUFACTURE_X1, sY + BTN_Y1, 2);
 	}
 }
 
@@ -187,7 +188,7 @@ char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short 
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
 		if (pCfg == nullptr) continue;
 
-		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
+		int spriteIdx = ItemPackPivotPoint + pCfg->m_sSprite;
 		int drawX = sX + ITEM_OFFSET_X + m_pGame->m_pItemList[cItemID]->m_sX;
 		int drawY = sY + ITEM_OFFSET_Y + m_pGame->m_pItemList[cItemID]->m_sY;
 
@@ -445,7 +446,7 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 		if (m_pGame->m_bIsItemEquipped[cItemID]) continue;
 
 		// Calculate item bounds
-		int spriteIdx = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
+		int spriteIdx = ItemPackPivotPoint + pCfg->m_sSprite;
 		int itemDrawX = sX + ITEM_OFFSET_X + pItem->m_sX;
 		int itemDrawY = sY + ITEM_OFFSET_Y + pItem->m_sY;
 

@@ -3,6 +3,7 @@
 #include "lan_eng.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_LevelUpSetting::DialogBox_LevelUpSetting(CGame* pGame)
 	: IDialogBox(DialogBoxId::LevelUpSetting, pGame)
 {
@@ -33,11 +34,11 @@ void DialogBox_LevelUpSetting::DrawStatRow(short sX, short sY, int iYOffset, con
 
 	// + arrow highlight
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanIncrease)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 195, sY + iArrowYOffset, 5);
+		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 195, sY + iArrowYOffset, 5);
 
 	// - arrow highlight
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanDecrease)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + iArrowYOffset, 6);
+		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 210, sY + iArrowYOffset, 6);
 }
 
 void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
@@ -48,9 +49,9 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	char cTxt[120];
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + 16, sY + 100, 4);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame4, sX + 16, sY + 100, 4);
 
 	// Header text
 	PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING1);
@@ -86,9 +87,9 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Close button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 
 	// Majestic button (only if no pending changes and no points left)
 	if ((m_pGame->m_pPlayer->m_wLU_Str == 0) && (m_pGame->m_pPlayer->m_wLU_Vit == 0) && (m_pGame->m_pPlayer->m_wLU_Dex == 0) &&
@@ -98,12 +99,12 @@ void DialogBox_LevelUpSetting::OnDraw(short msX, short msY, short msZ, char cLB)
 		    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
 			if (m_pGame->m_pPlayer->m_iLU_Point <= 0)
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 21);
+				DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 21);
 		}
 		else
 		{
 			if (m_pGame->m_pPlayer->m_iLU_Point <= 0)
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 20);
+				DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 20);
 		}
 	}
 }

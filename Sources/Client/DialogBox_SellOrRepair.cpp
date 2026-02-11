@@ -6,6 +6,7 @@
 #include "NetMessages.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_SellOrRepair::DialogBox_SellOrRepair(CGame* pGame)
 	: IDialogBox(DialogBoxId::SellOrRepair, pGame)
 {
@@ -24,14 +25,14 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	switch (Info().cMode) {
 	case 1:
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
+		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+		DrawNewDialogBox(InterfaceNdText, sX, sY, 11);
 
 		cItemID = Info().sV1;
 
 		cItemColor = m_pGame->m_pItemList[cItemID]->m_cItemColor;
 		if (cItemColor == 0)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
+			m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
 		else
 		{
 			switch (m_pGame->m_pItemList[cItemID]->m_sSprite) {
@@ -39,9 +40,9 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 2: // Bows
 			case 3: // Shields
 			case 15: // Axes hammers
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+				m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 				break;
-			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+			default: m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 				break;
 			}
 		}
@@ -71,21 +72,21 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM4, GameColors::UILabel);
 
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 39);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 38);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 39);
+		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 38);
 
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 		break;
 
 	case 2:
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 10);
+		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+		DrawNewDialogBox(InterfaceNdText, sX, sY, 10);
 		cItemID = Info().sV1;
 		cItemColor = m_pGame->m_pItemList[cItemID]->m_cItemColor;
 		if (cItemColor == 0)
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
+			m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame);
 		else
 		{
 			switch (m_pGame->m_pItemList[cItemID]->m_sSprite) {
@@ -93,10 +94,10 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 2: // Bows
 			case 3: // Shields
 			case 15: // Axes hammers
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+				m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 				break;
 
-			default: m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+			default: m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemList[cItemID]->m_sSprite]->Draw(sX + 62 + 15, sY + 84 + 30, m_pGame->m_pItemList[cItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 				break;
 			}
 		}
@@ -122,17 +123,17 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 55, sY + 190, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM7, GameColors::UILabel);
 
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 43);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 42);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 43);
+		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 42);
 
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
-		else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+		else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 		break;
 
 	case 3:
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
+		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+		DrawNewDialogBox(InterfaceNdText, sX, sY, 11);
 
 		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM8, GameColors::UILabel);
 		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel);
@@ -140,8 +141,8 @@ void DialogBox_SellOrRepair::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 
 	case 4:
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 10);
+		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+		DrawNewDialogBox(InterfaceNdText, sX, sY, 10);
 
 		PutString(sX + 55, sY + 100, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM11, GameColors::UILabel);
 		PutString(sX + 55, sY + 120, DRAW_DIALOGBOX_SELLOR_REPAIR_ITEM9, GameColors::UILabel);

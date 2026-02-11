@@ -7,6 +7,7 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
+using namespace hb::client::sprite_id;
 
 namespace MouseButton = hb::shared::input::MouseButton;
 
@@ -22,10 +23,10 @@ void Screen_MainMenu::on_initialize()
 
     // Note: Sprite removal logic (m_pSprite.remove) is better handled by resource management,
     // but preserving legacy behavior for now.
-    // DEF_SPRID_INTERFACE_ND_LOADING removal was in original code.
-    // m_pGame->m_pSprite.remove(DEF_SPRID_INTERFACE_ND_LOADING); // Keeping strict to original if needed? 
+    // InterfaceNdLoading removal was in original code.
+    // m_pGame->m_pSprite.remove(InterfaceNdLoading); // Keeping strict to original if needed? 
     // Actually, let's keep it safe.
-    m_pGame->m_pSprite.remove(DEF_SPRID_INTERFACE_ND_LOADING);
+    m_pGame->m_pSprite.remove(InterfaceNdLoading);
     
     m_pGame->EndInputString();
 
@@ -126,17 +127,17 @@ void Screen_MainMenu::on_update()
 
 void Screen_MainMenu::on_render()
 {
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_MAINMENU, 0, 0, 0, true);
+    m_pGame->DrawNewDialogBox(InterfaceNdMainMenu, 0, 0, 0, true);
 
     switch (m_cCurFocus) {
     case 1:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(465, 238, 1);
+        m_pGame->m_pSprite[InterfaceNdMainMenu]->Draw(465, 238, 1);
         break;
     case 2:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(465, 276, 2);
+        m_pGame->m_pSprite[InterfaceNdMainMenu]->Draw(465, 276, 2);
         break;
     case 3:
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Draw(465, 315, 3);
+        m_pGame->m_pSprite[InterfaceNdMainMenu]->Draw(465, 315, 3);
         break;
     }
 

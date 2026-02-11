@@ -10,6 +10,7 @@
 #include "IInput.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+using namespace hb::client::sprite_id;
 
 Overlay_WaitInitData::Overlay_WaitInitData(CGame* pGame)
     : IGameScreen(pGame)
@@ -62,9 +63,9 @@ void Overlay_WaitInitData::on_render()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
     std::snprintf(m_pGame->G_cTxt, sizeof(m_pGame->G_cTxt), "Waiting for response... %dsec", dwElapsed / 1000);
     hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 54, dlgY + 65, m_pGame->G_cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));

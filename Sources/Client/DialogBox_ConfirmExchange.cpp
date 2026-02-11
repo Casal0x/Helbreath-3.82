@@ -2,6 +2,7 @@
 #include "Game.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_ConfirmExchange::DialogBox_ConfirmExchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::ConfirmExchange, pGame)
 {
@@ -13,7 +14,7 @@ void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
 
 	switch (Info().cMode)
 	{
@@ -23,15 +24,15 @@ void DialogBox_ConfirmExchange::OnDraw(short msX, short msY, short msZ, char cLB
 
 		// Yes button
 		if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 19);
+			DrawNewDialogBox(InterfaceNdButton, sX + 30, sY + 55, 19);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 30, sY + 55, 18);
+			DrawNewDialogBox(InterfaceNdButton, sX + 30, sY + 55, 18);
 
 		// No button
 		if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 3);
+			DrawNewDialogBox(InterfaceNdButton, sX + 170, sY + 55, 3);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 170, sY + 55, 2);
+			DrawNewDialogBox(InterfaceNdButton, sX + 170, sY + 55, 2);
 		break;
 
 	case 2: // Waiting for response

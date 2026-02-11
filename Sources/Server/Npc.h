@@ -11,21 +11,38 @@
 #include "Appearance.h"
 #include "PlayerStatusData.h"
 
-#define DEF_MAXWAYPOINTS			10
+namespace hb::server::npc
+{
 
-#define DEF_MOVETYPE_STOP			0		// .  NPC  .
-#define DEF_MOVETYPE_SEQWAYPOINT	1
-#define DEF_MOVETYPE_RANDOMWAYPOINT	2
-#define DEF_MOVETYPE_FOLLOW			3
-#define DEF_MOVETYPE_RANDOMAREA		4
-#define DEF_MOVETYPE_RANDOM			5
-#define DEF_MOVETYPE_GUARD			6
+constexpr int MaxWaypoints = 10;
 
-#define DEF_BEHAVIOR_STOP			0
-#define DEF_BEHAVIOR_MOVE			1
-#define DEF_BEHAVIOR_ATTACK			2
-#define DEF_BEHAVIOR_FLEE			3
-#define DEF_BEHAVIOR_DEAD			4
+namespace MoveType
+{
+	enum : int
+	{
+		Stop            = 0,
+		SeqWaypoint     = 1,
+		RandomWaypoint  = 2,
+		Follow          = 3,
+		RandomArea      = 4,
+		Random          = 5,
+		Guard           = 6,
+	};
+}
+
+namespace Behavior
+{
+	enum : int
+	{
+		Stop    = 0,
+		Move    = 1,
+		Attack  = 2,
+		Flee    = 3,
+		Dead    = 4,
+	};
+}
+
+} // namespace hb::server::npc
 
 class CNpc  
 {
@@ -108,8 +125,8 @@ public:
 	char  m_cTotalWaypoint;
 
 	int   m_iSpotMobIndex;			// spot-mob-generator ?
-	int   m_iWayPointIndex[DEF_MAXWAYPOINTS+1];
-	char  m_cMagicEffectStatus[DEF_MAXMAGICEFFECTS];
+	int   m_iWayPointIndex[hb::server::npc::MaxWaypoints+1];
+	char  m_cMagicEffectStatus[hb::server::config::MaxMagicEffects];
 
 	bool  m_bIsPermAttackMode;
    	uint32_t   m_iNoDieRemainExp;

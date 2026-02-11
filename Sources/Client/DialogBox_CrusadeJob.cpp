@@ -6,6 +6,7 @@
 #include "lan_eng.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_CrusadeJob::DialogBox_CrusadeJob(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeJob, pGame)
 {
@@ -83,9 +84,9 @@ void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short 
 	// OK button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 		(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
 void DialogBox_CrusadeJob::OnDraw(short msX, short msY, short msZ, char cLB)
@@ -93,7 +94,7 @@ void DialogBox_CrusadeJob::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
 
 	switch (Info().cMode)
 	{

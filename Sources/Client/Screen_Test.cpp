@@ -14,6 +14,7 @@
 #include "SpriteLoader.h"
 #include "IInput.h"
 #include "RendererFactory.h"
+using namespace hb::client::sprite_id;
 
 Screen_Test::Screen_Test(CGame* pGame)
 	: IGameScreen(pGame)
@@ -37,49 +38,49 @@ void Screen_Test::LoadBitmapFonts()
 
 	// Load sprfonts sprites
 	hb::shared::sprite::SpriteLoader::open_pak("sprfonts", [&](hb::shared::sprite::SpriteLoader& loader) {
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1] = loader.get_sprite(0, false);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2] = loader.get_sprite(1, false);
+		m_pGame->m_pSprite[InterfaceFont1] = loader.get_sprite(0, false);
+		m_pGame->m_pSprite[InterfaceFont2] = loader.get_sprite(1, false);
 	});
 
 	// Load interface2 sprites (for number font and SPRFONTS2)
 	// ADDINTERFACE is sprite 0, SPRFONTS2 is sprite 1
 	hb::shared::sprite::SpriteLoader::open_pak("interface2", [&](hb::shared::sprite::SpriteLoader& loader) {
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = loader.get_sprite(0, false);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = loader.get_sprite(1, false);
+		m_pGame->m_pSprite[InterfaceAddInterface] = loader.get_sprite(0, false);
+		m_pGame->m_pSprite[InterfaceSprFonts2] = loader.get_sprite(1, false);
 	});
 
 	// Create bitmap fonts from the loaded sprites
 	// Font 1: Characters '!' (33) to 'z' (122)
-	if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1])
+	if (m_pGame->m_pSprite[InterfaceFont1])
 	{
 		hb::shared::text::LoadBitmapFont(GameFont::Bitmap1,
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1].get(), '!', 'z', 0,
+			m_pGame->m_pSprite[InterfaceFont1].get(), '!', 'z', 0,
 			GameFont::GetFontSpacing(GameFont::Bitmap1));
 	}
 
 	// Font 2: Characters ' ' (32) to '~' (126) - uses dynamic spacing
-	if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2])
+	if (m_pGame->m_pSprite[InterfaceFont2])
 	{
 		hb::shared::text::LoadBitmapFontDynamic(GameFont::Bitmap2,
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2].get(), ' ', '~', 0);
+			m_pGame->m_pSprite[InterfaceFont2].get(), ' ', '~', 0);
 	}
 
 	// Number font: Digits '0' to '9', frame offset 6 in ADDINTERFACE sprite
-	if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE])
+	if (m_pGame->m_pSprite[InterfaceAddInterface])
 	{
 		hb::shared::text::LoadBitmapFont(GameFont::Numbers,
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE].get(), '0', '9', 6,
+			m_pGame->m_pSprite[InterfaceAddInterface].get(), '0', '9', 6,
 			GameFont::GetFontSpacing(GameFont::Numbers));
 	}
 
 	// SPRFONTS2: Characters ' ' (32) to '~' (126), with 3 different sizes
-	if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2])
+	if (m_pGame->m_pSprite[InterfaceSprFonts2])
 	{
 		for (int idx = 0; idx < 3; idx++)
 		{
 			int fontId = GameFont::SprFont3_0 + idx;
 			hb::shared::text::LoadBitmapFontDynamic(fontId,
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95 * idx);
+				m_pGame->m_pSprite[InterfaceSprFonts2].get(), ' ', '~', 95 * idx);
 		}
 	}
 }

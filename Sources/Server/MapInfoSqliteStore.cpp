@@ -514,7 +514,7 @@ bool LoadMapTeleportLocations(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXTELEPORTLOC) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxTeleportLoc) continue;
 
 		if (pMap->m_pTeleportLoc[idx] == nullptr) {
 			pMap->m_pTeleportLoc[idx] = new CTeleportLoc;
@@ -551,7 +551,7 @@ bool LoadMapInitialPoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXINITIALPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxInitialPoint) continue;
 
 		pMap->m_pInitialPoint[idx].x = sqlite3_column_int(stmt, 1);
 		pMap->m_pInitialPoint[idx].y = sqlite3_column_int(stmt, 2);
@@ -579,7 +579,7 @@ bool LoadMapWaypoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXWAYPOINTCFG) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxWaypointCfg) continue;
 
 		pMap->m_WaypointList[idx].x = sqlite3_column_int(stmt, 1);
 		pMap->m_WaypointList[idx].y = sqlite3_column_int(stmt, 2);
@@ -608,7 +608,7 @@ bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXNMR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxNmr) continue;
 
 		pMap->m_rcNoAttackRect[idx] = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
@@ -640,7 +640,7 @@ bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXMGAR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxMgar) continue;
 
 		pMap->m_rcMobGenAvoidRect[idx] = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
@@ -673,7 +673,7 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSPOTMOBGENERATOR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxSpotMobGenerator) continue;
 
 		pMap->m_stSpotMobGenerator[idx].bDefined = true;
 		pMap->m_stSpotMobGenerator[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
@@ -718,7 +718,7 @@ bool LoadMapFishPoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXFISHPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxFishPoint) continue;
 
 		pMap->m_FishPointList[idx].x = sqlite3_column_int(stmt, 1);
 		pMap->m_FishPointList[idx].y = sqlite3_column_int(stmt, 2);
@@ -747,7 +747,7 @@ bool LoadMapMineralPoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXMINERALPOINT) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxMineralPoint) continue;
 
 		pMap->m_MineralPointList[idx].x = sqlite3_column_int(stmt, 1);
 		pMap->m_MineralPointList[idx].y = sqlite3_column_int(stmt, 2);
@@ -777,7 +777,7 @@ bool LoadMapStrategicPoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSTRATEGICPOINTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxStrategicPoints) continue;
 
 		if (pMap->m_pStrategicPointList[idx] == nullptr) {
 			pMap->m_pStrategicPointList[idx] = new CStrategicPoint;
@@ -812,7 +812,7 @@ bool LoadMapEnergySphereCreationPoints(sqlite3* db, const char* mapName, CMap* p
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXENERGYSPHERES) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxEnergySpheres) continue;
 
 		pMap->m_stEnergySphereCreationList[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
 		pMap->m_stEnergySphereCreationList[idx].sX = sqlite3_column_int(stmt, 2);
@@ -843,7 +843,7 @@ bool LoadMapEnergySphereGoalPoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXENERGYSPHERES) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxEnergySpheres) continue;
 
 		pMap->m_stEnergySphereGoalList[idx].cResult = static_cast<char>(sqlite3_column_int(stmt, 1));
 		pMap->m_stEnergySphereGoalList[idx].aresdenX = sqlite3_column_int(stmt, 2);
@@ -877,7 +877,7 @@ bool LoadMapStrikePoints(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXSTRIKEPOINTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxStrikePoints) continue;
 
 		pMap->m_stStrikePoint[idx].dX = sqlite3_column_int(stmt, 1);
 		pMap->m_stStrikePoint[idx].dY = sqlite3_column_int(stmt, 2);
@@ -920,7 +920,7 @@ bool LoadMapItemEvents(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXITEMEVENTS) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxItemEvents) continue;
 
 		CopyColumnText(stmt, 1, pMap->m_stItemEventList[idx].cItemName,
 			sizeof(pMap->m_stItemEventList[idx].cItemName));
@@ -956,7 +956,7 @@ bool LoadMapHeldenianTowers(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXHELDENIANTOWER) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxHeldenianTower) continue;
 
 		pMap->m_stHeldenianTower[idx].sTypeID = static_cast<short>(sqlite3_column_int(stmt, 1));
 		pMap->m_stHeldenianTower[idx].cSide = static_cast<char>(sqlite3_column_int(stmt, 2));
@@ -987,7 +987,7 @@ bool LoadMapHeldenianGateDoors(sqlite3* db, const char* mapName, CMap* pMap)
 
 	while (sqlite3_step(stmt) == SQLITE_ROW) {
 		int idx = sqlite3_column_int(stmt, 0);
-		if (idx < 0 || idx >= DEF_MAXHELDENIANDOOR) continue;
+		if (idx < 0 || idx >= hb::server::map::MaxHeldenianDoor) continue;
 
 		pMap->m_stHeldenianGateDoor[idx].cDir = static_cast<char>(sqlite3_column_int(stmt, 1));
 		pMap->m_stHeldenianGateDoor[idx].dX = static_cast<short>(sqlite3_column_int(stmt, 2));

@@ -5,6 +5,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcActionQuery, pGame)
@@ -26,7 +27,7 @@ void DialogBox_NpcActionQuery::DrawHighlightedText(short sX, short sY, const cha
 
 void DialogBox_NpcActionQuery::DrawMode0_NpcMenu(short sX, short sY, short msX, short msY)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 
 	if (Info().sV3 == 90) {
 		PutString(sX + 33, sY + 23, "Heldenian staff officer", GameColors::UILabel);
@@ -66,7 +67,7 @@ void DialogBox_NpcActionQuery::DrawMode1_GiveToPlayer(short sX, short sY, short 
 	std::memset(cStr2, 0, sizeof(cStr2));
 	std::memset(cStr3, 0, sizeof(cStr3));
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
 	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
 	std::snprintf(cTxt2, sizeof(cTxt2), DRAW_DIALOGBOX_NPCACTION_QUERY29_1, Info().cStr);
@@ -85,7 +86,7 @@ void DialogBox_NpcActionQuery::DrawMode2_SellToShop(short sX, short sY, short ms
 	std::memset(cStr2, 0, sizeof(cStr2));
 	std::memset(cStr3, 0, sizeof(cStr3));
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
@@ -111,7 +112,7 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 	std::memset(cStr2, 0, sizeof(cStr2));
 	std::memset(cStr3, 0, sizeof(cStr3));
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
 	m_pGame->GetItemName(m_pGame->m_pItemList[Info().sV1].get(), cStr1, cStr2, cStr3);
 
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_NPCACTION_QUERY29, Info().sV3, cStr1);
@@ -125,7 +126,7 @@ void DialogBox_NpcActionQuery::DrawMode3_DepositToWarehouse(short sX, short sY, 
 
 void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, short msX, short msY)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 
 	PutString(sX + 35, sY + 25, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UILabel);
 	PutString(sX + 35 - 1, sY + 25 - 1, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UIWhite);
@@ -137,7 +138,7 @@ void DialogBox_NpcActionQuery::DrawMode4_TalkToNpcOrUnicorn(short sX, short sY, 
 
 void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short msX, short msY)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 6);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 6);
 
 	PutString(sX + 33, sY + 23, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UILabel);
 	PutString(sX + 33 - 1, sY + 23 - 1, m_pGame->GetNpcConfigName(Info().sV3), GameColors::UIWhite);
@@ -160,7 +161,7 @@ void DialogBox_NpcActionQuery::DrawMode5_ShopWithSell(short sX, short sY, short 
 
 void DialogBox_NpcActionQuery::DrawMode6_Gail(short sX, short sY, short msX, short msY)
 {
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 
 	DrawHighlightedText(sX + 28, sY + 55, DRAW_DIALOGBOX_NPCACTION_QUERY21, msX, msY, sX + 25, sX + 100, sY + 55, sY + 70);
 

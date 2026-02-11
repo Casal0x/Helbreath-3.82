@@ -1,6 +1,7 @@
 #include "DialogBox_Help.h"
 #include "Game.h"
 #include "lan_eng.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_Help::DialogBox_Help(CGame* pGame)
 	: IDialogBox(DialogBoxId::Help, pGame)
@@ -28,7 +29,7 @@ void DialogBox_Help::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 
 	// Help topics list
 	DrawHelpItem(sX, szX, sY, 0, DRAW_DIALOGBOX_HELP2, IsMouseOverItem(msX, msY, sX, sY, 0));
@@ -49,9 +50,9 @@ void DialogBox_Help::OnDraw(short msX, short msY, short msZ, char cLB)
 	// Close button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
 bool DialogBox_Help::OnClick(short msX, short msY)

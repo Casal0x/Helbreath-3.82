@@ -10,6 +10,7 @@
 #include "AudioManager.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+using namespace hb::client::sprite_id;
 
 Overlay_ConnectionLost::Overlay_ConnectionLost(CGame* pGame)
     : IGameScreen(pGame)
@@ -47,9 +48,9 @@ void Overlay_ConnectionLost::on_update()
 void Overlay_ConnectionLost::on_render()
 {
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
     hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 64, dlgY + 55, "Connection Lost!", hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
     PutString(dlgX + 60, dlgY + 85, UPDATE_SCREEN_ON_CONNECTION_LOST, GameColors::UIBlack);
     DrawVersion();

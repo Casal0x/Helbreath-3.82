@@ -17,6 +17,8 @@ namespace dynamic_object = hb::shared::dynamic_object;
 using namespace hb::shared::action;
 
 using namespace hb::shared::item;
+using namespace hb::client::config;
+using namespace hb::client::sprite_id;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -31,16 +33,16 @@ struct MenuCharEquipment {
 static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, MenuCharEquipment& eq)
 {
 	// Sprite base IDs differ by gender
-	int UNDIES  = isFemale ? DEF_SPRID_UNDIES_W    : DEF_SPRID_UNDIES_M;
-	int HAIR    = isFemale ? DEF_SPRID_HAIR_W      : DEF_SPRID_HAIR_M;
-	int ARMOR   = isFemale ? DEF_SPRID_BODYARMOR_W : DEF_SPRID_BODYARMOR_M;
-	int BERK    = isFemale ? DEF_SPRID_BERK_W      : DEF_SPRID_BERK_M;
-	int LEGG    = isFemale ? DEF_SPRID_LEGG_W      : DEF_SPRID_LEGG_M;
-	int BOOT    = isFemale ? DEF_SPRID_BOOT_W      : DEF_SPRID_BOOT_M;
-	int WEAPON  = isFemale ? DEF_SPRID_WEAPON_W    : DEF_SPRID_WEAPON_M;
-	int SHIELD  = isFemale ? DEF_SPRID_SHIELD_W    : DEF_SPRID_SHIELD_M;
-	int MANTLE  = isFemale ? DEF_SPRID_MANTLE_W    : DEF_SPRID_MANTLE_M;
-	int HEAD    = isFemale ? DEF_SPRID_HEAD_W      : DEF_SPRID_HEAD_M;
+	int UNDIES  = isFemale ? UndiesW    : UndiesM;
+	int HAIR    = isFemale ? HairW      : HairM;
+	int ARMOR   = isFemale ? BodyArmorW : BodyArmorM;
+	int BERK    = isFemale ? BerkW      : BerkM;
+	int LEGG    = isFemale ? LeggW      : LeggM;
+	int BOOT    = isFemale ? BootW      : BootM;
+	int WEAPON  = isFemale ? WeaponW    : WeaponM;
+	int SHIELD  = isFemale ? ShieldW    : ShieldM;
+	int MANTLE  = isFemale ? MantleW    : MantleM;
+	int HEAD    = isFemale ? HeadW      : HeadM;
 
 	// Walking uses pose 3, standing uses pose 2
 	bool isWalking = state.m_appearance.bIsWalking;
@@ -104,7 +106,7 @@ hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int i
 		CalcHumanEquipment(m_entityState, true, eq);
 		break;
 	default:  // Mob/NPC
-		eq.body = DEF_SPRID_MOB + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
+		eq.body = Mob + (m_entityState.m_sOwnerType - 10) * 8 * 7 + (1 * 8);
 		eq.undies = eq.hair = eq.bodyArmor = eq.armArmor = -1;
 		eq.boots = eq.pants = eq.weapon = eq.shield = eq.helm = eq.mantle = -1;
 		isMob = true;
@@ -330,9 +332,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 	// Pre-calculate map data bounds for efficient boundary checking
 	const short mapMinX = m_pMapData->m_sPivotX;
-	const short mapMaxX = m_pMapData->m_sPivotX + MAPDATASIZEX;
+	const short mapMaxX = m_pMapData->m_sPivotX + MapDataSizeX;
 	const short mapMinY = m_pMapData->m_sPivotY;
-	const short mapMaxY = m_pMapData->m_sPivotY + MAPDATASIZEY;
+	const short mapMaxY = m_pMapData->m_sPivotY + MapDataSizeY;
 
 	// Tile-based loop bounds (much cleaner than pixel-based)
 	// Buffer: 7 tiles around visible area for smooth object sliding
@@ -412,7 +414,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				if ((bRet == true) && (sItemID != 0) && m_pItemConfigList[sItemID] != 0)
 				{
 					if (cItemColor == 0)
-						m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame);
+						m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame);
 					else
 					{
 						switch (m_pItemConfigList[sItemID]->m_sSprite) {
@@ -420,10 +422,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 2: // Bows
 						case 3: // Shields
 						case hb::shared::owner::ShopKeeper: // Axes hammers
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+							m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 							break;
 						default:
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+							m_pSprite[ItemGroundPivotPoint + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 							break;
 						}
 					}
@@ -453,7 +455,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					info.dataX = m_entityState.m_iDataX;
 					info.dataY = m_entityState.m_iDataY;
 					info.ownerType = m_entityState.m_sOwnerType;
-					info.action = DEF_OBJECTDEAD;
+					info.action = ObjectDead;
 					info.direction = m_entityState.m_iDir;
 					info.frame = m_entityState.m_iFrame;
 					info.name = m_entityState.m_cName.data();
@@ -776,20 +778,20 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					char cTmpDOdir, cTmpDOframe;
 					cTmpDOdir = CMisc::cCalcDirection(cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData1 + cDynamicObjectData3, cDynamicObjectData2 + cDynamicObjectData4);
 					cTmpDOframe = ((cTmpDOdir - 1) * 4) + (rand() % 4);
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, hb::shared::sprite::DrawParams::Alpha(0.25f));
+					m_pSprite[ItemDynamicPivotPoint + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, hb::shared::sprite::DrawParams::Alpha(0.25f));
 				}
 				break;
 
 				case dynamic_object::Mineral1:		// 4
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0, hb::shared::sprite::DrawParams::Shadow());
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0);
-					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 0, hb::shared::sprite::DrawParams::Shadow());
+					m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 0);
+					CursorTarget::TestDynamicObject(m_pSprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case dynamic_object::Mineral2:		// 5
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::Shadow());
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1);
-					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::Shadow());
+					m_pSprite[ItemDynamicPivotPoint + 1]->Draw(ix, iy, 1);
+					CursorTarget::TestDynamicObject(m_pSprite[ItemDynamicPivotPoint + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
 				case dynamic_object::Spike:			// 9
@@ -797,11 +799,11 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					break;
 
 				case dynamic_object::AresdenFlag1:  // 6
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
+					m_pSprite[ItemDynamicPivotPoint + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 
 				case dynamic_object::ElvineFlag1: // 7
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
+					m_pSprite[ItemDynamicPivotPoint + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 				}
 			}
@@ -848,7 +850,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			std::memset(m_entityState.m_cName.data(), 0, m_entityState.m_cName.size());
 			std::snprintf(m_entityState.m_cName.data(), m_entityState.m_cName.size(), "%s", CursorTarget::GetFocusedName());
 
-			if ((focusAction != DEF_OBJECTDEAD) && (focusFrame < 0)) {
+			if ((focusAction != ObjectDead) && (focusFrame < 0)) {
 				// Skip drawing invalid frame
 			} else {
 				switch (focusAction) {
@@ -952,7 +954,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					DrawObject_OnDying(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTDEAD:
+				case ObjectDead:
 					DrawObject_OnDead(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 				}

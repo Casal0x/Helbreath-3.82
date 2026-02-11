@@ -9,13 +9,22 @@
 #include <windows.h>
 #include "CommonTypes.h"
 
-#define DEF_DELAYEVENTTYPE_DAMAGEOBJECT				1
-#define DEF_DELAYEVENTTYPE_MAGICRELEASE				2
-#define DEF_DELAYEVENTTYPE_USEITEM_SKILL			3
-#define DEF_DELAYEVENTTYPE_METEORSTRIKE				4
-#define DEF_DELAYEVENTTYPE_DOMETEORSTRIKEDAMAGE		5
-#define DEF_DELAYEVENTTYPE_CALCMETEORSTRIKEEFFECT	6
-#define DEF_DELAYEVENTTYPE_ANCIENT_TABLET			7
+namespace hb::server::delay_event
+{
+namespace Type
+{
+	enum : int
+	{
+		DamageObject            = 1,
+		MagicRelease            = 2,
+		UseItemSkill            = 3,
+		MeteorStrike            = 4,
+		DoMeteorStrikeDamage    = 5,
+		CalcMeteorStrikeEffect  = 6,
+		AncientTablet           = 7,
+	};
+}
+} // namespace hb::server::delay_event
 
 class CDelayEvent
 {

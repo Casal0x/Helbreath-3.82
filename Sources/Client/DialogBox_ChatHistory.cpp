@@ -4,6 +4,7 @@
 #include "IInput.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 #define DEF_CHAT_VISIBLE_LINES 8
 #define DEF_CHAT_SCROLLBAR_HEIGHT 105
@@ -20,8 +21,8 @@ void DialogBox_ChatHistory::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
 
 	const bool dialogTrans = ConfigManager::Get().IsDialogTransparencyEnabled();
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 4, false, dialogTrans);
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 22, false, dialogTrans);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 4, false, dialogTrans);
+	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 22, false, dialogTrans);
 
 	HandleScrollInput(sX, sY, msX, msY, msZ, cLB);
 	DrawScrollBar(sX, sY);
@@ -80,7 +81,7 @@ void DialogBox_ChatHistory::DrawScrollBar(short sX, short sY)
 	double d3 = (d1 * d2) / (game_limits::max_chat_scroll_msgs - DEF_CHAT_VISIBLE_LINES);
 	int iPointerLoc = (int)d3;
 	iPointerLoc = DEF_CHAT_SCROLLBAR_HEIGHT - iPointerLoc;
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 346, sY + 33 + iPointerLoc, 7);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 346, sY + 33 + iPointerLoc, 7);
 }
 
 void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)

@@ -7,6 +7,7 @@
 
 
 using namespace hb::shared::action;
+using namespace hb::client::sprite_id;
 
 DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuideMap, pGame)
@@ -32,11 +33,11 @@ void DialogBox_GuideMap::DrawBorder(short sX, short sY)
 
 void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 {
-	int m_iMaxMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + m_pGame->m_cMapIndex + 1;
+	int m_iMaxMapIndex = InterfaceGuideMap + m_pGame->m_cMapIndex + 1;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	if (m_pGame->m_cMapIndex >= 35)
-		m_iMaxMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + m_pGame->m_cMapIndex + 1;
+		m_iMaxMapIndex = InterfaceGuideMap + m_pGame->m_cMapIndex + 1;
 
 	short shX = m_pGame->m_pPlayer->m_sPlayerX - 64;
 	short shY = m_pGame->m_pPlayer->m_sPlayerY - 64;
@@ -50,7 +51,7 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 	else
 		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
 
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX - shX + m_pGame->m_pPlayer->m_sPlayerX, sY - shY + m_pGame->m_pPlayer->m_sPlayerY, 37);
+	m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX - shX + m_pGame->m_pPlayer->m_sPlayerX, sY - shY + m_pGame->m_pPlayer->m_sPlayerY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
 	{
@@ -59,7 +60,7 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 			if (m_pGame->m_sEventX >= shX && m_pGame->m_sEventX <= shX + 128 &&
 				m_pGame->m_sEventY >= shY && m_pGame->m_sEventY <= shY + 128)
 			{
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->Draw(sX + m_pGame->m_sEventX - shX, sY + m_pGame->m_sEventY - shY, m_pGame->m_sMonsterID);
+				m_pGame->m_pSprite[InterfaceMonster]->Draw(sX + m_pGame->m_sEventX - shX, sY + m_pGame->m_sEventY - shY, m_pGame->m_sMonsterID);
 			}
 		}
 	}
@@ -67,13 +68,13 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 
 void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 {
-	int m_iMinMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP;
+	int m_iMinMapIndex = InterfaceGuideMap;
 	int m_iMinMapSquare = m_pGame->m_cMapIndex;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	if (m_pGame->m_cMapIndex >= 35)
 	{
-		m_iMinMapIndex = DEF_SPRID_INTERFACE_GUIDEMAP + 35;
+		m_iMinMapIndex = InterfaceGuideMap + 35;
 		m_iMinMapSquare = m_pGame->m_cMapIndex - 35;
 	}
 
@@ -84,7 +85,7 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 
 	short shX = (m_pGame->m_pPlayer->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + shX, sY + shY, 37);
+	m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + shX, sY + shY, 37);
 
 	if ((m_pGame->m_dwCurTime - m_pGame->m_dwMonsterEventTime) < 30000)
 	{
@@ -92,7 +93,7 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 		{
 			shX = (m_pGame->m_sEventX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 			shY = (m_pGame->m_sEventY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_MONSTER]->Draw(sX + shX, sY + shY, m_pGame->m_sMonsterID);
+			m_pGame->m_pSprite[InterfaceMonster]->Draw(sX + shX, sY + shY, m_pGame->m_sMonsterID);
 		}
 	}
 }

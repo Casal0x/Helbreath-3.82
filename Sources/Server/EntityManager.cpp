@@ -8,6 +8,16 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::action;
+using namespace hb::server::config;
+using namespace hb::server::npc;
+using namespace hb::server::net;
+namespace smap = hb::server::map;
+namespace sdelay = hb::server::delay_event;
+using namespace hb::server::config;
+using namespace hb::server::npc;
+using namespace hb::server::net;
+namespace smap = hb::server::map;
+namespace sdelay = hb::server::delay_event;
 
 using namespace hb::shared::item;
 
@@ -23,14 +33,14 @@ extern int ITEMSPREAD_FIEXD_COORD[25][2];
 CEntityManager::CEntityManager()
 {
     // Allocate entity array (EntityManager OWNS this)
-    m_pNpcList = new CNpc*[DEF_MAXNPCS];
-    for(int i = 0; i < DEF_MAXNPCS; i++) {
+    m_pNpcList = new CNpc*[MaxNpcs];
+    for(int i = 0; i < MaxNpcs; i++) {
         m_pNpcList[i] = NULL;
         m_dwEntityGUID[i] = 0;
     }
 
     // Allocate active entity tracking list for performance
-    m_pActiveEntityList = new int[DEF_MAXNPCS];
+    m_pActiveEntityList = new int[MaxNpcs];
     m_iActiveEntityCount = 0;
 
     m_pMapList = NULL;
@@ -45,7 +55,7 @@ CEntityManager::~CEntityManager()
 {
     // Delete all entities (EntityManager owns them)
     if (m_pNpcList != NULL) {
-        for(int i = 0; i < DEF_MAXNPCS; i++) {
+        for(int i = 0; i < MaxNpcs; i++) {
             if (m_pNpcList[i] != NULL) {
                 delete m_pNpcList[i];
                 m_pNpcList[i] = NULL;
@@ -115,7 +125,7 @@ int CEntityManager::CreateEntity(
     if (!m_bInitialized) return -1;
     if (m_pGame == NULL) return -1;
     if (strlen(pName) == 0) return -1;
-    if (iNpcConfigId < 0 || iNpcConfigId >= DEF_MAXNPCTYPES) return -1;
+    if (iNpcConfigId < 0 || iNpcConfigId >= MaxNpcTypes) return -1;
 
     int t, j, k, iMapIndex;
     char cTmpName[11], cTxt[120];
@@ -138,7 +148,7 @@ int CEntityManager::CreateEntity(
     if (iMapIndex == -1) return -1;
 
     // Find free entity slot
-    for(int i = 1; i < DEF_MAXNPCS; i++)
+    for(int i = 1; i < MaxNpcs; i++)
         if (m_pNpcList[i] == 0) {
             m_pNpcList[i] = new CNpc(pName);
 
@@ -162,8 +172,8 @@ int CEntityManager::CreateEntity(
 
             // Determine spawn location based on move type
             switch (cMoveType) {
-            case DEF_MOVETYPE_GUARD:
-            case DEF_MOVETYPE_RANDOM:
+            case MoveType::Guard:
+            case MoveType::Random:
                 if ((poX != 0) && (poY != 0) && (*poX != 0) && (*poY != 0)) {
                     sX = *poX;
                     sY = *poY;
@@ -174,7 +184,7 @@ int CEntityManager::CreateEntity(
                         sY = (rand() % (m_pMapList[iMapIndex]->m_sSizeY - 50)) + 15;
 
                         bFlag = true;
-                        for (k = 0; k < DEF_MAXMGAR; k++)
+                        for (k = 0; k < smap::MaxMgar; k++)
                             if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].x != -1) {
                                 if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Left()) &&
                                     (sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[k].Right()) &&
@@ -195,13 +205,13 @@ int CEntityManager::CreateEntity(
                 }
                 break;
 
-            case DEF_MOVETYPE_RANDOMAREA:
+            case MoveType::RandomArea:
                 // Spawn in random area
                 sX = (short)((rand() % pArea->width) + pArea->x);
                 sY = (short)((rand() % pArea->height) + pArea->y);
                 break;
 
-            case DEF_MOVETYPE_RANDOMWAYPOINT:
+            case MoveType::RandomWaypoint:
                 // Spawn at random waypoint
                 sX = (short)m_pMapList[iMapIndex]->m_WaypointList[pWaypointList[m_pGame->iDice(1, 10) - 1]].x;
                 sY = (short)m_pMapList[iMapIndex]->m_WaypointList[pWaypointList[m_pGame->iDice(1, 10) - 1]].y;
@@ -266,30 +276,30 @@ int CEntityManager::CreateEntity(
 
             // Set destination based on move type
             switch (cMoveType) {
-            case DEF_MOVETYPE_GUARD:
+            case MoveType::Guard:
                 m_pNpcList[i]->m_dX = m_pNpcList[i]->m_sX;
                 m_pNpcList[i]->m_dY = m_pNpcList[i]->m_sY;
                 break;
 
-            case DEF_MOVETYPE_SEQWAYPOINT:
+            case MoveType::SeqWaypoint:
                 m_pNpcList[i]->m_cCurWaypoint = 1;
                 m_pNpcList[i]->m_dX = (short)m_pMapList[iMapIndex]->m_WaypointList[m_pNpcList[i]->m_iWayPointIndex[m_pNpcList[i]->m_cCurWaypoint]].x;
                 m_pNpcList[i]->m_dY = (short)m_pMapList[iMapIndex]->m_WaypointList[m_pNpcList[i]->m_iWayPointIndex[m_pNpcList[i]->m_cCurWaypoint]].y;
                 break;
 
-            case DEF_MOVETYPE_RANDOMWAYPOINT:
+            case MoveType::RandomWaypoint:
                 m_pNpcList[i]->m_cCurWaypoint = (rand() % (m_pNpcList[i]->m_cTotalWaypoint - 1)) + 1;
                 m_pNpcList[i]->m_dX = (short)m_pMapList[iMapIndex]->m_WaypointList[m_pNpcList[i]->m_iWayPointIndex[m_pNpcList[i]->m_cCurWaypoint]].x;
                 m_pNpcList[i]->m_dY = (short)m_pMapList[iMapIndex]->m_WaypointList[m_pNpcList[i]->m_iWayPointIndex[m_pNpcList[i]->m_cCurWaypoint]].y;
                 break;
 
-            case DEF_MOVETYPE_RANDOMAREA:
+            case MoveType::RandomArea:
                 m_pNpcList[i]->m_cCurWaypoint = 0;
                 m_pNpcList[i]->m_dX = (short)((rand() % m_pNpcList[i]->m_rcRandomArea.width) + m_pNpcList[i]->m_rcRandomArea.x);
                 m_pNpcList[i]->m_dY = (short)((rand() % m_pNpcList[i]->m_rcRandomArea.height) + m_pNpcList[i]->m_rcRandomArea.y);
                 break;
 
-            case DEF_MOVETYPE_RANDOM:
+            case MoveType::Random:
                 m_pNpcList[i]->m_dX = (short)((rand() % (m_pMapList[iMapIndex]->m_sSizeX - 50)) + 15);
                 m_pNpcList[i]->m_dY = (short)((rand() % (m_pMapList[iMapIndex]->m_sSizeY - 50)) + 15);
                 break;
@@ -303,7 +313,7 @@ int CEntityManager::CreateEntity(
             case 2:
             case 3:
             case 5:
-                m_pNpcList[i]->m_cBehavior = DEF_BEHAVIOR_STOP;
+                m_pNpcList[i]->m_cBehavior = Behavior::Stop;
 
                 switch (m_pNpcList[i]->m_sType) {
                 case 15: // ShopKeeper-W
@@ -322,7 +332,7 @@ int CEntityManager::CreateEntity(
                 break;
 
             default:
-                m_pNpcList[i]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+                m_pNpcList[i]->m_cBehavior = Behavior::Move;
                 m_pNpcList[i]->m_cDir = 5;
                 break;
             }
@@ -364,7 +374,7 @@ int CEntityManager::CreateEntity(
             // Set entity properties
             m_pNpcList[i]->m_cMapIndex = (char)iMapIndex;
             m_pNpcList[i]->m_dwTime = GameClock::GetTimeMS() + (rand() % 10000);
-			m_pNpcList[i]->m_dwActionTime += (rand() % (300 * DEF_GAMETICK_MULTIPLER));
+			m_pNpcList[i]->m_dwActionTime += (rand() % (300 * GameTickMultiplier));
             m_pNpcList[i]->m_dwMPupTime = GameClock::GetTimeMS();
             m_pNpcList[i]->m_dwHPupTime = m_pNpcList[i]->m_dwMPupTime;
             m_pNpcList[i]->m_sBehaviorTurnCount = 0;
@@ -421,12 +431,12 @@ int CEntityManager::CreateEntity(
 
     // No free slots - log diagnostic info
     int iUsedSlots = 0;
-    for(int idx = 1; idx < DEF_MAXNPCS; idx++) {
+    for(int idx = 1; idx < MaxNpcs; idx++) {
         if (m_pNpcList[idx] != 0) iUsedSlots++;
     }
     std::snprintf(G_cTxt, sizeof(G_cTxt),
         "[SPAWN] ERROR: No free entity slots! Used: %d/%d, ActiveList: %d, TotalEntities: %d",
-        iUsedSlots, DEF_MAXNPCS - 1, m_iActiveEntityCount, m_iTotalEntities);
+        iUsedSlots, MaxNpcs - 1, m_iActiveEntityCount, m_iTotalEntities);
     PutLogList(G_cTxt);
     return -1; // No free slots
 }
@@ -515,14 +525,14 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
     // ========================================================================
     // 5. Set death behavior and timer
     // ========================================================================
-    pEntity->m_cBehavior = DEF_BEHAVIOR_DEAD;
+    pEntity->m_cBehavior = Behavior::Dead;
     pEntity->m_sBehaviorTurnCount = 0;
     pEntity->m_dwDeadTime = GameClock::GetTimeMS();
 
     // ========================================================================
     // 6. Check for no-penalty/no-reward maps
     // ========================================================================
-    if (m_pMapList[iMapIndex]->m_cType == DEF_MAPTYPE_NOPENALTY_NOREWARD) {
+    if (m_pMapList[iMapIndex]->m_cType == smap::MapType::NoPenaltyNoReward) {
         return;
     }
 
@@ -551,7 +561,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         }
 
         if (sType == 81) {
-            for(int i = 1; i < DEF_MAXCLIENTS; i++) {
+            for(int i = 1; i < MaxClients; i++) {
                 if (m_pGame->m_pClientList[i] != NULL) {
                     m_pGame->SendNotifyMsg(sAttackerH, i, Notify::AbaddonKilled,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -568,7 +578,7 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         int iQuestIndex = m_pGame->m_pClientList[sAttackerH]->m_iQuest;
         if (iQuestIndex != 0 && m_pGame->m_pQuestConfigList[iQuestIndex] != NULL) {
             switch (m_pGame->m_pQuestConfigList[iQuestIndex]->m_iType) {
-            case DEF_QUESTTYPE_MONSTERHUNT:
+            case hb::server::quest::Type::MonsterHunt:
                 if (m_pGame->m_pClientList[sAttackerH]->m_bQuestMatchFlag_Loc &&
                     m_pGame->m_pQuestConfigList[iQuestIndex]->m_iTargetType == sType) {
                     m_pGame->m_pClientList[sAttackerH]->m_iCurQuestCount++;
@@ -633,12 +643,12 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         case hb::shared::owner_class::Player:
             if (m_pGame->m_pClientList[sAttackerH]->m_cSide != pEntity->m_cSide) {
                 m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint += iConstructionPoint;
-                if (m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-                    m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+                if (m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint > MaxConstructionPoint)
+                    m_pGame->m_pClientList[sAttackerH]->m_iConstructionPoint = MaxConstructionPoint;
 
                 m_pGame->m_pClientList[sAttackerH]->m_iWarContribution += iWarContribution;
-                if (m_pGame->m_pClientList[sAttackerH]->m_iWarContribution > DEF_MAXWARCONTRIBUTION)
-                    m_pGame->m_pClientList[sAttackerH]->m_iWarContribution = DEF_MAXWARCONTRIBUTION;
+                if (m_pGame->m_pClientList[sAttackerH]->m_iWarContribution > MaxWarContribution)
+                    m_pGame->m_pClientList[sAttackerH]->m_iWarContribution = MaxWarContribution;
 
                 std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Npc Killed by player! Construction: +%d WarContribution: +%d",
                     iConstructionPoint, iWarContribution);
@@ -665,13 +675,13 @@ void CEntityManager::OnEntityKilled(int iEntityHandle, short sAttackerH, char cA
         case hb::shared::owner_class::Npc:
             if (m_pGame->m_pNpcList[sAttackerH]->m_iGuildGUID != 0) {
                 if (m_pGame->m_pNpcList[sAttackerH]->m_cSide != pEntity->m_cSide) {
-                    for(int i = 1; i < DEF_MAXCLIENTS; i++) {
+                    for(int i = 1; i < MaxClients; i++) {
                         if ((m_pGame->m_pClientList[i] != NULL) &&
                             (m_pGame->m_pClientList[i]->m_iGuildGUID == m_pGame->m_pNpcList[sAttackerH]->m_iGuildGUID) &&
                             (m_pGame->m_pClientList[i]->m_iCrusadeDuty == 3)) {
                             m_pGame->m_pClientList[i]->m_iConstructionPoint += iConstructionPoint;
-                            if (m_pGame->m_pClientList[i]->m_iConstructionPoint > DEF_MAXCONSTRUCTIONPOINT)
-                                m_pGame->m_pClientList[i]->m_iConstructionPoint = DEF_MAXCONSTRUCTIONPOINT;
+                            if (m_pGame->m_pClientList[i]->m_iConstructionPoint > MaxConstructionPoint)
+                                m_pGame->m_pClientList[i]->m_iConstructionPoint = MaxConstructionPoint;
 
                             std::snprintf(G_cTxt, sizeof(G_cTxt), "Enemy Npc Killed by Npc! Construct point +%d", iConstructionPoint);
                             PutLogList(G_cTxt);
@@ -748,7 +758,7 @@ void CEntityManager::ProcessEntities()
 
     dwTime = GameClock::GetTimeMS();
 
-    for(int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < MaxNpcs; i++) {
         if (m_pNpcList[i] == 0)
             continue;
 
@@ -757,17 +767,17 @@ void CEntityManager::ProcessEntities()
             PollAllSockets();
         }
 
-        if (m_pNpcList[i]->m_cBehavior == DEF_BEHAVIOR_ATTACK) {
+        if (m_pNpcList[i]->m_cBehavior == Behavior::Attack) {
             switch (m_pGame->iDice(1, 7)) {
             case 1: dwActionTime = m_pNpcList[i]->m_dwActionTime; break;
-            case 2: dwActionTime = m_pNpcList[i]->m_dwActionTime - (100 * DEF_GAMETICK_MULTIPLER); break;
-            case 3: dwActionTime = m_pNpcList[i]->m_dwActionTime - (150 * DEF_GAMETICK_MULTIPLER); break;
-            case 4: dwActionTime = m_pNpcList[i]->m_dwActionTime - (250 * DEF_GAMETICK_MULTIPLER); break;
-            case 5: dwActionTime = m_pNpcList[i]->m_dwActionTime - (350 * DEF_GAMETICK_MULTIPLER); break;
-            case 6: dwActionTime = m_pNpcList[i]->m_dwActionTime - (450 * DEF_GAMETICK_MULTIPLER); break;
-            case 7: dwActionTime = m_pNpcList[i]->m_dwActionTime - (550 * DEF_GAMETICK_MULTIPLER); break;
+            case 2: dwActionTime = m_pNpcList[i]->m_dwActionTime - (100 * GameTickMultiplier); break;
+            case 3: dwActionTime = m_pNpcList[i]->m_dwActionTime - (150 * GameTickMultiplier); break;
+            case 4: dwActionTime = m_pNpcList[i]->m_dwActionTime - (250 * GameTickMultiplier); break;
+            case 5: dwActionTime = m_pNpcList[i]->m_dwActionTime - (350 * GameTickMultiplier); break;
+            case 6: dwActionTime = m_pNpcList[i]->m_dwActionTime - (450 * GameTickMultiplier); break;
+            case 7: dwActionTime = m_pNpcList[i]->m_dwActionTime - (550 * GameTickMultiplier); break;
             }
-            if (dwActionTime < (100 * DEF_GAMETICK_MULTIPLER)) dwActionTime = (100 * DEF_GAMETICK_MULTIPLER);
+            if (dwActionTime < (100 * GameTickMultiplier)) dwActionTime = (100 * GameTickMultiplier);
         }
         else {
             dwActionTime = m_pNpcList[i]->m_dwActionTime;
@@ -780,7 +790,7 @@ void CEntityManager::ProcessEntities()
             m_pNpcList[i]->m_dwTime = dwTime;
 
             if (abs(m_pNpcList[i]->m_cMagicLevel) > 0) {
-                if ((dwTime - m_pNpcList[i]->m_dwMPupTime) > DEF_MPUPTIME) {
+                if ((dwTime - m_pNpcList[i]->m_dwMPupTime) > MpUpTime) {
                     m_pNpcList[i]->m_dwMPupTime = dwTime;
                     m_pNpcList[i]->m_iMana += m_pGame->iDice(1, (m_pNpcList[i]->m_iMaxMana / 5));
 
@@ -789,7 +799,7 @@ void CEntityManager::ProcessEntities()
                 }
             }
 
-            if (((dwTime - m_pNpcList[i]->m_dwHPupTime) > DEF_HPUPTIME) && (m_pNpcList[i]->m_bIsKilled == false)) {
+            if (((dwTime - m_pNpcList[i]->m_dwHPupTime) > HpUpTime) && (m_pNpcList[i]->m_bIsKilled == false)) {
                 m_pNpcList[i]->m_dwHPupTime = dwTime;
 
                 iMaxHP = m_pGame->iDice(m_pNpcList[i]->m_iHitDice, 8) + m_pNpcList[i]->m_iHitDice;
@@ -803,19 +813,19 @@ void CEntityManager::ProcessEntities()
             }
 
             switch (m_pNpcList[i]->m_cBehavior) {
-            case DEF_BEHAVIOR_DEAD:
+            case Behavior::Dead:
                 UpdateDeadBehavior(i);
                 break;
-            case DEF_BEHAVIOR_STOP:
+            case Behavior::Stop:
                 UpdateStopBehavior(i);
                 break;
-            case DEF_BEHAVIOR_MOVE:
+            case Behavior::Move:
                 UpdateMoveBehavior(i);
                 break;
-            case DEF_BEHAVIOR_ATTACK:
+            case Behavior::Attack:
                 UpdateAttackBehavior(i);
                 break;
-            case DEF_BEHAVIOR_FLEE:
+            case Behavior::Flee:
                 UpdateFleeBehavior(i);
                 break;
             }
@@ -828,7 +838,7 @@ void CEntityManager::ProcessEntities()
                     break;
 
                 default:
-                    if ((dwTime - m_pNpcList[i]->m_dwSummonedTime) > DEF_SUMMONTIME)
+                    if ((dwTime - m_pNpcList[i]->m_dwSummonedTime) > SummonTime)
                         OnEntityKilled(i, 0, 0, 0);
                     break;
                 }
@@ -884,7 +894,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 	case 2:
 	case 3:
 	case 5:
-		m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_STOP;
+		m_pNpcList[iNpcH]->m_cBehavior = Behavior::Stop;
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 		return;
 	}
@@ -916,7 +926,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 	if (sTarget != 0) {
 		if (m_pNpcList[iNpcH]->m_dwActionTime < 1000) {
 			if (m_pGame->iDice(1, 3) == 3) {
-				m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+				m_pNpcList[iNpcH]->m_cBehavior = Behavior::Attack;
 				m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 				m_pNpcList[iNpcH]->m_iTargetIndex = sTarget;
 				m_pNpcList[iNpcH]->m_cTargetType = cTargetType;
@@ -924,7 +934,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 			}
 		}
 		else {
-			m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+			m_pNpcList[iNpcH]->m_cBehavior = Behavior::Attack;
 			m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 			m_pNpcList[iNpcH]->m_iTargetIndex = sTarget;
 			m_pNpcList[iNpcH]->m_cTargetType = cTargetType;
@@ -934,13 +944,13 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 
 	if ((m_pNpcList[iNpcH]->m_bIsMaster) && (m_pGame->iDice(1, 3) == 2)) return;
 
-	if (m_pNpcList[iNpcH]->m_cMoveType == DEF_MOVETYPE_FOLLOW) {
+	if (m_pNpcList[iNpcH]->m_cMoveType == MoveType::Follow) {
 		sX = m_pNpcList[iNpcH]->m_sX;
 		sY = m_pNpcList[iNpcH]->m_sY;
 		switch (m_pNpcList[iNpcH]->m_cFollowOwnerType) {
 		case hb::shared::owner_class::Player:
 			if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iFollowOwnerIndex] == 0) {
-				m_pNpcList[iNpcH]->m_cMoveType = DEF_MOVETYPE_RANDOM;
+				m_pNpcList[iNpcH]->m_cMoveType = MoveType::Random;
 				return;
 			}
 
@@ -949,7 +959,7 @@ void CEntityManager::NpcBehavior_Move(int iNpcH)
 			break;
 		case hb::shared::owner_class::Npc:
 			if (m_pNpcList[m_pNpcList[iNpcH]->m_iFollowOwnerIndex] == 0) {
-				m_pNpcList[iNpcH]->m_cMoveType = DEF_MOVETYPE_RANDOM;
+				m_pNpcList[iNpcH]->m_cMoveType = MoveType::Random;
 				m_pNpcList[iNpcH]->m_iFollowOwnerIndex = 0;
 				//bSerchMaster(iNpcH);
 				return;
@@ -1150,7 +1160,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 
 		if ((m_pNpcList[iNpcH]->m_bIsPermAttackMode == false))
-			m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+			m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 
 		return;
 	}
@@ -1162,7 +1172,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 	case hb::shared::owner_class::Player:
 		if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex] == 0) {
 			m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-			m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+			m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 			return;
 		}
 		dX = m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_sX;
@@ -1172,7 +1182,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 	case hb::shared::owner_class::Npc:
 		if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex] == 0) {
 			m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-			m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+			m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 			return;
 		}
 		dX = m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_sX;
@@ -1185,7 +1195,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 		(m_pNpcList[iNpcH]->m_cActionLimit != 5)) {
 
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-		m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+		m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 		return;
 	}
 
@@ -1194,7 +1204,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 		(m_pNpcList[iNpcH]->m_cActionLimit != 5)) {
 
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-		m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+		m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 		return;
 	}
 
@@ -1237,15 +1247,15 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 
 		if ((m_pNpcList[iNpcH]->m_bIsPermAttackMode == false) && (m_pNpcList[iNpcH]->m_cActionLimit == 0)) {
 			switch (m_pNpcList[iNpcH]->m_iAttackStrategy) {
-			case DEF_ATTACKAI_EXCHANGEATTACK:
+			case AttackAI::ExchangeAttack:
 				m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-				m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+				m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 				break;
 
-			case DEF_ATTACKAI_TWOBYONEATTACK:
+			case AttackAI::TwoByOneAttack:
 				if (m_pNpcList[iNpcH]->m_iAttackCount >= 2) {
 					m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-					m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+					m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 				}
 				break;
 			}
@@ -1378,7 +1388,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 						if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Protect] == 2) {
 							if ((abs(sX - dX) > m_pNpcList[iNpcH]->m_iAttackRange) || (abs(sY - dY) > m_pNpcList[iNpcH]->m_iAttackRange)) {
 								m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-								m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+								m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 								return;
 							}
 							else goto NBA_CHASE;
@@ -1390,7 +1400,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 						if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Protect] == 2) {
 							if ((abs(sX - dX) > m_pNpcList[iNpcH]->m_iAttackRange) || (abs(sY - dY) > m_pNpcList[iNpcH]->m_iAttackRange)) {
 								m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-								m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+								m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 								return;
 							}
 							else goto NBA_CHASE;
@@ -1472,7 +1482,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] == 0) {
 								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Player, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::Ice, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
 								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
 							}
@@ -1488,7 +1498,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] == 0) {
 								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Npc, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::Ice, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
 							}
 						}
@@ -1503,7 +1513,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							if (m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] == 0) {
 								m_pGame->m_pClientList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Player, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::Ice, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Player, 0, 0, 0, 1, 0, 0);
 								m_pGame->SendNotifyMsg(0, m_pNpcList[iNpcH]->m_iTargetIndex, Notify::MagicEffectOn, hb::shared::magic::Ice, 1, 0, 0);
 							}
@@ -1517,7 +1527,7 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 							if (m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] == 0) {
 								m_pNpcList[m_pNpcList[iNpcH]->m_iTargetIndex]->m_cMagicEffectStatus[hb::shared::magic::Ice] = 1;
 							m_pGame->SetIceFlag(m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Npc, true);
-								m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::Ice, dwTime + (5 * 1000),
+								m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Ice, dwTime + (5 * 1000),
 									m_pNpcList[iNpcH]->m_iTargetIndex, hb::shared::owner_class::Npc, 0, 0, 0, 1, 0, 0);
 							}
 						}
@@ -1538,15 +1548,15 @@ void CEntityManager::NpcBehavior_Attack(int iNpcH)
 
 			if ((m_pNpcList[iNpcH]->m_bIsPermAttackMode == false) && (m_pNpcList[iNpcH]->m_cActionLimit == 0)) {
 				switch (m_pNpcList[iNpcH]->m_iAttackStrategy) {
-				case DEF_ATTACKAI_EXCHANGEATTACK:
+				case AttackAI::ExchangeAttack:
 					m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-					m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+					m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 					break;
 
-				case DEF_ATTACKAI_TWOBYONEATTACK:
+				case AttackAI::TwoByOneAttack:
 					if (m_pNpcList[iNpcH]->m_iAttackCount >= 2) {
 						m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-						m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_FLEE;
+						m_pNpcList[iNpcH]->m_cBehavior = Behavior::Flee;
 					}
 					break;
 				}
@@ -1590,10 +1600,10 @@ void CEntityManager::NpcBehavior_Flee(int iNpcH)
 	m_pNpcList[iNpcH]->m_sBehaviorTurnCount++;
 
 	switch (m_pNpcList[iNpcH]->m_iAttackStrategy) {
-	case DEF_ATTACKAI_EXCHANGEATTACK:
-	case DEF_ATTACKAI_TWOBYONEATTACK:
+	case AttackAI::ExchangeAttack:
+	case AttackAI::TwoByOneAttack:
 		if (m_pNpcList[iNpcH]->m_sBehaviorTurnCount >= 2) {
-			m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+			m_pNpcList[iNpcH]->m_cBehavior = Behavior::Attack;
 			m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 			return;
 		}
@@ -1606,7 +1616,7 @@ void CEntityManager::NpcBehavior_Flee(int iNpcH)
 
 	if (m_pNpcList[iNpcH]->m_sBehaviorTurnCount > 10) {
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
-		m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_MOVE;
+		m_pNpcList[iNpcH]->m_cBehavior = Behavior::Move;
 		m_pNpcList[iNpcH]->m_tmp_iError = 0;
 		if (m_pNpcList[iNpcH]->m_iHP <= 3) {
 			m_pNpcList[iNpcH]->m_iHP += m_pGame->iDice(1, m_pNpcList[iNpcH]->m_iHitDice);
@@ -1710,7 +1720,7 @@ void CEntityManager::NpcBehavior_Stop(int iNpcH)
 
 	if ((sTarget != 0)) {
 
-		m_pNpcList[iNpcH]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+		m_pNpcList[iNpcH]->m_cBehavior = Behavior::Attack;
 		m_pNpcList[iNpcH]->m_sBehaviorTurnCount = 0;
 		m_pNpcList[iNpcH]->m_iTargetIndex = sTarget;
 		m_pNpcList[iNpcH]->m_cTargetType = cTargetType;
@@ -1743,10 +1753,10 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 	bool bFlag;
 
 	switch (m_pNpcList[iNpcH]->m_cMoveType) {
-	case DEF_MOVETYPE_GUARD:
+	case MoveType::Guard:
 		break;
 
-	case DEF_MOVETYPE_SEQWAYPOINT:
+	case MoveType::SeqWaypoint:
 
 		m_pNpcList[iNpcH]->m_cCurWaypoint++;
 		if (m_pNpcList[iNpcH]->m_cCurWaypoint >= m_pNpcList[iNpcH]->m_cTotalWaypoint)
@@ -1755,20 +1765,20 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 		m_pNpcList[iNpcH]->m_dY = (short)(m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_WaypointList[m_pNpcList[iNpcH]->m_iWayPointIndex[m_pNpcList[iNpcH]->m_cCurWaypoint]].y);
 		break;
 
-	case DEF_MOVETYPE_RANDOMWAYPOINT:
+	case MoveType::RandomWaypoint:
 
 		m_pNpcList[iNpcH]->m_cCurWaypoint = (short)((rand() % (m_pNpcList[iNpcH]->m_cTotalWaypoint - 1)) + 1);
 		m_pNpcList[iNpcH]->m_dX = (short)(m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_WaypointList[m_pNpcList[iNpcH]->m_iWayPointIndex[m_pNpcList[iNpcH]->m_cCurWaypoint]].x);
 		m_pNpcList[iNpcH]->m_dY = (short)(m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_WaypointList[m_pNpcList[iNpcH]->m_iWayPointIndex[m_pNpcList[iNpcH]->m_cCurWaypoint]].y);
 		break;
 
-	case DEF_MOVETYPE_RANDOMAREA:
+	case MoveType::RandomArea:
 
 		m_pNpcList[iNpcH]->m_dX = (short)((rand() % m_pNpcList[iNpcH]->m_rcRandomArea.width) + m_pNpcList[iNpcH]->m_rcRandomArea.x);
 		m_pNpcList[iNpcH]->m_dY = (short)((rand() % m_pNpcList[iNpcH]->m_rcRandomArea.height) + m_pNpcList[iNpcH]->m_rcRandomArea.y);
 		break;
 
-	case DEF_MOVETYPE_RANDOM:
+	case MoveType::Random:
 		//m_pNpcList[iNpcH]->m_dX = (rand() % (m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_sSizeX - 50)) + 15;
 		//m_pNpcList[iNpcH]->m_dY = (rand() % (m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->m_sSizeY - 50)) + 15;
 		iMapIndex = m_pNpcList[iNpcH]->m_cMapIndex;
@@ -1778,7 +1788,7 @@ void CEntityManager::CalcNextWayPointDestination(int iNpcH)
 			sY = (rand() % (m_pMapList[iMapIndex]->m_sSizeY - 50)) + 15;
 
 			bFlag = true;
-			for (j = 0; j < DEF_MAXMGAR; j++)
+			for (j = 0; j < smap::MaxMgar; j++)
 				if (m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].x != -1) {
 					if ((sX >= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Left()) &&
 						(sX <= m_pMapList[iMapIndex]->m_rcMobGenAvoidRect[j].Right()) &&
@@ -1851,7 +1861,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 					break;
 				}
 
-				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::Invisibility, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
+				m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::Invisibility, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
 					sOwnerH, cOwnerType, 0, 0, 0, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 
 				if (cOwnerType == hb::shared::owner_class::Player)
@@ -1913,7 +1923,7 @@ void CEntityManager::NpcMagicHandler(int iNpcH, short dX, short dY, short sType)
 					break;
 				}
 
-				m_pGame->bRegisterDelayEvent(DEF_DELAYEVENTTYPE_MAGICRELEASE, hb::shared::magic::HoldObject, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
+				m_pGame->bRegisterDelayEvent(sdelay::Type::MagicRelease, hb::shared::magic::HoldObject, dwTime + (m_pGame->m_pMagicConfigList[sType]->m_dwLastTime * 1000),
 					sOwnerH, cOwnerType, 0, 0, 0, m_pGame->m_pMagicConfigList[sType]->m_sValue4, 0, 0);
 
 				if (cOwnerType == hb::shared::owner_class::Player)
@@ -2159,10 +2169,10 @@ void CEntityManager::NpcRequestAssistance(int iNpcH)
 			m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->GetOwner(&sOwnerH, &cOwnerType, ix, iy);
 			if ((sOwnerH != 0) && (m_pNpcList[sOwnerH] != 0) && (cOwnerType == hb::shared::owner_class::Npc) &&
 				(iNpcH != sOwnerH) && (m_pNpcList[sOwnerH]->m_cSide == m_pNpcList[iNpcH]->m_cSide) &&
-				(m_pNpcList[sOwnerH]->m_bIsPermAttackMode == false) && (m_pNpcList[sOwnerH]->m_cBehavior == DEF_BEHAVIOR_MOVE)) {
+				(m_pNpcList[sOwnerH]->m_bIsPermAttackMode == false) && (m_pNpcList[sOwnerH]->m_cBehavior == Behavior::Move)) {
 
 				// NPC .
-				m_pNpcList[sOwnerH]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+				m_pNpcList[sOwnerH]->m_cBehavior = Behavior::Attack;
 				m_pNpcList[sOwnerH]->m_sBehaviorTurnCount = 0;
 				m_pNpcList[sOwnerH]->m_iTargetIndex = m_pNpcList[iNpcH]->m_iTargetIndex;
 				m_pNpcList[sOwnerH]->m_cTargetType = m_pNpcList[iNpcH]->m_cTargetType;
@@ -2235,7 +2245,7 @@ void CEntityManager::_NpcBehavior_GrandMagicGenerator(int iNpcH)
 {
 	switch (m_pNpcList[iNpcH]->m_cSide) {
 	case 1:
-		if (m_pGame->m_iAresdenMana > DEF_GMGMANACONSUMEUNIT) {
+		if (m_pGame->m_iAresdenMana > GmgManaConsumeUnit) {
 			m_pGame->m_iAresdenMana = 0;
 			m_pNpcList[iNpcH]->m_iManaStock++;
 			if (m_pNpcList[iNpcH]->m_iManaStock > m_pNpcList[iNpcH]->m_iMaxMana) {
@@ -2250,7 +2260,7 @@ void CEntityManager::_NpcBehavior_GrandMagicGenerator(int iNpcH)
 		break;
 
 	case 2:
-		if (m_pGame->m_iElvineMana > DEF_GMGMANACONSUMEUNIT) {
+		if (m_pGame->m_iElvineMana > GmgManaConsumeUnit) {
 			m_pGame->m_iElvineMana = 0;
 			m_pNpcList[iNpcH]->m_iManaStock++;
 			if (m_pNpcList[iNpcH]->m_iManaStock > m_pNpcList[iNpcH]->m_iMaxMana) {
@@ -2332,7 +2342,7 @@ bool CEntityManager::bSetNpcFollowMode(char* pName, char* pFollowName, char cFol
 	iMapIndex = -1;
 	iFollowIndex = -1;
 
-	for(int i = 1; i < DEF_MAXNPCS; i++)
+	for(int i = 1; i < MaxNpcs; i++)
 		if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, pName, 5) == 0)) {
 			iIndex = i;
 			iMapIndex = m_pNpcList[i]->m_cMapIndex;
@@ -2343,7 +2353,7 @@ NEXT_STEP_SNFM1:
 
 	switch (cFollowOwnerType) {
 	case hb::shared::owner_class::Npc:
-		for(int i = 1; i < DEF_MAXNPCS; i++)
+		for(int i = 1; i < MaxNpcs; i++)
 			if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, pFollowName, 5) == 0)) {
 				if (m_pNpcList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
@@ -2353,7 +2363,7 @@ NEXT_STEP_SNFM1:
 		break;
 
 	case hb::shared::owner_class::Player:
-		for(int i = 1; i < DEF_MAXCLIENTS; i++)
+		for(int i = 1; i < MaxClients; i++)
 			if ((m_pGame->m_pClientList[i] != 0) && (_strnicmp(m_pGame->m_pClientList[i]->m_cCharName, pFollowName, hb::shared::limits::CharNameLen - 1) == 0)) {
 				if (m_pGame->m_pClientList[i]->m_cMapIndex != iMapIndex) return false;
 				iFollowIndex = i;
@@ -2367,7 +2377,7 @@ NEXT_STEP_SNFM2:
 
 	if ((iIndex == -1) || (iFollowIndex == -1)) return false;
 
-	m_pNpcList[iIndex]->m_cMoveType = DEF_MOVETYPE_FOLLOW;
+	m_pNpcList[iIndex]->m_cMoveType = MoveType::Follow;
 	m_pNpcList[iIndex]->m_cFollowOwnerType = cFollowOwnerType;
 	m_pNpcList[iIndex]->m_iFollowOwnerIndex = iFollowIndex;
 	m_pNpcList[iIndex]->m_cSide = cFollowSide;
@@ -2380,7 +2390,7 @@ void CEntityManager::bSetNpcAttackMode(char* cName, int iTargetH, char cTargetTy
 {
 	int iIndex;
 
-	for(int i = 1; i < DEF_MAXNPCS; i++)
+	for(int i = 1; i < MaxNpcs; i++)
 		if ((m_pNpcList[i] != 0) && (memcmp(m_pNpcList[i]->m_cName, cName, 5) == 0)) {
 			iIndex = i;
 			goto NEXT_STEP_SNAM1;
@@ -2403,7 +2413,7 @@ NEXT_STEP_SNAM1:
 		break;
 	}
 
-	m_pNpcList[iIndex]->m_cBehavior = DEF_BEHAVIOR_ATTACK;
+	m_pNpcList[iIndex]->m_cBehavior = Behavior::Attack;
 	m_pNpcList[iIndex]->m_sBehaviorTurnCount = 0;
 	m_pNpcList[iIndex]->m_iTargetIndex = iTargetH;
 	m_pNpcList[iIndex]->m_cTargetType = cTargetType;
@@ -2454,7 +2464,7 @@ void CEntityManager::DeleteNpcInternal(int iNpcH)
 	case 39:
 	case 42:
 		m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->bRemoveCrusadeStructureInfo(m_pNpcList[iNpcH]->m_sX, m_pNpcList[iNpcH]->m_sY);
-		for(int i = 0; i < DEF_MAXGUILDS; i++)
+		for(int i = 0; i < MaxGuilds; i++)
 			if (m_pGame->m_pGuildTeleportLoc[i].m_iV1 == m_pNpcList[iNpcH]->m_iGuildGUID) {
 				m_pGame->m_pGuildTeleportLoc[i].m_dwTime = dwTime;
 				m_pGame->m_pGuildTeleportLoc[i].m_iV2--;
@@ -2640,7 +2650,7 @@ bool CEntityManager::SpawnNpcDropItem(int iNpcH, int itemId, int minCount, int m
 	m_pMapList[m_pNpcList[iNpcH]->m_cMapIndex]->bSetItem(m_pNpcList[iNpcH]->m_sX, m_pNpcList[iNpcH]->m_sY, pItem);
 	m_pGame->SendEventToNearClient_TypeB(MsgId::EventCommon, CommonType::ItemDrop, m_pNpcList[iNpcH]->m_cMapIndex,
 		m_pNpcList[iNpcH]->m_sX, m_pNpcList[iNpcH]->m_sY, pItem->m_sIDnum, 0, pItem->m_cItemColor, pItem->m_dwAttribute);
-	m_pGame->_bItemLog(DEF_ITEMLOG_NEWGENDROP, 0, m_pNpcList[iNpcH]->m_cNpcName, pItem);
+	m_pGame->_bItemLog(ItemLogAction::NewGenDrop, 0, m_pNpcList[iNpcH]->m_cNpcName, pItem);
 	return true;
 }
 
@@ -2649,7 +2659,7 @@ int CEntityManager::GetEntityHandleByGUID(uint32_t dwGUID) const
     if (dwGUID == 0)
         return -1;
 
-    for(int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < MaxNpcs; i++) {
         if (m_dwEntityGUID[i] == dwGUID && m_pNpcList[i] != NULL)
             return i;
     }
@@ -2659,7 +2669,7 @@ int CEntityManager::GetEntityHandleByGUID(uint32_t dwGUID) const
 
 uint32_t CEntityManager::GetEntityGUID(int iEntityHandle) const
 {
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS)
+    if (iEntityHandle < 1 || iEntityHandle >= MaxNpcs)
         return 0;
 
     return m_dwEntityGUID[iEntityHandle];
@@ -2686,7 +2696,7 @@ int CEntityManager::FindEntityByName(const char* pName) const
     if (pName == NULL)
         return -1;
 
-    for(int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < MaxNpcs; i++) {
         if (m_pNpcList[i] != NULL) {
             if (memcmp(m_pNpcList[i]->m_cName, pName, 6) == 0)
                 return i;
@@ -2710,7 +2720,7 @@ bool CEntityManager::InitEntityAttributes(CNpc* pNpc, int iNpcConfigId, short sC
 
 int CEntityManager::GetFreeEntitySlot() const
 {
-    for(int i = 1; i < DEF_MAXNPCS; i++) {
+    for(int i = 1; i < MaxNpcs; i++) {
         if (m_pNpcList[i] == NULL)
             return i;
     }
@@ -2719,7 +2729,7 @@ int CEntityManager::GetFreeEntitySlot() const
 
 bool CEntityManager::IsValidEntity(int iEntityHandle) const
 {
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS)
+    if (iEntityHandle < 1 || iEntityHandle >= MaxNpcs)
         return false;
 
     return (m_pNpcList[iEntityHandle] != NULL);
@@ -2742,7 +2752,7 @@ void CEntityManager::AddToActiveList(int iEntityHandle)
     // Add entity to active list for fast iteration
     // This allows us to iterate only active entities (e.g., 70) instead of all slots (5000)
 
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS) {
+    if (iEntityHandle < 1 || iEntityHandle >= MaxNpcs) {
         return; // Invalid handle
     }
 
@@ -2764,7 +2774,7 @@ void CEntityManager::RemoveFromActiveList(int iEntityHandle)
     // Remove entity from active list when deleted
     // Uses swap-and-pop for O(1) removal
 
-    if (iEntityHandle < 1 || iEntityHandle >= DEF_MAXNPCS) {
+    if (iEntityHandle < 1 || iEntityHandle >= MaxNpcs) {
         return; // Invalid handle
     }
 
@@ -3530,7 +3540,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 				}
 
 				bMaster = (CreateEntity(iNpcConfigId, cName_Master, m_pMapList[i]->m_cName, (rand() % 3), cSA,
-					DEF_MOVETYPE_RANDOM, &pX, &pY, cWaypoint, 0, 0, -1, false, false, bFirmBerserk, true, 0) > 0);
+					MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, bFirmBerserk, true, 0) > 0);
 				if (bMaster == false) {
 					m_pMapList[i]->SetNamingValueEmpty(iNamingValue);
 				}
@@ -3660,7 +3670,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 				case 1:
 					if ((iResult != 35) && (iResult != 36) && (iResult != 37) && (iResult != 49) 
 						&& (iResult != 51) && (iResult != 15) && (iResult != 16) && (iResult != 21)) iTotalMob = 12;
-					for (x = 1; x < DEF_MAXCLIENTS; x++)
+					for (x = 1; x < MaxClients; x++)
 					if ((iNpcID != -1) && (m_pGame->m_pClientList[x] != 0) && (m_pGame->m_pClientList[x]->m_bIsInitComplete )) {
 						m_pGame->SendNotifyMsg(0, x, Notify::SpawnEvent, pX, pY, iNpcID, 0, 0, 0);
 					}
@@ -3693,7 +3703,7 @@ void CEntityManager::ProcessRandomSpawns(int iMapIndex)
 					}
 
 					if (CreateEntity(iNpcConfigId, cName_Slave, m_pMapList[i]->m_cName, (rand() % 3), cSA,
-						DEF_MOVETYPE_RANDOM, &pX, &pY, cWaypoint, 0, 0, -1, false, false, bFirmBerserk, false, 0) <= 0) {
+						MoveType::Random, &pX, &pY, cWaypoint, 0, 0, -1, false, false, bFirmBerserk, false, 0) <= 0) {
 						m_pMapList[i]->SetNamingValueEmpty(iNamingValue);
 					}
 					else {
@@ -3730,7 +3740,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
     char cSA;
 
     // Loop through all spot mob generators
-    for(int j = 1; j < DEF_MAXSPOTMOBGENERATOR; j++) {
+    for(int j = 1; j < smap::MaxSpotMobGenerator; j++) {
         if (!m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].bDefined) continue;
 
         if (m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].iMaxMobs <=
@@ -3769,7 +3779,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
             case 1: // RECT-based spawn (RANDOMAREA)
                 iResult = CreateEntity(
                     iNpcConfigId, cName_Master, m_pMapList[iMapIndex]->m_cName,
-                    (rand() % 3), cSA, DEF_MOVETYPE_RANDOMAREA,
+                    (rand() % 3), cSA, MoveType::RandomArea,
                     &pX, &pY, cWaypoint,
                     &m_pMapList[iMapIndex]->m_stSpotMobGenerator[j].rcRect,
                     j, -1, false, false, false, false, 0
@@ -3782,7 +3792,7 @@ void CEntityManager::ProcessSpotSpawns(int iMapIndex)
                 }
                 iResult = CreateEntity(
                     iNpcConfigId, cName_Master, m_pMapList[iMapIndex]->m_cName,
-                    (rand() % 3), cSA, DEF_MOVETYPE_RANDOMWAYPOINT,
+                    (rand() % 3), cSA, MoveType::RandomWaypoint,
                     &pX, &pY, cWaypoint, 0,
                     j, -1, false, false, false, false, 0
                 );

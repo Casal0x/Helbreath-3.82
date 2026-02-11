@@ -164,14 +164,31 @@ namespace ItemSpread
 	};
 }
 
-// Item log action types (server-only; others in Game.h)
+// Item log action types
 // Named ItemLogAction to avoid collision with the ItemLog class
 namespace ItemLogAction
 {
 	enum : int32_t
 	{
+		Give                                    = 1,
+		Drop                                    = 2,
+		Get                                     = 3,
+		Deplete                                 = 4,
+		NewGenDrop                              = 5,
+		Buy                                     = 7,
+		Sell                                    = 8,
+		Retrieve                                = 9,
+		Deposit                                 = 10,
+		Exchange                                = 11,
+		SkillLearn                              = 12,
+		Make                                    = 13,
+		SummonMonster                           = 14,
+		Poisoned                                = 15,
+		MagicLearn                              = 16,
+		Repair                                  = 17,
 		UpgradeFail                             = 29,
 		UpgradeSuccess                          = 30,
+		Use                                     = 32,
 	};
 }
 

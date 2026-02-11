@@ -15,10 +15,10 @@ CNpc::CNpc(char * pName5)
 	std::memset(m_cName, 0, sizeof(m_cName));
 	memcpy(m_cName, pName5, 5);
 	
-	for(int i = 0; i < DEF_MAXWAYPOINTS; i++)			  
+	for(int i = 0; i < hb::server::npc::MaxWaypoints; i++)			  
 		m_iWayPointIndex[i] = -1;
 	
-	for(int i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
+	for(int i = 0; i < hb::server::config::MaxMagicEffects; i++) 
 		m_cMagicEffectStatus[i]	= 0;
 
 	m_bIsSummoned       = false;

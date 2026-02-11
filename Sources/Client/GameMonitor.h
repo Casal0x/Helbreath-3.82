@@ -11,7 +11,7 @@
 #include <string.h>
 #include "ChatMsg.h"
 
-#define DEF_MAXBADWORD		500
+namespace hb::client::config { constexpr int MaxBadWord = 500; }
 
 class CGameMonitor  
 {
@@ -21,6 +21,6 @@ public:
 	CGameMonitor();
 	virtual ~CGameMonitor();
 
-	class CMsg * m_pWordList[DEF_MAXBADWORD];
+	class CMsg * m_pWordList[hb::client::config::MaxBadWord];
 
 };

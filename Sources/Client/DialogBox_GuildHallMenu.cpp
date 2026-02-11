@@ -9,6 +9,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::client::net;
+using namespace hb::client::sprite_id;
 DialogBox_GuildHallMenu::DialogBox_GuildHallMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildHallMenu, pGame)
 {
@@ -22,7 +23,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	sX = Info().sX;
 	sY = Info().sY;
 	szX = Info().sSizeX;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 
 	switch (Info().cMode) {
 	case 0: // initial diag

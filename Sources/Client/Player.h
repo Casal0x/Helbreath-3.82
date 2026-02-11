@@ -9,10 +9,13 @@
 #include "PlayerStatusData.h"
 #include "ActionID.h"
 
-#define DEF_PLAYERNAME_LENGTH      12
-#define DEF_GUILDNAME_LENGTH       22
-#define DEF_PLAYER_MAXMAGICTYPE    100
-#define DEF_PLAYER_MAXSKILLTYPE    60
+namespace hb::client::config
+{
+constexpr int PlayerNameLength = 12;
+constexpr int GuildNameLength = 22;
+constexpr int PlayerMaxMagicType = 100;
+constexpr int PlayerMaxSkillType = 60;
+} // namespace hb::client::config
 
 //=============================================================================
 // Player Animation Definitions
@@ -67,12 +70,12 @@ public:
     CPlayerController m_Controller;
 
     // IDENTITY & ACCOUNT
-    char m_cPlayerName[DEF_PLAYERNAME_LENGTH];
+    char m_cPlayerName[hb::client::config::PlayerNameLength];
     short m_sPlayerObjectID;
     short m_sPlayerType;
     char m_cAccountName[hb::shared::limits::AccountNameLen];
     char m_cAccountPassword[hb::shared::limits::AccountPassLen];
-    char m_cGuildName[DEF_GUILDNAME_LENGTH];
+    char m_cGuildName[hb::client::config::GuildNameLength];
     int m_iGuildRank;
 
     // POSITION & MOVEMENT
@@ -109,8 +112,8 @@ public:
     int8_t m_iGender, m_iSkinCol, m_iHairStyle, m_iHairCol, m_iUnderCol;
 
     // SKILLS & MAGIC
-    std::array<int8_t, DEF_PLAYER_MAXMAGICTYPE> m_iMagicMastery{};
-    std::array<uint8_t, DEF_PLAYER_MAXSKILLTYPE> m_iSkillMastery{};
+    std::array<int8_t, hb::client::config::PlayerMaxMagicType> m_iMagicMastery{};
+    std::array<uint8_t, hb::client::config::PlayerMaxSkillType> m_iSkillMastery{};
 
     // STATUS FLAGS
     bool m_bIsPoisoned, m_bIsConfusion, m_bParalyze;

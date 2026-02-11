@@ -6,6 +6,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_SellList::DialogBox_SellList(CGame* pGame)
 	: IDialogBox(DialogBoxId::SellList, pGame)
@@ -20,8 +21,8 @@ void DialogBox_SellList::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 11);
 
 	int iEmptyCount = 0;
 	DrawItemList(sX, sY, szX, msX, msY, iEmptyCount);
@@ -154,16 +155,16 @@ void DialogBox_SellList::DrawButtons(short sX, short sY, short msX, short msY, b
 	// Sell button (only enabled when there are items)
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
 		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y) && bHasItems)
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 39);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 39);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 38);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 38);
 
 	// Cancel button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
 bool DialogBox_SellList::OnClick(short msX, short msY)

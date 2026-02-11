@@ -14,6 +14,7 @@
 
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 Overlay_QueryDeleteCharacter::Overlay_QueryDeleteCharacter(CGame* pGame)
@@ -40,7 +41,7 @@ void Overlay_QueryDeleteCharacter::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // ESC cancels - base screen (SelectCharacter) will be revealed
     if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
@@ -105,7 +106,7 @@ void Overlay_QueryDeleteCharacter::on_render()
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // Double shadow effect after initial animation period (600ms)
     if (dwElapsed >= 600)
@@ -114,7 +115,7 @@ void Overlay_QueryDeleteCharacter::on_render()
     }
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
     // Title
     hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
@@ -135,12 +136,12 @@ void Overlay_QueryDeleteCharacter::on_render()
     // Yes button with hover effect
     bool bYesHover = (msX >= dlgX + 38) && (msX <= dlgX + 38 + ui_layout::btn_size_x) &&
                      (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 38, dlgY + 119, bYesHover ? 19 : 18);
+    DrawNewDialogBox(InterfaceNdButton, dlgX + 38, dlgY + 119, bYesHover ? 19 : 18);
 
     // No button with hover effect
     bool bNoHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + ui_layout::btn_size_x) &&
                     (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bNoHover ? 3 : 2);
+    DrawNewDialogBox(InterfaceNdButton, dlgX + 208, dlgY + 119, bNoHover ? 3 : 2);
 
     DrawVersion();
 }

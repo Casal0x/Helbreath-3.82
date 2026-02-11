@@ -7,7 +7,7 @@
 #include "CommonTypes.h"
 #include "Item.h"
 
-#define DEF_TILE_PER_ITEMS	12
+namespace hb::server::map { constexpr int TilePerItems = 12; }
 
 class CTile  
 {												  
@@ -21,7 +21,7 @@ public:
 	char  m_cDeadOwnerClass;	// DEF_OT_PLAYER / DEF_OT_NPC
 	short m_sDeadOwner;
 
-	CItem * m_pItem[DEF_TILE_PER_ITEMS];
+	CItem * m_pItem[hb::server::map::TilePerItems];
 	char  m_cTotalItem;
 
 	uint16_t  m_wDynamicObjectID;

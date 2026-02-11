@@ -5,6 +5,7 @@
 #include "lan_eng.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_Skill::DialogBox_Skill(CGame* pGame)
 	: IDialogBox(DialogBoxId::Skill, pGame)
 {
@@ -22,8 +23,8 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 	sX = Info().sX;
 	sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0); // Normal Dialog
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 1); // Skill Dialog Title Bar
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0); // Normal Dialog
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 1); // Skill Dialog Title Bar
 
 	switch (Info().cMode) {
 	case 0:
@@ -65,8 +66,8 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 
 				if (m_pGame->m_iDownSkillIndex == (i + Info().sView))
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, hb::shared::sprite::DrawParams::Tint(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
-				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, hb::shared::sprite::DrawParams::Tint(1, 1, 1));
+					m_pGame->m_pSprite[InterfaceAddInterface]->Draw(sX + 215, sY + 47 + i * 15, 21, hb::shared::sprite::DrawParams::Tint(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				else m_pGame->m_pSprite[InterfaceAddInterface]->Draw(sX + 215, sY + 47 + i * 15, 20, hb::shared::sprite::DrawParams::Tint(1, 1, 1));
 			}
 
 		iTotalLines = 0;
@@ -83,8 +84,8 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 		else iPointerLoc = 0;
 		if (iTotalLines > 17)
 		{
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
+			DrawNewDialogBox(InterfaceNdGame2, sX, sY, 1);
+			DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + iPointerLoc + 35, 7);
 		}
 
 		if (cLB != 0 && iTotalLines > 17)

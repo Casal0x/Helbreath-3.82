@@ -3,6 +3,7 @@
 #include "IInput.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_RepairAll::DialogBox_RepairAll(CGame* pGame)
 	: IDialogBox(DialogBoxId::RepairAll, pGame)
 {
@@ -19,8 +20,8 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 	int iTotalLines, iPointerLoc;
 	double d1, d2, d3;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 10);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 10);
 
 	for (int i = 0; i < 15; i++)
 	{
@@ -52,8 +53,8 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	if (iTotalLines > 15)
 	{
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
+		DrawNewDialogBox(InterfaceNdGame2, sX, sY, 1);
+		DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + iPointerLoc + 35, 7);
 	}
 
 	// Mouse wheel scrolling
@@ -76,15 +77,15 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 	{
 		// Repair button
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 43);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 43);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 42);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 42);
 
 		// Cancel button
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 
 		// Total cost
 		std::memset(cTxt, 0, sizeof(cTxt));
@@ -98,9 +99,9 @@ void DialogBox_RepairAll::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		// Cancel button only
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 	}
 }
 

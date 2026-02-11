@@ -5,11 +5,12 @@
 #include <cstdio>
 #include <cstring>
 
-#define DEF_PASSWORD_SALT_HEX 33  // 16 bytes = 32 hex chars + null
-#define DEF_PASSWORD_HASH_HEX 65  // 32 bytes = 64 hex chars + null
 
 namespace PasswordHash
 {
+constexpr int SaltHexLen = 33;  // 16 bytes = 32 hex chars + null
+constexpr int HashHexLen = 65;  // 32 bytes = 64 hex chars + null
+
 	inline void BytesToHex(const unsigned char* bytes, size_t len, char* outHex, size_t outSize)
 	{
 		for (size_t i = 0; i < len && (i * 2 + 2) < outSize; i++) {
@@ -31,7 +32,7 @@ namespace PasswordHash
 
 	inline bool GenerateSalt(char* outSaltHex, size_t outSize)
 	{
-		if (outSize < DEF_PASSWORD_SALT_HEX) return false;
+		if (outSize < SaltHexLen) return false;
 
 		unsigned char saltBytes[16] = {};
 		NTSTATUS status = BCryptGenRandom(nullptr, saltBytes, sizeof(saltBytes), BCRYPT_USE_SYSTEM_PREFERRED_RNG);
@@ -44,7 +45,7 @@ namespace PasswordHash
 
 	inline bool HashPassword(const char* password, const char* saltHex, char* outHashHex, size_t outSize)
 	{
-		if (outSize < DEF_PASSWORD_HASH_HEX) return false;
+		if (outSize < HashHexLen) return false;
 
 		// Construct input: saltHex + password
 		char input[256] = {};
@@ -81,7 +82,7 @@ namespace PasswordHash
 
 	inline bool VerifyPassword(const char* password, const char* saltHex, const char* storedHashHex)
 	{
-		char computedHash[DEF_PASSWORD_HASH_HEX] = {};
+		char computedHash[HashHexLen] = {};
 		if (!HashPassword(password, saltHex, computedHash, sizeof(computedHash))) {
 			return false;
 		}

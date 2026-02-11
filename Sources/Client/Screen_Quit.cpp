@@ -8,6 +8,7 @@
 #include "CommonTypes.h"
 #include "IInput.h"
 #include "SpriteID.h"
+using namespace hb::client::sprite_id;
 
 
 namespace MouseButton = hb::shared::input::MouseButton;
@@ -71,18 +72,18 @@ void Screen_Quit::on_update()
 
 void Screen_Quit::on_render()
 {
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 0, 0, 0, true);
+    DrawNewDialogBox(InterfaceNdQuit, 0, 0, 0, true);
 
     // Fade in the quit dialog over 500ms
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
     if (dwElapsed >= FADE_IN_MS)
     {
-        DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_QUIT, 335, 183, 1, true);
+        DrawNewDialogBox(InterfaceNdQuit, 335, 183, 1, true);
     }
     else
     {
         float fAlpha = static_cast<float>(dwElapsed) / static_cast<float>(FADE_IN_MS);
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(335, 183, 1, hb::shared::sprite::DrawParams::Alpha(fAlpha));
+        m_pGame->m_pSprite[InterfaceNdQuit]->Draw(335, 183, 1, hb::shared::sprite::DrawParams::Alpha(fAlpha));
     }
 
     DrawVersion();

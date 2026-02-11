@@ -11,18 +11,27 @@
 #include <memory.h>
 
 
-#define DEF_QUESTTYPE_MONSTERHUNT				1
-#define DEF_QUESTTYPE_MONSTERHUNT_TIMELIMIT		2
-#define DEF_QUESTTYPE_ASSASSINATION 			3
-#define DEF_QUESTTYPE_DELIVERY					4
-#define DEF_QUESTTYPE_ESCORT					5
-#define DEF_QUESTTYPE_GUARD						6
-#define DEF_QUESTTYPE_GOPLACE					7
-#define DEF_QUESTTYPE_BUILDSTRUCTURE			8
-#define DEF_QUESTTYPE_SUPPLYBUILDSTRUCTURE		9
-#define DEF_QUESTTYPE_STRATEGICSTRIKE			10
-#define DEF_QUESTTYPE_SENDTOBATTLE				11
-#define DEF_QUESTTYPE_SETOCCUPYFLAG				12
+namespace hb::server::quest
+{
+namespace Type
+{
+	enum : int
+	{
+		MonsterHunt             = 1,
+		MonsterHuntTimeLimit    = 2,
+		Assassination           = 3,
+		Delivery                = 4,
+		Escort                  = 5,
+		Guard                   = 6,
+		GoPlace                 = 7,
+		BuildStructure          = 8,
+		SupplyBuildStructure    = 9,
+		StrategicStrike         = 10,
+		SendToBattle            = 11,
+		SetOccupyFlag           = 12,
+	};
+}
+} // namespace hb::server::quest
 
 class CQuest  
 {

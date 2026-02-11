@@ -9,6 +9,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Slates::DialogBox_Slates(CGame* pGame)
 	: IDialogBox(DialogBoxId::Slates, pGame)
@@ -32,19 +33,19 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 		iAdjX = -1;
 		iAdjY = -7;
 
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX, sY, 4);
+		DrawNewDialogBox(InterfaceNdInventory, sX, sY, 4);
 
 		if (Info().sV1 != -1) {
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 20, sY + 12, 5);
+			DrawNewDialogBox(InterfaceNdInventory, sX + 20, sY + 12, 5);
 		}
 		if (Info().sV2 != -1) {
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 20, sY + 87, 6);
+			DrawNewDialogBox(InterfaceNdInventory, sX + 20, sY + 87, 6);
 		}
 		if (Info().sV3 != -1) {
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 85, sY + 32, 7);
+			DrawNewDialogBox(InterfaceNdInventory, sX + 85, sY + 32, 7);
 		}
 		if (Info().sV4 != -1) {
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX + 70, sY + 97, 8);
+			DrawNewDialogBox(InterfaceNdInventory, sX + 70, sY + 97, 8);
 		}
 
 		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
@@ -66,8 +67,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 			sX = Info().sX;
 			sY = Info().sY;
 		}
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX, sY, 4);
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_INVENTORY]->Draw(sX + 22, sY + 14, 3);
+		m_pGame->m_pSprite[InterfaceNdInventory]->Draw(sX, sY, 4);
+		m_pGame->m_pSprite[InterfaceNdInventory]->Draw(sX + 22, sY + 14, 3);
 		PutAlignedString(199, 438, 201, "KURURURURURURURURU!!!", GameColors::UISlatesPink);
 		PutAlignedString(200, 439, 200, "KURURURURURURURURU!!!", GameColors::UISlatesCyan);
 

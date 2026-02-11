@@ -14,8 +14,7 @@
 #include <memory.h>
 #include "Game.h"
 
-#define DEF_MAXPARTY		5000
-#define DEF_MAXPARTYMEMBER	100
+namespace hb::server::party { constexpr int MaxParty = 5000; constexpr int MaxPartyMember = 100; }
 
 
 class PartyManager
@@ -33,13 +32,13 @@ public:
 	PartyManager(class CGame* pGame);
 	virtual ~PartyManager();
 
-	int m_iMemberNumList[DEF_MAXPARTY];
+	int m_iMemberNumList[hb::server::party::MaxParty];
 
 	struct {
 		int  m_iPartyID, m_iIndex;
 		char m_cName[hb::shared::limits::CharNameLen];
 		uint32_t m_dwServerChangeTime;
-	} m_stMemberNameList[DEF_MAXPARTY];
+	} m_stMemberNameList[hb::server::party::MaxParty];
 
 	class CGame* m_pGame;
 	uint32_t m_dwCheckMemberActTime;

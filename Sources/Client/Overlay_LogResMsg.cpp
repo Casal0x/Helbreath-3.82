@@ -11,6 +11,7 @@
 #include "AudioManager.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+using namespace hb::client::sprite_id;
 
 
 namespace MouseButton = hb::shared::input::MouseButton;
@@ -95,7 +96,7 @@ void Overlay_LogResMsg::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // ESC or Enter dismisses the message
     if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
@@ -291,15 +292,15 @@ void Overlay_LogResMsg::on_render()
     int msY = hb::shared::input::GetMouseY();
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
     // Draw OK button with hover effect
     bool bHover = (msX >= dlgX + 208) && (msX <= dlgX + 208 + ui_layout::btn_size_x) &&
                   (msY >= dlgY + 119) && (msY <= dlgY + 119 + ui_layout::btn_size_y);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, dlgX + 208, dlgY + 119, bHover ? 1 : 0);
+    DrawNewDialogBox(InterfaceNdButton, dlgX + 208, dlgY + 119, bHover ? 1 : 0);
 
     // Render the appropriate message
     RenderMessage(dlgX, dlgY);

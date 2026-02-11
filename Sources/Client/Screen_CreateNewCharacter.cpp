@@ -19,6 +19,7 @@ using namespace hb::shared::net;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 using namespace hb::shared::action;
+using namespace hb::client::sprite_id;
 
 Screen_CreateNewCharacter::Screen_CreateNewCharacter(CGame* pGame)
     : IGameScreen(pGame)
@@ -397,8 +398,8 @@ void Screen_CreateNewCharacter::on_render()
     }
 
     // ======== Draw character creation UI (inlined from _bDraw_OnCreateNewCharacter) ========
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWCHAR, 0, 0, 0, true);
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 69, true);
+    m_pGame->DrawNewDialogBox(InterfaceNdNewChar, 0, 0, 0, true);
+    m_pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 69, true);
     hb::shared::text::DrawTextAligned(GameFont::Default, 64 + OX, 90 + OY, (282) - (64), 15, _BDRAW_ON_CREATE_NEW_CHARACTER1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     hb::shared::text::DrawTextAligned(GameFont::Default, 57 + OX, 110 + OY, (191) - (57), 15, DEF_MSG_CHARACTERNAME, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     if (m_cCurFocus != 1) hb::shared::text::DrawText(GameFont::Default, 197 + OX, 112 + OY, m_cNewCharName, hb::shared::text::TextStyle::Color(GameColors::UILabel));
@@ -432,25 +433,25 @@ void Screen_CreateNewCharacter::on_render()
 
     // Button states
     if ((m_bNewCharFlag == true) && (m_cCurFocus == 2))
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + OX, 445 + OY, 25);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(384 + OX, 445 + OY, 25);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(384 + OX, 445 + OY, 24);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(384 + OX, 445 + OY, 24);
     if (m_cCurFocus == 3)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + OX, 445 + OY, 17);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(500 + OX, 445 + OY, 17);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(500 + OX, 445 + OY, 16);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(500 + OX, 445 + OY, 16);
     if (m_cCurFocus == 4)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + OX, 445 + OY, 68);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(60 + OX, 445 + OY, 68);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(60 + OX, 445 + OY, 67);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(60 + OX, 445 + OY, 67);
     if (m_cCurFocus == 5)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + OX, 445 + OY, 66);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(145 + OX, 445 + OY, 66);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(145 + OX, 445 + OY, 65);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(145 + OX, 445 + OY, 65);
     if (m_cCurFocus == 6)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + OX, 445 + OY, 64);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(230 + OX, 445 + OY, 64);
     else
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(230 + OX, 445 + OY, 63);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(230 + OX, 445 + OY, 63);
 
     m_pGame->ShowReceivedString();
 

@@ -24,11 +24,11 @@
 #include "PlayerStatusData.h"
 using namespace std;
 
-#define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
+namespace hb::server::config { constexpr int ClientSocketBlockLimit = 2000; } // Queue size per client
 
 // hb::shared::limits::MaxMagicType and hb::shared::limits::MaxSkillType are defined in NetConstants.h
 
-#define DEF_SPECABLTYTIMESEC	1200
+namespace hb::server::config { constexpr int SpecialAbilityTimeSec = 1200; }
 
 class CClient  
 {
@@ -159,7 +159,7 @@ public:
 	bool  m_bSkillUsingStatus[hb::shared::limits::MaxSkillType];
 	int   m_iSkillUsingTimeID[hb::shared::limits::MaxSkillType]; //v1.12
 
-	char  m_cMagicEffectStatus[DEF_MAXMAGICEFFECTS];
+	char  m_cMagicEffectStatus[hb::server::config::MaxMagicEffects];
 
 	int   m_iWhisperPlayerIndex;
 	char  m_cProfile[256];

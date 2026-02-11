@@ -4,6 +4,7 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_ItemDropAmount::DialogBox_ItemDropAmount(CGame* pGame)
 	: IDialogBox(DialogBoxId::ItemDropExternal, pGame)
@@ -17,7 +18,7 @@ void DialogBox_ItemDropAmount::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	char cTxt[120], cStr1[64], cStr2[64], cStr3[64];
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 5);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 5);
 
 	switch (Info().cMode)
 	{

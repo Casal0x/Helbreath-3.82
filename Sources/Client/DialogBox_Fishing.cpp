@@ -6,6 +6,7 @@
 #include "lan_eng.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_Fishing::DialogBox_Fishing(CGame* pGame)
 	: IDialogBox(DialogBoxId::Fishing, pGame)
 {
@@ -19,7 +20,7 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 	char cTxt[120];
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 2);
 
 	char cStr1[64], cStr2[64], cStr3[64];
 	m_pGame->GetItemName(m_pGame->FindItemIdByName(Info().cStr), 0, cStr1, cStr2, cStr3);
@@ -27,7 +28,7 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode)
 	{
 	case 0:
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
+		m_pGame->m_pSprite[ItemPackPivotPoint + Info().sV3]->Draw(sX + 18 + 35, sY + 18 + 17, Info().sV4);
 
 		std::snprintf(cTxt, sizeof(cTxt), "%s", cStr1);
 		PutString(sX + 98, sY + 14, cTxt, GameColors::UIWhite);

@@ -4,6 +4,7 @@
 
 #include "GameMonitor.h"
 #include "CommonTypes.h"
+using namespace hb::client::config;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -13,7 +14,7 @@ CGameMonitor::CGameMonitor()
 {
 	int i;
 
-	for (i = 0; i < DEF_MAXBADWORD; i++)
+	for (i = 0; i < MaxBadWord; i++)
 		m_pWordList[i] = 0;
 }
 
@@ -21,7 +22,7 @@ CGameMonitor::~CGameMonitor()
 {
 	int i;
 
-	for (i = 0; i < DEF_MAXBADWORD; i++)
+	for (i = 0; i < MaxBadWord; i++)
 		if (m_pWordList[i] != 0) delete m_pWordList[i];
 }
 
@@ -53,7 +54,7 @@ int CGameMonitor::iReadBadWordFileList(char* pFn)
 	{
 		m_pWordList[iIndex] = new class CMsg(0, token, 0);
 		iIndex++;
-		if (iIndex >= DEF_MAXBADWORD) break;
+		if (iIndex >= MaxBadWord) break;
 		token = strtok(NULL, seps);
 	}
 	delete[] pContents;

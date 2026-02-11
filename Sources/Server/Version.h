@@ -1,8 +1,9 @@
 #pragma once
 #include "CommonTypes.h"
 
-#define DEF_UPPERVERSION		"2"
-#define DEF_LOWERVERSION 		"24b"
-
-//#define DEF_BUILDDATE			312
-#define DEF_BUILDDATE			1126
+namespace hb::server::version
+{
+constexpr const char* Upper = "2";
+constexpr const char* Lower = "24b";
+constexpr int BuildDate = 1126;
+} // namespace hb::server::version

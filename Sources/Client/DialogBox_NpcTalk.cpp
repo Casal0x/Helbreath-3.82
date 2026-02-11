@@ -5,6 +5,7 @@
 
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcTalk, pGame)
 {
@@ -27,7 +28,7 @@ void DialogBox_NpcTalk::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sX;
 	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sY;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
 
 	DrawButtons(sX, sY, msX, msY);
 	DrawTextContent(sX, sY);
@@ -44,23 +45,23 @@ void DialogBox_NpcTalk::DrawButtons(short sX, short sY, short msX, short msY)
 	case 0: // OK button only
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 			(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 		else
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 		break;
 
 	case 1: // Accept / Decline buttons
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) &&
 			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 33);
 		else
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 32);
 
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 41);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 41);
 		else
-			m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 40);
+			m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 40);
 		break;
 
 	case 2: // Next button
@@ -96,7 +97,7 @@ void DialogBox_NpcTalk::DrawScrollBar(short sX, short sY, int iTotalLines)
 		double d2 = (double)(iTotalLines - 17);
 		double d3 = (274.0 * d1) / d2;
 		int iPointerLoc = (int)d3;
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 3);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
 	}
 }
 

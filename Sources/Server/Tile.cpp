@@ -24,7 +24,7 @@ CTile::CTile()
 	m_sDeadOwner      = 0;
 	m_cDeadOwnerClass = 0;
 	
-	for(int i = 0; i < DEF_TILE_PER_ITEMS; i++) 
+	for(int i = 0; i < hb::server::map::TilePerItems; i++) 
 		m_pItem[i] = 0;
 	m_cTotalItem = 0;
 
@@ -42,6 +42,6 @@ CTile::CTile()
 CTile::~CTile()
 {
  
-	for(int i = 0; i < DEF_TILE_PER_ITEMS; i++) 
+	for(int i = 0; i < hb::server::map::TilePerItems; i++) 
 	if (m_pItem[i] != 0) delete m_pItem[i];
 }

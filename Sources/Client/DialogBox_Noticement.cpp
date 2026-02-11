@@ -1,6 +1,7 @@
 #include "DialogBox_Noticement.h"
 #include "Game.h"
 #include "lan_eng.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_Noticement::DialogBox_Noticement(CGame* pGame)
 	: IDialogBox(DialogBoxId::Noticement, pGame)
@@ -14,7 +15,7 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame4, sX, sY, 2);
 
 	switch (Info().cMode)
 	{
@@ -44,9 +45,9 @@ void DialogBox_Noticement::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// OK button (same position for both modes)
 	if ((msX >= sX + 210) && (msX <= sX + 210 + ui_layout::btn_size_x) && (msY > sY + 127) && (msY < sY + 127 + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 1);
+		DrawNewDialogBox(InterfaceNdButton, sX + 210, sY + 127, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 210, sY + 127, 0);
+		DrawNewDialogBox(InterfaceNdButton, sX + 210, sY + 127, 0);
 }
 
 bool DialogBox_Noticement::OnClick(short msX, short msY)

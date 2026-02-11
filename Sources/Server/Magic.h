@@ -10,7 +10,7 @@
 #include "CommonTypes.h"
 #include "MagicTypes.h"
 
-#define DEF_MAXMAGICEFFECTS			100
+namespace hb::server::config { constexpr int MaxMagicEffects = 100; }
 
 class CMagic
 {

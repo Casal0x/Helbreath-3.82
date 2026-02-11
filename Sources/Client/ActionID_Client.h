@@ -3,6 +3,9 @@
 #include "ActionID.h"  // Include shared definitions
 
 // Client-specific definitions for animation and rendering
-#define DEF_TOTALCHARACTERS		120  // for CLEROTH - NEW MONSTERS
-#define DEF_TOTALACTION			15   // Animation frame slots
-#define DEF_OBJECTDEAD			101  // Dead body rendering state
+namespace hb::client::config
+{
+constexpr int TotalCharacters = 120;
+constexpr int TotalAction = 15;
+constexpr int ObjectDead = 101;
+} // namespace hb::client::config

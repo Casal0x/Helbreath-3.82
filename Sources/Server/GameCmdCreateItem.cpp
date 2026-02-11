@@ -7,6 +7,7 @@
 #include <cstdio>
 
 using namespace hb::shared::net;
+using namespace hb::server::config;
 bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -19,7 +20,7 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		return true;
 	}
 
-	if (iItemID < 0 || iItemID >= DEF_MAXITEMTYPES || pGame->m_pItemConfigList[iItemID] == nullptr)
+	if (iItemID < 0 || iItemID >= MaxItemTypes || pGame->m_pItemConfigList[iItemID] == nullptr)
 	{
 		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
 		return true;

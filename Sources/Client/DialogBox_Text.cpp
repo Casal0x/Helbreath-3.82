@@ -4,6 +4,7 @@
 #include "IInput.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 // game_limits::max_text_dlg_lines is in GameConstants.h (via Game.h)
 
 DialogBox_Text::DialogBox_Text(CGame* pGame)
@@ -28,12 +29,12 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sX;
 	short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::Text).sY;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
 
 	int iTotalLines = GetTotalLines();
 
 	if (iTotalLines > 17)
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 1);
 
 	// Mouse wheel scrolling
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Text && msZ != 0)
@@ -56,8 +57,8 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 		double d2 = (double)(iTotalLines - 17);
 		double d3 = (274.0 * d1) / d2;
 		iPointerLoc = (int)(d3 + 0.5);
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 1);
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + 35 + iPointerLoc, 7);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 1);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + 35 + iPointerLoc, 7);
 	}
 
 	// Draw text lines
@@ -115,11 +116,11 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 	if ((msX > sX + ui_layout::right_btn_x) && (msX < sX + ui_layout::right_btn_x + ui_layout::btn_size_x) &&
 		(msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	}
 	else
 	{
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 	}
 }
 

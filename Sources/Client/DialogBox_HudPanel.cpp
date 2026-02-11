@@ -8,6 +8,7 @@
 #include <cstdlib>
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 // Static button data shared between draw and click handling
 const DialogBox_HudPanel::ToggleButtonInfo DialogBox_HudPanel::TOGGLE_BUTTONS[] = {
 	{ 410, 447, 412, 6, "Character",   DialogBoxId::CharacterInfo },
@@ -42,7 +43,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 {
 	int iMaxPoint, iBarWidth;
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[InterfaceNdIconPanel];
 
 	// HP bar
 	iMaxPoint = hb::shared::calc::CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel,
@@ -110,7 +111,7 @@ void DialogBox_HudPanel::DrawGaugeBars()
 void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
 {
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[InterfaceNdIconPanel];
 
 	// Level up / Restart text (mutually exclusive: dead shows Restart, alive shows Level Up)
 	if (m_pGame->m_pPlayer->m_iHP > 0)
@@ -183,7 +184,7 @@ void DialogBox_HudPanel::DrawIconButtons(short msX, short msY)
 	if (msY <= BTN_Y1() || msY >= BTN_Y2()) return;
 
 	uint32_t dwTime = m_pGame->m_dwCurTime;
-	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL];
+	auto pSprite = m_pGame->m_pSprite[InterfaceNdIconPanel];
 	int xOffset = HudXOffset();
 
 	for (int i = 0; i < TOGGLE_BUTTON_COUNT; i++)
@@ -205,7 +206,7 @@ void DialogBox_HudPanel::OnDraw(short msX, short msY, short msZ, char cLB)
 	short panelY = Info().sY;
 
 	// Draw main HUD background centered (at xOffset, which is 0 for 640x480, 80 for 800x600)
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(0, panelY, 14);
+	m_pGame->m_pSprite[InterfaceNdIconPanel]->Draw(0, panelY, 14);
 
 	DrawGaugeBars();
 	DrawStatusIcons(msX, msY);

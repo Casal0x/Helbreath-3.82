@@ -6,6 +6,7 @@
 #include <cstdio>
 
 using namespace hb::shared::net;
+using namespace hb::server::config;
 bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -18,7 +19,7 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		return true;
 	}
 
-	if (iNpcID < 0 || iNpcID >= DEF_MAXNPCTYPES || pGame->m_pNpcConfigList[iNpcID] == nullptr)
+	if (iNpcID < 0 || iNpcID >= MaxNpcTypes || pGame->m_pNpcConfigList[iNpcID] == nullptr)
 	{
 		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid NPC ID.");
 		return true;
@@ -39,7 +40,7 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		int tY = pGame->m_pClientList[iClientH]->m_sY;
 
 		// bIsSummoned=false so NPCs give EXP/drops, bBypassMobLimit=true so they don't count toward map limit
-		if (pGame->bCreateNewNpc(iNpcID, cUniqueName, pMapName, 0, 0, DEF_MOVETYPE_RANDOM,
+		if (pGame->bCreateNewNpc(iNpcID, cUniqueName, pMapName, 0, 0, hb::server::npc::MoveType::Random,
 			&tX, &tY, nullptr, nullptr, 0, -1, false, false, false, false, 0, true))
 		{
 			iSpawned++;

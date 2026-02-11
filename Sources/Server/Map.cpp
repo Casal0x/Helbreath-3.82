@@ -2,6 +2,8 @@
 
 #include "CommonTypes.h"
 #include "Map.h"
+using namespace hb::server::map;
+using namespace hb::server::config;
 
 extern void PutLogFileList(char* cStr);
 
@@ -10,40 +12,40 @@ extern void PutLogFileList(char* cStr);
 CMap::CMap(class CGame* pGame)
 	: m_bIsSnowEnabled(false)
 {
-	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < MaxTeleportLoc; i++)
 		m_pTeleportLoc[i] = 0;
 
-	for(int i = 0; i < DEF_MAXWAYPOINTCFG; i++) {
+	for(int i = 0; i < MaxWaypointCfg; i++) {
 		m_WaypointList[i].x = -1;
 		m_WaypointList[i].y = -1;
 	}
 
-	for(int i = 0; i < DEF_MAXMGAR; i++) {
+	for(int i = 0; i < MaxMgar; i++) {
 		m_rcMobGenAvoidRect[i].y = -1;
 		m_rcMobGenAvoidRect[i].x = -1;
 	}
 
-	for(int i = 0; i < DEF_MAXNMR; i++) {
+	for(int i = 0; i < MaxNmr; i++) {
 		m_rcNoAttackRect[i].y = -1;
 		m_rcNoAttackRect[i].x = -1;
 	}
 
-	for(int i = 0; i < DEF_MAXSPOTMOBGENERATOR; i++) {
+	for(int i = 0; i < MaxSpotMobGenerator; i++) {
 		m_stSpotMobGenerator[i].bDefined = false;
 		m_stSpotMobGenerator[i].iTotalActiveMob = 0;
 	}
 
-	for(int i = 0; i < DEF_MAXFISHPOINT; i++) {
+	for(int i = 0; i < MaxFishPoint; i++) {
 		m_FishPointList[i].x = -1;
 		m_FishPointList[i].y = -1;
 	}
 
-	for(int i = 0; i < DEF_MAXMINERALPOINT; i++) {
+	for(int i = 0; i < MaxMineralPoint; i++) {
 		m_MineralPointList[i].x = -1;
 		m_MineralPointList[i].y = -1;
 	}
 
-	for(int i = 0; i < DEF_MAXINITIALPOINT; i++) {
+	for(int i = 0; i < MaxInitialPoint; i++) {
 		m_pInitialPoint[i].x = -1;
 		m_pInitialPoint[i].y = -1;
 	}
@@ -51,13 +53,13 @@ CMap::CMap(class CGame* pGame)
 	for(int i = 0; i < 1000; i++)
 		m_bNamingValueUsingStatus[i] = false;
 
-	for(int i = 0; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 0; i < MaxOccupyFlag; i++)
 		m_pOccupyFlag[i] = 0;
 
-	for(int i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
+	for(int i = 0; i < MaxStrategicPoints; i++)
 		m_pStrategicPointList[i] = 0;
 
-	for(int i = 0; i < DEF_MAXENERGYSPHERES; i++) {
+	for(int i = 0; i < MaxEnergySpheres; i++) {
 		m_stEnergySphereCreationList[i].cType = 0;
 		m_stEnergySphereGoalList[i].cResult = 0;
 	}
@@ -84,7 +86,7 @@ CMap::CMap(class CGame* pGame)
 	m_pTile = 0;
 
 	m_cWhetherStatus = 0;
-	m_cType = DEF_MAPTYPE_NORMAL;
+	m_cType = MapType::Normal;
 
 	m_pGame = pGame;
 
@@ -105,8 +107,8 @@ CMap::CMap(class CGame* pGame)
 	m_bIsEnergySphereGoalEnabled = false;
 	m_iCurEnergySphereGoalPointIndex = -1;
 
-	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < MaxSectors; ix++)
+		for(int iy = 0; iy < MaxSectors; iy++) {
 			m_stSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stSectorInfo[ix][iy].iElvineActivity = 0;
@@ -122,20 +124,20 @@ CMap::CMap(class CGame* pGame)
 
 	m_iMaxNx = m_iMaxNy = m_iMaxAx = m_iMaxAy = m_iMaxEx = m_iMaxEy = m_iMaxMx = m_iMaxMy = m_iMaxPx = m_iMaxPy = 0;
 
-	for(int i = 0; i < DEF_MAXHELDENIANDOOR; i++) {
+	for(int i = 0; i < MaxHeldenianDoor; i++) {
 		m_stHeldenianGateDoor[i].cDir = 0;
 		m_stHeldenianGateDoor[i].dX = 0;
 		m_stHeldenianGateDoor[i].dY = 0;
 	}
 
-	for(int i = 0; i < DEF_MAXHELDENIANTOWER; i++) {
+	for(int i = 0; i < MaxHeldenianTower; i++) {
 		m_stHeldenianTower[i].sTypeID = 0;
 		m_stHeldenianTower[i].dX = 0;
 		m_stHeldenianTower[i].dY = 0;
 		m_stHeldenianTower[i].cSide = 0;
 	}
 
-	for(int i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
+	for(int i = 0; i < MaxStrikePoints; i++) {
 		m_stStrikePoint[i].dX = 0;
 		m_stStrikePoint[i].dY = 0;
 		m_stStrikePoint[i].iHP = 0;
@@ -161,7 +163,7 @@ CMap::CMap(class CGame* pGame)
 	m_bIsRecallImpossible = false;
 	m_bIsApocalypseMap = false;
 
-	for(int i = 0; i < DEF_MAXDYNAMICGATES; i++) {
+	for(int i = 0; i < MaxDynamicGates; i++) {
 		m_stDynamicGateCoords[i].m_bIsGateMap = false;
 		m_stDynamicGateCoords[i].m_iDynamicGateX = 0;
 		m_stDynamicGateCoords[i].m_iDynamicGateY = 0;
@@ -177,13 +179,13 @@ CMap::~CMap()
 	if (m_pTile != 0)
 		delete[]m_pTile;
 
-	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < MaxTeleportLoc; i++)
 		if (m_pTeleportLoc[i] != 0) delete m_pTeleportLoc[i];
 
-	for(int i = 0; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 0; i < MaxOccupyFlag; i++)
 		if (m_pOccupyFlag[i] != 0) delete m_pOccupyFlag[i];
 
-	for(int i = 0; i < DEF_MAXSTRATEGICPOINTS; i++)
+	for(int i = 0; i < MaxStrategicPoints; i++)
 		if (m_pStrategicPointList[i] != 0) delete m_pStrategicPointList[i];
 }
 
@@ -248,7 +250,7 @@ void CMap::GetOwner(short* pOwner, char* pOwnerClass, short sX, short sY)
 	*pOwner = pTile->m_sOwner;
 	*pOwnerClass = pTile->m_cOwnerClass;
 
-	if ((*pOwnerClass == 1) && (*pOwner > DEF_MAXCLIENTS)) {
+	if ((*pOwnerClass == 1) && (*pOwner > MaxClients)) {
 		*pOwner = 0;
 		*pOwnerClass = 0;
 		return;
@@ -374,11 +376,11 @@ bool CMap::bSetItem(short sX, short sY, CItem* pItem)
 
 	pTile = (class CTile*)(m_pTile + sX + sY * m_sSizeX);
 
-	if (pTile->m_pItem[DEF_TILE_PER_ITEMS - 1] != 0)
-		delete pTile->m_pItem[DEF_TILE_PER_ITEMS - 1];
+	if (pTile->m_pItem[TilePerItems - 1] != 0)
+		delete pTile->m_pItem[TilePerItems - 1];
 	else pTile->m_cTotalItem++;
 
-	for(int i = DEF_TILE_PER_ITEMS - 2; i >= 0; i--)
+	for(int i = TilePerItems - 2; i >= 0; i--)
 		pTile->m_pItem[i + 1] = pTile->m_pItem[i];
 
 	pTile->m_pItem[0] = pItem;
@@ -399,7 +401,7 @@ CItem* CMap::pGetItem(short sX, short sY, short* pRemainItemID, char* pRemainIte
 	pItem = pTile->m_pItem[0];
 	if (pTile->m_cTotalItem == 0) return 0;
 
-	for(int i = 0; i <= DEF_TILE_PER_ITEMS - 2; i++)
+	for(int i = 0; i <= TilePerItems - 2; i++)
 		pTile->m_pItem[i] = pTile->m_pItem[i + 1];
 	pTile->m_cTotalItem--;
 	pTile->m_pItem[pTile->m_cTotalItem] = 0;
@@ -452,7 +454,7 @@ bool CMap::bInit(char* pName)
 	if (_bDecodeMapDataFileContents() == false)
 		return false;
 
-	for(int i = 0; i < DEF_MAXTELEPORTLOC; i++)
+	for(int i = 0; i < MaxTeleportLoc; i++)
 		m_pTeleportLoc[i] = 0;
 
 	return true;
@@ -553,10 +555,10 @@ bool CMap::_bDecodeMapDataFileContents()
 bool CMap::bSearchTeleportDest(int sX, int sY, char* pMapName, int* pDx, int* pDy, char* pDir)
 {
 	// Collect all matching teleport entries for this source tile
-	int matches[DEF_MAXTELEPORTLOC];
+	int matches[MaxTeleportLoc];
 	int matchCount = 0;
 
-	for (int i = 0; i < DEF_MAXTELEPORTLOC; i++) {
+	for (int i = 0; i < MaxTeleportLoc; i++) {
 		if ((m_pTeleportLoc[i] != 0) && (m_pTeleportLoc[i]->m_sSrcX == sX) && (m_pTeleportLoc[i]->m_sSrcY == sY)) {
 			matches[matchCount++] = i;
 		}
@@ -637,7 +639,7 @@ bool CMap::bGetIsWater(short dX, short dY)
 
 bool CMap::bRemoveCropsTotalSum()
 {
-	if (m_iTotalAgriculture < DEF_MAXAGRICULTURE)
+	if (m_iTotalAgriculture < MaxAgriculture)
 	{
 		m_iTotalAgriculture--;
 		if (m_iTotalAgriculture < 0)
@@ -651,7 +653,7 @@ bool CMap::bRemoveCropsTotalSum()
 
 bool CMap::bAddCropsTotalSum()
 {
-	if (m_iTotalAgriculture < DEF_MAXAGRICULTURE)
+	if (m_iTotalAgriculture < MaxAgriculture)
 	{
 		m_iTotalAgriculture++;
 		return true;
@@ -703,7 +705,7 @@ int CMap::iRegisterOccupyFlag(int dX, int dY, int iSide, int iEKNum, int iDOI)
 
 	if ((dX < 20) || (dX >= m_sSizeX - 20) || (dY < 20) || (dY >= m_sSizeY - 20)) return -1;
 
-	for(int i = 1; i < DEF_MAXOCCUPYFLAG; i++)
+	for(int i = 1; i < MaxOccupyFlag; i++)
 		if (m_pOccupyFlag[i] == 0) {
 			m_pOccupyFlag[i] = new class COccupyFlag(dX, dY, iSide, iEKNum, iDOI);
 			if (m_pOccupyFlag == 0) return -1;
@@ -717,8 +719,8 @@ int CMap::iRegisterOccupyFlag(int dX, int dY, int iSide, int iEKNum, int iDOI)
 
 void CMap::ClearSectorInfo()
 {
-	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < MaxSectors; ix++)
+		for(int iy = 0; iy < MaxSectors; iy++) {
 			m_stSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stSectorInfo[ix][iy].iElvineActivity = 0;
@@ -729,8 +731,8 @@ void CMap::ClearSectorInfo()
 
 void CMap::ClearTempSectorInfo()
 {
-	for(int ix = 0; ix < DEF_MAXSECTORS; ix++)
-		for(int iy = 0; iy < DEF_MAXSECTORS; iy++) {
+	for(int ix = 0; ix < MaxSectors; ix++)
+		for(int iy = 0; iy < MaxSectors; iy++) {
 			m_stTempSectorInfo[ix][iy].iNeutralActivity = 0;
 			m_stTempSectorInfo[ix][iy].iAresdenActivity = 0;
 			m_stTempSectorInfo[ix][iy].iElvineActivity = 0;
@@ -743,7 +745,7 @@ void CMap::_SetupNoAttackArea()
 {
 	class CTile* pTile;
 
-	for(int i = 0; i < DEF_MAXNMR; i++) {
+	for(int i = 0; i < MaxNmr; i++) {
 		if ((m_rcNoAttackRect[i].y > 0)) {
 			for(int ix = m_rcNoAttackRect[i].Left(); ix <= m_rcNoAttackRect[i].Right(); ix++)
 				for(int iy = m_rcNoAttackRect[i].Top(); iy <= m_rcNoAttackRect[i].Bottom(); iy++) {
@@ -799,7 +801,7 @@ bool CMap::bAddCrusadeStructureInfo(char cType, short sX, short sY, char cSide)
 {
  
 
-	for(int i = 0; i < DEF_MAXHELDENIANTOWER; i++)
+	for(int i = 0; i < MaxHeldenianTower; i++)
 	if (m_stHeldenianTower[i].cType == 0) {
 	if (m_stHeldenianTower[i].cSide == 1) {
 		m_stHeldenianTower[i].sTypeID = sTypeID;
@@ -861,7 +863,7 @@ void CMap::RestoreStrikePoints()
 {
 	
 
-	for(int i = 0; i < DEF_MAXSTRIKEPOINTS; i++) {
+	for(int i = 0; i < MaxStrikePoints; i++) {
 		m_stStrikePoint[i].iInitHP = m_stStrikePoint[i].iHP;
 	}
 }

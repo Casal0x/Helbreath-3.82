@@ -8,9 +8,18 @@
 #include <windows.h>
 #include "CommonTypes.h"
 
-#define DEF_MSGFROM_CLIENT		1
-#define DEF_MSGFROM_LOGSERVER	2
-#define DEF_MSGFROM_BOT			4
+namespace hb::server::msg
+{
+namespace Source
+{
+	enum : int
+	{
+		Client    = 1,
+		LogServer = 2,
+		Bot       = 4,
+	};
+}
+} // namespace hb::server::msg
 
 class CMsg  								 
 {

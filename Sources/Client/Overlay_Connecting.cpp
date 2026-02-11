@@ -10,6 +10,7 @@
 #include "IInput.h"
 #include "TextLibExt.h"
 #include "GameFonts.h"
+using namespace hb::client::sprite_id;
 
 Overlay_Connecting::Overlay_Connecting(CGame* pGame)
     : IGameScreen(pGame)
@@ -80,10 +81,10 @@ void Overlay_Connecting::on_render()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 2, dlgX, dlgY);
 
     // Draw dialog box
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 2);
 
     // Draw countdown text
     char cTxt[64];

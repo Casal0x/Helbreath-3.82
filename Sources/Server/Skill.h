@@ -9,9 +9,18 @@
 
 
 
-#define DEF_SKILLEFFECTTYPE_GET			    1
-#define DEF_SKILLEFFECTTYPE_PRETEND			2
-#define DEF_SKILLEFFECTTYPE_TAMING			3
+namespace hb::server::skill
+{
+namespace EffectType
+{
+	enum : int
+	{
+		Get     = 1,
+		Pretend = 2,
+		Taming  = 3,
+	};
+}
+} // namespace hb::server::skill
 
 
 class CSkill

@@ -7,6 +7,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Shop::DialogBox_Shop(CGame* pGame)
     : IDialogBox(DialogBoxId::SaleMenu, pGame)
@@ -19,8 +20,8 @@ void DialogBox_Shop::OnDraw(short msX, short msY, short msZ, char cLB)
     short sX = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sX;
     short sY = m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).sY;
 
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 11);
+    m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+    m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 11);
 
     switch (m_pGame->m_dialogBoxManager.Info(DialogBoxId::SaleMenu).cMode) {
     case 0:
@@ -49,8 +50,8 @@ void DialogBox_Shop::DrawItemList(short sX, short sY, short msX, short msY, shor
         d2 = (double)(iTotalLines - 13);
         d3 = (274.0f * d1) / d2;
         iPointerLoc = (int)(d3);
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 3);
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
+        m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
+        m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + iPointerLoc + 35, 7);
     }
     else iPointerLoc = 0;
 
@@ -142,7 +143,7 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
     bool bFlagStatLow = false;
     bool bFlagRedShown = false;
 
-    m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame);
+    m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_pItemForSaleList[iItemIndex]->m_sSprite]->Draw(sX + 62 + 30 - 35, sY + 84 + 30 - 10, m_pGame->m_pItemForSaleList[iItemIndex]->m_sSpriteFrame);
 
     std::memset(cTemp, 0, sizeof(cTemp));
     m_pGame->GetItemName(m_pGame->m_pItemForSaleList[iItemIndex].get(), cTemp, cStr2, cStr3);
@@ -192,12 +193,12 @@ void DialogBox_Shop::DrawItemDetails(short sX, short sY, short msX, short msY, s
 
     // Draw buttons
     if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 31);
-    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 30);
+        m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 31);
+    else m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 30);
 
     if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
-        m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
-    else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
+        m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 17);
+    else m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 16);
 }
 
 void DialogBox_Shop::DrawWeaponStats(short sX, short sY, int iItemIndex, bool& bFlagRedShown)
@@ -413,8 +414,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
     uint32_t dwTime = m_pGame->m_dwCurTime;
     char cTemp[255];
 
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 219, 19);
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 219, 19);
+    m_pGame->m_pSprite[InterfaceNdGame2]->Draw(sX + 156, sY + 219, 19);
+    m_pGame->m_pSprite[InterfaceNdGame2]->Draw(sX + 170, sY + 219, 19);
     hb::shared::text::DrawText(GameFont::Default, sX + 123 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, hb::shared::text::TextStyle::Color(GameColors::UILabel)); // "Quantity:"
     hb::shared::text::DrawText(GameFont::Default, sX + 124 - 35, sY + 237 - 10, DRAW_DIALOGBOX_SHOP27, hb::shared::text::TextStyle::Color(GameColors::UILabel));
 
@@ -447,8 +448,8 @@ void DialogBox_Shop::DrawQuantitySelector(short sX, short sY, short msX, short m
         hb::shared::text::DrawText(GameFont::Default, sX - 35 + 200, sY - 10 + 237, (cTemp), hb::shared::text::TextStyle::Color(GameColors::UILabel));
         hb::shared::text::DrawText(GameFont::Default, sX - 35 + 201, sY - 10 + 237, (cTemp), hb::shared::text::TextStyle::Color(GameColors::UILabel));
     }
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 156, sY + 244, 20);
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + 170, sY + 244, 20);
+    m_pGame->m_pSprite[InterfaceNdGame2]->Draw(sX + 156, sY + 244, 20);
+    m_pGame->m_pSprite[InterfaceNdGame2]->Draw(sX + 170, sY + 244, 20);
 }
 
 bool DialogBox_Shop::OnClick(short msX, short msY)

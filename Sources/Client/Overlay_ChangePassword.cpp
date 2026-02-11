@@ -16,6 +16,7 @@
 
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 Overlay_ChangePassword::Overlay_ChangePassword(CGame* pGame)
@@ -55,7 +56,7 @@ void Overlay_ChangePassword::on_initialize()
 
     // Start input on old password field
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
     StartInputString(dlgX + 161, dlgY + 67, 11, m_cOldPassword);
     ClearInputString();
 }
@@ -70,7 +71,7 @@ void Overlay_ChangePassword::UpdateFocusedInput()
     if (m_iPrevFocus != m_iCurFocus)
     {
         int dlgX, dlgY;
-        GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+        GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
 
         EndInputString();
         switch (m_iCurFocus)
@@ -238,7 +239,7 @@ void Overlay_ChangePassword::on_update()
 
     // Mouse click detection
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
 
     if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
@@ -284,12 +285,12 @@ void Overlay_ChangePassword::on_render()
     bool bValidInputs = ValidateInputs();
 
     int dlgX, dlgY;
-    GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
+    GetCenteredDialogPos(InterfaceNdGame4, 0, dlgX, dlgY);
 
     // Draw dialog boxes
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 0);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, dlgX, dlgY, 13);
-    DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX + 157, dlgY + 109, 7);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX, dlgY, 0);
+    DrawNewDialogBox(InterfaceNdText, dlgX, dlgY, 13);
+    DrawNewDialogBox(InterfaceNdGame4, dlgX + 157, dlgY + 109, 7);
 
     // Draw labels
     PutString(dlgX + 53, dlgY + 43, UPDATE_SCREEN_ON_CHANGE_PASSWORD1, GameColors::UILabel);
@@ -340,11 +341,11 @@ void Overlay_ChangePassword::on_render()
 
     // OK button (enabled only when inputs are valid)
     int okFrame = (bValidInputs && m_iCurFocus == 5) ? 21 : 20;
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(dlgX + 44, dlgY + 208, okFrame);
+    m_pGame->m_pSprite[InterfaceNdButton]->Draw(dlgX + 44, dlgY + 208, okFrame);
 
     // Cancel button
     int cancelFrame = (m_iCurFocus == 6) ? 17 : 16;
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(dlgX + 217, dlgY + 208, cancelFrame);
+    m_pGame->m_pSprite[InterfaceNdButton]->Draw(dlgX + 217, dlgY + 208, cancelFrame);
 
     DrawVersion();
 }

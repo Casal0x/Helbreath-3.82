@@ -82,6 +82,8 @@ namespace sock = hb::shared::net::socket;
 using namespace hb::shared::action;
 
 using namespace hb::shared::item;
+using namespace hb::client::config;
+using namespace hb::client::sprite_id;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -421,8 +423,8 @@ void CGame::DrawCursor()
 	}
 
 	// Draw the cursor sprite
-	if (m_pSprite[DEF_SPRID_MOUSECURSOR])
-		m_pSprite[DEF_SPRID_MOUSECURSOR]->Draw(msX, msY, iCursorFrame);
+	if (m_pSprite[MouseCursor])
+		m_pSprite[MouseCursor]->Draw(msX, msY, iCursorFrame);
 }
 
 
@@ -3717,8 +3719,8 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 
 	if (m_bIsCrusadeMode)
 	{
-		if (m_pPlayer->m_iConstructLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_pPlayer->m_iConstructLocX * 32 - m_Camera.GetX(), m_pPlayer->m_iConstructLocY * 32 - m_Camera.GetY(), 41);
-		if (m_iTeleportLocX != -1) DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, m_iTeleportLocX * 32 - m_Camera.GetX(), m_iTeleportLocY * 32 - m_Camera.GetY(), 42);
+		if (m_pPlayer->m_iConstructLocX != -1) DrawNewDialogBox(InterfaceNdCrusade, m_pPlayer->m_iConstructLocX * 32 - m_Camera.GetX(), m_pPlayer->m_iConstructLocY * 32 - m_Camera.GetY(), 41);
+		if (m_iTeleportLocX != -1) DrawNewDialogBox(InterfaceNdCrusade, m_iTeleportLocX * 32 - m_Camera.GetX(), m_iTeleportLocY * 32 - m_Camera.GetY(), 42);
 	}
 }
 
@@ -4041,7 +4043,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 
 		// Draw additive overlay sprite at combat icon position only when ALT is held
 		if (hb::shared::input::IsAltDown() && bMastered)
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
+			m_pSprite[InterfaceNdIconPanel]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
 
 		// Draw super attack count text at bottom-right of combat button area
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "%d", m_pPlayer->m_iSuperAttackLeft);
@@ -4058,18 +4060,18 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 
 	if (sType <= 3)
 	{
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
+		m_pSprite[ItemEquipPivotPoint + 0]->Draw(sX, sY, sType - 1);
 		const auto& hcM = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
+		m_pSprite[ItemEquipPivotPoint + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
 
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
+		m_pSprite[ItemEquipPivotPoint + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 	else
 	{
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
+		m_pSprite[ItemEquipPivotPoint + 40]->Draw(sX, sY, sType - 4);
 		const auto& hcF = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
+		m_pSprite[ItemEquipPivotPoint + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
+		m_pSprite[ItemEquipPivotPoint + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 }
 
@@ -8763,7 +8765,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			// after dispatch, but the tile animation may still be playing
 			int dXc = m_pPlayer->m_sPlayerX - m_pMapData->m_sPivotX;
 			int dYc = m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY;
-			if (dXc >= 0 && dXc < MAPDATASIZEX && dYc >= 0 && dYc < MAPDATASIZEY) {
+			if (dXc >= 0 && dXc < MapDataSizeX && dYc >= 0 && dYc < MapDataSizeY) {
 				int8_t animAction = m_pMapData->m_pData[dXc][dYc].m_animation.cAction;
 				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
 					return;
@@ -11144,24 +11146,24 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 	if (m_entityState.m_status.bInvisibility)
 	{
 		if (m_entityState.m_status.bAngelSTR)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
+			m_pSprite[TutelaryAngelsPivotPoint + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
 		else if (m_entityState.m_status.bAngelDEX)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
 		else if (m_entityState.m_status.bAngelINT)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
 		else if (m_entityState.m_status.bAngelMAG)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
 		if (m_entityState.m_status.bAngelSTR)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
+			m_pSprite[TutelaryAngelsPivotPoint + iSprite]->Draw(sX, sY, cFrame);  //AngelicPendant(STR)
 		else if (m_entityState.m_status.bAngelDEX)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 1) + iSprite]->Draw(sX, sY, cFrame); //AngelicPendant(DEX)
 		else if (m_entityState.m_status.bAngelINT)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(INT)
 		else if (m_entityState.m_status.bAngelMAG)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
+			m_pSprite[TutelaryAngelsPivotPoint + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame);//AngelicPendant(MAG)
 	}
 
 }
@@ -11310,13 +11312,13 @@ void CGame::ResponseHeldenianTeleportList(char* pData)
 void CGame::DKGlare(int iWeaponColor, int iWeaponIndex, int* iWeaponGlare)
 {
 	if (iWeaponColor != 9) return;
-	if (((iWeaponIndex >= DEF_SPRID_WEAPON_M + 64 * 14) && (iWeaponIndex < DEF_SPRID_WEAPON_M + 64 * 14 + 56)) //msw3
-		|| ((iWeaponIndex >= DEF_SPRID_WEAPON_W + 64 * 14) && (iWeaponIndex < DEF_SPRID_WEAPON_W + 64 * 14 + 56))) //wsw3
+	if (((iWeaponIndex >= WeaponM + 64 * 14) && (iWeaponIndex < WeaponM + 64 * 14 + 56)) //msw3
+		|| ((iWeaponIndex >= WeaponW + 64 * 14) && (iWeaponIndex < WeaponW + 64 * 14 + 56))) //wsw3
 	{
 		*iWeaponGlare = 3;
 	}
-	else if (((iWeaponIndex >= DEF_SPRID_WEAPON_M + 64 * 37) && (iWeaponIndex < DEF_SPRID_WEAPON_M + 64 * 37 + 56)) //MStaff3
-		|| ((iWeaponIndex >= DEF_SPRID_WEAPON_W + 64 * 37) && (iWeaponIndex < DEF_SPRID_WEAPON_W + 64 * 37 + 56)))//WStaff3
+	else if (((iWeaponIndex >= WeaponM + 64 * 37) && (iWeaponIndex < WeaponM + 64 * 37 + 56)) //MStaff3
+		|| ((iWeaponIndex >= WeaponW + 64 * 37) && (iWeaponIndex < WeaponW + 64 * 37 + 56)))//WStaff3
 	{
 		*iWeaponGlare = 2;
 	}

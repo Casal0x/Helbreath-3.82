@@ -13,6 +13,7 @@
 #include "Quest.h"
 #include "Skill.h"
 #include "sqlite3.h"
+using namespace hb::server::config;
 
 extern void PutLogList(char* cMsg);
 extern void PutLogListLevel(int level, const char* cMsg);
@@ -677,7 +678,7 @@ bool SaveRealmConfig(sqlite3* db, const CGame* game)
     }
 
     int mapIndex = 0;
-    for(int i = 0; i < DEF_MAXMAPS; i++) {
+    for(int i = 0; i < MaxMaps; i++) {
         if (game->m_pMapList[i] == nullptr) {
             continue;
         }
@@ -1014,7 +1015,7 @@ bool SaveBannedListConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXBANNED; i++) {
+    for(int i = 0; i < MaxBanned; i++) {
         if (game->m_stBannedList[i].m_cBannedIPaddress[0] == 0) {
             continue;
         }
@@ -1042,7 +1043,7 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXBANNED; i++) {
+    for(int i = 0; i < MaxBanned; i++) {
         std::memset(game->m_stBannedList[i].m_cBannedIPaddress, 0, sizeof(game->m_stBannedList[i].m_cBannedIPaddress));
     }
 
@@ -1053,7 +1054,7 @@ bool LoadBannedListConfig(sqlite3* db, CGame* game)
 
     int index = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        if (index >= DEF_MAXBANNED) {
+        if (index >= MaxBanned) {
             break;
         }
         CopyColumnText(stmt, 0, game->m_stBannedList[index].m_cBannedIPaddress, sizeof(game->m_stBannedList[index].m_cBannedIPaddress));
@@ -1116,7 +1117,7 @@ bool LoadAdminConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for (int i = 0; i < DEF_MAXADMINS; i++) {
+    for (int i = 0; i < MaxAdmins; i++) {
         std::memset(&game->m_stAdminList[i], 0, sizeof(AdminEntry));
     }
     game->m_iAdminCount = 0;
@@ -1128,7 +1129,7 @@ bool LoadAdminConfig(sqlite3* db, CGame* game)
 
     int index = 0;
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        if (index >= DEF_MAXADMINS) {
+        if (index >= MaxAdmins) {
             break;
         }
         CopyColumnText(stmt, 0, game->m_stAdminList[index].m_cAccountName, sizeof(game->m_stAdminList[index].m_cAccountName));
@@ -1246,7 +1247,7 @@ bool SaveNpcConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXNPCTYPES; i++) {
+    for(int i = 0; i < MaxNpcTypes; i++) {
         if (game->m_pNpcConfigList[i] == nullptr) {
             continue;
         }
@@ -1307,7 +1308,7 @@ bool LoadNpcConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXNPCTYPES; i++) {
+    for(int i = 0; i < MaxNpcTypes; i++) {
         delete game->m_pNpcConfigList[i];
         game->m_pNpcConfigList[i] = nullptr;
     }
@@ -1328,7 +1329,7 @@ bool LoadNpcConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int npcId = sqlite3_column_int(stmt, col++);
-        if (npcId < 0 || npcId >= DEF_MAXNPCTYPES) {
+        if (npcId < 0 || npcId >= MaxNpcTypes) {
             continue;
         }
 
@@ -1775,7 +1776,7 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXQUESTTYPE; i++) {
+    for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
         if (game->m_pQuestConfigList[i] == nullptr) {
             continue;
         }
@@ -1834,7 +1835,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXQUESTTYPE; i++) {
+    for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
         delete game->m_pQuestConfigList[i];
         game->m_pQuestConfigList[i] = nullptr;
     }
@@ -1855,7 +1856,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int questIndex = sqlite3_column_int(stmt, col++);
-        if (questIndex < 0 || questIndex >= DEF_MAXQUESTTYPE) {
+        if (questIndex < 0 || questIndex >= hb::server::config::MaxQuestType) {
             continue;
         }
 
@@ -1930,7 +1931,7 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
+    for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
         if (game->m_pPortionConfigList[i] != nullptr) {
             const CPortion* potion = game->m_pPortionConfigList[i];
             sqlite3_reset(potionStmt);
@@ -1989,7 +1990,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXPORTIONTYPES; i++) {
+    for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
         delete game->m_pPortionConfigList[i];
         game->m_pPortionConfigList[i] = nullptr;
         delete game->m_pCraftingConfigList[i];
@@ -2013,7 +2014,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int potionId = sqlite3_column_int(stmt, col++);
-        if (potionId < 0 || potionId >= DEF_MAXPORTIONTYPES) {
+        if (potionId < 0 || potionId >= hb::server::config::MaxPortionTypes) {
             continue;
         }
         CPortion* potion = new CPortion();
@@ -2034,7 +2035,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int craftingId = sqlite3_column_int(stmt, col++);
-        if (craftingId < 0 || craftingId >= DEF_MAXPORTIONTYPES) {
+        if (craftingId < 0 || craftingId >= hb::server::config::MaxPortionTypes) {
             continue;
         }
         CPortion* crafting = new CPortion();
@@ -2163,7 +2164,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
 
         // Use the stored item_id directly instead of looking up by name
         // (names in items table are now display names, not internal names)
-        if (storedItemId > 0 && storedItemId < DEF_MAXITEMTYPES && game->m_pItemConfigList[storedItemId] != nullptr) {
+        if (storedItemId > 0 && storedItemId < MaxItemTypes && game->m_pItemConfigList[storedItemId] != nullptr) {
             build->m_sItemID = static_cast<short>(storedItemId);
         } else {
             // Fallback to name lookup for backwards compatibility
@@ -2310,7 +2311,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     bool success = true;
 
     // Save crusade schedules
-    for(int i = 0; i < DEF_MAXSCHEDULE && success; i++) {
+    for(int i = 0; i < hb::server::config::MaxSchedule && success; i++) {
         if (game->m_stCrusadeWarSchedule[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2328,7 +2329,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save apocalypse schedules (start and end times in one row)
-    for(int i = 0; i < DEF_MAXAPOCALYPSE && success; i++) {
+    for(int i = 0; i < hb::server::config::MaxApocalypse && success; i++) {
         if (game->m_stApocalypseScheduleStart[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2352,7 +2353,7 @@ bool SaveScheduleConfig(sqlite3* db, const CGame* game)
     }
 
     // Save heldenian schedules (these have end times)
-    for(int i = 0; i < DEF_MAXHELDENIAN && success; i++) {
+    for(int i = 0; i < hb::server::config::MaxHeldenian && success; i++) {
         if (game->m_stHeldenianSchedule[i].iDay >= 0) {
             sqlite3_reset(stmt);
             sqlite3_clear_bindings(stmt);
@@ -2390,12 +2391,12 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
     }
 
     // Initialize all schedules to -1
-    for(int i = 0; i < DEF_MAXSCHEDULE; i++) {
+    for(int i = 0; i < hb::server::config::MaxSchedule; i++) {
         game->m_stCrusadeWarSchedule[i].iDay = -1;
         game->m_stCrusadeWarSchedule[i].iHour = -1;
         game->m_stCrusadeWarSchedule[i].iMinute = -1;
     }
-    for(int i = 0; i < DEF_MAXAPOCALYPSE; i++) {
+    for(int i = 0; i < hb::server::config::MaxApocalypse; i++) {
         game->m_stApocalypseScheduleStart[i].iDay = -1;
         game->m_stApocalypseScheduleStart[i].iHour = -1;
         game->m_stApocalypseScheduleStart[i].iMinute = -1;
@@ -2403,7 +2404,7 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         game->m_stApocalypseScheduleEnd[i].iHour = -1;
         game->m_stApocalypseScheduleEnd[i].iMinute = -1;
     }
-    for(int i = 0; i < DEF_MAXHELDENIAN; i++) {
+    for(int i = 0; i < hb::server::config::MaxHeldenian; i++) {
         game->m_stHeldenianSchedule[i].iDay = -1;
         game->m_stHeldenianSchedule[i].StartiHour = -1;
         game->m_stHeldenianSchedule[i].StartiMinute = -1;
@@ -2432,14 +2433,14 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
         // is_active at column 7 - can be used for state tracking
 
         if (strcmp(eventType, "crusade") == 0) {
-            if (idx >= 0 && idx < DEF_MAXSCHEDULE) {
+            if (idx >= 0 && idx < hb::server::config::MaxSchedule) {
                 game->m_stCrusadeWarSchedule[idx].iDay = day;
                 game->m_stCrusadeWarSchedule[idx].iHour = startHour;
                 game->m_stCrusadeWarSchedule[idx].iMinute = startMinute;
             }
         }
         else if (strcmp(eventType, "apocalypse") == 0) {
-            if (idx >= 0 && idx < DEF_MAXAPOCALYPSE) {
+            if (idx >= 0 && idx < hb::server::config::MaxApocalypse) {
                 // Start time
                 game->m_stApocalypseScheduleStart[idx].iDay = day;
                 game->m_stApocalypseScheduleStart[idx].iHour = startHour;
@@ -2451,7 +2452,7 @@ bool LoadScheduleConfig(sqlite3* db, CGame* game)
             }
         }
         else if (strcmp(eventType, "heldenian") == 0) {
-            if (idx >= 0 && idx < DEF_MAXHELDENIAN) {
+            if (idx >= 0 && idx < hb::server::config::MaxHeldenian) {
                 game->m_stHeldenianSchedule[idx].iDay = day;
                 game->m_stHeldenianSchedule[idx].StartiHour = startHour;
                 game->m_stHeldenianSchedule[idx].StartiMinute = startMinute;

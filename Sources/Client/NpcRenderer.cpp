@@ -3,6 +3,7 @@
 #include "EquipmentIndices.h"
 #include "RenderHelpers.h"
 #include "CommonTypes.h"
+using namespace hb::client::sprite_id;
 
 hb::shared::sprite::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
@@ -29,7 +30,7 @@ hb::shared::sprite::BoundRect CNpcRenderer::DrawStop(int indexX, int indexY, int
 	// Special frame from NPC appearance
 	if (state.m_appearance.HasNpcSpecialState())
 	{
-		eq.iBodyIndex = DEF_SPRID_MOB + (state.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
+		eq.iBodyIndex = Mob + (state.m_sOwnerType - 10) * 8 * 7 + (4 * 8);
 		state.m_iFrame = state.m_appearance.iSpecialFrame - 1;
 	}
 

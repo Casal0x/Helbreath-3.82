@@ -6,6 +6,7 @@
 #include "NetMessages.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 static constexpr int POINTS_PER_MAJESTIC = 3;
 static constexpr int MIN_STAT_VALUE = 10;
 
@@ -43,11 +44,11 @@ void DialogBox_ChangeStatsMajestic::DrawStatRow(short sX, short sY, int iYOffset
 
 	// UP arrow highlight (undo reduction)
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanUndo)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 195, sY + iArrowYOffset, 5);
+		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 195, sY + iArrowYOffset, 5);
 
 	// DOWN arrow highlight (reduce stat)
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iArrowYOffset) && (msY <= sY + iArrowYOffset + 6) && bCanReduce)
-		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME4]->Draw(sX + 210, sY + iArrowYOffset, 6);
+		m_pGame->m_pSprite[InterfaceNdGame4]->Draw(sX + 210, sY + iArrowYOffset, 6);
 }
 
 void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char cLB)
@@ -57,9 +58,9 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 	short szX = Info().sSizeX;
 	char cTxt[120];
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 2);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + 16, sY + 100, 4);
+	DrawNewDialogBox(InterfaceNdGame2, sX, sY, 0);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame4, sX + 16, sY + 100, 4);
 
 	PutAlignedString(sX, sX + szX, sY + 50, DRAW_DIALOGBOX_LEVELUP_SETTING14);
 	PutAlignedString(sX, sX + szX, sY + 65, DRAW_DIALOGBOX_LEVELUP_SETTING15);
@@ -109,16 +110,16 @@ void DialogBox_ChangeStatsMajestic::OnDraw(short msX, short msY, short msZ, char
 
 	// Cancel button (left)
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 17);
-	else DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 16);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 17);
+	else DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 16);
 
 	// Confirm button (right) — show as active only when there are pending changes
 	if (iPendingCost > 0)
 	{
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 		else
-			DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+			DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 	}
 }
 

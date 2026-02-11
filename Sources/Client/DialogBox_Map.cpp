@@ -4,6 +4,7 @@
 #include "GlobalDef.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_Map::DialogBox_Map(CGame* pGame)
 	: IDialogBox(DialogBoxId::Map, pGame)
@@ -36,8 +37,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		switch (Info().sV2) {
 		case 0: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 0);
+				m_pGame->m_pSprite[InterfaceNewMaps1]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps1]->Draw(sX, sY, 0);
 			dX = 19;
 			dY = 20;
 			szX = 260;
@@ -46,8 +47,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 1: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1]->Draw(sX, sY, 1);
+				m_pGame->m_pSprite[InterfaceNewMaps1]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps1]->Draw(sX, sY, 1);
 			dX = 20;
 			dY = 18;
 			szX = 260;
@@ -56,8 +57,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 2: // middleland
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 0);
+				m_pGame->m_pSprite[InterfaceNewMaps2]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps2]->Draw(sX, sY, 0);
 			dX = 11;
 			dY = 31;
 			szX = 280;
@@ -66,8 +67,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 3: // default
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2]->Draw(sX, sY, 1);
+				m_pGame->m_pSprite[InterfaceNewMaps2]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps2]->Draw(sX, sY, 1);
 			dX = 52;
 			dY = 42;
 			szX = 200;
@@ -76,8 +77,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 4: // aresden dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 0);
+				m_pGame->m_pSprite[InterfaceNewMaps3]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps3]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -86,8 +87,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 5: // elvine dungeon
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3]->Draw(sX, sY, 1);
+				m_pGame->m_pSprite[InterfaceNewMaps3]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps3]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -96,8 +97,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 6: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 0);
+				m_pGame->m_pSprite[InterfaceNewMaps4]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps4]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -106,8 +107,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 7: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS4]->Draw(sX, sY, 1);
+				m_pGame->m_pSprite[InterfaceNewMaps4]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps4]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 40;
 			szX = 220;
@@ -116,8 +117,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 8: // aresden
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 0);
+				m_pGame->m_pSprite[InterfaceNewMaps5]->Draw(sX, sY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps5]->Draw(sX, sY, 0);
 			dX = 40;
 			dY = 32;
 			szX = 220;
@@ -126,8 +127,8 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		case 9: // elvine
 			if (dialogTrans)
-				m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
-			else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5]->Draw(sX, sY, 1);
+				m_pGame->m_pSprite[InterfaceNewMaps5]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.25f));
+			else m_pGame->m_pSprite[InterfaceNewMaps5]->Draw(sX, sY, 1);
 			dX = 40;
 			dY = 38;
 			szX = 220;
@@ -146,7 +147,7 @@ void DialogBox_Map::OnDraw(short msX, short msY, short msZ, char cLB)
 		dV3 = (dV2 * (double)szY) / dV1;
 		tY = (int)dV3 + dY;
 
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX + tX, sY + tY, 43);
+		DrawNewDialogBox(InterfaceNdGame4, sX + tX, sY + tY, 43);
 		char coordBuf[32];
 		snprintf(coordBuf, sizeof(coordBuf), "%d,%d", m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY);
 		hb::shared::text::DrawText(GameFont::SprFont3_2, sX + 10 + tX - 5, sY + 10 + tY - 6, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));

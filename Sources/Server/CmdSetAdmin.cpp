@@ -8,6 +8,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+using namespace hb::server::config;
 
 void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 {
@@ -75,7 +76,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	bool bFound = false;
 
 	// First check online clients
-	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	for (int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
 			_stricmp(pGame->m_pClientList[i]->m_cCharName, cCharName) == 0)
@@ -111,7 +112,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 		pGame->m_stAdminList[existingAdminIdx].m_iAdminLevel = iAdminLevel;
 
 		// Update online player's level
-		for (int i = 1; i < DEF_MAXCLIENTS; i++)
+		for (int i = 1; i < MaxClients; i++)
 		{
 			if (pGame->m_pClientList[i] != nullptr &&
 				_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0)
@@ -137,7 +138,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Check capacity
-	if (pGame->m_iAdminCount >= DEF_MAXADMINS)
+	if (pGame->m_iAdminCount >= MaxAdmins)
 	{
 		PutLogList("(!) Admin list is full!");
 		return;
@@ -153,7 +154,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	pGame->m_iAdminCount++;
 
 	// If the player is currently online, set their admin index and level
-	for (int i = 1; i < DEF_MAXCLIENTS; i++)
+	for (int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
 			_stricmp(pGame->m_pClientList[i]->m_cAccountName, cAccountName) == 0 &&

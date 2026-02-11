@@ -3,6 +3,7 @@
 #include "lan_eng.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_WarningMsg::DialogBox_WarningMsg(CGame* pGame)
 	: IDialogBox(DialogBoxId::WarningBattleArea, pGame)
@@ -15,7 +16,7 @@ void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sX = Info().sX;
 	short sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, sX, sY, 2);
+	DrawNewDialogBox(InterfaceNdGame4, sX, sY, 2);
 
 	hb::shared::text::DrawText(GameFont::Default, sX + 63, sY + 35, DEF_MSG_WARNING1, hb::shared::text::TextStyle::WithShadow(GameColors::UIYellow));
 	PutString(sX + 30, sY + 57, DEF_MSG_WARNING2, GameColors::UIOrange);
@@ -25,9 +26,9 @@ void DialogBox_WarningMsg::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// OK button
 	if ((msX >= sX + 122) && (msX <= sX + 125 + ui_layout::btn_size_x) && (msY >= sY + 127) && (msY <= sY + 127 + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 1);
+		DrawNewDialogBox(InterfaceNdButton, sX + 122, sY + 127, 1);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + 122, sY + 127, 0);
+		DrawNewDialogBox(InterfaceNdButton, sX + 122, sY + 127, 0);
 }
 
 bool DialogBox_WarningMsg::OnClick(short msX, short msY)

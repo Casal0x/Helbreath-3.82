@@ -20,6 +20,7 @@ using namespace hb::shared::net;
 namespace dynamic_object = hb::shared::dynamic_object;
 
 using namespace hb::shared::action;
+using namespace hb::client::config;
 
 namespace
 {
@@ -51,7 +52,7 @@ CMapData::CMapData(class CGame* pGame)
 	std::memset(m_iObjectIDcacheLocY, 0, sizeof(m_iObjectIDcacheLocY));
 	m_dwDOframeTime = m_dwFrameTime = GameClock::GetTimeMS();
 
-	for (i = 0; i < DEF_TOTALCHARACTERS; i++)
+	for (i = 0; i < TotalCharacters; i++)
 	{
 		m_stFrame[i][Type::Move].m_sMaxFrame = 7;
 	}
@@ -829,8 +830,8 @@ void CMapData::Init()
 	m_sPivotX = -1;
 	m_sPivotY = -1;
 
-	for (x = 0; x < MAPDATASIZEX; x++)
-		for (y = 0; y < MAPDATASIZEY; y++)
+	for (x = 0; x < MapDataSizeX; x++)
+		for (y = 0; y < MapDataSizeY; y++)
 			m_pData[x][y].Clear();
 
 	for (x = 0; x < hb::shared::object_id::NpcMax; x++) {
@@ -921,8 +922,8 @@ void CMapData::_bDecodeMapInfo(char* pHeader)
 void CMapData::ShiftMapData(char cDir)
 {
 	int ix, iy;
-	for (iy = 0; iy < MAPDATASIZEY; iy++)
-		for (ix = 0; ix < MAPDATASIZEX; ix++)
+	for (iy = 0; iy < MapDataSizeY; iy++)
+		for (ix = 0; ix < MapDataSizeX; ix++)
 			m_pTmpData[ix][iy].Clear();
 
 	switch (cDir) {
@@ -985,8 +986,8 @@ void CMapData::ShiftMapData(char cDir)
 bool CMapData::bGetIsLocateable(short sX, short sY)
 {
 	int dX, dY;
-	if ((sX < m_sPivotX) || (sX > m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY > m_sPivotY + MAPDATASIZEY)) return false;
+	if ((sX < m_sPivotX) || (sX > m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY > m_sPivotY + MapDataSizeY)) return false;
 	dX = sX - m_sPivotX;
 	dY = sY - m_sPivotY;
 	//Helltrayn 28/05/09. A�adimos esto para corregir el bug MIM que cierra el cliente
@@ -1037,8 +1038,8 @@ bool CMapData::bGetIsLocateable(short sX, short sY)
 
 bool CMapData::bIsTeleportLoc(short sX, short sY)
 {
-	if ((sX < m_sPivotX) || (sX > m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY > m_sPivotY + MAPDATASIZEY)) return false;
+	if ((sX < m_sPivotX) || (sX > m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY > m_sPivotY + MapDataSizeY)) return false;
 
 	if (m_tile[sX][sY].m_bIsTeleport == false) return false;
 
@@ -1072,20 +1073,20 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		((sAction == Type::Move) || (sAction == Type::Run) ||
 			(sAction == Type::DamageMove) || (sAction == Type::Damage) ||
 			(sAction == Type::Dying))) {
-		if ((sX >= m_sPivotX) && (sX < m_sPivotX + MAPDATASIZEX) &&
-			(sY >= m_sPivotY) && (sY < m_sPivotY + MAPDATASIZEY)) {
+		if ((sX >= m_sPivotX) && (sX < m_sPivotX + MapDataSizeX) &&
+			(sY >= m_sPivotY) && (sY < m_sPivotY + MapDataSizeY)) {
 			bUseAbsPos = true;
 		}
 	}
 	if ((!hb::shared::object_id::IsNearbyOffset(wObjectID))
-		&& ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX)
-			|| (sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY)))
+		&& ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX)
+			|| (sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY)))
 	{
 		if (m_iObjectIDcacheLocX[wObjectID] > 0)
 		{
 			iX = m_iObjectIDcacheLocX[wObjectID] - m_sPivotX;
 			iY = m_iObjectIDcacheLocY[wObjectID] - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1111,7 +1112,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		{
 			iX = abs(m_iObjectIDcacheLocX[wObjectID]) - m_sPivotX;
 			iY = abs(m_iObjectIDcacheLocY[wObjectID]) - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1129,8 +1130,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 			}
 		}
 
-		for (iX = 0; iX < MAPDATASIZEX; iX++)
-			for (iY = 0; iY < MAPDATASIZEY; iY++)
+		for (iX = 0; iX < MapDataSizeX; iX++)
+			for (iY = 0; iY < MapDataSizeY; iY++)
 			{
 				if (m_pData[iX][iY].m_wObjectID == wObjectID)
 				{
@@ -1172,7 +1173,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		{
 			iX = m_iObjectIDcacheLocX[wObjectID] - m_sPivotX;
 			iY = m_iObjectIDcacheLocY[wObjectID] - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1207,7 +1208,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		{
 			iX = abs(m_iObjectIDcacheLocX[wObjectID]) - m_sPivotX;
 			iY = abs(m_iObjectIDcacheLocY[wObjectID]) - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1233,9 +1234,9 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 			for (iY = sY - iAdd; iY <= sY + iAdd; iY++)
 			{
 				if (iX < m_sPivotX) break;
-				else if (iX >= m_sPivotX + MAPDATASIZEX) break;
+				else if (iX >= m_sPivotX + MapDataSizeX) break;
 				if (iY < m_sPivotY) break;
-				else if (iY >= m_sPivotY + MAPDATASIZEY) break;
+				else if (iY >= m_sPivotY + MapDataSizeY) break;
 				//if (memcmp(m_pData[iX - m_sPivotX][iY - m_sPivotY].m_cOwnerName, cTmpName, 10) == 0) {
 				if (m_pData[iX - m_sPivotX][iY - m_sPivotY].m_wObjectID == wObjectID)
 				{
@@ -1283,7 +1284,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		{
 			iX = m_iObjectIDcacheLocX[wObjectID] - m_sPivotX;
 			iY = m_iObjectIDcacheLocY[wObjectID] - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1346,7 +1347,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 		{
 			iX = abs(m_iObjectIDcacheLocX[wObjectID]) - m_sPivotX;
 			iY = abs(m_iObjectIDcacheLocY[wObjectID]) - m_sPivotY;
-			if ((iX < 0) || (iX >= MAPDATASIZEX) || (iY < 0) || (iY >= MAPDATASIZEY))
+			if ((iX < 0) || (iX >= MapDataSizeX) || (iY < 0) || (iY >= MapDataSizeY))
 			{
 				m_iObjectIDcacheLocX[wObjectID] = 0;
 				m_iObjectIDcacheLocY[wObjectID] = 0;
@@ -1399,8 +1400,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 			}
 		}
 
-		for (iX = 0; iX < MAPDATASIZEX; iX++)
-			for (iY = 0; iY < MAPDATASIZEY; iY++)
+		for (iX = 0; iX < MapDataSizeX; iX++)
+			for (iY = 0; iY < MapDataSizeY; iY++)
 			{
 				if (m_pData[iX][iY].m_wObjectID == wObjectID)
 				{
@@ -1770,8 +1771,8 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 	int endY = sCenterY + (halfViewY + bufferY);
 	if (startX < 0) startX = 0;
 	if (startY < 0) startY = 0;
-	if (endX > MAPDATASIZEX) endX = MAPDATASIZEX;
-	if (endY > MAPDATASIZEY) endY = MAPDATASIZEY;
+	if (endX > MapDataSizeX) endX = MapDataSizeX;
+	if (endY > MapDataSizeY) endY = MapDataSizeY;
 
 	for (dX = startX; dX < endX; dX++)
 		for (dY = startY; dY < endY; dY++)
@@ -3904,8 +3905,8 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 {
 	int dX, dY;
 	int sAbsX, sAbsY, sDist;
-	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY))
+	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY))
 	{
 		return false;
 	}
@@ -3945,11 +3946,11 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 
 	std::memset(pTmpName, 0, sizeof(pTmpName));
 	if (pName != nullptr) std::snprintf(pTmpName, sizeof(pTmpName), "%s", pName);
-	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY))
+	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY))
 	{
-		for (dX = 0; dX < MAPDATASIZEX; dX++)
-			for (dY = 0; dY < MAPDATASIZEY; dY++)
+		for (dX = 0; dX < MapDataSizeX; dX++)
+			for (dY = 0; dY < MapDataSizeY; dY++)
 			{
 				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName, 10) == 0)
 				{
@@ -3966,10 +3967,10 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 		{
 			if (dX < m_sPivotX) break;
 			else
-				if (dX > m_sPivotX + MAPDATASIZEX) break;
+				if (dX > m_sPivotX + MapDataSizeX) break;
 			if (dY < m_sPivotY) break;
 			else
-				if (dY > m_sPivotY + MAPDATASIZEY) break;
+				if (dY > m_sPivotY + MapDataSizeY) break;
 
 			if (memcmp(m_pData[dX - m_sPivotX][dY - m_sPivotY].m_cDeadOwnerName, pTmpName, 10) == 0)
 			{
@@ -3981,8 +3982,8 @@ bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, 
 		}
 
 	if (bEraseFlag != true) {
-		for (dX = 0; dX < MAPDATASIZEX; dX++)
-			for (dY = 0; dY < MAPDATASIZEY; dY++) {
+		for (dX = 0; dX < MapDataSizeX; dX++)
+			for (dY = 0; dY < MapDataSizeY; dY++) {
 
 				if (memcmp(m_pData[dX][dY].m_cDeadOwnerName, pTmpName, 10) == 0) {
 					m_pData[dX][dY].m_sDeadOwnerType = 0;
@@ -4019,8 +4020,8 @@ bool __fastcall CMapData::bSetChatMsgOwner(uint16_t wObjectID, short sX, short s
 
 	if ((sX == -10) && (sY == -10)) goto SCMO_FULL_SEARCH;
 
-	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY))
+	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY))
 	{
 		return false;
 	}
@@ -4029,10 +4030,10 @@ bool __fastcall CMapData::bSetChatMsgOwner(uint16_t wObjectID, short sX, short s
 		{
 			if (dX < m_sPivotX) break;
 			else
-				if (dX > m_sPivotX + MAPDATASIZEX) break;
+				if (dX > m_sPivotX + MapDataSizeX) break;
 			if (dY < m_sPivotY) break;
 			else
-				if (dY > m_sPivotY + MAPDATASIZEY) break;
+				if (dY > m_sPivotY + MapDataSizeY) break;
 
 			if (m_pData[dX - m_sPivotX][dY - m_sPivotY].m_wObjectID == wObjectID) {
 				m_pData[dX - m_sPivotX][dY - m_sPivotY].m_iChatMsg = iIndex;
@@ -4046,8 +4047,8 @@ bool __fastcall CMapData::bSetChatMsgOwner(uint16_t wObjectID, short sX, short s
 
 SCMO_FULL_SEARCH:;
 
-	for (dX = 0; dX < MAPDATASIZEX; dX++)
-		for (dY = 0; dY < MAPDATASIZEY; dY++) {
+	for (dX = 0; dX < MapDataSizeX; dX++)
+		for (dY = 0; dY < MapDataSizeY; dY++) {
 
 			if (m_pData[dX][dY].m_wObjectID == wObjectID) {
 				m_pData[dX][dY].m_iChatMsg = iIndex;
@@ -4077,8 +4078,8 @@ bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwn
 {
 	int dX, dY;
 
-	if ((sX < m_sPivotX) || (sX > m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY > m_sPivotY + MAPDATASIZEY)) {
+	if ((sX < m_sPivotX) || (sX > m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY > m_sPivotY + MapDataSizeY)) {
 		std::memset(pName, 0, sizeof(pName));
 		return false;
 	}
@@ -4098,8 +4099,8 @@ bool CMapData::bSetDynamicObject(short sX, short sY, uint16_t wID, short sType, 
 {
 	int dX, dY, sPrevType;
 
-	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX) ||
-		(sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY))
+	if ((sX < m_sPivotX) || (sX >= m_sPivotX + MapDataSizeX) ||
+		(sY < m_sPivotY) || (sY >= m_sPivotY + MapDataSizeY))
 	{
 		return false;
 	}
@@ -4165,8 +4166,8 @@ bool CMapData::bSetDynamicObject(short sX, short sY, uint16_t wID, short sType, 
 void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, hb::shared::entity::PlayerAppearance* pAppearance, hb::shared::entity::PlayerStatus* pStatus, char* pName)
 {
 	int iX, iY;
-	for (iX = 0; iX < MAPDATASIZEX; iX++)
-		for (iY = 0; iY < MAPDATASIZEY; iY++)
+	for (iX = 0; iX < MapDataSizeX; iX++)
+		for (iY = 0; iY < MapDataSizeY; iY++)
 			if (m_pData[iX][iY].m_wObjectID == wObjectID)
 			{
 				*pOwnerType = (char)m_pData[iX][iY].m_sOwnerType;

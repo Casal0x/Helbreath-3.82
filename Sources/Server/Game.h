@@ -28,7 +28,6 @@
 #include "NetMessages.h"
 #include "Packet/PacketMap.h"
 #include "ServerMessages.h"
-#include "MessageIndex.h"
 #include "Misc.h"
 #include "NetworkMsg.h"
 #include "Magic.h"
@@ -50,132 +49,89 @@
 #include "IOServicePool.h"
 #include "ConcurrentMsgQueue.h"
 
-#define DEF_MAXMAPS					100
-#define DEF_MAXAGRICULTURE			200
-#define DEF_MAXNPCTYPES				200
-#define DEF_SERVERSOCKETBLOCKLIMIT	300
-#define DEF_MAXBANNED				500
-#define DEF_MAXADMINS				50
-#define DEF_MAXNPCITEMS				1000
-#define DEF_MAXCLIENTS				2000
-#define DEF_MAXCLIENTLOGINSOCK		2000
-#define DEF_MAXNPCS					15000
-#define DEF_MAXITEMTYPES			5000
-#define DEF_CLIENTTIMEOUT			30000  // MODERNIZED: Increased from 10s to 30s for heavy entity rendering
-#define DEF_SPUPTIME				10000
-#define DEF_POISONTIME				12000
-#define DEF_HPUPTIME				15000
-#define DEF_MPUPTIME				20000
-#define DEF_HUNGERTIME				60000
-#define DEF_NOTICETIME				80000
-#define DEF_SUMMONTIME				300000
-#define DEF_AUTOSAVETIME			600000
-#define MAX_HELDENIANTOWER			200
+namespace hb::server::config
+{
+// Infrastructure limits
+constexpr int MaxMaps                   = 100;
+constexpr int MaxNpcTypes               = 200;
+constexpr int ServerSocketBlockLimit    = 300;
+constexpr int MaxBanned                 = 500;
+constexpr int MaxAdmins                 = 50;
+constexpr int MaxNpcItems               = 1000;
+constexpr int MaxClients                = 2000;
+constexpr int MaxClientLoginSock        = 2000;
+constexpr int MaxNpcs                   = 15000;
+constexpr int MaxItemTypes              = 5000;
+constexpr int MaxDynamicObjects         = 60000;
+constexpr int MaxDelayEvents            = 60000;
+constexpr int MaxNotifyMsgs             = 300;
+constexpr int MaxSkillPoints            = 700;
+constexpr int MaxRewardGold             = 99999999;
 
-#define DEF_EXPSTOCKTIME		1000*10		// ExpStock ?
-#define DEF_MSGQUENESIZE		100000
-#define DEF_AUTOEXPTIME			1000*60*6
-#define DEF_TOTALLEVELUPPOINT	3
+// Timing constants (milliseconds)
+constexpr int ClientTimeout             = 30000;
+constexpr int SpUpTime                  = 10000;
+constexpr int PoisonTime                = 12000;
+constexpr int HpUpTime                  = 15000;
+constexpr int MpUpTime                  = 20000;
+constexpr int HungerTime                = 60000;
+constexpr int NoticeTime                = 80000;
+constexpr int SummonTime                = 300000;
+constexpr int AutoSaveTime              = 600000;
+constexpr int ExpStockTime              = 1000 * 10;
+constexpr int AutoExpTime               = 1000 * 60 * 6;
+constexpr int NightTime                 = 30;
+constexpr int RagProtectionTime         = 7000;
 
+// Game config
+constexpr int MsgQueueSize              = 100000;
+constexpr int TotalLevelUpPoint         = 3;
+constexpr int GuildStartRank            = 12;
+constexpr int SsnLimitMultiplyValue     = 2;
+constexpr int CharPointLimit            = 1000;
+} // namespace hb::server::config
 
-#define DEF_MAXDYNAMICOBJECTS	60000
-#define DEF_MAXDELAYEVENTS		60000
-#define DEF_GUILDSTARTRANK		12
+namespace hb::server::config
+{
+// Attack AI types
+namespace AttackAI
+{
+	enum : int
+	{
+		Normal          = 1,
+		ExchangeAttack  = 2,
+		TwoByOneAttack  = 3,
+	};
+}
 
-#define DEF_SSN_LIMIT_MULTIPLY_VALUE	2	// SSN-limit
+// Resource limits
+constexpr int MaxFishs                  = 200;
+constexpr int MaxMinerals               = 200;
+constexpr int MaxEngagingFish           = 30;
+constexpr int MaxPortionTypes           = 500;
+constexpr int MaxQuestType              = 200;
 
-#define DEF_MAXNOTIFYMSGS		300
-#define DEF_MAXSKILLPOINTS		700
-#define DEF_NIGHTTIME			30
+// Game limits
+constexpr int MaxGuilds                 = 1000;
+constexpr int MaxConstructNum           = 10;
+constexpr int MaxSchedule               = 10;
+constexpr int MaxApocalypse             = 7;
+constexpr int MaxHeldenian              = 10;
+constexpr int MaxFightZone              = 10;
 
-#define DEF_CHARPOINTLIMIT		1000
-#define DEF_RAGPROTECTIONTIME	7000
-#define DEF_MAXREWARDGOLD		99999999
+// Combat constants
+constexpr int MinimumHitRatio           = 15;
+constexpr int MaximumHitRatio           = 99;
+constexpr int SpecialEventTime          = 300000;
 
-#define DEF_ATTACKAI_NORMAL				1
-#define DEF_ATTACKAI_EXCHANGEATTACK		2
-#define DEF_ATTACKAI_TWOBYONEATTACK		3
+// Crusade constants
+constexpr int GmgManaConsumeUnit        = 15;
+constexpr int MaxConstructionPoint      = 30000;
+constexpr int MaxSummonPoints           = 30000;
+constexpr int MaxWarContribution        = 200000;
+} // namespace hb::server::config
 
-#define DEF_MAXFISHS					200
-#define DEF_MAXMINERALS					200
-#define	DEF_MAXCROPS					200
-#define DEF_MAXENGAGINGFISH				30
-#define DEF_MAXPORTIONTYPES				500
-
-#define DEF_SPECIALEVENTTIME			300000 // 600000 // 10
-#define DEF_MAXQUESTTYPE				200
-#define DEF_DEF_MAXHELDENIANDOOR			10
-
-#define DEF_ITEMLOG_GIVE				1
-#define DEF_ITEMLOG_DROP				2
-#define DEF_ITEMLOG_GET					3
-#define DEF_ITEMLOG_DEPLETE				4
-#define DEF_ITEMLOG_NEWGENDROP			5
-
-// New 07/05/2004
-#define DEF_ITEMLOG_BUY					7
-#define DEF_ITEMLOG_SELL				8
-#define DEF_ITEMLOG_RETRIEVE			9
-#define DEF_ITEMLOG_DEPOSIT				10
-#define DEF_ITEMLOG_EXCHANGE			11
-#define DEF_ITEMLOG_MAKE				13
-#define DEF_ITEMLOG_SUMMONMONSTER		14
-#define DEF_ITEMLOG_POISONED			15
-#define DEF_ITEMLOG_REPAIR				17
-#define DEF_ITEMLOG_SKILLLEARN			12
-#define DEF_ITEMLOG_MAGICLEARN			16
-#define DEF_ITEMLOG_USE					32
-
-#define DEF_MAXGUILDS					1000
-
-#define DEF_MAXCONSTRUCTNUM				10
-#define DEF_MAXSCHEDULE					10
-#define DEF_MAXAPOCALYPSE				7
-#define DEF_MAXHELDENIAN				10
-
-#define DEF_MAXFIGHTZONE 10
-
-//============================
-#define DEF_MINIMUMHITRATIO 15
-//============================		
-
-//============================
-#define DEF_MAXIMUMHITRATIO	99
-//============================
-
-// hb::shared::limits::PlayerMaxLevel is defined in NetConstants.h
-
-//============================
-// New Changed 12/05/2004
-#define DEF_GMGMANACONSUMEUNIT	15			// Grand Magic Generator   .
-//============================
-
-#define DEF_MAXCONSTRUCTIONPOINT 30000
-#define DEF_MAXSUMMONPOINTS		 30000
-#define DEF_MAXWARCONTRIBUTION	 200000
-
-
-// MOG Definitions - 3.51
-// Level up MSG
-// 2003-04-14      ...
-// Stat Point Change MSG
-
-//#define hb::shared::net::Notify::StateChangeFailed 0x11A01002
-//#define hb::shared::net::Notify::SettingFailed 0x11A01003
-//#define hb::shared::net::Notify::StateChangeSuccess 0x11A01004
-//#define hb::shared::net::Notify::SettingSuccess 0x11A01005
-
-//Mine
-//#define hb::shared::net::Notify::SettingFailed 0x11A01003
-//#define hb::shared::net::Notify::SettingSuccess 0x11A01005
-//2.24
-//#define hb::shared::net::Notify::SettingFailed 0xBB4
-//#define hb::shared::net::Notify::SettingSuccess 0xBB3
-
-
-
-#define DEF_TEST 0xFFFF0000
-//#define DEF_TESTSERVER
+// ItemLog values moved to ServerMessages.h -> hb::server::net::ItemLogAction
 
 #define NO_MSGSPEEDCHECK
 
@@ -274,7 +230,7 @@ struct LoginClient
 	LoginClient(asio::io_context& ctx)
 	{
 		_sock = 0;
-		_sock = new class hb::shared::net::ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
+		_sock = new class hb::shared::net::ASIOSocket(ctx, hb::server::config::ClientSocketBlockLimit);
 		_sock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 		_timeout_tm = 0;
 	}
@@ -309,7 +265,7 @@ public:
 	bool bSendClientNpcConfigs(int iClientH);
 	const DropTable* GetDropTable(int id) const;
 
-	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
+	LoginClient* _lclients[hb::server::config::MaxClientLoginSock];
 
 	bool bAcceptLogin(hb::shared::net::ASIOSocket* sock);
 	bool bAcceptFromAsync(asio::ip::tcp::socket&& peer);
@@ -754,12 +710,12 @@ public:
 	void _ClearItemConfigList();
 	bool _bRegisterMap(char * pName);
 
-	class CClient * m_pClientList[DEF_MAXCLIENTS];
+	class CClient * m_pClientList[hb::server::config::MaxClients];
 	class CNpc   ** m_pNpcList;  // Pointer to EntityManager's entity array (for backward compatibility)
-	class CMap    * m_pMapList[DEF_MAXMAPS];
-	class CNpcItem * m_pTempNpcItem[DEF_MAXNPCITEMS];
-	class CDynamicObject * m_pDynamicObjectList[DEF_MAXDYNAMICOBJECTS];
-	class CDelayEvent    * m_pDelayEventList[DEF_MAXDELAYEVENTS];
+	class CMap    * m_pMapList[hb::server::config::MaxMaps];
+	class CNpcItem * m_pTempNpcItem[hb::server::config::MaxNpcItems];
+	class CDynamicObject * m_pDynamicObjectList[hb::server::config::MaxDynamicObjects];
+	class CDelayEvent    * m_pDelayEventList[hb::server::config::MaxDelayEvents];
 
 	class CEntityManager * m_pEntityManager;  // Entity spawn/despawn manager
 
@@ -775,11 +731,11 @@ public:
 	bool m_bIsShopDataAvailable;
 	std::map<int, int> m_NpcShopMappings;        // npc_type  shop_id
 	std::map<int, ShopData> m_ShopData;          // shop_id  ShopData
-	CItem   * m_pItemConfigList[DEF_MAXITEMTYPES];
-	class CNpc    * m_pNpcConfigList[DEF_MAXNPCTYPES];
+	CItem   * m_pItemConfigList[hb::server::config::MaxItemTypes];
+	class CNpc    * m_pNpcConfigList[hb::server::config::MaxNpcTypes];
 	class CMagic  * m_pMagicConfigList[hb::shared::limits::MaxMagicType];
 	class CSkill  * m_pSkillConfigList[hb::shared::limits::MaxSkillType];
-	class CQuest  * m_pQuestConfigList[DEF_MAXQUESTTYPE];
+	class CQuest  * m_pQuestConfigList[hb::server::config::MaxQuestType];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
 
 	uint32_t m_dwConfigHash[4]{};
@@ -816,7 +772,7 @@ public:
 	char  m_cDayOrNight;
  	int   m_iSkillSSNpoint[102];
 
-	class CMsg * m_pNoticeMsgList[DEF_MAXNOTIFYMSGS];
+	class CMsg * m_pNoticeMsgList[hb::server::config::MaxNotifyMsgs];
 	int   m_iTotalNoticeMsg, m_iPrevSendNoticeMsg;
 	uint32_t m_dwNoticeTime, m_dwSpecialEventTime;
 	bool  m_bIsSpecialEventTime;
@@ -824,13 +780,13 @@ public:
 
 	uint32_t m_iLevelExpTable[1000];	//New 22/10/04
 
- 	class CFish * m_pFish[DEF_MAXFISHS];
-	class CPortion * m_pPortionConfigList[DEF_MAXPORTIONTYPES];
-	class CPortion* m_pCraftingConfigList[DEF_MAXPORTIONTYPES];
+ 	class CFish * m_pFish[hb::server::config::MaxFishs];
+	class CPortion * m_pPortionConfigList[hb::server::config::MaxPortionTypes];
+	class CPortion* m_pCraftingConfigList[hb::server::config::MaxPortionTypes];
 
 	bool  m_bIsServerShutdowned;
 	char  m_cShutDownCode;
-	class CMineral * m_pMineral[DEF_MAXMINERALS];
+	class CMineral * m_pMineral[hb::server::config::MaxMinerals];
 
 	int   m_iMiddlelandMapIndex; 
 	int   m_iAresdenMapIndex;
@@ -843,7 +799,7 @@ public:
 
 	uint32_t m_dwCanFightzoneReserveTime ;
 
-	int  m_iFightZoneReserve[DEF_MAXFIGHTZONE] ;
+	int  m_iFightZoneReserve[hb::server::config::MaxFightZone] ;
 	int  m_iFightzoneNoForceRecall  ;
 
 	struct {
@@ -880,7 +836,7 @@ public:
 	int m_iCollectedMana[3];
 	int m_iAresdenMana, m_iElvineMana;
 
-	class CTeleportLoc m_pGuildTeleportLoc[DEF_MAXGUILDS];
+	class CTeleportLoc m_pGuildTeleportLoc[hb::server::config::MaxGuilds];
 
 	int m_iLastCrusadeWinner; 	// New 13/05/2004
 	struct {
@@ -897,9 +853,9 @@ public:
 
 	struct {
 		char m_cBannedIPaddress[21];
-	} m_stBannedList[DEF_MAXBANNED];
+	} m_stBannedList[hb::server::config::MaxBanned];
 
-	AdminEntry m_stAdminList[DEF_MAXADMINS];
+	AdminEntry m_stAdminList[hb::server::config::MaxAdmins];
 	int m_iAdminCount = 0;
 
 	int FindAdminByAccount(const char* accountName);
@@ -918,13 +874,13 @@ public:
 		int iDay;
 		int iHour;
 		int iMinute;
-	} m_stCrusadeWarSchedule[DEF_MAXSCHEDULE];
+	} m_stCrusadeWarSchedule[hb::server::config::MaxSchedule];
 
 	struct {
 		int iDay;
 		int iHour;
 		int iMinute;
-	} m_stApocalypseScheduleStart[DEF_MAXAPOCALYPSE];
+	} m_stApocalypseScheduleStart[hb::server::config::MaxApocalypse];
 
 	struct {
 		int iDay;
@@ -932,19 +888,19 @@ public:
 		int StartiMinute;
 		int EndiHour;
 		int EndiMinute;
-	} m_stHeldenianSchedule[DEF_MAXHELDENIAN];
+	} m_stHeldenianSchedule[hb::server::config::MaxHeldenian];
 
 	struct {
 		int iDay;
 		int iHour;
 		int iMinute;
-	} m_stApocalypseScheduleEnd[DEF_MAXAPOCALYPSE];
+	} m_stApocalypseScheduleEnd[hb::server::config::MaxApocalypse];
 
 	int m_iTotalMiddleCrusadeStructures;
  
-	int m_iClientShortCut[DEF_MAXCLIENTS+1];
+	int m_iClientShortCut[hb::server::config::MaxClients+1];
 
-	int m_iNpcConstructionPoint[DEF_MAXNPCTYPES];
+	int m_iNpcConstructionPoint[hb::server::config::MaxNpcTypes];
 	uint32_t m_dwCrusadeGUID;
 	short m_sLastCrusadeDate;
 	int   m_iCrusadeWinnerSide;
@@ -952,7 +908,7 @@ public:
 	struct  {
 		int iTotalMembers;
 		int iIndex[9];
-	}m_stPartyInfo[DEF_MAXCLIENTS];
+	}m_stPartyInfo[hb::server::config::MaxClients];
 
 	// 09/26/2004
 	short m_sSlateSuccessRate;

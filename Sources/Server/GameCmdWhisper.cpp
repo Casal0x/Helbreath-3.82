@@ -4,6 +4,7 @@
 #include <cstring>
 
 using namespace hb::shared::net;
+using namespace hb::server::config;
 bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -41,7 +42,7 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex = -1;
 
 	// Search for player on this server (case-insensitive)
-	for(int i = 1; i < DEF_MAXCLIENTS; i++)
+	for(int i = 1; i < MaxClients; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
 			_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)

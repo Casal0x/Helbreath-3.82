@@ -19,6 +19,7 @@ using namespace hb::shared::net;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 using namespace hb::shared::action;
+using namespace hb::client::sprite_id;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -91,8 +92,8 @@ void Screen_SelectCharacter::on_update()
                 m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                 if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                 {
-                    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-                    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
+                    m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
+                    m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                     m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                     m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
@@ -208,8 +209,8 @@ void Screen_SelectCharacter::on_update()
                         m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
                         if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true)
                         {
-                            m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-                            m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
+                            m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
+                            m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                             m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                             m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
@@ -242,8 +243,8 @@ void Screen_SelectCharacter::on_update()
                     m_pGame->m_pPlayer->m_iLevel = (int)m_pGame->m_pCharList[m_cCurFocus - 1]->m_sLevel;
 
                     if (CMisc::bCheckValidString(m_pGame->m_pPlayer->m_cPlayerName) == true) {
-                        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Unload();
-                        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU]->Unload();
+                        m_pGame->m_pSprite[InterfaceNdLogin]->Unload();
+                        m_pGame->m_pSprite[InterfaceNdMainMenu]->Unload();
                         m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
                         m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
@@ -310,8 +311,8 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     uint32_t dwTime = GameClock::GetTimeMS();
     sX = OX;
     sY = 10 + OY;
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_SELECTCHAR, 0, 0, 0);
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 50);
+    pGame->DrawNewDialogBox(InterfaceNdSelectChar, 0, 0, 0);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 50);
 
     iTemp1 = 0;
     iTemp2 = 0;
@@ -323,8 +324,8 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     for (i = 0; i < 4; i++)
     {
         if ((cCurFocus - 1 == i) && (bIgnoreFocus == false))
-            pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 62);
-        else pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 61);
+            pGame->m_pSprite[InterfaceNdButton]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 62);
+        else pGame->m_pSprite[InterfaceNdButton]->Draw(sX + 110 + i * 109 - 7, 63 - 9 + OY, 61);
 
         if (pGame->m_pCharList[i] != nullptr)
         {
@@ -373,34 +374,34 @@ void Screen_SelectCharacter::DrawBackground(CGame* pGame, short sX, short sY, sh
     }
     i = 0;
 
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 51);
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 52);
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 53);
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 54);
-    pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 55);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 51);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 52);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 53);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 54);
+    pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 55);
 
     if ((msX > 360 + OX) && (msY >= 283 + OY) && (msX < 545 + OX) && (msY <= 315 + OY)) {
-        pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 56);
+        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 56);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER1, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER2, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 320 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER3, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 335 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER4, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 316 + OY) && (msX < 545 + OX) && (msY <= 345 + OY)) {
-        pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 57);
+        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 57);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER5, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 346 + OY) && (msX < 545 + OX) && (msY <= 375 + OY)) {
-        pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 58);
+        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 58);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 275 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER6, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 290 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER7, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 376 + OY) && (msX < 545 + OX) && (msY <= 405 + OY)) {
-        pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 59);
+        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 59);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER12, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else if ((msX > 360 + OX) && (msY >= 406 + OY) && (msX < 545 + OX) && (msY <= 435 + OY)) {
-        pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, OX, OY, 60);
+        pGame->DrawNewDialogBox(InterfaceNdButton, OX, OY, 60);
         hb::shared::text::DrawTextAligned(GameFont::Default, 98 + OX, 305 + 15 + OY, (357) - (98), 15, UPDATE_SCREEN_ON_SELECT_CHARACTER13, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
     }
     else {

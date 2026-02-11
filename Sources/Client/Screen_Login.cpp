@@ -14,6 +14,7 @@
 
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 Screen_Login::Screen_Login(CGame* pGame)
@@ -207,7 +208,7 @@ void Screen_Login::on_render()
 void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int msY)
 {
     bool bFlag = true;
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 0, 0, 0, true);
+    m_pGame->DrawNewDialogBox(InterfaceNdLogin, 0, 0, 0, true);
     m_pGame->DrawVersion();
 
     // Smooth alpha fade-in for login box: 0-500ms delay, then 500-700ms fade from 0 to 1
@@ -218,7 +219,7 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
     if (elapsedMs > FADE_DELAY_MS) {
         float fadeProgress = static_cast<float>(elapsedMs - FADE_DELAY_MS) / FADE_DURATION_MS;
         float alpha = fadeProgress > 1.0f ? 1.0f : fadeProgress;
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(99, 182, 2, hb::shared::sprite::DrawParams::Alpha(alpha));
+        m_pGame->m_pSprite[InterfaceNdLogin]->Draw(99, 182, 2, hb::shared::sprite::DrawParams::Alpha(alpha));
     }
 
     if (m_cCurFocus != 1) {
@@ -248,7 +249,7 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
 
     if (bFlag == true)
     {
-        if (m_cCurFocus == 3) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 140, 343, 3, true);
+        if (m_cCurFocus == 3) m_pGame->DrawNewDialogBox(InterfaceNdLogin, 140, 343, 3, true);
     }
-    if (m_cCurFocus == 4) m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_LOGIN, 316, 343, 4, true);
+    if (m_cCurFocus == 4) m_pGame->DrawNewDialogBox(InterfaceNdLogin, 316, 343, 4, true);
 }

@@ -19,8 +19,11 @@
 #include "ActionID_Client.h"
 #include "ObjectIDRange.h"
 
-#define MAPDATASIZEX	60 // 30
-#define MAPDATASIZEY	55 // 25
+namespace hb::client::config
+{
+constexpr int MapDataSizeX = 60;
+constexpr int MapDataSizeY = 55;
+} // namespace hb::client::config
 
 class CMapData
 {
@@ -44,15 +47,15 @@ public:
 	bool bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint32_t dwItemAttr, bool bDropEffect = true);
 	int  iObjectFrameCounter(char * cPlayerName, short sViewPointX, short sViewPointY);
 
-	class CTile m_pData[MAPDATASIZEX][MAPDATASIZEY];
-	class CTile m_pTmpData[MAPDATASIZEX][MAPDATASIZEY];
+	class CTile m_pData[hb::client::config::MapDataSizeX][hb::client::config::MapDataSizeY];
+	class CTile m_pTmpData[hb::client::config::MapDataSizeX][hb::client::config::MapDataSizeY];
 	class CTileSpr m_tile[752][752];
 	class CGame * m_pGame;
 
 	struct {
 		short m_sMaxFrame;
 		short m_sFrameTime;
-	} m_stFrame[DEF_TOTALCHARACTERS][DEF_TOTALACTION];
+	} m_stFrame[hb::client::config::TotalCharacters][hb::client::config::TotalAction];
 	uint32_t m_dwFrameTime;
 	uint32_t m_dwDOframeTime;
 	uint32_t m_dwFrameCheckTime;

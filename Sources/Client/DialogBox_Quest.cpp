@@ -1,6 +1,7 @@
 #include "DialogBox_Quest.h"
 #include "Game.h"
 #include "lan_eng.h"
+using namespace hb::client::sprite_id;
 
 DialogBox_Quest::DialogBox_Quest(CGame* pGame)
 	: IDialogBox(DialogBoxId::Quest, pGame)
@@ -15,8 +16,8 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 	short szX = Info().sSizeX;
 	char cTxt[120], cTemp[21];
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 4);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 4);
 
 	switch (Info().cMode) {
 	case 1:
@@ -131,9 +132,9 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
+		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
 	else
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
+		m_pGame->DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 0);
 }
 
 bool DialogBox_Quest::OnClick(short msX, short msY)

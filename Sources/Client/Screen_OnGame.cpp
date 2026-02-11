@@ -28,6 +28,8 @@ namespace MouseButton = hb::shared::input::MouseButton;
 using namespace hb::shared::action;
 
 using namespace hb::shared::item;
+using namespace hb::client::config;
+using namespace hb::client::sprite_id;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -334,7 +336,7 @@ void Screen_OnGame::on_update()
             (cmd == Type::Move || cmd == Type::Run)) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
-            if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
+            if (dX >= 0 && dX < MapDataSizeX && dY >= 0 && dY < MapDataSizeY) {
                 auto& motion = m_pGame->m_pMapData->m_pData[dX][dY].m_motion;
                 if (motion.bIsMoving && motion.fProgress >= 0.95f) {
                     m_pGame->m_pPlayer->m_Controller.SetCommandAvailable(true);
@@ -350,7 +352,7 @@ void Screen_OnGame::on_update()
         else if (cmd == Type::Stop) {
             int dX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
-            if (dX >= 0 && dX < MAPDATASIZEX && dY >= 0 && dY < MAPDATASIZEY) {
+            if (dX >= 0 && dX < MapDataSizeX && dY >= 0 && dY < MapDataSizeY) {
                 int8_t animAction = m_pGame->m_pMapData->m_pData[dX][dY].m_animation.cAction;
                 if (animAction == Type::Stop) {
                     uint32_t cmdTime = m_pGame->m_pPlayer->m_Controller.GetCommandTime();
@@ -376,7 +378,7 @@ void Screen_OnGame::on_update()
             int dX4 = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
             int dY4 = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
             bool bDamageAnimPlaying = false;
-            if (dX4 >= 0 && dX4 < MAPDATASIZEX && dY4 >= 0 && dY4 < MAPDATASIZEY) {
+            if (dX4 >= 0 && dX4 < MapDataSizeX && dY4 >= 0 && dY4 < MapDataSizeY) {
                 int8_t animAction = m_pGame->m_pMapData->m_pData[dX4][dY4].m_animation.cAction;
                 bDamageAnimPlaying = (animAction == Type::Damage || animAction == Type::DamageMove);
             }
@@ -433,8 +435,8 @@ void Screen_OnGame::on_render()
 
     // Update entity motion interpolation for all tiles
     uint32_t dwTime = m_pGame->m_dwCurTime;
-    for (int y = 0; y < MAPDATASIZEY; y++) {
-        for (int x = 0; x < MAPDATASIZEX; x++) {
+    for (int y = 0; y < MapDataSizeY; y++) {
+        for (int x = 0; x < MapDataSizeX; x++) {
             m_pGame->m_pMapData->m_pData[x][y].m_motion.Update(dwTime);
         }
     }
@@ -445,7 +447,7 @@ void Screen_OnGame::on_render()
     {
         int playerDX = m_pGame->m_pPlayer->m_sPlayerX - m_pGame->m_pMapData->m_sPivotX;
         int playerDY = m_pGame->m_pPlayer->m_sPlayerY - m_pGame->m_pMapData->m_sPivotY;
-        if (playerDX >= 0 && playerDX < MAPDATASIZEX && playerDY >= 0 && playerDY < MAPDATASIZEY)
+        if (playerDX >= 0 && playerDX < MapDataSizeX && playerDY >= 0 && playerDY < MapDataSizeY)
         {
             auto& motion = m_pGame->m_pMapData->m_pData[playerDX][playerDY].m_motion;
             int camX = (m_pGame->m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32
@@ -579,7 +581,7 @@ void Screen_OnGame::RenderItemTooltip()
 
     char cItemColor = item->m_cItemColor;
     bool is_hand_item = pCfg->GetEquipPos() == EquipPos::LeftHand || pCfg->GetEquipPos() == EquipPos::RightHand || pCfg->GetEquipPos() == EquipPos::TwoHand;
-    size_t item_sprite_index = DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite;
+    size_t item_sprite_index = ItemPackPivotPoint + pCfg->m_sSprite;
     hb::shared::sprite::ISprite* sprite = m_pGame->m_pSprite[item_sprite_index].get();
     bool is_equippable = pCfg->IsArmor() || pCfg->IsWeapon() || pCfg->IsAccessory();
 

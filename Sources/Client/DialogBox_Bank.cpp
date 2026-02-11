@@ -6,6 +6,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Bank::DialogBox_Bank(CGame* pGame)
 	: IDialogBox(DialogBoxId::Bank, pGame)
@@ -21,8 +22,8 @@ void DialogBox_Bank::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX - 5;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 2);
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 21);
+	m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 2);
+	m_pGame->DrawNewDialogBox(InterfaceNdText, sX, sY, 21);
 
 	switch (Info().cMode) {
 	case -1:
@@ -129,16 +130,16 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 	// Draw item sprite
 	char cItemColor = pItem->m_cItemColor;
 	if (cItemColor == 0) {
-		m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame);
+		m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame);
 	}
 	else {
 		if ((pCfg->GetEquipPos() == EquipPos::LeftHand) ||
 			(pCfg->GetEquipPos() == EquipPos::RightHand) ||
 			(pCfg->GetEquipPos() == EquipPos::TwoHand)) {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+			m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 		}
 		else {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+			m_pGame->m_pSprite[ItemPackPivotPoint + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 		}
 	}
 }
@@ -153,8 +154,8 @@ void DialogBox_Bank::DrawScrollbar(short sX, short sY, int iTotalLines, short ms
 		d2 = (double)(iTotalLines - Info().sV1);
 		d3 = (274.0f * d1) / d2;
 		iPointerLoc = (int)d3;
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX, sY, 3);
-		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sX + 242, sY + iPointerLoc + 35, 7);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX, sY, 3);
+		m_pGame->DrawNewDialogBox(InterfaceNdGame2, sX + 242, sY + iPointerLoc + 35, 7);
 	}
 	else {
 		iPointerLoc = 0;

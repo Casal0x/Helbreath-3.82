@@ -2,4 +2,4 @@
 #include "CommonTypes.h"
 #include "NetConstants.h"
 
-#define DEF_GAMETICK_MULTIPLER			15		// Game tick multiplier (1 = 300ms ticks)
+namespace hb::server::config { constexpr int GameTickMultiplier = 15; } // (1 = 300ms ticks)

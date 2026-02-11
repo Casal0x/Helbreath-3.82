@@ -15,23 +15,23 @@
 
 #include "OwnerClass.h"
 
-// for Client Data
-#define DEF_MAPDATASIZEX		30
-#define DEF_MAPDATASIZEY		25
-#define DEF_MAXTELEPORTLOC		200
-#define DEF_MAXWAYPOINTCFG		200
-#define DEF_MAXMGAR				50
-#define DEF_MAXNMR				50
-#define DEF_MAXSPOTMOBGENERATOR	100
-#define DEF_MAXFISHPOINT		200
-#define DEF_MAXITEMEVENTS		200
-#define DEF_MAXMINERALPOINT		200
-#define DEF_MAXHELDENIANDOOR	200
-#define DEF_MAXOCCUPYFLAG		20001 //3001
-#define	DEF_MAXINITIALPOINT		20
-#define DEF_MAXAGRICULTURE		200
-#define DEF_MAXDYNAMICGATES		10
-#define DEF_MAXHELDENIANTOWER	200
+namespace hb::server::map
+{
+constexpr int MaxTeleportLoc        = 200;
+constexpr int MaxWaypointCfg        = 200;
+constexpr int MaxMgar               = 50;
+constexpr int MaxNmr                = 50;
+constexpr int MaxSpotMobGenerator   = 100;
+constexpr int MaxFishPoint          = 200;
+constexpr int MaxItemEvents         = 200;
+constexpr int MaxMineralPoint       = 200;
+constexpr int MaxHeldenianDoor      = 200;
+constexpr int MaxOccupyFlag         = 20001;
+constexpr int MaxInitialPoint       = 20;
+constexpr int MaxAgriculture        = 200;
+constexpr int MaxDynamicGates       = 10;
+constexpr int MaxHeldenianTower     = 200;
+} // namespace hb::server::map
 
 // MODERNIZED: Prevent old winsock.h from loading (must be before windows.h)
 
@@ -41,13 +41,21 @@
 #include "TeleportLoc.h"
 #include "GlobalDef.h"
 
-#define DEF_MAPTYPE_NORMAL				0
-#define DEF_MAPTYPE_NOPENALTY_NOREWARD	1
-#define DEF_MAXENERGYSPHERES			10
-
-#define DEF_MAXSTRATEGICPOINTS			200
-#define DEF_MAXSECTORS					60
-#define DEF_MAXSTRIKEPOINTS				20
+namespace hb::server::map
+{
+namespace MapType
+{
+	enum : int
+	{
+		Normal              = 0,
+		NoPenaltyNoReward   = 1,
+	};
+}
+constexpr int MaxEnergySpheres      = 10;
+constexpr int MaxStrategicPoints    = 200;
+constexpr int MaxSectors            = 60;
+constexpr int MaxStrikePoints       = 20;
+} // namespace hb::server::map
 
 
 
@@ -100,10 +108,10 @@ public:
 	char  m_cName[11];
 	char  m_cLocationName[11];
 	short m_sSizeX, m_sSizeY, m_sTileDataSize;
-	class CTeleportLoc * m_pTeleportLoc[DEF_MAXTELEPORTLOC];
+	class CTeleportLoc * m_pTeleportLoc[hb::server::map::MaxTeleportLoc];
 	
 	//short m_sInitialPointX, m_sInitialPointY;
-	hb::shared::geometry::GamePoint m_pInitialPoint[DEF_MAXINITIALPOINT];
+	hb::shared::geometry::GamePoint m_pInitialPoint[hb::server::map::MaxInitialPoint];
 
 	bool  m_bNamingValueUsingStatus[1000]; // 0~999
 	bool  m_bRandomMobGenerator;
@@ -130,13 +138,13 @@ public:
 		int  iProbSA;
 		int  iKindSA;
 
-	} m_stSpotMobGenerator[DEF_MAXSPOTMOBGENERATOR];
+	} m_stSpotMobGenerator[hb::server::map::MaxSpotMobGenerator];
 
-	hb::shared::geometry::GamePoint m_WaypointList[DEF_MAXWAYPOINTCFG];
-	hb::shared::geometry::GameRectangle  m_rcMobGenAvoidRect[DEF_MAXMGAR];
-	hb::shared::geometry::GameRectangle  m_rcNoAttackRect[DEF_MAXNMR];
+	hb::shared::geometry::GamePoint m_WaypointList[hb::server::map::MaxWaypointCfg];
+	hb::shared::geometry::GameRectangle  m_rcMobGenAvoidRect[hb::server::map::MaxMgar];
+	hb::shared::geometry::GameRectangle  m_rcNoAttackRect[hb::server::map::MaxNmr];
 
-	hb::shared::geometry::GamePoint m_FishPointList[DEF_MAXFISHPOINT];
+	hb::shared::geometry::GamePoint m_FishPointList[hb::server::map::MaxFishPoint];
 	int   m_iTotalFishPoint, m_iMaxFish, m_iCurFish;
 	
 	int	  m_iApocalypseMobGenType, m_iApocalypseBossMobNpcID;
@@ -152,7 +160,7 @@ public:
 
 	bool  m_bMineralGenerator;
 	char  m_cMineralGeneratorLevel;
-	hb::shared::geometry::GamePoint m_MineralPointList[DEF_MAXMINERALPOINT];
+	hb::shared::geometry::GamePoint m_MineralPointList[hb::server::map::MaxMineralPoint];
 	int   m_iTotalMineralPoint, m_iMaxMineral, m_iCurMineral;
 
 	char  m_cWhetherStatus;		// . 0 . 1~3  4~6  7~9
@@ -161,10 +169,10 @@ public:
 	int   m_iLevelLimit;
 	int   m_iUpperLevelLimit;
 
-	class COccupyFlag * m_pOccupyFlag[DEF_MAXOCCUPYFLAG];
+	class COccupyFlag * m_pOccupyFlag[hb::server::map::MaxOccupyFlag];
 	int   m_iTotalOccupyFlags;
 	
-	class CStrategicPoint * m_pStrategicPointList[DEF_MAXSTRATEGICPOINTS];
+	class CStrategicPoint * m_pStrategicPointList[hb::server::map::MaxStrategicPoints];
 	bool  m_bIsAttackEnabled;
 
 	bool  m_bIsFightZone;
@@ -173,14 +181,14 @@ public:
 		char cType;
 		int sX, sY;
 
-	} m_stEnergySphereCreationList[DEF_MAXENERGYSPHERES];
+	} m_stEnergySphereCreationList[hb::server::map::MaxEnergySpheres];
 
 	int m_iTotalEnergySphereCreationPoint;
 	
 	struct {
 		char cResult;
 		int aresdenX, aresdenY, elvineX, elvineY;
-	} m_stEnergySphereGoalList[DEF_MAXENERGYSPHERES];
+	} m_stEnergySphereGoalList[hb::server::map::MaxEnergySpheres];
 
 	int m_iTotalEnergySphereGoalPoint;
 
@@ -192,7 +200,7 @@ public:
 		char m_cDynamicGateMap[11];
 		int m_iDynamicGateX;
 		int m_iDynamicGateY;
-	} m_stDynamicGateCoords[DEF_MAXDYNAMICGATES];
+	} m_stDynamicGateCoords[hb::server::map::MaxDynamicGates];
 
 	struct {
 		int iPlayerActivity;
@@ -201,7 +209,7 @@ public:
 		int iElvineActivity;
 		int iMonsterActivity;
 
-	} m_stSectorInfo[DEF_MAXSECTORS][DEF_MAXSECTORS], m_stTempSectorInfo[DEF_MAXSECTORS][DEF_MAXSECTORS];
+	} m_stSectorInfo[hb::server::map::MaxSectors][hb::server::map::MaxSectors], m_stTempSectorInfo[hb::server::map::MaxSectors][hb::server::map::MaxSectors];
 	short sMobEventAmount;
 	int m_iTotalItemEvents;
 	struct {
@@ -211,20 +219,20 @@ public:
 		int iMonth;
 		int iDay;
 		int iTotalNum;
-	} m_stItemEventList[DEF_MAXITEMEVENTS]{};
+	} m_stItemEventList[hb::server::map::MaxItemEvents]{};
 
 	struct {
 		char  cDir;
 		short dX;
 		short dY;
-	} m_stHeldenianGateDoor[DEF_MAXHELDENIANDOOR];
+	} m_stHeldenianGateDoor[hb::server::map::MaxHeldenianDoor];
 
 	struct {
 		short sTypeID;
 		short dX;
 		short dY;
 		char  cSide;
-	} m_stHeldenianTower[DEF_MAXHELDENIANTOWER];
+	} m_stHeldenianTower[hb::server::map::MaxHeldenianTower];
 
 	int m_iMaxNx, m_iMaxNy, m_iMaxAx, m_iMaxAy, m_iMaxEx, m_iMaxEy, m_iMaxMx, m_iMaxMy, m_iMaxPx, m_iMaxPy;
 	
@@ -237,7 +245,7 @@ public:
 		int iEffectX[5];
 		int iEffectY[5];
 	
-	} m_stStrikePoint[DEF_MAXSTRIKEPOINTS];
+	} m_stStrikePoint[hb::server::map::MaxStrikePoints];
 	int m_iTotalStrikePoints;
 
 	bool m_bIsDisabled;

@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+using namespace hb::server::config;
 
 void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 {
@@ -57,7 +58,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	// Find player by name
 	int iClientH = 0;
-	for(int j = 1; j < DEF_MAXCLIENTS; j++)
+	for(int j = 1; j < MaxClients; j++)
 	{
 		if (pGame->m_pClientList[j] != nullptr &&
 			_stricmp(pGame->m_pClientList[j]->m_cCharName, cPlayerName) == 0)
@@ -76,7 +77,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Validate item ID
-	if (iItemID < 0 || iItemID >= DEF_MAXITEMTYPES || pGame->m_pItemConfigList[iItemID] == nullptr)
+	if (iItemID < 0 || iItemID >= MaxItemTypes || pGame->m_pItemConfigList[iItemID] == nullptr)
 	{
 		char buf[256];
 		std::snprintf(buf, sizeof(buf), "Invalid item ID: %d.", iItemID);

@@ -7,6 +7,7 @@
 #endif
 
 using namespace hb::shared::item;
+using namespace hb::server::config;
 
 extern char G_cTxt[512];
 
@@ -17,7 +18,7 @@ CClient::CClient(asio::io_context& ctx)
  
 
 	m_pXSock = 0;
-	m_pXSock = new class hb::shared::net::ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
+	m_pXSock = new class hb::shared::net::ASIOSocket(ctx, hb::server::config::ClientSocketBlockLimit);
 	m_pXSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
 	std::memset(m_cProfile, 0, sizeof(m_cProfile));
@@ -134,7 +135,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_iHPstock = 0;
 	m_bIsKilled = false;
 
-	for(int i = 0; i < DEF_MAXMAGICEFFECTS; i++) 
+	for(int i = 0; i < hb::server::config::MaxMagicEffects; i++) 
 		m_cMagicEffectStatus[i]	= 0;
 
 	m_iWhisperPlayerIndex = -1;
@@ -255,7 +256,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_iAddAbsPD = m_iAddAbsMD = 0;
 	m_iAddCD = m_iAddExp = m_iAddGold = 0;
 		
-	m_iSpecialAbilityTime = DEF_SPECABLTYTIMESEC;		// Special ability can be used once every DEF_SPECABLTYTIMESEC seconds.
+	m_iSpecialAbilityTime = SpecialAbilityTimeSec;		// Special ability can be used once every SpecialAbilityTimeSec seconds.
 	m_iSpecialAbilityType = 0;
 	m_bIsSpecialAbilityEnabled = false;
 	m_iSpecialAbilityLastSec   = 0;

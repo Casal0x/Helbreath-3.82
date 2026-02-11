@@ -8,6 +8,7 @@
 #include "lan_eng.h"
 
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Magic::DialogBox_Magic(CGame* pGame)
 	: IDialogBox(DialogBoxId::Magic, pGame)
@@ -31,8 +32,8 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	sX = Info().sX;
 	sY = Info().sY;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 1, false, dialogTrans);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 7, false, dialogTrans);
+	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 1, false, dialogTrans);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 7, false, dialogTrans);
 
 	// Handle scroll wheel input
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Magic && msZ != 0)
@@ -99,20 +100,20 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Circle selector bar
-	m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 30, sY + 250, 19);
+	m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 30, sY + 250, 19);
 
 	// Circle selector highlight
 	switch (Info().sView) {
-	case 0: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 30, sY + 250, 20); break;
-	case 1: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 43, sY + 250, 21); break;
-	case 2: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 61, sY + 250, 22); break;
-	case 3: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 86, sY + 250, 23); break;
-	case 4: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 106, sY + 250, 24); break;
-	case 5: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 121, sY + 250, 25); break;
-	case 6: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 142, sY + 250, 26); break;
-	case 7: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 169, sY + 250, 27); break;
-	case 8: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 202, sY + 250, 28); break;
-	case 9: m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS]->Draw(sX + 222, sY + 250, 29); break;
+	case 0: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 30, sY + 250, 20); break;
+	case 1: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 43, sY + 250, 21); break;
+	case 2: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 61, sY + 250, 22); break;
+	case 3: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 86, sY + 250, 23); break;
+	case 4: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 106, sY + 250, 24); break;
+	case 5: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 121, sY + 250, 25); break;
+	case 6: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 142, sY + 250, 26); break;
+	case 7: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 169, sY + 250, 27); break;
+	case 8: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 202, sY + 250, 28); break;
+	case 9: m_pGame->m_pSprite[InterfaceSprFonts]->Draw(sX + 222, sY + 250, 29); break;
 	}
 
 	// Calculate magic probability
@@ -189,9 +190,9 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 
 	// Alchemy button
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 285) && (msY <= sY + 285 + ui_layout::btn_size_y))
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + 285, 49, false, dialogTrans);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + 285, 49, false, dialogTrans);
 	else
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + 285, 48, false, dialogTrans);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, sY + 285, 48, false, dialogTrans);
 }
 
 bool DialogBox_Magic::OnClick(short msX, short msY)

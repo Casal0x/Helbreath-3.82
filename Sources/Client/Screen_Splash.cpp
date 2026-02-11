@@ -12,6 +12,7 @@
 #include "CommonTypes.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
+using namespace hb::client::sprite_id;
 
 Screen_Splash::Screen_Splash(CGame* pGame)
     : IGameScreen(pGame)
@@ -22,7 +23,7 @@ void Screen_Splash::on_initialize()
 {
     GameModeManager::SetCurrentMode(GameMode::Splash);
 
-    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN] = hb::shared::sprite::Sprites::Create("New-Dialog", 3, false);
+    m_pGame->m_pSprite[SplashScreen] = hb::shared::sprite::Sprites::Create("New-Dialog", 3, false);
 
     m_credits = {{
         { "Centuu - HelbreathServer starting base", "https://github.com/centuu/HelbreathServer" },
@@ -35,7 +36,7 @@ void Screen_Splash::on_initialize()
 
 void Screen_Splash::on_uninitialize()
 {
-    m_pGame->m_pSprite.remove(DEF_SPRID_SPLASH_SCREEN);
+    m_pGame->m_pSprite.remove(SplashScreen);
 }
 
 void Screen_Splash::on_update()
@@ -81,7 +82,7 @@ float Screen_Splash::GetContributorAlpha(uint32_t elapsedMs, int contributorInde
 
 void Screen_Splash::on_render()
 {
-    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN]->Draw(0, 0, 0);
+    m_pGame->m_pSprite[SplashScreen]->Draw(0, 0, 0);
 
     constexpr int lineHeight = 16;
     constexpr int bottomMargin = 20;

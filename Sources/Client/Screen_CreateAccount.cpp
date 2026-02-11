@@ -12,6 +12,7 @@
 
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 namespace MouseButton = hb::shared::input::MouseButton;
 
 #ifdef DEF_MAKE_ACCOUNT
@@ -260,7 +261,7 @@ void Screen_CreateAccount::on_render()
     auto blackStyle = hb::shared::text::TextStyle::Color(GameColors::UIBlack);
 
     // Draw background
-    m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0, 0, 0, true);
+    m_pGame->DrawNewDialogBox(InterfaceNdNewAccount, 0, 0, 0, true);
 
     // Draw labels
     hb::shared::text::DrawText(GameFont::Default, 377, 84, "Account:", labelStyle);
@@ -359,22 +360,22 @@ void Screen_CreateAccount::on_render()
     bool bHoverCreate = (m_sNewAcctMsX >= 297 && m_sNewAcctMsX <= 297 + 72 &&
         m_sNewAcctMsY >= 398 && m_sNewAcctMsY <= 398 + 20);
     if ((iFlag == 0) && (m_cCurFocus == 5 || bHoverCreate))
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98, 398, 25);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(199 + 98, 398, 24);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(199 + 98, 398, 25);
+    else m_pGame->m_pSprite[InterfaceNdButton]->Draw(199 + 98, 398, 24);
 
     // Button 6: Clear (at 392, 398 - size 72x20) - CENTER
     bool bHoverClear = (m_sNewAcctMsX >= 392 && m_sNewAcctMsX <= 392 + 72 &&
         m_sNewAcctMsY >= 398 && m_sNewAcctMsY <= 398 + 20);
     if (m_cCurFocus == 6 || bHoverClear)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98, 398, 27);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(294 + 98, 398, 26);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(294 + 98, 398, 27);
+    else m_pGame->m_pSprite[InterfaceNdButton]->Draw(294 + 98, 398, 26);
 
     // Button 7: Cancel (at 488, 398 - size 72x20) - RIGHT
     bool bHoverCancel = (m_sNewAcctMsX >= 488 && m_sNewAcctMsX <= 488 + 72 &&
         m_sNewAcctMsY >= 398 && m_sNewAcctMsY <= 398 + 20);
     if (m_cCurFocus == 7 || bHoverCancel)
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98, 398, 17);
-    else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->Draw(390 + 98, 398, 16);
+        m_pGame->m_pSprite[InterfaceNdButton]->Draw(390 + 98, 398, 17);
+    else m_pGame->m_pSprite[InterfaceNdButton]->Draw(390 + 98, 398, 16);
 
     m_pGame->DrawVersion();
 }

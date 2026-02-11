@@ -8,6 +8,7 @@
 #include "RendererFactory.h"
 #include "ITextRenderer.h"
 #include <cstring>
+using namespace hb::client::sprite_id;
 
 // Content area constants
 static const int CONTENT_X = 21;
@@ -104,11 +105,11 @@ DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
 void DialogBox_SysMenu::OnUpdate()
 {
 	// Cache frame dimensions on first update (sprites loaded by now)
-	if (!m_bFrameSizesInitialized && m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] != nullptr)
+	if (!m_bFrameSizesInitialized && m_pGame->m_pSprite[InterfaceNdButton] != nullptr)
 	{
-		hb::shared::sprite::SpriteRect wideRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(78);
-		hb::shared::sprite::SpriteRect smallRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(79);
-		hb::shared::sprite::SpriteRect largeRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(81);
+		hb::shared::sprite::SpriteRect wideRect = m_pGame->m_pSprite[InterfaceNdButton]->GetFrameRect(78);
+		hb::shared::sprite::SpriteRect smallRect = m_pGame->m_pSprite[InterfaceNdButton]->GetFrameRect(79);
+		hb::shared::sprite::SpriteRect largeRect = m_pGame->m_pSprite[InterfaceNdButton]->GetFrameRect(81);
 
 		// Only use if we got valid dimensions (not from NullSprite)
 		if (wideRect.width > 0 && wideRect.height > 0 && smallRect.width > 0 && smallRect.height > 0)
@@ -130,8 +131,8 @@ void DialogBox_SysMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 
 	// Draw dialog background
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME1, sX, sY, 0);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 6);
+	DrawNewDialogBox(InterfaceNdGame1, sX, sY, 0);
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 6);
 
 	// Handle mouse scroll over dialog to cycle tabs
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::SystemMenu && msZ != 0)
@@ -179,7 +180,7 @@ void DialogBox_SysMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 
 void DialogBox_SysMenu::DrawTabs(short sX, short sY, short msX, short msY)
 {
-	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
+	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[InterfaceNdButton]->GetFrameRect(70);
 	int btnY = sY + 33;
 
 	const int tabFrames[TAB_COUNT][2] = {
@@ -196,7 +197,7 @@ void DialogBox_SysMenu::DrawTabs(short sX, short sY, short msX, short msY)
 		bool bActive = (m_iActiveTab == i);
 
 		int frameIndex = (bActive || bHovered) ? tabFrames[i][1] : tabFrames[i][0];
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, btnX, btnY, frameIndex);
+		DrawNewDialogBox(InterfaceNdButton, btnX, btnY, frameIndex);
 	}
 }
 
@@ -223,7 +224,7 @@ void DialogBox_SysMenu::DrawToggle(int x, int y, bool bEnabled, short msX, short
 {
 	// Draw toggle background box at y-2
 	const int boxY = y - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, x, boxY, 79);
+	DrawNewDialogBox(InterfaceNdButton, x, boxY, 79);
 
 	// Use cached dimensions or fallback values
 	const int boxWidth = m_bFrameSizesInitialized ? m_iSmallBoxWidth : 36;
@@ -284,12 +285,12 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 	if (m_pGame->m_cLogOutCount == -1) {
 		bool bHover = (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
 			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, buttonY, bHover ? 9 : 8);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, buttonY, bHover ? 9 : 8);
 	}
 	else {
 		bool bHover = (msX >= sX + ui_layout::left_btn_x && msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x &&
 			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, buttonY, bHover ? 7 : 6);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::left_btn_x, buttonY, bHover ? 7 : 6);
 	}
 
 	// Restart button (right side, only when dead)
@@ -297,7 +298,7 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 	{
 		bool bHover = (msX >= sX + ui_layout::right_btn_x && msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x &&
 			msY >= buttonY && msY <= buttonY + ui_layout::btn_size_y);
-		DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, buttonY, bHover ? 37 : 36);
+		DrawNewDialogBox(InterfaceNdButton, sX + ui_layout::right_btn_x, buttonY, bHover ? 37 : 36);
 	}
 }
 
@@ -335,7 +336,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	PutString(labelX + 1, lineY, "FPS Limit:", GameColors::UILabel);
 
 	const int fpsBoxY = lineY - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, largeBoxX, fpsBoxY, 81);
+	DrawNewDialogBox(InterfaceNdButton, largeBoxX, fpsBoxY, 81);
 
 	static const int s_FpsOptions[] = { 60, 100, 144, 240, 0 };
 	static const char* s_FpsLabels[] = { "60", "100", "144", "240", "Max" };
@@ -362,7 +363,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	PutString(labelX + 1, lineY, "Aspect Ratio:", GameColors::UILabel);
 
 	const int aspectBoxY = lineY - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, aspectBoxY, 78);
+	DrawNewDialogBox(InterfaceNdButton, wideBoxX, aspectBoxY, 78);
 
 	const bool bStretch = ConfigManager::Get().IsFullscreenStretchEnabled();
 	const int aspectRegionWidth = wideBoxWidth / 2;
@@ -405,7 +406,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	const int detailLevel = ConfigManager::Get().GetDetailLevel();
 	const int boxY = lineY - 2;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, boxY, 78);
+	DrawNewDialogBox(InterfaceNdButton, wideBoxX, boxY, 78);
 
 	const int regionWidth = wideBoxWidth / 3;
 
@@ -471,7 +472,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	PutString(labelX + 1, lineY, "Display Mode:", GameColors::UILabel);
 
 	const int modeBoxY = lineY - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, modeBoxY, 78);
+	DrawNewDialogBox(InterfaceNdButton, wideBoxX, modeBoxY, 78);
 
 	bool modeHover = (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight);
 	const hb::shared::render::Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
@@ -489,7 +490,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	PutString(labelX + 1, lineY, "hb::shared::render::Window Style:", GameColors::UILabel);
 
 	const int styleBoxY = lineY - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, styleBoxY, 78);
+	DrawNewDialogBox(InterfaceNdButton, wideBoxX, styleBoxY, 78);
 
 	bool styleHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight);
 	const hb::shared::render::Color& styleColor = isFullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
@@ -521,7 +522,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	snprintf(resBuf, sizeof(resBuf), "%dx%d", resWidth, resHeight);
 
 	const int resBoxY = lineY - 2;
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, resBoxY, 78);
+	DrawNewDialogBox(InterfaceNdButton, wideBoxX, resBoxY, 78);
 
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
 	const hb::shared::render::Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
@@ -557,8 +558,8 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
 
 	int masterVol = AudioManager::Get().GetMasterVolume();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + masterVol, lineY, 8);
+	DrawNewDialogBox(InterfaceNdButton, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(InterfaceNdGame2, sliderX + masterVol, lineY, 8);
 
 	if (s_bDraggingMasterSlider && cLB != 0)
 	{
@@ -580,8 +581,8 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
 
 	int effectsVol = AudioManager::Get().GetSoundVolume();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + effectsVol, lineY, 8);
+	DrawNewDialogBox(InterfaceNdButton, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(InterfaceNdGame2, sliderX + effectsVol, lineY, 8);
 
 	if (s_bDraggingEffectsSlider && cLB != 0)
 	{
@@ -603,8 +604,8 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
 
 	int ambientVol = AudioManager::Get().GetAmbientVolume();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + ambientVol, lineY, 8);
+	DrawNewDialogBox(InterfaceNdButton, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(InterfaceNdGame2, sliderX + ambientVol, lineY, 8);
 
 	if (s_bDraggingAmbientSlider && cLB != 0)
 	{
@@ -626,8 +627,8 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
 
 	int uiVol = AudioManager::Get().GetUIVolume();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + uiVol, lineY, 8);
+	DrawNewDialogBox(InterfaceNdButton, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(InterfaceNdGame2, sliderX + uiVol, lineY, 8);
 
 	if (s_bDraggingUISlider && cLB != 0)
 	{
@@ -649,8 +650,8 @@ void DialogBox_SysMenu::DrawAudioTab(short sX, short sY, short msX, short msY, c
 		PutString(toggleX, lineY, DRAW_DIALOGBOX_SYSMENU_DISABLED, GameColors::UIDisabled);
 
 	int musicVol = AudioManager::Get().GetMusicVolume();
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sliderX, lineY + 5, 80);
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME2, sliderX + musicVol, lineY, 8);
+	DrawNewDialogBox(InterfaceNdButton, sliderX, lineY + 5, 80);
+	DrawNewDialogBox(InterfaceNdGame2, sliderX + musicVol, lineY, 8);
 
 	if (s_bDraggingMusicSlider && cLB != 0)
 	{
@@ -715,7 +716,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// Check tab button clicks
-	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
+	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[InterfaceNdButton]->GetFrameRect(70);
 	int btnY = sY + 33;
 
 	for (int i = 0; i < TAB_COUNT; i++)

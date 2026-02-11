@@ -38,6 +38,7 @@
 #include "GameChatCommand.h"
 #include "IOServicePool.h"
 #include "ConcurrentMsgQueue.h"
+using namespace hb::server::config;
 
 void PutHackLogFileList(char* cStr);
 void PutPvPLogFileList(char* cStr);
@@ -86,7 +87,7 @@ unsigned __stdcall ThreadProc(void* ch)
 	{
 		Sleep(1000);
 
-		for(int a = 0; a < DEF_MAXMAPS; a++)
+		for(int a = 0; a < MaxMaps; a++)
 		{
 			if (G_pGame->m_pMapList[a] != 0)
 			{
@@ -142,7 +143,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	default:
 		// Handle sub log socket events
-		if ((message >= WM_USER_BOT_ACCEPT + 1) && (message <= WM_USER_BOT_ACCEPT + DEF_MAXCLIENTLOGINSOCK))
+		if ((message >= WM_USER_BOT_ACCEPT + 1) && (message <= WM_USER_BOT_ACCEPT + MaxClientLoginSock))
 			G_pGame->OnSubLogSocketEvent(message, wParam, lParam);
 
 		return (DefWindowProc(hWnd, message, wParam, lParam));
@@ -198,7 +199,7 @@ bool InitInstance(HINSTANCE hInstance, int nCmdShow)
 	SYSTEMTIME SysTime;
 
 	GetLocalTime(&SysTime);
-	std::snprintf(cTitle, sizeof(cTitle), "Helbreath GameServer V%s.%s %d (Executed at: %d %d %d)", DEF_UPPERVERSION, DEF_LOWERVERSION, DEF_BUILDDATE, SysTime.wMonth, SysTime.wDay, SysTime.wHour);
+	std::snprintf(cTitle, sizeof(cTitle), "Helbreath GameServer V%s.%s %d (Executed at: %d %d %d)", hb::server::version::Upper, hb::server::version::Lower, hb::server::version::BuildDate, SysTime.wMonth, SysTime.wDay, SysTime.wHour);
 
 	// Create message-only window (hidden) for socket events
 	G_hWnd = CreateWindowEx(
@@ -227,8 +228,8 @@ bool InitInstance(HINSTANCE hInstance, int nCmdShow)
 	printf("=======================================================================\n");
 	printf("         HELBREATH GAME SERVER - CONSOLE MODE                         \n");
 	printf("=======================================================================\n");
-	printf("Version: %s.%s\n", DEF_UPPERVERSION, DEF_LOWERVERSION);
-	printf("Build: %d\n", DEF_BUILDDATE);
+	printf("Version: %s.%s\n", hb::server::version::Upper, hb::server::version::Lower);
+	printf("Build: %d\n", hb::server::version::BuildDate);
 	printf("Started: %d/%d/%d %02d:%02d\n", SysTime.wMonth, SysTime.wDay, SysTime.wYear, SysTime.wHour, SysTime.wMinute);
 	printf("=======================================================================\n\n");
 	printf("Initializing server...\n\n");
@@ -262,9 +263,9 @@ void DrainErrorQueue()
 	hb::shared::net::SocketErrorEvent evt;
 	while (G_errorQueue.Pop(evt)) {
 		// Determine if this is a game client or login client
-		// Game clients have positive indices 1..DEF_MAXCLIENTS-1
-		// Login clients have negative indices (-1 to -DEF_MAXCLIENTLOGINSOCK)
-		if (evt.iSocketIndex > 0 && evt.iSocketIndex < DEF_MAXCLIENTS) {
+		// Game clients have positive indices 1..MaxClients-1
+		// Login clients have negative indices (-1 to -MaxClientLoginSock)
+		if (evt.iSocketIndex > 0 && evt.iSocketIndex < MaxClients) {
 			if (G_pGame->m_pClientList[evt.iSocketIndex] != nullptr) {
 				std::snprintf(G_cTxt, sizeof(G_cTxt),
 					"<%d> Client Disconnected! Async error=%d (%s) CharName=%s",
@@ -278,7 +279,7 @@ void DrainErrorQueue()
 		else if (evt.iSocketIndex < 0) {
 			// Login client: index is -(loginClientH + 1)
 			int loginH = -(evt.iSocketIndex + 1);
-			if (loginH >= 0 && loginH < DEF_MAXCLIENTLOGINSOCK) {
+			if (loginH >= 0 && loginH < MaxClientLoginSock) {
 				G_pGame->DeleteLoginClient(loginH);
 			}
 		}
@@ -290,7 +291,7 @@ void PollLoginClients()
 {
 	if (G_pGame == nullptr) return;
 
-	for(int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
+	for(int i = 0; i < MaxClientLoginSock; i++) {
 		if (G_pGame->_lclients[i] != nullptr && G_pGame->_lclients[i]->_sock != nullptr) {
 			G_pGame->OnLoginClientSocketEvent(i);
 		}
@@ -328,7 +329,7 @@ WPARAM EventLoop()
 
 				// Run game logic every 300ms (same as old timer)
 				// GameProcess calls NpcProcess which now polls sockets during entity processing
-				if (dwNow - dwLastGameProcess >= (300/ DEF_GAMETICK_MULTIPLER)) {
+				if (dwNow - dwLastGameProcess >= (300/ hb::server::config::GameTickMultiplier)) {
 					G_pGame->GameProcess();
 					dwLastGameProcess = dwNow;
 				}
@@ -350,10 +351,10 @@ WPARAM EventLoop()
 				if (dwNow - dwLastDebug > 60000) {
 					int activeClients = 0;
 					int activeLoginClients = 0;
-					for(int i = 1; i < DEF_MAXCLIENTS; i++) {
+					for(int i = 1; i < MaxClients; i++) {
 						if (G_pGame->m_pClientList[i] != nullptr) activeClients++;
 					}
-					for(int i = 0; i < DEF_MAXCLIENTLOGINSOCK; i++) {
+					for(int i = 0; i < MaxClientLoginSock; i++) {
 						if (G_pGame->_lclients[i] != nullptr) activeLoginClients++;
 					}
 					dwLastDebug = dwNow;
@@ -386,12 +387,12 @@ void Initialize()
 	GetServerConsole().Init();
 
 	// ���� ����� Ÿ�̸�
-	G_mmTimer = _StartTimer((300 / DEF_GAMETICK_MULTIPLER));
+	G_mmTimer = _StartTimer((300 / hb::server::config::GameTickMultiplier));
 
-	G_pListenSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pListenSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
 	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
 
-	G_pLoginSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pLoginSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), ServerSocketBlockLimit);
 	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
 
 	// Start async accept on both listen sockets

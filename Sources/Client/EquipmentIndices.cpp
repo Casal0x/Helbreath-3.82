@@ -2,6 +2,7 @@
 #include "EntityRenderState.h"
 #include "SpriteID.h"
 #include "ConfigManager.h"
+using namespace hb::client::sprite_id;
 
 EquipmentIndices EquipmentIndices::CalcPlayer(const CEntityRenderState& state, int bodyPose, int weaponPose, int shieldPose)
 {
@@ -10,16 +11,16 @@ EquipmentIndices EquipmentIndices::CalcPlayer(const CEntityRenderState& state, i
 	bool isFemale = state.IsFemale();
 
 	// Gender-specific sprite base IDs
-	int UNDIES  = isFemale ? DEF_SPRID_UNDIES_W    : DEF_SPRID_UNDIES_M;
-	int HAIR    = isFemale ? DEF_SPRID_HAIR_W      : DEF_SPRID_HAIR_M;
-	int ARMOR   = isFemale ? DEF_SPRID_BODYARMOR_W : DEF_SPRID_BODYARMOR_M;
-	int BERK    = isFemale ? DEF_SPRID_BERK_W      : DEF_SPRID_BERK_M;
-	int LEGG    = isFemale ? DEF_SPRID_LEGG_W      : DEF_SPRID_LEGG_M;
-	int BOOT    = isFemale ? DEF_SPRID_BOOT_W      : DEF_SPRID_BOOT_M;
-	int WEAPON  = isFemale ? DEF_SPRID_WEAPON_W    : DEF_SPRID_WEAPON_M;
-	int SHIELD  = isFemale ? DEF_SPRID_SHIELD_W    : DEF_SPRID_SHIELD_M;
-	int MANTLE  = isFemale ? DEF_SPRID_MANTLE_W    : DEF_SPRID_MANTLE_M;
-	int HEAD    = isFemale ? DEF_SPRID_HEAD_W      : DEF_SPRID_HEAD_M;
+	int UNDIES  = isFemale ? UndiesW    : UndiesM;
+	int HAIR    = isFemale ? HairW      : HairM;
+	int ARMOR   = isFemale ? BodyArmorW : BodyArmorM;
+	int BERK    = isFemale ? BerkW      : BerkM;
+	int LEGG    = isFemale ? LeggW      : LeggM;
+	int BOOT    = isFemale ? BootW      : BootM;
+	int WEAPON  = isFemale ? WeaponW    : WeaponM;
+	int SHIELD  = isFemale ? ShieldW    : ShieldM;
+	int MANTLE  = isFemale ? MantleW    : MantleM;
+	int HEAD    = isFemale ? HeadW      : HeadM;
 
 	// Body index
 	eq.iBodyIndex = 500 + (state.m_sOwnerType - 1) * 8 * 15 + (bodyPose * 8);
@@ -63,7 +64,7 @@ EquipmentIndices EquipmentIndices::CalcNpc(const CEntityRenderState& state, int 
 {
 	EquipmentIndices eq = {};
 
-	eq.iBodyIndex      = DEF_SPRID_MOB + (state.m_sOwnerType - 10) * 8 * 7 + (npcPose * 8);
+	eq.iBodyIndex      = Mob + (state.m_sOwnerType - 10) * 8 * 7 + (npcPose * 8);
 	eq.iUndiesIndex    = -1;
 	eq.iHairIndex      = -1;
 	eq.iBodyArmorIndex = -1;

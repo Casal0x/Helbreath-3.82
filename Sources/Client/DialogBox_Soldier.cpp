@@ -9,6 +9,7 @@
 #include "TextLibExt.h"
 
 using namespace hb::shared::net;
+using namespace hb::client::sprite_id;
 DialogBox_Soldier::DialogBox_Soldier(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeSoldier, pGame)
 {
@@ -35,9 +36,9 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 	sY = Info().sY;
 	szX = Info().sSizeX;
 
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY - 5, 0, false, ConfigManager::Get().IsDialogTransparencyEnabled());
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
-	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_TEXT, sX, sY, 17, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+	DrawNewDialogBox(InterfaceNdCrusade, sX, sY - 5, 0, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+	DrawNewDialogBox(InterfaceNdCrusade, sX, sY, 21, false, ConfigManager::Get().IsDialogTransparencyEnabled());
+	DrawNewDialogBox(InterfaceNdText, sX, sY, 17, false, ConfigManager::Get().IsDialogTransparencyEnabled());
 
 	switch (Info().cMode) {
 	case 0: // Main dlg, Map
@@ -54,16 +55,16 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 15);
+			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20, sY + 340, 15);
 		}
-		else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 1);
+		else m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20, sY + 340, 1);
 
 		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
+			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
 		}
-		else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
+		else m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
 
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
@@ -82,23 +83,23 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 15);
+			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20, sY + 340, 15);
 		}
-		else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20, sY + 340, 1);
+		else m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20, sY + 340, 1);
 
 		if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74 - 50, sY + 340, 19);
+			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74 - 50, sY + 340, 19);
 		}
-		else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74 - 50, sY + 340, 20);
+		else m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74 - 50, sY + 340, 20);
 
 		if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
+			m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74, sY + 340, 18);
 		}
-		else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_CRUSADE]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
+		else m_pGame->m_pSprite[InterfaceNdCrusade]->Draw(sX + 20 + 150 + 74, sY + 340, 4);
 
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
@@ -158,7 +159,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 					tY = (int)dV3;
 					switch (m_pGame->m_stCrusadeStructureInfo[i].cType) {
 					case 42:
-						DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 40);
+						DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 40);
 						break;
 					}
 				}
@@ -172,7 +173,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 				dV2 = (double)m_pGame->m_iTeleportLocY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 42, false, true);
+				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 42, false, true);
 			}
 			if (strcmp(m_pGame->m_cMapName, "middleland") == 0)
 			{
@@ -184,7 +185,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 				dV2 = (double)m_pGame->m_pPlayer->m_sPlayerY;
 				dV3 = (dV2 * (double)szY) / dV1;
 				tY = (int)dV3;
-				DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_CRUSADE, sX + tX + 15, sY + tY + 60, 43);
+				DrawNewDialogBox(InterfaceNdCrusade, sX + tX + 15, sY + tY + 60, 43);
 			}
 		}
 		if ((msX >= sX + 15) && (msX <= sX + 15 + 278)

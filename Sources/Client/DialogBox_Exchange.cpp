@@ -7,6 +7,7 @@
 
 using namespace hb::shared::net;
 using namespace hb::shared::item;
+using namespace hb::client::sprite_id;
 
 DialogBox_Exchange::DialogBox_Exchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::Exchange, pGame)
@@ -21,7 +22,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 	short sY = Info().sY;
 	short szX = Info().sSizeX;
 
-	m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWEXCHANGE, sX, sY, 0);
+	m_pGame->DrawNewDialogBox(InterfaceNdNewExchange, sX, sY, 0);
 
 	switch (Info().cMode) {
 	case 1: // Not yet confirmed exchange
@@ -98,7 +99,7 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 		if (m_pGame->m_stDialogBoxExchangeInfo[i].sV1 != -1) {
 			cItemColor = m_pGame->m_stDialogBoxExchangeInfo[i].sV4;
 			if (cItemColor == 0) {
-				m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2);
+				m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2);
 			}
 			else {
 				switch (m_pGame->m_stDialogBoxExchangeInfo[i].sV1) {
@@ -107,10 +108,10 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+					m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 					break;
 				default:
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+					m_pGame->m_pSprite[ItemPackPivotPoint + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 					break;
 				}
 			}
