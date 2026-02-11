@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PacketHeaders.h"
-#include "../Appearance.h"
-#include "../PlayerStatusData.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -29,8 +29,8 @@ namespace net {
 		std::int16_t type;
 		std::uint8_t dir;
 		char name[10];
-		PlayerAppearance appearance;
-		PlayerStatus status;
+		hb::shared::entity::PlayerAppearance appearance;
+		hb::shared::entity::PlayerStatus status;
 		std::uint8_t padding;
 	};
 

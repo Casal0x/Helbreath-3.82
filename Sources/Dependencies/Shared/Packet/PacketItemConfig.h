@@ -18,7 +18,7 @@ HB_PACK_BEGIN
 struct HB_PACKED PacketItemConfigEntry
 {
 	int16_t  itemId;                // Item ID number
-	char     name[DEF_ITEMNAME];    // Item display name (fixed size, null-padded)
+	char     name[hb::shared::limits::ItemNameLen];    // Item display name (fixed size, null-padded)
 	int8_t   itemType;              // Item type (see ItemType enum)
 	int8_t   equipPos;              // Equipment position (see EquipPos enum)
 	int16_t  effectType;            // Primary effect type
@@ -56,7 +56,7 @@ HB_PACK_END
 HB_PACK_BEGIN
 struct HB_PACKED PacketItemConfigHeader
 {
-	PacketHeader header;            // Standard packet header (msg_id = MSGID_ITEMCONFIGURATIONCONTENTS)
+	PacketHeader header;            // Standard packet header (msg_id = hb::shared::net::MsgId::ItemConfigContents)
 	uint16_t     itemCount;         // Number of items in this packet
 	uint16_t     totalItems;        // Total items across all packets (0 if unknown/single packet)
 	uint16_t     packetIndex;       // Index of this packet (0-based, for multi-packet sends)

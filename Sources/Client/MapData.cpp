@@ -14,13 +14,20 @@
 #include <cstdio>
 #include <string_view>
 
+
+
+using namespace hb::shared::net;
+namespace dynamic_object = hb::shared::dynamic_object;
+
+using namespace hb::shared::action;
+
 namespace
 {
 	const uint32_t DEF_FULLDATA_REQUEST_INTERVAL = 2000;
-	uint32_t g_dwLastFullDataRequestTime[hb::objectid::NpcMax];
+	uint32_t g_dwLastFullDataRequestTime[hb::shared::object_id::NpcMax];
 	bool ShouldRequestFullData(uint16_t wObjectID, int sX, int sY)
 	{
-		if (hb::objectid::IsNearbyOffset(wObjectID)) return false;
+		if (hb::shared::object_id::IsNearbyOffset(wObjectID)) return false;
 		if (sX != -1 || sY != -1) return true;
 
 		uint32_t dwNow = GameClock::GetTimeMS();
@@ -46,771 +53,771 @@ CMapData::CMapData(class CGame* pGame)
 
 	for (i = 0; i < DEF_TOTALCHARACTERS; i++)
 	{
-		m_stFrame[i][DEF_OBJECTMOVE].m_sMaxFrame = 7;
+		m_stFrame[i][Type::Move].m_sMaxFrame = 7;
 	}
 	for (i = 1; i <= 6; i++)
 	{
 		// Original Helbreath 3.82 timing values
-		m_stFrame[i][DEF_OBJECTSTOP].m_sMaxFrame = 14;
-		m_stFrame[i][DEF_OBJECTSTOP].m_sFrameTime = 60;
-		m_stFrame[i][DEF_OBJECTMOVE].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTMOVE].m_sFrameTime = 70;
-		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sMaxFrame = 3;
-		m_stFrame[i][DEF_OBJECTDAMAGEMOVE].m_sFrameTime = 50;
-		m_stFrame[i][DEF_OBJECTRUN].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTRUN].m_sFrameTime = 39;
-		m_stFrame[i][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTATTACK].m_sFrameTime = 78;
-		m_stFrame[i][DEF_OBJECTATTACKMOVE].m_sMaxFrame = 12;
-		m_stFrame[i][DEF_OBJECTATTACKMOVE].m_sFrameTime = 78;
-		m_stFrame[i][DEF_OBJECTMAGIC].m_sMaxFrame = 15;
-		m_stFrame[i][DEF_OBJECTMAGIC].m_sFrameTime = 88;
-		m_stFrame[i][DEF_OBJECTGETITEM].m_sMaxFrame = 3;
-		m_stFrame[i][DEF_OBJECTGETITEM].m_sFrameTime = 150;
-		m_stFrame[i][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-		m_stFrame[i][DEF_OBJECTDAMAGE].m_sFrameTime = 70;
-		m_stFrame[i][DEF_OBJECTDYING].m_sMaxFrame = 12;
-		m_stFrame[i][DEF_OBJECTDYING].m_sFrameTime = 80;
+		m_stFrame[i][Type::Stop].m_sMaxFrame = 14;
+		m_stFrame[i][Type::Stop].m_sFrameTime = 60;
+		m_stFrame[i][Type::Move].m_sMaxFrame = 7;
+		m_stFrame[i][Type::Move].m_sFrameTime = 70;
+		m_stFrame[i][Type::DamageMove].m_sMaxFrame = 3;
+		m_stFrame[i][Type::DamageMove].m_sFrameTime = 50;
+		m_stFrame[i][Type::Run].m_sMaxFrame = 7;
+		m_stFrame[i][Type::Run].m_sFrameTime = 39;
+		m_stFrame[i][Type::Attack].m_sMaxFrame = 7;
+		m_stFrame[i][Type::Attack].m_sFrameTime = 78;
+		m_stFrame[i][Type::AttackMove].m_sMaxFrame = 12;
+		m_stFrame[i][Type::AttackMove].m_sFrameTime = 78;
+		m_stFrame[i][Type::Magic].m_sMaxFrame = 15;
+		m_stFrame[i][Type::Magic].m_sFrameTime = 88;
+		m_stFrame[i][Type::GetItem].m_sMaxFrame = 3;
+		m_stFrame[i][Type::GetItem].m_sFrameTime = 150;
+		m_stFrame[i][Type::Damage].m_sMaxFrame = 7;
+		m_stFrame[i][Type::Damage].m_sFrameTime = 70;
+		m_stFrame[i][Type::Dying].m_sMaxFrame = 12;
+		m_stFrame[i][Type::Dying].m_sFrameTime = 80;
 	}
 
-	m_stFrame[hb::owner::Slime][DEF_OBJECTSTOP].m_sFrameTime = 240;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTMOVE].m_sFrameTime = 63;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTATTACK].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTDYING].m_sFrameTime = 240;
-	m_stFrame[hb::owner::Slime][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTSTOP].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTATTACK].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Skeleton][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTSTOP].m_sFrameTime = 210;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::StoneGolem][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTSTOP].m_sFrameTime = 210;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTATTACK].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Cyclops][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTSTOP].m_sFrameTime = 180;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::OrcMage][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTSTOP].m_sFrameTime = 180;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTATTACK].m_sFrameTime = 150;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTDAMAGE].m_sFrameTime = 180;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::ShopKeeper][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTSTOP].m_sFrameTime = 120;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::GiantAnt][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTSTOP].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTMOVE].m_sFrameTime = 40;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Scorpion][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTSTOP].m_sFrameTime = 210;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTMOVE].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTATTACK].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Zombie][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTATTACK].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTDAMAGE].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Gandalf][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTATTACK].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTDAMAGE].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Howard][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Guard][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Amphis][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::ClayGolem][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Tom][DEF_OBJECTSTOP].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Tom][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::William][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::William][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Kennedy][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Kennedy][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTMOVE].m_sFrameTime = 50;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Hellhound][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTATTACK].m_sMaxFrame = 5;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Troll][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTATTACK].m_sMaxFrame = 5;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Ogre][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTATTACK].m_sMaxFrame = 5;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Liche][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Demon][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Unicorn][DEF_OBJECTDYING].m_sMaxFrame = 11;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::WereWolf][DEF_OBJECTDYING].m_sMaxFrame = 11;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTSTOP].m_sFrameTime = 240;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTATTACK].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTDYING].m_sFrameTime = 240;
-	m_stFrame[hb::owner::Dummy][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTSTOP].m_sFrameTime = 80;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTSTOP].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTMOVE].m_sFrameTime = 20;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTMOVE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTDAMAGE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTDYING].m_sFrameTime = 80;
-	m_stFrame[hb::owner::EnergySphere][DEF_OBJECTDYING].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::ArrowGuardTower][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::CannonGuardTower][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::ManaCollector][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Detector][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::EnergyShield][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::GrandMagicGenerator][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTMOVE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::ManaStone][DEF_OBJECTDYING].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::LightWarBeetle][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GodsHandKnight][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GodsHandKnightCK][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::TempleKnight][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::BattleGolem][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Stalker][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::HellClaw][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTDAMAGE].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::TigerWorm][DEF_OBJECTDYING].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTSTOP].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTATTACK].m_sMaxFrame = 4;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTDAMAGE].m_sMaxFrame = 0;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Catapult][DEF_OBJECTDYING].m_sMaxFrame = 6;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTATTACK].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTATTACK].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Gargoyle][DEF_OBJECTDYING].m_sMaxFrame = 11 + 3;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTATTACK].m_sMaxFrame = 12;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTDYING].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Beholder][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTATTACK].m_sMaxFrame = 9;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[hb::owner::DarkElf][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTMOVE].m_sFrameTime = 30;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Bunny][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Cat][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTSTOP].m_sFrameTime = 300;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTMOVE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GiantFrog][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::MountainGiant][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Ettin][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::CannibalPlant][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Rudolph][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTATTACK].m_sFrameTime = 60;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::DireBoar][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTMOVE].m_sFrameTime = 55;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Frost][DEF_OBJECTDYING].m_sMaxFrame = 5 + 3;//7 +3;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTSTOP].m_sMaxFrame = 40;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTMOVE].m_sFrameTime = 160;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTATTACK].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTDAMAGE].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTDYING].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Crops][DEF_OBJECTDYING].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTMOVE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTATTACK].m_sFrameTime = 105;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::IceGolem][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTSTOP].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTMOVE].m_sFrameTime = 90;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTDYING].m_sFrameTime = 65;
-	m_stFrame[hb::owner::Wyvern][DEF_OBJECTDYING].m_sMaxFrame = 15 + 3;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTMOVE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTDYING].m_sFrameTime = 65;
-	m_stFrame[hb::owner::McGaffin][DEF_OBJECTDYING].m_sMaxFrame = 3 + 3;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTMOVE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTDYING].m_sFrameTime = 65;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTDYING].m_sMaxFrame = 3 + 3;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTSTOP].m_sFrameTime = 200;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Perry][DEF_OBJECTMOVE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTDAMAGE].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTDYING].m_sFrameTime = 65;
-	m_stFrame[hb::owner::Devlin][DEF_OBJECTDYING].m_sMaxFrame = 3 + 3;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Dragon][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Centaur][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTSTOP].m_sFrameTime = 100;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTATTACK].m_sFrameTime = 80;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTDAMAGE].m_sFrameTime = 60;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTDYING].m_sFrameTime = 65;
-	m_stFrame[hb::owner::ClawTurtle][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::FireWyvern][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GiantCrayfish][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GiLizard][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::GiTree][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::MasterOrc][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Minaus][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Nizie][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTDYING].m_sFrameTime = 150;
-	m_stFrame[hb::owner::Tentocle][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Abaddon][DEF_OBJECTDYING].m_sMaxFrame = 15 + 3;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Sorceress][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::ATK][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::MasterElf][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::DSK][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::HBT][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::CT][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::CT][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CT][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::CT][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::CT][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CT][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::CT][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::CT][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::CT][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Barbarian][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTMOVE].m_sFrameTime = 70;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTATTACK].m_sFrameTime = 100;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::AGC][DEF_OBJECTDYING].m_sMaxFrame = 10;
-	m_stFrame[hb::owner::Gail][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Gail][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTDAMAGE].m_sFrameTime = 100;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::Gate][DEF_OBJECTDYING].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Slime][Type::Stop].m_sFrameTime = 240;
+	m_stFrame[hb::shared::owner::Slime][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Slime][Type::Move].m_sFrameTime = 63;
+	m_stFrame[hb::shared::owner::Slime][Type::Attack].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Slime][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Slime][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Slime][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Slime][Type::Dying].m_sFrameTime = 240;
+	m_stFrame[hb::shared::owner::Slime][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Stop].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Attack].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Skeleton][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Stop].m_sFrameTime = 210;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::StoneGolem][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Stop].m_sFrameTime = 210;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Attack].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Cyclops][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Stop].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::OrcMage][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Stop].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Attack].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Damage].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::ShopKeeper][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Stop].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::GiantAnt][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Stop].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Move].m_sFrameTime = 40;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Scorpion][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Zombie][Type::Stop].m_sFrameTime = 210;
+	m_stFrame[hb::shared::owner::Zombie][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Zombie][Type::Move].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Zombie][Type::Attack].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Zombie][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Zombie][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Zombie][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Zombie][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Zombie][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Attack].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Damage].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Gandalf][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Howard][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Howard][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Howard][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Howard][Type::Attack].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Howard][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Howard][Type::Damage].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Howard][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Howard][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Howard][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Guard][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Guard][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Guard][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Guard][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Guard][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Guard][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Guard][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Guard][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Guard][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Amphis][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Amphis][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Amphis][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Amphis][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Amphis][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Amphis][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Amphis][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Amphis][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Amphis][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::ClayGolem][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Tom][Type::Stop].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Tom][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::William][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::William][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Kennedy][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Kennedy][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Move].m_sFrameTime = 50;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Hellhound][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Troll][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Troll][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Troll][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Troll][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Troll][Type::Attack].m_sMaxFrame = 5;
+	m_stFrame[hb::shared::owner::Troll][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Troll][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Troll][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Troll][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Ogre][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Ogre][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Ogre][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Ogre][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Ogre][Type::Attack].m_sMaxFrame = 5;
+	m_stFrame[hb::shared::owner::Ogre][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Ogre][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Ogre][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Ogre][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Liche][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Liche][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Liche][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Liche][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Liche][Type::Attack].m_sMaxFrame = 5;
+	m_stFrame[hb::shared::owner::Liche][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Liche][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Liche][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Liche][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Demon][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Demon][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Demon][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Demon][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Demon][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Demon][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Demon][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Demon][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Demon][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Unicorn][Type::Dying].m_sMaxFrame = 11;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Move].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::WereWolf][Type::Dying].m_sMaxFrame = 11;
+	m_stFrame[hb::shared::owner::Dummy][Type::Stop].m_sFrameTime = 240;
+	m_stFrame[hb::shared::owner::Dummy][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Dummy][Type::Move].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Dummy][Type::Attack].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Dummy][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Dummy][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Dummy][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Dummy][Type::Dying].m_sFrameTime = 240;
+	m_stFrame[hb::shared::owner::Dummy][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Stop].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Stop].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Move].m_sFrameTime = 20;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Move].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Damage].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Dying].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::EnergySphere][Type::Dying].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::ArrowGuardTower][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::CannonGuardTower][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::ManaCollector][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::Detector][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Detector][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::Detector][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Detector][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::Detector][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Detector][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Detector][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Detector][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::Detector][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Detector][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::EnergyShield][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::GrandMagicGenerator][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Move].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::ManaStone][Type::Dying].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::LightWarBeetle][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GodsHandKnight][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GodsHandKnightCK][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::TempleKnight][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::BattleGolem][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Stalker][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Stalker][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Stalker][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Stalker][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Stalker][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Stalker][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Stalker][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Stalker][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Stalker][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::HellClaw][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Damage].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::TigerWorm][Type::Dying].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Catapult][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Catapult][Type::Stop].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::Catapult][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Catapult][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Catapult][Type::Attack].m_sMaxFrame = 4;
+	m_stFrame[hb::shared::owner::Catapult][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Catapult][Type::Damage].m_sMaxFrame = 0;
+	m_stFrame[hb::shared::owner::Catapult][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Catapult][Type::Dying].m_sMaxFrame = 6;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Attack].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Attack].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Gargoyle][Type::Dying].m_sMaxFrame = 11 + 3;
+	m_stFrame[hb::shared::owner::Beholder][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Beholder][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Beholder][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Beholder][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Beholder][Type::Attack].m_sMaxFrame = 12;
+	m_stFrame[hb::shared::owner::Beholder][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Beholder][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Beholder][Type::Dying].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Beholder][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Attack].m_sMaxFrame = 9;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::DarkElf][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Bunny][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Bunny][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Bunny][Type::Move].m_sFrameTime = 30;
+	m_stFrame[hb::shared::owner::Bunny][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Bunny][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Bunny][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Bunny][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Bunny][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Bunny][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Cat][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Cat][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Cat][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Cat][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Cat][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Cat][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Cat][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Cat][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Cat][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Stop].m_sFrameTime = 300;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Move].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GiantFrog][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::MountainGiant][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Ettin][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Ettin][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Ettin][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Ettin][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Ettin][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Ettin][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Ettin][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Ettin][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Ettin][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Move].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::CannibalPlant][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Rudolph][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Attack].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::DireBoar][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Frost][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Frost][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Frost][Type::Move].m_sFrameTime = 55;
+	m_stFrame[hb::shared::owner::Frost][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Frost][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Frost][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Frost][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Frost][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Frost][Type::Dying].m_sMaxFrame = 5 + 3;//7 +3;
+	m_stFrame[hb::shared::owner::Crops][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Crops][Type::Stop].m_sMaxFrame = 40;
+	m_stFrame[hb::shared::owner::Crops][Type::Move].m_sFrameTime = 160;
+	m_stFrame[hb::shared::owner::Crops][Type::Attack].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Crops][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Crops][Type::Damage].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Crops][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Crops][Type::Dying].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Crops][Type::Dying].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Move].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Attack].m_sFrameTime = 105;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::IceGolem][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Stop].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Move].m_sFrameTime = 90;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Dying].m_sFrameTime = 65;
+	m_stFrame[hb::shared::owner::Wyvern][Type::Dying].m_sMaxFrame = 15 + 3;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Move].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Perry][Type::Move].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Dying].m_sFrameTime = 65;
+	m_stFrame[hb::shared::owner::McGaffin][Type::Dying].m_sMaxFrame = 3 + 3;
+	m_stFrame[hb::shared::owner::Perry][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Perry][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Perry][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Perry][Type::Move].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Perry][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Perry][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Perry][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Perry][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Perry][Type::Dying].m_sFrameTime = 65;
+	m_stFrame[hb::shared::owner::Perry][Type::Dying].m_sMaxFrame = 3 + 3;
+	m_stFrame[hb::shared::owner::Devlin][Type::Stop].m_sFrameTime = 200;
+	m_stFrame[hb::shared::owner::Devlin][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Devlin][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Perry][Type::Move].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Devlin][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::Devlin][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Devlin][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::Devlin][Type::Damage].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::Devlin][Type::Dying].m_sFrameTime = 65;
+	m_stFrame[hb::shared::owner::Devlin][Type::Dying].m_sMaxFrame = 3 + 3;
+	m_stFrame[hb::shared::owner::Dragon][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Dragon][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Dragon][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Dragon][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Dragon][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Dragon][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Dragon][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Dragon][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Dragon][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Centaur][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Centaur][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Centaur][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Centaur][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Centaur][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Centaur][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Centaur][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Centaur][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Centaur][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Stop].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Attack].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Damage].m_sFrameTime = 60;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Dying].m_sFrameTime = 65;
+	m_stFrame[hb::shared::owner::ClawTurtle][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::FireWyvern][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GiantCrayfish][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GiLizard][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::GiTree][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::GiTree][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiTree][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::GiTree][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiTree][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiTree][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::GiTree][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::GiTree][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::GiTree][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::MasterOrc][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Minaus][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Minaus][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Minaus][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Minaus][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Minaus][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Minaus][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Minaus][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Minaus][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Minaus][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Nizie][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Nizie][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Nizie][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Nizie][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Nizie][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Nizie][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Nizie][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Nizie][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Nizie][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Dying].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::Tentocle][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Abaddon][Type::Dying].m_sMaxFrame = 15 + 3;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Sorceress][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::ATK][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::ATK][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ATK][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::ATK][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::ATK][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ATK][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::ATK][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::ATK][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::ATK][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::MasterElf][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::DSK][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::DSK][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DSK][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::DSK][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::DSK][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DSK][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::DSK][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::DSK][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::DSK][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::HBT][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::HBT][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::HBT][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::HBT][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::HBT][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::HBT][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::HBT][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::HBT][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::HBT][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::CT][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::CT][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CT][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::CT][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::CT][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CT][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::CT][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::CT][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::CT][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Barbarian][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::AGC][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::AGC][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AGC][Type::Move].m_sFrameTime = 70;
+	m_stFrame[hb::shared::owner::AGC][Type::Attack].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::AGC][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AGC][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::AGC][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AGC][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::AGC][Type::Dying].m_sMaxFrame = 10;
+	m_stFrame[hb::shared::owner::Gail][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Gail][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gate][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[hb::shared::owner::Gate][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gate][Type::Damage].m_sFrameTime = 100;
+	m_stFrame[hb::shared::owner::Gate][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::Gate][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::Gate][Type::Dying].m_sMaxFrame = 10;
 
-	m_stFrame[99][DEF_OBJECTSTOP].m_sFrameTime = 250;
-	m_stFrame[99][DEF_OBJECTSTOP].m_sMaxFrame = 3;
-	m_stFrame[99][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[99][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[99][DEF_OBJECTATTACK].m_sMaxFrame = 7;
-	m_stFrame[99][DEF_OBJECTDAMAGE].m_sFrameTime = 120;
-	m_stFrame[99][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[99][DEF_OBJECTDYING].m_sFrameTime = 100;
-	m_stFrame[99][DEF_OBJECTDYING].m_sMaxFrame = 9;
+	m_stFrame[99][Type::Stop].m_sFrameTime = 250;
+	m_stFrame[99][Type::Stop].m_sMaxFrame = 3;
+	m_stFrame[99][Type::Move].m_sFrameTime = 80;
+	m_stFrame[99][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[99][Type::Attack].m_sMaxFrame = 7;
+	m_stFrame[99][Type::Damage].m_sFrameTime = 120;
+	m_stFrame[99][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[99][Type::Dying].m_sFrameTime = 100;
+	m_stFrame[99][Type::Dying].m_sMaxFrame = 9;
 
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTSTOP].m_sFrameTime = 40;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTSTOP].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTMOVE].m_sFrameTime = 80;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTATTACK].m_sFrameTime = 120;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTATTACK].m_sMaxFrame = 3;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTDAMAGE].m_sFrameTime = 150;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTDAMAGE].m_sMaxFrame = 7;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTDYING].m_sFrameTime = 180;
-	m_stFrame[hb::owner::AirElemental][DEF_OBJECTDYING].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Stop].m_sFrameTime = 40;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Stop].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Move].m_sFrameTime = 80;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Attack].m_sFrameTime = 120;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Attack].m_sMaxFrame = 3;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Damage].m_sFrameTime = 150;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Damage].m_sMaxFrame = 7;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Dying].m_sFrameTime = 180;
+	m_stFrame[hb::shared::owner::AirElemental][Type::Dying].m_sMaxFrame = 7;
 
 }
 
@@ -826,7 +833,7 @@ void CMapData::Init()
 		for (y = 0; y < MAPDATASIZEY; y++)
 			m_pData[x][y].Clear();
 
-	for (x = 0; x < hb::objectid::NpcMax; x++) {
+	for (x = 0; x < hb::shared::object_id::NpcMax; x++) {
 		m_iObjectIDcacheLocX[x] = 0;
 		m_iObjectIDcacheLocY[x] = 0;
 	}
@@ -920,54 +927,54 @@ void CMapData::ShiftMapData(char cDir)
 
 	switch (cDir) {
 	case 1: // North
-		for (ix = 0; ix < DEF_INITDATA_TILES_X + 1; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
 		m_sPivotY--;
 		break;
 	case 2: // NE
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
 		m_sPivotX++;
 		m_sPivotY--;
 		break;
 	case 3: // East
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y + 1; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
 		m_sPivotX++;
 		break;
 	case 4: // SE
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
 		m_sPivotX++;
 		m_sPivotY++;
 		break;
 	case 5: // South
-		for (ix = 0; ix < DEF_INITDATA_TILES_X + 1; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX + 1; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
 		m_sPivotY++;
 		break;
 	case 6: // SW
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + 1 + iy], sizeof(class CTile));
 		m_sPivotX--;
 		m_sPivotY++;
 		break;
 	case 7: // West
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y + 1; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY + 1; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
 		m_sPivotX--;
 		break;
 	case 8: // NW
-		for (ix = 0; ix < DEF_INITDATA_TILES_X; ix++)
-			for (iy = 0; iy < DEF_INITDATA_TILES_Y; iy++)
-				memcpy(&m_pTmpData[DEF_MAPDATA_BUFFER_Y + ix][DEF_MAPDATA_BUFFER_Y + 1 + iy], &m_pData[DEF_MAPDATA_BUFFER_X + ix][DEF_MAPDATA_BUFFER_Y + iy], sizeof(class CTile));
+		for (ix = 0; ix < hb::shared::view::InitDataTilesX; ix++)
+			for (iy = 0; iy < hb::shared::view::InitDataTilesY; iy++)
+				memcpy(&m_pTmpData[hb::shared::view::MapDataBufferY + ix][hb::shared::view::MapDataBufferY + 1 + iy], &m_pData[hb::shared::view::MapDataBufferX + ix][hb::shared::view::MapDataBufferY + iy], sizeof(class CTile));
 		m_sPivotX--;
 		m_sPivotY--;
 		break;
@@ -986,45 +993,45 @@ bool CMapData::bGetIsLocateable(short sX, short sY)
 	if (dX <= 0 || dY <= 0) return false;
 	if (m_pData[dX][dY].m_sOwnerType != 0) return false;
 	if (m_tile[sX][sY].m_bIsMoveAllowed == false) return false;
-	if (m_pData[dX][dY].m_sDynamicObjectType == DEF_DYNAMICOBJECT_MINERAL1) return false; // 4
-	if (m_pData[dX][dY].m_sDynamicObjectType == DEF_DYNAMICOBJECT_MINERAL2) return false; // 5
+	if (m_pData[dX][dY].m_sDynamicObjectType == dynamic_object::Mineral1) return false; // 4
+	if (m_pData[dX][dY].m_sDynamicObjectType == dynamic_object::Mineral2) return false; // 5
 
-	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::owner::Wyvern) return false;
-	if (m_pData[dX + 1][dY].m_sOwnerType == hb::owner::Wyvern) return false;
-	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::owner::Wyvern)) return false;
-	if (m_pData[dX][dY + 1].m_sOwnerType == hb::owner::Wyvern) return false;
-	if (m_pData[dX][dY].m_sOwnerType == hb::owner::Wyvern) return false;
-	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::owner::Wyvern)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::owner::Wyvern)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::owner::Wyvern)) return false;
-	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::owner::Wyvern)) return false;
-	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::owner::FireWyvern) return false;
-	if (m_pData[dX + 1][dY].m_sOwnerType == hb::owner::FireWyvern) return false;
-	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::owner::FireWyvern)) return false;
-	if (m_pData[dX][dY + 1].m_sOwnerType == hb::owner::FireWyvern) return false;
-	if (m_pData[dX][dY].m_sOwnerType == hb::owner::FireWyvern) return false;
-	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::owner::FireWyvern)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::owner::FireWyvern)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::owner::FireWyvern)) return false;
-	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::owner::FireWyvern)) return false;
-	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::owner::Abaddon) return false;
-	if (m_pData[dX + 1][dY].m_sOwnerType == hb::owner::Abaddon) return false;
-	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::owner::Abaddon)) return false;
-	if (m_pData[dX][dY + 1].m_sOwnerType == hb::owner::Abaddon) return false;
-	if (m_pData[dX][dY].m_sOwnerType == hb::owner::Abaddon) return false;
-	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::owner::Abaddon)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::owner::Abaddon)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::owner::Abaddon)) return false;
-	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::owner::Abaddon)) return false;
-	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::owner::Gate) return false;
-	if (m_pData[dX + 1][dY].m_sOwnerType == hb::owner::Gate) return false;
-	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::owner::Gate)) return false;
-	if (m_pData[dX][dY + 1].m_sOwnerType == hb::owner::Gate) return false;
-	if (m_pData[dX][dY].m_sOwnerType == hb::owner::Gate) return false;
-	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::owner::Gate)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::owner::Gate)) return false;
-	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::owner::Gate)) return false;
-	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::owner::Gate)) return false;
+	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::shared::owner::Wyvern) return false;
+	if (m_pData[dX + 1][dY].m_sOwnerType == hb::shared::owner::Wyvern) return false;
+	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::shared::owner::Wyvern)) return false;
+	if (m_pData[dX][dY + 1].m_sOwnerType == hb::shared::owner::Wyvern) return false;
+	if (m_pData[dX][dY].m_sOwnerType == hb::shared::owner::Wyvern) return false;
+	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::shared::owner::Wyvern)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::shared::owner::Wyvern)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::shared::owner::Wyvern)) return false;
+	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::shared::owner::Wyvern)) return false;
+	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::shared::owner::FireWyvern) return false;
+	if (m_pData[dX + 1][dY].m_sOwnerType == hb::shared::owner::FireWyvern) return false;
+	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::shared::owner::FireWyvern)) return false;
+	if (m_pData[dX][dY + 1].m_sOwnerType == hb::shared::owner::FireWyvern) return false;
+	if (m_pData[dX][dY].m_sOwnerType == hb::shared::owner::FireWyvern) return false;
+	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::shared::owner::FireWyvern)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::shared::owner::FireWyvern)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::shared::owner::FireWyvern)) return false;
+	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::shared::owner::FireWyvern)) return false;
+	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::shared::owner::Abaddon) return false;
+	if (m_pData[dX + 1][dY].m_sOwnerType == hb::shared::owner::Abaddon) return false;
+	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::shared::owner::Abaddon)) return false;
+	if (m_pData[dX][dY + 1].m_sOwnerType == hb::shared::owner::Abaddon) return false;
+	if (m_pData[dX][dY].m_sOwnerType == hb::shared::owner::Abaddon) return false;
+	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::shared::owner::Abaddon)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::shared::owner::Abaddon)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::shared::owner::Abaddon)) return false;
+	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::shared::owner::Abaddon)) return false;
+	if (m_pData[dX + 1][dY + 1].m_sOwnerType == hb::shared::owner::Gate) return false;
+	if (m_pData[dX + 1][dY].m_sOwnerType == hb::shared::owner::Gate) return false;
+	if ((dY > 0) && (m_pData[dX + 1][dY - 1].m_sOwnerType == hb::shared::owner::Gate)) return false;
+	if (m_pData[dX][dY + 1].m_sOwnerType == hb::shared::owner::Gate) return false;
+	if (m_pData[dX][dY].m_sOwnerType == hb::shared::owner::Gate) return false;
+	if ((dY > 0) && (m_pData[dX][dY - 1].m_sOwnerType == hb::shared::owner::Gate)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY + 1].m_sOwnerType == hb::shared::owner::Gate)) return false;
+	if ((dX > 0) && (m_pData[dX - 1][dY].m_sOwnerType == hb::shared::owner::Gate)) return false;
+	if ((dX > 0) && (dY > 0) && (m_pData[dX - 1][dY - 1].m_sOwnerType == hb::shared::owner::Gate)) return false;
 	return true;
 }
 
@@ -1038,7 +1045,7 @@ bool CMapData::bIsTeleportLoc(short sX, short sY)
 	return true;
 }
 
-bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, const PlayerAppearance& appearance, const PlayerStatus& status, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame, short npcConfigId)
+bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sType, int cDir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, char* pName, short sAction, short sV1, short sV2, short sV3, int iPreLoc, int iFrame, short npcConfigId)
 {
 	int   iX, iY, dX, dY;
 	int   iChatIndex, iAdd;
@@ -1047,8 +1054,8 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	int   iEffectType, iEffectFrame, iEffectTotalFrame;
 	bool  bUseAbsPos = false;
 	uint16_t wOriginalObjectID = wObjectID;
-	PlayerStatus localStatus = status;
-	PlayerAppearance localAppearance = appearance;
+	hb::shared::entity::PlayerStatus localStatus = status;
+	hb::shared::entity::PlayerAppearance localAppearance = appearance;
 	short localNpcConfigId = npcConfigId;
 	// Track old motion offset for seamless tile transitions during continuous movement
 	float fOldMotionOffsetX = 0.0f;
@@ -1061,16 +1068,16 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	std::snprintf(cTmpName, sizeof(cTmpName), "%s", pName);
 	dwTime = m_dwFrameTime;
 	iEffectType = iEffectFrame = iEffectTotalFrame = 0;
-	if ((hb::objectid::IsNearbyOffset(wObjectID)) &&
-		((sAction == DEF_OBJECTMOVE) || (sAction == DEF_OBJECTRUN) ||
-			(sAction == DEF_OBJECTDAMAGEMOVE) || (sAction == DEF_OBJECTDAMAGE) ||
-			(sAction == DEF_OBJECTDYING))) {
+	if ((hb::shared::object_id::IsNearbyOffset(wObjectID)) &&
+		((sAction == Type::Move) || (sAction == Type::Run) ||
+			(sAction == Type::DamageMove) || (sAction == Type::Damage) ||
+			(sAction == Type::Dying))) {
 		if ((sX >= m_sPivotX) && (sX < m_sPivotX + MAPDATASIZEX) &&
 			(sY >= m_sPivotY) && (sY < m_sPivotY + MAPDATASIZEY)) {
 			bUseAbsPos = true;
 		}
 	}
-	if ((!hb::objectid::IsNearbyOffset(wObjectID))
+	if ((!hb::shared::object_id::IsNearbyOffset(wObjectID))
 		&& ((sX < m_sPivotX) || (sX >= m_sPivotX + MAPDATASIZEX)
 			|| (sY < m_sPivotY) || (sY >= m_sPivotY + MAPDATASIZEY)))
 	{
@@ -1155,7 +1162,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	}
 	iChatIndex = 0;
 
-	if ((!hb::objectid::IsNearbyOffset(wObjectID)) && (sAction != DEF_OBJECTNULLACTION))
+	if ((!hb::shared::object_id::IsNearbyOffset(wObjectID)) && (sAction != Type::NullAction))
 	{
 		std::memset(cTmpName, 0, sizeof(cTmpName));
 		std::snprintf(cTmpName, sizeof(cTmpName), "%s", pName);
@@ -1268,10 +1275,10 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 	}
 	else
 	{
-		if (sAction != DEF_OBJECTNULLACTION)// ObjectID
-			wObjectID = hb::objectid::ToRealID(wObjectID);
+		if (sAction != Type::NullAction)// ObjectID
+			wObjectID = hb::shared::object_id::ToRealID(wObjectID);
 		// v1.5 Crash
-		if (hb::objectid::IsNearbyOffset(wObjectID)) return false;
+		if (hb::shared::object_id::IsNearbyOffset(wObjectID)) return false;
 		if (m_iObjectIDcacheLocX[wObjectID] > 0)
 		{
 			iX = m_iObjectIDcacheLocX[wObjectID] - m_sPivotX;
@@ -1292,11 +1299,11 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				}
 				else {
 					switch (sAction) {
-					case DEF_OBJECTRUN:
-					case DEF_OBJECTMOVE:
-					case DEF_OBJECTDAMAGEMOVE:
-					case DEF_OBJECTATTACKMOVE:
-						hb::direction::ApplyOffset(cDir, dX, dY);
+					case Type::Run:
+					case Type::Move:
+					case Type::DamageMove:
+					case Type::AttackMove:
+						hb::shared::direction::ApplyOffset(cDir, dX, dY);
 						break;
 					default:
 						break;
@@ -1310,7 +1317,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					return false;
 				}
 				iChatIndex = m_pData[iX][iY].m_iChatMsg;
-				if (sAction != DEF_OBJECTNULLACTION)
+				if (sAction != Type::NullAction)
 				{
 					sType = m_pData[iX][iY].m_sOwnerType;
 					localNpcConfigId = m_pData[iX][iY].m_sNpcConfigId;
@@ -1355,11 +1362,11 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 				}
 				else {
 					switch (sAction) {
-					case DEF_OBJECTMOVE:
-					case DEF_OBJECTRUN:
-					case DEF_OBJECTDAMAGEMOVE:
-					case DEF_OBJECTATTACKMOVE:
-						hb::direction::ApplyOffset(cDir, dX, dY);
+					case Type::Move:
+					case Type::Run:
+					case Type::DamageMove:
+					case Type::AttackMove:
+						hb::shared::direction::ApplyOffset(cDir, dX, dY);
 						break;
 					default:
 						break;
@@ -1373,7 +1380,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					return false;
 				}
 				iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
-				if (sAction != DEF_OBJECTNULLACTION) {
+				if (sAction != Type::NullAction) {
 					sType = m_pData[iX][iY].m_sDeadOwnerType;
 					localAppearance = m_pData[iX][iY].m_deadAppearance;
 					localStatus = m_pData[iX][iY].m_deadStatus;
@@ -1405,11 +1412,11 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					}
 					else {
 						switch (sAction) {
-						case DEF_OBJECTRUN:
-						case DEF_OBJECTMOVE:
-						case DEF_OBJECTDAMAGEMOVE:
-						case DEF_OBJECTATTACKMOVE:
-							hb::direction::ApplyOffset(cDir, dX, dY);
+						case Type::Run:
+						case Type::Move:
+						case Type::DamageMove:
+						case Type::AttackMove:
+							hb::shared::direction::ApplyOffset(cDir, dX, dY);
 							break;
 						default:
 							break;
@@ -1423,7 +1430,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 						return false;
 					}
 					iChatIndex = m_pData[iX][iY].m_iChatMsg;
-					if (sAction != DEF_OBJECTNULLACTION) {
+					if (sAction != Type::NullAction) {
 						sType = m_pData[iX][iY].m_sOwnerType;
 						localNpcConfigId = m_pData[iX][iY].m_sNpcConfigId;
 						localAppearance = m_pData[iX][iY].m_appearance;
@@ -1456,11 +1463,11 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 					}
 					else {
 						switch (sAction) {
-						case DEF_OBJECTMOVE:
-						case DEF_OBJECTRUN:
-						case DEF_OBJECTDAMAGEMOVE:
-						case DEF_OBJECTATTACKMOVE:
-							hb::direction::ApplyOffset(cDir, dX, dY);
+						case Type::Move:
+						case Type::Run:
+						case Type::DamageMove:
+						case Type::AttackMove:
+							hb::shared::direction::ApplyOffset(cDir, dX, dY);
 							break;
 						default:
 							break;
@@ -1474,7 +1481,7 @@ bool __fastcall CMapData::bSetOwner(uint16_t wObjectID, int sX, int sY, int sTyp
 						return false;
 					}
 					iChatIndex = m_pData[iX][iY].m_iDeadChatMsg;
-					if (sAction != DEF_OBJECTNULLACTION) {
+					if (sAction != Type::NullAction) {
 						sType = m_pData[iX][iY].m_sDeadOwnerType;
 						localNpcConfigId = m_pData[iX][iY].m_sDeadNpcConfigId;
 						localAppearance = m_pData[iX][iY].m_deadAppearance;
@@ -1506,12 +1513,12 @@ EXIT_SEARCH_LOOP:;
 
 	if (iPreLoc == 0 && m_pData[dX][dY].m_sOwnerType != 0)
 	{
-		if (sAction == DEF_OBJECTDYING)
+		if (sAction == Type::Dying)
 		{
 			dX = sX - m_sPivotX;
 			dY = sY - m_sPivotY;
 		}
-		if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTDYING)
+		if (m_pData[dX][dY].m_animation.cAction == Type::Dying)
 		{
 			m_pData[dX][dY].m_wDeadObjectID = m_pData[dX][dY].m_wObjectID;
 			m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
@@ -1571,12 +1578,12 @@ EXIT_SEARCH_LOOP:;
 		m_pData[dX][dY].m_iEffectTotalFrame = iEffectTotalFrame;
 		std::memset(m_pData[dX][dY].m_cOwnerName, 0, sizeof(m_pData[dX][dY].m_cOwnerName));
 		std::snprintf(m_pData[dX][dY].m_cOwnerName, sizeof(m_pData[dX][dY].m_cOwnerName), "%s", cTmpName);
-		if ((sAction != DEF_OBJECTNULLACTION) && (sAction != DEF_MSGTYPE_CONFIRM) && (sAction != DEF_MSGTYPE_REJECT))
+		if ((sAction != Type::NullAction) && (sAction != MsgType::Confirm) && (sAction != MsgType::Reject))
 		{
 			// Look up animation definition: players use PlayerAnim, NPCs use m_stFrame
 			int16_t maxFrame, frameTime;
 			bool loop;
-			if (hb::owner::IsPlayer(sType)) {
+			if (hb::shared::owner::IsPlayer(sType)) {
 				const AnimDef& def = PlayerAnim::FromAction(static_cast<int8_t>(sAction));
 				maxFrame = def.sMaxFrame;
 				frameTime = def.sFrameTime;
@@ -1590,8 +1597,8 @@ EXIT_SEARCH_LOOP:;
 				maxFrame, frameTime, loop, static_cast<int8_t>(iFrame));
 
 			// Initialize smooth movement interpolation for movement actions
-			if (sAction == DEF_OBJECTMOVE || sAction == DEF_OBJECTRUN ||
-				sAction == DEF_OBJECTDAMAGEMOVE || sAction == DEF_OBJECTATTACKMOVE)
+			if (sAction == Type::Move || sAction == Type::Run ||
+				sAction == Type::DamageMove || sAction == Type::AttackMove)
 			{
 				bool hasHaste = localStatus.bHaste;
 				bool isFrozen = localStatus.bFrozen;
@@ -1653,14 +1660,14 @@ EXIT_SEARCH_LOOP:;
 			if (m_pData[dX][dY].m_animation.sMaxFrame == 0)
 			{
 				int16_t maxFrame, frameTime;
-				if (hb::owner::IsPlayer(sType)) {
+				if (hb::shared::owner::IsPlayer(sType)) {
 					maxFrame = PlayerAnim::Stop.sMaxFrame;
 					frameTime = PlayerAnim::Stop.sFrameTime;
 				} else {
-					maxFrame = m_stFrame[sType][DEF_OBJECTSTOP].m_sMaxFrame;
-					frameTime = m_stFrame[sType][DEF_OBJECTSTOP].m_sFrameTime;
+					maxFrame = m_stFrame[sType][Type::Stop].m_sMaxFrame;
+					frameTime = m_stFrame[sType][Type::Stop].m_sFrameTime;
 				}
-				m_pData[dX][dY].m_animation.SetAction(DEF_OBJECTSTOP, cDir,
+				m_pData[dX][dY].m_animation.SetAction(Type::Stop, cDir,
 					maxFrame, frameTime, false);
 			}
 		}
@@ -1668,7 +1675,7 @@ EXIT_SEARCH_LOOP:;
 		if (localAppearance.iEffectType != 0)
 		{
 			m_pData[dX][dY].m_iEffectType = localAppearance.iEffectType;
-			if (sAction == DEF_OBJECTNULLACTION)
+			if (sAction == Type::NullAction)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
 				m_pData[dX][dY].m_dwEffectTime = dwTime;
@@ -1698,7 +1705,7 @@ EXIT_SEARCH_LOOP:;
 		if (localAppearance.iEffectType != 0)
 		{
 			m_pData[dX][dY].m_iEffectType = localAppearance.iEffectType;
-			if (sAction == DEF_OBJECTNULLACTION)
+			if (sAction == Type::NullAction)
 			{
 				m_pData[dX][dY].m_iEffectFrame = 0;
 				m_pData[dX][dY].m_dwEffectTime = dwTime;
@@ -1790,20 +1797,20 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 				{
 					m_pData[dX][dY].m_cDynamicObjectFrame++;
 					switch (m_pData[dX][dY].m_sDynamicObjectType) {
-					case DEF_DYNAMICOBJECT_SPIKE:
+					case dynamic_object::Spike:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 13)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						break;
 
-					case DEF_DYNAMICOBJECT_ICESTORM:
+					case dynamic_object::IceStorm:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 10)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						//if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
 						//	m_pGame->PlayGameSound('E', 16, sDist);
 						break;
 
-					case DEF_DYNAMICOBJECT_FIRE:// Firewall
-					case DEF_DYNAMICOBJECT_FIRE3: // by Snoopy(FireBow)
+					case dynamic_object::Fire:// Firewall
+					case dynamic_object::Fire3: // by Snoopy(FireBow)
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 24)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
@@ -1812,7 +1819,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_FIRE2:	//  // Crusade buildings burning.
+					case dynamic_object::Fire2:	//  // Crusade buildings burning.
 						if (m_pData[dX][dY].m_cDynamicObjectFrame > 27)
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						if (m_pData[dX][dY].m_cDynamicObjectFrame == 1)
@@ -1826,12 +1833,12 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_FISHOBJECT:
+					case dynamic_object::FishObject:
 						if ((rand() % 12) == 1)
 							m_pGame->m_pEffectManager->AddEffect(EffectType::BUBBLES_DRUNK, (m_sPivotX + dX) * 32 + m_pData[dX][dY].m_cDynamicObjectData1, (m_sPivotY + dY) * 32 + m_pData[dX][dY].m_cDynamicObjectData2, 0, 0, 0);
 						break;
 
-					case DEF_DYNAMICOBJECT_FISH:
+					case dynamic_object::Fish:
 						if ((dwTime - m_pData[dX][dY].m_dwDynamicObjectTime) < 100) break;
 						m_pData[dX][dY].m_dwDynamicObjectTime = dwTime;
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 15) m_pData[dX][dY].m_cDynamicObjectFrame = 0;
@@ -1877,36 +1884,36 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						m_pData[dX][dY].m_cDynamicObjectData2 += m_pData[dX][dY].m_cDynamicObjectData4;
 						break;
 
-					case DEF_DYNAMICOBJECT_PCLOUD_BEGIN:
+					case dynamic_object::PCloudBegin:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 8)
 						{
-							m_pData[dX][dY].m_sDynamicObjectType = DEF_DYNAMICOBJECT_PCLOUD_LOOP;
+							m_pData[dX][dY].m_sDynamicObjectType = dynamic_object::PCloudLoop;
 							m_pData[dX][dY].m_cDynamicObjectFrame = rand() % 8;
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_PCLOUD_LOOP:
+					case dynamic_object::PCloudLoop:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 8)
 						{
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_PCLOUD_END:
+					case dynamic_object::PCloudEnd:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 8)
 						{
 							m_pData[dX][dY].m_sDynamicObjectType = 0;
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_ARESDENFLAG1:
+					case dynamic_object::AresdenFlag1:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 4)
 						{
 							m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 						}
 						break;
 
-					case DEF_DYNAMICOBJECT_ELVINEFLAG1:
+					case dynamic_object::ElvineFlag1:
 						if (m_pData[dX][dY].m_cDynamicObjectFrame >= 8)
 						{
 							m_pData[dX][dY].m_cDynamicObjectFrame = 4;
@@ -1942,7 +1949,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 				int16_t baseFrameTime;
 				short ownerType = m_pData[dX][dY].m_sOwnerType;
 				int8_t ownerAction = m_pData[dX][dY].m_animation.cAction;
-				if (hb::owner::IsPlayer(ownerType)) {
+				if (hb::shared::owner::IsPlayer(ownerType)) {
 					baseFrameTime = PlayerAnim::FromAction(ownerAction).sFrameTime;
 				} else {
 					baseFrameTime = m_stFrame[ownerType][ownerAction].m_sFrameTime;
@@ -1950,11 +1957,11 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 
 				// Compute effective frame time with status modifiers
 				switch (ownerAction) {
-				case DEF_OBJECTATTACK: // 3
-				case DEF_OBJECTATTACKMOVE:	// 8
+				case Type::Attack: // 3
+				case Type::AttackMove:	// 8
 					iDelay = m_pData[dX][dY].m_status.iAttackDelay * 12;
 					break;
-				case DEF_OBJECTMAGIC: // 4
+				case Type::Magic: // 4
 					if (m_pGame->m_pPlayer->m_iSkillMastery[4] == 100) iDelay = -17;
 					else iDelay = 0;
 					break;
@@ -1967,9 +1974,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 					iDelay += baseFrameTime >> 2;
 
 				if (m_pData[dX][dY].m_status.bHaste) { // haste
-					int16_t runFrameTime = hb::owner::IsPlayer(ownerType)
+					int16_t runFrameTime = hb::shared::owner::IsPlayer(ownerType)
 						? PlayerAnim::Run.sFrameTime
-						: m_stFrame[ownerType][DEF_OBJECTRUN].m_sFrameTime;
+						: m_stFrame[ownerType][Type::Run].m_sFrameTime;
 					iDelay -= static_cast<int>(runFrameTime / 2.3);
 				}
 
@@ -1998,7 +2005,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							&& (m_sRectY <= dY) && ((m_sRectY + 19) >= dY))
 							// (!) Ower -> DeadOwner 004971AB
 						{
-							if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTDYING) //10
+							if (m_pData[dX][dY].m_animation.cAction == Type::Dying) //10
 							{
 								m_pData[dX][dY].m_wDeadObjectID = m_pData[dX][dY].m_wObjectID;
 								m_pData[dX][dY].m_sDeadOwnerType = m_pData[dX][dY].m_sOwnerType;
@@ -2021,17 +2028,17 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								// Transition to STOP: use player or NPC anim defs
 								int16_t stopMaxFrame, stopFrameTime;
 								bool stopLoop;
-								if (hb::owner::IsPlayer(m_pData[dX][dY].m_sOwnerType)) {
-									const AnimDef& def = PlayerAnim::FromAction(DEF_OBJECTSTOP);
+								if (hb::shared::owner::IsPlayer(m_pData[dX][dY].m_sOwnerType)) {
+									const AnimDef& def = PlayerAnim::FromAction(Type::Stop);
 									stopMaxFrame = def.sMaxFrame;
 									stopFrameTime = def.sFrameTime;
 									stopLoop = def.bLoop;
 								} else {
-									stopMaxFrame = m_stFrame[m_pData[dX][dY].m_sOwnerType][DEF_OBJECTSTOP].m_sMaxFrame;
-									stopFrameTime = m_stFrame[m_pData[dX][dY].m_sOwnerType][DEF_OBJECTSTOP].m_sFrameTime;
+									stopMaxFrame = m_stFrame[m_pData[dX][dY].m_sOwnerType][Type::Stop].m_sMaxFrame;
+									stopFrameTime = m_stFrame[m_pData[dX][dY].m_sOwnerType][Type::Stop].m_sFrameTime;
 									stopLoop = false;
 								}
-								m_pData[dX][dY].m_animation.SetAction(DEF_OBJECTSTOP,
+								m_pData[dX][dY].m_animation.SetAction(Type::Stop,
 									m_pData[dX][dY].m_animation.cDir,
 									stopMaxFrame, stopFrameTime, stopLoop);
 							}
@@ -2050,7 +2057,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							m_pGame->m_floatingText.Clear(m_pData[dX][dY].m_iChatMsg);
 						}
 					}
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTSTOP) { // DEF_OBJECTSTOP = 1 // 00497334
+					if (m_pData[dX][dY].m_animation.cAction == Type::Stop) { // Type::Stop = 1 // 00497334
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
 						case 2:
@@ -2073,9 +2080,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								}
 							}
 							break;
-						case hb::owner::EnergyShield: // ESG
-						case hb::owner::GrandMagicGenerator: // GMG
-						case hb::owner::ManaStone: // ManaStone
+						case hb::shared::owner::EnergyShield: // ESG
+						case hb::shared::owner::GrandMagicGenerator: // GMG
+						case hb::shared::owner::ManaStone: // ManaStone
 							if ((rand() % 40) == 25)
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 60 - 30), (m_sPivotY + dY) * 32 - (rand() % 100) - 5, 0, 0, -(rand() % 12), 0);
@@ -2084,7 +2091,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pGame->m_pEffectManager->AddEffect(EffectType::STAR_TWINKLE, (m_sPivotX + dX) * 32 + (rand() % 60 - 30), (m_sPivotY + dY) * 32 - (rand() % 100) - 5, 0, 0, -(rand() % 12), 0);
 							}
 							break;
-						case hb::owner::IceGolem: // IceGolem
+						case hb::shared::owner::IceGolem: // IceGolem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 3)
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::ICE_GOLEM_EFFECT_1, (m_sPivotX + dX) * 32 + (rand() % 40 - 20), (m_sPivotY + dY) * 32 + (rand() % 40 - 20), 0, 0, 0);
@@ -2104,7 +2111,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTMOVE) { //2 //004977BF
+					if (m_pData[dX][dY].m_animation.cAction == Type::Move) { //2 //004977BF
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
 						case 2:
@@ -2112,9 +2119,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 4:
 						case 5:
 						case 6:
-						case hb::owner::TempleKnight: // TK
-						case hb::owner::Beholder: // Beholder
-						case hb::owner::DarkElf: // Dark-Elf
+						case hb::shared::owner::TempleKnight: // TK
+						case hb::shared::owner::Beholder: // Beholder
+						case hb::shared::owner::DarkElf: // Dark-Elf
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1) || (m_pData[dX][dY].m_animation.cCurrentFrame == 5))
 							{
 								m_pGame->PlayGameSound('C', 8, sDist, lPan);
@@ -2146,211 +2153,211 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							break;
 
-						case hb::owner::Sorceress: // Snoopy: Sorceress
+						case hb::shared::owner::Sorceress: // Snoopy: Sorceress
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 149, sDist, lPan);
 							break;
 
-						case hb::owner::ATK: // Snoopy: ATK
+						case hb::shared::owner::ATK: // Snoopy: ATK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 142, sDist, lPan);
 							break;
 
-						case hb::owner::MasterElf: // Snoopy: MasterElf
+						case hb::shared::owner::MasterElf: // Snoopy: MasterElf
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
 								if (true) m_pGame->PlayGameSound('C', 10, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::DSK: // Snoopy: DSK
+						case hb::shared::owner::DSK: // Snoopy: DSK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 147, sDist, lPan);
 							break;
 
-						case hb::owner::Slime: // Slime
-						case hb::owner::TigerWorm: // TW
+						case hb::shared::owner::Slime: // Slime
+						case hb::shared::owner::TigerWorm: // TW
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 1, sDist, lPan);
 							break;
 
-						case hb::owner::Skeleton: // SKel
+						case hb::shared::owner::Skeleton: // SKel
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 13, sDist, lPan);
 							break;
 
-						case hb::owner::Cyclops: // Cyclops
-						case hb::owner::HellClaw: // HC
+						case hb::shared::owner::Cyclops: // Cyclops
+						case hb::shared::owner::HellClaw: // HC
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 41, sDist, lPan);
 							break;
 
-						case hb::owner::OrcMage: // Orc
-						case hb::owner::Stalker: // SK
+						case hb::shared::owner::OrcMage: // Orc
+						case hb::shared::owner::Stalker: // SK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 9, sDist, lPan);
 							break;
 
-						case hb::owner::GiantAnt: // Ant
-						case hb::owner::LightWarBeetle: // LWBeetle
+						case hb::shared::owner::GiantAnt: // Ant
+						case hb::shared::owner::LightWarBeetle: // LWBeetle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 29, sDist, lPan);
 							break;
 
-						case hb::owner::Scorpion: // Scorpion
+						case hb::shared::owner::Scorpion: // Scorpion
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 21, sDist, lPan);
 							break;
 
-						case hb::owner::Zombie: // Zombie
+						case hb::shared::owner::Zombie: // Zombie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 17, sDist, lPan);
 							break;
 
-						case hb::owner::Amphis: // Snake
+						case hb::shared::owner::Amphis: // Snake
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 25, sDist, lPan);
 							break;
 
-						case hb::owner::ClayGolem: // Clay-Golem
-						case hb::owner::Gargoyle: // Gargoyle
+						case hb::shared::owner::ClayGolem: // Clay-Golem
+						case hb::shared::owner::Gargoyle: // Gargoyle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 37, sDist, lPan);
 							break;
 
-						case hb::owner::Hellhound: // HH
+						case hb::shared::owner::Hellhound: // HH
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 5, sDist, lPan);
 							break;
 
-						case hb::owner::Troll: // Troll
-						case hb::owner::Minaus: // Snoopy: Ajout Minaus
+						case hb::shared::owner::Troll: // Troll
+						case hb::shared::owner::Minaus: // Snoopy: Ajout Minaus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 46, sDist, lPan);
 							break;
 
-						case hb::owner::Ogre: // Ogre
+						case hb::shared::owner::Ogre: // Ogre
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 51, sDist, lPan);
 							break;
 
-						case hb::owner::Liche: // Liche
+						case hb::shared::owner::Liche: // Liche
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 55, sDist, lPan);
 							break;
 
-						case hb::owner::Demon: // DD
+						case hb::shared::owner::Demon: // DD
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 59, sDist, lPan);
 							break;
 
-						case hb::owner::Unicorn: // Uni
-						case hb::owner::GodsHandKnightCK: // GHKABS
+						case hb::shared::owner::Unicorn: // Uni
+						case hb::shared::owner::GodsHandKnightCK: // GHKABS
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 63, sDist, lPan);
 							break;
 
-						case hb::owner::WereWolf: // WW
+						case hb::shared::owner::WereWolf: // WW
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 67, sDist, lPan);
 							break;
 
-						case hb::owner::Bunny://Rabbit
+						case hb::shared::owner::Bunny://Rabbit
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 71, sDist, lPan);
 							break;
 
-						case hb::owner::Cat://Cat
+						case hb::shared::owner::Cat://Cat
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 72, sDist, lPan);
 							break;
 
-						case hb::owner::GiantFrog://Giant-Frog
+						case hb::shared::owner::GiantFrog://Giant-Frog
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 73, sDist, lPan);
 							break;
 
-						case hb::owner::MountainGiant://Mountain Giant
+						case hb::shared::owner::MountainGiant://Mountain Giant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 87, sDist, lPan);
 							break;
 
-						case hb::owner::Ettin://Ettin
-						case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
+						case hb::shared::owner::Ettin://Ettin
+						case hb::shared::owner::MasterOrc: // Snoopy: MasterMageOrc
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 91, sDist, lPan);
 							break;
 
-						case hb::owner::CannibalPlant://Cannibal Plant
+						case hb::shared::owner::CannibalPlant://Cannibal Plant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 95, sDist, lPan);
 							break;
 
-						case hb::owner::Rudolph://Rudolph
+						case hb::shared::owner::Rudolph://Rudolph
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('C', 11, sDist, lPan);
 							break;
 
-						case hb::owner::DireBoar: // DireBoar
-						case hb::owner::GiantCrayfish: // Snoopy: GiantCrayFish
-						case hb::owner::Barbarian: // Snoopy: Barbarian
+						case hb::shared::owner::DireBoar: // DireBoar
+						case hb::shared::owner::GiantCrayfish: // Snoopy: GiantCrayFish
+						case hb::shared::owner::Barbarian: // Snoopy: Barbarian
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 87, sDist, lPan);
 							break;
 
-						case hb::owner::Frost://Frost
+						case hb::shared::owner::Frost://Frost
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 25, sDist, lPan);
 							break;
 
-						case hb::owner::StoneGolem: // Stone-Golem
-						case hb::owner::BattleGolem: // BG
-						case hb::owner::IceGolem: // Snoopy: IceGolem
+						case hb::shared::owner::StoneGolem: // Stone-Golem
+						case hb::shared::owner::BattleGolem: // BG
+						case hb::shared::owner::IceGolem: // Snoopy: IceGolem
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 33, sDist, lPan);
 							break;
 
-						case hb::owner::FireWyvern: // Snoopy: Fite-Wyvern
+						case hb::shared::owner::FireWyvern: // Snoopy: Fite-Wyvern
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 106, sDist, lPan);
 							break;
 
-						case hb::owner::Tentocle: // Snoopy: Tentocle
+						case hb::shared::owner::Tentocle: // Snoopy: Tentocle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 110, sDist, lPan);
 							break;
 
-						case hb::owner::ClawTurtle: // Snoopy: Claw Turtle
+						case hb::shared::owner::ClawTurtle: // Snoopy: Claw Turtle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 114, sDist, lPan);
 							break;
 
-						case hb::owner::Centaur: // Snoopy: Centaurus
+						case hb::shared::owner::Centaur: // Snoopy: Centaurus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 117, sDist, lPan);
 							break;
 
-						case hb::owner::GiTree: // Snoopy: Giant Tree
+						case hb::shared::owner::GiTree: // Snoopy: Giant Tree
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 122, sDist, lPan);
 							break;
 
-						case hb::owner::GiLizard: // Snoopy: Giant Lizard
+						case hb::shared::owner::GiLizard: // Snoopy: Giant Lizard
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 126, sDist, lPan);
 							break;
 
-						case hb::owner::Dragon: // Snoopy: Dragon
+						case hb::shared::owner::Dragon: // Snoopy: Dragon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 130, sDist, lPan);
 							break;
 
-						case hb::owner::Nizie: // Snoopy: Nizie
+						case hb::shared::owner::Nizie: // Snoopy: Nizie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 134, sDist, lPan);
 							break;
 
-						case hb::owner::Abaddon: // void CGame::DrawDruncncity();Abaddon
+						case hb::shared::owner::Abaddon: // void CGame::DrawDruncncity();Abaddon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 136, sDist, lPan);
 							break;
@@ -2360,9 +2367,9 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								m_pGame->PlayGameSound('C', 8, sDist, lPan);
 							break;
 						}
-					} // Fin du DEF_OBJECTMOVE
+					} // Fin du Type::Move
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTRUN)  // 2   //00497E34
+					if (m_pData[dX][dY].m_animation.cAction == Type::Run)  // 2   //00497E34
 					{
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
@@ -2371,7 +2378,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 4:
 						case 5:
 						case 6:
-						case hb::owner::GodsHandKnight: // GHK
+						case hb::shared::owner::GodsHandKnight: // GHK
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1) || (m_pData[dX][dY].m_animation.cCurrentFrame == 5))
 							{
 								cTotalFrame = 8;
@@ -2407,7 +2414,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							break;
 						}
 					}
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTATTACKMOVE)  //8 //004980A5
+					if (m_pData[dX][dY].m_animation.cAction == Type::AttackMove)  //8 //004980A5
 					{
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
@@ -2489,15 +2496,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if ((m_pData[dX][dY].m_animation.cAction == DEF_OBJECTATTACK)) { //3 00498685
+					if ((m_pData[dX][dY].m_animation.cAction == Type::Attack)) { //3 00498685
 						switch (m_pData[dX][dY].m_sOwnerType) {
-						case hb::owner::IceGolem: // IceGolem
+						case hb::shared::owner::IceGolem: // IceGolem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_1, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
 							}
 							break;
-						case hb::owner::CT: // void CGame::DrawDruncncity();Crossbow Turret (Heldenian)
+						case hb::shared::owner::CT: // void CGame::DrawDruncncity();Crossbow Turret (Heldenian)
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::GATE_ROUND, m_sPivotX + m_pData[dX][dY].m_sV1, m_sPivotY + m_pData[dX][dY].m_sV2
@@ -2505,7 +2512,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								//m_pGame->PlayGameSound('E', 43, sDist, lPan); // Son "wouufffff"
 							}
 							break;
-						case hb::owner::AGC: // void CGame::DrawDruncncity();AGT (Heldenian)
+						case hb::shared::owner::AGC: // void CGame::DrawDruncncity();AGT (Heldenian)
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 							{
 								m_pGame->m_pEffectManager->AddEffect(EffectType::ARROW_FLYING, m_sPivotX + m_pData[dX][dY].m_sV1, m_sPivotY + m_pData[dX][dY].m_sV2
@@ -2634,266 +2641,266 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 							break;
 
-						case hb::owner::ATK: // Snoopy: ATK
+						case hb::shared::owner::ATK: // Snoopy: ATK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 140, sDist, lPan);
 							break;
 
-						case hb::owner::MasterElf: // Snoopy: MasterElf
+						case hb::shared::owner::MasterElf: // Snoopy: MasterElf
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('C', 8, sDist, lPan);
 							break;
 
-						case hb::owner::DSK: // Snoopy: DSK
+						case hb::shared::owner::DSK: // Snoopy: DSK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 145, sDist, lPan);
 							break;
 
-						case hb::owner::Beholder: // Beholder
+						case hb::shared::owner::Beholder: // Beholder
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('E', 46, sDist, lPan);
 							break;
 
-						case hb::owner::DarkElf: // DE
+						case hb::shared::owner::DarkElf: // DE
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
 								if (true) m_pGame->PlayGameSound('C', 3, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::TigerWorm: // TW
+						case hb::shared::owner::TigerWorm: // TW
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
 								if (true) m_pGame->PlayGameSound('C', 1, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::Slime: // Slime
+						case hb::shared::owner::Slime: // Slime
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 2, sDist, lPan);
 							break;
 
-						case hb::owner::Skeleton: // Skell
+						case hb::shared::owner::Skeleton: // Skell
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 14, sDist, lPan);
 							break;
 
-						case hb::owner::StoneGolem: // Stone-Golem
-						case hb::owner::IceGolem: // ICeGolem
+						case hb::shared::owner::StoneGolem: // Stone-Golem
+						case hb::shared::owner::IceGolem: // ICeGolem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 34, sDist, lPan);
 							break;
 
-						case hb::owner::Cyclops: // Cyclops
-						case hb::owner::HellClaw: // HC
+						case hb::shared::owner::Cyclops: // Cyclops
+						case hb::shared::owner::HellClaw: // HC
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 42, sDist, lPan);
 							break;
 
-						case hb::owner::GodsHandKnight: // GHK
-						case hb::owner::GodsHandKnightCK: // GHKABS
-						case hb::owner::TempleKnight: // TK
-						case hb::owner::Gargoyle: // GG
+						case hb::shared::owner::GodsHandKnight: // GHK
+						case hb::shared::owner::GodsHandKnightCK: // GHKABS
+						case hb::shared::owner::TempleKnight: // TK
+						case hb::shared::owner::Gargoyle: // GG
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 							{
 								if (true) m_pGame->PlayGameSound('C', 2, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::OrcMage: // orc
-						case hb::owner::Stalker: // SK
+						case hb::shared::owner::OrcMage: // orc
+						case hb::shared::owner::Stalker: // SK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 10, sDist, lPan);
 							break;
 
-						case hb::owner::GiantAnt: // Ant
-						case hb::owner::LightWarBeetle: // LWB
+						case hb::shared::owner::GiantAnt: // Ant
+						case hb::shared::owner::LightWarBeetle: // LWB
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 30, sDist, lPan);
 							break;
 
-						case hb::owner::Scorpion: // Scorpion
+						case hb::shared::owner::Scorpion: // Scorpion
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 22, sDist, lPan);
 							break;
 
-						case hb::owner::Zombie: // Zombie
+						case hb::shared::owner::Zombie: // Zombie
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 18, sDist, lPan);
 							break;
 
-						case hb::owner::Amphis: // Snake
+						case hb::shared::owner::Amphis: // Snake
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 26, sDist, lPan);
 							break;
 
-						case hb::owner::ClayGolem: // Clay-Golem
+						case hb::shared::owner::ClayGolem: // Clay-Golem
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 38, sDist, lPan);
 							break;
 
-						case hb::owner::Hellhound: // HH
+						case hb::shared::owner::Hellhound: // HH
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 6, sDist, lPan);
 							break;
 
-						case hb::owner::Troll: // Troll
+						case hb::shared::owner::Troll: // Troll
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 47, sDist, lPan);
 							break;
 
-						case hb::owner::Ogre: // Ogre
+						case hb::shared::owner::Ogre: // Ogre
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 52, sDist, lPan);
 							break;
 
-						case hb::owner::Liche: // Liche
+						case hb::shared::owner::Liche: // Liche
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 56, sDist, lPan);
 							break;
 
-						case hb::owner::Demon: // DD
+						case hb::shared::owner::Demon: // DD
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 60, sDist, lPan);
 							break;
 
-						case hb::owner::Unicorn: // Uni
+						case hb::shared::owner::Unicorn: // Uni
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 64, sDist, lPan);
 							break;
 
-						case hb::owner::WereWolf: // WW
+						case hb::shared::owner::WereWolf: // WW
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								m_pGame->PlayGameSound('M', 68, sDist, lPan);
 							break;
 
-						case hb::owner::Bunny://Rabbit
+						case hb::shared::owner::Bunny://Rabbit
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 75, sDist, lPan);
 							break;
 
-						case hb::owner::Cat://Cat
+						case hb::shared::owner::Cat://Cat
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 76, sDist, lPan);
 							break;
 
-						case hb::owner::GiantFrog://Giant-Frog
+						case hb::shared::owner::GiantFrog://Giant-Frog
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 77, sDist, lPan);
 							break;
 
-						case hb::owner::MountainGiant://Mountain Giant
+						case hb::shared::owner::MountainGiant://Mountain Giant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 88, sDist, lPan);
 							break;
 
-						case hb::owner::Ettin://Ettin
+						case hb::shared::owner::Ettin://Ettin
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 92, sDist, lPan);
 							break;
 
-						case hb::owner::CannibalPlant://Cannibal Plant
+						case hb::shared::owner::CannibalPlant://Cannibal Plant
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 96, sDist, lPan);
 							break;
 
-						case hb::owner::Rudolph://Rudolph
+						case hb::shared::owner::Rudolph://Rudolph
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
 								if (true) m_pGame->PlayGameSound('M', 38, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::DireBoar://DireBoar
+						case hb::shared::owner::DireBoar://DireBoar
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 68, sDist, lPan);
 							break;
 
-						case hb::owner::Frost://Frost
+						case hb::shared::owner::Frost://Frost
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 							{
 								if (true) m_pGame->PlayGameSound('C', 4, sDist, lPan);
 							}
 							break;
 
-						case hb::owner::MasterOrc: // Snoopy: Master MageOrc
-						case hb::owner::Barbarian: // Snoopy: Barbarian
+						case hb::shared::owner::MasterOrc: // Snoopy: Master MageOrc
+						case hb::shared::owner::Barbarian: // Snoopy: Barbarian
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 78, sDist, lPan);
 							break;
 
-						case hb::owner::GiantCrayfish: // Snoopy: GiantCrayFish
+						case hb::shared::owner::GiantCrayfish: // Snoopy: GiantCrayFish
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 100, sDist, lPan);
 							break;
 
-						case hb::owner::FireWyvern: // Snoopy: Fire Wyvern
+						case hb::shared::owner::FireWyvern: // Snoopy: Fire Wyvern
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 107, sDist, lPan);
 							break;
 
-						case hb::owner::Tentocle: // Snoopy: Tentocle
+						case hb::shared::owner::Tentocle: // Snoopy: Tentocle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 111, sDist, lPan);
 							break;
 
-						case hb::owner::Abaddon: // Snoopy: Abaddon
+						case hb::shared::owner::Abaddon: // Snoopy: Abaddon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 137, sDist, lPan);
 							break;
 
-						case hb::owner::ClawTurtle: // Snoopy: Claw-Turtle
+						case hb::shared::owner::ClawTurtle: // Snoopy: Claw-Turtle
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 115, sDist, lPan);
 							break;
 
-						case hb::owner::Centaur: // Snoopy: Centaurus
+						case hb::shared::owner::Centaur: // Snoopy: Centaurus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 119, sDist, lPan);
 							break;
 
-						case hb::owner::GiTree: // Snoopy: Giant-Tree
+						case hb::shared::owner::GiTree: // Snoopy: Giant-Tree
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 123, sDist, lPan);
 							break;
 
-						case hb::owner::GiLizard: // Snoopy: GiantLizard
+						case hb::shared::owner::GiLizard: // Snoopy: GiantLizard
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 127, sDist, lPan);
 							break;
 
-						case hb::owner::Dragon: // Snoopy: Dragon
+						case hb::shared::owner::Dragon: // Snoopy: Dragon
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 131, sDist, lPan);
 							break;
 
-						case hb::owner::Nizie: //Snoopy:  Nizie
+						case hb::shared::owner::Nizie: //Snoopy:  Nizie
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 135, sDist, lPan);
 							break;
 
-						case hb::owner::Minaus: // Snoopy: Minaus
+						case hb::shared::owner::Minaus: // Snoopy: Minaus
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 104, sDist, lPan);
 							break;
 
-						case hb::owner::HBT: // Snoopy: Heavy BattleTank
+						case hb::shared::owner::HBT: // Snoopy: Heavy BattleTank
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 151, sDist, lPan);
 							break;
 
-						case hb::owner::CT: // Snoopy: Crosbow Turret
+						case hb::shared::owner::CT: // Snoopy: Crosbow Turret
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 153, sDist, lPan);
 							break;
 
-						case hb::owner::AGC: // Snoopy: Cannon Turret
+						case hb::shared::owner::AGC: // Snoopy: Cannon Turret
 							if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 								m_pGame->PlayGameSound('M', 155, sDist, lPan);
 							break;
 
-						case hb::owner::Dummy: // Dummy
-						case hb::owner::EnergySphere: // Snoopy: EnergySphere
+						case hb::shared::owner::Dummy: // Dummy
+						case hb::shared::owner::EnergySphere: // Snoopy: EnergySphere
 						default:
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 2) {
 								if (true) m_pGame->PlayGameSound('C', 2, sDist, lPan);
@@ -2902,15 +2909,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTDAMAGE)  // 6  00499159
+					if (m_pData[dX][dY].m_animation.cAction == Type::Damage)  // 6  00499159
 					{
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
 						case 2:
 						case 3:  // Men
-						case hb::owner::GodsHandKnight: // GHK
-						case hb::owner::GodsHandKnightCK: // GHKABS
-						case hb::owner::TempleKnight: // TK
+						case hb::shared::owner::GodsHandKnight: // GHK
+						case hb::shared::owner::GodsHandKnightCK: // GHKABS
+						case hb::shared::owner::TempleKnight: // TK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 4)
 							{
 								if (m_pData[dX][dY].m_sV2 == -1)
@@ -2984,176 +2991,176 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
-							case hb::owner::Barbarian: // Snoopy: Barbarian
+							case hb::shared::owner::Barbarian: // Snoopy: Barbarian
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlayGameSound('M', 144, sDist, lPan);
 								break;
 
-							case hb::owner::ATK: // Snoopy: ATK
+							case hb::shared::owner::ATK: // Snoopy: ATK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1 && true) m_pGame->PlayGameSound('M', 143, sDist, lPan);
 								break;
 
-							case hb::owner::MasterElf: // Snoopy: MasterElf
+							case hb::shared::owner::MasterElf: // Snoopy: MasterElf
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('C', 7, sDist, lPan);
 								break;
 
-							case hb::owner::DSK: // Snoopy: DSK
+							case hb::shared::owner::DSK: // Snoopy: DSK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('M', 148, sDist, lPan);
 								break;
 
-							case hb::owner::DarkElf: // DE
+							case hb::shared::owner::DarkElf: // DE
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5 && true) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 								break;
 
-							case hb::owner::Slime: // Slime
-							case hb::owner::Beholder: // BB
+							case hb::shared::owner::Slime: // Slime
+							case hb::shared::owner::Beholder: // BB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 3, sDist, lPan);
 								break;
 
-							case hb::owner::Skeleton: // Skell
+							case hb::shared::owner::Skeleton: // Skell
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 15, sDist, lPan);
 								break;
 
-							case hb::owner::StoneGolem: // Stone-Golem
-							case hb::owner::IceGolem: // IceGolem
+							case hb::shared::owner::StoneGolem: // Stone-Golem
+							case hb::shared::owner::IceGolem: // IceGolem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 35, sDist, lPan);
 								break;
 
-							case hb::owner::Cyclops: // Cyclops
-							case hb::owner::HellClaw: // HC
-							case hb::owner::Gargoyle: // GG
+							case hb::shared::owner::Cyclops: // Cyclops
+							case hb::shared::owner::HellClaw: // HC
+							case hb::shared::owner::Gargoyle: // GG
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 43, sDist, lPan);
 								break;
 
-							case hb::owner::OrcMage: // Orc
-							case hb::owner::Stalker: // SK
+							case hb::shared::owner::OrcMage: // Orc
+							case hb::shared::owner::Stalker: // SK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 11, sDist, lPan);
 								break;
 
-							case hb::owner::GiantAnt: // Ant
-							case hb::owner::LightWarBeetle: // LWB
+							case hb::shared::owner::GiantAnt: // Ant
+							case hb::shared::owner::LightWarBeetle: // LWB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 31, sDist, lPan);
 								break;
 
-							case hb::owner::Scorpion: // Scorp
+							case hb::shared::owner::Scorpion: // Scorp
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 23, sDist, lPan);
 								break;
 
-							case hb::owner::Zombie: // Zombie
+							case hb::shared::owner::Zombie: // Zombie
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 19, sDist, lPan);
 								break;
 
-							case hb::owner::Amphis: // Snake
+							case hb::shared::owner::Amphis: // Snake
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 27, sDist, lPan);
 								break;
 
-							case hb::owner::ClayGolem: // Clay-Golem
+							case hb::shared::owner::ClayGolem: // Clay-Golem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
-							case hb::owner::Hellhound: // HH
+							case hb::shared::owner::Hellhound: // HH
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 7, sDist, lPan);
 								break;
 
-							case hb::owner::Troll: // Troll
+							case hb::shared::owner::Troll: // Troll
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 48, sDist, lPan);
 								break;
 
-							case hb::owner::Ogre: // Ogre
+							case hb::shared::owner::Ogre: // Ogre
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 53, sDist, lPan);
 								break;
 
-							case hb::owner::Liche: // Liche
+							case hb::shared::owner::Liche: // Liche
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 57, sDist, lPan);
 								break;
 
-							case hb::owner::Demon: // DD
+							case hb::shared::owner::Demon: // DD
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 61, sDist, lPan);
 								break;
 
-							case hb::owner::Unicorn: // Uni
+							case hb::shared::owner::Unicorn: // Uni
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
-							case hb::owner::WereWolf: // WW
+							case hb::shared::owner::WereWolf: // WW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
 
-							case hb::owner::Dummy: // dummy
-							case hb::owner::EnergySphere: // Snoopy: EnergyBall
+							case hb::shared::owner::Dummy: // dummy
+							case hb::shared::owner::EnergySphere: // Snoopy: EnergyBall
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) m_pGame->PlayGameSound('M', 2, sDist, lPan);
 								break;
 
-							case hb::owner::Bunny://Rabbit
+							case hb::shared::owner::Bunny://Rabbit
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 79, sDist, lPan);
 								break;
 
-							case hb::owner::Cat://Cat
+							case hb::shared::owner::Cat://Cat
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 80, sDist, lPan);
 								break;
 
-							case hb::owner::GiantFrog://Giant-Frog
+							case hb::shared::owner::GiantFrog://Giant-Frog
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 81, sDist, lPan);
 								break;
 
-							case hb::owner::MountainGiant: // Mountain Giant
-							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
+							case hb::shared::owner::MountainGiant: // Mountain Giant
+							case hb::shared::owner::MasterOrc: // Snoopy: MasterMageOrc
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 89, sDist, lPan);
 								break;
 
-							case hb::owner::Ettin://Ettin
+							case hb::shared::owner::Ettin://Ettin
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 93, sDist, lPan);
 								break;
-							case hb::owner::CannibalPlant://Cannabl Plant
+							case hb::shared::owner::CannibalPlant://Cannabl Plant
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 97, sDist, lPan);
 								break;
-							case hb::owner::Rudolph://Rudolph
+							case hb::shared::owner::Rudolph://Rudolph
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
-							case hb::owner::DireBoar://DireBoar
+							case hb::shared::owner::DireBoar://DireBoar
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 78, sDist, lPan);
 								break;
-							case hb::owner::Frost://Frost
+							case hb::shared::owner::Frost://Frost
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1) m_pGame->PlayGameSound('C', 13, sDist, lPan);
 								break;
 
-							case hb::owner::GiantCrayfish: // Snoopy: Giant CrayFish
+							case hb::shared::owner::GiantCrayfish: // Snoopy: Giant CrayFish
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
-							case hb::owner::Minaus: // Snoopy: Minaus
+							case hb::shared::owner::Minaus: // Snoopy: Minaus
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 102, sDist, lPan);
 								break;
 
-							case hb::owner::Tentocle: // Snoopy: Tentocle
+							case hb::shared::owner::Tentocle: // Snoopy: Tentocle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 108, sDist, lPan);
 								break;
 
-							case hb::owner::Abaddon: // Snoopy: Abaddon
+							case hb::shared::owner::Abaddon: // Snoopy: Abaddon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 138, sDist, lPan);
 								break;
 
-							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
+							case hb::shared::owner::ClawTurtle: // Snoopy: ClawTurtle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 112, sDist, lPan);
 								break;
 
-							case hb::owner::Centaur: // Snoopy: Centaurus
-							case hb::owner::Sorceress: // Snoopy: Sorceress
+							case hb::shared::owner::Centaur: // Snoopy: Centaurus
+							case hb::shared::owner::Sorceress: // Snoopy: Sorceress
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 116, sDist, lPan);
 								break;
 
-							case hb::owner::GiTree: // Snoopy: GiantTree
+							case hb::shared::owner::GiTree: // Snoopy: GiantTree
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 120, sDist, lPan);
 								break;
 
-							case hb::owner::GiLizard: // Snoopy: GiantLizard
+							case hb::shared::owner::GiLizard: // Snoopy: GiantLizard
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 124, sDist, lPan);
 								break;
 
-							case hb::owner::Dragon: // Snoopy: Dragon
+							case hb::shared::owner::Dragon: // Snoopy: Dragon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 128, sDist, lPan);
 								break;
 
-							case hb::owner::Nizie: // Snoopy: Nizie
+							case hb::shared::owner::Nizie: // Snoopy: Nizie
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1)) m_pGame->PlayGameSound('M', 132, sDist, lPan);
 								break;
 							}
@@ -3161,7 +3168,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTDAMAGEMOVE) { // 7 004997BD
+					if (m_pData[dX][dY].m_animation.cAction == Type::DamageMove) { // 7 004997BD
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
 						case 2:
@@ -3233,197 +3240,197 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
-							case hb::owner::ATK: //Snoopy:  ATK
+							case hb::shared::owner::ATK: //Snoopy:  ATK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 									m_pGame->PlayGameSound('M', 143, sDist, lPan);
 								break;
-							case hb::owner::MasterElf: // Snoopy: MasterElf
+							case hb::shared::owner::MasterElf: // Snoopy: MasterElf
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 									m_pGame->PlayGameSound('C', 7, sDist, lPan);
 								break;
-							case hb::owner::Barbarian: // Snoopy: Barbarian
+							case hb::shared::owner::Barbarian: // Snoopy: Barbarian
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 									m_pGame->PlayGameSound('M', 144, sDist, lPan);
 								break;
-							case hb::owner::DSK: // Snoopy: DSK
+							case hb::shared::owner::DSK: // Snoopy: DSK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 									m_pGame->PlayGameSound('M', 148, sDist, lPan);
 								break;
 
-							case hb::owner::Slime: // Slime
+							case hb::shared::owner::Slime: // Slime
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 3, sDist, lPan);
 								break;
 
-							case hb::owner::Skeleton: // Skell
+							case hb::shared::owner::Skeleton: // Skell
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 15, sDist, lPan);
 								break;
 
-							case hb::owner::StoneGolem: // Stone Golem
-							case hb::owner::IceGolem: // IceGolem
+							case hb::shared::owner::StoneGolem: // Stone Golem
+							case hb::shared::owner::IceGolem: // IceGolem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 35, sDist, lPan);
 								break;
 
-							case hb::owner::Cyclops: // Cyclops
+							case hb::shared::owner::Cyclops: // Cyclops
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 43, sDist, lPan);
 								break;
 
-							case hb::owner::OrcMage: // Orc
-							case hb::owner::Stalker: // SK
+							case hb::shared::owner::OrcMage: // Orc
+							case hb::shared::owner::Stalker: // SK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 11, sDist, lPan);
 								break;
 
-							case hb::owner::GiantAnt: // Ant
-							case hb::owner::LightWarBeetle: // LWB
+							case hb::shared::owner::GiantAnt: // Ant
+							case hb::shared::owner::LightWarBeetle: // LWB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 31, sDist, lPan);
 								break;
 
-							case hb::owner::Scorpion: // Scorpion
+							case hb::shared::owner::Scorpion: // Scorpion
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 23, sDist, lPan);
 								break;
 
-							case hb::owner::Zombie: // Zombie
+							case hb::shared::owner::Zombie: // Zombie
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 19, sDist, lPan);
 								break;
 
-							case hb::owner::Amphis: // Snake
+							case hb::shared::owner::Amphis: // Snake
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 27, sDist, lPan);
 								break;
 
-							case hb::owner::ClayGolem: // Clay-Golem
+							case hb::shared::owner::ClayGolem: // Clay-Golem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
-							case hb::owner::Hellhound: // HH
+							case hb::shared::owner::Hellhound: // HH
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 7, sDist, lPan);
 								break;
 
-							case hb::owner::Troll: // Troll
+							case hb::shared::owner::Troll: // Troll
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 48, sDist, lPan);
 								break;
 
-							case hb::owner::Ogre: // Ogre
+							case hb::shared::owner::Ogre: // Ogre
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 53, sDist, lPan);
 								break;
 
-							case hb::owner::Liche: // Liche
+							case hb::shared::owner::Liche: // Liche
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 57, sDist, lPan);
 								break;
 
-							case hb::owner::Demon: // DD
+							case hb::shared::owner::Demon: // DD
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 61, sDist, lPan);
 								break;
 
-							case hb::owner::Unicorn: // Uni
+							case hb::shared::owner::Unicorn: // Uni
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
-							case hb::owner::WereWolf: // WW
+							case hb::shared::owner::WereWolf: // WW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 2)
 									m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
-							case hb::owner::Bunny://Rabbit
+							case hb::shared::owner::Bunny://Rabbit
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 79, sDist, lPan);
 								break;
 
-							case hb::owner::Cat://Cat
+							case hb::shared::owner::Cat://Cat
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 80, sDist, lPan);
 								break;
 
-							case hb::owner::GiantFrog://Giant-Frog
+							case hb::shared::owner::GiantFrog://Giant-Frog
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 81, sDist, lPan);
 								break;
 
-							case hb::owner::MountainGiant://Mountain Giant
-							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
+							case hb::shared::owner::MountainGiant://Mountain Giant
+							case hb::shared::owner::MasterOrc: // Snoopy: MasterMageOrc
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 89, sDist, lPan);
 								break;
 
-							case hb::owner::Ettin://Ettin
+							case hb::shared::owner::Ettin://Ettin
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 93, sDist, lPan);
 								break;
 
-							case hb::owner::CannibalPlant://Cannibal Plant
+							case hb::shared::owner::CannibalPlant://Cannibal Plant
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 97, sDist, lPan);
 								break;
 
-							case hb::owner::Rudolph://Rudolph
+							case hb::shared::owner::Rudolph://Rudolph
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 69, sDist, lPan);
 								break;
-							case hb::owner::DireBoar://DireBoar
+							case hb::shared::owner::DireBoar://DireBoar
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 78, sDist, lPan);
 								break;
 
-							case hb::owner::GiantCrayfish: //Snoopy:  GiantCrayFish
+							case hb::shared::owner::GiantCrayfish: //Snoopy:  GiantCrayFish
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
-							case hb::owner::Minaus: // Snoopy: Minos
+							case hb::shared::owner::Minaus: // Snoopy: Minos
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 101, sDist, lPan);
 								break;
 
-							case hb::owner::Tentocle: // Snoopy: Tentocle
+							case hb::shared::owner::Tentocle: // Snoopy: Tentocle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 108, sDist, lPan);
 								break;
 
-							case hb::owner::Abaddon: // Snoopy: Abaddon
+							case hb::shared::owner::Abaddon: // Snoopy: Abaddon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 138, sDist, lPan);
 								break;
 
-							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
+							case hb::shared::owner::ClawTurtle: // Snoopy: ClawTurtle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 112, sDist, lPan);
 								break;
 
-							case hb::owner::Centaur: // Snoopy: Centaurus
-							case hb::owner::Sorceress: // Snoopy: Sorceress
+							case hb::shared::owner::Centaur: // Snoopy: Centaurus
+							case hb::shared::owner::Sorceress: // Snoopy: Sorceress
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 116, sDist, lPan);
 								break;
 
-							case hb::owner::GiTree: // Snoopy: GiantTree
+							case hb::shared::owner::GiTree: // Snoopy: GiantTree
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 120, sDist, lPan);
 								break;
 
-							case hb::owner::GiLizard: // Snoopy: GiantLizard
+							case hb::shared::owner::GiLizard: // Snoopy: GiantLizard
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 124, sDist, lPan);
 								break;
 
-							case hb::owner::Dragon: // Snoopy: Dragon
+							case hb::shared::owner::Dragon: // Snoopy: Dragon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 128, sDist, lPan);
 								break;
 
-							case hb::owner::Nizie: // Snoopy: Nizie
+							case hb::shared::owner::Nizie: // Snoopy: Nizie
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 132, sDist, lPan);
 								break;
@@ -3435,7 +3442,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTMAGIC)  // 4 00499D51
+					if (m_pData[dX][dY].m_animation.cAction == Type::Magic)  // 4 00499D51
 					{
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
@@ -3475,15 +3482,15 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						}
 					}
 
-					if (m_pData[dX][dY].m_animation.cAction == DEF_OBJECTDYING)  // 10 // 00499F5D
+					if (m_pData[dX][dY].m_animation.cAction == Type::Dying)  // 10 // 00499F5D
 					{
 						switch (m_pData[dX][dY].m_sOwnerType) {
 						case 1:
 						case 2:
 						case 3:
-						case hb::owner::GodsHandKnight: // GHK
-						case hb::owner::GodsHandKnightCK: // GHKABS
-						case hb::owner::TempleKnight: // TK
+						case hb::shared::owner::GodsHandKnight: // GHK
+						case hb::shared::owner::GodsHandKnightCK: // GHKABS
+						case hb::shared::owner::TempleKnight: // TK
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 6)
 							{
 								if (m_pData[dX][dY].m_sV2 == -1)
@@ -3509,7 +3516,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 						case 4:
 						case 5:
 						case 6:
-						case hb::owner::DarkElf: // DE
+						case hb::shared::owner::DarkElf: // DE
 							if (m_pData[dX][dY].m_animation.cCurrentFrame == 6)
 							{
 								if (m_pData[dX][dY].m_sV2 == -1)
@@ -3551,30 +3558,30 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 							}
 
 							switch (m_pData[dX][dY].m_sOwnerType) {
-							case hb::owner::Beholder: // BB
+							case hb::shared::owner::Beholder: // BB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 39, sDist, lPan);
 								break;
 
-							case hb::owner::Slime: // Slime
-							case hb::owner::Dummy: // Dummy
-							case hb::owner::EnergySphere: // Snoopy: EnergyBall
+							case hb::shared::owner::Slime: // Slime
+							case hb::shared::owner::Dummy: // Dummy
+							case hb::shared::owner::EnergySphere: // Snoopy: EnergyBall
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 4, sDist, lPan);
 								break;
 
-							case hb::owner::Skeleton: // Skell
+							case hb::shared::owner::Skeleton: // Skell
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 16, sDist, lPan);
 								break;
 
-							case hb::owner::StoneGolem: // Stone-Golem
-							case hb::owner::BattleGolem: // BG
+							case hb::shared::owner::StoneGolem: // Stone-Golem
+							case hb::shared::owner::BattleGolem: // BG
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 36, sDist, lPan);
 								break;
 
-							case hb::owner::IceGolem: // IceGolem
+							case hb::shared::owner::IceGolem: // IceGolem
 								//							if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								//								m_pGame->m_pEffectManager->AddEffect(EffectType::AURA_EFFECT_2, (m_sPivotX+dX)*32, (m_sPivotY+dY)*32, 0, 0, 0 );
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5) {
@@ -3583,87 +3590,87 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								}
 								break;
 
-							case hb::owner::Cyclops: // Cyclops
-							case hb::owner::HellClaw: // HC
+							case hb::shared::owner::Cyclops: // Cyclops
+							case hb::shared::owner::HellClaw: // HC
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 44, sDist, lPan);
 								break;
 
-							case hb::owner::OrcMage: // Orc
-							case hb::owner::Stalker: // SK
+							case hb::shared::owner::OrcMage: // Orc
+							case hb::shared::owner::Stalker: // SK
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 12, sDist, lPan);
 								break;
 
-							case hb::owner::GiantAnt: // Ant
-							case hb::owner::LightWarBeetle: // LWB
+							case hb::shared::owner::GiantAnt: // Ant
+							case hb::shared::owner::LightWarBeetle: // LWB
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 32, sDist, lPan);
 								break;
 
-							case hb::owner::Scorpion: // Scorp
+							case hb::shared::owner::Scorpion: // Scorp
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 24, sDist, lPan);
 								break;
 
-							case hb::owner::Zombie: // Zombie
+							case hb::shared::owner::Zombie: // Zombie
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 20, sDist, lPan);
 								break;
 
-							case hb::owner::Amphis: // Snake
+							case hb::shared::owner::Amphis: // Snake
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 28, sDist, lPan);
 								break;
 
-							case hb::owner::ClayGolem: // Clay-Golem
+							case hb::shared::owner::ClayGolem: // Clay-Golem
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 40, sDist, lPan);
 								break;
 
-							case hb::owner::Hellhound: // HH
+							case hb::shared::owner::Hellhound: // HH
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 8, sDist, lPan);
 								break;
 
-							case hb::owner::Troll: // Troll
+							case hb::shared::owner::Troll: // Troll
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 49, sDist, lPan);
 								break;
 
-							case hb::owner::Ogre: // Ogre
+							case hb::shared::owner::Ogre: // Ogre
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 54, sDist, lPan);
 								break;
 
-							case hb::owner::Liche: // Liche
-							case hb::owner::TigerWorm: // TW
+							case hb::shared::owner::Liche: // Liche
+							case hb::shared::owner::TigerWorm: // TW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 58, sDist, lPan);
 								break;
 
-							case hb::owner::Demon: // DD
+							case hb::shared::owner::Demon: // DD
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 62, sDist, lPan);
 								break;
 
-							case hb::owner::Unicorn: // Uni
+							case hb::shared::owner::Unicorn: // Uni
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 66, sDist, lPan);
 								break;
 
-							case hb::owner::WereWolf: // WW
+							case hb::shared::owner::WereWolf: // WW
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 									m_pGame->PlayGameSound('M', 70, sDist, lPan);
 								break;
 
-							case hb::owner::ArrowGuardTower: // AGT
-							case hb::owner::CannonGuardTower: // CGT
-							case hb::owner::ManaCollector: // MS
-							case hb::owner::Detector: // DT
-							case hb::owner::EnergyShield: // ESG
-							case hb::owner::GrandMagicGenerator: // GMG
-							case hb::owner::ManaStone: // ManaStone
+							case hb::shared::owner::ArrowGuardTower: // AGT
+							case hb::shared::owner::CannonGuardTower: // CGT
+							case hb::shared::owner::ManaCollector: // MS
+							case hb::shared::owner::Detector: // DT
+							case hb::shared::owner::EnergyShield: // ESG
+							case hb::shared::owner::GrandMagicGenerator: // GMG
+							case hb::shared::owner::ManaStone: // ManaStone
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 3)
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_EXPLOSION, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
@@ -3678,7 +3685,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								}
 								break;
 
-							case hb::owner::CT: // Snoopy: CrossBowTurret
+							case hb::shared::owner::CT: // Snoopy: CrossBowTurret
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 3)
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_EXPLOSION, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
@@ -3695,7 +3702,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->PlayGameSound('M', 154, sDist, lPan);
 								break;
 
-							case hb::owner::AGC: // Snoopy: CannonTurret
+							case hb::shared::owner::AGC: // Snoopy: CannonTurret
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 3)
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_EXPLOSION, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
@@ -3712,7 +3719,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->PlayGameSound('M', 156, sDist, lPan);
 								break;
 
-							case hb::owner::Catapult: // CP
+							case hb::shared::owner::Catapult: // CP
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 1)
 								{
 									m_pGame->m_pEffectManager->AddEffect(EffectType::MS_CRUSADE_EXPLOSION, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32 - 30, 0, 0, 0, 0);
@@ -3727,7 +3734,7 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								}
 								break;
 
-							case hb::owner::Gargoyle: // GG
+							case hb::shared::owner::Gargoyle: // GG
 								if (m_pData[dX][dY].m_animation.cCurrentFrame == 5)
 								{
 									m_pGame->PlayGameSound('M', 44, sDist, lPan);
@@ -3747,122 +3754,122 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 								}
 								break;
 
-							case hb::owner::Bunny:// Rabbit
+							case hb::shared::owner::Bunny:// Rabbit
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 83, sDist, lPan);
 								break;
 
-							case hb::owner::Cat: // Cat
+							case hb::shared::owner::Cat: // Cat
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 84, sDist, lPan);
 								break;
 
-							case hb::owner::GiantFrog://Giant-Frog
+							case hb::shared::owner::GiantFrog://Giant-Frog
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 85, sDist, lPan);
 								break;
 
-							case hb::owner::MountainGiant://Mountain Giant
-							case hb::owner::MasterOrc: // Snoopy: MasterMageOrc
+							case hb::shared::owner::MountainGiant://Mountain Giant
+							case hb::shared::owner::MasterOrc: // Snoopy: MasterMageOrc
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 90, sDist, lPan);
 								break;
 
-							case hb::owner::Ettin://Ettin
-							case hb::owner::Barbarian: // Snoopy: Barbarian
+							case hb::shared::owner::Ettin://Ettin
+							case hb::shared::owner::Barbarian: // Snoopy: Barbarian
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 94, sDist, lPan);
 								break;
 
-							case hb::owner::ATK: // Snoopy: ATK
+							case hb::shared::owner::ATK: // Snoopy: ATK
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 141, sDist, lPan);
 								break;
 
-							case hb::owner::DSK: // Snoopy: DSK
+							case hb::shared::owner::DSK: // Snoopy: DSK
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 146, sDist, lPan);
 								break;
 
-							case hb::owner::Rudolph://Rudolph
+							case hb::shared::owner::Rudolph://Rudolph
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 65, sDist, lPan);
 								break;
 
-							case hb::owner::DireBoar://DireBoar
+							case hb::shared::owner::DireBoar://DireBoar
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 94, sDist, lPan);
 								break;
 
-							case hb::owner::Wyvern: // Wyvern
+							case hb::shared::owner::Wyvern: // Wyvern
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('E', 7, sDist, lPan);
 								break;
 
-							case hb::owner::Dragon: // Snoopy: Dragon
+							case hb::shared::owner::Dragon: // Snoopy: Dragon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 129, sDist, lPan);
 								break;
 
-							case hb::owner::Centaur: // Snoopy: Centaur
-							case hb::owner::Sorceress: // Snoopy: Sorceress
+							case hb::shared::owner::Centaur: // Snoopy: Centaur
+							case hb::shared::owner::Sorceress: // Snoopy: Sorceress
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 129, sDist, lPan);
 								break;
 
-							case hb::owner::ClawTurtle: // Snoopy: ClawTurtle
+							case hb::shared::owner::ClawTurtle: // Snoopy: ClawTurtle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 113, sDist, lPan);
 								break;
 
-							case hb::owner::FireWyvern: // Snoopy: FireWyvern
+							case hb::shared::owner::FireWyvern: // Snoopy: FireWyvern
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 105, sDist, lPan);
 								break;
 
 
-							case hb::owner::CannibalPlant: // Cannibal Plant
-							case hb::owner::GiantCrayfish: // Snoopy: GiantGrayFish
+							case hb::shared::owner::CannibalPlant: // Cannibal Plant
+							case hb::shared::owner::GiantCrayfish: // Snoopy: GiantGrayFish
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 98, sDist, lPan);
 								break;
 
-							case hb::owner::GiLizard: //Snoopy:
+							case hb::shared::owner::GiLizard: //Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 125, sDist, lPan);
 								break;
 
-							case hb::owner::GiTree: // Snoopy:
+							case hb::shared::owner::GiTree: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 121, sDist, lPan);
 								break;
 
-							case hb::owner::Minaus: // Snoopy:
+							case hb::shared::owner::Minaus: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 103, sDist, lPan);
 								break;
 
-							case hb::owner::Nizie: // Snoopy:
+							case hb::shared::owner::Nizie: // Snoopy:
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 133, sDist, lPan);
 								break;
 
-							case hb::owner::Tentocle: //Snoopy: Tentocle
+							case hb::shared::owner::Tentocle: //Snoopy: Tentocle
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 109, sDist, lPan);
 								break;
 
-							case hb::owner::Abaddon: // Snoopy: Abaddon
+							case hb::shared::owner::Abaddon: // Snoopy: Abaddon
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 139, sDist, lPan);
 								break;
 
-							case hb::owner::MasterElf: // Snoopy: MasterElf
+							case hb::shared::owner::MasterElf: // Snoopy: MasterElf
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 150, sDist, lPan);
 								break;
 
-							case hb::owner::HBT: // Snoopy: HBT
+							case hb::shared::owner::HBT: // Snoopy: HBT
 								if ((m_pData[dX][dY].m_animation.cCurrentFrame == 1))
 									m_pGame->PlayGameSound('M', 152, sDist, lPan);
 								break;
@@ -3872,8 +3879,8 @@ int CMapData::iObjectFrameCounter(char* cPlayerName, short sViewPointX, short sV
 									m_pGame->PlayGameSound('C', 15, sDist, lPan);
 								break;
 
-							case hb::owner::Frost: // Frost
-							case hb::owner::Gate: // Snoopy: Gate
+							case hb::shared::owner::Frost: // Frost
+							case hb::shared::owner::Gate: // Snoopy: Gate
 								break;
 							}
 							break;
@@ -3930,7 +3937,7 @@ bool CMapData::bSetItem(short sX, short sY, short sIDnum, char cItemColor, uint3
 	return true;
 }
 
-bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const PlayerAppearance& appearance, const PlayerStatus& status, char* pName, short npcConfigId)
+bool __fastcall CMapData::bSetDeadOwner(uint16_t wObjectID, short sX, short sY, short sType, char cDir, const hb::shared::entity::PlayerAppearance& appearance, const hb::shared::entity::PlayerStatus& status, char* pName, short npcConfigId)
 {
 	int  dX, dY;
 	char pTmpName[12];
@@ -4066,7 +4073,7 @@ void CMapData::ClearDeadChatMsg(short sX, short sY)
 	m_pData[sX - m_sPivotX][sY - m_sPivotY].m_iDeadChatMsg = 0;
 }
 
-bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwnerType, PlayerStatus* pOwnerStatus, uint16_t* pObjectID)
+bool __fastcall CMapData::bGetOwner(short sX, short sY, char* pName, short* pOwnerType, hb::shared::entity::PlayerStatus* pOwnerStatus, uint16_t* pObjectID)
 {
 	int dX, dY;
 
@@ -4113,49 +4120,49 @@ bool CMapData::bSetDynamicObject(short sX, short sY, uint16_t wID, short sType, 
 
 	switch (sType) {
 	case 0:
-		if (sPrevType == DEF_DYNAMICOBJECT_FIRE)
+		if (sPrevType == dynamic_object::Fire)
 		{
 			m_pGame->m_pEffectManager->AddEffect(EffectType::RED_CLOUD_PARTICLES, (m_sPivotX + dX) * 32, (m_sPivotY + dY) * 32, 0, 0, 0, 0);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::RED_CLOUD_PARTICLES, (m_sPivotX + dX) * 32 + (10 - (rand() % 20)), (m_sPivotY + dY) * 32 + (20 - (rand() % 40)), 0, 0, 0, 0);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::RED_CLOUD_PARTICLES, (m_sPivotX + dX) * 32 + (10 - (rand() % 20)), (m_sPivotY + dY) * 32 + (20 - (rand() % 40)), 0, 0, 0, 0);
 			m_pGame->m_pEffectManager->AddEffect(EffectType::RED_CLOUD_PARTICLES, (m_sPivotX + dX) * 32 + (10 - (rand() % 20)), (m_sPivotY + dY) * 32 + (20 - (rand() % 40)), 0, 0, 0, 0);
 		}
-		else if ((sPrevType == DEF_DYNAMICOBJECT_PCLOUD_BEGIN) || (sPrevType == DEF_DYNAMICOBJECT_PCLOUD_LOOP))
+		else if ((sPrevType == dynamic_object::PCloudBegin) || (sPrevType == dynamic_object::PCloudLoop))
 		{
-			m_pData[dX][dY].m_sDynamicObjectType = DEF_DYNAMICOBJECT_PCLOUD_END;
+			m_pData[dX][dY].m_sDynamicObjectType = dynamic_object::PCloudEnd;
 			m_pData[dX][dY].m_cDynamicObjectFrame = 0;
 			m_pData[dX][dY].m_dwDynamicObjectTime = GameClock::GetTimeMS();
 		}
 		break;
 
-	case DEF_DYNAMICOBJECT_FISH:
+	case dynamic_object::Fish:
 		m_pData[dX][dY].m_cDynamicObjectData1 = (rand() % 40) - 20;
 		m_pData[dX][dY].m_cDynamicObjectData2 = (rand() % 40) - 20;
 		m_pData[dX][dY].m_cDynamicObjectData3 = (rand() % 10) - 5;
 		m_pData[dX][dY].m_cDynamicObjectData4 = (rand() % 10) - 5;
 		break;
 
-	case DEF_DYNAMICOBJECT_PCLOUD_BEGIN:
+	case dynamic_object::PCloudBegin:
 		if (bIsEvent == false)
 		{
-			m_pData[dX][dY].m_sDynamicObjectType = DEF_DYNAMICOBJECT_PCLOUD_LOOP;
+			m_pData[dX][dY].m_sDynamicObjectType = dynamic_object::PCloudLoop;
 			m_pData[dX][dY].m_cDynamicObjectFrame = rand() % 8;
 		}
 		else m_pData[dX][dY].m_cDynamicObjectFrame = -1 * (rand() % 8);
 		break;
 
-	case DEF_DYNAMICOBJECT_ARESDENFLAG1:
+	case dynamic_object::AresdenFlag1:
 		m_pData[dX][dY].m_cDynamicObjectFrame = (rand() % 4);
 		break;
 
-	case DEF_DYNAMICOBJECT_ELVINEFLAG1:
+	case dynamic_object::ElvineFlag1:
 		m_pData[dX][dY].m_cDynamicObjectFrame = 4 + (rand() % 4);
 		break;
 	}
 	return true;
 }
 
-void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, PlayerAppearance* pAppearance, PlayerStatus* pStatus, char* pName)
+void CMapData::GetOwnerStatusByObjectID(uint16_t wObjectID, char* pOwnerType, char* pDir, hb::shared::entity::PlayerAppearance* pAppearance, hb::shared::entity::PlayerStatus* pStatus, char* pName)
 {
 	int iX, iY;
 	for (iX = 0; iX < MAPDATASIZEX; iX++)

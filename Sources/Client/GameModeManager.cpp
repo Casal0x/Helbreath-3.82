@@ -8,7 +8,7 @@
 #include "IGameScreen.h"
 #include "CommonTypes.h"  // For GameClock
 #include "FrameTiming.h"  // For FrameTiming::GetDeltaTime()
-#include "IInput.h"       // For Input::SetSuppressed
+#include "IInput.h"       // For hb::shared::input::SetSuppressed
 #include "ConfigManager.h"
 #include "RendererFactory.h"
 
@@ -125,7 +125,7 @@ void GameModeManager::UpdateScreensImpl()
     // Suppress input for base screen during transitions or when overlay is active
     if (bTransitioning || m_pActiveOverlay)
     {
-        Input::SetSuppressed(true);
+        hb::shared::input::SetSuppressed(true);
     }
 
     // Update base screen (input suppressed if transitioning or overlay active)
@@ -135,7 +135,7 @@ void GameModeManager::UpdateScreensImpl()
     }
 
     // Always restore input before overlay update
-    Input::SetSuppressed(false);
+    hb::shared::input::SetSuppressed(false);
 
     // Update overlay (receives input only when not transitioning)
     if (m_pActiveOverlay && !bTransitioning)
@@ -156,7 +156,7 @@ void GameModeManager::RenderImpl()
     if (m_pActiveOverlay)
     {
         if (m_pActiveOverlay->wants_background_dim())
-            m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), Color::Black(128));
+            m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), hb::shared::render::Color::Black(128));
         m_pActiveOverlay->on_render();
     }
 }
@@ -225,7 +225,7 @@ void GameModeManager::ApplyScreenChange()
 
             // Game screen uses user's configured FPS limit;
             // all other screens cap at 60 FPS (no reason to render menus faster)
-            IWindow* pWindow = Window::Get();
+            hb::shared::render::IWindow* pWindow = hb::shared::render::Window::Get();
             if (pWindow)
             {
                 if (m_currentMode == GameMode::MainGame)

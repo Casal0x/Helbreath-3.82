@@ -5,9 +5,10 @@
 #include "lan_eng.h"
 #include "SharedCalculations.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
-using hb::item::EquipPos;
+using hb::shared::item::EquipPos;
 
 // Draw order: first entry drawn first (bottom layer), last entry drawn last (top layer).
 // Collision checks iterate in reverse so topmost-drawn item has highest click priority.
@@ -89,7 +90,7 @@ static EquipPos FindHoverSlot(CGame* pGame, const EquipSlotLayout* slots, int sl
 }
 
 // Helper: Render equipped item with optional hover highlight
-void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY,
+void DialogBox_Character::DrawEquippedItem(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
 	const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset)
 {
 	int itemIdx = cEquipPoiStatus[static_cast<int>(equipPos)];
@@ -105,7 +106,7 @@ void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 	bool bDisabled = m_pGame->m_bIsItemDisabled[itemIdx];
 
 	// Select color array based on item type (weapons use different colors)
-	const Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
+	const hb::shared::render::Color* colors = useWeaponColors ? GameColors::Weapons : GameColors::Items;
 
 	auto pSprite = m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + spriteOffset];
 
@@ -114,18 +115,18 @@ void DialogBox_Character::DrawEquippedItem(hb::item::EquipPos equipPos, int draw
 		if (cItemColor == 0)
 			pSprite->Draw(drawX, drawY, sFrame);
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Tint(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b));
+			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Tint(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b));
 	}
 	else
 	{
 		if (cItemColor == 0)
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 		else
-			pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::TintedAlpha(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b, 0.7f));
+			pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::TintedAlpha(colors[cItemColor].r, colors[cItemColor].g, colors[cItemColor].b, 0.7f));
 	}
 
 	if (bHighlight)
-		pSprite->Draw(drawX, drawY, sFrame, SpriteLib::DrawParams::Additive(0.35f));
+		pSprite->Draw(drawX, drawY, sFrame, hb::shared::sprite::DrawParams::Additive(0.35f));
 }
 
 // Helper: Draw hover button
@@ -142,7 +143,7 @@ void DialogBox_Character::DrawHoverButton(int sX, int sY, int btnX, int btnY,
 void DialogBox_Character::BuildEquipStatusArray(char (&cEquipPoiStatus)[DEF_MAXITEMEQUIPPOS]) const
 {
 	std::memset(cEquipPoiStatus, -1, sizeof(cEquipPoiStatus));
-	for (int i = 0; i < hb::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_pGame->m_pItemList[i] != nullptr && m_pGame->m_bIsItemEquipped[i])
 		{
@@ -250,10 +251,10 @@ void DialogBox_Character::OnDraw(short msX, short msY, short msZ, char cLB)
 	PutAlignedString(sX + 180, sX + 250, sY + 142, statBuf, GameColors::UILabel);
 
 	// Calculate max stats
-	int iMaxHP = CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
-	int iMaxMP = CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
-	int iMaxSP = CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
-	int iMaxLoad = CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	int iMaxHP = hb::shared::calc::CalculateMaxHP(m_pGame->m_pPlayer->m_iVit, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr);
+	int iMaxMP = hb::shared::calc::CalculateMaxMP(m_pGame->m_pPlayer->m_iMag, m_pGame->m_pPlayer->m_iAngelicMag, m_pGame->m_pPlayer->m_iLevel, m_pGame->m_pPlayer->m_iInt, m_pGame->m_pPlayer->m_iAngelicInt);
+	int iMaxSP = hb::shared::calc::CalculateMaxSP(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
+	int iMaxLoad = hb::shared::calc::CalculateMaxLoad(m_pGame->m_pPlayer->m_iStr, m_pGame->m_pPlayer->m_iAngelicStr, m_pGame->m_pPlayer->m_iLevel);
 
 	// HP, MP, SP
 	char valueBuf[32];
@@ -318,7 +319,7 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear
@@ -351,7 +352,7 @@ void DialogBox_Character::DrawMaleCharacter(short sX, short sY, short msX, short
 				if (!m_pGame->m_bIsItemDisabled[itemIdx])
 					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 				else
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 	}
@@ -367,7 +368,7 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 	if (cEquipPoiStatus[ToInt(EquipPos::Head)] == -1)
 	{
 		const auto& hc = GameColors::Hair[m_pGame->m_pPlayer->m_playerAppearance.iHairColor];
-		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX + 171, sY + 290, m_pGame->m_pPlayer->m_playerAppearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Underwear - female underwear is at +19+40 = +59
@@ -414,7 +415,7 @@ void DialogBox_Character::DrawFemaleCharacter(short sX, short sY, short msX, sho
 				if (!m_pGame->m_bIsItemDisabled[itemIdx])
 					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame);
 				else
-					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, SpriteLib::DrawParams::Alpha(0.5f));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + sSprH + 40]->Draw(sX + 45, sY + 143, sFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 	}
@@ -484,7 +485,7 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 		!m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::SellOrRepair) &&
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3 == 24)
 	{
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, cItemID,
 			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
 			pCfg->m_cName,
 			m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
@@ -502,8 +503,8 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 
 			{
 				short sID = pItem->m_sIDnum;
-				if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
-					sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
+				if (sID == hb::shared::item::ItemId::AngelicPandentSTR || sID == hb::shared::item::ItemId::AngelicPandentDEX ||
+					sID == hb::shared::item::ItemId::AngelicPandentINT || sID == hb::shared::item::ItemId::AngelicPandentMAG)
 					m_pGame->PlayGameSound('E', 53, 0);
 				else
 					m_pGame->PlayGameSound('E', 29, 0);
@@ -513,17 +514,17 @@ bool DialogBox_Character::OnDoubleClick(short msX, short msY)
 			if (pCfg->m_cEquipPos >= 11 &&
 				pCfg->GetItemType() == ItemType::Equip)
 			{
-				if (pItem->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+				if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
 					m_pGame->m_pPlayer->m_iAngelicStr = 0;
-				else if (pItem->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
 					m_pGame->m_pPlayer->m_iAngelicDex = 0;
-				else if (pItem->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
 					m_pGame->m_pPlayer->m_iAngelicInt = 0;
-				else if (pItem->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+				else if (pItem->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
 					m_pGame->m_pPlayer->m_iAngelicMag = 0;
 			}
 
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, cItemID, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::ReleaseItem, 0, cItemID, 0, 0, 0);
 			m_pGame->m_bIsItemEquipped[cItemID] = false;
 			m_pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 			CursorTarget::ClearSelection();

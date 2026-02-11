@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_GuildOperation::DialogBox_GuildOperation(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildOperation, pGame)
 {
@@ -146,11 +147,11 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
 			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDAPPROVE, 0, 0, 0, 0, cName20);
+			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildApprove, 0, 0, 0, 0, cName20);
 			break;
 		case 2:
 			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDAPPROVE, 0, 0, 0, 0, cName20);
+			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildApprove, 0, 0, 0, 0, cName20);
 			break;
 		}
 		m_pGame->_ShiftGuildOperationList();
@@ -166,11 +167,11 @@ bool DialogBox_GuildOperation::OnClick(short msX, short msY)
 		switch (m_pGame->m_stGuildOpList[0].cOpMode) {
 		case 1:
 			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_JOINGUILDREJECT, 0, 0, 0, 0, cName20);
+			bSendCommand(MsgId::CommandCommon, CommonType::JoinGuildReject, 0, 0, 0, 0, cName20);
 			break;
 		case 2:
 			std::snprintf(cName20, sizeof(cName20), "%s", m_pGame->m_stGuildOpList[0].cName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_DISMISSGUILDREJECT, 0, 0, 0, 0, cName20);
+			bSendCommand(MsgId::CommandCommon, CommonType::DismissGuildReject, 0, 0, 0, 0, cName20);
 			break;
 		}
 		m_pGame->_ShiftGuildOperationList();

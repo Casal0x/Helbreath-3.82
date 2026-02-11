@@ -34,9 +34,9 @@ bool HotkeyManager::HandleKey(KeyCode vk, Trigger trigger)
 		return false;
 	}
 
-	const bool ctrlDown = Input::IsCtrlDown();
-	const bool shiftDown = Input::IsShiftDown();
-	const bool altDown = Input::IsAltDown();
+	const bool ctrlDown = hb::shared::input::IsCtrlDown();
+	const bool shiftDown = hb::shared::input::IsShiftDown();
+	const bool altDown = hb::shared::input::IsAltDown();
 
 	bool handled = false;
 	for (const auto& entry : m_entries)

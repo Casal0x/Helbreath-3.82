@@ -43,12 +43,12 @@ public:
 	}
 
 	bool m_bBuildEnabled;
-	char m_cName[DEF_ITEMNAME];
+	char m_cName[hb::shared::limits::ItemNameLen];
 	int	 m_iSkillLimit;
 	int  m_iMaxSkill;
 	int  m_iSprH, m_iSprFrame;
-	char m_cElementName1[DEF_ITEMNAME], m_cElementName2[DEF_ITEMNAME], m_cElementName3[DEF_ITEMNAME];
-	char m_cElementName4[DEF_ITEMNAME], m_cElementName5[DEF_ITEMNAME], m_cElementName6[DEF_ITEMNAME];
+	char m_cElementName1[hb::shared::limits::ItemNameLen], m_cElementName2[hb::shared::limits::ItemNameLen], m_cElementName3[hb::shared::limits::ItemNameLen];
+	char m_cElementName4[hb::shared::limits::ItemNameLen], m_cElementName5[hb::shared::limits::ItemNameLen], m_cElementName6[hb::shared::limits::ItemNameLen];
 	uint32_t m_iElementCount[7];
 	bool  m_bElementFlag[7];
 

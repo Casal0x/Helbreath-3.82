@@ -28,7 +28,7 @@ EffectManager::~EffectManager()
 }
 
 // Listo
-void EffectManager::SetEffectSprites(SpriteLib::SpriteCollection& effectSpr)
+void EffectManager::SetEffectSprites(hb::shared::sprite::SpriteCollection& effectSpr)
 {
 	m_pEffectSpr = &effectSpr;
 }

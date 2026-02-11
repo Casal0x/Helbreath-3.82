@@ -4,6 +4,7 @@
 #include "Misc.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_Skill::DialogBox_Skill(CGame* pGame)
 	: IDialogBox(DialogBoxId::Skill, pGame)
 {
@@ -27,7 +28,7 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 	switch (Info().cMode) {
 	case 0:
 		for (i = 0; i < 17; i++)
-			if ((i < DEF_MAXSKILLTYPE) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
+			if ((i < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
 				std::memset(cTemp, 0, sizeof(cTemp));
 				std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->m_pSkillCfgList[i + Info().sView]->m_cName);
@@ -64,12 +65,12 @@ void DialogBox_Skill::OnDraw(short msX, short msY, short msZ, char cLB)
 				}
 
 				if (m_pGame->m_iDownSkillIndex == (i + Info().sView))
-					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, SpriteLib::DrawParams::Tint(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
-				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, SpriteLib::DrawParams::Tint(1, 1, 1));
+					m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 21, hb::shared::sprite::DrawParams::Tint(GameColors::UIWhite.r, GameColors::UIWhite.g, GameColors::UIWhite.b));
+				else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE]->Draw(sX + 215, sY + 47 + i * 15, 20, hb::shared::sprite::DrawParams::Tint(1, 1, 1));
 			}
 
 		iTotalLines = 0;
-		for (i = 0; i < DEF_MAXSKILLTYPE; i++)
+		for (i = 0; i < hb::shared::limits::MaxSkillType; i++)
 			if (m_pGame->m_pSkillCfgList[i] != 0) iTotalLines++;
 
 		if (iTotalLines > 17)
@@ -125,7 +126,7 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 		break;
 	case 0:
 		for (i = 0; i < 17; i++)
-			if ((i < DEF_MAXSKILLTYPE) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
+			if ((i < hb::shared::limits::MaxSkillType) && (m_pGame->m_pSkillCfgList[i + Info().sView] != 0))
 			{
 				if ((msX >= sX + 44) && (msX <= sX + 135 + 44) && (msY >= sY + 45 + i * 15) && (msY <= sY + 59 + i * 15))
 				{
@@ -149,7 +150,7 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 						switch (m_pGame->m_pSkillCfgList[i + Info().sView]->m_cUseMethod) {
 						case 0:
 						case 2:
-							bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USESKILL, 0, (i + Info().sView), 0, 0, 0);
+							bSendCommand(MsgId::CommandCommon, CommonType::ReqUseSkill, 0, (i + Info().sView), 0, 0, 0);
 							m_pGame->m_bSkillUsingStatus = true;
 							DisableThisDialog();
 							PlaySoundEffect('E', 14, 5);
@@ -161,7 +162,7 @@ bool DialogBox_Skill::OnClick(short msX, short msY)
 				{
 					if (Info().bFlag == false)
 					{
-						bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SETDOWNSKILLINDEX, 0, i + Info().sView, 0, 0, 0);
+						bSendCommand(MsgId::CommandCommon, CommonType::ReqSetDownSkillIndex, 0, i + Info().sView, 0, 0, 0);
 						PlaySoundEffect('E', 14, 5);
 						Info().bFlag = true;
 						return true;

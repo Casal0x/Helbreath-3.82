@@ -11,8 +11,7 @@
 
 #include <cstdint>
 
-namespace hb {
-namespace item {
+namespace hb::shared::item {
 
 //------------------------------------------------------------------------
 // Equipment Position
@@ -391,5 +390,4 @@ inline bool IsSpecialItem(short sIDnum)
     }
 }
 
-} // namespace item
-} // namespace hb
+} // namespace hb::shared::item

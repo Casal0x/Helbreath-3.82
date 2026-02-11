@@ -1726,7 +1726,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
         if (client->m_pItemList[i] == nullptr) {
             continue;
         }
@@ -1785,7 +1785,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxBankItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxBankItems; i++) {
         if (client->m_pItemInBankList[i] == nullptr) {
             continue;
         }
@@ -1826,7 +1826,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         FailAndRollback("item_positions prepare");
         return false;
     }
-    for(int i = 0; i < hb::limits::MaxItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1852,7 +1852,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         FailAndRollback("item_equips prepare");
         return false;
     }
-    for(int i = 0; i < hb::limits::MaxItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1877,7 +1877,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         FailAndRollback("magic_mastery prepare");
         return false;
     }
-    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1902,7 +1902,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         FailAndRollback("skill_mastery prepare");
         return false;
     }
-    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;
@@ -1927,7 +1927,7 @@ bool SaveCharacterSnapshot(sqlite3* db, const CClient* client)
         FailAndRollback("skill_ssn prepare");
         return false;
     }
-    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         ok = true;

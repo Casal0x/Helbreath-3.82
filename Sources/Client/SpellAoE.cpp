@@ -81,15 +81,15 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// Linear spells: Bresenham line (steps 2-9) with cross pattern,
 	// plus a rectangular area at the destination point
 	// =================================================================
-	case hb::magic::DamageLinear:
-	case hb::magic::IceLinear:
-	case hb::magic::DamageLinearSpDown:
+	case hb::shared::magic::DamageLinear:
+	case hb::shared::magic::IceLinear:
+	case hb::shared::magic::DamageLinearSpDown:
 	{
 		// Line trace with cross pattern at each step
 		for (int i = 2; i < 10; i++) {
 			int iErr = 0;
 			int tX, tY;
-			GetPoint2(casterX, casterY, targetX, targetY, &tX, &tY, &iErr, i);
+			hb::shared::geometry::GetPoint2(casterX, casterY, targetX, targetY, &tX, &tY, &iErr, i);
 
 			// Cross pattern: center + 4 cardinal neighbors
 			count = AddUnique(outTiles, count, outMax, tX, tY);
@@ -115,11 +115,11 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// Area spells with center damage: rectangular AoE + center hit
 	// Server: center tile gets m_sValue4/5/6, area gets m_sValue7/8/9
 	// =================================================================
-	case hb::magic::DamageArea:
-	case hb::magic::SpDownArea:
-	case hb::magic::SpUpArea:
-	case hb::magic::Tremor:
-	case hb::magic::Ice:
+	case hb::shared::magic::DamageArea:
+	case hb::shared::magic::SpDownArea:
+	case hb::shared::magic::SpUpArea:
+	case hb::shared::magic::Tremor:
+	case hb::shared::magic::Ice:
 	{
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		if (radiusX > 0 || radiusY > 0) {
@@ -131,9 +131,9 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Area spells WITHOUT center damage (no-spot)
 	// =================================================================
-	case hb::magic::DamageAreaNoSpot:
-	case hb::magic::DamageAreaNoSpotSpDown:
-	case hb::magic::DamageAreaArmorBreak:
+	case hb::shared::magic::DamageAreaNoSpot:
+	case hb::shared::magic::DamageAreaNoSpotSpDown:
+	case hb::shared::magic::DamageAreaArmorBreak:
 	{
 		if (radiusX > 0 || radiusY > 0) {
 			count = AddArea(outTiles, count, outMax, targetX, targetY, radiusX, radiusY);
@@ -148,7 +148,7 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// CREATE_DYNAMIC: Firewall, Firefield, Spikefield, Poison Cloud
 	// Pattern depends on m_sValue11: 1=wall, 2=field
 	// =================================================================
-	case hb::magic::CreateDynamic:
+	case hb::shared::magic::CreateDynamic:
 	{
 		int dynRadius = params.dynamicRadius;
 		if (dynRadius <= 0) dynRadius = 1;
@@ -189,7 +189,7 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Confuse (Mass Illusion etc.) — uses AoE radius, affects area
 	// =================================================================
-	case hb::magic::Confuse:
+	case hb::shared::magic::Confuse:
 	{
 		if (radiusX > 0 || radiusY > 0) {
 			count = AddArea(outTiles, count, outMax, targetX, targetY, radiusX, radiusY);
@@ -202,29 +202,29 @@ int SpellAoE::CalculateTiles(const SpellAoEParams& params,
 	// =================================================================
 	// Single target spells — just the target tile
 	// =================================================================
-	case hb::magic::DamageSpot:
-	case hb::magic::HpUpSpot:
-	case hb::magic::SpDownSpot:
-	case hb::magic::SpUpSpot:
-	case hb::magic::HoldObject:
-	case hb::magic::Possession:
-	case hb::magic::Poison:
-	case hb::magic::Inhibition:
-	case hb::magic::Cancellation:
-	case hb::magic::Berserk:
-	case hb::magic::Protect:
-	case hb::magic::Polymorph:
-	case hb::magic::Resurrection:
-	case hb::magic::Scan:
-	case hb::magic::Invisibility:
-	case hb::magic::Haste:
+	case hb::shared::magic::DamageSpot:
+	case hb::shared::magic::HpUpSpot:
+	case hb::shared::magic::SpDownSpot:
+	case hb::shared::magic::SpUpSpot:
+	case hb::shared::magic::HoldObject:
+	case hb::shared::magic::Possession:
+	case hb::shared::magic::Poison:
+	case hb::shared::magic::Inhibition:
+	case hb::shared::magic::Cancellation:
+	case hb::shared::magic::Berserk:
+	case hb::shared::magic::Protect:
+	case hb::shared::magic::Polymorph:
+	case hb::shared::magic::Resurrection:
+	case hb::shared::magic::Scan:
+	case hb::shared::magic::Invisibility:
+	case hb::shared::magic::Haste:
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		break;
 
 	// Self/utility spells — show target tile as a simple indicator
-	case hb::magic::Teleport:
-	case hb::magic::Summon:
-	case hb::magic::Create:
+	case hb::shared::magic::Teleport:
+	case hb::shared::magic::Summon:
+	case hb::shared::magic::Create:
 		count = AddUnique(outTiles, count, outMax, targetX, targetY);
 		break;
 

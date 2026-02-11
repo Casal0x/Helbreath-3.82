@@ -12,6 +12,7 @@ extern char G_cSpriteAlphaDegree;
 #include <cstring>
 #include <cmath>
 
+using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
 
 void HandleWhetherChange(CGame* pGame, char* pData)
@@ -127,16 +128,16 @@ void HandleServerChange(CGame* pGame, char* pData)
 	{
 		pGame->m_pLSock.reset();
 	}
-	pGame->m_pLSock = std::make_unique<ASIOSocket>(pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+	pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
 	pGame->m_pLSock->bConnect(pGame->m_cLogServerAddr, iWorldServerPort);
-	pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+	pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
 	pGame->m_pPlayer->m_bIsPoisoned = false;
 
 	pGame->ChangeGameMode(GameMode::Connecting);
-	pGame->m_dwConnectMode = MSGID_REQUEST_ENTERGAME;
-	//m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW; //Gateway
-	pGame->m_wEnterGameType = DEF_ENTERGAMEMSGTYPE_NEW_TOWLSBUTMLS;
+	pGame->m_dwConnectMode = MsgId::RequestEnterGame;
+	//m_wEnterGameType = EnterGameMsg::New; //Gateway
+	pGame->m_wEnterGameType = EnterGameMsg::NewToWlsButMls;
 	std::memset(pGame->m_cMsg, 0, sizeof(pGame->m_cMsg));
 	std::snprintf(pGame->m_cMsg, sizeof(pGame->m_cMsg), "%s", "55");
 }

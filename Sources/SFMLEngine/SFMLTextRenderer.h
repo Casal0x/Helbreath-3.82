@@ -9,7 +9,7 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
-namespace TextLib {
+namespace hb::shared::text {
 
 class SFMLTextRenderer : public ITextRenderer
 {
@@ -31,8 +31,8 @@ public:
     int GetLineHeight() const override;
 
     // Drawing
-    void DrawText(int x, int y, const char* text, const ::Color& color) override;
-    void DrawTextAligned(int x, int y, int width, int height, const char* text, const ::Color& color,
+    void DrawText(int x, int y, const char* text, const hb::shared::render::Color& color) override;
+    void DrawTextAligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
                          Align alignment = Align::TopLeft) override;
 
     // Batching (no-op for SFML, no DC acquisition needed)
@@ -52,4 +52,4 @@ private:
     unsigned int m_fontSize;
 };
 
-} // namespace TextLib
+} // namespace hb::shared::text

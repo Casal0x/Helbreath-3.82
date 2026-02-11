@@ -81,7 +81,7 @@ public:
     // Core Item Data
     //------------------------------------------------------------------------
 
-    char  m_cName[DEF_ITEMNAME];    // Internal item name (from database)
+    char  m_cName[hb::shared::limits::ItemNameLen];    // Internal item name (from database)
 
     short m_sIDnum;                 // Item ID number (unique identifier)
     char  m_cItemType;              // Item type (see ItemType enum)
@@ -196,44 +196,44 @@ public:
     // Type-Safe Enum Accessors
     //------------------------------------------------------------------------
 
-    hb::item::EquipPos GetEquipPos() const
+    hb::shared::item::EquipPos GetEquipPos() const
     {
-        return hb::item::ToEquipPos(m_cEquipPos);
+        return hb::shared::item::ToEquipPos(m_cEquipPos);
     }
 
-    void SetEquipPos(hb::item::EquipPos pos)
+    void SetEquipPos(hb::shared::item::EquipPos pos)
     {
-        m_cEquipPos = hb::item::ToInt(pos);
+        m_cEquipPos = hb::shared::item::ToInt(pos);
     }
 
-    hb::item::ItemType GetItemType() const
+    hb::shared::item::ItemType GetItemType() const
     {
-        return hb::item::ToItemType(m_cItemType);
+        return hb::shared::item::ToItemType(m_cItemType);
     }
 
-    void SetItemType(hb::item::ItemType type)
+    void SetItemType(hb::shared::item::ItemType type)
     {
-        m_cItemType = hb::item::ToInt(type);
+        m_cItemType = hb::shared::item::ToInt(type);
     }
 
-    hb::item::ItemEffectType GetItemEffectType() const
+    hb::shared::item::ItemEffectType GetItemEffectType() const
     {
-        return hb::item::ToItemEffectType(m_sItemEffectType);
+        return hb::shared::item::ToItemEffectType(m_sItemEffectType);
     }
 
-    void SetItemEffectType(hb::item::ItemEffectType type)
+    void SetItemEffectType(hb::shared::item::ItemEffectType type)
     {
-        m_sItemEffectType = hb::item::ToInt(type);
+        m_sItemEffectType = hb::shared::item::ToInt(type);
     }
 
-    hb::item::TouchEffectType GetTouchEffectType() const
+    hb::shared::item::TouchEffectType GetTouchEffectType() const
     {
-        return hb::item::ToTouchEffectType(m_sTouchEffectType);
+        return hb::shared::item::ToTouchEffectType(m_sTouchEffectType);
     }
 
-    void SetTouchEffectType(hb::item::TouchEffectType type)
+    void SetTouchEffectType(hb::shared::item::TouchEffectType type)
     {
-        m_sTouchEffectType = hb::item::ToInt(type);
+        m_sTouchEffectType = hb::shared::item::ToInt(type);
     }
 
     //------------------------------------------------------------------------
@@ -268,24 +268,24 @@ public:
     // Check if item is stackable based on its type
     bool IsStackable() const
     {
-        return hb::item::IsStackableType(GetItemType());
+        return hb::shared::item::IsStackableType(GetItemType());
     }
 
     // Check if item is a weapon
     bool IsWeapon() const
     {
-        return hb::item::IsWeaponSlot(GetEquipPos());
+        return hb::shared::item::IsWeaponSlot(GetEquipPos());
     }
 
     // Check if item is armor
     bool IsArmor() const
     {
-        return hb::item::IsArmorSlot(GetEquipPos());
+        return hb::shared::item::IsArmorSlot(GetEquipPos());
     }
 
     // Check if item is an accessory
     bool IsAccessory() const
     {
-        return hb::item::IsAccessorySlot(GetEquipPos());
+        return hb::shared::item::IsAccessorySlot(GetEquipPos());
     }
 };

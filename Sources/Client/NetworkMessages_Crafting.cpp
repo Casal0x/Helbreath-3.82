@@ -70,7 +70,7 @@ void HandleBuildItemSuccess(CGame* pGame, char* pData)
 		sV1 = pkt->item_id;
 		sV2 = pkt->item_count;
 	}
-	if (hb::objectid::IsPlayerID(sV1))
+	if (hb::shared::object_id::IsPlayerID(sV1))
 	{
 		pGame->m_dialogBoxManager.EnableDialogBox(DialogBoxId::Manufacture, 6, 1, sV1, 0);
 		pGame->m_dialogBoxManager.Info(DialogBoxId::Manufacture).sV1 = sV2;

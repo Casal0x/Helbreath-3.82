@@ -103,7 +103,7 @@ public:
 	class CTeleportLoc * m_pTeleportLoc[DEF_MAXTELEPORTLOC];
 	
 	//short m_sInitialPointX, m_sInitialPointY;
-	GamePoint m_pInitialPoint[DEF_MAXINITIALPOINT];
+	hb::shared::geometry::GamePoint m_pInitialPoint[DEF_MAXINITIALPOINT];
 
 	bool  m_bNamingValueUsingStatus[1000]; // 0~999
 	bool  m_bRandomMobGenerator;
@@ -121,7 +121,7 @@ public:
 		char cType;				// 1:RANDOMAREA   2:RANDOMWAYPOINT
 
 		char cWaypoint[10];     // RANDOMWAYPOINT
-		GameRectangle rcRect;			// RANDOMAREA
+		hb::shared::geometry::GameRectangle rcRect;			// RANDOMAREA
 
 		int  iTotalActiveMob;
 		int  iNpcConfigId;
@@ -132,17 +132,17 @@ public:
 
 	} m_stSpotMobGenerator[DEF_MAXSPOTMOBGENERATOR];
 
-	GamePoint m_WaypointList[DEF_MAXWAYPOINTCFG];
-	GameRectangle  m_rcMobGenAvoidRect[DEF_MAXMGAR];
-	GameRectangle  m_rcNoAttackRect[DEF_MAXNMR];
+	hb::shared::geometry::GamePoint m_WaypointList[DEF_MAXWAYPOINTCFG];
+	hb::shared::geometry::GameRectangle  m_rcMobGenAvoidRect[DEF_MAXMGAR];
+	hb::shared::geometry::GameRectangle  m_rcNoAttackRect[DEF_MAXNMR];
 
-	GamePoint m_FishPointList[DEF_MAXFISHPOINT];
+	hb::shared::geometry::GamePoint m_FishPointList[DEF_MAXFISHPOINT];
 	int   m_iTotalFishPoint, m_iMaxFish, m_iCurFish;
 	
 	int	  m_iApocalypseMobGenType, m_iApocalypseBossMobNpcID;
-	GameRectangle m_rcApocalypseBossMob;
+	hb::shared::geometry::GameRectangle m_rcApocalypseBossMob;
 	char  m_cDynamicGateType;
-	GameRectangle m_rcDynamicGateCoord;
+	hb::shared::geometry::GameRectangle m_rcDynamicGateCoord;
 	char  m_cDynamicGateCoordDestMap[11];
 	short m_sDynamicGateCoordTgtX, m_sDynamicGateCoordTgtY;
 	bool  m_bIsCitizenLimit;
@@ -152,7 +152,7 @@ public:
 
 	bool  m_bMineralGenerator;
 	char  m_cMineralGeneratorLevel;
-	GamePoint m_MineralPointList[DEF_MAXMINERALPOINT];
+	hb::shared::geometry::GamePoint m_MineralPointList[DEF_MAXMINERALPOINT];
 	int   m_iTotalMineralPoint, m_iMaxMineral, m_iCurMineral;
 
 	char  m_cWhetherStatus;		// . 0 . 1~3  4~6  7~9
@@ -205,7 +205,7 @@ public:
 	short sMobEventAmount;
 	int m_iTotalItemEvents;
 	struct {
-		char cItemName[DEF_ITEMNAME];
+		char cItemName[hb::shared::limits::ItemNameLen];
 		int iAmount;
 		int iTotal;
 		int iMonth;
@@ -247,7 +247,7 @@ public:
 		char cType;			// NULL   .
 		char cSide;
 		short sX, sY;
-	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
+	} m_stCrusadeStructureInfo[hb::shared::limits::MaxCrusadeStructures];
 	int m_iTotalCrusadeStructures;
 	bool m_bIsEnergySphereAutoCreation;
 private:

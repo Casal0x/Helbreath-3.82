@@ -22,7 +22,7 @@ void Screen_Splash::on_initialize()
 {
     GameModeManager::SetCurrentMode(GameMode::Splash);
 
-    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN] = SpriteLib::Sprites::Create("New-Dialog", 3, false);
+    m_pGame->m_pSprite[DEF_SPRID_SPLASH_SCREEN] = hb::shared::sprite::Sprites::Create("New-Dialog", 3, false);
 
     m_credits = {{
         { "Centuu - HelbreathServer starting base", "https://github.com/centuu/HelbreathServer" },
@@ -95,21 +95,21 @@ void Screen_Splash::on_render()
             continue;
 
         // Scale RGB by alpha to simulate fade (TTF fonts don't support alpha)
-        auto fade = [alpha](const Color& c) {
-            return TextLib::TextStyle::WithDropShadow(Color(
+        auto fade = [alpha](const hb::shared::render::Color& c) {
+            return hb::shared::text::TextStyle::WithDropShadow(hb::shared::render::Color(
                 static_cast<uint8_t>(c.r * alpha),
                 static_cast<uint8_t>(c.g * alpha),
                 static_cast<uint8_t>(c.b * alpha)));
         };
 
         const auto& credit = m_credits[i];
-        TextLib::DrawTextAligned(GameFont::Default, 0, creditY, LOGICAL_WIDTH(), lineHeight,
-            credit.displayLine.c_str(), fade(GameColors::UIWhite), TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 0, creditY, LOGICAL_WIDTH(), lineHeight,
+            credit.displayLine.c_str(), fade(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 
         if (!credit.url.empty())
         {
-            TextLib::DrawTextAligned(GameFont::Default, 0, creditY + lineHeight, LOGICAL_WIDTH(), lineHeight,
-                credit.url.c_str(), fade(GameColors::UIFactionChat), TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 0, creditY + lineHeight, LOGICAL_WIDTH(), lineHeight,
+                credit.url.c_str(), fade(GameColors::UIFactionChat), hb::shared::text::Align::TopCenter);
         }
     }
 

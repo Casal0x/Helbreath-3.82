@@ -19,7 +19,7 @@
 // Forward declaration
 class SFMLRenderer;
 
-class SFMLSprite : public SpriteLib::ISprite
+class SFMLSprite : public hb::shared::sprite::ISprite
 {
 public:
     // Construction from file path (opens file, reads sprite data)
@@ -35,18 +35,18 @@ public:
     //------------------------------------------------------------------
 
     // Core drawing
-    void Draw(int x, int y, int frame, const SpriteLib::DrawParams& params = SpriteLib::DrawParams{}) override;
-    void DrawToSurface(void* destSurface, int x, int y, int frame, const SpriteLib::DrawParams& params = SpriteLib::DrawParams{}) override;
+    void Draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
+    void DrawToSurface(void* destSurface, int x, int y, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
     void DrawWidth(int x, int y, int frame, int width, bool vertical = false) override;
-    void DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const SpriteLib::DrawParams& params = SpriteLib::DrawParams{}) override;
+    void DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const hb::shared::sprite::DrawParams& params = hb::shared::sprite::DrawParams{}) override;
 
     // Frame information
     int GetFrameCount() const override;
-    SpriteLib::SpriteRect GetFrameRect(int frame) const override;
+    hb::shared::sprite::SpriteRect GetFrameRect(int frame) const override;
     void GetBoundingRect(int x, int y, int frame, int& left, int& top, int& right, int& bottom) override;
     void CalculateBounds(int x, int y, int frame) override;
     bool GetLastDrawBounds(int& left, int& top, int& right, int& bottom) const override;
-    SpriteLib::BoundRect GetBoundRect() const override;
+    hb::shared::sprite::BoundRect GetBoundRect() const override;
 
     // Collision detection
     bool CheckCollision(int spriteX, int spriteY, int frame, int pointX, int pointY) override;
@@ -83,7 +83,7 @@ private:
     bool CreateTexture();
 
     // Draw implementation
-    void DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const SpriteLib::DrawParams& params);
+    void DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const hb::shared::sprite::DrawParams& params);
 
     // Apply alpha degree effect
     void ApplyAlphaDegree();
@@ -92,7 +92,7 @@ private:
     // Member Variables
     //------------------------------------------------------------------
 
-    // Renderer reference
+    // hb::shared::render::Renderer reference
     SFMLRenderer* m_pRenderer;
 
     // PAK file info (for lazy loading)
@@ -118,6 +118,6 @@ private:
 
     // State
     bool m_inUse;
-    SpriteLib::BoundRect m_boundRect;
+    hb::shared::sprite::BoundRect m_boundRect;
     uint32_t m_lastAccessTime;
 };

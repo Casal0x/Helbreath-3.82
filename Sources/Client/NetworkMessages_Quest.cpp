@@ -38,7 +38,7 @@ void HandleQuestContents(CGame* pGame, char* pData)
 void HandleQuestReward(CGame* pGame, char* pData)
 {
 	short sWho, sFlag;
-	char cRewardName[DEF_ITEMNAME], cTxt[120];
+	char cRewardName[hb::shared::limits::ItemNameLen], cTxt[120];
 	int iAmount, iIndex, iPreCon;
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyQuestReward>(
 		pData, sizeof(hb::net::PacketNotifyQuestReward));

@@ -9,6 +9,9 @@
 #include "IInput.h"
 #include "SpriteID.h"
 
+
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Screen_Quit::Screen_Quit(CGame* pGame)
     : IGameScreen(pGame)
 {
@@ -41,18 +44,18 @@ void Screen_Quit::on_update()
     if (dwElapsed >= INPUT_ACTIVE_MS)
     {
         // Handle escape/enter to quit
-        if (Input::IsKeyPressed(KeyCode::Escape) || Input::IsKeyPressed(KeyCode::Enter))
+        if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
         {
             m_pGame->ChangeGameMode(GameMode::Null);
-            Window::Close();
+            hb::shared::render::Window::Close();
             return;
         }
 
         // Check for mouse click
-        if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
         {
             m_pGame->ChangeGameMode(GameMode::Null);
-            Window::Close();
+            hb::shared::render::Window::Close();
             return;
         }
     }
@@ -61,7 +64,7 @@ void Screen_Quit::on_update()
     if (dwElapsed >= AUTO_QUIT_MS)
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        Window::Close();
+        hb::shared::render::Window::Close();
         return;
     }
 }
@@ -79,7 +82,7 @@ void Screen_Quit::on_render()
     else
     {
         float fAlpha = static_cast<float>(dwElapsed) / static_cast<float>(FADE_IN_MS);
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(335, 183, 1, SpriteLib::DrawParams::Alpha(fAlpha));
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT]->Draw(335, 183, 1, hb::shared::sprite::DrawParams::Alpha(fAlpha));
     }
 
     DrawVersion();

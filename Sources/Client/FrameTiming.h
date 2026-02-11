@@ -22,7 +22,7 @@ enum class ProfileStage {
 
 // FrameTiming: Per-frame delta timing and stage profiling
 //
-// FPS and frame counting are handled engine-side (IRenderer::GetFPS).
+// FPS and frame counting are handled engine-side (hb::shared::render::IRenderer::GetFPS).
 // FrameTiming provides: Per-frame delta and per-stage profiling.
 //
 // Usage:

@@ -35,7 +35,7 @@ struct AnimParams {
 	int iRisePixels;          // Total upward rise distance
 	int iRiseDurationMs;      // Time to reach final position
 	int iFontOffset;          // Offset from SprFont3_0 (0=large, 1=medium, 2=small)
-	Color color;              // Text color
+	hb::shared::render::Color color;              // Text color
 	bool bUseSpriteFont;      // true = sprite font, false = renderer text
 };
 

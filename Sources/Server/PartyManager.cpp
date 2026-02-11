@@ -203,7 +203,7 @@ bool PartyManager::bGetPartyInfo(int iGSCH, char* pName, int iPartyID)
 	int iTotal = 0;
 	for (int i = 1; i < DEF_MAXPARTY; i++)
 		if ((m_stMemberNameList[i].m_iPartyID == iPartyID) && (m_stMemberNameList[i].m_iPartyID != 0)) {
-			std::memcpy(cp, m_stMemberNameList[i].m_cName, DEF_CHARNAME - 1);
+			std::memcpy(cp, m_stMemberNameList[i].m_cName, hb::shared::limits::CharNameLen - 1);
 			cp += 11;
 			iTotal++;
 		}

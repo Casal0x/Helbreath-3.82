@@ -12,7 +12,7 @@ namespace NetworkMessageHandlers {
 	{
 		char cIndex;
 		DWORD dwCount, dwAttribute;
-		char  cName[DEF_ITEMNAME], cItemType, cEquipPos, cGenderLimit, cItemColor;
+		char  cName[hb::shared::limits::ItemNameLen], cItemType, cEquipPos, cGenderLimit, cItemColor;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sItemEffectValue2, sItemSpecEffectValue2;
 		WORD wWeight, wCurLifeSpan;
@@ -23,7 +23,7 @@ namespace NetworkMessageHandlers {
 
 		cIndex = static_cast<char>(pkt->bank_index);
 		std::memset(cName, 0, sizeof(cName));
-		memcpy(cName, pkt->name, DEF_ITEMNAME - 1);
+		memcpy(cName, pkt->name, hb::shared::limits::ItemNameLen - 1);
 		dwCount = pkt->count;
 		cItemType = static_cast<char>(pkt->item_type);
 		cEquipPos = static_cast<char>(pkt->equip_pos);
@@ -58,7 +58,7 @@ namespace NetworkMessageHandlers {
 			else std::snprintf(cTxt, sizeof(cTxt), NOTIFYMSG_ITEMTOBANK2, dwCount, cStr1);
 
 			if (pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::Bank) == true)
-				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = hb::limits::MaxBankItems - 12;
+				pGame->m_dialogBoxManager.Info(DialogBoxId::Bank).sView = hb::shared::limits::MaxBankItems - 12;
 			pGame->AddEventList(cTxt, 10);
 		}
 	}

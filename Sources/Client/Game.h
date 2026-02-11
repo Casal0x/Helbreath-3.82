@@ -113,7 +113,7 @@ public:
 	void EndInputString();
 	void ClearInputString();
 	void ShowReceivedString(bool bIsHide = false);
-	bool GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
+	bool GetText(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam);
 	void DrawDialogBoxs(short msX, short msY, short msZ, char cLB);
 	void FormatCommaNumber(uint32_t value, char* buffer, size_t bufSize);
 
@@ -155,9 +155,9 @@ public:
 	void DrawVersion();
 	bool _bIsItemOnHand();
 	void DynamicObjectHandler(char * pData);
-	bool _bCheckItemByType(hb::item::ItemType type);
-	void DrawNpcName(   short sX, short sY, short sOwnerType, const PlayerStatus& status, short npcConfigId = -1);
-	void DrawObjectName(short sX, short sY, char * pName, const PlayerStatus& status, uint16_t wObjectID);
+	bool _bCheckItemByType(hb::shared::item::ItemType type);
+	void DrawNpcName(   short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId = -1);
+	void DrawObjectName(short sX, short sY, char * pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID);
 	void PlayGameSound(char cType, int iNum, int iDist, long lPan = 0);  // Forwards to AudioManager
 	void _LoadTextDlgContents(int cType);
 	int  _iLoadTextDlgContents2(int iType);
@@ -187,18 +187,18 @@ void _LoadShopMenuContents(char cType);
 	void DisableDialogBox(int iBoxID);
 	void EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char * pString = 0);
 	void InitItemList(char * pData);
-	SpriteLib::BoundRect __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
-	SpriteLib::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
+	hb::shared::sprite::BoundRect __fastcall DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime);
 	void ClearGuildNameList();
 	void DrawBackground(short sDivX, short sModX, short sDivY, short sModY);
 	void ChatMsgHandler(char * pData);
@@ -269,7 +269,7 @@ void _LoadShopMenuContents(char cType);
 	void StartBGM();  // Forwards to AudioManager based on current location
 
 	//Snoopy: added function:
-	int bHasHeroSet(const PlayerAppearance& appr, short OwnerType);
+	int bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType);
 	void ShowHeldenianVictory(short sSide);
 	void ResponseHeldenianTeleportList(char *pData);
 	void DKGlare(int iWeaponColor, int iWeaponIndex, int *iWeaponGlare);
@@ -283,7 +283,7 @@ void _LoadShopMenuContents(char cType);
 	{
 		char index;
 		short price;
-	} m_stRepairAll[hb::limits::MaxItems];
+	} m_stRepairAll[hb::shared::limits::MaxItems];
 
 	bool _ItemDropHistory(short sItemID);
 	CGame();
@@ -295,7 +295,7 @@ void _LoadShopMenuContents(char cType);
 	struct {
 		int   sV1, sV2, sV3, sV4, sV5, sV6, sV7, sItemID;
 		uint32_t dwV1;
-		char  cStr1[DEF_ITEMNAME], cStr2[32];
+		char  cStr1[hb::shared::limits::ItemNameLen], cStr2[32];
 	} m_stDialogBoxExchangeInfo[8];
 //Snoopy end<<<<<<<<<<<<<<<<<<
 	struct {
@@ -335,17 +335,17 @@ void _LoadShopMenuContents(char cType);
 	struct {
 		char cStatus;
 		char cName[12];
-	} m_stPartyMember[hb::limits::MaxPartyMembers];
+	} m_stPartyMember[hb::shared::limits::MaxPartyMembers];
 
 	struct {
 		short sX, sY;
 		char cType;
 		char cSide;
-	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
+	} m_stCrusadeStructureInfo[hb::shared::limits::MaxCrusadeStructures];
 
 	struct {
 		char cName[12];
-	} m_stPartyMemberNameList[hb::limits::MaxPartyMembers+1];
+	} m_stPartyMemberNameList[hb::shared::limits::MaxPartyMembers+1];
 
 	// v2.171 2002-6-14
 	struct {
@@ -363,32 +363,32 @@ void _LoadShopMenuContents(char cType);
 		int iCost;
 	} m_stTeleportList[20];
 
-	class IRenderer* m_Renderer;  // Abstract renderer interface
-	std::unique_ptr<SpriteLib::ISpriteFactory> m_pSpriteFactory;  // Sprite factory for creating sprites
-	SpriteLib::SpriteCollection m_pSprite;
-	SpriteLib::SpriteCollection m_pTileSpr;
-	SpriteLib::SpriteCollection m_pEffectSpr;
+	class hb::shared::render::IRenderer* m_Renderer;  // Abstract renderer interface
+	std::unique_ptr<hb::shared::sprite::ISpriteFactory> m_pSpriteFactory;  // Sprite factory for creating sprites
+	hb::shared::sprite::SpriteCollection m_pSprite;
+	hb::shared::sprite::SpriteCollection m_pTileSpr;
+	hb::shared::sprite::SpriteCollection m_pEffectSpr;
 
 	std::unique_ptr<CPlayer> m_pPlayer;  // Main player data
 	std::unique_ptr<class CMapData> m_pMapData;
-	std::unique_ptr<IOServicePool> m_pIOPool;  // 0 threads = manual poll mode for client
-	std::unique_ptr<class ASIOSocket> m_pGSock;
-	std::unique_ptr<class ASIOSocket> m_pLSock;
+	std::unique_ptr<hb::shared::net::IOServicePool> m_pIOPool;  // 0 threads = manual poll mode for client
+	std::unique_ptr<class hb::shared::net::ASIOSocket> m_pGSock;
+	std::unique_ptr<class hb::shared::net::ASIOSocket> m_pLSock;
 	CFloatingTextManager m_floatingText;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_chat_scroll_msgs> m_pChatScrollList;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_whisper_msgs> m_pWhisperMsg;
 	std::unique_ptr<EffectManager> m_pEffectManager;
 	std::unique_ptr<NetworkMessageManager> m_pNetworkMessageManager;
-	std::array<std::unique_ptr<class CItem>, hb::limits::MaxItems> m_pItemList;
-	std::array<std::unique_ptr<class CItem>, hb::limits::MaxBankItems> m_pBankList;
-	std::array<std::unique_ptr<class CMagic>, DEF_MAXMAGICTYPE> m_pMagicCfgList;
-	std::array<std::unique_ptr<class CSkill>, DEF_MAXSKILLTYPE> m_pSkillCfgList;
+	std::array<std::unique_ptr<class CItem>, hb::shared::limits::MaxItems> m_pItemList;
+	std::array<std::unique_ptr<class CItem>, hb::shared::limits::MaxBankItems> m_pBankList;
+	std::array<std::unique_ptr<class CMagic>, hb::shared::limits::MaxMagicType> m_pMagicCfgList;
+	std::array<std::unique_ptr<class CSkill>, hb::shared::limits::MaxSkillType> m_pSkillCfgList;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pMsgTextList;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pMsgTextList2;
 	std::array<std::unique_ptr<class CMsg>, game_limits::max_text_dlg_lines> m_pAgreeMsgTextList;
 	std::unique_ptr<class CMsg> m_pExID;
-	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pBuildItemList;
-	std::array<std::unique_ptr<class CBuildItem>, hb::limits::MaxBuildItems> m_pDispBuildItemList;
+	std::array<std::unique_ptr<class CBuildItem>, hb::shared::limits::MaxBuildItems> m_pBuildItemList;
+	std::array<std::unique_ptr<class CBuildItem>, hb::shared::limits::MaxBuildItems> m_pDispBuildItemList;
 
 	std::array<std::unique_ptr<class CItem>, game_limits::max_menu_items> m_pItemForSaleList;
 	int16_t m_sPendingShopType;  // Shop type awaiting response from server (0 = none)
@@ -420,8 +420,8 @@ void _LoadShopMenuContents(char cType);
 
 	//v2.183 Hunter Mode - Moved to CPlayer
 
-std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
-	std::array<bool, hb::limits::MaxItems> m_bIsItemDisabled{};
+std::array<bool, hb::shared::limits::MaxItems> m_bIsItemEquipped{};
+	std::array<bool, hb::shared::limits::MaxItems> m_bIsItemDisabled{};
 	bool m_bIsGetPointingMode;
 	bool m_bWaitForNewClick;  // After magic cast, ignore held click until released
 	uint32_t m_dwMagicCastTime;  // Timestamp when magic was cast (for post-cast delay)
@@ -479,7 +479,7 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	int m_iGizonItemUpgradeLeft;
 	//int m_iFeedBackCardIndex; // removed by Snoopy
 
-	std::array<short, hb::item::DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
+	std::array<short, hb::shared::item::DEF_MAXITEMEQUIPPOS> m_sItemEquipmentStatus{};
 	short m_sMCX, m_sMCY;
 	int   m_iCastingMagicType;
 	short m_sVDL_X, m_sVDL_Y;
@@ -491,7 +491,7 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	char m_cEdit[4];
 	char G_cTxt[128];
 	char m_cBGMmapName[12];
-	char m_cItemOrder[hb::limits::MaxItems];
+	char m_cItemOrder[hb::shared::limits::MaxItems];
 	char m_cAmountString[12];
 	char m_cLogOutCount;
 	char m_cRestartCount;
@@ -537,9 +537,9 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	bool _bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize);
 	bool _bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize);
 
-	struct NpcConfig { short npcType = 0; char name[DEF_NPCNAME]{}; bool valid = false; };
-	std::array<NpcConfig, DEF_MAXNPCCONFIGS> m_npcConfigList{};   // indexed by npc_id
-	char m_cNpcNameByType[120][DEF_NPCNAME]{};                    // type->name reverse map (last config wins)
+	struct NpcConfig { short npcType = 0; char name[hb::shared::limits::NpcNameLen]{}; bool valid = false; };
+	std::array<NpcConfig, hb::shared::limits::MaxNpcConfigs> m_npcConfigList{};   // indexed by npc_id
+	char m_cNpcNameByType[120][hb::shared::limits::NpcNameLen]{};                    // type->name reverse map (last config wins)
 	int m_iNpcConfigsReceived = 0;
 
 	enum class ConfigRetryLevel : uint8_t { None = 0, CacheTried = 1, ServerRequested = 2, Failed = 3 };
@@ -562,7 +562,7 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 
 	short m_sItemDropID[25];
 
-	GameRectangle m_rcPlayerRect, m_rcBodyRect;
+	hb::shared::geometry::GameRectangle m_rcPlayerRect, m_rcBodyRect;
 
 	bool m_bWhisper;
 	bool m_bShout;
@@ -584,7 +584,7 @@ std::array<bool, hb::limits::MaxItems> m_bIsItemEquipped{};
 	// Entity render state (temporary state for currently rendered entity)
 	CEntityRenderState m_entityState;
 
-	// Renderer classes for entity drawing
+	// hb::shared::render::Renderer classes for entity drawing
 	CPlayerRenderer m_playerRenderer;
 	CNpcRenderer m_npcRenderer;
 

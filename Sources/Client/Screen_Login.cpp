@@ -12,6 +12,10 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Screen_Login::Screen_Login(CGame* pGame)
     : IGameScreen(pGame), m_cPrevFocus(0)
 {
@@ -49,9 +53,9 @@ void Screen_Login::on_update()
     m_pGame->m_dwCurTime = dwTime;
 
     // Explicit TAB handling since legacy OnKeyDown ignores it
-    if (Input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
     {
-        if (Input::IsShiftDown())
+        if (hb::shared::input::IsShiftDown())
         {
             m_pGame->PlayGameSound('E', 14, 5);
              m_cCurFocus--;
@@ -88,7 +92,7 @@ void Screen_Login::on_update()
          m_pGame->m_cArrowPressed = 0;
     }
 
-    if (Input::IsKeyPressed(KeyCode::Enter) == true)
+    if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true)
     {
         switch (m_cCurFocus) {
         case 1:
@@ -108,12 +112,12 @@ void Screen_Login::on_update()
             std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
 
             // Connect
-            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+            m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-            m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+            m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
             m_pGame->ChangeGameMode(GameMode::Connecting);
-            m_pGame->m_dwConnectMode = MSGID_REQUEST_LOGIN;
+            m_pGame->m_dwConnectMode = MsgId::RequestLogin;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
             return;
@@ -123,7 +127,7 @@ void Screen_Login::on_update()
         }
     }
 
-    if (Input::IsKeyPressed(KeyCode::Escape) == true)
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->PlayGameSound('E', 14, 5);
         m_pGame->EndInputString();
@@ -149,20 +153,20 @@ void Screen_Login::on_update()
     }
 
     // Mouse click detection
-    if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
         // Name field click
-        if (Input::IsMouseInRect(234, 221, 147, 17)) {
+        if (hb::shared::input::IsMouseInRect(234, 221, 147, 17)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 1;
         }
         // Password field click
-        else if (Input::IsMouseInRect(234, 244, 147, 17)) {
+        else if (hb::shared::input::IsMouseInRect(234, 244, 147, 17)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 2;
         }
         // Login button click
-        else if (Input::IsMouseInRect(140, 343, 84, 20)) {
+        else if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
             if ((strlen(m_cLoginName) != 0) && (strlen(m_cLoginPassword) != 0)) {
                 m_pGame->EndInputString();
@@ -171,32 +175,32 @@ void Screen_Login::on_update()
                 std::snprintf(m_pGame->m_pPlayer->m_cAccountName, sizeof(m_pGame->m_pPlayer->m_cAccountName), "%s", m_cLoginName);
                 std::snprintf(m_pGame->m_pPlayer->m_cAccountPassword, sizeof(m_pGame->m_pPlayer->m_cAccountPassword), "%s", m_cLoginPassword);
 
-                m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+                m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
                 m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-                m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+                m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
                 m_pGame->ChangeGameMode(GameMode::Connecting);
-                m_pGame->m_dwConnectMode = MSGID_REQUEST_LOGIN;
+                m_pGame->m_dwConnectMode = MsgId::RequestLogin;
                 std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
                 std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "11");
                 return;
             }
         }
         // Cancel button click
-        else if (Input::IsMouseInRect(316, 343, 76, 20)) {
+        else if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_pGame->ChangeGameMode(GameMode::MainMenu);
             return;
         }
     }
 
-    if (Input::IsMouseInRect(140, 343, 84, 20)) m_cCurFocus = 3;
-    if (Input::IsMouseInRect(316, 343, 76, 20)) m_cCurFocus = 4;
+    if (hb::shared::input::IsMouseInRect(140, 343, 84, 20)) m_cCurFocus = 3;
+    if (hb::shared::input::IsMouseInRect(316, 343, 76, 20)) m_cCurFocus = 4;
 }
 
 void Screen_Login::on_render()
 {
-    DrawLoginWindow(m_cLoginName, m_cLoginPassword, Input::GetMouseX(), Input::GetMouseY());
+    DrawLoginWindow(m_cLoginName, m_cLoginPassword, hb::shared::input::GetMouseX(), hb::shared::input::GetMouseY());
 }
 
 // Logic migrated from CGame::_Draw_OnLogin
@@ -214,13 +218,13 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
     if (elapsedMs > FADE_DELAY_MS) {
         float fadeProgress = static_cast<float>(elapsedMs - FADE_DELAY_MS) / FADE_DURATION_MS;
         float alpha = fadeProgress > 1.0f ? 1.0f : fadeProgress;
-        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(99, 182, 2, SpriteLib::DrawParams::Alpha(alpha));
+        m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN]->Draw(99, 182, 2, hb::shared::sprite::DrawParams::Alpha(alpha));
     }
 
     if (m_cCurFocus != 1) {
         if (CMisc::bCheckValidName(pAccount) != false)
-            TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputValid));
-        else TextLib::DrawText(GameFont::Default, 234, 222, pAccount, TextLib::TextStyle::WithShadow(GameColors::InputInvalid));
+            hb::shared::text::DrawText(GameFont::Default, 234, 222, pAccount, hb::shared::text::TextStyle::WithShadow(GameColors::InputValid));
+        else hb::shared::text::DrawText(GameFont::Default, 234, 222, pAccount, hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid));
     }
     if ((CMisc::bCheckValidName(pAccount) == false) || (strlen(pAccount) == 0)) bFlag = false;
 
@@ -228,11 +232,11 @@ void Screen_Login::DrawLoginWindow(char* pAccount, char* pPassword, int msX, int
         // Mask password with asterisks
         std::string masked(strlen(pPassword), '*');
         if ((CMisc::bCheckValidString(pPassword) != false))
-            TextLib::DrawText(GameFont::Default, 234, 245, masked.c_str(),
-                              TextLib::TextStyle::WithShadow(GameColors::InputValid));
+            hb::shared::text::DrawText(GameFont::Default, 234, 245, masked.c_str(),
+                              hb::shared::text::TextStyle::WithShadow(GameColors::InputValid));
         else
-            TextLib::DrawText(GameFont::Default, 234, 245, masked.c_str(),
-                              TextLib::TextStyle::WithShadow(GameColors::InputInvalid));
+            hb::shared::text::DrawText(GameFont::Default, 234, 245, masked.c_str(),
+                              hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid));
     }
     if ((CMisc::bCheckValidString(pPassword) == false) || (strlen(pPassword) == 0)) bFlag = false;
 

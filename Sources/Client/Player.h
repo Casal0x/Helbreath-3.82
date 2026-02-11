@@ -41,16 +41,16 @@ namespace PlayerAnim {
 	inline const AnimDef& FromAction(int8_t action)
 	{
 		switch (action) {
-		case DEF_OBJECTSTOP:       return Stop;
-		case DEF_OBJECTMOVE:       return Move;
-		case DEF_OBJECTRUN:        return Run;
-		case DEF_OBJECTATTACK:     return Attack;
-		case DEF_OBJECTATTACKMOVE: return AttackMove;
-		case DEF_OBJECTMAGIC:      return Magic;
-		case DEF_OBJECTGETITEM:    return GetItem;
-		case DEF_OBJECTDAMAGE:     return Damage;
-		case DEF_OBJECTDAMAGEMOVE: return DamageMove;
-		case DEF_OBJECTDYING:      return Dying;
+		case hb::shared::action::Type::Stop:       return Stop;
+		case hb::shared::action::Type::Move:       return Move;
+		case hb::shared::action::Type::Run:        return Run;
+		case hb::shared::action::Type::Attack:     return Attack;
+		case hb::shared::action::Type::AttackMove: return AttackMove;
+		case hb::shared::action::Type::Magic:      return Magic;
+		case hb::shared::action::Type::GetItem:    return GetItem;
+		case hb::shared::action::Type::Damage:     return Damage;
+		case hb::shared::action::Type::DamageMove: return DamageMove;
+		case hb::shared::action::Type::Dying:      return Dying;
 		default:                   return Stop;
 		}
 	}
@@ -70,8 +70,8 @@ public:
     char m_cPlayerName[DEF_PLAYERNAME_LENGTH];
     short m_sPlayerObjectID;
     short m_sPlayerType;
-    char m_cAccountName[DEF_ACCOUNT_NAME];
-    char m_cAccountPassword[DEF_ACCOUNT_PASS];
+    char m_cAccountName[hb::shared::limits::AccountNameLen];
+    char m_cAccountPassword[hb::shared::limits::AccountPassLen];
     char m_cGuildName[DEF_GUILDNAME_LENGTH];
     int m_iGuildRank;
 
@@ -96,16 +96,16 @@ public:
 
     // COMBAT
     int m_iAC, m_iTHAC0;
-    PlayerStatus m_playerStatus;
+    hb::shared::entity::PlayerStatus m_playerStatus;
     int m_iPKCount, m_iEnemyKillCount, m_iRewardGold, m_iContribution;
     int m_iSuperAttackLeft, m_iSpecialAbilityType, m_iSpecialAbilityTimeLeftSec;
 
     // APPEARANCE
-    PlayerAppearance m_playerAppearance;
+    hb::shared::entity::PlayerAppearance m_playerAppearance;
 
     // Illusion Effect appearance
-    PlayerStatus m_illusionStatus;
-    PlayerAppearance m_illusionAppearance;
+    hb::shared::entity::PlayerStatus m_illusionStatus;
+    hb::shared::entity::PlayerAppearance m_illusionAppearance;
     int8_t m_iGender, m_iSkinCol, m_iHairStyle, m_iHairCol, m_iUnderCol;
 
     // SKILLS & MAGIC

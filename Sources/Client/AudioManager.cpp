@@ -302,7 +302,7 @@ void AudioManager::PlayGameSound(SoundType type, int index, int distance, int pa
 	// Center-to-edge is ViewCenterTileX/Y; add a few tiles beyond screen edge
 	if (distance > 0)
 	{
-		const auto& res = ResolutionConfig::Get();
+		const auto& res = hb::shared::render::ResolutionConfig::Get();
 		int maxDist = std::max(res.ViewCenterTileX(), res.ViewCenterTileY()) + 4;
 		if (maxDist < 10) maxDist = 10;
 		if (distance >= maxDist)

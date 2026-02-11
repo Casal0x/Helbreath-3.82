@@ -10,7 +10,13 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+
+
+namespace dynamic_object = hb::shared::dynamic_object;
+
+using namespace hb::shared::action;
+
+using namespace hb::shared::item;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -75,7 +81,7 @@ static void CalcHumanEquipment(const CEntityRenderState& state, bool isFemale, M
 	eq.skirtDraw = isFemale && (pantsType == 1);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	// Extract equipment colors from packed appearance color
 	MenuCharEquipment eq = {};
@@ -113,7 +119,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 		if (color == 0)
 			m_pSprite[idx]->Draw(sX, sY, dirFrame);
 		else
-			m_pSprite[idx]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
+			m_pSprite[idx]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[color].r, GameColors::Items[color].g, GameColors::Items[color].b));
 	};
 
 	auto drawWeapon = [&]() {
@@ -121,7 +127,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 		if (eq.weaponColor == 0)
 			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame);
 		else
-			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
+			m_pSprite[eq.weapon]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[eq.weaponColor].r, GameColors::Weapons[eq.weaponColor].g, GameColors::Weapons[eq.weaponColor].b));
 	};
 
 	auto drawMantle = [&](int order) {
@@ -132,7 +138,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	// Check if mob type should skip shadow
 	auto shouldSkipShadow = [&]() {
 		switch (m_entityState.m_sOwnerType) {
-		case hb::owner::Slime: case hb::owner::EnergySphere: case hb::owner::TigerWorm: case hb::owner::Catapult: case hb::owner::CannibalPlant: case hb::owner::IceGolem: case hb::owner::Abaddon: case hb::owner::Gate:
+		case hb::shared::owner::Slime: case hb::shared::owner::EnergySphere: case hb::shared::owner::TigerWorm: case hb::shared::owner::Catapult: case hb::shared::owner::CannibalPlant: case hb::shared::owner::IceGolem: case hb::shared::owner::Abaddon: case hb::shared::owner::Gate:
 			return true;
 		default:
 			return false;
@@ -141,7 +147,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 
 	// Draw body shadow
 	if (!shouldSkipShadow() && ConfigManager::Get().GetDetailLevel() != 0 && !isMob)
-		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Shadow());
+		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Shadow());
 
 	// Draw weapon first if drawing order is 1
 	if (_cDrawingOrder[m_entityState.m_iDir] == 1)
@@ -149,7 +155,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 
 	// Draw body
 	if (isMob)
-		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	else
 		m_pSprite[eq.body + (m_entityState.m_iDir - 1)]->Draw(sX, sY, m_entityState.m_iFrame);
 
@@ -161,7 +167,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 	if (eq.hair != -1 && eq.helm == -1)
 	{
 		const auto& hc = GameColors::Hair[hairColor];
-		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
+		m_pSprite[eq.hair]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt
@@ -201,7 +207,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove_ForMenu(int indexX, int indexY, in
 
 // --- DrawObject dispatcher functions ---
 
-SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -209,7 +215,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnStop(int indexX, int indexY, int sX, in
 		return m_npcRenderer.DrawStop(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawMove(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -217,7 +223,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMove(int indexX, int indexY, int sX, in
 		return m_npcRenderer.DrawMove(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawRun(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -225,7 +231,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnRun(int indexX, int indexY, int sX, int
 		return m_npcRenderer.DrawRun(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawAttack(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -233,7 +239,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttack(int indexX, int indexY, int sX, 
 		return m_npcRenderer.DrawAttack(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawAttackMove(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -241,7 +247,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnAttackMove(int indexX, int indexY, int 
 		return m_npcRenderer.DrawAttackMove(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawMagic(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -249,7 +255,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnMagic(int indexX, int indexY, int sX, i
 		return m_npcRenderer.DrawMagic(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawGetItem(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -257,7 +263,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnGetItem(int indexX, int indexY, int sX,
 		return m_npcRenderer.DrawGetItem(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawDamage(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -265,7 +271,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamage(int indexX, int indexY, int sX, 
 		return m_npcRenderer.DrawDamage(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawDamageMove(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -273,7 +279,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDamageMove(int indexX, int indexY, int 
 		return m_npcRenderer.DrawDamageMove(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawDying(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -281,7 +287,7 @@ SpriteLib::BoundRect CGame::DrawObject_OnDying(int indexX, int indexY, int sX, i
 		return m_npcRenderer.DrawDying(indexX, indexY, sX, sY, bTrans, dwTime);
 }
 
-SpriteLib::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CGame::DrawObject_OnDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
 	if (m_entityState.IsPlayer())
 		return m_playerRenderer.DrawDead(indexX, indexY, sX, sY, bTrans, dwTime);
@@ -413,16 +419,16 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						case 1: // Swds
 						case 2: // Bows
 						case 3: // Shields
-						case hb::owner::ShopKeeper: // Axes hammers
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+						case hb::shared::owner::ShopKeeper: // Axes hammers
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 							break;
 						default:
-							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+							m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + m_pItemConfigList[sItemID]->m_sSprite]->Draw(ix, iy, m_pItemConfigList[sItemID]->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 							break;
 						}
 					}
 
-					if (Input::IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
+					if (hb::shared::input::IsShiftDown() && msX >= ix - 16 && msY >= iy - 16 && msX <= ix + 16 && msY <= iy + 16) {
 						sItemSelectedID = sItemID;
 						dwItemSelectedAttr = dwItemAttr;
 						iItemSelectedx = ix;
@@ -435,7 +441,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 				if ((bRet == true) && (m_entityState.m_wObjectID != 0))
 				{
-					SpriteLib::BoundRect bounds = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime);
+					hb::shared::sprite::BoundRect bounds = DrawObject_OnDead(indexX, indexY, ix, iy, false, dwTime);
 
 					// Build picking info for dead object
 					TargetObjectInfo info = {};
@@ -490,7 +496,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 
 					if (m_iIlusionOwnerH != 0)
 					{
-						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (!hb::owner::IsNPC(m_entityState.m_sOwnerType)))
+						if ((strcmp(m_entityState.m_cName.data(), m_pPlayer->m_cPlayerName) != 0) && (!hb::shared::owner::IsNPC(m_entityState.m_sOwnerType)))
 						{
 							m_entityState.m_sOwnerType = m_cIlusionOwnerType;
 							m_entityState.m_status = m_pPlayer->m_illusionStatus;
@@ -503,45 +509,45 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				{
 					m_entityState.m_iMoveOffsetX = 0;
 					m_entityState.m_iMoveOffsetY = 0;
-					SpriteLib::BoundRect bounds = {0, -1, 0, 0};
+					hb::shared::sprite::BoundRect bounds = {0, -1, 0, 0};
 					switch (m_entityState.m_iAction) {
-					case DEF_OBJECTSTOP:
+					case Type::Stop:
 						bounds = DrawObject_OnStop(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTMOVE:
+					case Type::Move:
 						bounds = DrawObject_OnMove(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTDAMAGEMOVE:
+					case Type::DamageMove:
 						bounds = DrawObject_OnDamageMove(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTRUN:
+					case Type::Run:
 						bounds = DrawObject_OnRun(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTATTACK:
+					case Type::Attack:
 						bounds = DrawObject_OnAttack(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTATTACKMOVE:
+					case Type::AttackMove:
 						bounds = DrawObject_OnAttackMove(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTMAGIC:
+					case Type::Magic:
 						bounds = DrawObject_OnMagic(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTGETITEM:
+					case Type::GetItem:
 						bounds = DrawObject_OnGetItem(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTDAMAGE:
+					case Type::Damage:
 						bounds = DrawObject_OnDamage(indexX, indexY, ix, iy, false, dwTime);
 						break;
 
-					case DEF_OBJECTDYING:
+					case Type::Dying:
 						bounds = DrawObject_OnDying(indexX, indexY, ix, iy, false, dwTime);
 						break;
 					}
@@ -597,20 +603,20 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					switch (sObjSpr) {
 					case 200:
 					case 223:
-						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Shadow());
+						m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Shadow());
 						break;
 
 					case 224:
 						switch (sObjSprFrame) {
-						case hb::owner::Tom:
-						case hb::owner::Dummy:
-						case hb::owner::EnergySphere:
-						case hb::owner::ArrowGuardTower:
-						case hb::owner::CannonGuardTower:
-						case hb::owner::ManaCollector:
+						case hb::shared::owner::Tom:
+						case hb::shared::owner::Dummy:
+						case hb::shared::owner::EnergySphere:
+						case hb::shared::owner::ArrowGuardTower:
+						case hb::shared::owner::CannonGuardTower:
+						case hb::shared::owner::ManaCollector:
 							break;
 						default:
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Shadow());
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Shadow());
 							break;
 						}
 					}
@@ -631,9 +637,9 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 							if (G_cSpriteAlphaDegree == 2) //nuit
 							{
 								// Lamp fixture lights (the actual light sources on the lamp)
-								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
-								m_pEffectSpr[0]->Draw(ix + 16, iy - 94, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
-								m_pEffectSpr[0]->Draw(ix - 19, iy - 126, 1, SpriteLib::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_pEffectSpr[0]->Draw(ix + 2, iy - 147, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_pEffectSpr[0]->Draw(ix + 16, iy - 94, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
+								m_pEffectSpr[0]->Draw(ix - 19, iy - 126, 1, hb::shared::sprite::DrawParams::AdditiveColored(255, 230, 180, 0.8f));
 							}
 						}
 						break;
@@ -687,8 +693,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 						if ((bIsPlayerDrawed == true) && (m_pTileSpr[sObjSpr]->GetBoundRect().top <= m_rcPlayerRect.Top()) && (m_pTileSpr[sObjSpr]->GetBoundRect().bottom >= m_rcPlayerRect.Bottom()) &&
 							(ConfigManager::Get().GetDetailLevel() >= 2) && (m_pTileSpr[sObjSpr]->GetBoundRect().left <= m_rcPlayerRect.Left()) && (m_pTileSpr[sObjSpr]->GetBoundRect().right >= m_rcPlayerRect.Right()))
 						{
-							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, SpriteLib::DrawParams::Fade());
-							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, SpriteLib::DrawParams::Average());
+							m_pTileSpr[sObjSpr + 50]->Draw(ix, iy, sObjSprFrame, hb::shared::sprite::DrawParams::Fade());
+							m_pTileSpr[sObjSpr]->Draw(ix - 16, iy - 16, sObjSprFrame, hb::shared::sprite::DrawParams::Average());
 						}
 						else
 						{
@@ -715,7 +721,7 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 								{
 									if (m_pTileSpr[sObjSpr]->CheckCollision(ix - 16, iy - 16, sObjSprFrame, ix + ix1[j], iy + iy2[j]))
 									{
-										m_pEffectSpr[66 + (j % 6)]->Draw(ix + ix1[j], iy + iy2[j], (iXmasTreeBulbDelay >> 2), SpriteLib::DrawParams::Alpha(0.5f));
+										m_pEffectSpr[66 + (j % 6)]->Draw(ix + ix1[j], iy + iy2[j], (iXmasTreeBulbDelay >> 2), hb::shared::sprite::DrawParams::Alpha(0.5f));
 									}
 								}
 							}
@@ -728,73 +734,73 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 			if ((bRet == true) && (sDynamicObject != 0))
 			{
 				switch (sDynamicObject) {
-				case DEF_DYNAMICOBJECT_PCLOUD_BEGIN:	// 10
+				case dynamic_object::PCloudBegin:	// 10
 					if (sDynamicObjectFrame >= 0)
-						m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+						m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_PCLOUD_LOOP:		// 11
-					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 8, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				case dynamic_object::PCloudLoop:		// 11
+					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 8, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_PCLOUD_END:		// 12
-					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 16, SpriteLib::DrawParams{0.5f, 0, 0, 0, false});
+				case dynamic_object::PCloudEnd:		// 12
+					m_pEffectSpr[23]->Draw(ix + (rand() % 2), iy + (rand() % 2), sDynamicObjectFrame + 16, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_ICESTORM:		// 8
+				case dynamic_object::IceStorm:		// 8
 					iDvalue = (rand() % 5) * (-1);
-					m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams::TintedAlpha(192 + 2 * iDvalue, 192 + 2 * iDvalue, 192 + 2 * iDvalue, 0.7f));
-					m_pEffectSpr[13]->Draw(ix, iy, sDynamicObjectFrame, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
+					m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::TintedAlpha(192 + 2 * iDvalue, 192 + 2 * iDvalue, 192 + 2 * iDvalue, 0.7f));
+					m_pEffectSpr[13]->Draw(ix, iy, sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_FIRE:			// 1
-				case DEF_DYNAMICOBJECT_FIRE3:			// 14
+				case dynamic_object::Fire:			// 1
+				case dynamic_object::Fire3:			// 14
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.25f, 0, 0, 0, false}); break;
-					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false}); break;
-					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.7f, 0, 0, 0, false}); break;
+					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
-					m_pEffectSpr[9]->Draw(ix, iy, sDynamicObjectFrame / 3, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
+					m_pEffectSpr[9]->Draw(ix, iy, sDynamicObjectFrame / 3, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_FIRE2:			// 13
+				case dynamic_object::Fire2:			// 13
 					switch (rand() % 3) {
-					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.25f, 0, 0, 0, false}); break;
-					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.5f, 0, 0, 0, false}); break;
-					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, SpriteLib::DrawParams{0.7f, 0, 0, 0, false}); break;
+					case 0: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.25f, 0, 0, 0, false}); break;
+					case 1: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.5f, 0, 0, 0, false}); break;
+					case 2: m_pEffectSpr[0]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false}); break;
 					}
 					break;
 
-				case DEF_DYNAMICOBJECT_FISH:			// 2
+				case dynamic_object::Fish:			// 2
 				{
 					char cTmpDOdir, cTmpDOframe;
 					cTmpDOdir = CMisc::cCalcDirection(cDynamicObjectData1, cDynamicObjectData2, cDynamicObjectData1 + cDynamicObjectData3, cDynamicObjectData2 + cDynamicObjectData4);
 					cTmpDOframe = ((cTmpDOdir - 1) * 4) + (rand() % 4);
-					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, SpriteLib::DrawParams::Alpha(0.25f));
+					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 0]->Draw(ix + cDynamicObjectData1, iy + cDynamicObjectData2, cTmpDOframe, hb::shared::sprite::DrawParams::Alpha(0.25f));
 				}
 				break;
 
-				case DEF_DYNAMICOBJECT_MINERAL1:		// 4
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0, SpriteLib::DrawParams::Shadow());
+				case dynamic_object::Mineral1:		// 4
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0, hb::shared::sprite::DrawParams::Shadow());
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 0);
 					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
-				case DEF_DYNAMICOBJECT_MINERAL2:		// 5
-					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1, SpriteLib::DrawParams::Shadow());
+				case dynamic_object::Mineral2:		// 5
+					if (ConfigManager::Get().GetDetailLevel() != 0) m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1, hb::shared::sprite::DrawParams::Shadow());
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->Draw(ix, iy, 1);
 					CursorTarget::TestDynamicObject(m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 1]->GetBoundRect(), indexX, indexY, res_msy);
 					break;
 
-				case DEF_DYNAMICOBJECT_SPIKE:			// 9
-					m_pEffectSpr[17]->Draw(ix, iy, sDynamicObjectFrame, SpriteLib::DrawParams{0.7f, 0, 0, 0, false});
+				case dynamic_object::Spike:			// 9
+					m_pEffectSpr[17]->Draw(ix, iy, sDynamicObjectFrame, hb::shared::sprite::DrawParams{0.7f, 0, 0, 0, false});
 					break;
 
-				case DEF_DYNAMICOBJECT_ARESDENFLAG1:  // 6
+				case dynamic_object::AresdenFlag1:  // 6
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 
-				case DEF_DYNAMICOBJECT_ELVINEFLAG1: // 7
+				case dynamic_object::ElvineFlag1: // 7
 					m_pSprite[DEF_SPRID_ITEMDYNAMIC_PIVOTPOINT + 2]->Draw(ix, iy, sDynamicObjectFrame);
 					break;
 				}
@@ -821,8 +827,8 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		uint16_t focusObjID;
 		short focusOwnerType;
 		char focusAction, focusDir, focusFrame;
-		PlayerAppearance focusAppearance;
-		PlayerStatus focusStatus;
+		hb::shared::entity::PlayerAppearance focusAppearance;
+		hb::shared::entity::PlayerStatus focusStatus;
 		short focusDataX, focusDataY;
 
 		if (CursorTarget::GetFocusHighlightData(focusSX, focusSY, focusObjID, focusOwnerType,
@@ -846,10 +852,10 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 				// Skip drawing invalid frame
 			} else {
 				switch (focusAction) {
-				case DEF_OBJECTSTOP:
+				case Type::Stop:
 					DrawObject_OnStop(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
-				case DEF_OBJECTMOVE:
+				case Type::Move:
 					switch (focusOwnerType) {
 					case 1:
 					case 2:
@@ -858,56 +864,56 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					case 5:
 					case 6: // Human F
 
-					case hb::owner::Troll: // Troll.
-					case hb::owner::Ogre: // Ogre
-					case hb::owner::Liche: // Liche
-					case hb::owner::Demon: // DD
-					case hb::owner::Unicorn: // Uni
-					case hb::owner::WereWolf: // WW
-					case hb::owner::LightWarBeetle: // LWB
-					case hb::owner::GodsHandKnight: // GHK
-					case hb::owner::GodsHandKnightCK: // GHKABS
-					case hb::owner::TempleKnight: // TK
-					case hb::owner::BattleGolem: // BG
-					case hb::owner::Stalker: // SK
-					case hb::owner::HellClaw: // HC
-					case hb::owner::TigerWorm: // TW
-					case hb::owner::Catapult: // CP
-					case hb::owner::Gargoyle: // GG
-					case hb::owner::Beholder: // BB
-					case hb::owner::DarkElf: // DE
-					case hb::owner::Bunny: // Rabbit
-					case hb::owner::Cat: // Cat
-					case hb::owner::GiantFrog: // Frog
-					case hb::owner::MountainGiant: // MG
-					case hb::owner::Ettin: // Ettin
-					case hb::owner::CannibalPlant: // Plant
-					case hb::owner::Rudolph: // Rudolph
-					case hb::owner::DireBoar: // DireBoar
-					case hb::owner::Frost: // Frost
-					case hb::owner::IceGolem: // Ice-Golem
-					case hb::owner::Wyvern: // Wyvern
-					case hb::owner::Dragon: // Dragon..........Ajouts par Snoopy
-					case hb::owner::Centaur: // Centaur
-					case hb::owner::ClawTurtle: // ClawTurtle
-					case hb::owner::FireWyvern: // FireWyvern
-					case hb::owner::GiantCrayfish: // GiantCrayfish
-					case hb::owner::GiLizard: // Gi Lizard
-					case hb::owner::GiTree: // Gi Tree
-					case hb::owner::MasterOrc: // Master Orc
-					case hb::owner::Minaus: // Minaus
-					case hb::owner::Nizie: // Nizie
-					case hb::owner::Tentocle: // Tentocle
-					case hb::owner::Abaddon: // Abaddon
-					case hb::owner::Sorceress: // Sorceress
-					case hb::owner::ATK: // ATK
-					case hb::owner::MasterElf: // MasterElf
-					case hb::owner::DSK: // DSK
-					case hb::owner::HBT: // HBT
-					case hb::owner::CT: // CT
-					case hb::owner::Barbarian: // Barbarian
-					case hb::owner::AGC: // AGC
-					case hb::owner::Gate: // Gate
+					case hb::shared::owner::Troll: // Troll.
+					case hb::shared::owner::Ogre: // Ogre
+					case hb::shared::owner::Liche: // Liche
+					case hb::shared::owner::Demon: // DD
+					case hb::shared::owner::Unicorn: // Uni
+					case hb::shared::owner::WereWolf: // WW
+					case hb::shared::owner::LightWarBeetle: // LWB
+					case hb::shared::owner::GodsHandKnight: // GHK
+					case hb::shared::owner::GodsHandKnightCK: // GHKABS
+					case hb::shared::owner::TempleKnight: // TK
+					case hb::shared::owner::BattleGolem: // BG
+					case hb::shared::owner::Stalker: // SK
+					case hb::shared::owner::HellClaw: // HC
+					case hb::shared::owner::TigerWorm: // TW
+					case hb::shared::owner::Catapult: // CP
+					case hb::shared::owner::Gargoyle: // GG
+					case hb::shared::owner::Beholder: // BB
+					case hb::shared::owner::DarkElf: // DE
+					case hb::shared::owner::Bunny: // Rabbit
+					case hb::shared::owner::Cat: // Cat
+					case hb::shared::owner::GiantFrog: // Frog
+					case hb::shared::owner::MountainGiant: // MG
+					case hb::shared::owner::Ettin: // Ettin
+					case hb::shared::owner::CannibalPlant: // Plant
+					case hb::shared::owner::Rudolph: // Rudolph
+					case hb::shared::owner::DireBoar: // DireBoar
+					case hb::shared::owner::Frost: // Frost
+					case hb::shared::owner::IceGolem: // Ice-Golem
+					case hb::shared::owner::Wyvern: // Wyvern
+					case hb::shared::owner::Dragon: // Dragon..........Ajouts par Snoopy
+					case hb::shared::owner::Centaur: // Centaur
+					case hb::shared::owner::ClawTurtle: // ClawTurtle
+					case hb::shared::owner::FireWyvern: // FireWyvern
+					case hb::shared::owner::GiantCrayfish: // GiantCrayfish
+					case hb::shared::owner::GiLizard: // Gi Lizard
+					case hb::shared::owner::GiTree: // Gi Tree
+					case hb::shared::owner::MasterOrc: // Master Orc
+					case hb::shared::owner::Minaus: // Minaus
+					case hb::shared::owner::Nizie: // Nizie
+					case hb::shared::owner::Tentocle: // Tentocle
+					case hb::shared::owner::Abaddon: // Abaddon
+					case hb::shared::owner::Sorceress: // Sorceress
+					case hb::shared::owner::ATK: // ATK
+					case hb::shared::owner::MasterElf: // MasterElf
+					case hb::shared::owner::DSK: // DSK
+					case hb::shared::owner::HBT: // HBT
+					case hb::shared::owner::CT: // CT
+					case hb::shared::owner::Barbarian: // Barbarian
+					case hb::shared::owner::AGC: // AGC
+					case hb::shared::owner::Gate: // Gate
 						break;
 
 					default: // 10..27
@@ -918,31 +924,31 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 					DrawObject_OnMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTDAMAGEMOVE:
+				case Type::DamageMove:
 					DrawObject_OnDamageMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTRUN:
+				case Type::Run:
 					DrawObject_OnRun(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTATTACK:
+				case Type::Attack:
 					DrawObject_OnAttack(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTATTACKMOVE:
+				case Type::AttackMove:
 					DrawObject_OnAttackMove(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTMAGIC:
+				case Type::Magic:
 					DrawObject_OnMagic(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTDAMAGE:
+				case Type::Damage:
 					DrawObject_OnDamage(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
-				case DEF_OBJECTDYING:
+				case Type::Dying:
 					DrawObject_OnDying(m_sMCX, m_sMCY, focusSX, focusSY, true, dwTime);
 					break;
 
@@ -963,19 +969,19 @@ void CGame::DrawObjects(short sPivotX, short sPivotY, short sDivX, short sDivY, 
 		if (strlen(cStr1) != 0)
 		{
 			if (m_bIsSpecial)
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIItemName_Special));
+				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIItemName_Special));
 			else
-				TextLib::DrawText(GameFont::Default, msX, msY + 25, cStr1, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+				hb::shared::text::DrawText(GameFont::Default, msX, msY + 25, cStr1, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 			iLoc += 15;
 		}
 		if (strlen(cStr2) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
+			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr2, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
 		if (strlen(cStr3) != 0)
 		{
-			TextLib::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
+			hb::shared::text::DrawText(GameFont::Default, msX, msY + 25 + iLoc, cStr3, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 			iLoc += 15;
 		}
 	}

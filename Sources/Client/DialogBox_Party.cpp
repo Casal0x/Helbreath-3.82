@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_Party::DialogBox_Party(CGame* pGame)
 	: IDialogBox(DialogBoxId::Party, pGame)
 {
@@ -124,7 +125,7 @@ void DialogBox_Party::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutAlignedString(sX, sX + szX, sY + 110, DRAW_DIALOGBOX_PARTY32);
 
 		int iNth = 0;
-		for (int i = 0; i <= hb::limits::MaxPartyMembers; i++) {
+		for (int i = 0; i <= hb::shared::limits::MaxPartyMembers; i++) {
 			if (strlen(m_pGame->m_stPartyMemberNameList[i].cName) != 0) {
 				PutAlignedString(sX + 17, sX + 270, sY + 140 + 15 * iNth, m_pGame->m_stPartyMemberNameList[i].cName);
 				iNth++;
@@ -242,7 +243,7 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 
 		if (m_pGame->m_iPartyStatus != 0) {
 			if ((msX > sX + 80) && (msX < sX + 195) && (msY > sY + 120) && (msY < sY + 140)) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 2, 0, 0, m_pGame->m_cMCName);
+				bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 2, 0, 0, m_pGame->m_cMCName);
 				Info().cMode = 4;
 				PlaySoundEffect('E', 14, 5);
 				return true;
@@ -257,14 +258,14 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 
 	case 1:
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACCEPTJOINPARTY, 0, 1, 0, 0, Info().cStr);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestAcceptJoinParty, 0, 1, 0, 0, Info().cStr);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Party);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
 
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACCEPTJOINPARTY, 0, 0, 0, 0, Info().cStr);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestAcceptJoinParty, 0, 0, 0, 0, Info().cStr);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Party);
 			PlaySoundEffect('E', 14, 5);
 			return true;
@@ -282,7 +283,7 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 	case 3:
 		if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
 			Info().cMode = 0;
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACCEPTJOINPARTY, 0, 2, 0, 0, Info().cStr);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestAcceptJoinParty, 0, 2, 0, 0, Info().cStr);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Party);
 			PlaySoundEffect('E', 14, 5);
 			return true;
@@ -304,7 +305,7 @@ bool DialogBox_Party::OnClick(short msX, short msY)
 
 	case 11:
 		if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 0, 0, 0, m_pGame->m_cMCName);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 0, 0, 0, m_pGame->m_cMCName);
 			Info().cMode = 5;
 			PlaySoundEffect('E', 14, 5);
 			return true;

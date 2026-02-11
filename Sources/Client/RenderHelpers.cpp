@@ -20,14 +20,14 @@ namespace RenderHelpers
 static bool ShouldSkipShadow(short sOwnerType)
 {
 	switch (sOwnerType) {
-	case hb::owner::Slime:
-	case hb::owner::EnergySphere:
-	case hb::owner::TigerWorm:
-	case hb::owner::Catapult:
-	case hb::owner::CannibalPlant:
-	case hb::owner::IceGolem:
-	case hb::owner::Abaddon:
-	case hb::owner::Gate:
+	case hb::shared::owner::Slime:
+	case hb::shared::owner::EnergySphere:
+	case hb::shared::owner::TigerWorm:
+	case hb::shared::owner::Catapult:
+	case hb::shared::owner::CannibalPlant:
+	case hb::shared::owner::IceGolem:
+	case hb::shared::owner::Abaddon:
+	case hb::shared::owner::Gate:
 		return true;
 	default:
 		return false;
@@ -42,7 +42,7 @@ void DrawEquipLayer(CGame& game, int spriteIndex, int sX, int sY, int frame,
 
 	if (bInv)
 	{
-		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Alpha(0.25f));
+		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 	}
 	else if (colorIndex == 0)
 	{
@@ -52,7 +52,7 @@ void DrawEquipLayer(CGame& game, int spriteIndex, int sX, int sY, int frame,
 	{
 		auto c = GameColors::Items[colorIndex];
 		game.m_pSprite[spriteIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
+			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
 	}
 }
 
@@ -64,7 +64,7 @@ void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 
 	if (bInv)
 	{
-		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, SpriteLib::DrawParams::Alpha(0.25f));
+		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 	}
 	else if (eq.iWeaponColor == 0)
 	{
@@ -74,7 +74,7 @@ void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	{
 		auto c = GameColors::Weapons[eq.iWeaponColor];
 		game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame,
-			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
+			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
 	}
 
 	// DK set glare
@@ -82,9 +82,9 @@ void DrawWeapon(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	game.DKGlare(eq.iWeaponColor, eq.iWeaponIndex, &weaponGlare);
 	switch (weaponGlare) {
 	case 0: break;
-	case 1: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, SpriteLib::DrawParams::AdditiveColored(game.m_iDrawFlag, 0, 0)); break;
-	case 2: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, SpriteLib::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
-	case 3: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, SpriteLib::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
+	case 1: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(game.m_iDrawFlag, 0, 0)); break;
+	case 2: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
+	case 3: game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, weaponFrame, hb::shared::sprite::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
 	}
 }
 
@@ -96,7 +96,7 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 
 	if (bInv)
 	{
-		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Alpha(0.25f));
+		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 	}
 	else if (eq.iShieldColor == 0)
 	{
@@ -106,7 +106,7 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	{
 		auto c = GameColors::Items[eq.iShieldColor];
 		game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(c.r, c.g, c.b));
+			hb::shared::sprite::DrawParams::Tint(c.r, c.g, c.b));
 	}
 
 	// Shield glare
@@ -115,8 +115,8 @@ void DrawShield(CGame& game, const EquipmentIndices& eq, int sX, int sY,
 	case 1:
 		// GM sprite (m_pEffectSpr[45]) is only drawn by DrawGMEffect when bGMMode is true
 		// fallthrough to case 2 for green-tinted additive shield overlay
-	case 2: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
-	case 3: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
+	case 2: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::AdditiveColored(0, game.m_iDrawFlag, 0)); break;
+	case 3: game.m_pSprite[eq.iShieldIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::AdditiveColored(0, 0, game.m_iDrawFlag)); break;
 	}
 }
 
@@ -128,30 +128,30 @@ void DrawShadow(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 	if (ConfigManager::Get().GetDetailLevel() == 0) return;
 	if (bInv) return;
 
-	game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Shadow());
+	game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Shadow());
 }
 
 // -----------------------------------------------------------------------
 void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
               bool bInv, short sOwnerType, bool bFrozen, bool bAdminInvis)
 {
-	if (sOwnerType == hb::owner::Abaddon)
+	if (sOwnerType == hb::shared::owner::Abaddon)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Alpha(0.5f));
+		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 	else if (bAdminInvis)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::TintedAlpha(255, 132, 132, 0.5f));
+			hb::shared::sprite::DrawParams::TintedAlpha(255, 132, 132, 0.5f));
 	}
 	else if (bInv)
 	{
-		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, SpriteLib::DrawParams::Alpha(0.5f));
+		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 	else if (bFrozen)
 	{
 		game.m_pSprite[iBodyDirIndex]->Draw(sX, sY, frame,
-			SpriteLib::DrawParams::Tint(94, 160, 208));
+			hb::shared::sprite::DrawParams::Tint(94, 160, 208));
 	}
 	else
 	{
@@ -160,7 +160,7 @@ void DrawBody(CGame& game, int iBodyDirIndex, int sX, int sY, int frame,
 
 	// Capture body bounding rect
 	auto br = game.m_pSprite[iBodyDirIndex]->GetBoundRect();
-	game.m_rcBodyRect = GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top);
+	game.m_rcBodyRect = hb::shared::geometry::GameRectangle(br.left, br.top, br.right - br.left, br.bottom - br.top);
 }
 
 // -----------------------------------------------------------------------
@@ -185,7 +185,7 @@ static void DrawEquipmentStack(CGame& game, const EquipmentIndices& eq,
 	if (eq.iHairIndex != -1 && eq.iHelmIndex == -1)
 	{
 		const auto& hc = GameColors::Hair[state.m_appearance.iHairColor];
-		game.m_pSprite[eq.iHairIndex]->Draw(sX, sY, dirFrame, SpriteLib::DrawParams::Tint(hc.r, hc.g, hc.b));
+		game.m_pSprite[eq.iHairIndex]->Draw(sX, sY, dirFrame, hb::shared::sprite::DrawParams::Tint(hc.r, hc.g, hc.b));
 	}
 
 	// Boots before pants if wearing skirt
@@ -237,8 +237,8 @@ void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 		DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
 
 		// Energy sphere light
-		if (state.m_sOwnerType == hb::owner::EnergySphere)
-			game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
+		if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
+			game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
 		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
@@ -248,8 +248,8 @@ void DrawPlayerLayers(CGame& game, const EquipmentIndices& eq,
 		// Body before weapon
 		DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
 
-		if (state.m_sOwnerType == hb::owner::EnergySphere)
-			game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
+		if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
+			game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 		DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen, bAdminInvis);
 		DrawEquipmentStack(game, eq, state, sX, sY, bInv, mantleOrder, equipFrameMul);
@@ -268,8 +268,8 @@ void DrawNpcLayers(CGame& game, const EquipmentIndices& eq,
 
 	DrawShadow(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType);
 
-	if (state.m_sOwnerType == hb::owner::EnergySphere)
-		game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
+	if (state.m_sOwnerType == hb::shared::owner::EnergySphere)
+		game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 	DrawBody(game, bodyDirIndex, sX, sY, frame, bInv, state.m_sOwnerType, state.m_status.bFrozen);
 }
@@ -279,7 +279,7 @@ bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv,
 {
 	bAdminInvis = false;
 
-	if (hb::owner::IsAlwaysInvisible(state.m_sOwnerType))
+	if (hb::shared::owner::IsAlwaysInvisible(state.m_sOwnerType))
 		bInv = true;
 
 	if (state.m_status.bInvisibility)
@@ -307,10 +307,10 @@ bool CheckInvisibility(CGame& game, const CEntityRenderState& state, bool& bInv,
 void ApplyDirectionOverride(CEntityRenderState& state)
 {
 	switch (state.m_sOwnerType) {
-	case hb::owner::AirElemental:
+	case hb::shared::owner::AirElemental:
 		state.m_iDir = 1;
 		break;
-	case hb::owner::Gate:
+	case hb::shared::owner::Gate:
 		if (state.m_iDir <= 3) state.m_iDir = 3;
 		else state.m_iDir = 5;
 		break;
@@ -349,16 +349,16 @@ void UpdateChat(CGame& game, const CEntityRenderState& state,
 void DrawNpcLight(CGame& game, short sOwnerType, int sX, int sY)
 {
 	switch (sOwnerType) {
-	case hb::owner::ShopKeeper:
-	case hb::owner::Gandalf:
-	case hb::owner::Howard:
-	case hb::owner::Tom:
-	case hb::owner::William:
-	case hb::owner::Kennedy:
-	case hb::owner::Catapult:
-	case hb::owner::HBT:
-	case hb::owner::Gail:
-		game.m_pEffectSpr[0]->Draw(sX, sY, 1, SpriteLib::DrawParams::Alpha(0.5f));
+	case hb::shared::owner::ShopKeeper:
+	case hb::shared::owner::Gandalf:
+	case hb::shared::owner::Howard:
+	case hb::shared::owner::Tom:
+	case hb::shared::owner::William:
+	case hb::shared::owner::Kennedy:
+	case hb::shared::owner::Catapult:
+	case hb::shared::owner::HBT:
+	case hb::shared::owner::Gail:
+		game.m_pEffectSpr[0]->Draw(sX, sY, 1, hb::shared::sprite::DrawParams::Alpha(0.5f));
 		break;
 	}
 }
@@ -368,8 +368,8 @@ void DrawEffectAuras(CGame& game, const CEntityRenderState& state, int sX, int s
 {
 	if (state.m_iEffectType == 0) return;
 	switch (state.m_iEffectType) {
-	case 1: game.m_pEffectSpr[26]->Draw(sX, sY, state.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break;
-	case 2: game.m_pEffectSpr[27]->Draw(sX, sY, state.m_iEffectFrame, SpriteLib::DrawParams::Alpha(0.5f)); break;
+	case 1: game.m_pEffectSpr[26]->Draw(sX, sY, state.m_iEffectFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
+	case 2: game.m_pEffectSpr[27]->Draw(sX, sY, state.m_iEffectFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
 	}
 }
 
@@ -380,55 +380,55 @@ void DrawBerserkGlow(CGame& game, const EquipmentIndices& eq, const CEntityRende
 	if (!state.m_status.bBerserk) return;
 	int bodyDirIndex = eq.iBodyIndex + (state.m_iDir - 1);
 	game.m_pSprite[bodyDirIndex]->Draw(sX, sY, state.m_iFrame,
-		SpriteLib::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
+		hb::shared::sprite::DrawParams::AdditiveColored(GameColors::BerserkGlow.r, GameColors::BerserkGlow.g, GameColors::BerserkGlow.b, 0.7f));
 }
 
 // -----------------------------------------------------------------------
 void DrawAbaddonEffects(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
-	if (state.m_sOwnerType != hb::owner::Abaddon) return;
+	if (state.m_sOwnerType != hb::shared::owner::Abaddon) return;
 
 	int randFrame = state.m_iFrame % 12;
-	game.m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
-	game.m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, SpriteLib::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[154]->Draw(sX - 50, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[155]->Draw(sX - 20, sY - 80, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[156]->Draw(sX + 70, sY - 50, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[157]->Draw(sX - 30, sY, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[158]->Draw(sX - 60, sY + 90, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
+	game.m_pEffectSpr[159]->Draw(sX + 65, sY + 85, randFrame, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	int ef = state.m_iEffectFrame;
 	switch (state.m_iDir) {
 	case 1:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 108, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 50, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX, sY + 108, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 50, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 2:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 70, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 70, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 3:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 105, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 90, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX, sY + 105, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 90, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 4:
-		game.m_pEffectSpr[153]->Draw(sX - 35, sY + 100, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 80, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX - 35, sY + 100, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 80, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 5:
-		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 65, sY - 5, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 65, sY - 5, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 6:
-		game.m_pEffectSpr[153]->Draw(sX + 45, sY + 95, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 31, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX + 45, sY + 95, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 31, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 7:
-		game.m_pEffectSpr[153]->Draw(sX + 40, sY + 110, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 30, sY + 10, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX + 40, sY + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 30, sY + 10, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	case 8:
-		game.m_pEffectSpr[153]->Draw(sX + 20, sY + 110, ef % 28, SpriteLib::DrawParams::Alpha(0.7f));
-		game.m_pEffectSpr[164]->Draw(sX - 20, sY + 16, ef % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[153]->Draw(sX + 20, sY + 110, ef % 28, hb::shared::sprite::DrawParams::Alpha(0.7f));
+		game.m_pEffectSpr[164]->Draw(sX - 20, sY + 16, ef % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 		break;
 	}
 }
@@ -437,7 +437,7 @@ void DrawAbaddonEffects(CGame& game, const CEntityRenderState& state, int sX, in
 void DrawGMEffect(CGame& game, const CEntityRenderState& state, int sX, int sY)
 {
 	if (state.m_status.bGMMode && state.IsPlayer())
-		game.m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, SpriteLib::DrawParams::Additive(1.0f));
+		game.m_pEffectSpr[45]->Draw(sX - 13, sY - 34, 0, hb::shared::sprite::DrawParams::Additive(1.0f));
 }
 
 // -----------------------------------------------------------------------
@@ -460,7 +460,7 @@ void DrawAfkEffect(CGame& game, const CEntityRenderState& state, int sX, int sY,
 		s_dwNextFrameTime = dwTime + 100 + (rand() % 101); // 100-200ms
 	}
 
-	game.m_pEffectSpr[AFK_SPRITE_INDEX]->Draw(sX + 56, sY+32, s_iAfkFrame, SpriteLib::DrawParams::Alpha(0.8f));
+	game.m_pEffectSpr[AFK_SPRITE_INDEX]->Draw(sX + 56, sY+32, s_iAfkFrame, hb::shared::sprite::DrawParams::Alpha(0.8f));
 }
 
 } // namespace RenderHelpers

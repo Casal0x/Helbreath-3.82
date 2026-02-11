@@ -6,7 +6,7 @@
 #include "SFMLBitmapFont.h"
 #include "SpriteTypes.h"
 
-namespace TextLib {
+namespace hb::shared::text {
 
 // Global accessor implementation
 static BitmapFontFactory* s_pBitmapFontFactory = nullptr;
@@ -23,7 +23,7 @@ void SetBitmapFontFactory(BitmapFontFactory* factory)
 
 // SFMLBitmapFont implementation
 
-SFMLBitmapFont::SFMLBitmapFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+SFMLBitmapFont::SFMLBitmapFont(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                                int frameOffset, const FontSpacing& spacing)
     : m_pSprite(sprite)
     , m_firstChar(firstChar)
@@ -58,7 +58,7 @@ int SFMLBitmapFont::GetCharWidth(char c) const
         int frame = GetFrameForChar(c);
         if (frame >= 0 && frame < m_pSprite->GetFrameCount())
         {
-            SpriteLib::SpriteRect rect = m_pSprite->GetFrameRect(frame);
+            hb::shared::sprite::SpriteRect rect = m_pSprite->GetFrameRect(frame);
             return rect.width;
         }
     }
@@ -93,7 +93,7 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
     // Set up draw parameters for bitmap font rendering
     // Bitmap font sprites are pure white - SFML multiply tint acts as color replacement:
     // white(255) * tint / 255 = tint. But (0,0,0) skips the tint block, so clamp to (1,1,1).
-    SpriteLib::DrawParams drawParams;
+    hb::shared::sprite::DrawParams drawParams;
     drawParams.alpha = params.alpha;
     drawParams.tintR = params.tintR;
     drawParams.tintG = params.tintG;
@@ -110,7 +110,7 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
     // This matches DDraw's additive tinting behavior for bright colors
     if (params.useAdditive)
     {
-        drawParams.blendMode = SpriteLib::BlendMode::Additive;
+        drawParams.blendMode = hb::shared::sprite::BlendMode::Additive;
     }
 
     int currentX = x;
@@ -129,7 +129,7 @@ void SFMLBitmapFont::DrawText(int x, int y, const char* text, const BitmapTextPa
                     // Original PutString_SprFont2 behavior:
                     // Draw raw/uncolored sprite at (+1,0) and (+1,+1) before main colored text
                     // In SFML, raw sprites appear white, so we draw with black to match DDraw
-                    SpriteLib::DrawParams shadowParams;
+                    hb::shared::sprite::DrawParams shadowParams;
                     shadowParams.tintR = 1;
                     shadowParams.tintG = 1;
                     shadowParams.tintB = 1;
@@ -160,7 +160,7 @@ void SFMLBitmapFont::DrawTextCentered(int x1, int x2, int y, const char* text, c
 
 // SFMLBitmapFontFactory implementation
 
-std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFont(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                                                                 int frameOffset, const FontSpacing& spacing)
 {
     if (!sprite)
@@ -169,7 +169,7 @@ std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFont(SpriteLib::ISprit
     return std::make_unique<SFMLBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFontDynamic(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                                                                        int frameOffset)
 {
     if (!sprite)
@@ -182,4 +182,4 @@ std::unique_ptr<IBitmapFont> SFMLBitmapFontFactory::CreateFontDynamic(SpriteLib:
     return std::make_unique<SFMLBitmapFont>(sprite, firstChar, lastChar, frameOffset, spacing);
 }
 
-} // namespace TextLib
+} // namespace hb::shared::text

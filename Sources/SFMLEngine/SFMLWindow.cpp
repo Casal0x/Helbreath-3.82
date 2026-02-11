@@ -1,4 +1,4 @@
-// SFMLWindow.cpp: Pure SFML window implementing IWindow interface
+// SFMLWindow.cpp: Pure SFML window implementing hb::shared::render::IWindow interface
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -12,6 +12,9 @@
 
 #ifdef _WIN32
 #include <windows.h>
+
+namespace MouseButton = hb::shared::input::MouseButton;
+
 #endif
 
 SFMLWindow::SFMLWindow()
@@ -37,7 +40,7 @@ SFMLWindow::~SFMLWindow()
     Destroy();
 }
 
-bool SFMLWindow::Create(const WindowParams& params)
+bool SFMLWindow::Create(const hb::shared::render::WindowParams& params)
 {
     if (m_open)
         return false;
@@ -62,7 +65,7 @@ bool SFMLWindow::Create(const WindowParams& params)
         sfStyle = sf::Style::Titlebar;
     }
 
-    m_renderWindow.create(videoMode, params.title ? params.title : "Window", sfStyle, state);
+    m_renderWindow.create(videoMode, params.title ? params.title : "hb::shared::render::Window", sfStyle, state);
 
     if (!m_renderWindow.isOpen())
         return false;
@@ -126,13 +129,13 @@ bool SFMLWindow::IsOpen() const
 void SFMLWindow::Close()
 {
     // Don't call m_pEventHandler->OnClose() here — that creates infinite recursion
-    // since OnClose() may call Window::Close(). OnClose() is only called from the
+    // since OnClose() may call hb::shared::render::Window::Close(). OnClose() is only called from the
     // SFML event loop when the user clicks the close button.
     m_open = false;
     m_renderWindow.close();
 }
 
-NativeWindowHandle SFMLWindow::GetHandle() const
+hb::shared::types::NativeWindowHandle SFMLWindow::GetHandle() const
 {
     return m_hWnd;
 }
@@ -269,15 +272,15 @@ void SFMLWindow::SetBorderless(bool borderless)
     SetWindowPos(m_hWnd, HWND_TOP, posX, posY, m_width, m_height, SWP_SHOWWINDOW);
 
     // Update input system with new window handle
-    if (Input::Get())
+    if (hb::shared::input::Get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(Input::Get());
+        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::Get());
         pInput->Initialize(m_hWnd);
         pInput->SetRenderWindow(&m_renderWindow);
     }
 
     // Update renderer with new render window
-    IRenderer* pRenderer = Renderer::Get();
+    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
     if (pRenderer)
     {
         static_cast<SFMLRenderer*>(pRenderer)->SetRenderWindow(&m_renderWindow);
@@ -353,7 +356,7 @@ void SFMLWindow::SetFramerateLimit(int limit)
 {
     m_iFpsLimit = limit;
     // Forward to renderer for engine-owned frame limiting
-    IRenderer* pRenderer = Renderer::Get();
+    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
     if (pRenderer)
         static_cast<SFMLRenderer*>(pRenderer)->SetFramerateLimit(limit);
 }
@@ -366,7 +369,7 @@ int SFMLWindow::GetFramerateLimit() const
 void SFMLWindow::SetVSyncEnabled(bool enabled)
 {
     m_bVSync = enabled;
-    IRenderer* pRenderer = Renderer::Get();
+    hb::shared::render::IRenderer* pRenderer = hb::shared::render::Renderer::Get();
     if (!pRenderer) return;
 
     auto* pSFMLRenderer = static_cast<SFMLRenderer*>(pRenderer);
@@ -508,11 +511,11 @@ bool SFMLWindow::ProcessMessages()
 
         if (const auto* mousePressed = event->getIf<sf::Event::MouseButtonPressed>())
         {
-            int button = MOUSE_BUTTON_LEFT;
+            int button = MouseButton::Left;
             if (mousePressed->button == sf::Mouse::Button::Right)
-                button = MOUSE_BUTTON_RIGHT;
+                button = MouseButton::Right;
             else if (mousePressed->button == sf::Mouse::Button::Middle)
-                button = MOUSE_BUTTON_MIDDLE;
+                button = MouseButton::Middle;
 
             if (m_pEventHandler)
             {
@@ -524,11 +527,11 @@ bool SFMLWindow::ProcessMessages()
 
         if (const auto* mouseReleased = event->getIf<sf::Event::MouseButtonReleased>())
         {
-            int button = MOUSE_BUTTON_LEFT;
+            int button = MouseButton::Left;
             if (mouseReleased->button == sf::Mouse::Button::Right)
-                button = MOUSE_BUTTON_RIGHT;
+                button = MouseButton::Right;
             else if (mouseReleased->button == sf::Mouse::Button::Middle)
-                button = MOUSE_BUTTON_MIDDLE;
+                button = MouseButton::Middle;
 
             if (m_pEventHandler)
             {
@@ -589,12 +592,12 @@ void SFMLWindow::WaitForMessage()
     }
 }
 
-void SFMLWindow::SetEventHandler(IWindowEventHandler* handler)
+void SFMLWindow::SetEventHandler(hb::shared::render::IWindowEventHandler* handler)
 {
     m_pEventHandler = handler;
 }
 
-IWindowEventHandler* SFMLWindow::GetEventHandler() const
+hb::shared::render::IWindowEventHandler* SFMLWindow::GetEventHandler() const
 {
     return m_pEventHandler;
 }

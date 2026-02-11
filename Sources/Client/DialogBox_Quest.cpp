@@ -40,7 +40,7 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::owner::William)); break;
+			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::shared::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;
@@ -89,7 +89,7 @@ void DialogBox_Quest::OnDraw(short msX, short msY, short msZ, char cLB)
 			case 1:
 			case 2:
 			case 3: break;
-			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::owner::William)); break;
+			case 4: std::snprintf(cTemp, sizeof(cTemp), "%s", m_pGame->GetNpcConfigName(hb::shared::owner::William)); break;
 			case 5:
 			case 6:
 			case 7: break;

@@ -6,7 +6,7 @@
 #include <direct.h>
 #endif
 
-using namespace hb::item;
+using namespace hb::shared::item;
 
 extern char G_cTxt[512];
 
@@ -17,8 +17,8 @@ CClient::CClient(asio::io_context& ctx)
  
 
 	m_pXSock = 0;
-	m_pXSock = new class ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
-	m_pXSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+	m_pXSock = new class hb::shared::net::ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
+	m_pXSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
 	std::memset(m_cProfile, 0, sizeof(m_cProfile));
 	strcpy(m_cProfile, "__________");
@@ -65,7 +65,7 @@ CClient::CClient(asio::io_context& ctx)
 
 	//50Cent - Repair All
 	totalItemRepair = 0;
-	for(int i = 0; i < hb::limits::MaxItems; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
 		m_stRepairAll[i].index = 0;
 		m_stRepairAll[i].price = 0;
 	}
@@ -74,7 +74,7 @@ CClient::CClient(asio::io_context& ctx)
 		m_sItemEquipmentStatus[i] = -1;
 	
 	// Initialize item list 
-	for(int i = 0; i < hb::limits::MaxItems; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
 		m_pItemList[i]       = 0;
 		m_ItemPosList[i].x   = 40;
 		m_ItemPosList[i].y   = 30;
@@ -83,18 +83,18 @@ CClient::CClient(asio::io_context& ctx)
 	m_cArrowIndex = -1;
 
 	// Initialize item list.
-	for(int i = 0; i < hb::limits::MaxBankItems; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++) {
 		m_pItemInBankList[i] = 0;
 	}
 
 	// Magic - Skill
-	for(int i = 0; i < DEF_MAXMAGICTYPE; i++)
+	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++)
 		m_cMagicMastery[i] = 0;
 	
-	for(int i = 0; i < DEF_MAXSKILLTYPE; i++)
+	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		m_cSkillMastery[i] = 0;
 
-	for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
 		m_bSkillUsingStatus[i] = false;
 		m_iSkillUsingTimeID[i] = 0;
 	}
@@ -202,7 +202,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID        = 0;
 
-	for(int i = 0; i < hb::limits::MaxPartyMembers; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}*/
@@ -285,7 +285,7 @@ CClient::CClient(asio::io_context& ctx)
 	m_dwCrusadeGUID = 0;
 	m_dwHeldenianGUID = 0;
 
-	for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
 		m_stCrusadeStructureInfo[i].sX = 0;
@@ -324,7 +324,7 @@ CClient::~CClient()
 	if (m_pXSock != 0)
 		delete m_pXSock;
 
-	for(int i = 0; i < hb::limits::MaxItems; i++)
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_pItemList[i] != 0) {
 			delete m_pItemList[i];
@@ -332,7 +332,7 @@ CClient::~CClient()
 		}
 	}
 
-	for(int i = 0; i < hb::limits::MaxBankItems; i++)
+	for(int i = 0; i < hb::shared::limits::MaxBankItems; i++)
 	{
 		if (m_pItemInBankList[i] != 0) {
 			delete m_pItemInBankList[i];
@@ -351,7 +351,7 @@ bool CClient::bCreateNewParty()
 	m_iPartyMemberCount = 0;
 	m_iPartyGUID = (rand() % 999999) + GameClock::GetTimeMS();
 
-	for(int i = 0; i < hb::limits::MaxPartyMembers; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
 		m_stPartyMemberName[i].iIndex = 0;
 		std::memset(m_stPartyMemberName[i].cName, 0, sizeof(m_stPartyMemberName[i].cName));
 	}

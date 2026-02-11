@@ -142,7 +142,7 @@ namespace NetworkMessageHandlers {
 		sMagicEffect = static_cast<short>(pkt->effect);
 		sOwnerH = static_cast<short>(pkt->owner);
 		switch (sMagicType) {
-		case hb::magic::Protect:
+		case hb::shared::magic::Protect:
 			switch (sMagicEffect) {
 			case 1: // "You are completely protected from arrows!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON1, 10);
@@ -160,7 +160,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::HoldObject:
+		case hb::shared::magic::HoldObject:
 			switch (sMagicEffect) {
 			case 1: // "You were bounded by a Hold Person spell! Unable to move!"
 				pGame->m_pPlayer->m_bParalyze = true;
@@ -173,7 +173,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Invisibility:
+		case hb::shared::magic::Invisibility:
 			switch (sMagicEffect) {
 			case 1: // "You are now invisible, no one can see you!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON6, 10);
@@ -181,7 +181,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Confuse:
+		case hb::shared::magic::Confuse:
 			switch (sMagicEffect) {
 			case 1:	// Confuse Language "No one understands you because of language confusion magic!"
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON7, 10);
@@ -204,12 +204,12 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Poison:
+		case hb::shared::magic::Poison:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON10, 10);
 			pGame->m_pPlayer->m_bIsPoisoned = true;
 			break;
 
-		case hb::magic::Berserk:
+		case hb::shared::magic::Berserk:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON11, 10);
@@ -217,7 +217,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Polymorph:
+		case hb::shared::magic::Polymorph:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON12, 10);
@@ -225,7 +225,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Ice:
+		case hb::shared::magic::Ice:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_ON13, 10);
 			break;
 		}
@@ -240,7 +240,7 @@ namespace NetworkMessageHandlers {
 		sMagicType = static_cast<short>(pkt->magic_type);
 		sMagicEffect = static_cast<short>(pkt->effect);
 		switch (sMagicType) {
-		case hb::magic::Protect:
+		case hb::shared::magic::Protect:
 			switch (sMagicEffect) {
 			case 1: // "Protection from arrows has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF1, 10);
@@ -258,7 +258,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::HoldObject:
+		case hb::shared::magic::HoldObject:
 			switch (sMagicEffect) {
 			case 1:	// "Hold person magic effect has vanished."
 				pGame->m_pPlayer->m_bParalyze = false;
@@ -272,7 +272,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Invisibility:
+		case hb::shared::magic::Invisibility:
 			switch (sMagicEffect) {
 			case 1:	// "Invisibility magic effect has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF6, 10);
@@ -280,7 +280,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Confuse:
+		case hb::shared::magic::Confuse:
 			switch (sMagicEffect) {
 			case 1:	// "Language confuse magic effect has vanished."
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF7, 10);
@@ -300,12 +300,12 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Poison:
+		case hb::shared::magic::Poison:
 			if (pGame->m_pPlayer->m_bIsPoisoned) pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF10, 10);
 			pGame->m_pPlayer->m_bIsPoisoned = false;
 			break;
 
-		case hb::magic::Berserk:
+		case hb::shared::magic::Berserk:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF11, 10);
@@ -313,7 +313,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Polymorph:
+		case hb::shared::magic::Polymorph:
 			switch (sMagicEffect) {
 			case 1:
 				pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF12, 10);
@@ -321,7 +321,7 @@ namespace NetworkMessageHandlers {
 			}
 			break;
 
-		case hb::magic::Ice:
+		case hb::shared::magic::Ice:
 			pGame->AddEventList(NOTIFYMSG_MAGICEFFECT_OFF13, 10);
 			break;
 		}
@@ -333,10 +333,10 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySpellSkill>(
 			pData, sizeof(hb::net::PacketNotifySpellSkill));
 		if (!pkt) return;
-		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
+		for (i = 0; i < hb::shared::limits::MaxMagicType; i++) {
 			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
 		}
-		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
+		for (i = 0; i < hb::shared::limits::MaxSkillType; i++) {
 			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
 			if (pGame->m_pSkillCfgList[i] != 0)
 				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];
@@ -349,10 +349,10 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyStateChangeSuccess>(
 			pData, sizeof(hb::net::PacketNotifyStateChangeSuccess));
 		if (!pkt) return;
-		for (i = 0; i < DEF_MAXMAGICTYPE; i++) {
+		for (i = 0; i < hb::shared::limits::MaxMagicType; i++) {
 			pGame->m_pPlayer->m_iMagicMastery[i] = pkt->magic_mastery[i];
 		}
-		for (i = 0; i < DEF_MAXSKILLTYPE; i++) {
+		for (i = 0; i < hb::shared::limits::MaxSkillType; i++) {
 			pGame->m_pPlayer->m_iSkillMastery[i] = pkt->skill_mastery[i];
 			if (pGame->m_pSkillCfgList[i] != 0)
 				pGame->m_pSkillCfgList[i]->m_iLevel = pkt->skill_mastery[i];

@@ -61,7 +61,7 @@ public:
 	void SetAmbientEnabled(bool enabled);
 	void SetUIEnabled(bool enabled);
 
-	// Window/Resolution settings
+	// hb::shared::render::Window/Resolution settings
 	int GetWindowWidth() const { return m_windowWidth; }
 	int GetWindowHeight() const { return m_windowHeight; }
 	void SetWindowSize(int width, int height);
@@ -144,7 +144,7 @@ private:
 	bool m_bAmbientEnabled;
 	bool m_bUIEnabled;
 
-	// Window/Resolution
+	// hb::shared::render::Window/Resolution
 	int m_windowWidth;
 	int m_windowHeight;
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PacketHeaders.h"
-#include "../Appearance.h"
-#include "../PlayerStatusData.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -40,8 +40,8 @@ namespace net {
 		std::int16_t type;
 		std::uint8_t dir;
 		char name[10];
-		PlayerAppearance appearance;
-		PlayerStatus status;
+		hb::shared::entity::PlayerAppearance appearance;
+		hb::shared::entity::PlayerStatus status;
 	};
 
 	struct HB_PACKED PacketEventLogNpc {
@@ -49,8 +49,8 @@ namespace net {
 		std::int16_t config_id;
 		std::uint8_t dir;
 		char name[5];
-		EntityAppearance appearance;
-		EntityStatus status;
+		hb::shared::entity::EntityAppearance appearance;
+		hb::shared::entity::EntityStatus status;
 	};
 
 	struct HB_PACKED PacketEventMotionPlayer {
@@ -61,8 +61,8 @@ namespace net {
 		std::int16_t type;
 		std::uint8_t dir;
 		char name[10];
-		PlayerAppearance appearance;
-		PlayerStatus status;
+		hb::shared::entity::PlayerAppearance appearance;
+		hb::shared::entity::PlayerStatus status;
 		std::uint8_t loc;
 		std::uint8_t reserved;
 	};
@@ -80,8 +80,8 @@ namespace net {
 		std::int16_t config_id;
 		std::uint8_t dir;
 		char name[5];
-		EntityAppearance appearance;
-		EntityStatus status;
+		hb::shared::entity::EntityAppearance appearance;
+		hb::shared::entity::EntityStatus status;
 		std::uint8_t loc;
 	};
 

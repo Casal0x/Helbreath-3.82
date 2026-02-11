@@ -1,8 +1,8 @@
 #pragma once
 
 #include "PacketCommon.h"
-#include "../Appearance.h"
-#include "../PlayerStatusData.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -27,8 +27,8 @@ namespace net {
 		PacketMapDataObjectBase base;
 		std::int16_t type;
 		std::uint8_t dir;
-		PlayerAppearance appearance;
-		PlayerStatus status;
+		hb::shared::entity::PlayerAppearance appearance;
+		hb::shared::entity::PlayerStatus status;
 		char name[10];
 	};
 
@@ -36,8 +36,8 @@ namespace net {
 		PacketMapDataObjectBase base;
 		std::int16_t config_id;
 		std::uint8_t dir;
-		EntityAppearance appearance;
-		EntityStatus status;
+		hb::shared::entity::EntityAppearance appearance;
+		hb::shared::entity::EntityStatus status;
 		char name[5];
 	};
 

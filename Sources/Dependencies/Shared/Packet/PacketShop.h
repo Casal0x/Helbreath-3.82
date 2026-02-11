@@ -51,7 +51,7 @@ struct HB_PACKED PacketShopResponseHeader
 HB_PACK_END
 
 //------------------------------------------------------------------------
-// Purchase Request - uses existing MSGID_COMMAND_COMMON with DEF_COMMONTYPE_REQ_PURCHASEITEM
+// Purchase Request - uses existing hb::shared::net::MsgId::CommandCommon with hb::shared::net::CommonType::ReqPurchaseItem
 // but now sends item ID instead of item name
 //
 // Parameters:

@@ -8,7 +8,7 @@
 #include <cstring>
 #include <string>
 
-namespace TextLib {
+namespace hb::shared::text {
 
 // Global accessor implementation
 static ITextRenderer* s_pTextRenderer = nullptr;
@@ -155,7 +155,7 @@ int SFMLTextRenderer::GetLineHeight() const
     return static_cast<int>(m_font.getLineSpacing(m_fontSize));
 }
 
-void SFMLTextRenderer::DrawText(int x, int y, const char* text, const ::Color& color)
+void SFMLTextRenderer::DrawText(int x, int y, const char* text, const hb::shared::render::Color& color)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
         return;
@@ -167,7 +167,7 @@ void SFMLTextRenderer::DrawText(int x, int y, const char* text, const ::Color& c
     m_pBackBuffer->draw(sfText);
 }
 
-void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, const ::Color& color,
+void SFMLTextRenderer::DrawTextAligned(int x, int y, int width, int height, const char* text, const hb::shared::render::Color& color,
                                         Align alignment)
 {
     if (!text || !m_fontLoaded || !m_pBackBuffer)
@@ -214,4 +214,4 @@ void SFMLTextRenderer::EndBatch()
     // No-op for SFML
 }
 
-} // namespace TextLib
+} // namespace hb::shared::text

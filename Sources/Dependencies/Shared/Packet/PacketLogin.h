@@ -12,8 +12,8 @@ namespace net {
 	struct HB_PACKED LoginRequest
 	{
 		PacketHeader header;
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
 		char world_name[30];
 	};
 	HB_PACK_END
@@ -22,9 +22,9 @@ namespace net {
 	struct HB_PACKED CreateCharacterRequest
 	{
 		PacketHeader header;
-		char character_name[DEF_ACCOUNT_NAME - 1];
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
+		char character_name[hb::shared::limits::AccountNameLen - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
 		char world_name[30];
 		std::uint8_t gender;
 		std::uint8_t skin;
@@ -44,9 +44,9 @@ namespace net {
 	struct HB_PACKED DeleteCharacterRequest
 	{
 		PacketHeader header;
-		char character_name[DEF_ACCOUNT_NAME - 1];
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
+		char character_name[hb::shared::limits::AccountNameLen - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
 		char world_name[30];
 	};
 	HB_PACK_END
@@ -55,10 +55,10 @@ namespace net {
 	struct HB_PACKED ChangePasswordRequest
 	{
 		PacketHeader header;
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
-		char new_password[DEF_ACCOUNT_PASS - 1];
-		char new_password_confirm[DEF_ACCOUNT_PASS - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
+		char new_password[hb::shared::limits::AccountPassLen - 1];
+		char new_password_confirm[hb::shared::limits::AccountPassLen - 1];
 	};
 	HB_PACK_END
 
@@ -66,9 +66,9 @@ namespace net {
 	struct HB_PACKED CreateAccountRequest
 	{
 		PacketHeader header;
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
-		char email[DEF_ACCOUNT_EMAIL - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
+		char email[hb::shared::limits::AccountEmailLen - 1];
 	};
 	HB_PACK_END
 
@@ -76,12 +76,12 @@ namespace net {
 	struct HB_PACKED EnterGameRequest
 	{
 		PacketHeader header;
-		char character_name[DEF_ACCOUNT_NAME - 1];
-		char map_name[DEF_ACCOUNT_NAME - 1];
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
+		char character_name[hb::shared::limits::AccountNameLen - 1];
+		char map_name[hb::shared::limits::AccountNameLen - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
 		std::int32_t level;
-		char world_name[DEF_ACCOUNT_NAME - 1];
+		char world_name[hb::shared::limits::AccountNameLen - 1];
 	};
 	HB_PACK_END
 
@@ -89,10 +89,10 @@ namespace net {
 	struct HB_PACKED EnterGameRequestFull
 	{
 		PacketHeader header;
-		char character_name[DEF_ACCOUNT_NAME - 1];
-		char map_name[DEF_ACCOUNT_NAME - 1];
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char password[DEF_ACCOUNT_PASS - 1];
+		char character_name[hb::shared::limits::AccountNameLen - 1];
+		char map_name[hb::shared::limits::AccountNameLen - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char password[hb::shared::limits::AccountPassLen - 1];
 		std::int32_t level;
 		char world_name[30];
 	};
@@ -110,8 +110,8 @@ namespace net {
 	HB_PACK_BEGIN
 	// Test log / account verify payload (after PacketHeader)
 	struct HB_PACKED TestLogPayload {
-		char account_name[DEF_ACCOUNT_NAME - 1];
-		char account_password[DEF_ACCOUNT_PASS - 1];
+		char account_name[hb::shared::limits::AccountNameLen - 1];
+		char account_password[hb::shared::limits::AccountPassLen - 1];
 		std::int32_t level;
 	};
 	HB_PACK_END

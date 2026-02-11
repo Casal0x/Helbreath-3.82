@@ -7,6 +7,9 @@
 #include <cmath>
 #include <algorithm>
 
+
+using namespace hb::shared::action;
+
 //=============================================================================
 // StartMove - Begin movement interpolation in a direction
 //=============================================================================
@@ -237,16 +240,16 @@ uint32_t EntityMotion::GetDurationForAction(int action, bool hasHaste, bool isFr
     uint32_t baseDuration;
 
     switch (action) {
-        case DEF_OBJECTMOVE:
+        case Type::Move:
             baseDuration = MovementTiming::WALK_DURATION_MS;
             break;
-        case DEF_OBJECTRUN:
+        case Type::Run:
             baseDuration = MovementTiming::RUN_DURATION_MS;
             break;
-        case DEF_OBJECTDAMAGEMOVE:
+        case Type::DamageMove:
             baseDuration = MovementTiming::DAMAGE_MOVE_DURATION_MS;
             break;
-        case DEF_OBJECTATTACKMOVE:
+        case Type::AttackMove:
             baseDuration = MovementTiming::ATTACK_MOVE_DURATION_MS;
             break;
         default:

@@ -4,7 +4,8 @@
 #include "IInput.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_Bank::DialogBox_Bank(CGame* pGame)
 	: IDialogBox(DialogBoxId::Bank, pGame)
@@ -47,7 +48,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 	for (int i = 0; i < Info().sV1; i++) {
 		int itemIndex = i + Info().sView;
-		if ((itemIndex < hb::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
+		if ((itemIndex < hb::shared::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
 			m_pGame->GetItemName(m_pGame->m_pBankList[itemIndex].get(), cStr1, cStr2, cStr3);
 
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
@@ -66,7 +67,7 @@ void DialogBox_Bank::DrawItemList(short sX, short sY, short szX, short msX, shor
 
 	// Count total items for scrollbar
 	int iTotalLines = 0;
-	for (int i = 0; i < hb::limits::MaxBankItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pGame->m_pBankList[i] != 0) iTotalLines++;
 
 	DrawScrollbar(sX, sY, iTotalLines, msX, msY, msZ, cLB);
@@ -134,10 +135,10 @@ void DialogBox_Bank::DrawItemDetails(short sX, short sY, short szX, int iItemInd
 		if ((pCfg->GetEquipPos() == EquipPos::LeftHand) ||
 			(pCfg->GetEquipPos() == EquipPos::RightHand) ||
 			(pCfg->GetEquipPos() == EquipPos::TwoHand)) {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 		}
 		else {
-			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+			m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + pCfg->m_sSprite]->Draw(sX + 60, sY + 68, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 		}
 	}
 }
@@ -204,12 +205,12 @@ bool DialogBox_Bank::OnClick(short msX, short msY)
 		for (int i = 0; i < Info().sV1; i++) {
 			if ((msX > sX + 30) && (msX < sX + 210) && (msY >= sY + 110 + i * 15) && (msY <= sY + 124 + i * 15)) {
 				int itemIndex = Info().sView + i;
-				if ((itemIndex < hb::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
+				if ((itemIndex < hb::shared::limits::MaxBankItems) && (m_pGame->m_pBankList[itemIndex] != 0)) {
 					if (m_pGame->_iGetTotalItemNum() >= 50) {
 						AddEventList(DLGBOX_CLICK_BANK1, 10);
 						return true;
 					}
-					bSendCommand(MSGID_REQUEST_RETRIEVEITEM, 0, 0, itemIndex, 0, 0, 0);
+					bSendCommand(MsgId::RequestRetrieveItem, 0, 0, itemIndex, 0, 0, 0);
 					Info().cMode = -1;
 					PlaySoundEffect('E', 14, 5);
 				}
@@ -281,7 +282,7 @@ bool DialogBox_Bank::OnItemDrop(short msX, short msY)
 		if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1))
 			AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 		else
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, giveInfo.sV1, 1,
+			bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, giveInfo.sV1, 1,
 				giveInfo.sV5, giveInfo.sV6, pCfg->m_cName, giveInfo.sV4);
 	}
 

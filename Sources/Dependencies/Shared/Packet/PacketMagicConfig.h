@@ -27,7 +27,7 @@ HB_PACK_END
 HB_PACK_BEGIN
 struct HB_PACKED PacketMagicConfigHeader
 {
-	PacketHeader header;    // msg_id = MSGID_MAGICCONFIGURATIONCONTENTS
+	PacketHeader header;    // msg_id = hb::shared::net::MsgId::MagicConfigContents
 	uint16_t magicCount;    // Entries in this packet
 	uint16_t totalMagics;   // Total across all packets
 	uint16_t packetIndex;   // 0-based packet index

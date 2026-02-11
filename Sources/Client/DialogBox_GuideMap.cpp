@@ -5,6 +5,9 @@
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
+
+using namespace hb::shared::action;
+
 DialogBox_GuideMap::DialogBox_GuideMap(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuideMap, pGame)
 {
@@ -24,7 +27,7 @@ void DialogBox_GuideMap::OnUpdate()
 
 void DialogBox_GuideMap::DrawBorder(short sX, short sY)
 {
-	m_pGame->m_Renderer->DrawRectOutline(sX - 2, sY - 2, 132, 132, Color(50, 50, 50), 2);
+	m_pGame->m_Renderer->DrawRectOutline(sX - 2, sY - 2, 132, 132, hb::shared::render::Color(50, 50, 50), 2);
 }
 
 void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
@@ -43,7 +46,7 @@ void DialogBox_GuideMap::DrawZoomedMap(short sX, short sY)
 	if (shY > m_pGame->m_pMapData->m_sMapSizeY - 128) shY = m_pGame->m_pMapData->m_sMapSizeY - 128;
 
 	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0, SpriteLib::DrawParams::Alpha(0.25f));
+		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0, hb::shared::sprite::DrawParams::Alpha(0.25f));
 	else
 		m_pGame->m_pSprite[m_iMaxMapIndex]->DrawShifted(sX, sY, shX, shY, 0);
 
@@ -75,9 +78,9 @@ void DialogBox_GuideMap::DrawFullMap(short sX, short sY)
 	}
 
 	if (ConfigManager::Get().IsDialogTransparencyEnabled())
-		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, SpriteLib::DrawParams::Alpha(0.25f));
+		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::Alpha(0.25f));
 	else
-		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, SpriteLib::DrawParams::NoColorKey());
+		m_pGame->m_pSprite[m_iMinMapIndex]->Draw(sX, sY, m_iMinMapSquare, hb::shared::sprite::DrawParams::NoColorKey());
 
 	short shX = (m_pGame->m_pPlayer->m_sPlayerX * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
 	short shY = (m_pGame->m_pPlayer->m_sPlayerY * 128) / (m_pGame->m_pMapData->m_sMapSizeX);
@@ -259,9 +262,9 @@ bool DialogBox_GuideMap::OnDoubleClick(short msX, short msY)
 	if (shX > m_pGame->m_pMapData->m_sMapSizeX - 30 || shY > m_pGame->m_pMapData->m_sMapSizeY - 30) return false;
 
 	if (ConfigManager::Get().IsRunningModeEnabled() && m_pGame->m_pPlayer->m_iSP > 0)
-		m_pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+		m_pGame->m_pPlayer->m_Controller.SetCommand(Type::Run);
 	else
-		m_pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+		m_pGame->m_pPlayer->m_Controller.SetCommand(Type::Move);
 
 	m_pGame->m_pPlayer->m_Controller.SetDestination(shX, shY);
 	m_pGame->m_pPlayer->m_Controller.CalculatePlayerTurn(m_pGame->m_pPlayer->m_sPlayerX, m_pGame->m_pPlayer->m_sPlayerY, m_pGame->m_pMapData.get());

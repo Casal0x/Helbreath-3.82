@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cmath>
 
+using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
 	// Helper function to update location flags from location string
 	static void UpdateLocationFlags(CGame* pGame, const char* cLocation)
@@ -49,11 +50,11 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketHeader));
 		if (!header) return;
 		switch (header->msg_type) {
-		case DEF_MSGTYPE_CONFIRM:
+		case MsgType::Confirm:
 			pGame->m_pPlayer->m_iGuildRank = 0;
 			pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 3;
 			break;
-		case DEF_MSGTYPE_REJECT:
+		case MsgType::Reject:
 			pGame->m_pPlayer->m_iGuildRank = -1;
 			pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 4;
 			break;
@@ -66,12 +67,12 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketHeader));
 		if (!header) return;
 		switch (header->msg_type) {
-		case DEF_MSGTYPE_CONFIRM:
+		case MsgType::Confirm:
 			std::memset(pGame->m_pPlayer->m_cGuildName, 0, sizeof(pGame->m_pPlayer->m_cGuildName));
 			pGame->m_pPlayer->m_iGuildRank = -1;
 			pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 7;
 			break;
-		case DEF_MSGTYPE_REJECT:
+		case MsgType::Reject:
 			pGame->m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 8;
 			break;
 		}

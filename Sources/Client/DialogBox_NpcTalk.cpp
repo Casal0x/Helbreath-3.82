@@ -4,6 +4,7 @@
 #include "TextLibExt.h"
 
 
+using namespace hb::shared::net;
 DialogBox_NpcTalk::DialogBox_NpcTalk(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcTalk, pGame)
 {
@@ -65,9 +66,9 @@ void DialogBox_NpcTalk::DrawButtons(short sX, short sY, short msX, short msY)
 	case 2: // Next button
 		if ((msX >= sX + 190) && (msX <= sX + 278) &&
 			(msY >= sY + 296) && (msY <= sY + 316))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 190, sY + 270, "Next", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }
@@ -81,8 +82,8 @@ void DialogBox_NpcTalk::DrawTextContent(short sX, short sY)
 	{
 		if ((i < game_limits::max_text_dlg_lines) && (m_pGame->m_pMsgTextList2[i + sView] != nullptr))
 		{
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 57 + i * 15, sX + sSizeX - sX, 15,
-				m_pGame->m_pMsgTextList2[i + sView]->m_pMsg, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 57 + i * 15, sX + sSizeX - sX, 15,
+				m_pGame->m_pMsgTextList2[i + sView]->m_pMsg, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 		}
 	}
 }
@@ -147,7 +148,7 @@ bool DialogBox_NpcTalk::OnClick(short msX, short msY)
 			(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		{
 			// Accept
-			m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_QUESTACCEPTED, 0, 0, 0, 0, 0);
+			m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::QuestAccepted, 0, 0, 0, 0, 0);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::NpcTalk);
 			m_pGame->PlayGameSound('E', 14, 5);
 			return true;

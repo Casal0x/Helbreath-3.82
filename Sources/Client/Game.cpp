@@ -25,7 +25,7 @@
 #include <windows.h>
 #endif
 
-// Renderer
+// hb::shared::render::Renderer
 #include "RendererFactory.h"
 #include "SpriteLoader.h"
 
@@ -75,7 +75,13 @@
 #include "Overlay_Msg.h"
 #include "Overlay_WaitInitData.h"
 
-using namespace hb::item;
+
+using namespace hb::shared::net;
+using namespace hb::client::net;
+namespace sock = hb::shared::net::socket;
+using namespace hb::shared::action;
+
+using namespace hb::shared::item;
 
 extern char G_cSpriteAlphaDegree;
 
@@ -142,7 +148,7 @@ CGame::CGame()
 	: m_playerRenderer(*this)
 	, m_npcRenderer(*this)
 {
-	m_pIOPool = std::make_unique<IOServicePool>(0);  // 0 threads = manual poll mode
+	m_pIOPool = std::make_unique<hb::shared::net::IOServicePool>(0);  // 0 threads = manual poll mode
 	m_pInputBuffer = nullptr;
 	m_Renderer = nullptr;
 	m_dialogBoxManager.Initialize(this);
@@ -152,7 +158,7 @@ CGame::CGame()
 	RegisterHotkeys();
 
 	iMaxStats = 0;
-	iMaxLevel = DEF_PLAYERMAXLEVEL;
+	iMaxLevel = hb::shared::limits::PlayerMaxLevel;
 	iMaxBankItems = 200; // Default soft cap, server overrides
 	m_cLoading = 0;
 	m_bIsFirstConn = true;
@@ -176,7 +182,7 @@ CGame::CGame()
 	m_wCommObjectID = 0;
 	m_wLastAttackTargetID = 0;
 	m_wEnterGameType = 0;
-	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+	m_pPlayer->m_Controller.SetCommand(Type::Stop);
 	m_bIsObserverMode = false;
 
 	// Initialize Managers (Networking v4) - using make_unique
@@ -217,7 +223,7 @@ CGame::CGame()
 
 CGame::~CGame()
 {
-	Renderer::Destroy();
+	hb::shared::render::Renderer::Destroy();
 	m_Renderer = nullptr;
 }
 
@@ -240,41 +246,41 @@ bool CGame::bInit()
 	m_bHideLocalCursor = false;
 
 	// Create and initialize the renderer
-	if (!Renderer::Set(RendererType::SFML))
+	if (!hb::shared::render::Renderer::Set(hb::shared::render::RendererType::SFML))
 	{
-		Window::ShowError("ERROR", "Failed to create renderer!");
+		hb::shared::render::Window::ShowError("ERROR", "Failed to create renderer!");
 		return false;
 	}
 
-	m_Renderer = Renderer::Get();
-	if (m_Renderer->Init(Window::GetHandle()) == false)
+	m_Renderer = hb::shared::render::Renderer::Get();
+	if (m_Renderer->Init(hb::shared::render::Window::GetHandle()) == false)
 	{
-		Window::ShowError("ERROR", "Failed to init renderer!");
+		hb::shared::render::Window::ShowError("ERROR", "Failed to init renderer!");
 		return false;
 	}
 
 	// Preload the default font for text rendering
-	if (TextLib::GetTextRenderer())
+	if (hb::shared::text::GetTextRenderer())
 	{
-		if (!TextLib::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
+		if (!hb::shared::text::GetTextRenderer()->LoadFontFromFile("FONTS/default.ttf"))
 		{
 			printf("[FONT] Failed to load default.ttf font file!\n");
 		}
 	}
 
 	// Initialize sprite factory and register it globally
-	m_pSpriteFactory.reset(CreateSpriteFactory(m_Renderer));
-	SpriteLib::Sprites::SetFactory(m_pSpriteFactory.get());
+	m_pSpriteFactory.reset(hb::shared::render::CreateSpriteFactory(m_Renderer));
+	hb::shared::sprite::Sprites::SetFactory(m_pSpriteFactory.get());
 
 	if (bCheckImportantFile() == false)
 	{
-		Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
+		hb::shared::render::Window::ShowError("ERROR1", "File checksum error! Get Update again please!");
 		return false;
 	}
 
 	if (_bDecodeBuildItemContents() == false)
 	{
-		Window::ShowError("ERROR2", "File checksum error! Get Update again please!");
+		hb::shared::render::Window::ShowError("ERROR2", "File checksum error! Get Update again please!");
 		return false;
 	}
 
@@ -283,7 +289,7 @@ bool CGame::bInit()
 	m_iLogServerPort = DEF_SERVER_PORT;
 	m_iGameServerPort = DEF_GSERVER_PORT;
 
-	// Mouse position tracking removed - use Input::GetMouseX/Y
+	// Mouse position tracking removed - use hb::shared::input::GetMouseX/Y
 	m_pMapData = std::make_unique<CMapData>(this);
 	std::memset(m_pPlayer->m_cPlayerName, 0, sizeof(m_pPlayer->m_cPlayerName));
 	std::memset(m_pPlayer->m_cAccountName, 0, sizeof(m_pPlayer->m_cAccountName));
@@ -332,7 +338,7 @@ void CGame::Quit()
 	m_pEffectSpr.clear();
 
 	// Clean up sprite factory
-	SpriteLib::Sprites::SetFactory(nullptr);
+	hb::shared::sprite::Sprites::SetFactory(nullptr);
 	if (m_pSpriteFactory) {
 		m_pSpriteFactory.reset();
 	}
@@ -376,8 +382,8 @@ void CGame::DrawCursor()
 		return;
 
 	// Get mouse position
-	int msX = Input::GetMouseX();
-	int msY = Input::GetMouseY();
+	int msX = hb::shared::input::GetMouseX();
+	int msY = hb::shared::input::GetMouseY();
 
 	// Skip if mouse position is invalid (not yet initialized)
 	if (msX == 0 && msY == 0)
@@ -391,11 +397,11 @@ void CGame::DrawCursor()
 		// In-game uses context-sensitive cursor from CursorTarget
 		if (m_bIsObserverMode) {
 			// Observer mode shows a small crosshair instead of cursor sprite
-			m_Renderer->DrawPixel(msX, msY, Color::White());
-			m_Renderer->DrawPixel(msX + 1, msY, Color::White());
-			m_Renderer->DrawPixel(msX - 1, msY, Color::White());
-			m_Renderer->DrawPixel(msX, msY + 1, Color::White());
-			m_Renderer->DrawPixel(msX, msY - 1, Color::White());
+			m_Renderer->DrawPixel(msX, msY, hb::shared::render::Color::White());
+			m_Renderer->DrawPixel(msX + 1, msY, hb::shared::render::Color::White());
+			m_Renderer->DrawPixel(msX - 1, msY, hb::shared::render::Color::White());
+			m_Renderer->DrawPixel(msX, msY + 1, hb::shared::render::Color::White());
+			m_Renderer->DrawPixel(msX, msY - 1, hb::shared::render::Color::White());
 			return;
 		}
 		iCursorFrame = CursorTarget::GetCursorFrame();
@@ -476,7 +482,7 @@ void CGame::RenderFrame()
 	if (GameModeManager::IsTransitioning())
 	{
 		float alpha = GameModeManager::GetFadeAlpha();
-		m_Renderer->DrawRectFilled(0, 0, m_Renderer->GetWidth(), m_Renderer->GetHeight(), Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
+		m_Renderer->DrawRectFilled(0, 0, m_Renderer->GetWidth(), m_Renderer->GetHeight(), hb::shared::render::Color::Black(static_cast<uint8_t>(alpha * 255.0f)));
 	}
 
 	// HUD metrics — drawn on all screens, on top of fade overlay
@@ -487,7 +493,7 @@ void CGame::RenderFrame()
 		if (ConfigManager::Get().IsShowFpsEnabled())
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), "fps : %u", m_Renderer->GetFPS());
-			TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 			iDisplayY += 14;
 		}
 
@@ -498,7 +504,7 @@ void CGame::RenderFrame()
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : %d ms", m_iLatencyMs);
 			else
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "latency : -- ms");
-			TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 			iDisplayY += 14;
 		}
 
@@ -506,7 +512,7 @@ void CGame::RenderFrame()
 		if (FrameTiming::IsProfilingEnabled())
 		{
 			iDisplayY += 4;
-			TextLib::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", TextLib::TextStyle::Color(GameColors::UIProfileYellow));
+			hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, "--- Profile (avg ms) ---", hb::shared::text::TextStyle::Color(GameColors::UIProfileYellow));
 			iDisplayY += 14;
 
 			for (int i = 0; i < static_cast<int>(ProfileStage::COUNT); i++)
@@ -516,7 +522,7 @@ void CGame::RenderFrame()
 				int wholePart = static_cast<int>(avgMs);
 				int fracPart = static_cast<int>((avgMs - wholePart) * 100);
 				std::snprintf(G_cTxt, sizeof(G_cTxt), "%-12s: %3d.%02d", FrameTiming::GetStageName(stage), wholePart, fracPart);
-				TextLib::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, TextLib::TextStyle::Color(GameColors::UINearWhite));
+				hb::shared::text::DrawText(GameFont::Default, 10, iDisplayY, G_cTxt, hb::shared::text::TextStyle::Color(GameColors::UINearWhite));
 				iDisplayY += 12;
 			}
 		}
@@ -533,7 +539,7 @@ void CGame::RenderFrame()
 
 	// Reset scroll delta now that dialogs have consumed it this frame
 	// (scroll accumulates across skip frames until a rendered frame processes it)
-	Input::ResetMouseWheelDelta();
+	hb::shared::input::ResetMouseWheelDelta();
 }
 
 
@@ -546,19 +552,19 @@ void CGame::OnGameSocketEvent()
     int iRet = m_pGSock->Poll();
 
     switch (iRet) {
-    case DEF_XSOCKEVENT_SOCKETCLOSED:
+    case sock::Event::SocketClosed:
         ChangeGameMode(GameMode::ConnectionLost);
         m_pGSock.reset();
         m_pGSock.reset();
         return;
-    case DEF_XSOCKEVENT_SOCKETERROR:
+    case sock::Event::SocketError:
         printf("[ERROR] Game socket error\n");
         ChangeGameMode(GameMode::ConnectionLost);
         m_pGSock.reset();
         m_pGSock.reset();
         return;
 
-    case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+    case sock::Event::ConnectionEstablish:
         ConnectionEstablishHandler(static_cast<int>(ServerType::Game));
         break;
     }
@@ -570,7 +576,7 @@ void CGame::OnGameSocketEvent()
     }
 
     // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
-    if (iRet == DEF_XSOCKEVENT_READCOMPLETE) {
+    if (iRet == sock::Event::ReadComplete) {
         size_t dwSize = 0;
         char* pData = m_pGSock->pGetRcvDataPointer(&dwSize);
         if (pData != nullptr && dwSize > 0) {
@@ -596,7 +602,7 @@ void CGame::OnGameSocketEvent()
     uint32_t dwStartTime = GameClock::GetTimeMS();
     int iProcessed = 0;
 
-    NetworkPacket packet;
+    hb::shared::net::NetworkPacket packet;
     while (iProcessed < MAX_PACKETS_PER_FRAME) {
 
         // Check budget
@@ -649,7 +655,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 	switch (dwMsgID) {
 
-	case DEF_REQUEST_ANGEL:	// to Game Server
+	case MsgId::RequestAngel:	// to Game Server
 	{
 		hb::net::PacketRequestAngel req{};
 		req.header.msg_id = dwMsgID;
@@ -665,8 +671,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case DEF_REQUEST_RESURRECTPLAYER_YES: // By snoopy
-	case DEF_REQUEST_RESURRECTPLAYER_NO:  // By snoopy
+	case MsgId::RequestResurrectYes: // By snoopy
+	case MsgId::RequestResurrectNo:  // By snoopy
 	{
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = dwMsgID;
@@ -675,7 +681,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_HELDENIAN_SCROLL:// By snoopy
+	case MsgId::RequestHeldenianScroll:// By snoopy
 	{
 		hb::net::PacketRequestHeldenianScroll req{};
 		req.header.msg_id = dwMsgID;
@@ -691,7 +697,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_TELEPORT_LIST:
+	case ClientMsgId::RequestTeleportList:
 	{
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
@@ -702,7 +708,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_HELDENIAN_TP_LIST: // Snoopy: Heldenian TP
+	case ClientMsgId::RequestHeldenianTpList: // Snoopy: Heldenian TP
 	{
 		hb::net::PacketRequestName20 req{};
 		req.header.msg_id = dwMsgID;
@@ -713,8 +719,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_HELDENIAN_TP: // Snoopy: Heldenian TP
-	case MSGID_REQUEST_CHARGED_TELEPORT:
+	case ClientMsgId::RequestHeldenianTp: // Snoopy: Heldenian TP
+	case ClientMsgId::RequestChargedTeleport:
 	{
 		hb::net::PacketRequestTeleportId req{};
 		req.header.msg_id = dwMsgID;
@@ -724,7 +730,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_SELLITEMLIST:
+	case MsgId::RequestSellItemList:
 	{
 		hb::net::PacketRequestSellItemList req{};
 		req.header.msg_id = dwMsgID;
@@ -737,7 +743,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_RESTART:
+	case MsgId::RequestRestart:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = dwMsgID;
@@ -746,7 +752,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_PANNING:
+	case MsgId::RequestPanning:
 	{
 		hb::net::PacketRequestPanning req{};
 		req.header.msg_id = dwMsgID;
@@ -757,8 +763,8 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	break;
 
 
-	case MSGID_GETMINIMUMLOADGATEWAY:
-	case MSGID_REQUEST_LOGIN:
+	case ClientMsgId::GetMinimumLoadGateway:
+	case MsgId::RequestLogin:
 		// to Log Server
 	{
 		hb::net::LoginRequest req{};
@@ -775,7 +781,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 	break;
 
-	case MSGID_REQUEST_CREATENEWCHARACTER:
+	case MsgId::RequestCreateNewCharacter:
 		// to Log Server
 	{
 		hb::net::CreateCharacterRequest req{};
@@ -804,7 +810,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_ENTERGAME:
+	case MsgId::RequestEnterGame:
 		// to Log Server
 	{
 		hb::net::EnterGameRequestFull req{};
@@ -825,7 +831,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_DELETECHARACTER:
+	case MsgId::RequestDeleteCharacter:
 		// to Log Server
 	{
 		hb::net::DeleteCharacterRequest req{};
@@ -843,7 +849,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_SETITEMPOS:
+	case MsgId::RequestSetItemPos:
 		// to Game Server
 	{
 		hb::net::PacketRequestSetItemPos req{};
@@ -856,7 +862,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_COMMAND_CHECKCONNECTION:
+	case MsgId::CommandCheckConnection:
 	{
 		hb::net::PacketCommandCheckConnection req{};
 		req.header.msg_id = dwMsgID;
@@ -867,7 +873,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 	break;
 
-	case MSGID_REQUEST_INITDATA:
+	case MsgId::RequestInitData:
 	{
 		hb::net::PacketRequestInitDataEx req{};
 		req.header.msg_id = dwMsgID;
@@ -890,7 +896,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_INITPLAYER:
+	case MsgId::RequestInitPlayer:
 	{
 		hb::net::PacketRequestInitPlayer req{};
 		req.header.msg_id = dwMsgID;
@@ -908,7 +914,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req), cKey);
 	}
 	break;
-	case MSGID_LEVELUPSETTINGS:
+	case MsgId::LevelUpSettings:
 	{
 		hb::net::PacketRequestLevelUpSettings req{};
 		req.header.msg_id = dwMsgID;
@@ -923,7 +929,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_COMMAND_CHATMSG:
+	case MsgId::CommandChatMsg:
 		if (m_bIsTeleportRequested == true) return false;
 		if (pString == 0) return false;
 
@@ -946,10 +952,10 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		}
 		break;
 
-	case MSGID_COMMAND_COMMON:
+	case MsgId::CommandCommon:
 		if (m_bIsTeleportRequested == true) return false;
 		switch (wCommand) {
-		case DEF_COMMONTYPE_BUILDITEM:
+		case CommonType::BuildItem:
 		{
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = dwMsgID;
@@ -973,7 +979,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		}
 		break;
 
-		case DEF_COMMONTYPE_REQ_CREATEPORTION:
+		case CommonType::ReqCreatePortion:
 		{
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = dwMsgID;
@@ -993,7 +999,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		break;
 
 		//Crafting
-		case DEF_COMMONTYPE_CRAFTITEM:
+		case CommonType::CraftItem:
 		{
 			hb::net::PacketCommandCommonBuild req{};
 			req.base.header.msg_id = dwMsgID;
@@ -1013,7 +1019,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		break;
 
 		// Create Slate Request - Diuuude
-		case DEF_COMMONTYPE_REQ_CREATESLATE:
+		case CommonType::ReqCreateSlate:
 		{
 			hb::net::PacketCommandCommonItems req{};
 			req.base.header.msg_id = dwMsgID;
@@ -1033,7 +1039,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		break;
 
 		// Magic spell casting - uses time_ms field to carry target object ID for auto-aim
-		case DEF_COMMONTYPE_MAGIC:
+		case CommonType::Magic:
 		{
 			hb::net::PacketCommandCommonWithTime req{};
 			req.base.header.msg_id = dwMsgID;
@@ -1087,13 +1093,13 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 		break;
 
-	case MSGID_REQUEST_CREATENEWGUILD:
-	case MSGID_REQUEST_DISBANDGUILD:
+	case MsgId::RequestCreateNewGuild:
+	case MsgId::RequestDisbandGuild:
 		// to Game Server
 	{
 		hb::net::PacketRequestGuildAction req{};
 		req.header.msg_id = dwMsgID;
-		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		req.header.msg_type = MsgType::Confirm;
 		std::memset(req.player, 0, sizeof(req.player));
 		std::memcpy(req.player, m_pPlayer->m_cPlayerName, sizeof(req.player));
 		std::memset(req.account, 0, sizeof(req.account));
@@ -1110,37 +1116,37 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_REQUEST_TELEPORT:
+	case MsgId::RequestTeleport:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = dwMsgID;
-		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		req.header.msg_type = MsgType::Confirm;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 
 	m_bIsTeleportRequested = true;
 	break;
 
-	case MSGID_REQUEST_CIVILRIGHT:
+	case MsgId::RequestCivilRight:
 	{
 		hb::net::PacketRequestHeaderOnly req{};
 		req.header.msg_id = dwMsgID;
-		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		req.header.msg_type = MsgType::Confirm;
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
-	case MSGID_REQUEST_RETRIEVEITEM:
+	case MsgId::RequestRetrieveItem:
 	{
 		hb::net::PacketRequestRetrieveItem req{};
 		req.header.msg_id = dwMsgID;
-		req.header.msg_type = DEF_MSGTYPE_CONFIRM;
+		req.header.msg_type = MsgType::Confirm;
 		req.item_slot = static_cast<uint8_t>(iV1);
 		iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&req), sizeof(req));
 	}
 	break;
 
-	case MSGID_REQUEST_NOTICEMENT:
+	case MsgId::RequestNoticement:
 	{
 		hb::net::PacketRequestNoticement req{};
 		req.header.msg_id = dwMsgID;
@@ -1150,7 +1156,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case  MSGID_REQUEST_FIGHTZONE_RESERVE:
+	case  MsgId::RequestFightZoneReserve:
 	{
 		hb::net::PacketRequestFightzoneReserve req{};
 		req.header.msg_id = dwMsgID;
@@ -1160,7 +1166,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 	}
 	break;
 
-	case MSGID_STATECHANGEPOINT:
+	case MsgId::StateChangePoint:
 	{
 		hb::net::PacketRequestStateChange req{};
 		req.header.msg_id = dwMsgID;
@@ -1177,7 +1183,7 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 
 	default:
 		if (m_bIsTeleportRequested == true) return false;
-		if ((wCommand == DEF_OBJECTATTACK) || (wCommand == DEF_OBJECTATTACKMOVE))
+		if ((wCommand == Type::Attack) || (wCommand == Type::AttackMove))
 		{
 			hb::net::PacketCommandMotionAttack req{};
 			req.base.header.msg_id = dwMsgID;
@@ -1210,22 +1216,22 @@ bool CGame::bSendCommand(uint32_t dwMsgID, uint16_t wCommand, char cDir, int iV1
 		break;
 	}
 	switch (iRet) {
-	case DEF_XSOCKEVENT_SOCKETCLOSED:
-	case DEF_XSOCKEVENT_SOCKETERROR:
-	case DEF_XSOCKEVENT_QUENEFULL:
+	case sock::Event::SocketClosed:
+	case sock::Event::SocketError:
+	case sock::Event::QueueFull:
 		printf("[ERROR] bSendCommand failed: ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		ChangeGameMode(GameMode::ConnectionLost);
 	m_pGSock.reset();
 	break;
 
-	case DEF_XSOCKEVENT_CRITICALERROR:
+	case sock::Event::CriticalError:
 	{
 		char cDbg[160];
 		std::snprintf(cDbg, sizeof(cDbg), "[NETWARN] bSendCommand: CRITICAL ret=%d msgid=0x%X cmd=0x%X\n", iRet, dwMsgID, wCommand);
 		printf("%s", cDbg);
 	}
 	m_pGSock.reset();
-	Window::Close();
+	hb::shared::render::Window::Close();
 	break;
 	}
 	return true;
@@ -1347,7 +1353,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 		const auto& entry = entries[i];
 		int magicId = entry.magicId;
 
-		if (magicId < 0 || magicId >= DEF_MAXMAGICTYPE) {
+		if (magicId < 0 || magicId >= hb::shared::limits::MaxMagicType) {
 			continue;
 		}
 
@@ -1373,7 +1379,7 @@ bool CGame::_bDecodeMagicConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 	// Log total count on last packet
 	int totalLoaded = 0;
-	for (int j = 0; j < DEF_MAXMAGICTYPE; j++) {
+	for (int j = 0; j < hb::shared::limits::MaxMagicType; j++) {
 		if (m_pMagicCfgList[j] != 0) totalLoaded++;
 	}
 	if (totalLoaded >= totalMagics && !LocalCacheManager::Get().IsReplaying()) {
@@ -1415,7 +1421,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 		const auto& entry = entries[i];
 		int skillId = entry.skillId;
 
-		if (skillId < 0 || skillId >= DEF_MAXSKILLTYPE) {
+		if (skillId < 0 || skillId >= hb::shared::limits::MaxSkillType) {
 			continue;
 		}
 
@@ -1436,7 +1442,7 @@ bool CGame::_bDecodeSkillConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 	// Log total count on last packet
 	int totalLoaded = 0;
-	for (int j = 0; j < DEF_MAXSKILLTYPE; j++) {
+	for (int j = 0; j < hb::shared::limits::MaxSkillType; j++) {
 		if (m_pSkillCfgList[j] != 0) totalLoaded++;
 	}
 	if (totalLoaded >= totalSkills && !LocalCacheManager::Get().IsReplaying()) {
@@ -1480,7 +1486,7 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 		int npcType = entry.npcType;
 
 		// Store by npc_id (primary key)
-		if (npcId >= 0 && npcId < DEF_MAXNPCCONFIGS) {
+		if (npcId >= 0 && npcId < hb::shared::limits::MaxNpcConfigs) {
 			m_npcConfigList[npcId].npcType = static_cast<short>(npcType);
 			std::memset(m_npcConfigList[npcId].name, 0, sizeof(m_npcConfigList[npcId].name));
 			std::snprintf(m_npcConfigList[npcId].name, sizeof(m_npcConfigList[npcId].name), "%s", entry.name);
@@ -1489,8 +1495,8 @@ bool CGame::_bDecodeNpcConfigFileContents(char* pData, uint32_t dwMsgSize)
 
 		// Update type->name reverse map (last config per type wins)
 		if (npcType >= 0 && npcType < 120) {
-			std::memset(m_cNpcNameByType[npcType], 0, DEF_NPCNAME);
-			std::snprintf(m_cNpcNameByType[npcType], DEF_NPCNAME, "%s", entry.name);
+			std::memset(m_cNpcNameByType[npcType], 0, hb::shared::limits::NpcNameLen);
+			std::snprintf(m_cNpcNameByType[npcType], hb::shared::limits::NpcNameLen, "%s", entry.name);
 		}
 	}
 
@@ -1519,7 +1525,7 @@ const char* CGame::GetNpcConfigName(short sType) const
 
 const char* CGame::GetNpcConfigNameById(short npcConfigId) const
 {
-	if (npcConfigId >= 0 && npcConfigId < DEF_MAXNPCCONFIGS && m_npcConfigList[npcConfigId].valid) {
+	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npcConfigList[npcConfigId].valid) {
 		return m_npcConfigList[npcConfigId].name;
 	}
 	return "Unknown";
@@ -1527,7 +1533,7 @@ const char* CGame::GetNpcConfigNameById(short npcConfigId) const
 
 short CGame::ResolveNpcType(short npcConfigId) const
 {
-	if (npcConfigId >= 0 && npcConfigId < DEF_MAXNPCCONFIGS && m_npcConfigList[npcConfigId].valid)
+	if (npcConfigId >= 0 && npcConfigId < hb::shared::limits::MaxNpcConfigs && m_npcConfigList[npcConfigId].valid)
 		return m_npcConfigList[npcConfigId].npcType;
 	return 0;
 }
@@ -1591,7 +1597,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 				}, &ctx);
 			bool bHasMagic = false;
 			if (bReplayOk) {
-				for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
+				for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
 			}
 			if (bReplayOk && bHasMagic) {
 				m_eConfigRetry[1] = ConfigRetryLevel::None;
@@ -1617,7 +1623,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 				}, &ctx);
 			bool bHasSkills = false;
 			if (bReplayOk) {
-				for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+				for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
 			}
 			if (bReplayOk && bHasSkills) {
 				m_eConfigRetry[2] = ConfigRetryLevel::None;
@@ -1643,7 +1649,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 				}, &ctx);
 			bool bHasNpcs = false;
 			if (bReplayOk) {
-				for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
+				for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
 			}
 			if (bReplayOk && bHasNpcs) {
 				m_eConfigRetry[3] = ConfigRetryLevel::None;
@@ -1676,7 +1682,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	}
 	break;
 
-	case MSGID_NOTIFY_CONFIG_RELOAD:
+	case MsgId::NotifyConfigReload:
 	{
 		const auto* reloadPkt = hb::net::PacketCast<hb::net::PacketNotifyConfigReload>(
 			pData, sizeof(hb::net::PacketNotifyConfigReload));
@@ -1699,113 +1705,113 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 	}
 	break;
 
-	case MSGID_ITEMCONFIGURATIONCONTENTS:
+	case MsgId::ItemConfigContents:
 		_bDecodeItemConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[0] = ConfigRetryLevel::None;
 		_CheckConfigsReadyAndEnterGame();
 		break;
-	case MSGID_MAGICCONFIGURATIONCONTENTS:
+	case MsgId::MagicConfigContents:
 		_bDecodeMagicConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[1] = ConfigRetryLevel::None;
 		_CheckConfigsReadyAndEnterGame();
 		break;
-	case MSGID_SKILLCONFIGURATIONCONTENTS:
+	case MsgId::SkillConfigContents:
 		_bDecodeSkillConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[2] = ConfigRetryLevel::None;
 		_CheckConfigsReadyAndEnterGame();
 		break;
-	case MSGID_NPCCONFIGURATIONCONTENTS:
+	case MsgId::NpcConfigContents:
 		_bDecodeNpcConfigFileContents(pData, dwMsgSize);
 		m_eConfigRetry[3] = ConfigRetryLevel::None;
 		_CheckConfigsReadyAndEnterGame();
 		break;
-	case MSGID_RESPONSE_CHARGED_TELEPORT:
+	case ClientMsgId::ResponseChargedTeleport:
 		ResponseChargedTeleport(pData);
 		break;
 
-	case MSGID_RESPONSE_TELEPORT_LIST:
+	case ClientMsgId::ResponseTeleportList:
 		ResponseTeleportList(pData);
 		break;
 
-	case MSGID_RESPONSE_HELDENIAN_TP_LIST: // Snoopy Heldenian TP
+	case ClientMsgId::ResponseHeldenianTpList: // Snoopy Heldenian TP
 		ResponseHeldenianTeleportList(pData);
 		break;
 
-	case MSGID_RESPONSE_NOTICEMENT:
+	case MsgId::ResponseNoticement:
 		NoticementHandler(pData);
 		break;
 
-	case MSGID_DYNAMICOBJECT:
+	case MsgId::DynamicObject:
 		DynamicObjectHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_INITPLAYER:
+	case MsgId::ResponseInitPlayer:
 		InitPlayerResponseHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_INITDATA:
+	case MsgId::ResponseInitData:
 		DevConsole::Get().Printf("[INIT] INITDATA received");
 		InitDataResponseHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_MOTION:
+	case MsgId::ResponseMotion:
 		MotionResponseHandler(pData);
 		break;
 
-	case MSGID_EVENT_COMMON:
+	case MsgId::EventCommon:
 		CommonEventHandler(pData);
 		break;
 
-	case MSGID_EVENT_MOTION:
+	case MsgId::EventMotion:
 		MotionEventHandler(pData);
 		break;
 
-	case MSGID_EVENT_LOG:
+	case MsgId::EventLog:
 		LogEventHandler(pData);
 		break;
 
-	case MSGID_COMMAND_CHATMSG:
+	case MsgId::CommandChatMsg:
 		ChatMsgHandler(pData);
 		break;
 
-	case MSGID_PLAYERITEMLISTCONTENTS:
+	case MsgId::PlayerItemListContents:
 		DevConsole::Get().Printf("[INIT] PLAYERITEMLISTCONTENTS received (size=%u)", dwMsgSize);
 		InitItemList(pData);
 		break;
 
-	case MSGID_NOTIFY:
+	case MsgId::Notify:
 		if (m_pNetworkMessageManager) {
 
-			m_pNetworkMessageManager->ProcessMessage(MSGID_NOTIFY, pData, dwMsgSize);
+			m_pNetworkMessageManager->ProcessMessage(MsgId::Notify, pData, dwMsgSize);
 		}
 		break;
 
-	case MSGID_RESPONSE_CREATENEWGUILD:
+	case MsgId::ResponseCreateNewGuild:
 		CreateNewGuildResponseHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_DISBANDGUILD:
+	case MsgId::ResponseDisbandGuild:
 		DisbandGuildResponseHandler(pData);
 		break;
 
-	case MSGID_PLAYERCHARACTERCONTENTS:
+	case MsgId::PlayerCharacterContents:
 		DevConsole::Get().Printf("[INIT] PLAYERCHARACTERCONTENTS received");
 		InitPlayerCharacteristics(pData);
 		break;
 
-	case MSGID_RESPONSE_CIVILRIGHT:
+	case MsgId::ResponseCivilRight:
 		CivilRightAdmissionHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_RETRIEVEITEM:
+	case MsgId::ResponseRetrieveItem:
 		RetrieveItemHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_PANNING:
+	case MsgId::ResponsePanning:
 		ResponsePanningHandler(pData);
 		break;
 
-	case MSGID_RESPONSE_FIGHTZONE_RESERVE:
+	case MsgId::ResponseFightZoneReserve:
 		ReserveFightzoneResponseHandler(pData);
 		break;
 
@@ -1813,7 +1819,7 @@ void CGame::GameRecvMsgHandler(uint32_t dwMsgSize, char* pData)
 		ResponseShopContentsHandler(pData);
 		break;
 
-	case MSGID_COMMAND_CHECKCONNECTION:
+	case MsgId::CommandCheckConnection:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketCommandCheckConnection>(
 			pData, sizeof(hb::net::PacketCommandCheckConnection));
@@ -1835,28 +1841,28 @@ void CGame::ConnectionEstablishHandler(char cWhere)
 
 	switch (cWhere) {
 	case static_cast<int>(ServerType::Game):
-		bSendCommand(MSGID_REQUEST_INITPLAYER, 0, 0, 0, 0, 0, 0);
+		bSendCommand(MsgId::RequestInitPlayer, 0, 0, 0, 0, 0, 0);
 		break;
 
 	case static_cast<int>(ServerType::Log):
 		switch (m_dwConnectMode) {
-		case MSGID_REQUEST_LOGIN:
+		case MsgId::RequestLogin:
 			if (strlen(m_cWorldServerName) == 0) {
 				printf("[ERROR] Login failed - m_cWorldServerName is empty\n");
 			}
-			bSendCommand(MSGID_REQUEST_LOGIN, 0, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestLogin, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_CREATENEWCHARACTER:
-			bSendCommand(MSGID_REQUEST_CREATENEWCHARACTER, 0, 0, 0, 0, 0, 0);
+		case MsgId::RequestCreateNewCharacter:
+			bSendCommand(MsgId::RequestCreateNewCharacter, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_ENTERGAME:
-			bSendCommand(MSGID_REQUEST_ENTERGAME, 0, 0, 0, 0, 0, 0);
+		case MsgId::RequestEnterGame:
+			bSendCommand(MsgId::RequestEnterGame, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_DELETECHARACTER:
-			bSendCommand(MSGID_REQUEST_DELETECHARACTER, 0, 0, 0, 0, 0, 0);
+		case MsgId::RequestDeleteCharacter:
+			bSendCommand(MsgId::RequestDeleteCharacter, 0, 0, 0, 0, 0, 0);
 			break;
-		case MSGID_REQUEST_INPUTKEYCODE:
-			bSendCommand(MSGID_REQUEST_INPUTKEYCODE, 0, 0, 0, 0, 0, 0);
+		case MsgId::RequestInputKeyCode:
+			bSendCommand(MsgId::RequestInputKeyCode, 0, 0, 0, 0, 0, 0);
 			break;
 		}
 
@@ -1876,12 +1882,12 @@ void CGame::InitPlayerResponseHandler(char* pData)
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
-	case DEF_MSGTYPE_CONFIRM:
-		bSendCommand(MSGID_REQUEST_INITDATA, 0, 0, 0, 0, 0, 0);
+	case MsgType::Confirm:
+		bSendCommand(MsgId::RequestInitData, 0, 0, 0, 0, 0, 0);
 		ChangeGameMode(GameMode::WaitingInitData);
 		break;
 
-	case DEF_MSGTYPE_REJECT:
+	case MsgType::Reject:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3J");
 		ChangeGameMode(GameMode::LogResMsg);
@@ -1904,7 +1910,7 @@ void CGame::OnTimer()
 		{
 			m_dwCheckConnectionTime = dwTime;
 			if ((m_pGSock != 0) && (m_pGSock->m_bIsAvailable == true))
-				bSendCommand(MSGID_COMMAND_CHECKCONNECTION, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
+				bSendCommand(MsgId::CommandCheckConnection, MsgType::Confirm, 0, 0, 0, 0, 0);
 		}
 	}
 
@@ -1942,17 +1948,17 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 
 	switch (cWhere) {
 	case 0:
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 			if (m_cItemOrder[i] == cItemID)
 				m_cItemOrder[i] = -1;
 
-		for (i = 1; i < hb::limits::MaxItems; i++)
+		for (i = 1; i < hb::shared::limits::MaxItems; i++)
 			if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1)) {
 				m_cItemOrder[i - 1] = m_cItemOrder[i];
 				m_cItemOrder[i] = -1;
 			}
 
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 			if (m_cItemOrder[i] == -1) {
 				m_cItemOrder[i] = cItemID;
 				return;
@@ -1963,9 +1969,9 @@ void CGame::_SetItemOrder(char cWhere, char cItemID)
 
 void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 {
-	char  cName[DEF_ITEMNAME];
+	char  cName[hb::shared::limits::ItemNameLen];
 	short sType, tX, tY;
-	PlayerStatus iStatus;
+	hb::shared::entity::PlayerStatus iStatus;
 
 	if (bCheckItemOperationEnabled(cItemID) == false) return;
 
@@ -1994,7 +2000,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					memcpy(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, cName, 10);
 				else
 				{
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::ItemDropExternal).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
 				}
 				m_dialogBoxManager.EnableDialogBox(DialogBoxId::ItemDropExternal, cItemID, m_pItemList[cItemID]->m_dwCount, 0);
 			}
@@ -2024,10 +2030,10 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
 					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr), "%s", cName);
-					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
+					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName); //v1.4
 					break;
 
-				case hb::owner::Howard: // Howard
+				case hb::shared::owner::Howard: // Howard
 					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 3, cItemID, sType);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
@@ -2044,12 +2050,12 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
-					//bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
+					//bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, m_pItemList[cItemID]->m_cName);
 					break;
 
-				case hb::owner::ShopKeeper: // ShopKeeper-W
-				case hb::owner::Tom: // Tom
+				case hb::shared::owner::ShopKeeper: // ShopKeeper-W
+				case hb::shared::owner::Tom: // Tom
 					m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 2, cItemID, sType);
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 1;
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV4 = m_wCommObjectID; // v1.4
@@ -2066,11 +2072,11 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 					m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sY = tY;
 
 					std::memset(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr));
-					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, DEF_NPCNAME, "%s", GetNpcConfigName(sType));
+					std::snprintf(m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).cStr, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(sType));
 					break;
 
 				default:
-					if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, cItemID, 1, m_sMCX, m_sMCY, pCfg->m_cName);
+					if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, cItemID, 1, m_sMCX, m_sMCY, pCfg->m_cName);
 					break;
 				}
 				//m_bIsItemDisabled[cItemID] = true;
@@ -2111,7 +2117,7 @@ void CGame::bItemDrop_ExternalScreen(char cItemID, short msX, short msY)
 			}
 			else
 			{
-				if (pCfg2) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_ITEMDROP, 0, cItemID, 1, 0, pCfg2->m_cName);
+				if (pCfg2) bSendCommand(MsgId::CommandCommon, CommonType::ItemDrop, 0, cItemID, 1, 0, pCfg2->m_cName);
 			}
 		}
 		m_bIsItemDisabled[cItemID] = true;
@@ -2134,7 +2140,7 @@ void CGame::CommonEventHandler(char* pData)
 	sV3 = base->v3;
 
 	switch (wEventType) {
-	case DEF_COMMONTYPE_ITEMDROP:
+	case CommonType::ItemDrop:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
 		if (!pkt) return;
@@ -2146,7 +2152,7 @@ void CGame::CommonEventHandler(char* pData)
 	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4);
 	break;
 
-	case DEF_COMMONTYPE_SETITEM:
+	case CommonType::SetItem:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonItem>(pData, sizeof(hb::net::PacketEventCommonItem));
 		if (!pkt) return;
@@ -2155,7 +2161,7 @@ void CGame::CommonEventHandler(char* pData)
 	m_pMapData->bSetItem(sX, sY, sV1, (char)sV3, dwV4, false); // v1.4 color
 	break;
 
-	case DEF_COMMONTYPE_MAGIC:
+	case CommonType::Magic:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventCommonMagic>(pData, sizeof(hb::net::PacketEventCommonMagic));
 		if (!pkt) return;
@@ -2164,7 +2170,7 @@ void CGame::CommonEventHandler(char* pData)
 	m_pEffectManager->AddEffect(static_cast<EffectType>(sV3), sX, sY, sV1, sV2, 0, sV4);
 	break;
 
-	case DEF_COMMONTYPE_CLEARGUILDNAME:
+	case CommonType::ClearGuildName:
 		ClearGuildNameList();
 		break;
 	}
@@ -2193,7 +2199,7 @@ void CGame::InitGameSettings()
 
 	m_Camera.SetShake(0);
 
-	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+	m_pPlayer->m_Controller.SetCommand(Type::Stop);
 	m_pPlayer->m_Controller.ResetCommandCount();
 
 	m_bIsGetPointingMode = false;
@@ -2298,7 +2304,7 @@ void CGame::InitGameSettings()
 		m_dialogBoxManager.Info(i).bIsScrollSelected = false;
 	}
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) {
 			m_pItemList[i].reset();
 		}
@@ -2308,15 +2314,15 @@ void CGame::InitGameSettings()
 		m_stSellItemList[i].iAmount = 0;
 	}
 
-	for (i = 0; i < hb::limits::MaxBankItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0) {
 			m_pBankList[i].reset();
 		}
 
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
+	for (i = 0; i < hb::shared::limits::MaxMagicType; i++)
 		m_pPlayer->m_iMagicMastery[i] = 0;
 
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
+	for (i = 0; i < hb::shared::limits::MaxSkillType; i++)
 		m_pPlayer->m_iSkillMastery[i] = 0;
 
 	for (i = 0; i < game_limits::max_text_dlg_lines; i++) {
@@ -2330,7 +2336,7 @@ void CGame::InitGameSettings()
 			m_pAgreeMsgTextList[i].reset();
 	}
 
-	for (i = 0; i < hb::limits::MaxPartyMembers; i++) {
+	for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) {
 		m_stPartyMember[i].cStatus = 0;
 		std::memset(m_stPartyMember[i].cName, 0, sizeof(m_stPartyMember[i].cName));
 	}
@@ -2371,7 +2377,7 @@ void CGame::InitGameSettings()
 	CursorTarget::ClearSelection();
 	m_bIsF1HelpWindowEnabled = false;
 	m_bIsTeleportRequested = false;
-	for (i = 0; i < hb::limits::MaxCrusadeStructures; i++)
+	for (i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 	{
 		m_stCrusadeStructureInfo[i].cType = 0;
 		m_stCrusadeStructureInfo[i].cSide = 0;
@@ -2400,7 +2406,7 @@ void CGame::InitGameSettings()
 	m_bIsXmas = false;
 	m_iTotalPartyMember = 0;
 	m_iPartyStatus = 0;
-	for (i = 0; i < hb::limits::MaxPartyMembers; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
+	for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++) std::memset(m_stPartyMemberNameList[i].cName, 0, sizeof(m_stPartyMemberNameList[i].cName));
 	m_iGizonItemUpgradeLeft = 0;
 	m_dialogBoxManager.EnableDialogBox(DialogBoxId::GuideMap, 0, 0, 0);
 }
@@ -2411,11 +2417,11 @@ void CGame::CreateNewGuildResponseHandler(char* pData)
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
-	case DEF_MSGTYPE_CONFIRM:
+	case MsgType::Confirm:
 		m_pPlayer->m_iGuildRank = 0;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 3;
 		break;
-	case DEF_MSGTYPE_REJECT:
+	case MsgType::Reject:
 		m_pPlayer->m_iGuildRank = -1;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 4;
 		break;
@@ -2507,12 +2513,12 @@ void CGame::DisbandGuildResponseHandler(char* pData)
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
-	case DEF_MSGTYPE_CONFIRM:
+	case MsgType::Confirm:
 		std::memset(m_pPlayer->m_cGuildName, 0, sizeof(m_pPlayer->m_cGuildName));
 		m_pPlayer->m_iGuildRank = -1;
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 7;
 		break;
-	case DEF_MSGTYPE_REJECT:
+	case MsgType::Reject:
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 8;
 		break;
 	}
@@ -2687,7 +2693,7 @@ void CGame::_RequestShopContents(int16_t npcType)
 
 	auto* req = reinterpret_cast<hb::net::PacketShopRequest*>(cData);
 	req->header.msg_id = MSGID_REQUEST_SHOP_CONTENTS;
-	req->header.msg_type = DEF_MSGTYPE_CONFIRM;
+	req->header.msg_type = MsgType::Confirm;
 	req->npcType = npcType;
 
 	m_pGSock->iSendMsg(cData, sizeof(hb::net::PacketShopRequest));
@@ -2782,7 +2788,7 @@ bool CGame::bCheckImportantFile()
 	HANDLE hFile;
 
 	// Use the sprite factory's configured path
-	std::string spritePath = SpriteLib::Sprites::GetSpritePath() + "\\TREES1.PAK";
+	std::string spritePath = hb::shared::sprite::Sprites::GetSpritePath() + "\\TREES1.PAK";
 	hFile = CreateFile(spritePath.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, 0, 0);
 	if (hFile == INVALID_HANDLE_VALUE) return false;
 
@@ -2794,22 +2800,22 @@ void CGame::RequestFullObjectData(uint16_t wObjectID)
 {
 	int     iRet;
 	hb::net::PacketHeader header{};
-	header.msg_id = MSGID_REQUEST_FULLOBJECTDATA;
+	header.msg_id = MsgId::RequestFullObjectData;
 	header.msg_type = wObjectID;
 
 	iRet = m_pGSock->iSendMsg(reinterpret_cast<char*>(&header), sizeof(header));
 
 	switch (iRet) {
-	case DEF_XSOCKEVENT_SOCKETCLOSED:
-	case DEF_XSOCKEVENT_SOCKETERROR:
-	case DEF_XSOCKEVENT_QUENEFULL:
+	case sock::Event::SocketClosed:
+	case sock::Event::SocketError:
+	case sock::Event::QueueFull:
 		ChangeGameMode(GameMode::ConnectionLost);
 		m_pGSock.reset();
 		break;
 
-	case DEF_XSOCKEVENT_CRITICALERROR:
+	case sock::Event::CriticalError:
 		m_pGSock.reset();
-		Window::Close();
+		hb::shared::render::Window::Close();
 		break;
 	}
 }
@@ -2822,8 +2828,8 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 	char ucHeader, cDir, cName[12], cItemColor;
 	short sTotal, sX, sY, sType, sDynamicObjectType;
 	short npcConfigId = -1;
-	PlayerStatus iStatus;
-	PlayerAppearance playerAppearance;
+	hb::shared::entity::PlayerStatus iStatus;
+	hb::shared::entity::PlayerAppearance playerAppearance;
 	uint16_t wObjectID;
 	uint16_t wDynamicObjectID;
 	short sItemID;
@@ -2849,7 +2855,7 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (hb::objectid::IsPlayerID(objBase->object_id))
+			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -2876,13 +2882,13 @@ void CGame::_ReadMapData(short sPivotX, short sPivotY, const char* pData)
 				memcpy(cName, obj->name, sizeof(obj->name));
 				cp += sizeof(hb::net::PacketMapDataObjectNpc);
 			}
-			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
+			{ m_pMapData->bSetOwner(wObjectID, sPivotX + sX, sPivotY + sY, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
 		}
 		if (ucHeader & 0x02) // object ID
 		{
 			const auto* objBase = hb::net::PacketCast<hb::net::PacketMapDataObjectBase>(cp, sizeof(hb::net::PacketMapDataObjectBase));
 			if (!objBase) return;
-			if (hb::objectid::IsPlayerID(objBase->object_id))
+			if (hb::shared::object_id::IsPlayerID(objBase->object_id))
 			{
 				const auto* obj = hb::net::PacketCast<hb::net::PacketMapDataObjectPlayer>(cp, sizeof(hb::net::PacketMapDataObjectPlayer));
 				if (!obj) return;
@@ -2938,9 +2944,9 @@ void CGame::LogEventHandler(char* pData)
 	WORD wEventType, wObjectID;
 	short sX, sY, sType;
 	short npcConfigId = -1;
-	PlayerStatus iStatus;
+	hb::shared::entity::PlayerStatus iStatus;
 	char cDir, cName[12];
-	PlayerAppearance playerAppearance;
+	hb::shared::entity::PlayerAppearance playerAppearance;
 
 	const auto* base = hb::net::PacketCast<hb::net::PacketEventLogBase>(pData, sizeof(hb::net::PacketEventLogBase));
 	if (!base) return;
@@ -2949,7 +2955,7 @@ void CGame::LogEventHandler(char* pData)
 	sX = base->x;
 	sY = base->y;
 	std::memset(cName, 0, sizeof(cName));
-	if (hb::objectid::IsPlayerID(wObjectID))
+	if (hb::shared::object_id::IsPlayerID(wObjectID))
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketEventLogPlayer>(pData, sizeof(hb::net::PacketEventLogPlayer));
 		if (!pkt) return;
@@ -2972,21 +2978,21 @@ void CGame::LogEventHandler(char* pData)
 	}
 
 	switch (wEventType) {
-	case DEF_MSGTYPE_CONFIRM:
-		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
+	case MsgType::Confirm:
+		{ m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
 		switch (sType) {
-		case hb::owner::LightWarBeetle: // LWB
-		case hb::owner::GodsHandKnight: // GHK
-		case hb::owner::GodsHandKnightCK: // GHKABS
-		case hb::owner::TempleKnight: // TK
-		case hb::owner::BattleGolem: // BG
+		case hb::shared::owner::LightWarBeetle: // LWB
+		case hb::shared::owner::GodsHandKnight: // GHK
+		case hb::shared::owner::GodsHandKnightCK: // GHKABS
+		case hb::shared::owner::TempleKnight: // TK
+		case hb::shared::owner::BattleGolem: // BG
 			m_pEffectManager->AddEffect(EffectType::WHITE_HALO, (sX) * 32, (sY) * 32, 0, 0, 0);
 			break;
 		}
 		break;
 
-	case DEF_MSGTYPE_REJECT:
-		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, DEF_OBJECTSTOP, 0, 0, 0, 0, 0, npcConfigId); }
+	case MsgType::Reject:
+		{ m_pMapData->bSetOwner(wObjectID, -1, -1, sType, cDir, playerAppearance, iStatus, cName, Type::Stop, 0, 0, 0, 0, 0, npcConfigId); }
 		break;
 	}
 
@@ -3003,19 +3009,19 @@ void CGame::OnLogSocketEvent()
     int iRet = m_pLSock->Poll();
 
     switch (iRet) {
-    case DEF_XSOCKEVENT_SOCKETCLOSED:
+    case sock::Event::SocketClosed:
         ChangeGameMode(GameMode::ConnectionLost);
         m_pLSock.reset();
         m_pLSock.reset();
         return;
-    case DEF_XSOCKEVENT_SOCKETERROR:
+    case sock::Event::SocketError:
         printf("[ERROR] Login socket error\n");
         ChangeGameMode(GameMode::ConnectionLost);
         m_pLSock.reset();
         m_pLSock.reset();
         return;
 
-    case DEF_XSOCKEVENT_CONNECTIONESTABLISH:
+    case sock::Event::ConnectionEstablish:
         ConnectionEstablishHandler(static_cast<int>(ServerType::Log));
         break;
     }
@@ -3027,7 +3033,7 @@ void CGame::OnLogSocketEvent()
     }
 
     // If Poll() completed a packet, queue it before DrainToQueue() overwrites the buffer
-    if (iRet == DEF_XSOCKEVENT_READCOMPLETE) {
+    if (iRet == sock::Event::ReadComplete) {
         size_t dwSize = 0;
         char* pData = m_pLSock->pGetRcvDataPointer(&dwSize);
         if (pData != nullptr && dwSize > 0) {
@@ -3052,7 +3058,7 @@ void CGame::OnLogSocketEvent()
     uint32_t dwStartTime = GameClock::GetTimeMS();
     int iProcessed = 0;
 
-    NetworkPacket packet;
+    hb::shared::net::NetworkPacket packet;
     while (iProcessed < MAX_PACKETS_PER_FRAME) {
 
         // Check budget
@@ -3104,7 +3110,7 @@ void CGame::LogResponseHandler(char* pData)
 	printf("[LogResponseHandler] Response 0x%04X using legacy handler\n", wResponse);
 
 	switch (wResponse) {
-	case DEF_LOGRESMSGTYPE_CHARACTERDELETED:
+	case LogResMsg::CharacterDeleted:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			pData, sizeof(hb::net::PacketLogCharacterListHeader));
@@ -3137,7 +3143,7 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_LOGRESMSGTYPE_CONFIRM:
+	case LogResMsg::Confirm:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogCharacterListHeader>(
 			pData, sizeof(hb::net::PacketLogCharacterListHeader));
@@ -3178,7 +3184,7 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_LOGRESMSGTYPE_REJECT:
+	case LogResMsg::Reject:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseReject>(pData, sizeof(hb::net::PacketLogResponseReject));
 		if (!pkt) return;
@@ -3192,73 +3198,73 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_LOGRESMSGTYPE_NOTENOUGHPOINT:
+	case LogResMsg::NotEnoughPoint:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7I");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_ACCOUNTLOCKED:
+	case LogResMsg::AccountLocked:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7K");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_SERVICENOTAVAILABLE:
+	case LogResMsg::ServiceNotAvailable:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "7L");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS:
+	case LogResMsg::PasswordChangeSuccess:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6B");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL:
+	case LogResMsg::PasswordChangeFail:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6C");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_PASSWORDMISMATCH:
+	case LogResMsg::PasswordMismatch:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "11");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT:
+	case LogResMsg::NotExistingAccount:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "12");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
+	case LogResMsg::NewAccountCreated:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "54");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
+	case LogResMsg::NewAccountFailed:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "05");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
+	case LogResMsg::AlreadyExistingAccount:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "06");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NOTEXISTINGCHARACTER:
+	case LogResMsg::NotExistingCharacter:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "Not existing character!");
 		ChangeGameMode(GameMode::Msg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NEWCHARACTERCREATED:
+	case LogResMsg::NewCharacterCreated:
 	{
 		const auto* list = hb::net::PacketCast<hb::net::PacketLogNewCharacterCreatedHeader>(
 			pData, sizeof(hb::net::PacketLogNewCharacterCreatedHeader));
@@ -3291,23 +3297,23 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED:
+	case LogResMsg::NewCharacterFailed:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "28");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGCHARACTER:
+	case LogResMsg::AlreadyExistingCharacter:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "29");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_ENTERGAMERESTYPE_PLAYING:
+	case EnterGameRes::Playing:
 		ChangeGameMode(GameMode::QueryForceLogin);
 		break;
 
-	case DEF_ENTERGAMERESTYPE_CONFIRM:
+	case EnterGameRes::Confirm:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogEnterGameConfirm>(
 			pData, sizeof(hb::net::PacketLogEnterGameConfirm));
@@ -3320,13 +3326,13 @@ void CGame::LogResponseHandler(char* pData)
 		memcpy(m_cGameServerName, pkt->game_server_name, sizeof(pkt->game_server_name));
 		(void)iGameServerPort;
 
-		m_pGSock = std::make_unique<ASIOSocket>(m_pIOPool->GetContext(), game_limits::socket_block_limit);
+		m_pGSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pIOPool->GetContext(), game_limits::socket_block_limit);
 		m_pGSock->bConnect(m_cLogServerAddr, m_iGameServerPort);
-		m_pGSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+		m_pGSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 	}
 	break;
 
-	case DEF_ENTERGAMERESTYPE_REJECT:
+	case EnterGameRes::Reject:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
@@ -3344,19 +3350,19 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_ENTERGAMERESTYPE_FORCEDISCONN:
+	case EnterGameRes::ForceDisconn:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "3X");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_NOTEXISTINGWORLDSERVER:
+	case LogResMsg::NotExistingWorldServer:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1Y");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_INPUTKEYCODE:
+	case LogResMsg::InputKeyCode:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketLogResponseCode>(pData, sizeof(hb::net::PacketLogResponseCode));
 		if (!pkt) return;
@@ -3372,19 +3378,19 @@ void CGame::LogResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_LOGRESMSGTYPE_FORCECHANGEPASSWORD:
+	case LogResMsg::ForceChangePassword:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "6M");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_INVALIDKOREANSSN:
+	case LogResMsg::InvalidKoreanSsn:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1a");
 		ChangeGameMode(GameMode::LogResMsg);
 		break;
 
-	case DEF_LOGRESMSGTYPE_LESSTHENFIFTEEN:
+	case LogResMsg::LessThenFifteen:
 		std::memset(m_cMsg, 0, sizeof(m_cMsg));
 		std::snprintf(m_cMsg, sizeof(m_cMsg), "%s", "1b");
 		ChangeGameMode(GameMode::LogResMsg);
@@ -3704,7 +3710,7 @@ void CGame::DrawBackground(short sDivX, short sModX, short sDivY, short sModY)
 			{
 				short sSpr = m_pMapData->m_tile[indexX][indexY].m_sTileSprite;
 				short sSprFrame = m_pMapData->m_tile[indexX][indexY].m_sTileSpriteFrame;
-				m_pTileSpr[sSpr]->Draw(ix - 16, iy - 16, sSprFrame, SpriteLib::DrawParams::NoColorKey());
+				m_pTileSpr[sSpr]->Draw(ix - 16, iy - 16, sSprFrame, hb::shared::sprite::DrawParams::NoColorKey());
 			}
 		}
 	}
@@ -3721,13 +3727,13 @@ void CGame::InitItemList(char* pData)
 	int     i, iAngelValue;
 	uint16_t cTotalItems;
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		m_cItemOrder[i] = -1;
 
 	for (i = 0; i < DEF_MAXITEMEQUIPPOS; i++)
 		m_sItemEquipmentStatus[i] = -1;
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		m_bIsItemDisabled[i] = false;
 
 	const auto* header = hb::net::PacketCast<hb::net::PacketResponseItemListHeader>(
@@ -3735,13 +3741,13 @@ void CGame::InitItemList(char* pData)
 	if (!header) return;
 	cTotalItems = header->item_count;
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0)
 		{
 			m_pItemList[i].reset();
 		}
 
-	for (i = 0; i < hb::limits::MaxBankItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
@@ -3774,13 +3780,13 @@ void CGame::InitItemList(char* pData)
 			&& (pCfg->m_cEquipPos >= 11))
 		{
 			iAngelValue = (m_pItemList[i]->m_dwAttribute & 0xF0000000) >> 28;
-			if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+			if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
 				m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
 				m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
 				m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-			else if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+			else if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
 				m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
 		}
 	}
@@ -3788,7 +3794,7 @@ void CGame::InitItemList(char* pData)
 	const auto* bank_header = reinterpret_cast<const hb::net::PacketResponseBankItemListHeader*>(itemEntries + cTotalItems);
 	cTotalItems = bank_header->bank_item_count;
 
-	for (i = 0; i < hb::limits::MaxBankItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0)
 		{
 			m_pBankList[i].reset();
@@ -3811,10 +3817,10 @@ void CGame::InitItemList(char* pData)
 
 	const auto* mastery = reinterpret_cast<const hb::net::PacketResponseMasteryData*>(bankEntries + cTotalItems);
 
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++)
+	for (i = 0; i < hb::shared::limits::MaxMagicType; i++)
 		m_pPlayer->m_iMagicMastery[i] = mastery->magic_mastery[i];
 
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++)
+	for (i = 0; i < hb::shared::limits::MaxSkillType; i++)
 	{
 		m_pPlayer->m_iSkillMastery[i] = static_cast<unsigned char>(mastery->skill_mastery[i]);
 		if (m_pSkillCfgList[i] != 0)
@@ -3823,10 +3829,10 @@ void CGame::InitItemList(char* pData)
 
 	// Diagnostic: count what was loaded
 	int nItems = 0, nBank = 0, nMagic = 0, nSkills = 0;
-	for (i = 0; i < hb::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
-	for (i = 0; i < hb::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
-	for (i = 0; i < DEF_MAXMAGICTYPE; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
-	for (i = 0; i < DEF_MAXSKILLTYPE; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
+	for (i = 0; i < hb::shared::limits::MaxItems; i++) if (m_pItemList[i]) nItems++;
+	for (i = 0; i < hb::shared::limits::MaxBankItems; i++) if (m_pBankList[i]) nBank++;
+	for (i = 0; i < hb::shared::limits::MaxMagicType; i++) if (m_pPlayer->m_iMagicMastery[i] != 0) nMagic++;
+	for (i = 0; i < hb::shared::limits::MaxSkillType; i++) if (m_pPlayer->m_iSkillMastery[i] != 0) nSkills++;
 	DevConsole::Get().Printf("[INIT] InitItemList: %d items, %d bank, %d magic, %d skills",
 		nItems, nBank, nMagic, nSkills);
 }
@@ -3835,7 +3841,7 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 {
 	int i;
 	if (m_bIsObserverMode == true) return;
-	// Note: Dialogs that handle scroll should read Input::GetMouseWheelDelta() and clear it after processing
+	// Note: Dialogs that handle scroll should read hb::shared::input::GetMouseWheelDelta() and clear it after processing
 	//Snoopy: 41->61
 	bool bIconPanelDrawn = false;
 	for (i = 0; i < 61; i++)
@@ -4034,15 +4040,15 @@ void CGame::DrawDialogBoxs(short msX, short msY, short msZ, char cLB)
 		bool bMastered = (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100);
 
 		// Draw additive overlay sprite at combat icon position only when ALT is held
-		if (Input::IsAltDown() && bMastered)
-			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX, iconY, 3, SpriteLib::DrawParams::Additive(0.7f));
+		if (hb::shared::input::IsAltDown() && bMastered)
+			m_pSprite[DEF_SPRID_INTERFACE_ND_ICONPANNEL]->Draw(iconX, iconY, 3, hb::shared::sprite::DrawParams::Additive(0.7f));
 
 		// Draw super attack count text at bottom-right of combat button area
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "%d", m_pPlayer->m_iSuperAttackLeft);
 		if (bMastered)
-			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithIntegratedShadow(Color(255, 255, 255)), TextLib::Align::BottomRight);
+			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, hb::shared::text::TextStyle::WithIntegratedShadow(hb::shared::render::Color(255, 255, 255)), hb::shared::text::Align::BottomRight);
 		else
-			TextLib::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive), TextLib::Align::BottomRight);
+			hb::shared::text::DrawTextAligned(GameFont::Bitmap1, btnX, btnY, btnW, btnH, G_cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive), hb::shared::text::Align::BottomRight);
 	}
 }
 
@@ -4054,7 +4060,7 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0]->Draw(sX, sY, sType - 1);
 		const auto& hcM = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, SpriteLib::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcM.r, hcM.g, hcM.b));
 
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
@@ -4062,7 +4068,7 @@ void CGame::_Draw_CharacterBody(short sX, short sY, short sType)
 	{
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40]->Draw(sX, sY, sType - 4);
 		const auto& hcF = GameColors::Hair[m_entityState.m_appearance.iHairColor];
-		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, SpriteLib::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
+		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 18 + 40]->Draw(sX, sY, m_entityState.m_appearance.iHairStyle, hb::shared::sprite::DrawParams::Tint(hcF.r, hcF.g, hcF.b));
 		m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 19 + 40]->Draw(sX, sY, m_entityState.m_appearance.iUnderwearType);
 	}
 }
@@ -4400,7 +4406,7 @@ void CGame::EnableDialogBox(int iBoxID, int cType, int sV1, int sV2, char* pStri
 		{
 			int iSoX, iSoM;
 			iSoX = iSoM = 0;
-			for (i = 0; i < hb::limits::MaxItems; i++)
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
 				if (m_pItemList[i] != 0)
 				{
 					if ((m_pItemList[i]->m_sSprite == 6) && (m_pItemList[i]->m_sSpriteFrame == 128)) iSoX++;
@@ -4587,7 +4593,7 @@ void CGame::DisableDialogBox(int iBoxID)
 	case DialogBoxId::NpcTalk:
 		if (m_dialogBoxManager.Info(DialogBoxId::NpcTalk).sV2 == 500)
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GETMAGICABILITY, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::GetMagicAbility, 0, 0, 0, 0, 0);
 		}
 		break;
 
@@ -4610,7 +4616,7 @@ void CGame::DisableDialogBox(int iBoxID)
 		{
 			// Re-enable item before clearing the slot
 			int sItemID = m_stDialogBoxExchangeInfo[i].sItemID;
-			if (sItemID >= 0 && sItemID < hb::limits::MaxItems && m_bIsItemDisabled[sItemID])
+			if (sItemID >= 0 && sItemID < hb::shared::limits::MaxItems && m_bIsItemDisabled[sItemID])
 				m_bIsItemDisabled[sItemID] = false;
 
 			std::memset(m_stDialogBoxExchangeInfo[i].cStr1, 0, sizeof(m_stDialogBoxExchangeInfo[i].cStr1));
@@ -4645,7 +4651,7 @@ void CGame::DisableDialogBox(int iBoxID)
 	{
 		auto& info = m_dialogBoxManager.Info(DialogBoxId::Slates);
 		auto clearSlot = [&](int idx) {
-			if (idx >= 0 && idx < hb::limits::MaxItems) m_bIsItemDisabled[idx] = false;
+			if (idx >= 0 && idx < hb::shared::limits::MaxItems) m_bIsItemDisabled[idx] = false;
 		};
 		clearSlot(info.sV1);
 		clearSlot(info.sV2);
@@ -4804,7 +4810,7 @@ void CGame::_LoadGameMsgTextContents()
 
 void CGame::_RequestMapStatus(const char* pMapName, int iMode)
 {
-	bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_MAPSTATUS, 0, iMode, 0, 0, pMapName);
+	bSendCommand(MsgId::CommandCommon, CommonType::RequestMapStatus, 0, iMode, 0, 0, pMapName);
 }
 
 void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
@@ -4835,7 +4841,7 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 	}
 
 	if (bIsLastData == true) {
-		while (sIndex < hb::limits::MaxCrusadeStructures) {
+		while (sIndex < hb::shared::limits::MaxCrusadeStructures) {
 			m_stCrusadeStructureInfo[sIndex].cType = 0;
 			m_stCrusadeStructureInfo[sIndex].sX = 0;
 			m_stCrusadeStructureInfo[sIndex].sY = 0;
@@ -4845,7 +4851,7 @@ void CGame::AddMapStatusInfo(const char* pData, bool bIsLastData)
 	}
 }
 
-bool CGame::GetText(NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
+bool CGame::GetText(hb::shared::types::NativeWindowHandle hWnd, uint32_t msg, uintptr_t wparam, intptr_t lparam)
 {
 	size_t len;
 	if (m_pInputBuffer == 0) return false;
@@ -4924,7 +4930,7 @@ void CGame::ShowReceivedString(bool bIsHide)
 
 	if ((GameClock::GetTimeMS() % 400) < 210) G_cTxt[strlen(G_cTxt)] = '_';
 
-	TextLib::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InputNormal));
+	hb::shared::text::DrawText(GameFont::Default, m_iInputX, m_iInputY, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InputNormal));
 }
 
 void CGame::ClearInputString()
@@ -4966,10 +4972,10 @@ void CGame::DrawNewDialogBox(char cType, int sX, int sY, int iFrame, bool bIsNoC
 	if (bIsNoColorKey == false)
 	{
 		if (bIsTrans == true)
-			m_pSprite[cType]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			m_pSprite[cType]->Draw(sX, sY, iFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 		else m_pSprite[cType]->Draw(sX, sY, iFrame);
 	}
-	else m_pSprite[cType]->Draw(sX, sY, iFrame, SpriteLib::DrawParams::NoColorKey());
+	else m_pSprite[cType]->Draw(sX, sY, iFrame, hb::shared::sprite::DrawParams::NoColorKey());
 }
 
 void CGame::SetCameraShakingEffect(short sDist, int iMul)
@@ -5007,7 +5013,7 @@ void CGame::DrawObjectFOE(int ix, int iy, int iFrame)
 {
 	if (IsHostile(m_entityState.m_status.iRelationship)) // red crusade circle
 	{
-		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		if (iFrame <= 4) m_pEffectSpr[38]->Draw(ix, iy, iFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 }
 
@@ -5023,10 +5029,10 @@ void CGame::SetTopMsg(const char* pString, unsigned char iLastSec)
 void CGame::DrawTopMsg()
 {
 	if (strlen(m_cTopMsg) == 0) return;
-	m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), 30, Color::Black(128));
+	m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), 30, hb::shared::render::Color::Black(128));
 
 	if ((((GameClock::GetTimeMS() - m_dwTopMsgTime) / 250) % 2) == 0)
-		TextLib::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, TextLib::TextStyle::Color(GameColors::UITopMsgYellow), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, 0, 10, LOGICAL_MAX_X(), 15, m_cTopMsg, hb::shared::text::TextStyle::Color(GameColors::UITopMsgYellow), hb::shared::text::Align::TopCenter);
 
 	if (GameClock::GetTimeMS() > (m_iTopMsgLastSec * 1000 + m_dwTopMsgTime)) {
 		std::memset(m_cTopMsg, 0, sizeof(m_cTopMsg));
@@ -5357,7 +5363,7 @@ bool CGame::_bCheckItemByType(ItemType type)
 {
 	int i;
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) {
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && pCfg->GetItemType() == type) return true;
@@ -5379,11 +5385,11 @@ void CGame::DynamicObjectHandler(char* pData)
 	sV3 = pkt->v3;
 
 	switch (pkt->header.msg_type) {
-	case DEF_MSGTYPE_CONFIRM:// Dynamic Object
+	case MsgType::Confirm:// Dynamic Object
 		m_pMapData->bSetDynamicObject(sX, sY, sV2, sV1, true);
 		break;
 
-	case DEF_MSGTYPE_REJECT:// Dynamic object
+	case MsgType::Reject:// Dynamic object
 		m_pMapData->bSetDynamicObject(sX, sY, sV2, 0, true);
 		break;
 	}
@@ -5393,7 +5399,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 {
 	int i;
 	uint16_t wWeaponType;
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5401,7 +5407,7 @@ bool CGame::_bIsItemOnHand() // Snoopy: Fixed to remove ShieldCast
 				|| (pCfg->GetEquipPos() == EquipPos::TwoHand)))
 				return true;
 		}
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if ((m_pItemList[i] != 0) && (m_bIsItemEquipped[i] == true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5422,7 +5428,7 @@ int CGame::_iCalcTotalWeight()
 	int i, iWeight, iCnt, iTemp;
 	iCnt = 0;
 	iWeight = 0;
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0)
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
@@ -5430,7 +5436,7 @@ int CGame::_iCalcTotalWeight()
 				|| (pCfg->GetItemType() == ItemType::Arrow)))
 			{
 				iTemp = pCfg->m_wWeight * m_pItemList[i]->m_dwCount;
-				if (m_pItemList[i]->m_sIDnum == hb::item::ItemId::Gold) iTemp = iTemp / 20;
+				if (m_pItemList[i]->m_sIDnum == hb::shared::item::ItemId::Gold) iTemp = iTemp / 20;
 				iWeight += iTemp;
 			}
 			else if (pCfg) iWeight += pCfg->m_wWeight;
@@ -5441,14 +5447,14 @@ int CGame::_iCalcTotalWeight()
 }
 uint32_t CGame::iGetLevelExp(int iLevel)
 {
-	return CalculateLevelExp(iLevel);
+	return hb::shared::calc::CalculateLevelExp(iLevel);
 }
 
 int CGame::_iGetTotalItemNum()
 {
 	int i, iCnt;
 	iCnt = 0;
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_pItemList[i] != 0) iCnt++;
 	return iCnt;
 }
@@ -5493,13 +5499,13 @@ void CGame::DrawWhetherEffects()
 				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
 				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
 				cTempFrame = 16 + (m_stWhetherObject[i].cStep / 6);
-				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 			else if ((m_stWhetherObject[i].cStep >= 20) && (m_stWhetherObject[i].cStep < 25) && (m_stWhetherObject[i].sX != 0))
 			{
 				dX = m_stWhetherObject[i].sX - m_Camera.GetX();
 				dY = m_stWhetherObject[i].sY - m_Camera.GetY();
-				m_pEffectSpr[11]->Draw(dX, dY, m_stWhetherObject[i].cStep, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pEffectSpr[11]->Draw(dX, dY, m_stWhetherObject[i].cStep, hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 		break;
@@ -5528,7 +5534,7 @@ void CGame::DrawWhetherEffects()
 				}
 				else cTempFrame = 39 + (m_stWhetherObject[i].cStep / 20) * 3 + (rand() % 3);
 
-				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, SpriteLib::DrawParams::Alpha(0.5f));
+				m_pEffectSpr[11]->Draw(dX, dY, cTempFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 				if (m_bIsXmas == true)
 				{
@@ -5547,7 +5553,7 @@ void CGame::DrawWhetherEffects()
 		{
 			for (i = 0; i <= MAXNUM; i++)
 			{
-				if (iy2[i] > 10) m_pEffectSpr[11]->Draw(ix1[i], iy2[i], iFrame[i], SpriteLib::DrawParams::Alpha(0.5f));
+				if (iy2[i] > 10) m_pEffectSpr[11]->Draw(ix1[i], iy2[i], iFrame[i], hb::shared::sprite::DrawParams::Alpha(0.5f));
 			}
 		}
 		break;
@@ -5700,25 +5706,25 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	{
 		switch (cType) {
 		case 1:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, Color(15, 15, 20), BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, hb::shared::render::Color(15, 15, 20), hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 1, pY1, iX1 - 1, iY1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1, iX1 + 1, iY1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 - 1, iX1, iY1 - 1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 + 1, iX1, iY1 + 1, GameColors::NightBlueMid, hb::shared::render::BlendMode::Additive);
 
-			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 2, pY1, iX1 - 2, iY1, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 2, pY1, iX1 + 2, iY1, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 - 2, iX1, iY1 - 2, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1 + 2, iX1, iY1 + 2, GameColors::NightBlueDark, hb::shared::render::BlendMode::Additive);
 
-			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, BlendMode::Additive);
-			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep, BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 1, pY1 - 1, iX1 - 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 + 1, pY1 - 1, iX1 + 1, iY1 - 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
+			m_Renderer->DrawLine(pX1 - 1, pY1 + 1, iX1 - 1, iY1 + 1, GameColors::NightBlueDeep, hb::shared::render::BlendMode::Additive);
 			break;
 
 		case 2:
-			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, Color(GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 128), BlendMode::Additive);
+			m_Renderer->DrawLine(pX1, pY1, iX1, iY1, hb::shared::render::Color(GameColors::NightBlueBright.r, GameColors::NightBlueBright.g, GameColors::NightBlueBright.b, 128), hb::shared::render::BlendMode::Additive);
 			break;
 		}
 		iErr = 0;
@@ -5746,7 +5752,7 @@ void CGame::_DrawThunderEffect(int sX, int sY, int dX, int dY, int rX, int rY, c
 	}
 	switch (cType) {
 	case 1:
-		m_pEffectSpr[6]->Draw(iX1, iY1, (rand() % 2), SpriteLib::DrawParams::Alpha(0.75f));
+		m_pEffectSpr[6]->Draw(iX1, iY1, (rand() % 2), hb::shared::sprite::DrawParams::Alpha(0.75f));
 		break;
 	}
 }
@@ -5870,7 +5876,7 @@ int CGame::_iGetBankItemCount()
 	int i, iCnt;
 
 	iCnt = 0;
-	for (i = 0; i < hb::limits::MaxBankItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBankItems; i++)
 		if (m_pBankList[i] != 0) iCnt++;
 
 	return iCnt;
@@ -5878,7 +5884,7 @@ int CGame::_iGetBankItemCount()
 
 bool CGame::_bDecodeBuildItemContents()
 {
-	for (int i = 0; i < hb::limits::MaxBuildItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 	{
 		if (m_pBuildItemList[i] != 0)
 			m_pBuildItemList[i].reset();
@@ -5895,30 +5901,30 @@ bool CGame::_bDecodeBuildItemContents()
 bool CGame::_bCheckBuildItemStatus()
 {
 	int iIndex, i, j, iMatch, iCount;
-	char cTempName[DEF_ITEMNAME];
-	int  iItemCount[hb::limits::MaxItems];
+	char cTempName[hb::shared::limits::ItemNameLen];
+	int  iItemCount[hb::shared::limits::MaxItems];
 
-	for (i = 0; i < hb::limits::MaxBuildItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 		if (m_pDispBuildItemList[i] != 0)
 		{
 			m_pDispBuildItemList[i].reset();
 		}
 	iIndex = 0;
-	for (i = 0; i < hb::limits::MaxBuildItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxBuildItems; i++)
 		if (m_pBuildItemList[i] != 0)
 		{	// Skill-Limit
 			if (m_pPlayer->m_iSkillMastery[13] >= m_pBuildItemList[i]->m_iSkillLimit)
 			{
 				iMatch = 0;
 				m_pDispBuildItemList[iIndex] = std::make_unique<CBuildItem>();
-				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cName, m_pBuildItemList[i]->m_cName, hb::shared::limits::ItemNameLen - 1);
 
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
-				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName1, m_pBuildItemList[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName2, m_pBuildItemList[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName3, m_pBuildItemList[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName4, m_pBuildItemList[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName5, m_pBuildItemList[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
+				memcpy(m_pDispBuildItemList[iIndex]->m_cElementName6, m_pBuildItemList[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
 
 				m_pDispBuildItemList[iIndex]->m_iElementCount[1] = m_pBuildItemList[i]->m_iElementCount[1];
 				m_pDispBuildItemList[iIndex]->m_iElementCount[2] = m_pBuildItemList[i]->m_iElementCount[2];
@@ -5933,22 +5939,22 @@ bool CGame::_bCheckBuildItemStatus()
 				m_pDispBuildItemList[iIndex]->m_iSkillLimit = m_pBuildItemList[i]->m_iSkillLimit;
 
 				// ItemCount
-				for (j = 0; j < hb::limits::MaxItems; j++)
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (m_pItemList[j] != 0)
 						iItemCount[j] = m_pItemList[j]->m_dwCount;
 					else iItemCount[j] = 0;
 
 				// Element1
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[1];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0) {
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -5962,16 +5968,16 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP2:;
 				// Element2
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[2];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -5985,16 +5991,16 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP3:;
 				// Element3
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[3];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -6008,16 +6014,16 @@ bool CGame::_bCheckBuildItemStatus()
 			CBIS_STEP4:;
 				// Element4 �˻�
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[4];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -6032,16 +6038,16 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element5
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[5];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -6056,16 +6062,16 @@ bool CGame::_bCheckBuildItemStatus()
 
 				// Element6
 				std::memset(cTempName, 0, sizeof(cTempName));
-				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, DEF_ITEMNAME - 1);
+				memcpy(cTempName, m_pBuildItemList[i]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
 				iCount = m_pBuildItemList[i]->m_iElementCount[6];
 				if (iCount == 0) iMatch++;
 				else
 				{
-					for (j = 0; j < hb::limits::MaxItems; j++)
+					for (j = 0; j < hb::shared::limits::MaxItems; j++)
 						if (m_pItemList[j] != 0)
 						{
 							CItem* pCfgJ = GetItemConfig(m_pItemList[j]->m_sIDnum);
-							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
+							if (pCfgJ && (memcmp(pCfgJ->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) && (m_pItemList[j]->m_dwCount >= (DWORD)(iCount)) &&
 								(iItemCount[j] > 0))
 							{
 								iMatch++;
@@ -6256,7 +6262,7 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 	int i, iCount2, iMatch, iIndex, iItemIndex[7];
 	int iCount;
 	int iItemCount[7];
-	char cTempName[DEF_ITEMNAME];
+	char cTempName[hb::shared::limits::ItemNameLen];
 	bool bItemFlag[7];
 
 	iIndex = m_dialogBoxManager.Info(DialogBoxId::Manufacture).cStr[0];
@@ -6279,7 +6285,7 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 
 	// Element1
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName1, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[1];
 	if (iCount == 0) iMatch++;
 	else
@@ -6288,7 +6294,7 @@ bool CGame::_bCheckCurrentBuildItemStatus()
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6304,7 +6310,7 @@ CCBIS_STEP2:;
 
 	// Element2
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName2, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[2];
 	if (iCount == 0) iMatch++;
 	else
@@ -6313,7 +6319,7 @@ CCBIS_STEP2:;
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6329,7 +6335,7 @@ CCBIS_STEP3:;
 
 	// Element3
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName3, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[3];
 	if (iCount == 0) iMatch++;
 	else
@@ -6338,7 +6344,7 @@ CCBIS_STEP3:;
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6354,7 +6360,7 @@ CCBIS_STEP4:;
 
 	// Element4
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName4, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[4];
 	if (iCount == 0) iMatch++;
 	else
@@ -6363,7 +6369,7 @@ CCBIS_STEP4:;
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6379,7 +6385,7 @@ CCBIS_STEP5:;
 
 	// Element5
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName5, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[5];
 	if (iCount == 0) iMatch++;
 	else
@@ -6388,7 +6394,7 @@ CCBIS_STEP5:;
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6404,7 +6410,7 @@ CCBIS_STEP6:;
 
 	// Element6
 	std::memset(cTempName, 0, sizeof(cTempName));
-	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, DEF_ITEMNAME - 1);
+	memcpy(cTempName, m_pDispBuildItemList[iIndex]->m_cElementName6, hb::shared::limits::ItemNameLen - 1);
 	iCount = m_pDispBuildItemList[iIndex]->m_iElementCount[6];
 	if (iCount == 0) iMatch++;
 	else
@@ -6413,7 +6419,7 @@ CCBIS_STEP6:;
 		{
 			if (iItemIndex[i] == -1) continue;
 			CItem* pCfgBI = GetItemConfig(m_pItemList[iItemIndex[i]]->m_sIDnum);
-			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, DEF_ITEMNAME - 1) == 0) &&
+			if (pCfgBI && (memcmp(pCfgBI->m_cName, cTempName, hb::shared::limits::ItemNameLen - 1) == 0) &&
 				(m_pItemList[iItemIndex[i]]->m_dwCount >= (DWORD)(iCount)) &&
 				(iItemCount[i] > 0) && (bItemFlag[i] == false))
 			{
@@ -6455,7 +6461,7 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 
 	const char* cName = pCfg->GetDisplayName();
 
-	if (hb::item::IsSpecialItem(pItem->m_sIDnum)) m_bIsSpecial = true;
+	if (hb::shared::item::IsSpecialItem(pItem->m_sIDnum)) m_bIsSpecial = true;
 
 	if ((pItem->m_dwAttribute & 0x00000001) != 0)
 	{
@@ -6503,9 +6509,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8);   break;
 			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9);   break;
 			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10);  break;
-			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
-			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
-			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
+			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
+			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
+			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
 			}
 			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
 			std::memset(pStr1, 0, 64);
@@ -6522,9 +6528,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
 			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
 			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
-			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
-			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
+			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
+			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
 			}
 			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
 
@@ -6540,9 +6546,9 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7); break;
 				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3); break;
 				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3); break;
-				case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);   break;
-				case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
+				case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);   break;
+				case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
 				std::snprintf(pStr3, 64, "%s", cTxt);
 			}
@@ -6573,12 +6579,12 @@ void CGame::GetItemName(CItem* pItem, char* pStr1, char* pStr2, char* pStr3)
 	// Display mana save effect if present
 	auto effectType = pCfg->GetItemEffectType();
 	int iManaSaveValue = 0;
-	if (effectType == hb::item::ItemEffectType::AttackManaSave)
+	if (effectType == hb::shared::item::ItemEffectType::AttackManaSave)
 	{
 		iManaSaveValue = pCfg->m_sItemEffectValue4;
 	}
-	else if (effectType == hb::item::ItemEffectType::AddEffect &&
-	         pCfg->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
+	else if (effectType == hb::shared::item::ItemEffectType::AddEffect &&
+	         pCfg->m_sItemEffectValue1 == hb::shared::item::ToInt(hb::shared::item::AddEffectType::ManaSave))
 	{
 		iManaSaveValue = pCfg->m_sItemEffectValue2;
 	}
@@ -6638,9 +6644,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME8); break;
 			case 8: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME9); break;
 			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME10); break;
-			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
-			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
-			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
+			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME11); break;
+			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME12); break;
+			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME13); break;
 			}
 			std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", pStr1);
 			std::memset(pStr1, 0, 64);
@@ -6657,9 +6663,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 			case 7: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME18); break;
 			case 8: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME19, dwValue1 * 7); break;
 			case 9: std::snprintf(cTxt, sizeof(cTxt), "%s", GET_ITEM_NAME20); break;
-			case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
-			case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
-			case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
+			case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME21, dwValue1 * 3); break;
+			case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME22, dwValue1); break;
+			case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME23, dwValue1); break;
 			}
 			std::snprintf(pStr2 + strlen(pStr2), 64 - strlen(pStr2), "%s", cTxt);
 
@@ -6676,9 +6682,9 @@ void CGame::GetItemName(short sItemId, uint32_t dwAttribute, char* pStr1, char* 
 				case 7:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME30, dwValue2 * 7);  break;
 				case 8:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME31, dwValue2 * 3);  break;
 				case 9:  std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME32, dwValue2 * 3);  break;
-				case hb::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);    break;
-				case hb::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
-				case hb::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
+				case hb::shared::owner::Slime: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME33, dwValue2);    break;
+				case hb::shared::owner::Skeleton: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME34, dwValue2 * 10); break;
+				case hb::shared::owner::StoneGolem: std::snprintf(cTxt, sizeof(cTxt), GET_ITEM_NAME35, dwValue2 * 10); break;
 				}
 				std::snprintf(pStr3, 64, "%s", cTxt);
 			}
@@ -6722,13 +6728,13 @@ bool CGame::_EnsureConfigLoaded(int type)
 		for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bLoaded = true; break; } }
 		break;
 	case 1: // Magic
-		for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bLoaded = true; break; } }
 		break;
 	case 2: // Skills
-		for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bLoaded = true; break; } }
 		break;
 	case 3: // Npcs
-		for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bLoaded = true; break; } }
+		for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bLoaded = true; break; } }
 		break;
 	}
 
@@ -6806,7 +6812,7 @@ void CGame::_RequestConfigsFromServer(bool bItems, bool bMagic, bool bSkills, bo
 {
 	if (!m_pGSock) return;
 	hb::net::PacketRequestConfigData pkt{};
-	pkt.header.msg_id = MSGID_REQUEST_CONFIGDATA;
+	pkt.header.msg_id = MsgId::RequestConfigData;
 	pkt.header.msg_type = 0;
 	pkt.requestItems = bItems ? 1 : 0;
 	pkt.requestMagic = bMagic ? 1 : 0;
@@ -6822,9 +6828,9 @@ void CGame::_CheckConfigsReadyAndEnterGame()
 	// Check if all four config types have at least one entry loaded
 	bool bHasItems = false, bHasMagic = false, bHasSkills = false, bHasNpcs = false;
 	for (int i = 1; i < 5000; i++) { if (m_pItemConfigList[i]) { bHasItems = true; break; } }
-	for (int i = 0; i < DEF_MAXMAGICTYPE; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
-	for (int i = 0; i < DEF_MAXSKILLTYPE; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
-	for (int i = 0; i < DEF_MAXNPCCONFIGS; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxMagicType; i++) { if (m_pMagicCfgList[i]) { bHasMagic = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxSkillType; i++) { if (m_pSkillCfgList[i]) { bHasSkills = true; break; } }
+	for (int i = 0; i < hb::shared::limits::MaxNpcConfigs; i++) { if (m_npcConfigList[i].valid) { bHasNpcs = true; break; } }
 
 	if (bHasItems && bHasMagic && bHasSkills && bHasNpcs) {
 		DevConsole::Get().Printf("[CONFIG] All configs loaded from server, entering game");
@@ -6841,7 +6847,7 @@ short CGame::FindItemIdByName(const char* cItemName)
 	if (cItemName == nullptr) return 0;
 	for (int i = 1; i < 5000; i++) {
 		if (m_pItemConfigList[i] != nullptr &&
-			memcmp(m_pItemConfigList[i]->m_cName, cItemName, DEF_ITEMNAME - 1) == 0) {
+			memcmp(m_pItemConfigList[i]->m_cName, cItemName, hb::shared::limits::ItemNameLen - 1) == 0) {
 			return static_cast<short>(i);
 		}
 	}
@@ -6854,8 +6860,8 @@ void CGame::NoticementHandler(char* pData)
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	switch (header->msg_type) {
-	case DEF_MSGTYPE_CONFIRM:
-	case DEF_MSGTYPE_REJECT:
+	case MsgType::Confirm:
+	case MsgType::Reject:
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseNoticementText>(
 			pData, sizeof(hb::net::PacketResponseNoticementText));
 		if (!pkt) return;
@@ -6928,9 +6934,9 @@ void CGame::CreateScreenShot()
 
 	std::string timeStr = std::format("{:02d}:{:02d} - {:02d}:{:02d}:{:02d}",
 		tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-	TextLib::DrawTextAligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
-		TextLib::TextStyle::Color(GameColors::UIWhite),
-		TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, 500, 30, 150, 15, timeStr.c_str(),
+		hb::shared::text::TextStyle::Color(GameColors::UIWhite),
+		hb::shared::text::Align::TopCenter);
 
 	std::filesystem::create_directory("SAVE");
 
@@ -7120,7 +7126,7 @@ void CGame::OnKeyDown(KeyCode _key)
 
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		if (Input::IsCtrlDown())
+		if (hb::shared::input::IsCtrlDown())
 		{
 			// Ctrl+0-9 for magic views
 			switch (_key) {
@@ -7138,7 +7144,7 @@ void CGame::OnKeyDown(KeyCode _key)
 			}
 		}
 		// Only Enter key activates chat input - not every key press
-		else if (_key == KeyCode::Enter && (m_bInputStatus == false) && (!Input::IsAltDown()))
+		else if (_key == KeyCode::Enter && (m_bInputStatus == false) && (!hb::shared::input::IsAltDown()))
 		{
 			StartInputString(CHAT_INPUT_X(), CHAT_INPUT_Y(), sizeof(m_cChatMsg), m_cChatMsg);
 			ClearInputString();
@@ -7152,13 +7158,13 @@ void CGame::ReserveFightzoneResponseHandler(char* pData)
 		pData, sizeof(hb::net::PacketResponseFightzoneReserve));
 	if (!pkt) return;
 	switch (pkt->header.msg_type) {
-	case DEF_MSGTYPE_CONFIRM:
+	case MsgType::Confirm:
 		AddEventList(RESERVE_FIGHTZONE_RESPONSE_HANDLER1, 10);
 		m_dialogBoxManager.Info(DialogBoxId::GuildMenu).cMode = 14;
 		m_iFightzoneNumber = m_iFightzoneNumberTemp;
 		break;
 
-	case DEF_MSGTYPE_REJECT:
+	case MsgType::Reject:
 		AddEventList(RESERVE_FIGHTZONE_RESPONSE_HANDLER2, 10);
 		m_iFightzoneNumberTemp = 0;
 
@@ -7191,7 +7197,7 @@ void CGame::RetrieveItemHandler(char* pData)
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
-	if (header->msg_type != DEF_MSGTYPE_REJECT)
+	if (header->msg_type != MsgType::Reject)
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseRetrieveItem>(
 			pData, sizeof(hb::net::PacketResponseRetrieveItem));
@@ -7214,7 +7220,7 @@ void CGame::RetrieveItemHandler(char* pData)
 			{
 				if (m_pItemList[cItemIndex] == 0) goto RIH_STEP2;
 				m_pBankList[cBankItemIndex].reset();
-				for (j = 0; j <= hb::limits::MaxBankItems - 2; j++)
+				for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
@@ -7229,7 +7235,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				short nX, nY;
 				nX = 40;
 				nY = 30;
-				for (j = 0; j < hb::limits::MaxItems; j++)
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 				{
 					if ((m_pItemList[j] != 0) && (m_pItemList[j]->m_sIDnum == m_pBankList[cBankItemIndex]->m_sIDnum))
 					{
@@ -7241,9 +7247,9 @@ void CGame::RetrieveItemHandler(char* pData)
 				m_pItemList[cItemIndex] = std::move(m_pBankList[cBankItemIndex]);
 				m_pItemList[cItemIndex]->m_sX = nX;
 				m_pItemList[cItemIndex]->m_sY = nY;
-				bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cItemIndex, nX, nY, 0, 0);
+				bSendCommand(MsgId::RequestSetItemPos, 0, cItemIndex, nX, nY, 0, 0);
 
-				for (j = 0; j < hb::limits::MaxItems; j++)
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (m_cItemOrder[j] == -1)
 					{
 						m_cItemOrder[j] = cItemIndex;
@@ -7252,7 +7258,7 @@ void CGame::RetrieveItemHandler(char* pData)
 				m_bIsItemEquipped[cItemIndex] = false;
 				m_bIsItemDisabled[cItemIndex] = false;
 				// m_pBankList[cBankItemIndex] already moved above
-				for (j = 0; j <= hb::limits::MaxBankItems - 2; j++)
+				for (j = 0; j <= hb::shared::limits::MaxBankItems - 2; j++)
 				{
 					if ((m_pBankList[j + 1] != 0) && (m_pBankList[j] == 0))
 					{
@@ -7287,10 +7293,10 @@ void CGame::EraseItem(char cItemID)
 	if (cItemID == m_sRecentShortCut)
 		m_sRecentShortCut = -1;
 	// ItemOrder
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		if (m_cItemOrder[i] == cItemID)
 			m_cItemOrder[i] = -1;
-	for (i = 1; i < hb::limits::MaxItems; i++)
+	for (i = 1; i < hb::shared::limits::MaxItems; i++)
 		if ((m_cItemOrder[i - 1] == -1) && (m_cItemOrder[i] != -1))
 		{
 			m_cItemOrder[i - 1] = m_cItemOrder[i];
@@ -7302,7 +7308,7 @@ void CGame::EraseItem(char cItemID)
 	m_bIsItemDisabled[cItemID] = false;
 }
 
-void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus& status, short npcConfigId)
+void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const hb::shared::entity::PlayerStatus& status, short npcConfigId)
 {
 	char cTxt[32], cTxt2[64];
 	std::memset(cTxt, 0, sizeof(cTxt));
@@ -7315,7 +7321,7 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	};
 
 	// Crop subtypes override the base "Crop" name from config
-	if (sOwnerType == hb::owner::Crops) {
+	if (sOwnerType == hb::shared::owner::Crops) {
 		static const char* cropNames[] = {
 			"Crop", "WaterMelon", "Pumpkin", "Garlic", "Barley", "Carrot",
 			"Radish", "Corn", "Chinese Bell Flower", "Melone", "Tomato",
@@ -7328,8 +7334,8 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 			std::snprintf(cTxt, sizeof(cTxt), "%s", npcName());
 	}
 	// Crusade structure kit suffix
-	else if ((sOwnerType == hb::owner::ArrowGuardTower || sOwnerType == hb::owner::CannonGuardTower ||
-			  sOwnerType == hb::owner::ManaCollector || sOwnerType == hb::owner::Detector) &&
+	else if ((sOwnerType == hb::shared::owner::ArrowGuardTower || sOwnerType == hb::shared::owner::CannonGuardTower ||
+			  sOwnerType == hb::shared::owner::ManaCollector || sOwnerType == hb::shared::owner::Detector) &&
 			 m_entityState.m_appearance.HasNpcSpecialState()) {
 		std::snprintf(cTxt, sizeof(cTxt), "%s Kit", npcName());
 	}
@@ -7338,22 +7344,22 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	}
 	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
 	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
-	if (m_bIsObserverMode == true) TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
+	if (m_bIsObserverMode == true) hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate));
 	else if (m_pPlayer->m_bIsConfusion || (m_iIlusionOwnerH != 0))
 	{
 		std::memset(cTxt, 0, sizeof(cTxt));
 		std::snprintf(cTxt, sizeof(cTxt), "%s", DRAW_OBJECT_NAME87);//"(Unknown)"
-		TextLib::DrawText(GameFont::Default, sX, sY + 14, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
+		hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled)); // v2.171
 	}
 	else
 	{
 		if (IsHostile(status.iRelationship))
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, TextLib::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME90, hb::shared::text::TextStyle::WithShadow(GameColors::UIRed)); // "(Enemy)"
 		else if (IsFriendly(status.iRelationship))
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, TextLib::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME89, hb::shared::text::TextStyle::WithShadow(GameColors::FriendlyNamePlate)); // "(Friendly)"
 		else
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, TextLib::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, DRAW_OBJECT_NAME88, hb::shared::text::TextStyle::WithShadow(GameColors::NeutralNamePlate)); // "(Neutral)"
 	}
 	switch (status.iAngelPercent) {
 	case 0: break;
@@ -7366,23 +7372,23 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 	case 7: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME58); break;//"Explosive"
 	case 8: std::snprintf(cTxt2, sizeof(cTxt2), "%s", DRAW_OBJECT_NAME59); break;//"Critical Explosive"
 	}
-	TextLib::DrawText(GameFont::Default, sX, sY + 28, cTxt2, TextLib::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY + 28, cTxt2, hb::shared::text::TextStyle::WithShadow(GameColors::MonsterStatusEffect));
 
 	// centu: no muestra la barra de hp de algunos npc
 	switch (sOwnerType) {
-	case hb::owner::ShopKeeper:
-	case hb::owner::Gandalf:
-	case hb::owner::Howard:
-	case hb::owner::Tom:
-	case hb::owner::William:
-	case hb::owner::Kennedy:
-	case hb::owner::ManaStone:
-	case hb::owner::Bunny:
-	case hb::owner::Cat:
-	case hb::owner::McGaffin:
-	case hb::owner::Perry:
-	case hb::owner::Devlin:
-	case hb::owner::Crops:
+	case hb::shared::owner::ShopKeeper:
+	case hb::shared::owner::Gandalf:
+	case hb::shared::owner::Howard:
+	case hb::shared::owner::Tom:
+	case hb::shared::owner::William:
+	case hb::shared::owner::Kennedy:
+	case hb::shared::owner::ManaStone:
+	case hb::shared::owner::Bunny:
+	case hb::shared::owner::Cat:
+	case hb::shared::owner::McGaffin:
+	case hb::shared::owner::Perry:
+	case hb::shared::owner::Devlin:
+	case hb::shared::owner::Crops:
 	{
 		switch (m_entityState.m_appearance.iSubType) {
 		case 1:
@@ -7394,23 +7400,23 @@ void CGame::DrawNpcName(short sX, short sY, short sOwnerType, const PlayerStatus
 		case 7:
 		case 8:
 		case 9:
-		case hb::owner::Slime:
-		case hb::owner::Skeleton:
-		case hb::owner::StoneGolem:
-		case hb::owner::Cyclops:
-		case hb::owner::OrcMage:
+		case hb::shared::owner::Slime:
+		case hb::shared::owner::Skeleton:
+		case hb::shared::owner::StoneGolem:
+		case hb::shared::owner::Cyclops:
+		case hb::shared::owner::OrcMage:
 		default:
 			break;
 		}
 	}
-	case hb::owner::Gail:
+	case hb::shared::owner::Gail:
 		break;
 	default:
 		break;
 	}
 }
 
-void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& status, uint16_t wObjectID)
+void CGame::DrawObjectName(short sX, short sY, char* pName, const hb::shared::entity::PlayerStatus& status, uint16_t wObjectID)
 {
 	char cTxt[64], cTxt2[64];
 	uint8_t sR, sG, sB;
@@ -7437,7 +7443,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		if (m_bIsCrusadeMode == false) std::snprintf(cTxt, sizeof(cTxt), "%s", pName);
 		else
 		{
-			if (!hb::objectid::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", GetNpcConfigName(hb::owner::Barbarian));
+			if (!hb::shared::object_id::IsPlayerID(m_entityState.m_wObjectID)) std::snprintf(cTxt, sizeof(cTxt), "%s", GetNpcConfigName(hb::shared::owner::Barbarian));
 			else
 			{
 				if (relationship == EntityRelationship::Enemy) std::snprintf(cTxt, sizeof(cTxt), "%d", m_entityState.m_wObjectID);
@@ -7446,7 +7452,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		}
 		if (m_iPartyStatus != 0)
 		{
-			for (i = 0; i < hb::limits::MaxPartyMembers; i++)
+			for (i = 0; i < hb::shared::limits::MaxPartyMembers; i++)
 			{
 				if (strcmp(m_stPartyMemberNameList[i].cName, pName) == 0)
 				{
@@ -7461,7 +7467,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 	if (status.bBerserk) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME50);//" Berserk"
 	if (status.bFrozen) std::snprintf(cTxt + strlen(cTxt), sizeof(cTxt) - strlen(cTxt), "%s", DRAW_OBJECT_NAME51);//" Frozen"
 
-	TextLib::DrawText(GameFont::Default, sX, sY, cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY, cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 	std::memset(cTxt, 0, sizeof(cTxt));
 
 	if (wObjectID == m_pPlayer->m_sPlayerObjectID)
@@ -7469,13 +7475,13 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 		if (m_pPlayer->m_iGuildRank == 0)
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_pPlayer->m_cGuildName);//" Guildmaster)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iGuildRank > 0)
 		{
 			std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_pPlayer->m_cGuildName);//" Guildsman)"
-			TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
+			hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 			iAddY = 14;
 		}
 		if (m_pPlayer->m_iPKCount != 0)
@@ -7509,14 +7515,14 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 						if (m_stGuildName[iGuildIndex].iGuildRank == 0)
 						{
 							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDMASTER, m_stGuildName[iGuildIndex].cGuildName);//
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
 						else if (m_stGuildName[iGuildIndex].iGuildRank > 0)
 						{
 							std::snprintf(G_cTxt, sizeof(G_cTxt), DEF_MSG_GUILDSMAN, m_stGuildName[iGuildIndex].cGuildName);//"
-							TextLib::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, TextLib::TextStyle::WithShadow(GameColors::InfoGrayLight));
+							hb::shared::text::DrawText(GameFont::Default, sX, sY + 14, G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::InfoGrayLight));
 							m_stGuildName[iGuildIndex].dwRefTime = m_dwCurTime;
 							iAddY = 14;
 						}
@@ -7527,7 +7533,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 					}
 				}
 			}
-			else bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQGUILDNAME, 0, m_entityState.m_wObjectID, iGuildIndex, 0, 0);
+			else bSendCommand(MsgId::CommandCommon, CommonType::ReqGuildName, 0, m_entityState.m_wObjectID, iGuildIndex, 0, 0);
 		}
 	}
 
@@ -7554,7 +7560,7 @@ void CGame::DrawObjectName(short sX, short sY, char* pName, const PlayerStatus& 
 			else std::snprintf(cTxt, sizeof(cTxt), "%s", DEF_MSG_ELVPK);  // "Elvine Criminal"
 		}
 	}
-	TextLib::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, TextLib::TextStyle::WithShadow(Color(sR, sG, sB)));
+	hb::shared::text::DrawText(GameFont::Default, sX, sY + 14 + iAddY, cTxt, hb::shared::text::TextStyle::WithShadow(hb::shared::render::Color(sR, sG, sB)));
 }
 
 bool CGame::FindGuildName(char* pName, int* ipIndex)
@@ -7590,7 +7596,7 @@ bool CGame::FindGuildName(char* pName, int* ipIndex)
 void CGame::DrawVersion()
 {
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "Ver: %s", hb::version::GetDisplayString());
-	TextLib::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, TextLib::TextStyle::WithShadow(GameColors::UIDisabled));
+	hb::shared::text::DrawText(GameFont::Default, 12 , (LOGICAL_HEIGHT() - 12 - 14) , G_cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIDisabled));
 }
 
 char CGame::GetOfficialMapName(char* pMapName, char* pName)
@@ -8042,7 +8048,7 @@ void CGame::ClearSkillUsingStatus()
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Fishing);
 		m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 		if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/) {
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		}
 	}
@@ -8051,7 +8057,7 @@ void CGame::ClearSkillUsingStatus()
 
 void CGame::NpcTalkHandler(char* pData)
 {
-	char cRewardName[DEF_ITEMNAME], cTargetName[21], cTemp[21], cTxt[250];
+	char cRewardName[hb::shared::limits::ItemNameLen], cTargetName[21], cTemp[21], cTxt[250];
 	short sType, sResponse;
 	int iAmount, iIndex, iContribution, iX, iY, iRange;
 	int iTargetType, iTargetCount, iQuestionType;
@@ -8071,7 +8077,7 @@ void CGame::NpcTalkHandler(char* pData)
 	iRange = pkt->range;
 
 	std::memset(cRewardName, 0, sizeof(cRewardName));
-	memcpy(cRewardName, pkt->reward_name, DEF_ITEMNAME - 1);
+	memcpy(cRewardName, pkt->reward_name, hb::shared::limits::ItemNameLen - 1);
 	std::memset(cTargetName, 0, sizeof(cTargetName));
 	memcpy(cTargetName, pkt->target_name, 20);
 
@@ -8086,7 +8092,7 @@ void CGame::NpcTalkHandler(char* pData)
 		switch (sType) {
 		case 1: //Monster Hunt
 			std::memset(cTemp, 0, sizeof(cTemp));
-			std::snprintf(cTemp, DEF_NPCNAME, "%s", GetNpcConfigName(iTargetType));
+			std::snprintf(cTemp, hb::shared::limits::NpcNameLen, "%s", GetNpcConfigName(iTargetType));
 			std::memset(cTxt, 0, sizeof(cTxt));
 			std::snprintf(cTxt, sizeof(cTxt), NPC_TALK_HANDLER16, iTargetCount, cTemp);
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, cTxt, 0);
@@ -8153,7 +8159,7 @@ void CGame::NpcTalkHandler(char* pData)
 			iQuestionType = 1;
 			break;
 
-		case hb::owner::Slime: // Crusade
+		case hb::shared::owner::Slime: // Crusade
 			std::memset(cTxt, 0, sizeof(cTxt));
 			m_pMsgTextList2[iIndex] = std::make_unique<CMsg>(0, NPC_TALK_HANDLER26, 0);
 			iIndex++;
@@ -8239,11 +8245,11 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 		{
 			targetObjectID = focused.objectID;
 		}
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_MAGIC, 0, indexX, indexY, m_iPointCommandType, nullptr, targetObjectID);
+		bSendCommand(MsgId::CommandCommon, CommonType::Magic, 0, indexX, indexY, m_iPointCommandType, nullptr, targetObjectID);
 	}
 	else if ((m_iPointCommandType >= 0) && (m_iPointCommandType < 50))
 	{
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, m_iPointCommandType, indexX, indexY, cTemp, cItemID); // v1.4
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, m_iPointCommandType, indexX, indexY, cTemp, cItemID); // v1.4
 
 		CItem* pCfgPt = GetItemConfig(m_pItemList[m_iPointCommandType]->m_sIDnum);
 		if (pCfgPt && pCfgPt->GetItemType() == ItemType::UseSkill)
@@ -8263,7 +8269,7 @@ void CGame::PointCommandHandler(int indexX, int indexY, char cItemID)
 			PlayGameSound('E', 14, 5);
 			std::memset(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, 0, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr));
 			std::snprintf(m_dialogBoxManager.Info(DialogBoxId::Party).cStr, sizeof(m_dialogBoxManager.Info(DialogBoxId::Party).cStr), "%s", m_cMCName);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_JOINPARTY, 0, 1, 0, 0, m_cMCName);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestJoinParty, 0, 1, 0, 0, m_cMCName);
 			return;
 		}
 	}
@@ -8331,23 +8337,23 @@ void CGame::MotionResponseHandler(char* pData)
 	char cDir;
 	int iPreHP;
 	//						          0 3        4 5						 6 7		8 9		   10	    11
-	// Confirm Code(4) | MsgSize(4) | MsgID(4) | DEF_OBJECTMOVE_CONFIRM(2) | Loc-X(2) | Loc-Y(2) | Dir(1) | MapData ...
-	// Confirm Code(4) | MsgSize(4) | MsgID(4) | DEF_OBJECTMOVE_REJECT(2)  | Loc-X(2) | Loc-Y(2)
+	// Confirm Code(4) | MsgSize(4) | MsgID(4) | Confirm::MoveConfirm(2) | Loc-X(2) | Loc-Y(2) | Dir(1) | MapData ...
+	// Confirm Code(4) | MsgSize(4) | MsgID(4) | Confirm::MoveReject(2)  | Loc-X(2) | Loc-Y(2)
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(
 		pData, sizeof(hb::net::PacketHeader));
 	if (!header) return;
 	wResponse = header->msg_type;
 
 	switch (wResponse) {
-	case DEF_OBJECTMOTION_CONFIRM:
+	case Confirm::MotionConfirm:
 		m_pPlayer->m_Controller.DecrementCommandCount();
 		break;
 
-	case DEF_OBJECTMOTION_ATTACK_CONFIRM:
+	case Confirm::MotionAttackConfirm:
 		m_pPlayer->m_Controller.DecrementCommandCount();
 		break;
 
-	case DEF_OBJECTMOTION_REJECT:
+	case Confirm::MotionReject:
 		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionReject>(
@@ -8357,19 +8363,19 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_sPlayerY = pkt->y;
 		}
 
-		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		m_pPlayer->m_Controller.SetCommand(Type::Stop);
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance,
 			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			DEF_OBJECTSTOP, 0, 0, 0);
+			Type::Stop, 0, 0, 0);
 		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
 		m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
 		break;
 
-	case DEF_OBJECTMOVE_CONFIRM:
+	case Confirm::MoveConfirm:
 	{
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveConfirm>(
 			pData, sizeof(hb::net::PacketResponseMotionMoveConfirm));
@@ -8410,7 +8416,7 @@ void CGame::MotionResponseHandler(char* pData)
 	}
 	break;
 
-	case DEF_OBJECTMOVE_REJECT:
+	case Confirm::MoveReject:
 		if (m_pPlayer->m_iHP <= 0) return;
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketResponseMotionMoveReject>(
@@ -8425,12 +8431,12 @@ void CGame::MotionResponseHandler(char* pData)
 			m_pPlayer->m_playerStatus = pkt->status;
 			m_pPlayer->m_bIsGMMode = m_pPlayer->m_playerStatus.bGMMode;
 		}
-		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		m_pPlayer->m_Controller.SetCommand(Type::Stop);
 		m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance, // v1.4
 			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			DEF_OBJECTSTOP, 0, 0, 0,
+			Type::Stop, 0, 0, 0,
 			0, 7);
 		m_pPlayer->m_Controller.ResetCommandCount();
 		m_bIsGetPointingMode = false;
@@ -8457,7 +8463,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 {
 	char   cDir, absX, absY, cName[12];
 	short  sX, sY, sObjectType, tX, tY;
-	PlayerStatus iObjectStatus;
+	hb::shared::entity::PlayerStatus iObjectStatus;
 	int    iRet;
 	uint32_t dwTime = GameClock::GetTimeMS();
 	uint16_t wType = 0;
@@ -8466,28 +8472,28 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	char  pDstName[21];
 	short sDstOwnerType;
-	PlayerStatus iDstOwnerStatus;
+	hb::shared::entity::PlayerStatus iDstOwnerStatus;
 
 	bool  bGORet;
 	// Fixed by Snoopy
 	if ((m_bIsObserverCommanded == false) && (m_bIsObserverMode == true))
 	{
 		if ((msX == 0) && (msY == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 8, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 8, 0, 0, 0, 0);
 		else if ((msX == LOGICAL_MAX_X()) && (msY == 0) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 2, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 2, 0, 0, 0, 0);
 		else if ((msX == LOGICAL_MAX_X()) && (msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 4, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 4, 0, 0, 0, 0);
 		else if ((msX == 0) && (msY == LOGICAL_MAX_Y()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 6, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 6, 0, 0, 0, 0);
 		else if ((msX == 0) && (m_Camera.GetDestinationX() > 32 * VIEW_TILE_WIDTH()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 7, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 7, 0, 0, 0, 0);
 		else if ((msX == LOGICAL_MAX_X()) && (m_Camera.GetDestinationX() < 32 * m_pMapData->m_sMapSizeX - 32 * VIEW_TILE_WIDTH()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 3, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 3, 0, 0, 0, 0);
 		else if ((msY == 0) && (m_Camera.GetDestinationY() > 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 1, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 1, 0, 0, 0, 0);
 		else if ((msY == LOGICAL_MAX_Y()) && (m_Camera.GetDestinationY() < 32 * m_pMapData->m_sMapSizeY - 32 * VIEW_TILE_HEIGHT()))
-			bSendCommand(MSGID_REQUEST_PANNING, 0, 5, 0, 0, 0, 0);
+			bSendCommand(MsgId::RequestPanning, 0, 5, 0, 0, 0, 0);
 		else return;
 
 		m_bIsObserverCommanded = true;
@@ -8497,7 +8503,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 
 	if (m_bIsObserverMode == true) return;
 
-	if (Input::IsAltDown()) // [ALT]
+	if (hb::shared::input::IsAltDown()) // [ALT]
 		m_pPlayer->m_bSuperAttackMode = true;
 	else m_pPlayer->m_bSuperAttackMode = false;
 
@@ -8622,7 +8628,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 				}
 				return;
 			}
-			if ((m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE) || (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) goto MOTION_COMMAND_PROCESS;
 			return;
 		}
 		break;
@@ -8641,7 +8647,7 @@ void CGame::CommandProcessor(short msX, short msY, short indexX, short indexY, c
 			}
 			CursorTarget::SetPrevPosition(msX, msY);
 
-			if ((m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE) || (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)) goto MOTION_COMMAND_PROCESS;
+			if ((m_pPlayer->m_Controller.GetCommand() == Type::Move) || (m_pPlayer->m_Controller.GetCommand() == Type::Run)) goto MOTION_COMMAND_PROCESS;
 			return;
 		}
 		if (cLB == 0) {
@@ -8714,7 +8720,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 	if (m_pPlayer->m_Controller.IsCommandAvailable() == false)
 	{
 		char cmd = m_pPlayer->m_Controller.GetCommand();
-		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == DEF_OBJECTMOVE || cmd == DEF_OBJECTRUN))
+		if (ConfigManager::Get().IsQuickActionsEnabled() && (cmd == Type::Move || cmd == Type::Run))
 		{
 			if (cLB != 0)
 			{
@@ -8723,7 +8729,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
-						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+						m_pPlayer->m_Controller.SetCommand(Type::GetItem);
 						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 						return;
 					}
@@ -8738,7 +8744,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				{
 					if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 					{
-						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+						m_pPlayer->m_Controller.SetCommand(Type::GetItem);
 						m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 						return;
 					}
@@ -8750,7 +8756,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if (pendingDir != 0) m_pPlayer->m_Controller.SetPendingStopDir(pendingDir);
 			}
 		}
-		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == DEF_OBJECTSTOP && !m_bIsGetPointingMode)
+		else if (ConfigManager::Get().IsQuickActionsEnabled() && cRB != 0 && cmd == Type::Stop && !m_bIsGetPointingMode)
 		{
 			// Right click while stopped (and not casting): process turn immediately
 			// But don't interrupt attack/magic animations — the controller command is STOP
@@ -8759,17 +8765,17 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			int dYc = m_pPlayer->m_sPlayerY - m_pMapData->m_sPivotY;
 			if (dXc >= 0 && dXc < MAPDATASIZEX && dYc >= 0 && dYc < MAPDATASIZEY) {
 				int8_t animAction = m_pMapData->m_pData[dXc][dYc].m_animation.cAction;
-				if (animAction == DEF_OBJECTATTACK || animAction == DEF_OBJECTATTACKMOVE || animAction == DEF_OBJECTMAGIC)
+				if (animAction == Type::Attack || animAction == Type::AttackMove || animAction == Type::Magic)
 					return;
 			}
 			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, indexX, indexY);
 			if (cDir != 0 && m_pPlayer->m_iPlayerDir != cDir)
 			{
 				m_pPlayer->m_iPlayerDir = cDir;
-				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, cDir, 0, 0, 0, 0);
+				bSendCommand(MsgId::CommandMotion, Type::Stop, cDir, 0, 0, 0, 0);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
 					m_pPlayer->m_sPlayerType, cDir, m_pPlayer->m_playerAppearance,
-					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0, 0, 10);
+					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0, 0, 10);
 				m_pPlayer->m_Controller.SetCommandTime(dwTime);
 			}
 		}
@@ -8789,7 +8795,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 	if (m_pPlayer->m_sDamageMove != 0)
 	{
-		m_pPlayer->m_Controller.SetCommand(DEF_OBJECTDAMAGEMOVE);
+		m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
 		goto MOTION_COMMAND_PROCESS;
 	}
 
@@ -8822,7 +8828,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 		 //if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 && sObjectType <= 6){
 			if ((m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6)/* && (!m_pPlayer->m_playerAppearance.bIsWalking)*/)
 			{
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+				m_pPlayer->m_Controller.SetCommand(Type::GetItem);
 				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 			}
 		}
@@ -8831,7 +8837,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			if (memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0) m_sMCY -= 1;
 			if ((m_sMCX != 0) && (m_sMCY != 0)) // m_sMCX, m_sMCY
 			{
-				if (Input::IsCtrlDown() == true)
+				if (hb::shared::input::IsCtrlDown() == true)
 				{
 					m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 					if (iObjectStatus.bInvisibility) return;
@@ -8841,21 +8847,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					if ((absX <= 1) && (absY <= 1))
 					{
 						wType = _iGetAttackType();
-						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 						&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 					{
 						wType = _iGetAttackType();
-						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 					}
 					else // Pas au corp � corp
 					{
 						switch (_iGetWeaponSkillType()) {
 						case 6: // Bow
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 							break;
@@ -8864,33 +8870,33 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 7: // SS
 							if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 							{
-								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 								{
 									if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 									{
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else
 								{
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							else
 							{
-								if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+								if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 									&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);	// Staminar
-								else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+									m_pPlayer->m_Controller.SetCommand(Type::Run);	// Staminar
+								else m_pPlayer->m_Controller.SetCommand(Type::Move);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 							}
@@ -8901,21 +8907,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								&& (_iGetAttackType() != 30)) // Crit without StormBlade
 							{
 								wType = _iGetAttackType();
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 								&& (_iGetAttackType() == 30))  // Crit with StormBlade (by Snoopy)
 							{
 								wType = _iGetAttackType();
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 3) && (absY <= 3)
 								&& (_iGetAttackType() == 5))  // Normal hit with StormBlade (by Snoopy)
 							{
 								wType = _iGetAttackType();
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Swing
@@ -8923,33 +8929,33 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))
 									&& (_iGetAttackType() != 5)) // no Dash possible with StormBlade
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
 										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											wType = _iGetAttackType();
 										}
 										else
 										{
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
 											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
@@ -8959,44 +8965,44 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						case 9: // Fencing
 							if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
 							{
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
 											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
 
-						case hb::owner::Slime: // Axe
+						case hb::shared::owner::Slime: // Axe
 							if ((absX <= 2) && (absY <= 2) && CanSuperAttack())
 							{
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
@@ -9004,103 +9010,103 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							{
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0)))
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
 									{
 										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100)
 										{
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											wType = _iGetAttackType();
 										}
 										else
 										{
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
 											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else
 									{
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else
 								{
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
-						case hb::owner::OrcMage: // Hammer
+						case hb::shared::owner::OrcMage: // Hammer
 							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
 											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
 							}
 							break;
-						case hb::owner::Guard: // Wand
+						case hb::shared::owner::Guard: // Wand
 							if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 							}
 							else {
 								if (((absX == 2) && (absY == 2)) || ((absX == 0) && (absY == 2)) || ((absX == 2) && (absY == 0))) {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)) {
 										if (m_pPlayer->m_iSkillMastery[_iGetWeaponSkillType()] == 100) {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
 											wType = _iGetAttackType();
 										}
 										else {
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
 											m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 										}
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									}
 									else {
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 								}
 								else {
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 										(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 								}
@@ -9115,7 +9121,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 					if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6)))
 					{
 						switch (sObjectType) { 	// CLEROTH - NPC TALK
-						case hb::owner::ShopKeeper: // ShopKeeper-W�
+						case hb::shared::owner::ShopKeeper: // ShopKeeper-W�
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 1);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9128,7 +9134,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 15;
 							break;
 
-						case hb::owner::Gandalf: // Gandlf
+						case hb::shared::owner::Gandalf: // Gandlf
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 16, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9141,7 +9147,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 19;
 							break;
 
-						case hb::owner::Howard: // Howard
+						case hb::shared::owner::Howard: // Howard
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 14, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9158,7 +9164,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
 							break;
 
-						case hb::owner::Tom: // Tom
+						case hb::shared::owner::Tom: // Tom
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 5, 11, 2);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9175,7 +9181,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV6 = m_sMCY;
 							break;
 
-						case hb::owner::William: // William
+						case hb::shared::owner::William: // William
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 13, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9188,7 +9194,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 25;
 							break;
 
-						case hb::owner::Kennedy: // Kennedy
+						case hb::shared::owner::Kennedy: // Kennedy
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 0, 7, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9201,7 +9207,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 26;
 							break;
 
-						case hb::owner::Guard: // Guard
+						case hb::shared::owner::Guard: // Guard
 							if (!IsHostile(iObjectStatus.iRelationship) && (!m_pPlayer->m_bIsCombatMode))
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -9216,9 +9222,9 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								m_dialogBoxManager.Info(DialogBoxId::NpcActionQuery).sV3 = 21;
 							}
 							break;
-						case hb::owner::McGaffin: // McGaffin
-						case hb::owner::Perry: // Perry
-						case hb::owner::Devlin: // Devlin
+						case hb::shared::owner::McGaffin: // McGaffin
+						case hb::shared::owner::Perry: // Perry
+						case hb::shared::owner::Devlin: // Devlin
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -9234,7 +9240,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 
-						case hb::owner::Unicorn: // Unicorn
+						case hb::shared::owner::Unicorn: // Unicorn
 							if (!m_pPlayer->m_bIsCombatMode)
 							{
 								m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 4, 0, 0);
@@ -9250,7 +9256,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							}
 							break;
 
-						case hb::owner::Gail: // Snoopy: Gail
+						case hb::shared::owner::Gail: // Snoopy: Gail
 							m_dialogBoxManager.EnableDialogBox(DialogBoxId::NpcActionQuery, 6, 0, 0);
 							tX = msX - 117;
 							tY = msY - 50;
@@ -9271,31 +9277,31 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							if ((absX <= 1) && (absY <= 1))
 							{
 								wType = _iGetAttackType();
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 								&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 							{
 								wType = _iGetAttackType();
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							}
 							else // Normal hit from a range.
 							{
 								switch (_iGetWeaponSkillType()) {
 								case 6: // Bow
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 									break;
 
 								case 5: // Boxe
 								case 7: // SS
-									if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
+									if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0)
 										&& (m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-									else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+										m_pPlayer->m_Controller.SetCommand(Type::Run);
+									else m_pPlayer->m_Controller.SetCommand(Type::Move);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									break;
@@ -9304,34 +9310,34 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									if ((absX <= 3) && (absY <= 3) && CanSuperAttack()
 										&& (_iGetAttackType() != 30)) // Crit without StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 										&& (_iGetAttackType() == 30)) // Crit with StormBlade by Snoopy
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else if ((absX <= 3) && (absY <= 3)
 										&& (_iGetAttackType() == 5)) // Normal hit with StormBlade by Snoopy
 									{
-										m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
+										else m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
@@ -9340,70 +9346,70 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 								case 9: // Fencing
 									if ((absX <= 4) && (absY <= 4) && CanSuperAttack())
 									{
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else
 									{
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
+										else m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
 
-								case hb::owner::Slime: //
+								case hb::shared::owner::Slime: //
 									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
+										else m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
-								case hb::owner::OrcMage: //
+								case hb::shared::owner::OrcMage: //
 									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
+										else m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
 									break;
-								case hb::owner::Guard: //
+								case hb::shared::owner::Guard: //
 									if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-										if ((absX <= 1) && (absY <= 1) && (Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACKMOVE);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+										if ((absX <= 1) && (absY <= 1) && (hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0))
+											m_pPlayer->m_Controller.SetCommand(Type::AttackMove);
+										else m_pPlayer->m_Controller.SetCommand(Type::Attack);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										wType = _iGetAttackType();
 									}
 									else {
-										if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+										if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 											(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-											m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-										else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+											m_pPlayer->m_Controller.SetCommand(Type::Run);
+										else m_pPlayer->m_Controller.SetCommand(Type::Move);
 										m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 										m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 									}
@@ -9414,10 +9420,10 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						}
 					}
 					else {
-						if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+						if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 							(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-						else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+							m_pPlayer->m_Controller.SetCommand(Type::Run);
+						else m_pPlayer->m_Controller.SetCommand(Type::Move);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 					}
@@ -9425,10 +9431,10 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			}
 			else
 			{
-				if ((Input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
+				if ((hb::shared::input::IsShiftDown() || ConfigManager::Get().IsRunningModeEnabled()) && (m_pPlayer->m_iSP > 0) &&
 					(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
-					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
-				else m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+					m_pPlayer->m_Controller.SetCommand(Type::Run);
+				else m_pPlayer->m_Controller.SetCommand(Type::Move);
 				m_pPlayer->m_Controller.SetDestination(indexX, indexY);
 				m_pPlayer->m_Controller.CalculatePlayerTurn(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pMapData.get());
 			}
@@ -9441,14 +9447,14 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			memcmp(m_cMCName, m_pPlayer->m_cPlayerName, 10) == 0 &&
 			(m_pPlayer->m_sPlayerType >= 1) && (m_pPlayer->m_sPlayerType <= 6))
 		{
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTGETITEM);
+			m_pPlayer->m_Controller.SetCommand(Type::GetItem);
 			m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 			goto MOTION_COMMAND_PROCESS;
 		}
 		else
 		{
 			// Original right click behavior (stop, turn, attack, etc.)
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			if (m_bIsGetPointingMode == true)
 			{
 				m_bIsGetPointingMode = false;
@@ -9463,7 +9469,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				absY = abs(m_pPlayer->m_sPlayerY - m_sMCY);
 				if (absX == 0 && absY == 0) return;
 
-			if (Input::IsCtrlDown() == true)
+			if (hb::shared::input::IsCtrlDown() == true)
 			{
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if (iObjectStatus.bInvisibility) return;
@@ -9472,21 +9478,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				if ((absX <= 1) && (absY <= 1))
 				{
 					wType = _iGetAttackType();
-					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 					&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 				{
 					wType = _iGetAttackType();
-					m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+					m_pPlayer->m_Controller.SetCommand(Type::Attack);
 					m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 				}
 				else
 				{
 					switch (_iGetWeaponSkillType()) {
 					case 6: // Bow
-						m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+						m_pPlayer->m_Controller.SetCommand(Type::Attack);
 						m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						wType = _iGetAttackType();
 						break;
@@ -9500,51 +9506,51 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 							&& (_iGetAttackType() != 30)) // without StormBlade by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 							&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 3) && (absY <= 3)
 							&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
 						{
 							wType = _iGetAttackType();
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						break;
 
 					case 9: // Fencing
 						if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 
-					case hb::owner::Slime: //
+					case hb::shared::owner::Slime: //
 						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
 
-					case hb::owner::OrcMage: //
+					case hb::shared::owner::OrcMage: //
 						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
 						break;
-					case hb::owner::Guard: //
+					case hb::shared::owner::Guard: //
 						if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 							wType = _iGetAttackType();
 						}
@@ -9559,12 +9565,12 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 				m_pMapData->bGetOwner(m_sMCX, m_sMCY, cName, &sObjectType, &iObjectStatus, &m_wCommObjectID);
 				if (sObjectType >= 10 || ((sObjectType >= 1) && (sObjectType <= 6))) {
 					switch (sObjectType) {
-					case hb::owner::ShopKeeper:
-					case hb::owner::Gandalf:
-					case hb::owner::Howard:
-					case hb::owner::Tom:
-					case hb::owner::William:
-					case hb::owner::Kennedy: // npcs
+					case hb::shared::owner::ShopKeeper:
+					case hb::shared::owner::Gandalf:
+					case hb::shared::owner::Howard:
+					case hb::shared::owner::Tom:
+					case hb::shared::owner::William:
+					case hb::shared::owner::Kennedy: // npcs
 						break;
 
 					default: // All "normal mobs"
@@ -9573,21 +9579,21 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 						if ((absX <= 1) && (absY <= 1))
 						{
 							wType = _iGetAttackType();
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else if ((absX <= 2) && (absY <= 2) // strike on Big mobs & gate from a range
 							&& ((sObjectType == 66) || (sObjectType == 73) || (sObjectType == 81) || (sObjectType == 91)))
 						{
 							wType = _iGetAttackType();
-							m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+							m_pPlayer->m_Controller.SetCommand(Type::Attack);
 							m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 						}
 						else //
 						{
 							switch (_iGetWeaponSkillType()) {
 							case 6: // Bow
-								m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+								m_pPlayer->m_Controller.SetCommand(Type::Attack);
 								m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								wType = _iGetAttackType();
 								break;
@@ -9601,50 +9607,50 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 									&& (_iGetAttackType() != 30)) // crit without StormBlade by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else if ((absX <= 5) && (absY <= 5) && CanSuperAttack()
 									&& (_iGetAttackType() == 30)) // with stormBlade crit by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								else if ((absX <= 3) && (absY <= 3)
 									&& (_iGetAttackType() == 5)) // with stormBlade no crit by Snoopy
 								{
 									wType = _iGetAttackType();
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 								}
 								break;
 
 							case 9: // fencing
 								if ((absX <= 4) && (absY <= 4) && CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
 
-							case hb::owner::Slime: //
+							case hb::shared::owner::Slime: //
 								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
-							case hb::owner::OrcMage: // hammer
+							case hb::shared::owner::OrcMage: // hammer
 								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
 								break;
-							case hb::owner::Guard: // wand
+							case hb::shared::owner::Guard: // wand
 								if ((absX <= 2) && (absY <= 2) && CanSuperAttack()) {
-									m_pPlayer->m_Controller.SetCommand(DEF_OBJECTATTACK);
+									m_pPlayer->m_Controller.SetCommand(Type::Attack);
 									m_pPlayer->m_Controller.SetDestination(m_sMCX, m_sMCY);
 									wType = _iGetAttackType();
 								}
@@ -9664,7 +9670,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 			if (m_pPlayer->m_iPlayerDir == cDir) return;
 			ClearSkillUsingStatus();
 			m_pPlayer->m_iPlayerDir = cDir;
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandMotion, Type::Stop, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
@@ -9680,7 +9686,7 @@ CP_SKIPMOUSEBUTTONSTATUS:;
 
 MOTION_COMMAND_PROCESS:;
 
-	if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTSTOP)
+	if (m_pPlayer->m_Controller.GetCommand() != Type::Stop)
 	{
 		if (m_pPlayer->m_iHP <= 0) return;
 		if (m_pPlayer->m_Controller.GetCommandCount() == 5) AddEventList(COMMAND_PROCESSOR2, 10, false);
@@ -9690,10 +9696,10 @@ MOTION_COMMAND_PROCESS:;
 		if ((m_pPlayer->m_sPlayerType >= 0) && (m_pPlayer->m_sPlayerType > 6))
 		{
 			switch (m_pPlayer->m_Controller.GetCommand()) {
-			case DEF_OBJECTRUN:
-			case DEF_OBJECTMAGIC:
-			case DEF_OBJECTGETITEM:
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			case Type::Run:
+			case Type::Magic:
+			case Type::GetItem:
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 				break;
 			}
 		}
@@ -9704,7 +9710,7 @@ MOTION_COMMAND_PROCESS:;
 		{
 			if (m_pPlayer->m_sDamageMove != 0)
 			{
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTDAMAGEMOVE);
+				m_pPlayer->m_Controller.SetCommand(Type::DamageMove);
 				m_pPlayer->m_Controller.SetDestination(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 
 				// mim crit fixed by kaozures tocado para ande bien by cloud :P
@@ -9741,49 +9747,49 @@ MOTION_COMMAND_PROCESS:;
 		}
 
 		switch (m_pPlayer->m_Controller.GetCommand()) {
-		case DEF_OBJECTRUN:
-		case DEF_OBJECTMOVE:
-		case DEF_OBJECTDAMAGEMOVE: // v1.43
+		case Type::Run:
+		case Type::Move:
+		case Type::DamageMove: // v1.43
 
 			if (m_pPlayer->m_bParalyze) return;
 			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID); // v1.4
 
 			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
 			{
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 				// Apply pending stop direction if set (from right-click while moving)
 				char pendingDir = m_pPlayer->m_Controller.GetPendingStopDir();
 				if (pendingDir != 0)
 				{
 					m_pPlayer->m_iPlayerDir = pendingDir;
-					bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTSTOP, pendingDir, 0, 0, 0, 0);
+					bSendCommand(MsgId::CommandMotion, Type::Stop, pendingDir, 0, 0, 0, 0);
 					m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY,
 						m_pPlayer->m_sPlayerType, pendingDir, m_pPlayer->m_playerAppearance,
-						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0, 0, 10);
+						m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0, 0, 10);
 					m_pPlayer->m_Controller.ClearPendingStopDir();
 				}
 			}
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
 				(bGORet == true) && (sDstOwnerType != 0))
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 2) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 2) &&
 				(m_pMapData->m_tile[m_pPlayer->m_Controller.GetDestinationX()][m_pPlayer->m_Controller.GetDestinationY()].m_bIsMoveAllowed == false))
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else
 			{
-				if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMOVE)
+				if (m_pPlayer->m_Controller.GetCommand() == Type::Move)
 				{
-					if (ConfigManager::Get().IsRunningModeEnabled() || Input::IsShiftDown()) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTRUN);
+					if (ConfigManager::Get().IsRunningModeEnabled() || hb::shared::input::IsShiftDown()) m_pPlayer->m_Controller.SetCommand(Type::Run);
 				}
-				if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTRUN)
+				if (m_pPlayer->m_Controller.GetCommand() == Type::Run)
 				{
-					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (Input::IsShiftDown() == false)) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
-					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMOVE);
+					if ((ConfigManager::Get().IsRunningModeEnabled() == false) && (hb::shared::input::IsShiftDown() == false)) m_pPlayer->m_Controller.SetCommand(Type::Move);
+					if (m_pPlayer->m_iSP < 1) m_pPlayer->m_Controller.SetCommand(Type::Move);
 				}
 
 				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
 				// Snoopy: Illusion Movement
-				if ((m_bIllusionMVT == true) && (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTDAMAGEMOVE))
+				if ((m_bIllusionMVT == true) && (m_pPlayer->m_Controller.GetCommand() != Type::DamageMove))
 				{
 					cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true, true);
 				}
@@ -9797,7 +9803,7 @@ MOTION_COMMAND_PROCESS:;
 					}
 
 					m_pPlayer->m_iPlayerDir = cDir;
-					bSendCommand(MSGID_COMMAND_MOTION, m_pPlayer->m_Controller.GetCommand(), cDir, 0, 0, 0, 0);
+					bSendCommand(MsgId::CommandMotion, m_pPlayer->m_Controller.GetCommand(), cDir, 0, 0, 0, 0);
 					switch (cDir) {
 					case 1:	m_pPlayer->m_sPlayerY--; break;
 					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
@@ -9818,16 +9824,16 @@ MOTION_COMMAND_PROCESS:;
 				}
 			}
 
-			if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTDAMAGEMOVE)
+			if (m_pPlayer->m_Controller.GetCommand() == Type::DamageMove)
 			{
 				m_bIsGetPointingMode = false;
 				m_iPointCommandType = -1;
 				ClearSkillUsingStatus();
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			}
 			break;
 
-		case DEF_OBJECTATTACK:
+		case Type::Attack:
 			cDir = CMisc::cGetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY());
 			// Snoopy: Illusion movement
 			if (m_bIllusionMVT == true)
@@ -9851,11 +9857,11 @@ MOTION_COMMAND_PROCESS:;
 				}
 					m_pPlayer->m_iPlayerDir = cDir;
 				m_wLastAttackTargetID = m_wCommObjectID;
-				bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACK, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
+				bSendCommand(MsgId::CommandMotion, Type::Attack, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 				m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 					m_pPlayer->m_playerAppearance,
 					m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-					DEF_OBJECTATTACK,
+					Type::Attack,
 					m_pPlayer->m_Controller.GetDestinationX() - m_pPlayer->m_sPlayerX, m_pPlayer->m_Controller.GetDestinationY() - m_pPlayer->m_sPlayerY, wType);
 				m_pPlayer->m_Controller.SetCommandAvailable(false);
 				m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
@@ -9871,17 +9877,17 @@ MOTION_COMMAND_PROCESS:;
 					m_pPlayer->m_Controller.SetAttackEndTime(GameClock::GetTimeMS() + expectedSwingTime);
 				}
 			}
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			break;
 
-		case DEF_OBJECTATTACKMOVE:
+		case Type::AttackMove:
 			if (m_pPlayer->m_bParalyze) return;
 			bGORet = m_pMapData->bGetOwner(m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), pDstName, &sDstOwnerType, &iDstOwnerStatus, &m_wCommObjectID);
 			if ((m_pPlayer->m_sPlayerX == m_pPlayer->m_Controller.GetDestinationX()) && (m_pPlayer->m_sPlayerY == m_pPlayer->m_Controller.GetDestinationY()))
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else if ((abs(m_pPlayer->m_sPlayerX - m_pPlayer->m_Controller.GetDestinationX()) <= 1) && (abs(m_pPlayer->m_sPlayerY - m_pPlayer->m_Controller.GetDestinationY()) <= 1) &&
 				(bGORet == true) && (sDstOwnerType != 0))
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			else
 			{
 				cDir = m_pPlayer->m_Controller.GetNextMoveDir(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), m_pMapData.get(), true);
@@ -9901,7 +9907,7 @@ MOTION_COMMAND_PROCESS:;
 
 					m_pPlayer->m_iPlayerDir = cDir;
 					m_wLastAttackTargetID = m_wCommObjectID;
-					bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTATTACKMOVE, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
+					bSendCommand(MsgId::CommandMotion, Type::AttackMove, cDir, m_pPlayer->m_Controller.GetDestinationX(), m_pPlayer->m_Controller.GetDestinationY(), wType, 0, m_wCommObjectID);
 					switch (cDir) {
 					case 1:	m_pPlayer->m_sPlayerY--; break;
 					case 2:	m_pPlayer->m_sPlayerY--; m_pPlayer->m_sPlayerX++;	break;
@@ -9933,10 +9939,10 @@ MOTION_COMMAND_PROCESS:;
 					m_pPlayer->m_Controller.SetPrevMove(m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY);
 				}
 			}
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			break;
 
-		case DEF_OBJECTGETITEM:
+		case Type::GetItem:
 			// Cancel logout countdown on get item
 			if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
 			{
@@ -9944,16 +9950,16 @@ MOTION_COMMAND_PROCESS:;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTGETITEM, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandMotion, Type::GetItem, m_pPlayer->m_iPlayerDir, 0, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
 				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-				DEF_OBJECTGETITEM, 0, 0, 0);
+				Type::GetItem, 0, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			break;
 
-		case DEF_OBJECTMAGIC:
+		case Type::Magic:
 			// Cancel logout countdown on magic cast
 			if ((m_cLogOutCount > 0) && (m_bForceDisconn == false))
 			{
@@ -9961,17 +9967,17 @@ MOTION_COMMAND_PROCESS:;
 				AddEventList(DLGBOX_CLICK_SYSMENU2, 10);
 			}
 
-			bSendCommand(MSGID_COMMAND_MOTION, DEF_OBJECTMAGIC, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
+			bSendCommand(MsgId::CommandMotion, Type::Magic, m_pPlayer->m_iPlayerDir, m_iCastingMagicType, 0, 0, 0);
 			m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 				m_pPlayer->m_playerAppearance,
 				m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-				DEF_OBJECTMAGIC, m_iCastingMagicType, 0, 0);
+				Type::Magic, m_iCastingMagicType, 0, 0);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 			// Only enter targeting mode if the cast wasn't interrupted by damage
 			if (m_iPointCommandType >= 100 && m_iPointCommandType < 200)
 				m_bIsGetPointingMode = true;
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_floatingText.RemoveByObjectID(m_pPlayer->m_sPlayerObjectID);
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
@@ -10061,25 +10067,25 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen));
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
 				break;
-			case hb::owner::Slime:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat));
+			case hb::shared::owner::Slime:
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
 				break;
-			case hb::owner::Howard:
-				TextLib::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat));
+			case hb::shared::owner::Howard:
+				hb::shared::text::DrawText(GameFont::Default, 10, 10 + i * 15, m_stEventHistory[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
 				break;
 			}
 		}
@@ -10089,31 +10095,31 @@ void CGame::ShowEventList(uint32_t dwTime)
 		{
 			switch (m_stEventHistory2[i].cColor) {
 			case 0:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
 				break;
 			case 1:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::ChatEventGreen));
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::ChatEventGreen));
 				break;
 			case 2:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat));
 				break;
 			case 3:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat));
 				break;
 			case 4:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat));
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat));
 				break;
-			case hb::owner::Slime:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat));
+			case hb::shared::owner::Slime:
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat));
 				break;
-			case hb::owner::Howard:
-				TextLib::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, TextLib::TextStyle::WithShadow(GameColors::UINormalChat));
+			case hb::shared::owner::Howard:
+				hb::shared::text::DrawText(GameFont::Default, 10, baseY + i * 15, m_stEventHistory2[i].cTxt, hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat));
 				break;
 			}
 		}
 	if (m_bSkillUsingStatus == true)
 	{
-		TextLib::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, TextLib::TextStyle::WithShadow(GameColors::UINearWhite));
+		hb::shared::text::DrawText(GameFont::Default, 440 - 29, 440 - 52, SHOW_EVENT_LIST1, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite));
 	}
 	m_Renderer->EndTextBatch();
 }
@@ -10122,7 +10128,7 @@ void CGame::RequestTeleportAndWaitData()
 {
 	if (m_bIsTeleportRequested) return;
 
-	bSendCommand(MSGID_REQUEST_TELEPORT, 0, 0, 0, 0, 0, 0);
+	bSendCommand(MsgId::RequestTeleport, 0, 0, 0, 0, 0, 0);
 	ChangeGameMode(GameMode::WaitingInitData);
 }
 
@@ -10154,7 +10160,7 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::SellOrRepair);
 	m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuildHallMenu); // Gail's diag
 
-	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+	m_pPlayer->m_Controller.SetCommand(Type::Stop);
 	//m_pPlayer->m_Controller.SetCommandAvailable(true);
 	m_pPlayer->m_Controller.ResetCommandCount();
 	m_bIsGetPointingMode = false;
@@ -10275,8 +10281,8 @@ void CGame::InitDataResponseHandler(char* pData)
 	m_pMapData->m_sPivotX = sX;
 	m_pMapData->m_sPivotY = sY;
 
-	m_pPlayer->m_sPlayerX = sX + DEF_PLAYER_PIVOT_OFFSET_X;
-	m_pPlayer->m_sPlayerY = sY + DEF_PLAYER_PIVOT_OFFSET_Y;
+	m_pPlayer->m_sPlayerX = sX + hb::shared::view::PlayerPivotOffsetX;
+	m_pPlayer->m_sPlayerY = sY + hb::shared::view::PlayerPivotOffsetY;
 
 	m_pPlayer->m_iPlayerDir = 5;
 
@@ -10285,13 +10291,13 @@ void CGame::InitDataResponseHandler(char* pData)
 		m_pMapData->bSetOwner(m_pPlayer->m_sPlayerObjectID, m_pPlayer->m_sPlayerX, m_pPlayer->m_sPlayerY, m_pPlayer->m_sPlayerType, m_pPlayer->m_iPlayerDir,
 			m_pPlayer->m_playerAppearance, // v1.4
 			m_pPlayer->m_playerStatus, m_pPlayer->m_cPlayerName,
-			DEF_OBJECTSTOP, 0, 0, 0);
+			Type::Stop, 0, 0, 0);
 	}
 
 	//m_sViewDstX = m_sViewPointX = (sX + VIEW_CENTER_TILE_X()) * 32 - 16;
 	//m_sViewDstY = m_sViewPointY = (sY + VIEW_CENTER_TILE_Y()) * 32 - 16;
 	m_Camera.SnapTo((m_pPlayer->m_sPlayerX - VIEW_CENTER_TILE_X()) * 32 - 16, (m_pPlayer->m_sPlayerY - VIEW_CENTER_TILE_Y()) * 32 - 16);
-	_ReadMapData(sX + DEF_MAPDATA_BUFFER_X, sY + DEF_MAPDATA_BUFFER_Y, cp);
+	_ReadMapData(sX + hb::shared::view::MapDataBufferX, sY + hb::shared::view::MapDataBufferY, cp);
 	// ------------------------------------------------------------------------+
 	std::snprintf(cTxt, sizeof(cTxt), INITDATA_RESPONSE_HANDLER1, m_cMapMessage);
 	AddEventList(cTxt, 10);
@@ -10331,7 +10337,7 @@ void CGame::InitDataResponseHandler(char* pData)
 			dwFileSize = GetFileSize(hFile, 0);
 			CloseHandle(hFile);
 		}
-		bSendCommand(MSGID_REQUEST_NOTICEMENT, 0, 0, (int)dwFileSize, 0, 0, 0);
+		bSendCommand(MsgId::RequestNoticement, 0, 0, (int)dwFileSize, 0, 0, 0);
 	}
 	//cp += 2;
 }
@@ -10341,10 +10347,10 @@ void CGame::MotionEventHandler(char* pData)
 	WORD wEventType, wObjectID;
 	short sX, sY, sType, sV1, sV2, sV3;
 	short npcConfigId = -1;
-	PlayerStatus iStatus;
+	hb::shared::entity::PlayerStatus iStatus;
 	char cDir, cName[12];
 	int iLoc;
-	PlayerAppearance playerAppearance;
+	hb::shared::entity::PlayerAppearance playerAppearance;
 	bool bPrevCombatMode = false;
 	char    cTxt[120];
 	std::memset(cName, 0, sizeof(cName));
@@ -10363,13 +10369,13 @@ void CGame::MotionEventHandler(char* pData)
 	if (!baseId) return;
 	wObjectID = baseId->object_id;
 
-	if (hb::objectid::IsNpcID(wObjectID)) {
+	if (hb::shared::object_id::IsNpcID(wObjectID)) {
 		m_dwLastNpcEventTime = GameClock::GetTimeMS();
 	}
 
-	if (!hb::objectid::IsNearbyOffset(wObjectID))
+	if (!hb::shared::object_id::IsNearbyOffset(wObjectID))
 	{
-		if (hb::objectid::IsPlayerID(wObjectID)) 	// Player
+		if (hb::shared::object_id::IsPlayerID(wObjectID)) 	// Player
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionPlayer>(pData, sizeof(hb::net::PacketEventMotionPlayer));
 			if (!pkt) return;
@@ -10400,8 +10406,8 @@ void CGame::MotionEventHandler(char* pData)
 	else
 	{
 		switch (wEventType) {
-		case DEF_OBJECTMOVE:
-		case DEF_OBJECTRUN:
+		case Type::Move:
+		case Type::Run:
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionDirOnly>(pData, sizeof(hb::net::PacketEventMotionDirOnly));
 			if (!pkt) return;
@@ -10411,9 +10417,9 @@ void CGame::MotionEventHandler(char* pData)
 		}
 		break;
 
-		case DEF_OBJECTMAGIC:
-		case DEF_OBJECTDAMAGE:
-		case DEF_OBJECTDAMAGEMOVE:
+		case Type::Magic:
+		case Type::Damage:
+		case Type::DamageMove:
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionShort>(pData, sizeof(hb::net::PacketEventMotionShort));
 			if (!pkt) return;
@@ -10425,7 +10431,7 @@ void CGame::MotionEventHandler(char* pData)
 		}
 		break;
 
-		case DEF_OBJECTDYING:
+		case Type::Dying:
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionMove>(pData, sizeof(hb::net::PacketEventMotionMove));
 			if (!pkt) return;
@@ -10437,8 +10443,8 @@ void CGame::MotionEventHandler(char* pData)
 		}
 		break;
 
-		case DEF_OBJECTATTACK:
-		case DEF_OBJECTATTACKMOVE:
+		case Type::Attack:
+		case Type::AttackMove:
 		{
 			const auto* pkt = hb::net::PacketCast<hb::net::PacketEventMotionAttack>(pData, sizeof(hb::net::PacketEventMotionAttack));
 			if (!pkt) return;
@@ -10459,7 +10465,7 @@ void CGame::MotionEventHandler(char* pData)
 		}
 	}
 
-	if ((wEventType == DEF_OBJECTNULLACTION) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
+	if ((wEventType == Type::NullAction) && (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0))
 	{
 		m_pPlayer->m_sPlayerType = sType;
 		bPrevCombatMode = m_pPlayer->m_playerAppearance.bIsWalking;
@@ -10482,51 +10488,51 @@ void CGame::MotionEventHandler(char* pData)
 				m_pPlayer->m_bIsCombatMode = false;
 			}
 		}
-		if (m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTRUN && m_pPlayer->m_Controller.GetCommand() != DEF_OBJECTMOVE) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
+		if (m_pPlayer->m_Controller.GetCommand() != Type::Run && m_pPlayer->m_Controller.GetCommand() != Type::Move) { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
 	}
 	else { m_pMapData->bSetOwner(wObjectID, sX, sY, sType, cDir, playerAppearance, iStatus, cName, (char)wEventType, sV1, sV2, sV3, iLoc, 0, npcConfigId); }
 
 	switch (wEventType) {
-	case DEF_OBJECTMAGIC: // Casting
-		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+	case Type::Magic: // Casting
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
 		{
 			std::memset(cTxt, 0, sizeof(cTxt));
 			std::snprintf(cTxt, sizeof(cTxt), "%s!", m_pMagicCfgList[sV1]->m_cName);
 			m_floatingText.AddNotifyText(NotifyTextType::MagicCastName, cTxt, m_dwCurTime,
-				hb::objectid::ToRealID(wObjectID), m_pMapData.get());
+				hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
 		}
 		break;
 
-	case DEF_OBJECTDYING:
-		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+	case Type::Dying:
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
 		m_floatingText.AddDamageFromValue(sV1, true, m_dwCurTime,
-			hb::objectid::ToRealID(wObjectID), m_pMapData.get());
+			hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
 		break;
 
-	case DEF_OBJECTDAMAGE:
-	case DEF_OBJECTDAMAGEMOVE:
+	case Type::Damage:
+	case Type::DamageMove:
 		if (memcmp(cName, m_pPlayer->m_cPlayerName, 10) == 0)
 		{
-			// Cancel spell casting if in the animation phase (DEF_OBJECTMAGIC)
-			if (m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMAGIC)
-				m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			// Cancel spell casting if in the animation phase (Type::Magic)
+			if (m_pPlayer->m_Controller.GetCommand() == Type::Magic)
+				m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_bIsGetPointingMode = false;
 			m_iPointCommandType = -1;
 			ClearSkillUsingStatus();
 			// Lock the controller until the damage animation finishes.
 			// Without this, quick actions allows immediate movement after being hit.
-			m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+			m_pPlayer->m_Controller.SetCommand(Type::Stop);
 			m_pPlayer->m_Controller.SetCommandAvailable(false);
 			m_pPlayer->m_Controller.SetCommandTime(GameClock::GetTimeMS());
 		}
-		m_floatingText.RemoveByObjectID(hb::objectid::ToRealID(wObjectID));
+		m_floatingText.RemoveByObjectID(hb::shared::object_id::ToRealID(wObjectID));
 		m_floatingText.AddDamageFromValue(sV1, false, m_dwCurTime,
-			hb::objectid::ToRealID(wObjectID), m_pMapData.get());
+			hb::shared::object_id::ToRealID(wObjectID), m_pMapData.get());
 		break;
 
-	case DEF_OBJECTATTACK:
-	case DEF_OBJECTATTACKMOVE:
-		if (wObjectID == m_pPlayer->m_sPlayerObjectID + hb::objectid::NearbyOffset)
+	case Type::Attack:
+	case Type::AttackMove:
+		if (wObjectID == m_pPlayer->m_sPlayerObjectID + hb::shared::object_id::NearbyOffset)
 		{
 			if (m_pMagicCfgList[sV3] != 0)
 			{
@@ -10781,7 +10787,7 @@ void CGame::UseShortCut(int num)
 	if (num < 4) index = num;
 	else index = num + 7;
 	if (GameModeManager::GetMode() != GameMode::MainGame) return;
-	if (Input::IsCtrlDown() == true)
+	if (hb::shared::input::IsCtrlDown() == true)
 	{
 		if (m_sRecentShortCut == -1)
 		{
@@ -10847,7 +10853,7 @@ int CGame::iGetManaCost(int iMagicNo)
 	int i, iManaSave, iManaCost;
 	iManaSave = 0;
 	if (iMagicNo < 0 || iMagicNo >= 100) return 1;
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_pItemList[i] == 0) continue;
 		if (m_bIsItemEquipped[i] == true)
@@ -10856,14 +10862,14 @@ int CGame::iGetManaCost(int iMagicNo)
 			auto effectType = m_pItemList[i]->GetItemEffectType();
 			switch (effectType)
 			{
-			case hb::item::ItemEffectType::AttackManaSave:
+			case hb::shared::item::ItemEffectType::AttackManaSave:
 				// Weapons with mana save: value stored in m_sItemEffectValue4
 				iManaSave += m_pItemList[i]->m_sItemEffectValue4;
 				break;
 
-			case hb::item::ItemEffectType::AddEffect:
+			case hb::shared::item::ItemEffectType::AddEffect:
 				// AddEffect with sub-type ManaSave (necklaces, etc.)
-				if (m_pItemList[i]->m_sItemEffectValue1 == hb::item::ToInt(hb::item::AddEffectType::ManaSave))
+				if (m_pItemList[i]->m_sItemEffectValue1 == hb::shared::item::ToInt(hb::shared::item::AddEffectType::ManaSave))
 				{
 					iManaSave += m_pItemList[i]->m_sItemEffectValue2;
 				}
@@ -10911,8 +10917,8 @@ void CGame::UseMagic(int iMagicNo)
 		AddEventList(DLGBOX_CLICK_MAGIC2, 10);
 		return;
 	}
-	if (!m_pPlayer->m_playerAppearance.bIsWalking) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
-	m_pPlayer->m_Controller.SetCommand(DEF_OBJECTMAGIC);
+	if (!m_pPlayer->m_playerAppearance.bIsWalking) bSendCommand(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
+	m_pPlayer->m_Controller.SetCommand(Type::Magic);
 	m_iCastingMagicType = iMagicNo;
 	m_sMagicShortCut = iMagicNo;
 	m_sRecentShortCut = iMagicNo + 100;
@@ -10931,13 +10937,13 @@ void CGame::ReleaseEquipHandler(char cEquipPos)
 		&& (pCfgEq && pCfgEq->GetItemType() == ItemType::Equip))
 	{
 		short sItemID = m_sItemEquipmentStatus[cEquipPos];
-		if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+		if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
 			m_pPlayer->m_iAngelicStr = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
 			m_pPlayer->m_iAngelicDex = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
 			m_pPlayer->m_iAngelicInt = 0;
-		else if (m_pItemList[sItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+		else if (m_pItemList[sItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
 			m_pPlayer->m_iAngelicMag = 0;
 	}
 
@@ -11003,7 +11009,7 @@ void CGame::ItemEquipHandler(char cItemID)
 		}
 	}
 
-	bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EQUIPITEM, 0, cItemID, 0, 0, 0);
+	bSendCommand(MsgId::CommandCommon, CommonType::EquipItem, 0, cItemID, 0, 0, 0);
 	m_sRecentShortCut = cItemID;
 	ReleaseEquipHandler(pCfg->m_cEquipPos);
 	switch (pCfg->GetEquipPos()) {
@@ -11041,13 +11047,13 @@ void CGame::ItemEquipHandler(char cItemID)
 		&& (pCfg->m_cEquipPos >= 11))
 	{
 		int iAngelValue = (m_pItemList[cItemID]->m_dwAttribute & 0xF0000000) >> 28;
-		if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+		if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
 			m_pPlayer->m_iAngelicStr = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
 			m_pPlayer->m_iAngelicDex = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
 			m_pPlayer->m_iAngelicInt = 1 + iAngelValue;
-		else if (m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+		else if (m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
 			m_pPlayer->m_iAngelicMag = 1 + iAngelValue;
 	}
 
@@ -11067,48 +11073,48 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 {	// Used at the beginning of character drawing
 	// DefenseShield
 	if (m_entityState.m_status.bDefenseShield)
-		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, SpriteLib::DrawParams::Alpha(0.5f));
+		//m_pEffectSpr[80]->Draw(sX+75, sY+107, m_entityState.m_iEffectFrame%17, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[80]->Draw(sX + 75, sY + 107, m_entityState.m_iEffectFrame % 17, hb::shared::sprite::DrawParams::Alpha(0.5f));
 
 	// Protection From Magic
 	if (m_entityState.m_status.bMagicProtection)
-		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[79]->Draw(sX+101, sY+135, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[79]->Draw(sX + 101, sY + 135, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Protection From Arrow
 	if (m_entityState.m_status.bProtectionFromArrow)
-		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[72]->Draw(sX, sY+35, m_entityState.m_iEffectFrame%30, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[72]->Draw(sX, sY + 35, m_entityState.m_iEffectFrame % 30, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Illusion
 	if (m_entityState.m_status.bIllusion)
-		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[73]->Draw(sX+125, sY+95, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[73]->Draw(sX + 125, sY + 130 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Illusion movement
 	if ((m_entityState.m_status.bIllusionMovement) != 0)
-		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[151]->Draw(sX+90, sY+55, m_entityState.m_iEffectFrame%24, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[151]->Draw(sX + 90, sY + 90 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 24, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Slate red  (HP)  Flame au sol
 	if (m_entityState.m_status.bSlateInvincible)
-		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[149]->Draw(sX+90, sY+120, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[149]->Draw(sX + 90, sY + 120, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Slate Blue (Mana) Bleu au sol
 	if (m_entityState.m_status.bSlateMana)
-		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[150]->Draw(sX+1, sY+26, m_entityState.m_iEffectFrame%15, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[150]->Draw(sX + 1, sY + 26, m_entityState.m_iEffectFrame % 15, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Slate Green (XP) Mauve au sol
 	if (m_entityState.m_status.bSlateExp)
-		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[148]->Draw(sX, sY+32, m_entityState.m_iEffectFrame%23, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[148]->Draw(sX, sY + 32, m_entityState.m_iEffectFrame % 23, hb::shared::sprite::DrawParams::Alpha(0.7f));
 
 	// Hero Flag (Heldenian)  Flameches d'entangle
 	if (m_entityState.m_status.bHero)
-		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[87]->Draw(sX+53, sY+54, m_entityState.m_iEffectFrame%29, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[87]->Draw(sX + 53, sY + 54, m_entityState.m_iEffectFrame % 29, hb::shared::sprite::DrawParams::Alpha(0.7f));
 }
 
 /*********************************************************************************************************************
@@ -11119,8 +11125,8 @@ void CGame::CheckActiveAura(short sX, short sY, uint32_t dwTime, short sOwnerTyp
 void CGame::CheckActiveAura2(short sX, short sY, uint32_t dwTime, short sOwnerType)
 {	// Poison
 	if (m_entityState.m_status.bPoisoned)
-		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, SpriteLib::DrawParams::Alpha(0.5f));
-		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, SpriteLib::DrawParams::Alpha(0.7f));
+		//m_pEffectSpr[81]->Draw(sX+115, sY+85, m_entityState.m_iEffectFrame%21, hb::shared::sprite::DrawParams::Alpha(0.5f));
+		m_pEffectSpr[81]->Draw(sX + 115, sY + 120 - _iAttackerHeight[sOwnerType], m_entityState.m_iEffectFrame % 21, hb::shared::sprite::DrawParams::Alpha(0.7f));
 	//	_iAttackerHeight[]
 }
 
@@ -11138,13 +11144,13 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 	if (m_entityState.m_status.bInvisibility)
 	{
 		if (m_entityState.m_status.bAngelSTR)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));  //AngelicPendant(STR)
 		else if (m_entityState.m_status.bAngelDEX)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, SpriteLib::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 1) + iSprite]->Draw(sX, sY, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f)); //AngelicPendant(DEX)
 		else if (m_entityState.m_status.bAngelINT)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 2) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(INT)
 		else if (m_entityState.m_status.bAngelMAG)
-			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, SpriteLib::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
+			m_pSprite[DEF_SPRID_TUTELARYANGELS_PIVOTPOINT + (50 * 3) + iSprite]->Draw(sX, sY - 15, cFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));//AngelicPendant(MAG)
 	}
 	else
 	{
@@ -11163,7 +11169,7 @@ void CGame::DrawAngel(int iSprite, short sX, short sY, char cFrame, uint32_t dwT
 **  int CGame::bHasHeroSet( short m_sAppr3, short m_sAppr3, char OwnerType)		( Snoopy )							**
 **  description			:: check weather the object (is character) is using a hero set (1:war, 2:mage)				**
 **********************************************************************************************************************/
-int CGame::bHasHeroSet(const PlayerAppearance& appr, short OwnerType)
+int CGame::bHasHeroSet(const hb::shared::entity::PlayerAppearance& appr, short OwnerType)
 {
 	char cArmor, cLeg, cBerk, cHat;
 	cArmor = appr.iArmorType;

@@ -7,7 +7,7 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+using namespace hb::shared::item;
 
 DialogBox_Magic::DialogBox_Magic(CGame* pGame)
 	: IDialogBox(DialogBoxId::Magic, pGame)
@@ -67,21 +67,21 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 
 			if (iManaCost > m_pGame->m_pPlayer->m_iMP)
 			{
-				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
 				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicPurple));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicPurple));
 			}
 			else if ((msX >= sX + 30) && (msX <= sX + 240) && (msY >= sY + 70 + iYloc) && (msY <= sY + 70 + 14 + iYloc))
 			{
-				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
 				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UINearWhite));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UINearWhite));
 			}
 			else
 			{
-				TextLib::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 30, sY + 70 + iYloc, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 				std::snprintf(cMana, sizeof(cMana), "%3d", iManaCost);
-				TextLib::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 206, sY + 70 + iYloc, cMana, hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			}
 
 			iYloc += 18;
@@ -161,7 +161,7 @@ void DialogBox_Magic::OnDraw(short msX, short msY, short msZ, char cLB)
 	}
 
 	// Equipment magic bonus
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if (m_pGame->m_pItemList[i] == 0) continue;
 		if (m_pGame->m_bIsItemEquipped[i] == true)
@@ -242,7 +242,7 @@ bool DialogBox_Magic::OnClick(short msX, short msY)
 		if (m_pGame->m_pPlayer->m_iSkillMastery[12] == 0) AddEventList(BDLBBOX_DOUBLE_CLICK_INVENTORY16, 10);
 		else
 		{
-			for (i = 0; i < hb::limits::MaxItems; i++)
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
 			{
 				if (m_pGame->m_pItemList[i] == 0) continue;
 				CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[i]->m_sIDnum);

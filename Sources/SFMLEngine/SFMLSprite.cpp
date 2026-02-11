@@ -95,7 +95,7 @@ bool SFMLSprite::CreateTexture()
     return true;
 }
 
-void SFMLSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& params)
+void SFMLSprite::Draw(int x, int y, int frame, const hb::shared::sprite::DrawParams& params)
 {
     // Lazy load texture on first draw
     if (!m_textureLoaded)
@@ -118,7 +118,7 @@ void SFMLSprite::Draw(int x, int y, int frame, const SpriteLib::DrawParams& para
     m_inUse = false;
 }
 
-void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const SpriteLib::DrawParams& params)
+void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const hb::shared::sprite::DrawParams& params)
 {
     // Lazy load texture on first draw
     if (!m_textureLoaded)
@@ -142,7 +142,7 @@ void SFMLSprite::DrawToSurface(void* destSurface, int x, int y, int frame, const
     m_inUse = false;
 }
 
-void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const SpriteLib::DrawParams& params)
+void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame, const hb::shared::sprite::DrawParams& params)
 {
     if (!target)
         return;
@@ -347,14 +347,14 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     sf::RenderStates states;
     bool wasSmooth = m_texture.isSmooth();
 
-    if (params.blendMode == SpriteLib::BlendMode::Additive) {
+    if (params.blendMode == hb::shared::sprite::BlendMode::Additive) {
         states.blendMode = sf::BlendAdd;
         // Enable smooth filtering for additive blending (light effects)
         // This produces smooth gradients like DDraw's per-pixel blending
         if (!wasSmooth) {
             m_texture.setSmooth(true);
         }
-    } else if (params.blendMode == SpriteLib::BlendMode::Average) {
+    } else if (params.blendMode == hb::shared::sprite::BlendMode::Average) {
         // 50/50 averaging: result = (src + dst) / 2
         // Achieved with alpha blending at 50% opacity
         states.blendMode = sf::BlendAlpha;
@@ -369,7 +369,7 @@ void SFMLSprite::DrawInternal(sf::RenderTexture* target, int x, int y, int frame
     target->draw(sprite, states);
 
     // Restore smooth setting if we changed it
-    if (params.blendMode == SpriteLib::BlendMode::Additive && !wasSmooth) {
+    if (params.blendMode == hb::shared::sprite::BlendMode::Additive && !wasSmooth) {
         m_texture.setSmooth(false);
     }
 }
@@ -434,7 +434,7 @@ void SFMLSprite::DrawWidth(int x, int y, int frame, int width, bool vertical)
     m_inUse = false;
 }
 
-void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const SpriteLib::DrawParams& params)
+void SFMLSprite::DrawShifted(int x, int y, int shiftX, int shiftY, int frame, const hb::shared::sprite::DrawParams& params)
 {
     // DrawShifted draws a 128x128 subregion of the sprite starting at (shiftX, shiftY)
     // This is used for the guide map to show a viewport window into a large map sprite
@@ -541,15 +541,15 @@ int SFMLSprite::GetFrameCount() const
     return static_cast<int>(m_frames.size());
 }
 
-SpriteLib::SpriteRect SFMLSprite::GetFrameRect(int frame) const
+hb::shared::sprite::SpriteRect SFMLSprite::GetFrameRect(int frame) const
 {
     if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
     {
-        return SpriteLib::SpriteRect{0, 0, 0, 0, 0, 0};
+        return hb::shared::sprite::SpriteRect{0, 0, 0, 0, 0, 0};
     }
 
     const PAKLib::sprite_rect& src = m_frames[frame];
-    SpriteLib::SpriteRect rect;
+    hb::shared::sprite::SpriteRect rect;
     rect.x = src.x;
     rect.y = src.y;
     rect.width = src.width;
@@ -579,7 +579,7 @@ void SFMLSprite::CalculateBounds(int x, int y, int frame)
 {
     if (frame < 0 || frame >= static_cast<int>(m_frames.size()))
     {
-        m_boundRect = SpriteLib::BoundRect{};
+        m_boundRect = hb::shared::sprite::BoundRect{};
         return;
     }
 
@@ -603,7 +603,7 @@ bool SFMLSprite::GetLastDrawBounds(int& left, int& top, int& right, int& bottom)
     return true;
 }
 
-SpriteLib::BoundRect SFMLSprite::GetBoundRect() const
+hb::shared::sprite::BoundRect SFMLSprite::GetBoundRect() const
 {
     return m_boundRect;
 }

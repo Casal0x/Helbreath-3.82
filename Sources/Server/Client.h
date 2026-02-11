@@ -26,7 +26,7 @@ using namespace std;
 
 #define DEF_CLIENTSOCKETBLOCKLIMIT	2000  // Queue size per client for unsent data during socket blocks
 
-// DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h
+// hb::shared::limits::MaxMagicType and hb::shared::limits::MaxSkillType are defined in NetConstants.h
 
 #define DEF_SPECABLTYTIMESEC	1200
 
@@ -64,9 +64,9 @@ public:
 	CClient(asio::io_context& ctx);
 	virtual ~CClient();
 
-	char m_cCharName[DEF_CHARNAME];
-	char m_cAccountName[DEF_ACCOUNT_NAME];
-	char m_cAccountPassword[DEF_ACCOUNT_PASS];
+	char m_cCharName[hb::shared::limits::CharNameLen];
+	char m_cAccountName[hb::shared::limits::AccountNameLen];
+	char m_cAccountPassword[hb::shared::limits::AccountPassLen];
 
 	bool  m_bIsInitComplete;
 	bool  m_bIsMsgSendAvailable;
@@ -83,8 +83,8 @@ public:
 	char  m_cDir;
 	short m_sType;
 	short m_sOriginalType;
-	PlayerAppearance m_appearance;
-	PlayerStatus m_status;
+	hb::shared::entity::PlayerAppearance m_appearance;
+	hb::shared::entity::PlayerStatus m_status;
 
 	uint32_t m_dwTime, m_dwHPTime, m_dwMPTime, m_dwSPTime, m_dwAutoSaveTime, m_dwHungerTime, m_dwWarmEffectTime;
 	uint32_t m_dwAfkActivityTime;
@@ -106,7 +106,7 @@ public:
 	// int  m_iHitRatio_ItemEffect_SM; //    HitRatio
 	//int  m_iHitRatio_ItemEffect_L;
 
-	int  m_iDamageAbsorption_Armor[hb::item::DEF_MAXITEMEQUIPPOS];		// Damage
+	int  m_iDamageAbsorption_Armor[hb::shared::item::DEF_MAXITEMEQUIPPOS];		// Damage
 	int  m_iDamageAbsorption_Shield;	// Parrying ?  Damage
 
 	int  m_iLevel;
@@ -135,7 +135,7 @@ public:
 	{
 		char index;
 		short price;
-	} m_stRepairAll[hb::limits::MaxItems];
+	} m_stRepairAll[hb::shared::limits::MaxItems];
 
 	char m_cAttackDiceThrow_SM;
 	char m_cAttackDiceRange_SM;
@@ -144,20 +144,20 @@ public:
 	char m_cAttackBonus_SM;
 	char m_cAttackBonus_L;
 
-	CItem * m_pItemList[hb::limits::MaxItems];
-	GamePoint m_ItemPosList[hb::limits::MaxItems];
-	CItem * m_pItemInBankList[hb::limits::MaxBankItems];
+	CItem * m_pItemList[hb::shared::limits::MaxItems];
+	hb::shared::geometry::GamePoint m_ItemPosList[hb::shared::limits::MaxItems];
+	CItem * m_pItemInBankList[hb::shared::limits::MaxBankItems];
 	
-	bool  m_bIsItemEquipped[hb::limits::MaxItems];
-	short m_sItemEquipmentStatus[hb::item::DEF_MAXITEMEQUIPPOS];
+	bool  m_bIsItemEquipped[hb::shared::limits::MaxItems];
+	short m_sItemEquipmentStatus[hb::shared::item::DEF_MAXITEMEQUIPPOS];
 	char  m_cArrowIndex;		// ?   .  -1( )
 
-	char           m_cMagicMastery[DEF_MAXMAGICTYPE];
-	unsigned char  m_cSkillMastery[DEF_MAXSKILLTYPE]; // v1.4
+	char           m_cMagicMastery[hb::shared::limits::MaxMagicType];
+	unsigned char  m_cSkillMastery[hb::shared::limits::MaxSkillType]; // v1.4
 
-	int   m_iSkillSSN[DEF_MAXSKILLTYPE];
-	bool  m_bSkillUsingStatus[DEF_MAXSKILLTYPE];
-	int   m_iSkillUsingTimeID[DEF_MAXSKILLTYPE]; //v1.12
+	int   m_iSkillSSN[hb::shared::limits::MaxSkillType];
+	bool  m_bSkillUsingStatus[hb::shared::limits::MaxSkillType];
+	int   m_iSkillUsingTimeID[hb::shared::limits::MaxSkillType]; //v1.12
 
 	char  m_cMagicEffectStatus[DEF_MAXMAGICEFFECTS];
 
@@ -177,7 +177,7 @@ public:
 
 	int   m_iFightzoneNumber , m_iReserveTime, m_iFightZoneTicketNumber ; 
 
-	class ASIOSocket * m_pXSock;
+	class hb::shared::net::ASIOSocket * m_pXSock;
 
 	int   m_iRating;
 
@@ -235,7 +235,7 @@ public:
 
 	bool  m_bIsExchangeMode;			// Is In Exchange Mode? 
 	int   m_iExchangeH;					// Client ID to Exchanging with 
-	char  m_cExchangeName[DEF_CHARNAME];	// Name of Client to Exchanging with
+	char  m_cExchangeName[hb::shared::limits::CharNameLen];	// Name of Client to Exchanging with
 	short m_sExchangeItemID[4];	// Item ID to validate exchange hasn't been tampered
 
 	char  m_cExchangeItemIndex[4];		// ItemID to Exchange
@@ -326,7 +326,7 @@ public:
 		char cType;
 		char cSide;
 		short sX, sY;
-	} m_stCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
+	} m_stCrusadeStructureInfo[hb::shared::limits::MaxCrusadeStructures];
 	int m_iCSIsendPoint;
 
 	char m_cSendingMapName[11];
@@ -346,22 +346,22 @@ public:
 	int m_iPartyID;
 	int m_iPartyStatus;
 	int m_iReqJoinPartyClientH;
-	char m_cReqJoinPartyName[DEF_CHARNAME];
+	char m_cReqJoinPartyName[hb::shared::limits::CharNameLen];
 
 	int   m_iPartyRank;										// Party . -1 . 1  . 12 ?
 	int   m_iPartyMemberCount;
 	int   m_iPartyGUID;										// v1.42 Party GUID
 	struct {
 	int  iIndex;
-	char cName[DEF_CHARNAME];
-	} m_stPartyMemberName[hb::limits::MaxPartyMembers];
+	char cName[hb::shared::limits::CharNameLen];
+	} m_stPartyMemberName[hb::shared::limits::MaxPartyMembers];
 
 	// New 07/05/2004
 	uint32_t m_dwLastActionTime;
 	int m_iDeadPenaltyTime;
 
 	// New 16/05/2004
-	char m_cWhisperPlayerName[DEF_CHARNAME];
+	char m_cWhisperPlayerName[hb::shared::limits::CharNameLen];
 	bool m_bIsInsideWarehouse;
 	bool m_bIsInsideWizardTower;
 	bool m_bIsInsideOwnTown;

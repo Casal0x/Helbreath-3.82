@@ -1529,7 +1529,7 @@ bool SaveMagicConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
         if (game->m_pMagicConfigList[i] == nullptr) {
             continue;
         }
@@ -1582,7 +1582,7 @@ bool LoadMagicConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
         delete game->m_pMagicConfigList[i];
         game->m_pMagicConfigList[i] = nullptr;
     }
@@ -1601,7 +1601,7 @@ bool LoadMagicConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int magicId = sqlite3_column_int(stmt, col++);
-        if (magicId < 0 || magicId >= DEF_MAXMAGICTYPE) {
+        if (magicId < 0 || magicId >= hb::shared::limits::MaxMagicType) {
             continue;
         }
 
@@ -1661,7 +1661,7 @@ bool SaveSkillConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
         if (game->m_pSkillConfigList[i] == nullptr) {
             continue;
         }
@@ -1704,7 +1704,7 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
         delete game->m_pSkillConfigList[i];
         game->m_pSkillConfigList[i] = nullptr;
     }
@@ -1722,7 +1722,7 @@ bool LoadSkillConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int skillId = sqlite3_column_int(stmt, col++);
-        if (skillId < 0 || skillId >= DEF_MAXSKILLTYPE) {
+        if (skillId < 0 || skillId >= hb::shared::limits::MaxSkillType) {
             continue;
         }
 
@@ -2080,7 +2080,7 @@ bool SaveBuildItemConfigs(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxBuildItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++) {
         if (game->m_pBuildItemList[i] == nullptr) {
             continue;
         }
@@ -2124,7 +2124,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxBuildItems; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxBuildItems; i++) {
         delete game->m_pBuildItemList[i];
         game->m_pBuildItemList[i] = nullptr;
     }
@@ -2144,7 +2144,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int buildId = sqlite3_column_int(stmt, col++);
-        if (buildId < 0 || buildId >= hb::limits::MaxBuildItems) {
+        if (buildId < 0 || buildId >= hb::shared::limits::MaxBuildItems) {
             continue;
         }
 
@@ -2217,7 +2217,7 @@ bool SaveCrusadeConfig(sqlite3* db, const CGame* game)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
         const auto& entry = game->m_stCrusadeStructures[i];
         if (entry.cType == 0 || entry.cMapName[0] == 0) {
             continue;
@@ -2251,7 +2251,7 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
         return false;
     }
 
-    for(int i = 0; i < hb::limits::MaxCrusadeStructures; i++) {
+    for(int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++) {
         std::memset(game->m_stCrusadeStructures[i].cMapName, 0, sizeof(game->m_stCrusadeStructures[i].cMapName));
         game->m_stCrusadeStructures[i].cType = 0;
         game->m_stCrusadeStructures[i].dX = 0;
@@ -2270,7 +2270,7 @@ bool LoadCrusadeConfig(sqlite3* db, CGame* game)
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         int col = 0;
         int structureId = sqlite3_column_int(stmt, col++);
-        if (structureId < 0 || structureId >= hb::limits::MaxCrusadeStructures) {
+        if (structureId < 0 || structureId >= hb::shared::limits::MaxCrusadeStructures) {
             continue;
         }
         CopyColumnText(stmt, col++, game->m_stCrusadeStructures[structureId].cMapName,

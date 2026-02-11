@@ -7,7 +7,7 @@
 #include "GameConstants.h"
 
 class CMapData;
-class IRenderer;
+namespace hb::shared::render { class IRenderer; }
 
 class CFloatingTextManager {
 public:
@@ -30,9 +30,9 @@ public:
 
 	// Rendering
 	void DrawAll(short sMinX, short sMinY, short sMaxX, short sMaxY,
-	             uint32_t dwCurTime, IRenderer* pRenderer);
+	             uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
 	void DrawSingle(int iIndex, short sX, short sY,
-	                uint32_t dwCurTime, IRenderer* pRenderer);
+	                uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
 
 	// Position updates from entity renderers
 	CFloatingText* Get(int iIndex);
@@ -48,7 +48,7 @@ private:
 	int FindFreeSlot() const;
 	int BindToTile(int iIndex, int iObjectID, CMapData* pMapData, short sX, short sY);
 	void DrawMessage(const CFloatingText& msg, short sX, short sY,
-	                 uint32_t dwCurTime, IRenderer* pRenderer);
+	                 uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer);
 
 	std::array<std::unique_ptr<CFloatingText>, MaxMessages> m_messages;
 };

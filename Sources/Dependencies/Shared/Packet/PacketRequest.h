@@ -20,7 +20,7 @@ namespace net {
 
 	struct HB_PACKED PacketRequestHeldenianScroll {
 		PacketHeader header;
-		char name[DEF_ITEMNAME - 1];
+		char name[hb::shared::limits::ItemNameLen - 1];
 		uint16_t item_id;
 	};
 
@@ -122,7 +122,7 @@ namespace net {
 
 	struct HB_PACKED PacketCommandCommonBuild {
 		PacketCommandCommonBase base;
-		char name[DEF_ITEMNAME - 1];
+		char name[hb::shared::limits::ItemNameLen - 1];
 		uint8_t item_ids[6];
 	};
 

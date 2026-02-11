@@ -8,6 +8,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::shared::net;
 DialogBox_Constructor::DialogBox_Constructor(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeConstructor, pGame)
 {
@@ -75,17 +76,17 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR3, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR3, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50)
 			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR4, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR4, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR5, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR5, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		break;
 
@@ -136,27 +137,27 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR13, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR13, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR14, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR14, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR15, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR15, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR16, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR16, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50) && (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR17, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR17, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74) && (msY >= sY + 322) && (msY <= sY + 322 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR18, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR18, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		break;
 
@@ -188,17 +189,17 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR20, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR20, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR21, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR21, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR22, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_CONSTRUCTOR22, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		break;
 	}
@@ -230,7 +231,7 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		if (szX != 0)
 		{
-			for (int i = 0; i < hb::limits::MaxCrusadeStructures; i++)
+			for (int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 				if (m_pGame->m_stCrusadeStructureInfo[i].cType == 42)
 				{
 					dV1 = (double)MapSzX;
@@ -301,7 +302,7 @@ void DialogBox_Constructor::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
 			char coordBuf[32];
 			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-			TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
+			hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 		}
 		break;
 	}
@@ -355,25 +356,25 @@ bool DialogBox_Constructor::OnClick(short msX, short msY)
 	case 1: // Choose building
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 38, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 38, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
 			PlaySoundEffect('E', 14, 5);
 			DisableDialogBox(DialogBoxId::CrusadeConstructor);
 		}
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 50 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 39, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 39, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
 			PlaySoundEffect('E', 14, 5);
 			DisableDialogBox(DialogBoxId::CrusadeConstructor);
 		}
 		if ((msX >= sX + 20 + 100) && (msX <= sX + 20 + 100 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 36, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 36, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
 			PlaySoundEffect('E', 14, 5);
 			DisableDialogBox(DialogBoxId::CrusadeConstructor);
 		}
 		if ((msX >= sX + 20 + 150) && (msX <= sX + 20 + 150 + 45) && (msY >= sY + 220) && (msY <= sY + 220 + 50))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SUMMONWARUNIT, 0, 37, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::SummonWarUnit, 0, 37, 1, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CrusadeCommander).sV1, 0);
 			PlaySoundEffect('E', 14, 5);
 			DisableDialogBox(DialogBoxId::CrusadeConstructor);
 		}
@@ -394,7 +395,7 @@ bool DialogBox_Constructor::OnClick(short msX, short msY)
 	case 2: // Use TP
 		if ((msX >= sX + 20 + 50) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GUILDTELEPORT, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::GuildTeleport, 0, 0, 0, 0, 0);
 			DisableDialogBox(DialogBoxId::CrusadeConstructor);
 			PlaySoundEffect('E', 14, 5);
 		}

@@ -18,7 +18,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Parse character name (first word)
-	char cCharName[DEF_CHARNAME] = {};
+	char cCharName[hb::shared::limits::CharNameLen] = {};
 	const char* p = pArgs;
 	int ci = 0;
 	while (*p != '\0' && *p != ' ' && *p != '\t' && ci < 10)
@@ -59,7 +59,7 @@ void CmdSetAdmin::Execute(CGame* pGame, const char* pArgs)
 	}
 
 	// Parse optional admin level (default: GameMaster = 1)
-	int iAdminLevel = hb::admin::GameMaster;
+	int iAdminLevel = hb::shared::admin::GameMaster;
 	if (*p != '\0')
 	{
 		iAdminLevel = std::atoi(p);

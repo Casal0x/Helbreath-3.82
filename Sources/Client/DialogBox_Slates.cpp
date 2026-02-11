@@ -7,7 +7,8 @@
 #include "TextLibExt.h"
 #include "NetMessages.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_Slates::DialogBox_Slates(CGame* pGame)
 	: IDialogBox(DialogBoxId::Slates, pGame)
@@ -48,8 +49,8 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 
 		if ((Info().sV1 != -1) && (Info().sV2 != -1) && (Info().sV3 != -1) && (Info().sV4 != -1)) {
 			if ((msX >= sX + 120) && (msX <= sX + 180) && (msY >= sY + 150) && (msY <= sY + 165))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			else hb::shared::text::DrawText(GameFont::Bitmap1, sX + 120, sY + 150, "Casting", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		}
 		break;
 
@@ -77,7 +78,7 @@ void DialogBox_Slates::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		if (Info().cStr[0] >= 5)
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_CREATESLATE, 0, Info().sV1, Info().sV2, Info().sV3, 0, Info().sV4);
+			bSendCommand(MsgId::CommandCommon, CommonType::ReqCreateSlate, 0, Info().sV1, Info().sV2, Info().sV3, 0, Info().sV4);
 			DisableDialogBox(DialogBoxId::Slates);
 		}
 		break;

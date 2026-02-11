@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdio>
 
+using namespace hb::shared::net;
 bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -12,7 +13,7 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Usage: /goto <playername>");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /goto <playername>");
 		return true;
 	}
 
@@ -25,11 +26,11 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 		{
 			char buf[64];
 			std::snprintf(buf, sizeof(buf), "Teleported to %s.", pGame->m_pClientList[iTargetH]->m_cCharName);
-			pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, buf);
+			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
 		}
 		else
 		{
-			pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Teleport failed (invalid map).");
+			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
 		}
 		return true;
 	}
@@ -39,7 +40,7 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	std::memset(cAccountName, 0, sizeof(cAccountName));
 	if (!ResolveCharacterToAccount(pArgs, cAccountName, sizeof(cAccountName)))
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Player not found.");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Player not found.");
 		return true;
 	}
 
@@ -47,7 +48,7 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	std::string dbPath;
 	if (!EnsureAccountDatabase(cAccountName, &db, dbPath))
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Failed to open account database.");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to open account database.");
 		return true;
 	}
 
@@ -57,7 +58,7 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	if (!bLoaded)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Failed to load character data.");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to load character data.");
 		return true;
 	}
 
@@ -65,11 +66,11 @@ bool GameCmdGoto::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	{
 		char buf[64];
 		std::snprintf(buf, sizeof(buf), "Teleported to %s's last position (offline).", state.characterName);
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, buf);
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
 	}
 	else
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Teleport failed (invalid map).");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Teleport failed (invalid map).");
 	}
 
 	return true;

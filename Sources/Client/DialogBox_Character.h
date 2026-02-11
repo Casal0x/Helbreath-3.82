@@ -4,7 +4,7 @@
 
 struct EquipSlotLayout
 {
-	hb::item::EquipPos equipPos;
+	hb::shared::item::EquipPos equipPos;
 	int offsetX;
 	int offsetY;
 	bool useWeaponColors;
@@ -25,7 +25,7 @@ public:
 private:
 	// Helper methods
 	void DrawStat(int x1, int x2, int y, int baseStat, int angelicBonus);
-	void DrawEquippedItem(hb::item::EquipPos equipPos, int drawX, int drawY,
+	void DrawEquippedItem(hb::shared::item::EquipPos equipPos, int drawX, int drawY,
 		const char* cEquipPoiStatus, bool useWeaponColors, bool bHighlight, int spriteOffset = 0);
 	void DrawHoverButton(int sX, int sY, int btnX, int btnY,
 		short msX, short msY, int hoverFrame, int normalFrame);
@@ -35,7 +35,7 @@ private:
 		const char* cEquipPoiStatus, char& cCollison);
 
 	// Shared helpers
-	void BuildEquipStatusArray(char (&cEquipPoiStatus)[hb::item::DEF_MAXITEMEQUIPPOS]) const;
+	void BuildEquipStatusArray(char (&cEquipPoiStatus)[hb::shared::item::DEF_MAXITEMEQUIPPOS]) const;
 	char FindEquipItemAtPoint(short msX, short msY, short sX, short sY,
 		const char* cEquipPoiStatus) const;
 };

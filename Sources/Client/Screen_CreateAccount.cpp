@@ -10,6 +10,10 @@
 #include "TextLibExt.h"
 #include "Packet/SharedPackets.h"
 
+
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
 #ifdef DEF_MAKE_ACCOUNT
 
 Screen_CreateAccount::Screen_CreateAccount(CGame* pGame)
@@ -63,9 +67,9 @@ void Screen_CreateAccount::on_update()
     uint32_t dwTime = GameClock::GetTimeMS();
     m_pGame->m_dwCurTime = dwTime;
 
-    m_sNewAcctMsX = static_cast<short>(Input::GetMouseX());
-    m_sNewAcctMsY = static_cast<short>(Input::GetMouseY());
-    char cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+    m_sNewAcctMsX = static_cast<short>(hb::shared::input::GetMouseX());
+    m_sNewAcctMsY = static_cast<short>(hb::shared::input::GetMouseY());
+    char cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
 
     // Handle arrow key navigation
     if (m_pGame->m_cArrowPressed != 0)
@@ -100,20 +104,20 @@ void Screen_CreateAccount::on_update()
     // Direct mouse click focus selection
     if (cLB != 0 && m_cNewAcctPrevLB == 0)
     {
-        if (Input::IsMouseInRect(427, 84, 100, 18)) m_cCurFocus = 1;
-        if (Input::IsMouseInRect(427, 106, 100, 18)) m_cCurFocus = 2;
-        if (Input::IsMouseInRect(427, 129, 100, 18)) m_cCurFocus = 3;
-        if (Input::IsMouseInRect(311, 215, 250, 18)) m_cCurFocus = 4;
+        if (hb::shared::input::IsMouseInRect(427, 84, 100, 18)) m_cCurFocus = 1;
+        if (hb::shared::input::IsMouseInRect(427, 106, 100, 18)) m_cCurFocus = 2;
+        if (hb::shared::input::IsMouseInRect(427, 129, 100, 18)) m_cCurFocus = 3;
+        if (hb::shared::input::IsMouseInRect(311, 215, 250, 18)) m_cCurFocus = 4;
 
         // Button 5: Create
-        if (Input::IsMouseInRect(297, 398, 72, 20))
+        if (hb::shared::input::IsMouseInRect(297, 398, 72, 20))
         {
             m_cCurFocus = 5;
             m_pGame->PlayGameSound('E', 14, 5);
             _submit_create_account();
         }
         // Button 6: Clear
-        if (Input::IsMouseInRect(392, 398, 72, 20))
+        if (hb::shared::input::IsMouseInRect(392, 398, 72, 20))
         {
             m_cCurFocus = 6;
             m_pGame->PlayGameSound('E', 14, 5);
@@ -122,7 +126,7 @@ void Screen_CreateAccount::on_update()
             m_cNewAcctPrevFocus = 0; // Trigger reset
         }
         // Button 7: Cancel
-        if (Input::IsMouseInRect(488, 398, 72, 20))
+        if (hb::shared::input::IsMouseInRect(488, 398, 72, 20))
         {
             m_cCurFocus = 7;
             m_pGame->PlayGameSound('E', 14, 5);
@@ -131,17 +135,17 @@ void Screen_CreateAccount::on_update()
     }
     m_cNewAcctPrevLB = cLB;
 
-    if (Input::IsKeyPressed(KeyCode::Escape) == true)
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) == true)
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
     }
 
     // Handle Tab key
-    if (Input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
     {
         m_pGame->PlayGameSound('E', 14, 5);
-        if (Input::IsShiftDown())
+        if (hb::shared::input::IsShiftDown())
         {
             m_cCurFocus--;
             if (m_cCurFocus < 1) m_cCurFocus = 4;
@@ -154,7 +158,7 @@ void Screen_CreateAccount::on_update()
     }
 
     // Handle Enter key
-    if (Input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Enter))
     {
         m_pGame->PlayGameSound('E', 14, 5);
 
@@ -190,7 +194,7 @@ void Screen_CreateAccount::_submit_create_account()
 
         // Build CreateAccountRequest packet
         hb::net::CreateAccountRequest req{};
-        req.header.msg_id = MSGID_REQUEST_CREATENEWACCOUNT;
+        req.header.msg_id = MsgId::RequestCreateNewAccount;
         req.header.msg_type = 0;
         std::snprintf(req.account_name, sizeof(req.account_name), "%s", m_cNewAcctName);
         std::snprintf(req.password, sizeof(req.password), "%s", m_cNewAcctPassword);
@@ -201,12 +205,12 @@ void Screen_CreateAccount::_submit_create_account()
         m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
         // Connection logic
-        m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+        m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
         m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort);
-        m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+        m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
         m_pGame->ChangeGameMode(GameMode::Connecting);
-        m_pGame->m_dwConnectMode = MSGID_REQUEST_CREATENEWACCOUNT;
+        m_pGame->m_dwConnectMode = MsgId::RequestCreateNewAccount;
         std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
         std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "01");
     }
@@ -215,21 +219,21 @@ void Screen_CreateAccount::_submit_create_account()
 bool Screen_CreateAccount::on_net_response(uint16_t wResponseType, char* pData)
 {
 	switch (wResponseType) {
-	case DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED:
+	case LogResMsg::NewAccountCreated:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "54");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
-	case DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED:
+	case LogResMsg::NewAccountFailed:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "05");
 		m_pGame->ChangeGameMode(GameMode::LogResMsg);
 		return true;
 
-	case DEF_LOGRESMSGTYPE_ALREADYEXISTINGACCOUNT:
+	case LogResMsg::AlreadyExistingAccount:
 		m_pGame->m_pLSock.reset();
 		std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
 		std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "06");
@@ -252,17 +256,17 @@ void Screen_CreateAccount::on_render()
     if (password().empty())                                      iFlag = 2;
     if (name().empty())                                          iFlag = 1;
 
-    auto labelStyle = TextLib::TextStyle::Color(GameColors::UIFormLabel);
-    auto blackStyle = TextLib::TextStyle::Color(GameColors::UIBlack);
+    auto labelStyle = hb::shared::text::TextStyle::Color(GameColors::UIFormLabel);
+    auto blackStyle = hb::shared::text::TextStyle::Color(GameColors::UIBlack);
 
     // Draw background
     m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_NEWACCOUNT, 0, 0, 0, true);
 
     // Draw labels
-    TextLib::DrawText(GameFont::Default, 377, 84, "Account:", labelStyle);
-    TextLib::DrawText(GameFont::Default, 372, 106, "Password:", labelStyle);
-    TextLib::DrawText(GameFont::Default, 372, 129, "(confirm)", labelStyle);
-    TextLib::DrawText(GameFont::Default, 271, 215, "eMail:", labelStyle);
+    hb::shared::text::DrawText(GameFont::Default, 377, 84, "Account:", labelStyle);
+    hb::shared::text::DrawText(GameFont::Default, 372, 106, "Password:", labelStyle);
+    hb::shared::text::DrawText(GameFont::Default, 372, 129, "(confirm)", labelStyle);
+    hb::shared::text::DrawText(GameFont::Default, 271, 215, "eMail:", labelStyle);
 
     // Show active input string
     if ((m_cCurFocus == 2) || (m_cCurFocus == 3))
@@ -271,82 +275,82 @@ void Screen_CreateAccount::on_render()
         m_pGame->ShowReceivedString();
 
     // Draw input field values with validation coloring
-    auto validStyle = TextLib::TextStyle::WithShadow(GameColors::InputValid);
-    auto invalidStyle = TextLib::TextStyle::WithShadow(GameColors::InputInvalid);
+    auto validStyle = hb::shared::text::TextStyle::WithShadow(GameColors::InputValid);
+    auto invalidStyle = hb::shared::text::TextStyle::WithShadow(GameColors::InputInvalid);
 
     if (m_cCurFocus != 1) {
         bool bValid = CMisc::bCheckValidName(m_cNewAcctName) != false;
-        TextLib::DrawText(GameFont::Default, 427, 84, m_cNewAcctName, bValid ? validStyle : invalidStyle);
+        hb::shared::text::DrawText(GameFont::Default, 427, 84, m_cNewAcctName, bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 2) {
         std::string masked2(password().size(), '*');
         bool bValid = CMisc::bCheckValidName(m_cNewAcctPassword) != false;
-        TextLib::DrawText(GameFont::Default, 427, 106, masked2.c_str(), bValid ? validStyle : invalidStyle);
+        hb::shared::text::DrawText(GameFont::Default, 427, 106, masked2.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 3) {
         std::string masked3(confirm().size(), '*');
         bool bValid = (password() == confirm());
-        TextLib::DrawText(GameFont::Default, 427, 129, masked3.c_str(), bValid ? validStyle : invalidStyle);
+        hb::shared::text::DrawText(GameFont::Default, 427, 129, masked3.c_str(), bValid ? validStyle : invalidStyle);
     }
     if (m_cCurFocus != 4) {
         bool bValid = CMisc::bIsValidEmail(m_cEmail);
-        TextLib::DrawText(GameFont::Default, 311, 48 + 190 - 25 + 2, m_cEmail, bValid ? validStyle : invalidStyle);
+        hb::shared::text::DrawText(GameFont::Default, 311, 48 + 190 - 25 + 2, m_cEmail, bValid ? validStyle : invalidStyle);
     }
 
     // Draw help text based on focus
     switch (m_cCurFocus) {
     case 1:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT1, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT2, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     case 2:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT4, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     case 3:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT8, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     case 4:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, blackStyle, TextLib::Align::TopCenter);
-        TextLib::DrawTextAligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT21, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT22, blackStyle, hb::shared::text::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT23, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     case 5:
         switch (iFlag) {
         case 0:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT33, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 1:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT35, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 2:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT38, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 3:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT42, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 5:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT50, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 6:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT52, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT53, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 7:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT56, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT57, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         case 9:
-            TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, blackStyle, TextLib::Align::TopCenter);
-            TextLib::DrawTextAligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, blackStyle, TextLib::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT63, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 345, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT64, blackStyle, hb::shared::text::Align::TopCenter);
+            hb::shared::text::DrawTextAligned(GameFont::Default, 290, 360, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT65, blackStyle, hb::shared::text::Align::TopCenter);
             break;
         }
         break;
     case 6:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT80, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     case 7:
-        TextLib::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, blackStyle, TextLib::Align::TopCenter);
+        hb::shared::text::DrawTextAligned(GameFont::Default, 290, 330, (575) - (290), 15, UPDATE_SCREEN_ON_CREATE_NEW_ACCOUNT81, blackStyle, hb::shared::text::Align::TopCenter);
         break;
     }
 

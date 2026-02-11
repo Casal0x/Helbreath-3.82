@@ -7,6 +7,6 @@ class GameCmdSpawn : public GameChatCommand
 {
 public:
 	const char* GetName() const override { return "spawn"; }
-	int GetDefaultLevel() const override { return hb::admin::Developer; }
+	int GetDefaultLevel() const override { return hb::shared::admin::Developer; }
 	bool Execute(CGame* pGame, int iClientH, const char* pArgs) override;
 };

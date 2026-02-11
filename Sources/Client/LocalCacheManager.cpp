@@ -123,7 +123,7 @@ bool LocalCacheManager::ReplayFromCache(ConfigCacheType type, PacketCallback cb,
 		return false;
 	}
 
-	uint32_t check = hb_crc32(payload.data(), payload.size());
+	uint32_t check = hb::shared::util::hb_crc32(payload.data(), payload.size());
 	if (check != hdr.crc32) {
 		m_bIsReplaying = false;
 		return false;
@@ -195,5 +195,5 @@ bool LocalCacheManager::_LoadHeader(ConfigCacheType type)
 
 uint32_t LocalCacheManager::_ComputePayloadHash(const std::vector<uint8_t>& data) const
 {
-	return hb_crc32(data.data(), data.size());
+	return hb::shared::util::hb_crc32(data.data(), data.size());
 }

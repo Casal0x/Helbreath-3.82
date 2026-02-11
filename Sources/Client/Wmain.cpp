@@ -14,7 +14,7 @@
 
 // --------------------------------------------------------------
 // Platform-independent core
-int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
+int GameMain(hb::shared::types::NativeInstance nativeInstance, int iconResourceId, const char* cmdLine)
 {
     srand((unsigned)time(0));
 
@@ -23,14 +23,14 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     ConfigManager::Get().Initialize();
     ConfigManager::Get().Load();
 
-    ResolutionConfig::Initialize(
+    hb::shared::render::ResolutionConfig::Initialize(
         ConfigManager::Get().GetWindowWidth(),
         ConfigManager::Get().GetWindowHeight()
     );
 
     auto game = std::make_unique<CGame>();
 
-    WindowParams params = {};
+    hb::shared::render::WindowParams params = {};
     params.title = "Helbreath";
     params.width = ConfigManager::Get().GetWindowWidth();
     params.height = ConfigManager::Get().GetWindowHeight();
@@ -41,42 +41,42 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     params.nativeInstance = nativeInstance;
     params.iconResourceId = iconResourceId;
 
-    if (!Window::Create(params))
+    if (!hb::shared::render::Window::Create(params))
     {
-        Window::ShowError("ERROR", "Failed to create window!");
+        hb::shared::render::Window::ShowError("ERROR", "Failed to create window!");
         game.reset();
         return 1;
     }
 
     auto windowHandler = std::make_unique<GameWindowHandler>(game.get());
-    Window::Get()->SetEventHandler(windowHandler.get());
-    Window::Get()->Show();
+    hb::shared::render::Window::Get()->SetEventHandler(windowHandler.get());
+    hb::shared::render::Window::Get()->Show();
 
     FrameTiming::Initialize();
 
     if (game->bInit() == false)
     {
-        Window::Get()->SetEventHandler(nullptr);
+        hb::shared::render::Window::Get()->SetEventHandler(nullptr);
         windowHandler.reset();
         game.reset();
-        Window::Close();
+        hb::shared::render::Window::Close();
         return 1;
     }
 
     // Push display settings from ConfigManager to engine
-    // Must happen after bInit() which creates the renderer via Renderer::Set()
-    Window::Get()->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
-    Window::Get()->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
-    Window::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
-    if (Renderer::Get())
-        Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+    // Must happen after bInit() which creates the renderer via hb::shared::render::Renderer::Set()
+    hb::shared::render::Window::Get()->SetVSyncEnabled(ConfigManager::Get().IsVSyncEnabled());
+    hb::shared::render::Window::Get()->SetFramerateLimit(ConfigManager::Get().GetFpsLimit());
+    hb::shared::render::Window::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
+    if (hb::shared::render::Renderer::Get())
+        hb::shared::render::Renderer::Get()->SetFullscreenStretch(ConfigManager::Get().IsFullscreenStretchEnabled());
 
     // Event loop — UpdateFrame runs every iteration (decoupled from frame rate),
     // RenderFrame is gated by the engine's frame limiter (VSync or FPS cap)
-    IWindow* window = Window::Get();
+    hb::shared::render::IWindow* window = hb::shared::render::Window::Get();
     while (true)
     {
-        Input::BeginFrame();
+        hb::shared::input::BeginFrame();
 
         if (!window->ProcessMessages())
             break;
@@ -91,12 +91,12 @@ int GameMain(NativeInstance nativeInstance, int iconResourceId, const char* cmdL
     }
 
     // Shutdown
-    Window::Get()->SetEventHandler(nullptr);
+    hb::shared::render::Window::Get()->SetEventHandler(nullptr);
     windowHandler.reset();
     game.reset();
 
-    Window::Destroy();
-    Renderer::Destroy();
+    hb::shared::render::Window::Destroy();
+    hb::shared::render::Renderer::Destroy();
 
     DevConsole::Get().Shutdown();
 

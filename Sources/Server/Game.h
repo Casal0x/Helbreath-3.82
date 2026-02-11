@@ -143,7 +143,7 @@
 #define DEF_MAXIMUMHITRATIO	99
 //============================
 
-// DEF_PLAYERMAXLEVEL is defined in NetConstants.h
+// hb::shared::limits::PlayerMaxLevel is defined in NetConstants.h
 
 //============================
 // New Changed 12/05/2004
@@ -157,30 +157,22 @@
 
 // MOG Definitions - 3.51
 // Level up MSG
-#define MSGID_LEVELUPSETTINGS				0x11A01000
 // 2003-04-14      ...
 // Stat Point Change MSG
-#define MSGID_STATECHANGEPOINT				0x11A01001
 
-//#define DEF_NOTIFY_STATECHANGE_FAILED 0x11A01002
-//#define DEF_NOTIFY_SETTING_FAILED 0x11A01003
-//#define DEF_NOTIFY_STATECHANGE_SUCCESS 0x11A01004
-//#define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
+//#define hb::shared::net::Notify::StateChangeFailed 0x11A01002
+//#define hb::shared::net::Notify::SettingFailed 0x11A01003
+//#define hb::shared::net::Notify::StateChangeSuccess 0x11A01004
+//#define hb::shared::net::Notify::SettingSuccess 0x11A01005
 
 //Mine
-//#define DEF_NOTIFY_SETTING_FAILED 0x11A01003
-//#define DEF_NOTIFY_SETTING_SUCCESS 0x11A01005
+//#define hb::shared::net::Notify::SettingFailed 0x11A01003
+//#define hb::shared::net::Notify::SettingSuccess 0x11A01005
 //2.24
-//#define DEF_NOTIFY_SETTING_FAILED 0xBB4
-//#define DEF_NOTIFY_SETTING_SUCCESS 0xBB3
+//#define hb::shared::net::Notify::SettingFailed 0xBB4
+//#define hb::shared::net::Notify::SettingSuccess 0xBB3
 
 
-#define DEF_STR 0x01
-#define DEF_DEX 0x02
-#define DEF_INT 0x03
-#define DEF_VIT 0x04
-#define DEF_MAG 0x05
-#define DEF_CHR 0x06
 
 #define DEF_TEST 0xFFFF0000
 //#define DEF_TESTSERVER
@@ -282,20 +274,20 @@ struct LoginClient
 	LoginClient(asio::io_context& ctx)
 	{
 		_sock = 0;
-		_sock = new class ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
-		_sock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+		_sock = new class hb::shared::net::ASIOSocket(ctx, DEF_CLIENTSOCKETBLOCKLIMIT);
+		_sock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 		_timeout_tm = 0;
 	}
 
 	uint32_t _timeout_tm;
 	~LoginClient();
-	ASIOSocket* _sock;
+	hb::shared::net::ASIOSocket* _sock;
 	char _ip[21];
 };
 
 struct AdminEntry {
-	char m_cAccountName[DEF_ACCOUNT_NAME];
-	char m_cCharName[DEF_CHARNAME];
+	char m_cAccountName[hb::shared::limits::AccountNameLen];
+	char m_cCharName[hb::shared::limits::CharNameLen];
 	char m_cApprovedIP[21];
 	int m_iAdminLevel = 1;
 };
@@ -319,7 +311,7 @@ public:
 
 	LoginClient* _lclients[DEF_MAXCLIENTLOGINSOCK];
 
-	bool bAcceptLogin(ASIOSocket* sock);
+	bool bAcceptLogin(hb::shared::net::ASIOSocket* sock);
 	bool bAcceptFromAsync(asio::ip::tcp::socket&& peer);
 	bool bAcceptLoginFromAsync(asio::ip::tcp::socket&& peer);
 
@@ -672,7 +664,7 @@ public:
 	void ChatMsgHandler(int iClientH, char * pData, size_t dwMsgSize);
 	bool IsBlockedBy(int iSenderH, int iReceiverH) const;
 	void NpcProcess();
-	int bCreateNewNpc(int iNpcConfigId, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0, bool bBypassMobLimit = false);
+	int bCreateNewNpc(int iNpcConfigId, char * pName, char * pMapName, short sClass, char cSA, char cMoveType, int * poX, int * poY, char * pWaypointList, hb::shared::geometry::GameRectangle * pArea, int iSpotMobIndex, char cChangeSide, bool bHideGenMode, bool bIsSummoned = false, bool bFirmBerserk = false, bool bIsMaster = false, int iGuildGUID = 0, bool bBypassMobLimit = false);
 	//bool bCreateNewNpc(char * pNpcName, char * pName, char * pMapName, short sX, short sY);
 	int SpawnMapNpcsFromDatabase(struct sqlite3* db, int iMapIndex);
 	bool _bGetIsStringIsNumber(char * pStr);
@@ -697,7 +689,7 @@ public:
 	void OnClientRead(int iClientH);
 	bool bInit();
 	void OnClientSocketEvent(int iClientH);  // MODERNIZED: Polls socket instead of handling window messages
-	bool bAccept(class ASIOSocket * pXSock);
+	bool bAccept(class hb::shared::net::ASIOSocket * pXSock);
 	void GetFightzoneTicketHandler(int iClientH);
 	void FightzoneReserveProcessor() ;
 
@@ -771,7 +763,7 @@ public:
 
 	class CEntityManager * m_pEntityManager;  // Entity spawn/despawn manager
 
-	ConcurrentMsgQueue m_msgQueue;
+	hb::shared::net::ConcurrentMsgQueue m_msgQueue;
 	int             m_iTotalMaps;
 	bool			m_bIsGameStarted;
 	bool			m_bIsItemAvailable, m_bIsBuildItemAvailable, m_bIsNpcAvailable, m_bIsMagicAvailable;
@@ -785,15 +777,15 @@ public:
 	std::map<int, ShopData> m_ShopData;          // shop_id  ShopData
 	CItem   * m_pItemConfigList[DEF_MAXITEMTYPES];
 	class CNpc    * m_pNpcConfigList[DEF_MAXNPCTYPES];
-	class CMagic  * m_pMagicConfigList[DEF_MAXMAGICTYPE];
-	class CSkill  * m_pSkillConfigList[DEF_MAXSKILLTYPE];
+	class CMagic  * m_pMagicConfigList[hb::shared::limits::MaxMagicType];
+	class CSkill  * m_pSkillConfigList[hb::shared::limits::MaxSkillType];
 	class CQuest  * m_pQuestConfigList[DEF_MAXQUESTTYPE];
 	//class CTeleport * m_pTeleportConfigList[DEF_MAXTELEPORTTYPE];
 
 	uint32_t m_dwConfigHash[4]{};
 	void ComputeConfigHashes();
 
-	class ASIOSocket* _lsock;
+	class hb::shared::net::ASIOSocket* _lsock;
 
 	class PartyManager* m_pPartyManager;
 
@@ -803,7 +795,7 @@ public:
 
 	std::vector<LoginClient*> _lclients_disconn;
 
-	char            m_pMsgBuffer[DEF_MSGBUFFERSIZE+1];
+	char            m_pMsgBuffer[hb::shared::limits::MsgBufferSize+1];
 
 	HWND  m_hWnd;
 	int   m_iTotalClients, m_iMaxClients, m_iTotalGameServerClients, m_iTotalGameServerMaxClients;
@@ -865,7 +857,7 @@ public:
 	
 	int   m_iAutoRebootingCount;
 
-	class CBuildItem * m_pBuildItemList[hb::limits::MaxBuildItems];
+	class CBuildItem * m_pBuildItemList[hb::shared::limits::MaxBuildItems];
 
 	char * m_pNoticementData;
 	uint32_t  m_dwNoticementDataSize;
@@ -882,7 +874,7 @@ public:
 		char cType;			
 		int  dX, dY;		
 
-	} m_stCrusadeStructures[hb::limits::MaxCrusadeStructures];
+	} m_stCrusadeStructures[hb::shared::limits::MaxCrusadeStructures];
 
 	
 	int m_iCollectedMana[3];
@@ -901,7 +893,7 @@ public:
 		char cType;		
 		char cSide;		
 		short sX, sY;	
-	} m_stMiddleCrusadeStructureInfo[hb::limits::MaxCrusadeStructures];
+	} m_stMiddleCrusadeStructureInfo[hb::shared::limits::MaxCrusadeStructures];
 
 	struct {
 		char m_cBannedIPaddress[21];

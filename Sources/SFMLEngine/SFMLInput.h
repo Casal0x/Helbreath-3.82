@@ -16,7 +16,7 @@ public:
     SFMLInput();
     virtual ~SFMLInput();
 
-    void Initialize(NativeWindowHandle hWnd);
+    void Initialize(hb::shared::types::NativeWindowHandle hWnd);
     void SetRenderWindow(sf::RenderWindow* pWindow);
 
     // ============== IInput Implementation ==============
@@ -47,7 +47,7 @@ public:
     virtual bool IsCtrlDown() const override;
     virtual bool IsAltDown() const override;
 
-    // Window focus
+    // hb::shared::render::Window focus
     virtual bool IsWindowActive() const override;
     virtual void SetWindowActive(bool active) override;
 
@@ -66,7 +66,7 @@ public:
 private:
     void ClearAllKeys();
 
-    NativeWindowHandle m_hWnd;
+    hb::shared::types::NativeWindowHandle m_hWnd;
     sf::RenderWindow* m_pRenderWindow;
     bool m_active;
     bool m_suppressed;

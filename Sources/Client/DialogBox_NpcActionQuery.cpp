@@ -3,7 +3,8 @@
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_NpcActionQuery::DialogBox_NpcActionQuery(CGame* pGame)
 	: IDialogBox(DialogBoxId::NpcActionQuery, pGame)
@@ -219,31 +220,31 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
 			switch (Info().sV1) {
 			case 7:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 1, 0, 0, 0);
 				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);
 				break;
 			case 11:
 				switch (Info().sV2) {
 				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
+					bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 2, 0, 0, 0);
 					AddEventList(TALKING_TO_SHOP_KEEPER, 10);
 					break;
 				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
+					bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 3, 0, 0, 0);
 					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);
 					break;
 				}
 				break;
 			case 13:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 4, 0, 0, 0);
 				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);
 				break;
 			case 14:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 5, 0, 0, 0);
 				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);
 				break;
 			case 16:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 6, 0, 0, 0);
 				AddEventList(TALKING_TO_MAGICIAN, 10);
 				break;
 			}
@@ -259,7 +260,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 4) && (absY <= 4) && pCfg)
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
+				bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
 			DisableThisDialog();
 			return true;
@@ -268,7 +269,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 			absX = abs(Info().sV5 - m_pGame->m_pPlayer->m_sPlayerX);
 			absY = abs(Info().sV6 - m_pGame->m_pPlayer->m_sPlayerY);
 			if ((absX <= 4) && (absY <= 4) && pCfg)
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_EXCHANGEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
+				bSendCommand(MsgId::CommandCommon, CommonType::ExchangeItemToChar, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY8, 10);
 			DisableThisDialog();
 			return true;
@@ -280,13 +281,13 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 	{
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if ((msX > sX + 25) && (msX < sX + 100) && (msY > sY + 55) && (msY < sY + 70)) {
-			if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_SELLITEM, 0, Info().sV1, Info().sV2, Info().sV3, pCfg->m_cName, Info().sV4);
+			if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::ReqSellItem, 0, Info().sV1, Info().sV2, Info().sV3, pCfg->m_cName, Info().sV4);
 			DisableThisDialog();
 			return true;
 		}
 		else if ((msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
 			if (Info().sV3 == 1) {
-				if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, Info().sV1, Info().sV2, 0, pCfg->m_cName, Info().sV4);
+				if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, Info().sV1, Info().sV2, 0, pCfg->m_cName, Info().sV4);
 				DisableThisDialog();
 				return true;
 			}
@@ -304,7 +305,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 				if (m_pGame->_iGetBankItemCount() >= (m_pGame->iMaxBankItems - 1)) {
 					AddEventList(DLGBOX_CLICK_NPCACTION_QUERY9, 10);
 				}
-				else if (pCfg) bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GIVEITEMTOCHAR, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
+				else if (pCfg) bSendCommand(MsgId::CommandCommon, CommonType::GiveItemToChar, Info().sV1, Info().sV3, Info().sV5, Info().sV6, pCfg->m_cName, Info().sV4);
 			}
 			else AddEventList(DLGBOX_CLICK_NPCACTION_QUERY7, 10);
 			DisableThisDialog();
@@ -317,23 +318,23 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 125) && (msX < sX + 180) && (msY > sY + 55) && (msY < sY + 70)) {
 			switch (Info().sV3) {
 			case 21:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 21, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 21, 0, 0, 0);
 				AddEventList(TALKING_TO_GUARD, 10);
 				break;
 			case 32:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 32, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 32, 0, 0, 0);
 				AddEventList(TALKING_TO_UNICORN, 10);
 				break;
 			case 67:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 67, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 67, 0, 0, 0);
 				AddEventList(TALKING_TO_MCGAFFIN, 10);
 				break;
 			case 68:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 68, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 68, 0, 0, 0);
 				AddEventList(TALKING_TO_PERRY, 10);
 				break;
 			case 69:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 69, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 69, 0, 0, 0);
 				AddEventList(TALKING_TO_DEVLIN, 10);
 				break;
 			}
@@ -355,31 +356,31 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		if ((m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::NpcTalk) == false) && (msX > sX + 155) && (msX < sX + 210) && (msY > sY + 55) && (msY < sY + 70)) {
 			switch (Info().sV1) {
 			case 7:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 1, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 1, 0, 0, 0);
 				AddEventList(TALKING_TO_GUILDHALL_OFFICER, 10);
 				break;
 			case 11:
 				switch (Info().sV2) {
 				case 1:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 2, 0, 0, 0);
+					bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 2, 0, 0, 0);
 					AddEventList(TALKING_TO_SHOP_KEEPER, 10);
 					break;
 				case 2:
-					bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 3, 0, 0, 0);
+					bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 3, 0, 0, 0);
 					AddEventList(TALKING_TO_BLACKSMITH_KEEPER, 10);
 					break;
 				}
 				break;
 			case 13:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 4, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 4, 0, 0, 0);
 				AddEventList(TALKING_TO_CITYHALL_OFFICER, 10);
 				break;
 			case 14:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 5, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 5, 0, 0, 0);
 				AddEventList(TALKING_TO_WAREHOUSE_KEEPER, 10);
 				break;
 			case 16:
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TALKTONPC, 0, 6, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::TalkToNpc, 0, 6, 0, 0, 0);
 				AddEventList(TALKING_TO_MAGICIAN, 10);
 				break;
 			}
@@ -389,7 +390,7 @@ bool DialogBox_NpcActionQuery::OnClick(short msX, short msY)
 		// Repair All
 		if ((msX > sX + 155) && (msX < sX + 210) && (msY > sY + 22) && (msY < sY + 37)) {
 			if (Info().sV3 == 24) {
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRALL, 0, 0, 0, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairAll, 0, 0, 0, 0, 0, 0);
 				DisableThisDialog();
 				return true;
 			}

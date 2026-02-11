@@ -1,6 +1,6 @@
-// GameWindowHandler.h: Window event handler adapter for CGame
+// GameWindowHandler.h: hb::shared::render::Window event handler adapter for CGame
 //
-// Implements IWindowEventHandler and routes events to CGame methods
+// Implements hb::shared::render::IWindowEventHandler and routes events to CGame methods
 //////////////////////////////////////////////////////////////////////
 
 #pragma once
@@ -10,15 +10,15 @@
 // Forward declarations
 class CGame;
 
-class GameWindowHandler : public IWindowEventHandler
+class GameWindowHandler : public hb::shared::render::IWindowEventHandler
 {
 public:
     GameWindowHandler(CGame* pGame);
     virtual ~GameWindowHandler() = default;
 
-    // ============== IWindowEventHandler Implementation ==============
+    // ============== hb::shared::render::IWindowEventHandler Implementation ==============
 
-    // Window Events
+    // hb::shared::render::Window Events
     virtual void OnClose() override;
     virtual void OnDestroy() override;
     virtual void OnActivate(bool active) override;
@@ -37,7 +37,7 @@ public:
     virtual bool OnCustomMessage(uint32_t message, uintptr_t wParam, intptr_t lParam) override;
 
     // Text Input
-    virtual bool OnTextInput(NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam) override;
+    virtual bool OnTextInput(hb::shared::types::NativeWindowHandle hWnd, uint32_t message, uintptr_t wParam, intptr_t lParam) override;
 
 private:
     CGame* m_pGame;

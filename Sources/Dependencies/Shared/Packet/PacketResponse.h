@@ -2,8 +2,8 @@
 
 #include "PacketHeaders.h"
 #include "NetConstants.h"
-#include "../Appearance.h"
-#include "../PlayerStatusData.h"
+#include "Appearance.h"
+#include "PlayerStatusData.h"
 
 #include <cstdint>
 
@@ -74,7 +74,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseItemListEntry {
-		char name[DEF_ITEMNAME - 1];
+		char name[hb::shared::limits::ItemNameLen - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -97,7 +97,7 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseBankItemEntry {
-		char name[DEF_ITEMNAME - 1];
+		char name[hb::shared::limits::ItemNameLen - 1];
 		uint32_t count;
 		uint8_t item_type;
 		uint8_t equip_pos;
@@ -115,8 +115,8 @@ namespace net {
 	};
 
 	struct HB_PACKED PacketResponseMasteryData {
-		char magic_mastery[DEF_MAXMAGICTYPE];
-		uint8_t skill_mastery[DEF_MAXSKILLTYPE];
+		char magic_mastery[hb::shared::limits::MaxMagicType];
+		uint8_t skill_mastery[hb::shared::limits::MaxSkillType];
 	};
 
 	struct HB_PACKED PacketResponseDynamicObject {
@@ -164,8 +164,8 @@ namespace net {
 		int16_t pivot_x;
 		int16_t pivot_y;
 		int16_t player_type;
-		PlayerAppearance appearance;
-		PlayerStatus status;
+		hb::shared::entity::PlayerAppearance appearance;
+		hb::shared::entity::PlayerStatus status;
 		char map_name[10];
 		char cur_location[10];
 		uint8_t sprite_alpha;

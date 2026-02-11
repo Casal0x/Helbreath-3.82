@@ -610,7 +610,7 @@ bool LoadMapNoAttackAreas(sqlite3* db, const char* mapName, CMap* pMap)
 		int idx = sqlite3_column_int(stmt, 0);
 		if (idx < 0 || idx >= DEF_MAXNMR) continue;
 
-		pMap->m_rcNoAttackRect[idx] = GameRectangle(
+		pMap->m_rcNoAttackRect[idx] = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
 			sqlite3_column_int(stmt, 2),
 			sqlite3_column_int(stmt, 3),
@@ -642,7 +642,7 @@ bool LoadMapNpcAvoidRects(sqlite3* db, const char* mapName, CMap* pMap)
 		int idx = sqlite3_column_int(stmt, 0);
 		if (idx < 0 || idx >= DEF_MAXMGAR) continue;
 
-		pMap->m_rcMobGenAvoidRect[idx] = GameRectangle(
+		pMap->m_rcMobGenAvoidRect[idx] = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
 			sqlite3_column_int(stmt, 2),
 			sqlite3_column_int(stmt, 3),
@@ -677,7 +677,7 @@ bool LoadMapSpotMobGenerators(sqlite3* db, const char* mapName, CMap* pMap)
 
 		pMap->m_stSpotMobGenerator[idx].bDefined = true;
 		pMap->m_stSpotMobGenerator[idx].cType = static_cast<char>(sqlite3_column_int(stmt, 1));
-		pMap->m_stSpotMobGenerator[idx].rcRect = GameRectangle(
+		pMap->m_stSpotMobGenerator[idx].rcRect = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 2),
 			sqlite3_column_int(stmt, 3),
 			sqlite3_column_int(stmt, 4),
@@ -1024,7 +1024,7 @@ bool LoadMapApocalypseBoss(sqlite3* db, const char* mapName, CMap* pMap)
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		pMap->m_iApocalypseBossMobNpcID = sqlite3_column_int(stmt, 0);
-		pMap->m_rcApocalypseBossMob = GameRectangle(
+		pMap->m_rcApocalypseBossMob = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
 			sqlite3_column_int(stmt, 2),
 			sqlite3_column_int(stmt, 3),
@@ -1054,7 +1054,7 @@ bool LoadMapDynamicGate(sqlite3* db, const char* mapName, CMap* pMap)
 
 	if (sqlite3_step(stmt) == SQLITE_ROW) {
 		pMap->m_cDynamicGateType = static_cast<char>(sqlite3_column_int(stmt, 0));
-		pMap->m_rcDynamicGateCoord = GameRectangle(
+		pMap->m_rcDynamicGateCoord = hb::shared::geometry::GameRectangle(
 			sqlite3_column_int(stmt, 1),
 			sqlite3_column_int(stmt, 2),
 			sqlite3_column_int(stmt, 3),

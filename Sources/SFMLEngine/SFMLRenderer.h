@@ -1,4 +1,4 @@
-// SFMLRenderer.h: SFML renderer implementing IRenderer interface
+// SFMLRenderer.h: SFML renderer implementing hb::shared::render::IRenderer interface
 //
 // Part of SFMLEngine static library
 // Uses sf::RenderTexture as back buffer and renders to sf::RenderWindow
@@ -14,22 +14,22 @@
 #include <string>
 #include <chrono>
 
-class SFMLRenderer : public IRenderer
+class SFMLRenderer : public hb::shared::render::IRenderer
 {
 public:
     SFMLRenderer();
     virtual ~SFMLRenderer();
 
-    // ============== IRenderer Implementation ==============
+    // ============== hb::shared::render::IRenderer Implementation ==============
 
     // Initialization
-    bool Init(NativeWindowHandle hWnd) override;
+    bool Init(hb::shared::types::NativeWindowHandle hWnd) override;
     void Shutdown() override;
 
     // Display Modes
     void SetFullscreen(bool fullscreen) override;
     bool IsFullscreen() const override;
-    void ChangeDisplayMode(NativeWindowHandle hWnd) override;
+    void ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd) override;
 
     // Scaling
     void SetFullscreenStretch(bool stretch) override;
@@ -47,37 +47,30 @@ public:
     double GetDeltaTimeMS() const override;
 
     // Primitive Rendering
-    void DrawPixel(int x, int y, const Color& color) override;
-    void DrawLine(int x0, int y0, int x1, int y1, const Color& color,
-                  BlendMode blend = BlendMode::Alpha) override;
-    void DrawRectFilled(int x, int y, int w, int h, const Color& color) override;
-    void DrawRectOutline(int x, int y, int w, int h, const Color& color,
+    void DrawPixel(int x, int y, const hb::shared::render::Color& color) override;
+    void DrawLine(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color,
+                  hb::shared::render::BlendMode blend = hb::shared::render::BlendMode::Alpha) override;
+    void DrawRectFilled(int x, int y, int w, int h, const hb::shared::render::Color& color) override;
+    void DrawRectOutline(int x, int y, int w, int h, const hb::shared::render::Color& color,
                          int thickness = 1) override;
     void DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
-                               const Color& color) override;
+                               const hb::shared::render::Color& color) override;
     void DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
-                                const Color& color, int thickness = 1) override;
+                                const hb::shared::render::Color& color, int thickness = 1) override;
 
     // Text Rendering
     void BeginTextBatch() override;
     void EndTextBatch() override;
-    void DrawText(int x, int y, const char* text, const Color& color) override;
-    void DrawTextRect(const GameRectangle& rect, const char* text, const Color& color) override;
+    void DrawText(int x, int y, const char* text, const hb::shared::render::Color& color) override;
+    void DrawTextRect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color) override;
 
     // Surface/Texture Management
-    ITexture* CreateTexture(uint16_t width, uint16_t height) override;
-    void DestroyTexture(ITexture* texture) override;
-
-    // Direct Buffer Access (emulated via sf::Image)
-    uint16_t* LockBackBuffer(int* pitch) override;
-    void UnlockBackBuffer() override;
+    hb::shared::render::ITexture* CreateTexture(uint16_t width, uint16_t height) override;
+    void DestroyTexture(hb::shared::render::ITexture* texture) override;
 
     // Clip Area
     void SetClipArea(int x, int y, int w, int h) override;
-    GameRectangle GetClipArea() const override;
-
-    // Pixel Format Info
-    int GetPixelFormat() const override;
+    hb::shared::geometry::GameRectangle GetClipArea() const override;
 
     // Screenshot
     bool Screenshot(const char* filename) override;
@@ -89,37 +82,11 @@ public:
     int GetHeightMid() const override;
     void ResizeBackBuffer(int width, int height) override;
 
-    // Color Key Support
-    uint32_t GetColorKey(ITexture* texture, uint16_t colorKey) override;
-    uint32_t GetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b) override;
-    void SetColorKey(ITexture* texture, uint16_t colorKey) override;
-    void SetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b) override;
-
-    // Transparency Tables (dummy - SFML uses GPU blending)
-    const long (*GetTransTableRB100() const)[64] override;
-    const long (*GetTransTableG100() const)[64] override;
-    const long (*GetTransTableRB70() const)[64] override;
-    const long (*GetTransTableG70() const)[64] override;
-    const long (*GetTransTableRB50() const)[64] override;
-    const long (*GetTransTableG50() const)[64] override;
-    const long (*GetTransTableRB25() const)[64] override;
-    const long (*GetTransTableG25() const)[64] override;
-    const long (*GetTransTableRB2() const)[64] override;
-    const long (*GetTransTableG2() const)[64] override;
-    const long (*GetTransTableFadeRB() const)[64] override;
-    const long (*GetTransTableFadeG() const)[64] override;
-
-    // Add Tables (dummy)
-    const int (*GetAddTable31() const)[510] override;
-    const int (*GetAddTable63() const)[510] override;
-    const int (*GetAddTransTable31() const)[64] override;
-    const int (*GetAddTransTable63() const)[64] override;
-
     // Sprite Alpha
     char GetSpriteAlphaDegree() const override;
     void SetSpriteAlphaDegree(char degree) override;
 
-    // Color Utilities
+    // hb::shared::render::Color Utilities
     void ColorTransferRGB(uint32_t rgb, int* outR, int* outG, int* outB) override;
 
     // Text Measurement
@@ -147,9 +114,6 @@ public:
     void SetVSyncMode(bool enabled);
 
 private:
-    // Initialize transparency tables with dummy values
-    void InitDummyTables();
-
     // Create render textures (called when OpenGL context is available)
     bool CreateRenderTextures();
 
@@ -157,17 +121,12 @@ private:
     bool m_texturesCreated;
     sf::RenderTexture m_backBuffer;
 
-    // For LockBackBuffer emulation
-    sf::Image m_lockedImage;
-    std::vector<uint16_t> m_lockedBuffer;
-    bool m_backBufferLocked;
-
     // Display properties
     int m_width;
     int m_height;
     bool m_fullscreen;
     bool m_bFullscreenStretch;
-    GameRectangle m_clipArea;
+    hb::shared::geometry::GameRectangle m_clipArea;
 
     // Engine-owned frame timing
     int m_iFpsLimit;
@@ -186,8 +145,4 @@ private:
     // Sprite alpha degree
     char m_spriteAlphaDegree;
 
-    // Dummy transparency tables (SFML uses GPU blending)
-    static long s_dummyTransTable[64][64];
-    static int s_dummyAddTable[64][510];
-    static int s_dummyAddTransTable[510][64];
 };

@@ -101,12 +101,12 @@ public:
 
 	short m_sOwnerType;							// +B2C
 	short m_sNpcConfigId;						// NPC config index (for name lookup, -1 if player)
-	PlayerStatus m_status;
+	hb::shared::entity::PlayerStatus m_status;
 
 	short m_sDeadOwnerType;						// +B3C
 	short m_sDeadNpcConfigId;					// Dead NPC config index
 
-	PlayerStatus m_deadStatus;
+	hb::shared::entity::PlayerStatus m_deadStatus;
 	short m_sV1;
 	short m_sV2;
 	short m_sV3;								// +B50
@@ -124,8 +124,8 @@ public:
 	char  m_cDeadOwnerName[12];
 
 	// Unpacked appearance data (extracted from m_sAppr1-4 at reception)
-	PlayerAppearance m_appearance;
-	PlayerAppearance m_deadAppearance;
+	hb::shared::entity::PlayerAppearance m_appearance;
+	hb::shared::entity::PlayerAppearance m_deadAppearance;
 
 	// Animation state (replaces m_cOwnerAction, m_cOwnerFrame, m_cDir, m_dwOwnerTime)
 	AnimationState m_animation;

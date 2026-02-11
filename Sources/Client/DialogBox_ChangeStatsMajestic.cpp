@@ -5,6 +5,7 @@
 #include "SpriteID.h"
 #include "NetMessages.h"
 
+using namespace hb::shared::net;
 static constexpr int POINTS_PER_MAJESTIC = 3;
 static constexpr int MIN_STAT_VALUE = 10;
 
@@ -175,7 +176,7 @@ bool DialogBox_ChangeStatsMajestic::OnClick(short msX, short msY)
 	{
 		if (iPendingCost > 0)
 		{
-			bSendCommand(MSGID_STATECHANGEPOINT, 0, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::StateChangePoint, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 	}

@@ -1,7 +1,7 @@
 // Screen_Test.h: Text Rendering Test Screen
 //
 // Side-by-side comparison of legacy PutString* methods (left)
-// and new TextLib::DrawText methods (right) for visual validation.
+// and new hb::shared::text::DrawText methods (right) for visual validation.
 //
 // Press ESC to exit the game.
 // Press UP/DOWN to scroll through test cases.

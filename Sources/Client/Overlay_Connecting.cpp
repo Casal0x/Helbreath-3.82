@@ -33,7 +33,7 @@ void Overlay_Connecting::on_update()
     uint32_t dwElapsed = dwTime - m_dwStartTime;
 
     // ESC key cancels connection (only after 7 seconds when hint is shown)
-    if (Input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
     {
         if (dwElapsed > 7000)
         {
@@ -88,7 +88,7 @@ void Overlay_Connecting::on_render()
     // Draw countdown text
     char cTxt[64];
     std::snprintf(cTxt, sizeof(cTxt), "Connecting to Server... %3dSec", dwElapsed / 1000);
-    TextLib::DrawText(GameFont::Bitmap1, dlgX + 45, dlgY + 65, cTxt, TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 45, dlgY + 65, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     // Show appropriate message based on elapsed time
     if (dwElapsed > 7000)

@@ -6,6 +6,7 @@
 #include <cstring>
 #include <cstdio>
 
+using namespace hb::shared::net;
 bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -14,13 +15,13 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	int iItemID = 0, iAmount = 1;
 	if (pArgs == nullptr || pArgs[0] == '\0' || sscanf(pArgs, "%d %d", &iItemID, &iAmount) < 1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Usage: /createitem <item_id> [amount]");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /createitem <item_id> [amount]");
 		return true;
 	}
 
 	if (iItemID < 0 || iItemID >= DEF_MAXITEMTYPES || pGame->m_pItemConfigList[iItemID] == nullptr)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Invalid item ID.");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid item ID.");
 		return true;
 	}
 
@@ -29,7 +30,7 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
 	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
-	bool bTrueStack = hb::item::IsTrueStackType(itemType) || (iItemID == hb::item::ItemId::Gold);
+	bool bTrueStack = hb::shared::item::IsTrueStackType(itemType) || (iItemID == hb::shared::item::ItemId::Gold);
 
 	int iCreated = 0;
 
@@ -43,20 +44,20 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 			int iEraseReq = 0;
 			if (pGame->_bAddClientItemList(iClientH, pItem, &iEraseReq))
 			{
-				pGame->SendItemNotifyMsg(iClientH, DEF_NOTIFY_ITEMOBTAINED, pItem, 0);
+				pGame->SendItemNotifyMsg(iClientH, Notify::ItemObtained, pItem, 0);
 				iCreated = iAmount;
 			}
 			else
 			{
 				delete pItem;
-				pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Inventory full.");
+				pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Inventory full.");
 				return true;
 			}
 		}
 		else
 		{
 			delete pItem;
-			pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Failed to create item.");
+			pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Failed to create item.");
 			return true;
 		}
 	}
@@ -68,7 +69,7 @@ bool GameCmdCreateItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "Created %d x %s (ID: %d).", iCreated, pItemName, iItemID);
-	pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, buf);
+	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
 
 	return true;
 }

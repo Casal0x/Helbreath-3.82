@@ -4,7 +4,8 @@
 #include "GlobalDef.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_SellList::DialogBox_SellList(CGame* pGame)
 	: IDialogBox(DialogBoxId::SellList, pGame)
@@ -204,7 +205,7 @@ bool DialogBox_SellList::OnClick(short msX, short msY)
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) &&
 		(msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_REQUEST_SELLITEMLIST, 0, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::RequestSellItemList, 0, 0, 0, 0, 0, 0);
 		m_pGame->PlayGameSound('E', 14, 5);
 		DisableThisDialog();
 		return true;
@@ -241,7 +242,7 @@ bool DialogBox_SellList::OnItemDrop(short msX, short msY)
 	}
 
 	// Can't sell gold
-	if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::item::ItemId::Gold)
+	if (m_pGame->m_pItemList[cItemID]->m_sIDnum == hb::shared::item::ItemId::Gold)
 	{
 		AddEventList(BITEMDROP_SELLLIST2, 10);
 		return false;

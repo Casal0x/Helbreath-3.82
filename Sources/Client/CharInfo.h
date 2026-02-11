@@ -27,7 +27,7 @@ public:
 
 	char m_cName[12], m_cMapName[12];
 	short m_sSkinCol, m_sSex;
-	PlayerAppearance m_appearance;
+	hb::shared::entity::PlayerAppearance m_appearance;
 	short	m_sStr, m_sVit, m_sDex, m_sInt, m_sMag, m_sChr;
 	int	m_sLevel;
 //	short m_sLevel;

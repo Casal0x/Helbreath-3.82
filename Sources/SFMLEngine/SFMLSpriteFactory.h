@@ -12,7 +12,7 @@
 // Forward declaration
 class SFMLRenderer;
 
-class SFMLSpriteFactory : public SpriteLib::ISpriteFactory
+class SFMLSpriteFactory : public hb::shared::sprite::ISpriteFactory
 {
 public:
     SFMLSpriteFactory(SFMLRenderer* pRenderer);
@@ -23,11 +23,11 @@ public:
     //------------------------------------------------------------------
 
     // Sprite creation
-    SpriteLib::ISprite* CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) override;
-    SpriteLib::ISprite* CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect = true) override;
+    hb::shared::sprite::ISprite* CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect = true) override;
+    hb::shared::sprite::ISprite* CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect = true) override;
 
     // Sprite destruction
-    void DestroySprite(SpriteLib::ISprite* sprite) override;
+    void DestroySprite(hb::shared::sprite::ISprite* sprite) override;
 
     // Global alpha degree
     void SetGlobalAlphaDegree(int degree) override;

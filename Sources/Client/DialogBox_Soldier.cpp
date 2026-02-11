@@ -8,6 +8,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::shared::net;
 DialogBox_Soldier::DialogBox_Soldier(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeSoldier, pGame)
 {
@@ -67,12 +68,12 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER3, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER3, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER4, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER4, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		break;
 
@@ -102,17 +103,17 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER6, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER6, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74 - 50) && (msX <= sX + 20 + 46 + 150 + 74 - 50)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER7, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER7, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		else if ((msX >= sX + 20 + 150 + 74) && (msX <= sX + 20 + 46 + 150 + 74)
 			&& (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			TextLib::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER8, TextLib::TextStyle::WithShadow(GameColors::UIWhite));
+			hb::shared::text::DrawText(GameFont::Default, msX + 20, msY + 35, DRAW_DIALOGBOX_SOLDIER8, hb::shared::text::TextStyle::WithShadow(GameColors::UIWhite));
 		}
 		break;
 	}
@@ -144,7 +145,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 		}
 		if (szX != 0)
 		{
-			for (int i = 0; i < hb::limits::MaxCrusadeStructures; i++)
+			for (int i = 0; i < hb::shared::limits::MaxCrusadeStructures; i++)
 				if (m_pGame->m_stCrusadeStructureInfo[i].cType == 42)
 				{
 					dV1 = (double)MapSzX;
@@ -203,7 +204,7 @@ void DialogBox_Soldier::OnDraw(short msX, short msY, short msZ, char cLB)
 			if (tY > MapSzY - 30) tY = MapSzY - 30;
 			char coordBuf[32];
 			snprintf(coordBuf, sizeof(coordBuf), "%d,%d", tX, tY);
-			TextLib::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
+			hb::shared::text::DrawText(GameFont::SprFont3_2, msX + 10, msY - 10, coordBuf, hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow4x));
 		}
 		break;
 	}
@@ -245,7 +246,7 @@ bool DialogBox_Soldier::OnClick(short msX, short msY)
 	case 1: // Use TP
 		if ((msX >= sX + 20) && (msX <= sX + 20 + 46 + 50) && (msY >= sY + 340) && (msY <= sY + 340 + 52))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_GUILDTELEPORT, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::GuildTeleport, 0, 0, 0, 0, 0);
 			DisableDialogBox(DialogBoxId::CrusadeSoldier);
 			PlaySoundEffect('E', 14, 5);
 		}

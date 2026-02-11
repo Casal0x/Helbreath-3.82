@@ -4,6 +4,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::shared::net;
+using namespace hb::client::net;
 DialogBox_CityHallMenu::DialogBox_CityHallMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::CityHallMenu, pGame)
 {
@@ -41,45 +43,45 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 	if (m_pGame->m_pPlayer->m_bCitizen == false)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 70) && (msY < sY + 95))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 70, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU1, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Reward gold
 	if (m_pGame->m_pPlayer->m_iRewardGold > 0)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU4, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Items
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 10))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 120) && (msY < sY + 145))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 120, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU8, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Cancel quest
 	if (m_pGame->m_stQuest.sQuestType != 0)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 145) && (msY < sY + 170))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 145, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU11, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Change playmode
 	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_pPlayer->m_bCitizen && (m_pGame->m_pPlayer->m_iPKCount == 0))
@@ -87,60 +89,60 @@ void DialogBox_CityHallMenu::DrawMode0_MainMenu(short sX, short sY, short szX, s
 		if (m_pGame->m_pPlayer->m_bHunter == true)
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 			else
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 		}
 		else if (m_pGame->m_pPlayer->m_iLevel < 100)
 		{
 			if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 170) && (msY < sY + 195))
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 			else
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 		}
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU56, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Teleport menu
 	if ((m_pGame->m_bIsCrusadeMode == false) && m_pGame->m_pPlayer->m_bCitizen && (m_pGame->m_pPlayer->m_iPKCount == 0))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 195) && (msY < sY + 220))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 195, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Change crusade role
 	if (m_pGame->m_bIsCrusadeMode && m_pGame->m_pPlayer->m_bCitizen)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 220) && (msY < sY + 220))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 220, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU14, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 270, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU17, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 270, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU17, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 }
 
 void DialogBox_CityHallMenu::DrawMode1_CitizenshipWarning(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU18, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU19, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 110, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU20, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU21, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU22, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU23, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU24, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 200, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU25, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU26, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 230, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU27, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU18, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU19, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 110, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU20, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU21, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU22, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU23, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 170, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU24, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 200, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU25, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU26, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 230, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU27, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
@@ -155,12 +157,12 @@ void DialogBox_CityHallMenu::DrawMode1_CitizenshipWarning(short sX, short sY, sh
 
 void DialogBox_CityHallMenu::DrawMode2_OfferingCitizenship(short sX, short sY, short szX)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU28, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU28, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 }
 
 void DialogBox_CityHallMenu::DrawMode3_CitizenshipSuccess(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU29, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU29, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
@@ -170,9 +172,9 @@ void DialogBox_CityHallMenu::DrawMode3_CitizenshipSuccess(short sX, short sY, sh
 
 void DialogBox_CityHallMenu::DrawMode4_CitizenshipFailed(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU30, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 100, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU31, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 115, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENuint32_t, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU30, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 100, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU31, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 115, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENuint32_t, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::right_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::right_btn_x, sY + ui_layout::btn_y, 1);
@@ -184,10 +186,10 @@ void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX,
 {
 	char cTxt[120];
 
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU33, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU33, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	std::snprintf(cTxt, sizeof(cTxt), DRAW_DIALOGBOX_CITYHALL_MENU34, m_pGame->m_pPlayer->m_iRewardGold);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU35, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, cTxt, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU35, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
@@ -202,90 +204,90 @@ void DialogBox_CityHallMenu::DrawMode5_RewardGold(short sX, short sY, short szX,
 
 void DialogBox_CityHallMenu::DrawMode7_HeroItems(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 60, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 60, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 
 	// Hero's Cape (EK 300)
 	if (m_pGame->m_pPlayer->m_iEnemyKillCount >= 300)
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 110))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU47, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Helm (EK 150 - Contrib 20)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 150) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 125) && (msY < sY + 140))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU48, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Cap (EK 100 - Contrib 20)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 155) && (msY < sY + 170))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU49, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Armor (EK 300 - Contrib 30)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 300) && (m_pGame->m_pPlayer->m_iContribution >= 30))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 185) && (msY < sY + 200))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 185, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU50, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Robe (EK 200 - Contrib 20)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 200) && (m_pGame->m_pPlayer->m_iContribution >= 20))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 215) && (msY < sY + 230))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 215, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU51, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Hauberk (EK 100 - Contrib 10)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 100) && (m_pGame->m_pPlayer->m_iContribution >= 10))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 245) && (msY < sY + 260))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 245, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU52, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 
 	// Hero's Leggings (EK 150 - Contrib 15)
 	if ((m_pGame->m_pPlayer->m_iEnemyKillCount >= 150) && (m_pGame->m_pPlayer->m_iContribution >= 15))
 	{
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 275) && (msY < sY + 290))
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 		else
-			TextLib::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+			hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 	}
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, TextLib::TextStyle::Color(GameColors::UIDisabled), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 275, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU53, hb::shared::text::TextStyle::Color(GameColors::UIDisabled), hb::shared::text::Align::TopCenter);
 }
 
 void DialogBox_CityHallMenu::DrawMode8_CancelQuest(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU54, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU55, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU54, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU55, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
@@ -301,20 +303,20 @@ void DialogBox_CityHallMenu::DrawMode8_CancelQuest(short sX, short sY, short szX
 void DialogBox_CityHallMenu::DrawMode9_ChangePlayMode(short sX, short sY, short szX, short msX, short msY)
 {
 	if (m_pGame->m_pPlayer->m_bHunter)
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 53, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU57, TextLib::TextStyle::Color(GameColors::UIYellow), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 53, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU57, hb::shared::text::TextStyle::Color(GameColors::UIYellow), hb::shared::text::Align::TopCenter);
 	else
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 53, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU58, TextLib::TextStyle::Color(GameColors::UIYellow), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 53, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU58, hb::shared::text::TextStyle::Color(GameColors::UIYellow), hb::shared::text::Align::TopCenter);
 
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 78, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU59, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawText(GameFont::Default, sX + 35, sY + 108, DRAW_DIALOGBOX_CITYHALL_MENU60, TextLib::TextStyle::Color(GameColors::UIOrange));
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU61, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU62, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU63, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawText(GameFont::Default, sX + 35, sY + 177, DRAW_DIALOGBOX_CITYHALL_MENU64, TextLib::TextStyle::Color(GameColors::UIOrange));
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 194, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU65, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 209, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU66, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 224, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU67, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 252, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU68, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 78, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU59, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 108, DRAW_DIALOGBOX_CITYHALL_MENU60, hb::shared::text::TextStyle::Color(GameColors::UIOrange));
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU61, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 140, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU62, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 155, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU63, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 177, DRAW_DIALOGBOX_CITYHALL_MENU64, hb::shared::text::TextStyle::Color(GameColors::UIOrange));
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 194, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU65, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 209, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU66, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 224, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU67, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 252, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU68, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
@@ -334,11 +336,11 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 
 	if (m_pGame->m_iTeleportMapCount > 0)
 	{
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 50, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU70, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU71, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 110, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU72, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(GameColors::UILabel));
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 50, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU69, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 80, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU70, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 95, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU71, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 110, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU72, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, hb::shared::text::TextStyle::WithShadow(GameColors::UILabel));
 
 		for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 		{
@@ -347,28 +349,28 @@ void DialogBox_CityHallMenu::DrawMode10_TeleportMenu(short sX, short sY, short s
 			snprintf(teleportBuf, sizeof(teleportBuf), DRAW_DIALOGBOX_CITYHALL_MENU77, mapNameBuf, m_pGame->m_stTeleportList[i].iCost);
 
 			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 			else
-				TextLib::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, TextLib::TextStyle::Color(GameColors::UIMenuHighlight), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 130 + i * 15, (sX + szX) - (sX), 15, teleportBuf, hb::shared::text::TextStyle::Color(GameColors::UIMenuHighlight), hb::shared::text::Align::TopCenter);
 		}
 	}
 	else if (m_pGame->m_iTeleportMapCount == -1)
 	{
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU73, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 150, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU74, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 175, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU75, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU73, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 150, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU74, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 175, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU75, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	}
 	else
 	{
-		TextLib::DrawTextAligned(GameFont::Default, sX, sY + 175, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU76, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+		hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 175, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU76, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 	}
 }
 
 void DialogBox_CityHallMenu::DrawMode11_HeroItemConfirm(short sX, short sY, short szX, short msX, short msY)
 {
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX - 1) - (sX), 15, m_pGame->m_cTakeHeroItemName, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX + 1, sY + 125, (sX + szX) - (sX + 1), 15, m_pGame->m_cTakeHeroItemName, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
-	TextLib::DrawTextAligned(GameFont::Default, sX, sY + 260, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46A, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 125, (sX + szX - 1) - (sX), 15, m_pGame->m_cTakeHeroItemName, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX + 1, sY + 125, (sX + szX) - (sX + 1), 15, m_pGame->m_cTakeHeroItemName, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
+	hb::shared::text::DrawTextAligned(GameFont::Default, sX, sY + 260, (sX + szX) - (sX), 15, DRAW_DIALOGBOX_CITYHALL_MENU46A, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 19);
@@ -457,7 +459,7 @@ bool DialogBox_CityHallMenu::OnClickMode0(short sX, short sY, short msX, short m
 	{
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 10;
 		m_pGame->m_iTeleportMapCount = -1;
-		m_pGame->bSendCommand(MSGID_REQUEST_TELEPORT_LIST, 0, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(ClientMsgId::RequestTeleportList, 0, 0, 0, 0, 0, 0);
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
 	}
@@ -479,7 +481,7 @@ bool DialogBox_CityHallMenu::OnClickMode1(short sX, short sY, short msX, short m
 	// Yes button
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_REQUEST_CIVILRIGHT, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::RequestCivilRight, MsgType::Confirm, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 2;
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
@@ -513,7 +515,7 @@ bool DialogBox_CityHallMenu::OnClickMode5(short sX, short sY, short msX, short m
 	// Yes button
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETREWARDMONEY, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqGetRewardMoney, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
@@ -645,7 +647,7 @@ bool DialogBox_CityHallMenu::OnClickMode8(short sX, short sY, short msX, short m
 	// Yes button
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_CANCELQUEST, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestCancelQuest, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
@@ -667,7 +669,7 @@ bool DialogBox_CityHallMenu::OnClickMode9(short sX, short sY, short msX, short m
 	// Yes button
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_HUNTMODE, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestHuntMode, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;
@@ -692,7 +694,7 @@ bool DialogBox_CityHallMenu::OnClickMode10(short sX, short sY, short msX, short 
 		{
 			if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 			{
-				m_pGame->bSendCommand(MSGID_REQUEST_CHARGED_TELEPORT, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
+				m_pGame->bSendCommand(ClientMsgId::RequestChargedTeleport, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
 				m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::CityHallMenu);
 				return true;
 			}
@@ -706,7 +708,7 @@ bool DialogBox_CityHallMenu::OnClickMode11(short sX, short sY, short msX, short 
 	// Yes button
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETHEROMANTLE, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqGetHeroMantle, 0, m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).sV1, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.Info(DialogBoxId::CityHallMenu).cMode = 0;
 		m_pGame->PlayGameSound('E', 14, 5);
 		return true;

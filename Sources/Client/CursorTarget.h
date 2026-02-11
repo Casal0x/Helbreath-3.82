@@ -59,8 +59,8 @@ struct FocusedObject {
 
     // Display info
     char name[12] = {0};
-    PlayerAppearance appearance;
-    PlayerStatus status;
+    hb::shared::entity::PlayerAppearance appearance;
+    hb::shared::entity::PlayerStatus status;
 
     // Query helpers
     bool IsDead() const {
@@ -79,8 +79,8 @@ struct TargetObjectInfo {
     short ownerType;
     char action, direction, frame;
     const char* name;  // Points to existing string, no copy
-    PlayerAppearance appearance;
-    PlayerStatus status;
+    hb::shared::entity::PlayerAppearance appearance;
+    hb::shared::entity::PlayerStatus status;
     FocusedObjectType type;
 };
 
@@ -127,13 +127,13 @@ namespace CursorTarget {
     // Test if mouse is over object's bounding rect
     // screenY used for depth sorting (lower Y = further back)
     // maxScreenY: bottom boundary for valid targeting (typically LOGICAL_HEIGHT() - 49)
-    void TestObject(const SpriteLib::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY);
+    void TestObject(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY);
 
     // Test ground item with circular proximity (13px radius)
     void TestGroundItem(int screenX, int screenY, int maxScreenY);
 
     // Test dynamic object (minerals, etc)
-    void TestDynamicObject(const SpriteLib::BoundRect& bounds, short mapX, short mapY, int maxScreenY);
+    void TestDynamicObject(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY);
 
     //-------------------------------------------------------------------------
     // Query Functions
@@ -161,17 +161,17 @@ namespace CursorTarget {
         short& outScreenX, short& outScreenY,
         uint16_t& outObjectID,
         short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-        PlayerAppearance& outAppearance, PlayerStatus& outStatus,
+        hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
         short& outDataX, short& outDataY
     );
 
     // Get focus status for relationship lookup
-    const PlayerStatus& GetFocusStatus();
+    const hb::shared::entity::PlayerStatus& GetFocusStatus();
 
     //-------------------------------------------------------------------------
     // Utilities
     //-------------------------------------------------------------------------
-    bool PointInRect(int x, int y, const SpriteLib::BoundRect& rect);
+    bool PointInRect(int x, int y, const hb::shared::sprite::BoundRect& rect);
     bool PointInCircle(int x, int y, int cx, int cy, int radius);
 
     //-------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 #include "DialogBox_ConfirmExchange.h"
 #include "Game.h"
 
+using namespace hb::shared::net;
 DialogBox_ConfirmExchange::DialogBox_ConfirmExchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::ConfirmExchange, pGame)
 {
@@ -53,7 +54,7 @@ bool DialogBox_ConfirmExchange::OnClick(short msX, short msY)
 		{
 			if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CONFIRMEXCHANGEITEM, 0,
+				bSendCommand(MsgId::CommandCommon, CommonType::ConfirmExchangeItem, 0,
 					m_pGame->m_stDialogBoxExchangeInfo[0].sV1,  // ItemID
 					m_pGame->m_stDialogBoxExchangeInfo[0].sV3,  // Amount
 					0, 0);
@@ -70,7 +71,7 @@ bool DialogBox_ConfirmExchange::OnClick(short msX, short msY)
 			DisableThisDialog();
 			DisableDialogBox(DialogBoxId::Exchange);
 			DisableDialogBox(DialogBoxId::Map);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CANCELEXCHANGEITEM, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::CancelExchangeItem, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}

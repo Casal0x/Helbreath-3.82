@@ -6,7 +6,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_Inventory::DialogBox_Inventory(CGame* pGame)
 	: IDialogBox(DialogBoxId::Inventory, pGame)
@@ -33,15 +34,15 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	uint32_t dwTime = m_pGame->m_dwCurTime;
 
 	// Select color arrays (weapons use different color set)
-	const Color* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
-	// (wG/wB merged into Color array above)
+	const hb::shared::render::Color* colors = bIsWeapon ? GameColors::Weapons : GameColors::Items;
+	// (wG/wB merged into hb::shared::render::Color array above)
 
 
 	if (cItemColor == 0)
 	{
 		// No color tint
 		if (bDisabled)
-			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.25f));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.25f));
 		else
 			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame);
 	}
@@ -53,9 +54,9 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 		int b = colors[cItemColor].b;
 
 		if (bDisabled)
-			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::TintedAlpha(r, g, b, 0.7f));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::TintedAlpha(r, g, b, 0.7f));
 		else
-			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Tint(r, g, b));
+			pSprite->Draw(drawX, drawY, pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Tint(r, g, b));
 	}
 
 	// Show item count for consumables and arrows
@@ -63,7 +64,7 @@ void DialogBox_Inventory::DrawInventoryItem(CItem* pItem, int itemIdx, int baseX
 	{
 		char countBuf[32];
 		m_pGame->FormatCommaNumber(static_cast<uint32_t>(pItem->m_dwCount), countBuf, sizeof(countBuf));
-		TextLib::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, TextLib::TextStyle::WithShadow(GameColors::UIDescription));
+		hb::shared::text::DrawText(GameFont::Default, baseX + COUNT_OFFSET_X + pItem->m_sX, baseY + COUNT_OFFSET_Y + pItem->m_sY, countBuf, hb::shared::text::TextStyle::WithShadow(GameColors::UIDescription));
 	}
 }
 
@@ -76,7 +77,7 @@ void DialogBox_Inventory::OnDraw(short msX, short msY, short msZ, char cLB)
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_INVENTORY, sX, sY, 0);
 
 	// Draw all inventory items
-	for (int i = 0; i < hb::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		int itemIdx = m_pGame->m_cItemOrder[i];
 		if (itemIdx == -1) continue;
@@ -149,7 +150,7 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 		else
 		{
 			// Look for manufacturing hammer
-			for (int i = 0; i < hb::limits::MaxItems; i++)
+			for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 			{
 				CItem* pItem = m_pGame->m_pItemList[i].get();
 				if (pItem == nullptr) continue;
@@ -177,10 +178,10 @@ bool DialogBox_Inventory::OnClick(short msX, short msY)
 // Helper: Find the clicked inventory item
 char DialogBox_Inventory::FindClickedItem(short msX, short msY, short sX, short sY)
 {
-	for (int i = 0; i < hb::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		if (m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i] == -1) continue;
-		char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
+		if (m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i] == -1) continue;
+		char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 		if (m_pGame->m_pItemList[cItemID] == nullptr) continue;
 
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[cItemID]->m_sIDnum);
@@ -231,7 +232,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 	{
 		if (pCfg->GetEquipPos() != EquipPos::None)
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRITEM, 0, cItemID,
+			bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairItem, 0, cItemID,
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV3, 0,
 				pCfg->m_cName,
 				m_pGame->m_dialogBoxManager.Info(DialogBoxId::GiveItem).sV4);
@@ -279,7 +280,7 @@ bool DialogBox_Inventory::OnDoubleClick(short msX, short msY)
 			}
 		}
 
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, cItemID, 0, 0, 0);
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, cItemID, 0, 0, 0);
 
 		if (pCfg->GetItemType() == ItemType::UseDeplete ||
 			pCfg->GetItemType() == ItemType::Eat)
@@ -428,9 +429,9 @@ PressResult DialogBox_Inventory::OnPress(short msX, short msY)
 	short sY = Info().sY;
 
 	// Check items in reverse order (topmost first)
-	for (int i = 0; i < hb::limits::MaxItems; i++)
+	for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
-		char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
+		char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 		if (cItemID == -1) continue;
 
 		CItem* pItem = m_pGame->m_pItemList[cItemID].get();
@@ -523,26 +524,26 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 	m_pGame->m_pItemList[cSelectedID]->m_sY = dY;
 
 	// Shift+drop: move all items with the same name to this position
-	if (Input::IsShiftDown())
+	if (hb::shared::input::IsShiftDown())
 	{
-		for (int i = 0; i < hb::limits::MaxItems; i++)
+		for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
-			if (m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i] != -1)
+			if (m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i] != -1)
 			{
-				char cItemID = m_pGame->m_cItemOrder[hb::limits::MaxItems - 1 - i];
+				char cItemID = m_pGame->m_cItemOrder[hb::shared::limits::MaxItems - 1 - i];
 				if (m_pGame->m_pItemList[cItemID] != nullptr &&
 					m_pGame->m_pItemList[cItemID]->m_sIDnum == m_pGame->m_pItemList[cSelectedID]->m_sIDnum)
 				{
 					m_pGame->m_pItemList[cItemID]->m_sX = dX;
 					m_pGame->m_pItemList[cItemID]->m_sY = dY;
-					bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cItemID, dX, dY, 0, 0);
+					bSendCommand(MsgId::RequestSetItemPos, 0, cItemID, dX, dY, 0, 0);
 				}
 			}
 		}
 	}
 	else
 	{
-		bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, cSelectedID, dX, dY, 0, 0);
+		bSendCommand(MsgId::RequestSetItemPos, 0, cSelectedID, dX, dY, 0, 0);
 	}
 
 	// If item was equipped, unequip it
@@ -559,8 +560,8 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 
 		{
 			short sID = m_pGame->m_pItemList[cSelectedID]->m_sIDnum;
-			if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
-				sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
+			if (sID == hb::shared::item::ItemId::AngelicPandentSTR || sID == hb::shared::item::ItemId::AngelicPandentDEX ||
+				sID == hb::shared::item::ItemId::AngelicPandentINT || sID == hb::shared::item::ItemId::AngelicPandentMAG)
 				m_pGame->PlayGameSound('E', 53, 0);
 			else
 				m_pGame->PlayGameSound('E', 29, 0);
@@ -570,17 +571,17 @@ bool DialogBox_Inventory::OnItemDrop(short msX, short msY)
 		if (pCfg->m_cEquipPos >= 11 &&
 			pCfg->GetItemType() == ItemType::Equip)
 		{
-			if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentSTR)
+			if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentSTR)
 				m_pGame->m_pPlayer->m_iAngelicStr = 0;
-			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentDEX)
+			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentDEX)
 				m_pGame->m_pPlayer->m_iAngelicDex = 0;
-			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentINT)
+			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentINT)
 				m_pGame->m_pPlayer->m_iAngelicInt = 0;
-			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::item::ItemId::AngelicPandentMAG)
+			else if (m_pGame->m_pItemList[cSelectedID]->m_sIDnum == hb::shared::item::ItemId::AngelicPandentMAG)
 				m_pGame->m_pPlayer->m_iAngelicMag = 0;
 		}
 
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_RELEASEITEM, 0, cSelectedID, 0, 0, 0);
+		bSendCommand(MsgId::CommandCommon, CommonType::ReleaseItem, 0, cSelectedID, 0, 0, 0);
 		m_pGame->m_bIsItemEquipped[cSelectedID] = false;
 		m_pGame->m_sItemEquipmentStatus[pCfg->m_cEquipPos] = -1;
 	}

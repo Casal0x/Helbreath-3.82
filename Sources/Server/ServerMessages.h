@@ -1,248 +1,196 @@
 #pragma once
-#include "CommonTypes.h"
+
+#include <cstdint>
 
 // ServerMessages.h - Server-Only Network Messages
 //
-// This file contains network message definitions and constants used exclusively
-// by the Helbreath Server. These include:
-// - Server infrastructure messages (database, inter-server communication)
-// - Configuration loading messages
-// - Logging and monitoring messages
-// - Internal tracking constants
+// Server infrastructure messages, internal tracking constants, and
+// inter-server communication protocol IDs.
 //
-// For shared protocol messages, see Dependencies/Shared/NetMessages.h
+// For shared protocol messages, see Dependencies/Shared/Net/NetMessages.h
 
-// ============================================================================
-// Configuration Message ID Conflicts
-// ============================================================================
+namespace hb::server::net
+{
 
-// CRITICAL: This conflicts with MSGID_EVENT_COMMON (0x0FA314DB) which is SHARED
-// Only the server loads magic configuration
-#define MSGID_MAGICCONFIGURATIONCONTENTS			0x0FA314E0
+// Server-Only Message IDs (infrastructure, inter-server, config loading)
+namespace ServerMsgId
+{
+	enum : uint32_t
+	{
+		// Configuration content messages
+		PortionConfigurationContents            = 0x0FA314DE,
+		QuestConfigurationContents              = 0x0FA40001,
+		BuildItemConfigurationContents          = 0x0FA40002,
+		NoticementFileContents                  = 0x0FA40004,
+		NpcItemConfigContents                   = 0x0FA40006,
 
-// ============================================================================
-// Server-Only Common Action Types
-// ============================================================================
+		// Server registration (server-to-server)
+		RequestRegisterGameServer               = 0x0512A3F4,
+		ResponseRegisterGameServer              = 0x0512A3F5,
+		RequestRegisterDbServer                 = 0x0512A3F6,
+		ResponseRegisterDbServer                = 0x0512A3F7,
 
-#define DEF_COMMONTYPE_BANGUILD						0x0A26
-#define DEF_COMMONTYPE_REQUEST_HELP					0x0A53
+		// Guild update messages (inter-server)
+		RequestUpdateGuildInfoNewGuildsman       = 0x0FC9420C,
+		RequestUpdateGuildInfoDelGuildsman       = 0x0FC9420D,
 
-// NOTE: Same ID as DEF_COMMONTYPE_REQUEST_HUNTMODE (client name)
-#define DEF_COMMONTYPE_REQ_CHANGEPLAYMODE			0x0A60
+		// Player data messages (database communication)
+		RequestPlayerData                       = 0x0C152210,
+		ResponsePlayerData                      = 0x0C152211,
+		ResponseSavePlayerDataReply             = 0x0C152212,
+		RequestSavePlayerData                   = 0x0DF3076F,
+		RequestSavePlayerDataReply              = 0x0DF30770,
+		RequestSavePlayerDataLogout             = 0x0DF3074F,
+		RequestNoSaveLogout                     = 0x0DF30750,
 
-// ============================================================================
-// Server-Only Notification Messages
-// ============================================================================
+		// Guild notifications (inter-server)
+		GuildNotify                             = 0x0DF30760,
 
-#define DEF_NOTIFY_EVENTMSGSTRING					0x0B0C
-#define DEF_NOTIFY_DEBUGMSG							0x0B49
-#define DEF_NOTIFY_DUTYSELECTED						0x0B96
-#define DEF_NOTIFY_HELP								0x0B99
-#define DEF_NOTIFY_HELPFAILED						0x0B9A
+		// Server teleport messages
+		RequestCityHallTeleport                 = 0x0EA03202,
+		RequestHeldenianTeleport                = 0x0EA03206,
+		RequestHeldenianWinner                  = 0x3D001240,
 
-// ============================================================================
-// Repair All System (Server-Only Part)
-// ============================================================================
+		// Game server status messages
+		GameServerAlive                         = 0x12A01002,
+		GameServerDown                          = 0x12A01004,
+		TotalGameServerClients                  = 0x12A01005,
+		EnterGameConfirm                        = 0x12A01006,
 
-#define DEF_COMMONTYPE_REQ_REPAIRALLDELETE			0x0F12
+		// Account and server management
+		AnnounceAccount                         = 0x13000000,
+		AccountInfoChange                       = 0x13000001,
+		IpInfoChange                            = 0x13000002,
+		GameServerShutdowned                    = 0x14000000,
+		AnnounceAccountNewPassword              = 0x14000010,
+		RequestIpIdStatus                       = 0x14E91200,
+		ResponseIpIdStatus                      = 0x14E91201,
+		RequestAccountConnStatus                = 0x14E91202,
+		ResponseAccountConnStatus               = 0x14E91203,
+		RequestClearAccountConnStatus           = 0x14E91204,
+		ResponseClearAccountConnStatus          = 0x14E91205,
+		RequestForceDisconnectAccount           = 0x15000000,
+		RequestNoCountingSaveLogout             = 0x15000001,
 
-// ============================================================================
-// Configuration Content Messages (Server Infrastructure)
-// Server loads game configuration files and sends to clients
-// ============================================================================
+		// Occupy flag data (territory control)
+		OccupyFlagData                          = 0x167C0A30,
+		RequestSaveAresdenOccupyFlagData        = 0x167C0A31,
+		RequestSaveElvineOccupyFlagData         = 0x167C0A32,
+		AresdenOccupyFlagSaveFileContents       = 0x17081034,
+		ElvineOccupyFlagSaveFileContents        = 0x17081035,
 
-#define MSGID_SKILLCONFIGURATIONCONTENTS			0x0FA314E1
-#define MSGID_PORTIONCONFIGURATIONCONTENTS			0x0FA314DE
-#define MSGID_QUESTCONFIGURATIONCONTENTS			0x0FA40001
-#define MSGID_BUILDITEMCONFIGURATIONCONTENTS		0x0FA40002
-#define MSGID_NOTICEMENTFILECONTENTS				0x0FA40004
-#define MSGID_NPCITEMCONFIGCONTENTS					0x0FA40006
+		// Misc server messages
+		SendServerShutdownMsg                   = 0x20000000,
+		ItemLog                                 = 0x210A914D,
+		GameItemLog                             = 0x210A914F,
 
-// ============================================================================
-// Server Registration Messages
-// Used for server-to-server communication
-// ============================================================================
+		// World server messages
+		RegisterWorldServer                     = 0x23AA210E,
+		RegisterWorldServerSocket               = 0x23AA210F,
+		RegisterWorldServerGameServer           = 0x23AB211F,
+		RequestCharInfoList                     = 0x23AB2200,
+		ResponseCharInfoList                    = 0x23AB2201,
+		RequestRemoveGameServer                 = 0x2400000A,
+		RequestClearAccountStatus               = 0x24021EE0,
+		RequestSetAccountInitStatus             = 0x25000198,
+		RequestSetAccountWaitStatus             = 0x25000199,
+		RequestCheckAccountPassword             = 0x2654203A,
+		WorldServerActivated                    = 0x27049D0C,
+		ResponseRegisterWorldServerSocket       = 0x280120A0,
 
-#define MSGID_REQUEST_REGISTERGAMESERVER			0x0512A3F4
-#define MSGID_RESPONSE_REGISTERGAMESERVER			0x0512A3F5
-#define MSGID_REQUEST_REGISTERDBSERVER				0x0512A3F6  // Definition
-#define MSGID_RESPONSE_REGISTERDBSERVER				0x0512A3F7  // Definition
+		// IP/Account time and block management
+		RequestBlockAccount                     = 0x2900AD10,
+		IpTimeChange                            = 0x2900AD20,
+		AccountTimeChange                       = 0x2900AD22,
+		RequestIpTime                           = 0x2900AD30,
+		ResponseIpTime                          = 0x2900AD31,
 
-// ============================================================================
-// Guild Update Messages (Inter-Server)
-// ============================================================================
+		// Server reboot and monitor
+		RequestAllServerReboot                  = 0x3AE8270A,
+		RequestExec1DotBat                      = 0x3AE8370A,
+		RequestExec2DotBat                      = 0x3AE8470A,
+		MonitorAlive                            = 0x3AE8570A,
+		CollectedMana                           = 0x3AE90000,
+		MeteorStrike                            = 0x3AE90001,
+		ServerStockMsg                          = 0x3AE90013,
 
-#define MSGID_REQUEST_UPDATEGUILDINFO_NEWGUILDSMAN	0x0FC9420C
-#define MSGID_REQUEST_UPDATEGUILDINFO_DELGUILDSMAN	0x0FC9420D
+		// Party operation
+		PartyOperation                          = 0x3C00123A,
 
-// ============================================================================
-// Player Data Messages (Server Infrastructure)
-// Used for database communication
-// ============================================================================
+		// Crusade log
+		GameCrusadeLog                          = 0x210A914F,
+	};
+}
 
-#define MSGID_REQUEST_PLAYERDATA					0x0C152210
-#define MSGID_RESPONSE_PLAYERDATA					0x0C152211
-#define MSGID_RESPONSE_SAVEPLAYERDATA_REPLY			0x0C152212
-#define MSGID_REQUEST_SAVEPLAYERDATA				0x0DF3076F
-#define MSGID_REQUEST_SAVEPLAYERDATA_REPLY			0x0DF30770
-#define MSGID_REQUEST_SAVEPLAYERDATALOGOUT			0x0DF3074F
-#define MSGID_REQUEST_NOSAVELOGOUT					0x0DF30750
+// Guild notification sub-types
+namespace GuildNotify
+{
+	enum : uint16_t
+	{
+		NewGuildsman                            = 0x1F00,
+	};
+}
 
-// ============================================================================
-// Guild Notifications (Inter-Server)
-// ============================================================================
+// Party status
+namespace PartyStatus
+{
+	enum : int32_t
+	{
+		Null                                    = 0,
+		Processing                              = 1,
+		Confirm                                 = 2,
+	};
+}
 
-#define MSGID_GUILDNOTIFY							0x0DF30760
-#define DEF_GUILDNOTIFY_NEWGUILDSMAN				0x1F00
+// Crusade log types
+namespace CrusadeLog
+{
+	enum : int32_t
+	{
+		EndCrusade                              = 1,
+		StartCrusade                            = 2,
+		SelectDuty                              = 3,
+		GetExp                                  = 4,
+	};
+}
 
-// ============================================================================
-// Server Teleport Messages
-// NOTE: ID conflicts with Client teleport messages
-// ============================================================================
+// Item spread types
+namespace ItemSpread
+{
+	enum : int32_t
+	{
+		Random                                  = 1,
+		Fixed                                   = 2,
+	};
+}
 
-#define MSGID_REQUEST_CITYHALLTELEPORT				0x0EA03202  // Conflicts with Client TELEPORT_LIST
-#define MSGID_REQUEST_HELDENIANTELEPORT				0x0EA03206  // Conflicts with Client TP_LIST
-#define MSGID_REQUEST_HELDENIAN_WINNER				0x3D001240
+// Item log action types (server-only; others in Game.h)
+// Named ItemLogAction to avoid collision with the ItemLog class
+namespace ItemLogAction
+{
+	enum : int32_t
+	{
+		UpgradeFail                             = 29,
+		UpgradeSuccess                          = 30,
+	};
+}
 
-// ============================================================================
-// Game Server Status Messages
-// ============================================================================
+// PK log types
+namespace PkLog
+{
+	enum : int32_t
+	{
+		ReduceCriminal                          = 1,
+		ByPlayer                                = 2,
+		ByPk                                    = 3,
+		ByEnemy                                 = 4,
+		ByNpc                                   = 5,
+		ByOther                                 = 6,
+	};
+}
 
-#define MSGID_GAMESERVERALIVE						0x12A01002
-#define MSGID_GAMESERVERDOWN						0x12A01004
-#define MSGID_TOTALGAMESERVERCLIENTS				0x12A01005
-#define MSGID_ENTERGAMECONFIRM						0x12A01006
+// Standalone constants
+constexpr int32_t MaxNpcItemDrop = 25;
+constexpr int32_t SlateClearNotify = 99;
 
-// ============================================================================
-// Account and Server Management Messages
-// ============================================================================
-
-#define DEF_MSGID_ANNOUNCEACCOUNT					0x13000000  // Definition
-#define MSGID_ACCOUNTINFOCHANGE						0x13000001  // Definition
-#define MSGID_IPINFOCHANGE							0x13000002  // Definition
-#define MSGID_GAMESERVERSHUTDOWNED					0x14000000
-#define MSGID_ANNOUNCEACCOUNTNEWPASSWORD			0x14000010  // Definition
-
-#define MSGID_REQUEST_IPIDSTATUS					0x14E91200  // Definition
-#define MSGID_RESPONSE_IPIDSTATUS					0x14E91201  // Definition
-#define MSGID_REQUEST_ACCOUNTCONNSTATUS				0x14E91202  // Definition
-#define MSGID_RESPONSE_ACCOUNTCONNSTATUS			0x14E91203  // Definition
-#define MSGID_REQUEST_CLEARACCOUNTCONNSTATUS		0x14E91204  // Definition
-#define MSGID_RESPONSE_CLEARACCOUNTCONNSTATUS		0x14E91205  // Definition
-
-#define MSGID_REQUEST_FORCEDISCONECTACCOUNT			0x15000000
-#define MSGID_REQUEST_NOCOUNTINGSAVELOGOUT			0x15000001  // Definition
-
-// ============================================================================
-// Occupy Flag Data (Territory Control)
-// ============================================================================
-
-#define MSGID_OCCUPYFLAGDATA						0x167C0A30  // Definition
-#define MSGID_REQUEST_SAVEARESDENOCCUPYFLAGDATA		0x167C0A31  // Definition
-#define MSGID_REQUEST_SAVEELVINEOCCUPYFLAGDATA		0x167C0A32  // Definition
-#define MSGID_ARESDENOCCUPYFLAGSAVEFILECONTENTS		0x17081034
-#define MSGID_ELVINEOCCUPYFLAGSAVEFILECONTENTS		0x17081035
-
-// ============================================================================
-#define MSGID_SENDSERVERSHUTDOWNMSG					0x20000000
-#define MSGID_ITEMLOG								0x210A914D
-#define MSGID_GAMEITEMLOG							0x210A914F
-
-// ============================================================================
-// World Server Messages
-// ============================================================================
-
-#define MSGID_REGISTER_WORLDSERVER					0x23AA210E  // Definition
-#define MSGID_REGISTER_WORLDSERVERSOCKET			0x23AA210F  // Definition
-#define MSGID_REGISTER_WORLDSERVER_GAMESERVER		0x23AB211F  // Definition
-
-#define MSGID_REQUEST_CHARINFOLIST					0x23AB2200  // Definition
-#define MSGID_RESPONSE_CHARINFOLIST					0x23AB2201  // Definition
-
-#define MSGID_REQUEST_REMOVEGAMESERVER				0x2400000A  // Definition
-#define MSGID_REQUEST_CLEARACCOUNTSTATUS			0x24021EE0  // Definition
-
-#define MSGID_REQUEST_SETACCOUNTINITSTATUS			0x25000198
-#define MSGID_REQUEST_SETACCOUNTWAITSTATUS			0x25000199
-
-#define MSGID_REQUEST_CHECKACCOUNTPASSWORD			0x2654203A
-#define MSGID_WORLDSERVERACTIVATED					0x27049D0C  // Definition
-
-#define MSGID_RESPONSE_REGISTER_WORLDSERVERSOCKET	0x280120A0  // Definition
-
-// ============================================================================
-// IP/Account Time and Block Management
-// ============================================================================
-
-#define MSGID_REQUEST_BLOCKACCOUNT					0x2900AD10  // Definition
-#define MSGID_IPTIMECHANGE							0x2900AD20  // Definition
-#define MSGID_ACCOUNTTIMECHANGE						0x2900AD22  // Definition
-#define MSGID_REQUEST_IPTIME						0x2900AD30  // Definition - Conflicts with SELLITEMLIST
-#define MSGID_RESPONSE_IPTIME						0x2900AD31  // Definition
-
-// ============================================================================
-// Server Reboot and Monitor Messages
-// ============================================================================
-
-#define MSGID_REQUEST_ALL_SERVER_REBOOT				0x3AE8270A  // Definition
-#define MSGID_REQUEST_EXEC_1DOTBAT					0x3AE8370A  // Definition
-#define MSGID_REQUEST_EXEC_2DOTBAT					0x3AE8470A  // Definition
-#define MSGID_MONITORALIVE							0x3AE8570A  // Definition
-
-#define MSGID_COLLECTEDMANA							0x3AE90000
-#define MSGID_METEORSTRIKE							0x3AE90001  // Definition
-
-#define MSGID_SERVERSTOCKMSG						0x3AE90013
-
-// ============================================================================
-// Party Operation Messages
-// ============================================================================
-
-#define MSGID_PARTYOPERATION						0x3C00123A
-
-#define DEF_PARTYSTATUS_PROCESSING					1
-#define DEF_PARTYSTATUS_NULL						0
-#define DEF_PARTYSTATUS_CONFIRM						2
-
-// ============================================================================
-// Crusade Logging
-// ============================================================================
-
-#define DEF_CRUSADELOG_ENDCRUSADE					1
-#define DEF_CRUSADELOG_STARTCRUSADE					2
-#define DEF_CRUSADELOG_SELECTDUTY					3
-#define DEF_CRUSADELOG_GETEXP						4
-#define MSGID_GAMECRUSADELOG						0x210A914F  // Conflicts with GAMEITEMLOG
-
-// ============================================================================
-// NPC Item Drops
-// ============================================================================
-
-#define DEF_ITEMSPREAD_RANDOM						1
-#define DEF_ITEMSPREAD_FIXED						2
-#define MAX_NPCITEMDROP								25
-
-// ============================================================================
-// Item Upgrade and Logs
-// ============================================================================
-
-#define DEF_ITEMLOG_UPGRADESUCCESS					30
-#define DEF_ITEMLOG_UPGRADEFAIL						29
-
-// ============================================================================
-// Slate System (Server-Only Part)
-// ============================================================================
-
-#define DEF_NOTIFY_SLATECLEAR						99
-
-// ============================================================================
-// PK (Player Kill) Logging Constants
-// Used only by server for internal PK tracking
-// ============================================================================
-
-#define DEF_PKLOG_REDUCECRIMINAL					1
-#define DEF_PKLOG_BYPLAYER							2
-#define DEF_PKLOG_BYPK								3
-#define DEF_PKLOG_BYENERMY							4
-#define DEF_PKLOG_BYNPC								5
-#define DEF_PKLOG_BYOTHER							6
+} // namespace hb::server::net

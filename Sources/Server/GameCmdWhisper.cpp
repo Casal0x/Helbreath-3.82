@@ -3,6 +3,7 @@
 #include "Game.h"
 #include <cstring>
 
+using namespace hb::shared::net;
 bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -16,15 +17,15 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 			sizeof(pGame->m_pClientList[iClientH]->m_cWhisperPlayerName));
 		pGame->m_pClientList[iClientH]->m_bIsCheckingWhisperPlayer = false;
 
-		char cName[DEF_CHARNAME] = {};
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_WHISPERMODEOFF, 0, 0, 0, cName);
+		char cName[hb::shared::limits::CharNameLen] = {};
+		pGame->SendNotifyMsg(0, iClientH, Notify::WhisperModeOff, 0, 0, 0, cName);
 		return true;
 	}
 
 	// Extract player name (max 10 chars)
-	char cName[DEF_CHARNAME] = {};
+	char cName[hb::shared::limits::CharNameLen] = {};
 	size_t nameLen = std::strlen(pArgs);
-	if (nameLen > DEF_CHARNAME - 1) nameLen = DEF_CHARNAME - 1;
+	if (nameLen > hb::shared::limits::CharNameLen - 1) nameLen = hb::shared::limits::CharNameLen - 1;
 
 	// Copy only the first word (stop at space)
 	for (size_t i = 0; i < nameLen; i++)
@@ -43,7 +44,7 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	for(int i = 1; i < DEF_MAXCLIENTS; i++)
 	{
 		if (pGame->m_pClientList[i] != nullptr &&
-			_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, DEF_CHARNAME - 1) == 0)
+			_strnicmp(pGame->m_pClientList[i]->m_cCharName, cName, hb::shared::limits::CharNameLen - 1) == 0)
 		{
 			// Can't whisper yourself
 			if (i == iClientH)
@@ -60,11 +61,11 @@ bool GameCmdWhisper::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	if (pGame->m_pClientList[iClientH]->m_iWhisperPlayerIndex == -1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_PLAYERNOTONGAME, 0, 0, 0, cName);
+		pGame->SendNotifyMsg(0, iClientH, Notify::PlayerNotOnGame, 0, 0, 0, cName);
 	}
 	else
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_WHISPERMODEON, 0, 0, 0,
+		pGame->SendNotifyMsg(0, iClientH, Notify::WhisperModeOn, 0, 0, 0,
 			pGame->m_pClientList[iClientH]->m_cWhisperPlayerName);
 	}
 

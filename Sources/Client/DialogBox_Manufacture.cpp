@@ -9,7 +9,8 @@
 #include "NetMessages.h"
 #include "IInput.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_Manufacture::DialogBox_Manufacture(CGame* pGame)
 	: IDialogBox(DialogBoxId::Manufacture, pGame)
@@ -118,42 +119,42 @@ void DialogBox_Manufacture::DrawAlchemyWaiting(short sX, short sY, short msX, sh
 	if (Info().sV1 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV2 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV3 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV4 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV5 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV6 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnBlue));
+	else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 }
 
 void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
@@ -167,40 +168,40 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 	if (Info().sV1 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV1]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV2 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV2]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV3 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV3]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 55 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV4 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV4]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV5 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV5]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 1 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
 	if (Info().sV6 != -1) {
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sV6]->m_sIDnum);
 		if (pCfg) m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT +
-		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, SpriteLib::DrawParams::Alpha(0.5f));
+		pCfg->m_sSprite]->Draw(sX + iAdjX + 55 + 45 * 2 + (1 - (rand() % 3)), sY + iAdjY + 100 + (1 - (rand() % 3)), pCfg->m_sSpriteFrame, hb::shared::sprite::DrawParams::Alpha(0.5f));
 	}
 
-	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed));
+	hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnRed));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{
@@ -210,7 +211,7 @@ void DialogBox_Manufacture::DrawAlchemyCreating(short sX, short sY)
 
 	if (Info().cStr[0] >= 5)
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_CREATEPORTION, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqCreatePortion, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 		m_pGame->PlayGameSound('E', 42, 0);
 	}
@@ -264,11 +265,11 @@ void DialogBox_Manufacture::DrawManufactureList(short sX, short sY, short msX, s
 
 	if ((Info().sView >= 1) && (m_pGame->m_pDispBuildItemList[Info().sView - 1] != 0))
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23);
-	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23, SpriteLib::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
+	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 210, 23, hb::shared::sprite::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
 
 	if (m_pGame->m_pDispBuildItemList[Info().sView + 13] != 0)
 		m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24);
-	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24, SpriteLib::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
+	else m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2]->Draw(sX + iAdjX + 225, sY + iAdjY + 230, 24, hb::shared::sprite::DrawParams::TintedAlpha(GameColors::UIBlack.r, GameColors::UIBlack.g, GameColors::UIBlack.b, 0.7f));
 
 	if ((cLB != 0) && (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::Manufacture)) {
 		if ((msX >= sX + iAdjX + 225) && (msX <= sX + iAdjX + 245) && (msY >= sY + iAdjY + 210) && (msY <= sY + iAdjY + 230)) {
@@ -393,18 +394,18 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 260 + 75, DRAW_DIALOGBOX_SKILLDLG17, GameColors::UILabel);
 
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 
 		if ((msX >= sX + iAdjX + 160) && (msX <= sX + iAdjX + 255) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372)) {
 			if (Info().cStr[4] == 1)
-				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive));
 		}
 		else {
 			if (Info().cStr[4] == 1)
-				TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
-			else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnActive));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 153, sY + iAdjY + 330 + 23, "Manufacture", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnActive));
 		}
 	}
 	else {
@@ -412,8 +413,8 @@ void DialogBox_Manufacture::DrawManufactureWaiting(short sX, short sY, short msX
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 215 + 75, DRAW_DIALOGBOX_SKILLDLG19, GameColors::UILabel);
 		PutAlignedString(sX, sX + szX, sY + iAdjY + 230 + 75, DRAW_DIALOGBOX_SKILLDLG20, GameColors::UILabel);
 		if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-			TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-		else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 25, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 	}
 }
 
@@ -511,7 +512,7 @@ void DialogBox_Manufacture::DrawManufactureInProgress(short sX, short sY)
 
 	if (Info().cStr[1] == 4)
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_BUILDITEM, 0, 0, 0, 0, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::BuildItem, 0, 0, 0, 0, m_pGame->m_pDispBuildItemList[Info().cStr[0]]->m_cName);
 		Info().cStr[1]++;
 	}
 }
@@ -552,8 +553,8 @@ void DialogBox_Manufacture::DrawManufactureDone(short sX, short sY, short msX, s
 	}
 
 	if ((msX >= sX + iAdjX + 32) && (msX <= sX + iAdjX + 95) && (msY >= sY + iAdjY + 353) && (msY <= sY + iAdjY + 372))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+	else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 35, sY + iAdjY + 330 + 23, "Back", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 }
 
 void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, short msY)
@@ -590,8 +591,8 @@ void DialogBox_Manufacture::DrawCraftingWaiting(short sX, short sY, short msX, s
 	}
 
 	if ((msX >= sX + iAdjX + 60) && (msX <= sX + iAdjX + 153) && (msY >= sY + iAdjY + 175) && (msY <= sY + iAdjY + 195))
-		TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnBlue));
-	else TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnBlue));
+	else hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 }
 
 void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
@@ -657,7 +658,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 		}
 	}
 
-	TextLib::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnRed));
+	hb::shared::text::DrawText(GameFont::Bitmap1, sX + iAdjX + 60, sY + iAdjY + 175, "Creating...", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnRed));
 
 	if ((dwTime - Info().dwT1) > 1000)
 	{
@@ -666,7 +667,7 @@ void DialogBox_Manufacture::DrawCraftingInProgress(short sX, short sY)
 	}
 	if (Info().cStr[1] >= 5)
 	{
-		m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CRAFTITEM, 0, 0, 0, 0, 0);
+		m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::CraftItem, 0, 0, 0, 0, 0);
 		m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Manufacture);
 		m_pGame->PlayGameSound('E', 42, 0);
 	}

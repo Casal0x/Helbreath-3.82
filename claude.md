@@ -20,26 +20,109 @@ powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target Server -Confi
 **IMPORTANT: Never use git commands (commit, stash, checkout, etc.). The user handles all git operations. Backups use `.bak` files.**
 
 1. **Start from clean build** — current code compiles with 0 errors before starting.
-2. **Write ONE script** in `Scripts/` that performs the complete transformation for one phase. Scripts never go in the project root.
-3. **Script creates `.bak` backups**: Before modifying any file, the script copies it to `<filename>.bak` in the same directory. This is the safety net.
-4. **Run the script**.
-5. **Build immediately**: `powershell -ExecutionPolicy Bypass -File Sources\build.ps1 -Target All -Config Debug`
-6. **If errors**: Restore all `.bak` files to their originals (overwrite the broken versions). Analyze what went wrong **in the script itself**, fix the script, re-run from step 4.
-7. **Never write a second "fix" script** — cascading patches cause cascading corruption. Always fix the original script and re-run cleanly.
-8. **Once 0 errors**: Delete all `.bak` files — this is your "commit". Move to next phase.
+2. **Write ONE self-contained script** in `Scripts/` that handles backup, transform, build, revert, and commit. Scripts never go in the project root.
+3. **Run the script** (no args) — it auto-reverts any existing `.bak` files, creates fresh backups, transforms, and builds.
+4. **If errors**: Fix the script itself, re-run (step 3). The script auto-reverts before each attempt.
+5. **Never write a second "fix" script** — cascading patches cause cascading corruption. Always fix the original script and re-run cleanly.
+6. **Once 0 errors**: Run `script.py --commit` to delete all `.bak` files. Move to next phase.
+
+### Self-Contained Script Pattern
+
+Every transformation script must include built-in backup/revert/commit logic. The script is **scope-aware** — it knows exactly which files it touches and manages only those `.bak` files.
+
+```
+python script.py            # Default: revert existing .bak → backup → transform → build
+python script.py --commit   # Delete .bak files (accepts the transformation)
+```
+
+**Script structure:**
+```python
+import sys, os, shutil, subprocess
+
+SOURCES = r"Z:\Helbreath-3.82\Sources"
+
+class TransformScript:
+    def __init__(self):
+        self.backed_up = []  # tracks .bak files created this run
+
+    def backup(self, path):
+        bak = path + ".bak"
+        if not os.path.exists(bak):
+            shutil.copy2(path, bak)
+        self.backed_up.append(bak)
+
+    def revert_all(self):
+        """Restore all .bak files this script knows about (scope-aware)."""
+        count = 0
+        for bak in self._find_my_baks():
+            orig = bak[:-4]
+            shutil.copy2(bak, orig)
+            os.remove(bak)
+            count += 1
+        if count:
+            print(f"  Reverted {count} files from .bak")
+
+    def commit_all(self):
+        """Delete all .bak files (accept transformation)."""
+        count = 0
+        for bak in self._find_my_baks():
+            os.remove(bak)
+            count += 1
+        print(f"  Committed: deleted {count} .bak files")
+
+    def build(self):
+        """Run MSBuild. Returns True on success."""
+        result = subprocess.run(
+            ["powershell", "-ExecutionPolicy", "Bypass", "-File",
+             os.path.join(SOURCES, "build.ps1"), "-Target", "All", "-Config", "Debug"],
+            capture_output=True, text=True
+        )
+        print(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
+        return result.returncode == 0 and "0 Error" in result.stdout
+
+    def transform(self):
+        """Override this with the actual transformation logic."""
+        raise NotImplementedError
+
+    def run(self):
+        if "--commit" in sys.argv:
+            self.commit_all()
+            return
+        # Default: revert any prior attempt, then transform + build
+        self.revert_all()
+        self.transform()
+        if self.build():
+            print("BUILD SUCCEEDED — run with --commit to accept")
+        else:
+            print("BUILD FAILED — fix script and re-run")
+
+    def _find_my_baks(self):
+        """Find .bak files in scope. Override if needed."""
+        # Default: walk SOURCES for all .bak files
+        baks = []
+        for root, dirs, files in os.walk(SOURCES):
+            for f in files:
+                if f.endswith(".bak"):
+                    baks.append(os.path.join(root, f))
+        return baks
+```
 
 ### Why This Matters
 - `.bak` files let you revert without touching git — the user controls all commits.
 - Fixing the script (not the output) produces **reproducible, correct transformations**.
-- Restoring from `.bak` before re-running ensures each attempt starts from a known-good state.
+- Auto-revert before re-running ensures each attempt starts from a known-good state.
 - One script per phase keeps the change atomic and reviewable.
 - Building after every script run catches problems immediately while context is fresh.
+- Self-contained scripts reduce manual tool calls — no separate revert/delete steps needed.
 
 ### Regex Safety Rules (Learned from Prior Failures)
-- **NEVER** use `::TypeName` as a regex pattern — it matches inside prefixed names (`sf::Color` → `sfhb::shared::types::Color`).
+- **NEVER** use `::TypeName` as a regex pattern — it matches inside prefixed names (`sf::Color` → `sfhb::shared::types::Color`). Use `(?<!\w)::TypeName\b` to require non-word char before `::`.
 - **NEVER** replace inside `#define` macro names — `#define DEF_X` cannot become `#define hb::shared::X`.
+- **ALWAYS** use `\b` word boundaries for type name replacements — `PlayerStatus` without `\b` matches inside `PlayerStatusData.h` (corrupts `#include` paths).
+- **ALWAYS** use `(?<!\w)` lookbehind for `::Name` patterns — `::GetPoint2` matches inside `CMisc::GetPoint2` without it.
 - **PREFER** explicit `content.replace("exact_old", "exact_new")` over regex for known patterns.
 - **ALWAYS** order replacements longest-first to avoid partial matches (`DEF_OBJECTMOVE_CONFIRM` before `DEF_OBJECTMOVE`).
+- **USE** placeholder approach for substring collisions (`SFMLInput::` contains `Input::`) — protect compound name first, replace, restore.
 - **TEST** the script on 2-3 files first when dealing with regex patterns.
 
 ## Solution Structure (3 projects)

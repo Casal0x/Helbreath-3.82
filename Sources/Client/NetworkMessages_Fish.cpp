@@ -22,7 +22,7 @@ void HandleFishChance(CGame* pGame, char* pData)
 void HandleEventFishMode(CGame* pGame, char* pData)
 {
 	short sSprite, sSpriteFrame;
-	char cName[DEF_ITEMNAME];
+	char cName[hb::shared::limits::ItemNameLen];
 	WORD wPrice;
 
 	const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyEventFishMode>(

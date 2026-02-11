@@ -48,8 +48,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 		{
 			cTmpDir = i;
 			if (cTmpDir > 8) cTmpDir -= 8;
-			aX = hb::direction::OffsetX[cTmpDir];
-			aY = hb::direction::OffsetY[cTmpDir];
+			aX = hb::shared::direction::OffsetX[cTmpDir];
+			aY = hb::shared::direction::OffsetY[cTmpDir];
 			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
 			{
 				m_bIsPrevMoveBlocked = false;
@@ -71,8 +71,8 @@ char CPlayerController::GetNextMoveDir(short sX, short sY, short dstX, short dst
 		{
 			cTmpDir = i;
 			if (cTmpDir < 1) cTmpDir += 8;
-			aX = hb::direction::OffsetX[cTmpDir];
-			aY = hb::direction::OffsetY[cTmpDir];
+			aX = hb::shared::direction::OffsetX[cTmpDir];
+			aY = hb::shared::direction::OffsetY[cTmpDir];
 			if (((dX + aX) == m_iPrevMoveX) && ((dY + aY) == m_iPrevMoveY) && (m_bIsPrevMoveBlocked == true) && (bMoveCheck == true))
 			{
 				m_bIsPrevMoveBlocked = false;
@@ -105,7 +105,7 @@ void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapDa
 	{
 		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
 		if (cDir == 0) break;
-		hb::direction::ApplyOffset(cDir, sX, sY);
+		hb::shared::direction::ApplyOffset(cDir, sX, sY);
 		sCnt1++;
 		if (sCnt1 > 30) break;
 	}
@@ -119,7 +119,7 @@ void CPlayerController::CalculatePlayerTurn(short playerX, short playerY, CMapDa
 	{
 		cDir = GetNextMoveDir(sX, sY, m_sDestX, m_sDestY, pMapData);
 		if (cDir == 0) break;
-		hb::direction::ApplyOffset(cDir, sX, sY);
+		hb::shared::direction::ApplyOffset(cDir, sX, sY);
 		sCnt2++;
 		if (sCnt2 > 30) break;
 	}

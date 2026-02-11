@@ -5,7 +5,8 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 DialogBox_Exchange::DialogBox_Exchange(CGame* pGame)
 	: IDialogBox(DialogBoxId::Exchange, pGame)
@@ -34,7 +35,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 245, DRAW_DIALOGBOX_EXCHANGE9, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE10, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE11, GameColors::UILabel);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnHover));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 == -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE12, GameColors::UILabel);
@@ -43,7 +44,7 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 260, DRAW_DIALOGBOX_EXCHANGE15, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE16, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE17, GameColors::UILabel);
-			TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnHover));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnHover));
 		}
 		else if ((m_pGame->m_stDialogBoxExchangeInfo[0].sV1 != -1) && (m_pGame->m_stDialogBoxExchangeInfo[4].sV1 != -1)) {
 			PutAlignedString(sX, sX + szX, sY + 215, DRAW_DIALOGBOX_EXCHANGE18, GameColors::UILabel);
@@ -53,15 +54,15 @@ void DialogBox_Exchange::OnDraw(short msX, short msY, short msZ, char cLB)
 			PutAlignedString(sX, sX + szX, sY + 275, DRAW_DIALOGBOX_EXCHANGE22, GameColors::UILabel);
 			PutAlignedString(sX, sX + szX, sY + 290, DRAW_DIALOGBOX_EXCHANGE23, GameColors::UILabel);
 			if ((msX >= sX + 200) && (msX <= sX + 200 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y))
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 			else
-				TextLib::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+				hb::shared::text::DrawText(GameFont::Bitmap1, sX + 220, sY + 310, "Exchange", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		}
 		if ((msX >= sX + 450) && (msX <= sX + 450 + ui_layout::btn_size_x) && (msY >= sY + 310) && (msY <= sY + 310 + ui_layout::btn_size_y)
 			&& (m_pGame->m_dialogBoxManager.IsEnabled(DialogBoxId::ConfirmExchange) == false))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 450, sY + 310, "Cancel", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 
 	case 2: // You have confirmed the exchange
@@ -106,10 +107,10 @@ void DialogBox_Exchange::DrawItems(short sX, short sY, short msX, short msY, int
 				case 3:  // Shields
 				case 15: // Axes hammers
 				case 17: // Wands
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Weapons[cItemColor].r, GameColors::Weapons[cItemColor].g, GameColors::Weapons[cItemColor].b));
 					break;
 				default:
-					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, SpriteLib::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
+					m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + m_pGame->m_stDialogBoxExchangeInfo[i].sV1]->Draw(sX + sXadd, sY + 130, m_pGame->m_stDialogBoxExchangeInfo[i].sV2, hb::shared::sprite::DrawParams::Tint(GameColors::Items[cItemColor].r, GameColors::Items[cItemColor].g, GameColors::Items[cItemColor].b));
 					break;
 				}
 			}
@@ -209,7 +210,7 @@ bool DialogBox_Exchange::OnClick(short msX, short msY)
 			// Cancel button
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Exchange);
 			m_pGame->m_dialogBoxManager.DisableDialogBox(DialogBoxId::Map);
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_CANCELEXCHANGEITEM, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::CancelExchangeItem, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
@@ -261,7 +262,7 @@ bool DialogBox_Exchange::OnItemDrop(short msX, short msY)
 		// Single item - add directly
 		m_pGame->m_stDialogBoxExchangeInfo[iSlot].sItemID = cItemID;
 		m_pGame->m_bIsItemDisabled[cItemID] = true;
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_SETEXCHANGEITEM, 0, cItemID, 1, 0, 0);
+		bSendCommand(MsgId::CommandCommon, CommonType::SetExchangeItem, 0, cItemID, 1, 0, 0);
 	}
 
 	return true;

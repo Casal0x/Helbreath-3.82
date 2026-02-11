@@ -29,10 +29,10 @@ private:
     bool ValidateInputs();
 
     // Input buffers
-    char m_cAccountName[DEF_ACCOUNT_NAME];
-    char m_cOldPassword[DEF_ACCOUNT_PASS];
-    char m_cNewPassword[DEF_ACCOUNT_PASS];
-    char m_cConfirmPassword[DEF_ACCOUNT_PASS];
+    char m_cAccountName[hb::shared::limits::AccountNameLen];
+    char m_cOldPassword[hb::shared::limits::AccountPassLen];
+    char m_cNewPassword[hb::shared::limits::AccountPassLen];
+    char m_cConfirmPassword[hb::shared::limits::AccountPassLen];
 
     // UI state
     int m_iCurFocus;      // 1=name, 2=old pass, 3=new pass, 4=confirm, 5=OK, 6=Cancel

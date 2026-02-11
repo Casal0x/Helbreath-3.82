@@ -10,6 +10,9 @@
 #include <cstdio>
 #include <cstring>
 
+
+using namespace hb::shared::action;
+
 // Multibyte character kind detection (replicates CGame::GetCharKind)
 static int GetCharKind(const char* str, int index)
 {
@@ -88,13 +91,13 @@ int CFloatingTextManager::AddDamageFromValue(short sDamage, bool bLastHit, uint3
 {
 	char cTxt[64]{};
 
-	if (sDamage == DEF_DAMAGE_IMMUNE)
+	if (sDamage == Sentinel::DamageImmune)
 	{
 		std::snprintf(cTxt, sizeof(cTxt), "%s", "* Immune *");
 		AudioManager::Get().PlayGameSound(SoundType::Character, 17, 0, 0);
 		return AddDamageText(DamageTextType::Medium, cTxt, dwTime, iObjectID, pMapData);
 	}
-	if (sDamage == DEF_MAGIC_FAILED)
+	if (sDamage == Sentinel::MagicFailed)
 	{
 		std::snprintf(cTxt, sizeof(cTxt), "%s", "* Failed! *");
 		AudioManager::Get().PlayGameSound(SoundType::Character, 17, 0, 0);
@@ -193,7 +196,7 @@ bool CFloatingTextManager::IsOccupied(int iIndex) const
 // ---------------------------------------------------------------
 
 void CFloatingTextManager::DrawAll(short sMinX, short sMinY, short sMaxX, short sMaxY,
-                                   uint32_t dwCurTime, IRenderer* pRenderer)
+                                   uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer)
 {
 	for (int i = 0; i < MaxMessages; i++)
 	{
@@ -206,14 +209,14 @@ void CFloatingTextManager::DrawAll(short sMinX, short sMinY, short sMaxX, short 
 }
 
 void CFloatingTextManager::DrawSingle(int iIndex, short sX, short sY,
-                                      uint32_t dwCurTime, IRenderer* pRenderer)
+                                      uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer)
 {
 	if (iIndex < 0 || iIndex >= MaxMessages || !m_messages[iIndex]) return;
 	DrawMessage(*m_messages[iIndex], sX, sY, dwCurTime, pRenderer);
 }
 
 void CFloatingTextManager::DrawMessage(const CFloatingText& msg, short sX, short sY,
-                                       uint32_t dwCurTime, IRenderer* pRenderer)
+                                       uint32_t dwCurTime, hb::shared::render::IRenderer* pRenderer)
 {
 	const auto& params = msg.GetParams();
 
@@ -296,46 +299,46 @@ void CFloatingTextManager::DrawMessage(const CFloatingText& msg, short sX, short
 					if ((unsigned char)msg.m_szText[i] >= 128) { iSize2 += 5; i++; }
 					else iSize2 += 4;
 				}
-			TextLib::DrawText(iFontID, sX - iSize2, iBaseY, msg.m_szText.c_str(),
-			                  TextLib::TextStyle::WithTwoPointShadow(GameColors::Red4x).WithAdditive());
+			hb::shared::text::DrawText(iFontID, sX - iSize2, iBaseY, msg.m_szText.c_str(),
+			                  hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Red4x).WithAdditive());
 		}
 		else
 		{
 			// Damage/LevelUp/EnemyKill: yellow sprite font with multi-line support
 			auto style = bIsTrans
-				? TextLib::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive()
-				: TextLib::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive();
+				? hb::shared::text::TextStyle::Color(GameColors::Yellow2x).WithAlpha(0.7f).WithAdditive()
+				: hb::shared::text::TextStyle::WithTwoPointShadow(GameColors::Yellow2x).WithAdditive();
 
 			switch (iLines) {
 			case 1:
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY, cMsgA, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY, cMsgA, style);
 				break;
 			case 2:
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY - 16, cMsgA, style);
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY, cMsgB, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY - 16, cMsgA, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY, cMsgB, style);
 				break;
 			case 3:
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY - 32, cMsgA, style);
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY - 16, cMsgB, style);
-				TextLib::DrawText(iFontID, sX - iSize, iBaseY, cMsgC, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY - 32, cMsgA, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY - 16, cMsgB, style);
+				hb::shared::text::DrawText(iFontID, sX - iSize, iBaseY, cMsgC, style);
 				break;
 			}
 		}
 	}
 	else
 	{
-		// Renderer text path (chat, skill change) — word-wrap handled by TextLib
+		// hb::shared::render::Renderer text path (chat, skill change) — word-wrap handled by TextLib
 		const char* pText = msg.m_szText.c_str();
-		Color rgb = params.color;
+		hb::shared::render::Color rgb = params.color;
 
-		int iTextHeight = TextLib::MeasureWrappedTextHeight(GameFont::Default, pText, 160);
+		int iTextHeight = hb::shared::text::MeasureWrappedTextHeight(GameFont::Default, pText, 160);
 		int iBoxHeight = params.iStartOffsetY + iTextHeight;
 		int iBoxY = sY - iBoxHeight - iRise;
 
 		// Shadow (+1,0) and (0,+1) offsets in black, then foreground
-		auto black = TextLib::TextStyle::Color(Color::Black());
-		TextLib::DrawTextWrapped(GameFont::Default, sX - 80 + 1, iBoxY, 160, iBoxHeight, pText, black, TextLib::Align::TopCenter);
-		TextLib::DrawTextWrapped(GameFont::Default, sX - 80, iBoxY + 1, 160, iBoxHeight, pText, black, TextLib::Align::TopCenter);
-		TextLib::DrawTextWrapped(GameFont::Default, sX - 80, iBoxY, 160, iBoxHeight, pText, TextLib::TextStyle::Color(rgb), TextLib::Align::TopCenter);
+		auto black = hb::shared::text::TextStyle::Color(hb::shared::render::Color::Black());
+		hb::shared::text::DrawTextWrapped(GameFont::Default, sX - 80 + 1, iBoxY, 160, iBoxHeight, pText, black, hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextWrapped(GameFont::Default, sX - 80, iBoxY + 1, 160, iBoxHeight, pText, black, hb::shared::text::Align::TopCenter);
+		hb::shared::text::DrawTextWrapped(GameFont::Default, sX - 80, iBoxY, 160, iBoxHeight, pText, hb::shared::text::TextStyle::Color(rgb), hb::shared::text::Align::TopCenter);
 	}
 }

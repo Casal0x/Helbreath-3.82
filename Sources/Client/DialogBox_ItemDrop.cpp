@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_ItemDrop::DialogBox_ItemDrop(CGame* pGame)
 	: IDialogBox(DialogBoxId::ItemDropConfirm, pGame)
 {
@@ -93,8 +94,8 @@ bool DialogBox_ItemDrop::OnClick(short msX, short msY)
 	{
 		Info().cMode = 3;
 		CItem* pCfg = m_pGame->GetItemConfig(m_pGame->m_pItemList[Info().sView]->m_sIDnum);
-		if (pCfg) bSendCommand(MSGID_COMMAND_COMMON,
-			DEF_COMMONTYPE_ITEMDROP,
+		if (pCfg) bSendCommand(MsgId::CommandCommon,
+			CommonType::ItemDrop,
 			0,
 			Info().sView,
 			1,

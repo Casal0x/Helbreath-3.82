@@ -13,7 +13,7 @@
 static SFMLInput* s_pInput = nullptr;
 
 // ============== Global Input Namespace Implementation ==============
-namespace Input {
+namespace hb::shared::input {
     void Create()
     {
         if (!s_pInput)
@@ -55,7 +55,7 @@ SFMLInput::SFMLInput()
 
 SFMLInput::~SFMLInput() = default;
 
-void SFMLInput::Initialize(NativeWindowHandle hWnd)
+void SFMLInput::Initialize(hb::shared::types::NativeWindowHandle hWnd)
 {
     m_hWnd = hWnd;
     m_active = true;
@@ -252,7 +252,7 @@ bool SFMLInput::IsSuppressed() const
     return m_suppressed;
 }
 
-// ============== Window Focus ==============
+// ============== hb::shared::render::Window Focus ==============
 
 bool SFMLInput::IsWindowActive() const
 {

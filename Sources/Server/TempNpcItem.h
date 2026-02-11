@@ -27,7 +27,7 @@ public:
 	{
 	}
 
-	char m_cName[DEF_ITEMNAME];
+	char m_cName[hb::shared::limits::ItemNameLen];
 	short m_sItemID;
 	short m_sFirstProbability;
 	short m_sSecondProbability;

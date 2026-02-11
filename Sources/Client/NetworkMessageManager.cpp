@@ -7,6 +7,7 @@
 #include <cstring>
 #include <cmath>
 
+using namespace hb::shared::net;
 namespace NetworkMessageHandlers {
 	// Stats
 	void HandleHP(CGame* pGame, char* pData);
@@ -235,242 +236,242 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 	const auto* header = hb::net::PacketCast<hb::net::PacketHeader>(pData, sizeof(hb::net::PacketHeader));
 	if (!header) return false;
 
-	if (dwMsgID == MSGID_NOTIFY)
+	if (dwMsgID == MsgId::Notify)
 	{
 		switch (header->msg_type)
 		{
 		// Stats
-		case DEF_NOTIFY_HP: NetworkMessageHandlers::HandleHP(m_pGame, pData); return true;
-		case DEF_NOTIFY_MP: NetworkMessageHandlers::HandleMP(m_pGame, pData); return true;
-		case DEF_NOTIFY_SP: NetworkMessageHandlers::HandleSP(m_pGame, pData); return true;
-		case DEF_NOTIFY_EXP: NetworkMessageHandlers::HandleExp(m_pGame, pData); return true;
-		case DEF_NOTIFY_LEVELUP: NetworkMessageHandlers::HandleLevelUp(m_pGame, pData); return true;
+		case Notify::Hp: NetworkMessageHandlers::HandleHP(m_pGame, pData); return true;
+		case Notify::Mp: NetworkMessageHandlers::HandleMP(m_pGame, pData); return true;
+		case Notify::Sp: NetworkMessageHandlers::HandleSP(m_pGame, pData); return true;
+		case Notify::Exp: NetworkMessageHandlers::HandleExp(m_pGame, pData); return true;
+		case Notify::LevelUp: NetworkMessageHandlers::HandleLevelUp(m_pGame, pData); return true;
 
 		// Items - Purchased/Obtained
-		case DEF_NOTIFY_ITEMPURCHASED: NetworkMessageHandlers::HandleItemPurchased(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMOBTAINED: NetworkMessageHandlers::HandleItemObtained(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMOBTAINED_BULK: NetworkMessageHandlers::HandleItemObtainedBulk(m_pGame, pData); return true;
+		case Notify::ItemPurchased: NetworkMessageHandlers::HandleItemPurchased(m_pGame, pData); return true;
+		case Notify::ItemObtained: NetworkMessageHandlers::HandleItemObtained(m_pGame, pData); return true;
+		case Notify::ItemObtainedBulk: NetworkMessageHandlers::HandleItemObtainedBulk(m_pGame, pData); return true;
 
 		// Items - LifeSpan/Released
-		case DEF_NOTIFY_ITEMLIFESPANEND: NetworkMessageHandlers::HandleItemLifeSpanEnd(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMRELEASED: NetworkMessageHandlers::HandleItemReleased(m_pGame, pData); return true;
+		case Notify::ItemLifeSpanEnd: NetworkMessageHandlers::HandleItemLifeSpanEnd(m_pGame, pData); return true;
+		case Notify::ItemReleased: NetworkMessageHandlers::HandleItemReleased(m_pGame, pData); return true;
 
 		// Items - Count/Depleted
-		case DEF_NOTIFY_SETITEMCOUNT: NetworkMessageHandlers::HandleSetItemCount(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMDEPLETED_ERASEITEM: NetworkMessageHandlers::HandleItemDepleted_EraseItem(m_pGame, pData); return true;
+		case Notify::SetItemCount: NetworkMessageHandlers::HandleSetItemCount(m_pGame, pData); return true;
+		case Notify::ItemDepletedEraseItem: NetworkMessageHandlers::HandleItemDepleted_EraseItem(m_pGame, pData); return true;
 
 		// Items - Drop/Give
-		case DEF_NOTIFY_DROPITEMFIN_ERASEITEM: NetworkMessageHandlers::HandleDropItemFin_EraseItem(m_pGame, pData); return true;
-		case DEF_NOTIFY_GIVEITEMFIN_ERASEITEM: NetworkMessageHandlers::HandleGiveItemFin_EraseItem(m_pGame, pData); return true;
-		case DEF_NOTIFY_DROPITEMFIN_COUNTCHANGED: NetworkMessageHandlers::HandleDropItemFin_CountChanged(m_pGame, pData); return true;
-		case DEF_NOTIFY_GIVEITEMFIN_COUNTCHANGED: NetworkMessageHandlers::HandleGiveItemFin_CountChanged(m_pGame, pData); return true;
+		case Notify::DropItemFinEraseItem: NetworkMessageHandlers::HandleDropItemFin_EraseItem(m_pGame, pData); return true;
+		case Notify::GiveItemFinEraseItem: NetworkMessageHandlers::HandleGiveItemFin_EraseItem(m_pGame, pData); return true;
+		case Notify::DropItemFinCountChanged: NetworkMessageHandlers::HandleDropItemFin_CountChanged(m_pGame, pData); return true;
+		case Notify::GiveItemFinCountChanged: NetworkMessageHandlers::HandleGiveItemFin_CountChanged(m_pGame, pData); return true;
 
 		// Items - Repair/Sell
-		case DEF_NOTIFY_ITEMREPAIRED: NetworkMessageHandlers::HandleItemRepaired(m_pGame, pData); return true;
-		case DEF_NOTIFY_REPAIRITEMPRICE: NetworkMessageHandlers::HandleRepairItemPrice(m_pGame, pData); return true;
-		case DEF_NOTIFY_REPAIRALLPRICES: NetworkMessageHandlers::HandleRepairAllPrices(m_pGame, pData); return true;
-		case DEF_NOTIFY_SELLITEMPRICE: NetworkMessageHandlers::HandleSellItemPrice(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTREPAIRITEM: NetworkMessageHandlers::HandleCannotRepairItem(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTSELLITEM: NetworkMessageHandlers::HandleCannotSellItem(m_pGame, pData); return true;
+		case Notify::ItemRepaired: NetworkMessageHandlers::HandleItemRepaired(m_pGame, pData); return true;
+		case Notify::RepairItemPrice: NetworkMessageHandlers::HandleRepairItemPrice(m_pGame, pData); return true;
+		case Notify::RepairAllPrices: NetworkMessageHandlers::HandleRepairAllPrices(m_pGame, pData); return true;
+		case Notify::SellItemPrice: NetworkMessageHandlers::HandleSellItemPrice(m_pGame, pData); return true;
+		case Notify::CannotRepairItem: NetworkMessageHandlers::HandleCannotRepairItem(m_pGame, pData); return true;
+		case Notify::CannotSellItem: NetworkMessageHandlers::HandleCannotSellItem(m_pGame, pData); return true;
 
 		// Items - Give/Cannot
-		case DEF_NOTIFY_CANNOTGIVEITEM: NetworkMessageHandlers::HandleCannotGiveItem(m_pGame, pData); return true;
+		case Notify::CannotGiveItem: NetworkMessageHandlers::HandleCannotGiveItem(m_pGame, pData); return true;
 
-		// Items - Color/Exchange
-		case DEF_NOTIFY_ITEMCOLORCHANGE: NetworkMessageHandlers::HandleItemColorChange(m_pGame, pData); return true;
-		case DEF_NOTIFY_SETEXCHANGEITEM: NetworkMessageHandlers::HandleSetExchangeItem(m_pGame, pData); return true;
-		case DEF_NOTIFY_OPENEXCHANGEWINDOW: NetworkMessageHandlers::HandleOpenExchangeWindow(m_pGame, pData); return true;
-		case DEF_NOTIFY_CURLIFESPAN: NetworkMessageHandlers::HandleCurLifeSpan(m_pGame, pData); return true;
+		// Items - hb::shared::render::Color/Exchange
+		case Notify::ItemColorChange: NetworkMessageHandlers::HandleItemColorChange(m_pGame, pData); return true;
+		case Notify::SetExchangeItem: NetworkMessageHandlers::HandleSetExchangeItem(m_pGame, pData); return true;
+		case Notify::OpenExchangeWindow: NetworkMessageHandlers::HandleOpenExchangeWindow(m_pGame, pData); return true;
+		case Notify::CurLifeSpan: NetworkMessageHandlers::HandleCurLifeSpan(m_pGame, pData); return true;
 
 		// Items - Upgrade/Attribute/Errors
-		case DEF_NOTIFY_NOTENOUGHGOLD: NetworkMessageHandlers::HandleNotEnoughGold(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTCARRYMOREITEM: NetworkMessageHandlers::HandleCannotCarryMoreItem(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMATTRIBUTECHANGE: NetworkMessageHandlers::HandleItemAttributeChange(m_pGame, pData); return true;
+		case Notify::NotEnoughGold: NetworkMessageHandlers::HandleNotEnoughGold(m_pGame, pData); return true;
+		case Notify::CannotCarryMoreItem: NetworkMessageHandlers::HandleCannotCarryMoreItem(m_pGame, pData); return true;
+		case Notify::ItemAttributeChange: NetworkMessageHandlers::HandleItemAttributeChange(m_pGame, pData); return true;
 		case 0x0BC0: NetworkMessageHandlers::HandleItemAttributeChange(m_pGame, pData); return true; // Same handler as ITEMATTRIBUTECHANGE
-		case DEF_NOTIFY_ITEMUPGRADEFAIL: NetworkMessageHandlers::HandleItemUpgradeFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_GIZONITEMUPGRADELEFT: NetworkMessageHandlers::HandleGizonItemUpgradeLeft(m_pGame, pData); return true;
-		case DEF_NOTIFY_GIZONEITEMCHANGE: NetworkMessageHandlers::HandleGizonItemChange(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMPOSLIST: NetworkMessageHandlers::HandleItemPosList(m_pGame, pData); return true;
-		case DEF_NOTIFY_ITEMSOLD: NetworkMessageHandlers::HandleItemSold(m_pGame, pData); return true;
+		case Notify::ItemUpgradeFail: NetworkMessageHandlers::HandleItemUpgradeFail(m_pGame, pData); return true;
+		case Notify::GizonItemUpgradeLeft: NetworkMessageHandlers::HandleGizonItemUpgradeLeft(m_pGame, pData); return true;
+		case Notify::GizoneItemChange: NetworkMessageHandlers::HandleGizonItemChange(m_pGame, pData); return true;
+		case Notify::ItemPosList: NetworkMessageHandlers::HandleItemPosList(m_pGame, pData); return true;
+		case Notify::ItemSold: NetworkMessageHandlers::HandleItemSold(m_pGame, pData); return true;
 
 		// Bank
-		case DEF_NOTIFY_ITEMTOBANK: NetworkMessageHandlers::HandleItemToBank(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTITEMTOBANK: NetworkMessageHandlers::HandleCannotItemToBank(m_pGame, pData); return true;
+		case Notify::ItemToBank: NetworkMessageHandlers::HandleItemToBank(m_pGame, pData); return true;
+		case Notify::CannotItemToBank: NetworkMessageHandlers::HandleCannotItemToBank(m_pGame, pData); return true;
 
 		// Exchange
-		case DEF_NOTIFY_EXCHANGEITEMCOMPLETE: NetworkMessageHandlers::HandleExchangeItemComplete(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANCELEXCHANGEITEM: NetworkMessageHandlers::HandleCancelExchangeItem(m_pGame, pData); return true;
+		case Notify::ExchangeItemComplete: NetworkMessageHandlers::HandleExchangeItemComplete(m_pGame, pData); return true;
+		case Notify::CancelExchangeItem: NetworkMessageHandlers::HandleCancelExchangeItem(m_pGame, pData); return true;
 
 		// Guild - Notify Messages
-		case DEF_NOTIFY_GUILDDISBANDED: NetworkMessageHandlers::HandleGuildDisbanded(m_pGame, pData); return true;
-		case DEF_NOTIFY_NEWGUILDSMAN: NetworkMessageHandlers::HandleNewGuildsMan(m_pGame, pData); return true;
-		case DEF_NOTIFY_DISMISSGUILDSMAN: NetworkMessageHandlers::HandleDismissGuildsMan(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTJOINMOREGUILDSMAN: NetworkMessageHandlers::HandleCannotJoinMoreGuildsMan(m_pGame, pData); return true;
-		case DEF_NOTIFY_REQGUILDNAMEANSWER: NetworkMessageHandlers::HandleReqGuildNameAnswer(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUERY_JOINGUILDREQPERMISSION: NetworkMessageHandlers::HandleQueryJoinGuildPermission(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUERY_DISMISSGUILDREQPERMISSION: NetworkMessageHandlers::HandleQueryDismissGuildPermission(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOGUILDMASTERLEVEL: NetworkMessageHandlers::HandleNoGuildMasterLevel(m_pGame, pData); return true;
-		case DEF_NOTIFY_SUCCESSBANGUILDMAN: NetworkMessageHandlers::HandleSuccessBanGuildMan(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTBANGUILDMAN: NetworkMessageHandlers::HandleCannotBanGuildMan(m_pGame, pData); return true;
+		case Notify::GuildDisbanded: NetworkMessageHandlers::HandleGuildDisbanded(m_pGame, pData); return true;
+		case Notify::NewGuildsman: NetworkMessageHandlers::HandleNewGuildsMan(m_pGame, pData); return true;
+		case Notify::DismissGuildsman: NetworkMessageHandlers::HandleDismissGuildsMan(m_pGame, pData); return true;
+		case Notify::CannotJoinMoreGuildsman: NetworkMessageHandlers::HandleCannotJoinMoreGuildsMan(m_pGame, pData); return true;
+		case Notify::ReqGuildNameAnswer: NetworkMessageHandlers::HandleReqGuildNameAnswer(m_pGame, pData); return true;
+		case Notify::QueryJoinGuildReqPermission: NetworkMessageHandlers::HandleQueryJoinGuildPermission(m_pGame, pData); return true;
+		case Notify::QueryDismissGuildReqPermission: NetworkMessageHandlers::HandleQueryDismissGuildPermission(m_pGame, pData); return true;
+		case Notify::NoGuildMasterLevel: NetworkMessageHandlers::HandleNoGuildMasterLevel(m_pGame, pData); return true;
+		case Notify::SuccessBanGuildman: NetworkMessageHandlers::HandleSuccessBanGuildMan(m_pGame, pData); return true;
+		case Notify::CannotBanGuildman: NetworkMessageHandlers::HandleCannotBanGuildMan(m_pGame, pData); return true;
 
 		// Guild - Common Type Messages
-		case DEF_COMMONTYPE_JOINGUILDAPPROVE: NetworkMessageHandlers::HandleJoinGuildApprove(m_pGame, pData); return true;
-		case DEF_COMMONTYPE_JOINGUILDREJECT: NetworkMessageHandlers::HandleJoinGuildReject(m_pGame, pData); return true;
-		case DEF_COMMONTYPE_DISMISSGUILDAPPROVE: NetworkMessageHandlers::HandleDismissGuildApprove(m_pGame, pData); return true;
-		case DEF_COMMONTYPE_DISMISSGUILDREJECT: NetworkMessageHandlers::HandleDismissGuildReject(m_pGame, pData); return true;
+		case CommonType::JoinGuildApprove: NetworkMessageHandlers::HandleJoinGuildApprove(m_pGame, pData); return true;
+		case CommonType::JoinGuildReject: NetworkMessageHandlers::HandleJoinGuildReject(m_pGame, pData); return true;
+		case CommonType::DismissGuildApprove: NetworkMessageHandlers::HandleDismissGuildApprove(m_pGame, pData); return true;
+		case CommonType::DismissGuildReject: NetworkMessageHandlers::HandleDismissGuildReject(m_pGame, pData); return true;
 
 		// Combat
-		case DEF_NOTIFY_KILLED: NetworkMessageHandlers::HandleKilled(m_pGame, pData); return true;
-		case DEF_NOTIFY_PKCAPTURED: NetworkMessageHandlers::HandlePKcaptured(m_pGame, pData); return true;
-		case DEF_NOTIFY_PKPENALTY: NetworkMessageHandlers::HandlePKpenalty(m_pGame, pData); return true;
-		case DEF_NOTIFY_ENEMYKILLS: NetworkMessageHandlers::HandleEnemyKills(m_pGame, pData); return true;
-		case DEF_NOTIFY_ENEMYKILLREWARD: NetworkMessageHandlers::HandleEnemyKillReward(m_pGame, pData); return true;
-		case DEF_NOTIFY_GLOBALATTACKMODE: NetworkMessageHandlers::HandleGlobalAttackMode(m_pGame, pData); return true;
-		case DEF_NOTIFY_DAMAGEMOVE: NetworkMessageHandlers::HandleDamageMove(m_pGame, pData); return true;
-		case DEF_NOTIFY_OBSERVERMODE: NetworkMessageHandlers::HandleObserverMode(m_pGame, pData); return true;
-		case DEF_NOTIFY_SUPERATTACKLEFT: NetworkMessageHandlers::HandleSuperAttackLeft(m_pGame, pData); return true;
-		case DEF_NOTIFY_SAFEATTACKMODE: NetworkMessageHandlers::HandleSafeAttackMode(m_pGame, pData); return true;
+		case Notify::Killed: NetworkMessageHandlers::HandleKilled(m_pGame, pData); return true;
+		case Notify::PkCaptured: NetworkMessageHandlers::HandlePKcaptured(m_pGame, pData); return true;
+		case Notify::PkPenalty: NetworkMessageHandlers::HandlePKpenalty(m_pGame, pData); return true;
+		case Notify::EnemyKills: NetworkMessageHandlers::HandleEnemyKills(m_pGame, pData); return true;
+		case Notify::EnemyKillReward: NetworkMessageHandlers::HandleEnemyKillReward(m_pGame, pData); return true;
+		case Notify::GlobalAttackMode: NetworkMessageHandlers::HandleGlobalAttackMode(m_pGame, pData); return true;
+		case Notify::DamageMove: NetworkMessageHandlers::HandleDamageMove(m_pGame, pData); return true;
+		case Notify::ObserverMode: NetworkMessageHandlers::HandleObserverMode(m_pGame, pData); return true;
+		case Notify::SuperAttackLeft: NetworkMessageHandlers::HandleSuperAttackLeft(m_pGame, pData); return true;
+		case Notify::SafeAttackMode: NetworkMessageHandlers::HandleSafeAttackMode(m_pGame, pData); return true;
 		// Skills
-		case DEF_NOTIFY_SKILLTRAINSUCCESS: NetworkMessageHandlers::HandleSkillTrainSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_MAGICSTUDYSUCCESS: NetworkMessageHandlers::HandleMagicStudySuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_MAGICSTUDYFAIL: NetworkMessageHandlers::HandleMagicStudyFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_DOWNSKILLINDEXSET: NetworkMessageHandlers::HandleDownSkillIndexSet(m_pGame, pData); return true;
-		case DEF_NOTIFY_SKILL: NetworkMessageHandlers::HandleSkill(m_pGame, pData); return true;
-		case DEF_NOTIFY_SKILLUSINGEND: NetworkMessageHandlers::HandleSkillUsingEnd(m_pGame, pData); return true;
-		case DEF_NOTIFY_MAGICEFFECTON: NetworkMessageHandlers::HandleMagicEffectOn(m_pGame, pData); return true;
-		case DEF_NOTIFY_MAGICEFFECTOFF: NetworkMessageHandlers::HandleMagicEffectOff(m_pGame, pData); return true;
-		case DEF_NOTIFY_SPELL_SKILL: NetworkMessageHandlers::HandleSpellSkill(m_pGame, pData); return true;
-		case DEF_NOTIFY_SPELLINTERRUPTED: NetworkMessageHandlers::HandleSpellInterrupted(m_pGame, pData); return true;
-		case DEF_NOTIFY_STATECHANGE_SUCCESS: NetworkMessageHandlers::HandleStateChangeSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_STATECHANGE_FAILED: NetworkMessageHandlers::HandleStateChangeFailed(m_pGame, pData); return true;
-		case DEF_NOTIFY_SETTING_FAILED: NetworkMessageHandlers::HandleSettingFailed(m_pGame, pData); return true;
-		case DEF_NOTIFY_SPECIALABILITYSTATUS: NetworkMessageHandlers::HandleSpecialAbilityStatus(m_pGame, pData); return true;
-		case DEF_NOTIFY_SPECIALABILITYENABLED: NetworkMessageHandlers::HandleSpecialAbilityEnabled(m_pGame, pData); return true;
-		case DEF_NOTIFY_SKILLTRAINFAIL: NetworkMessageHandlers::HandleSkillTrainFail(m_pGame, pData); return true;
+		case Notify::SkillTrainSuccess: NetworkMessageHandlers::HandleSkillTrainSuccess(m_pGame, pData); return true;
+		case Notify::MagicStudySuccess: NetworkMessageHandlers::HandleMagicStudySuccess(m_pGame, pData); return true;
+		case Notify::MagicStudyFail: NetworkMessageHandlers::HandleMagicStudyFail(m_pGame, pData); return true;
+		case Notify::DownSkillIndexSet: NetworkMessageHandlers::HandleDownSkillIndexSet(m_pGame, pData); return true;
+		case Notify::Skill: NetworkMessageHandlers::HandleSkill(m_pGame, pData); return true;
+		case Notify::SkillUsingEnd: NetworkMessageHandlers::HandleSkillUsingEnd(m_pGame, pData); return true;
+		case Notify::MagicEffectOn: NetworkMessageHandlers::HandleMagicEffectOn(m_pGame, pData); return true;
+		case Notify::MagicEffectOff: NetworkMessageHandlers::HandleMagicEffectOff(m_pGame, pData); return true;
+		case Notify::SpellSkill: NetworkMessageHandlers::HandleSpellSkill(m_pGame, pData); return true;
+		case Notify::SpellInterrupted: NetworkMessageHandlers::HandleSpellInterrupted(m_pGame, pData); return true;
+		case Notify::StateChangeSuccess: NetworkMessageHandlers::HandleStateChangeSuccess(m_pGame, pData); return true;
+		case Notify::StateChangeFailed: NetworkMessageHandlers::HandleStateChangeFailed(m_pGame, pData); return true;
+		case Notify::SettingFailed: NetworkMessageHandlers::HandleSettingFailed(m_pGame, pData); return true;
+		case Notify::SpecialAbilityStatus: NetworkMessageHandlers::HandleSpecialAbilityStatus(m_pGame, pData); return true;
+		case Notify::SpecialAbilityEnabled: NetworkMessageHandlers::HandleSpecialAbilityEnabled(m_pGame, pData); return true;
+		case Notify::SkillTrainFail: NetworkMessageHandlers::HandleSkillTrainFail(m_pGame, pData); return true;
 
 		// Player
-		case DEF_NOTIFY_CHARISMA: NetworkMessageHandlers::HandleCharisma(m_pGame, pData); return true;
-		case DEF_NOTIFY_HUNGER: NetworkMessageHandlers::HandleHunger(m_pGame, pData); return true;
-		case DEF_NOTIFY_PLAYERPROFILE: NetworkMessageHandlers::HandlePlayerProfile(m_pGame, pData); return true;
-		case DEF_NOTIFY_PLAYERONGAME: NetworkMessageHandlers::HandlePlayerStatus(m_pGame, true, pData); return true;
-		case DEF_NOTIFY_PLAYERNOTONGAME: NetworkMessageHandlers::HandlePlayerStatus(m_pGame, false, pData); return true;
-		case DEF_NOTIFY_WHISPERMODEON: NetworkMessageHandlers::HandleWhisperMode(m_pGame, true, pData); return true;
-		case DEF_NOTIFY_WHISPERMODEOFF: NetworkMessageHandlers::HandleWhisperMode(m_pGame, false, pData); return true;
-		case DEF_NOTIFY_PLAYERSHUTUP: NetworkMessageHandlers::HandlePlayerShutUp(m_pGame, pData); return true;
-		case DEF_NOTIFY_RATINGPLAYER: NetworkMessageHandlers::HandleRatingPlayer(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTRATING: NetworkMessageHandlers::HandleCannotRating(m_pGame, pData); return true;
-		case DEF_NOTIFY_CHANGEPLAYMODE: NetworkMessageHandlers::HandleChangePlayMode(m_pGame, pData); return true;
+		case Notify::Charisma: NetworkMessageHandlers::HandleCharisma(m_pGame, pData); return true;
+		case Notify::Hunger: NetworkMessageHandlers::HandleHunger(m_pGame, pData); return true;
+		case Notify::PlayerProfile: NetworkMessageHandlers::HandlePlayerProfile(m_pGame, pData); return true;
+		case Notify::PlayerOnGame: NetworkMessageHandlers::HandlePlayerStatus(m_pGame, true, pData); return true;
+		case Notify::PlayerNotOnGame: NetworkMessageHandlers::HandlePlayerStatus(m_pGame, false, pData); return true;
+		case Notify::WhisperModeOn: NetworkMessageHandlers::HandleWhisperMode(m_pGame, true, pData); return true;
+		case Notify::WhisperModeOff: NetworkMessageHandlers::HandleWhisperMode(m_pGame, false, pData); return true;
+		case Notify::PlayerShutUp: NetworkMessageHandlers::HandlePlayerShutUp(m_pGame, pData); return true;
+		case Notify::RatingPlayer: NetworkMessageHandlers::HandleRatingPlayer(m_pGame, pData); return true;
+		case Notify::CannotRating: NetworkMessageHandlers::HandleCannotRating(m_pGame, pData); return true;
+		case Notify::ChangePlayMode: NetworkMessageHandlers::HandleChangePlayMode(m_pGame, pData); return true;
 
 		// Quest
-		case DEF_NOTIFY_QUESTCONTENTS: NetworkMessageHandlers::HandleQuestContents(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUESTREWARD: NetworkMessageHandlers::HandleQuestReward(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUESTCOUNTER: NetworkMessageHandlers::HandleQuestCounter(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUESTCOMPLETED: NetworkMessageHandlers::HandleQuestCompleted(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUESTABORTED: NetworkMessageHandlers::HandleQuestAborted(m_pGame, pData); return true;
+		case Notify::QuestContents: NetworkMessageHandlers::HandleQuestContents(m_pGame, pData); return true;
+		case Notify::QuestReward: NetworkMessageHandlers::HandleQuestReward(m_pGame, pData); return true;
+		case Notify::QuestCounter: NetworkMessageHandlers::HandleQuestCounter(m_pGame, pData); return true;
+		case Notify::QuestCompleted: NetworkMessageHandlers::HandleQuestCompleted(m_pGame, pData); return true;
+		case Notify::QuestAborted: NetworkMessageHandlers::HandleQuestAborted(m_pGame, pData); return true;
 
 		// Party
-		case DEF_NOTIFY_PARTY: NetworkMessageHandlers::HandleParty(m_pGame, pData); return true;
-		case DEF_NOTIFY_QUERY_JOINPARTY: NetworkMessageHandlers::HandleQueryJoinParty(m_pGame, pData); return true;
-		case DEF_NOTIFY_RESPONSE_CREATENEWPARTY: NetworkMessageHandlers::HandleResponseCreateNewParty(m_pGame, pData); return true;
+		case Notify::Party: NetworkMessageHandlers::HandleParty(m_pGame, pData); return true;
+		case Notify::QueryJoinParty: NetworkMessageHandlers::HandleQueryJoinParty(m_pGame, pData); return true;
+		case Notify::ResponseCreateNewParty: NetworkMessageHandlers::HandleResponseCreateNewParty(m_pGame, pData); return true;
 
 		// Apocalypse
-		case DEF_NOTIFY_APOCGATESTARTMSG: NetworkMessageHandlers::HandleApocGateStart(m_pGame, pData); return true;
-		case DEF_NOTIFY_APOCGATEENDMSG: NetworkMessageHandlers::HandleApocGateEnd(m_pGame, pData); return true;
-		case DEF_NOTIFY_APOCGATEOPEN: NetworkMessageHandlers::HandleApocGateOpen(m_pGame, pData); return true;
-		case DEF_NOTIFY_APOCGATECLOSE: NetworkMessageHandlers::HandleApocGateClose(m_pGame, pData); return true;
-		case DEF_NOTIFY_APOCFORCERECALLPLAYERS: NetworkMessageHandlers::HandleApocForceRecall(m_pGame, pData); return true;
-		case DEF_NOTIFY_ABADDONKILLED: NetworkMessageHandlers::HandleAbaddonKilled(m_pGame, pData); return true;
+		case Notify::ApocGateStartMsg: NetworkMessageHandlers::HandleApocGateStart(m_pGame, pData); return true;
+		case Notify::ApocGateEndMsg: NetworkMessageHandlers::HandleApocGateEnd(m_pGame, pData); return true;
+		case Notify::ApocGateOpen: NetworkMessageHandlers::HandleApocGateOpen(m_pGame, pData); return true;
+		case Notify::ApocGateClose: NetworkMessageHandlers::HandleApocGateClose(m_pGame, pData); return true;
+		case Notify::ApocForceRecallPlayers: NetworkMessageHandlers::HandleApocForceRecall(m_pGame, pData); return true;
+		case Notify::AbaddonKilled: NetworkMessageHandlers::HandleAbaddonKilled(m_pGame, pData); return true;
 
 		// Heldenian
-		case DEF_NOTIFY_HELDENIANTELEPORT: NetworkMessageHandlers::HandleHeldenianTeleport(m_pGame, pData); return true;
-		case DEF_NOTIFY_HELDENIANEND: NetworkMessageHandlers::HandleHeldenianEnd(m_pGame, pData); return true;
-		case DEF_NOTIFY_HELDENIANSTART: NetworkMessageHandlers::HandleHeldenianStart(m_pGame, pData); return true;
-		case DEF_NOTIFY_HELDENIANVICTORY: NetworkMessageHandlers::HandleHeldenianVictory(m_pGame, pData); return true;
-		case DEF_NOTIFY_HELDENIANCOUNT: NetworkMessageHandlers::HandleHeldenianCount(m_pGame, pData); return true;
-		case DEF_NOTIFY_0BE8: NetworkMessageHandlers::HandleHeldenianRecall(m_pGame, pData); return true;
+		case Notify::HeldenianTeleport: NetworkMessageHandlers::HandleHeldenianTeleport(m_pGame, pData); return true;
+		case Notify::HeldenianEnd: NetworkMessageHandlers::HandleHeldenianEnd(m_pGame, pData); return true;
+		case Notify::HeldenianStart: NetworkMessageHandlers::HandleHeldenianStart(m_pGame, pData); return true;
+		case Notify::HeldenianVictory: NetworkMessageHandlers::HandleHeldenianVictory(m_pGame, pData); return true;
+		case Notify::HeldenianCount: NetworkMessageHandlers::HandleHeldenianCount(m_pGame, pData); return true;
+		case Notify::Unknown0BE8: NetworkMessageHandlers::HandleHeldenianRecall(m_pGame, pData); return true;
 
 		// Slates
-		case DEF_NOTIFY_SLATE_CREATESUCCESS: NetworkMessageHandlers::HandleSlateCreateSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_CREATEFAIL: NetworkMessageHandlers::HandleSlateCreateFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_INVINCIBLE: NetworkMessageHandlers::HandleSlateInvincible(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_MANA: NetworkMessageHandlers::HandleSlateMana(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_EXP: NetworkMessageHandlers::HandleSlateExp(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_STATUS: NetworkMessageHandlers::HandleSlateStatus(m_pGame, pData); return true;
-		case DEF_NOTIFY_SLATE_BERSERK: NetworkMessageHandlers::HandleSlateBerserk(m_pGame, pData); return true;
+		case Notify::SlateCreateSuccess: NetworkMessageHandlers::HandleSlateCreateSuccess(m_pGame, pData); return true;
+		case Notify::SlateCreateFail: NetworkMessageHandlers::HandleSlateCreateFail(m_pGame, pData); return true;
+		case Notify::SlateInvincible: NetworkMessageHandlers::HandleSlateInvincible(m_pGame, pData); return true;
+		case Notify::SlateMana: NetworkMessageHandlers::HandleSlateMana(m_pGame, pData); return true;
+		case Notify::SlateExp: NetworkMessageHandlers::HandleSlateExp(m_pGame, pData); return true;
+		case Notify::SlateStatus: NetworkMessageHandlers::HandleSlateStatus(m_pGame, pData); return true;
+		case Notify::SlateBerserk: NetworkMessageHandlers::HandleSlateBerserk(m_pGame, pData); return true;
 
 		// Events (Generic)
-		case DEF_NOTIFY_SPAWNEVENT: NetworkMessageHandlers::HandleSpawnEvent(m_pGame, pData); return true;
-		case DEF_NOTIFY_MONSTERCOUNT: NetworkMessageHandlers::HandleMonsterCount(m_pGame, pData); return true;
-		case DEF_NOTIFY_RESURRECTPLAYER: NetworkMessageHandlers::HandleResurrectPlayer(m_pGame, pData); return true;
+		case Notify::SpawnEvent: NetworkMessageHandlers::HandleSpawnEvent(m_pGame, pData); return true;
+		case Notify::MonsterCount: NetworkMessageHandlers::HandleMonsterCount(m_pGame, pData); return true;
+		case Notify::ResurrectPlayer: NetworkMessageHandlers::HandleResurrectPlayer(m_pGame, pData); return true;
 
 		// Crusade
-		case DEF_NOTIFY_CRUSADE: NetworkMessageHandlers::HandleCrusade(m_pGame, pData); return true;
-		case DEF_NOTIFY_GRANDMAGICRESULT: NetworkMessageHandlers::HandleGrandMagicResult(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOMORECRUSADESTRUCTURE: NetworkMessageHandlers::HandleNoMoreCrusadeStructure(m_pGame, pData); return true;
-		case DEF_NOTIFY_ENERGYSPHEREGOALIN: NetworkMessageHandlers::HandleEnergySphereGoalIn(m_pGame, pData); return true;
-		case DEF_NOTIFY_ENERGYSPHERECREATED: NetworkMessageHandlers::HandleEnergySphereCreated(m_pGame, pData); return true;
-		case DEF_NOTIFY_METEORSTRIKECOMING: NetworkMessageHandlers::HandleMeteorStrikeComing(m_pGame, pData); return true;
-		case DEF_NOTIFY_METEORSTRIKEHIT: NetworkMessageHandlers::HandleMeteorStrikeHit(m_pGame, pData); return true;
-		case DEF_NOTIFY_CANNOTCONSTRUCT: NetworkMessageHandlers::HandleCannotConstruct(m_pGame, pData); return true;
-		case DEF_NOTIFY_TCLOC: NetworkMessageHandlers::HandleTCLoc(m_pGame, pData); return true;
-		case DEF_NOTIFY_CONSTRUCTIONPOINT: NetworkMessageHandlers::HandleConstructionPoint(m_pGame, pData); return true;
+		case Notify::Crusade: NetworkMessageHandlers::HandleCrusade(m_pGame, pData); return true;
+		case Notify::GrandMagicResult: NetworkMessageHandlers::HandleGrandMagicResult(m_pGame, pData); return true;
+		case Notify::NoMoreCrusadeStructure: NetworkMessageHandlers::HandleNoMoreCrusadeStructure(m_pGame, pData); return true;
+		case Notify::EnergySphereGoalIn: NetworkMessageHandlers::HandleEnergySphereGoalIn(m_pGame, pData); return true;
+		case Notify::EnergySphereCreated: NetworkMessageHandlers::HandleEnergySphereCreated(m_pGame, pData); return true;
+		case Notify::MeteorStrikeComing: NetworkMessageHandlers::HandleMeteorStrikeComing(m_pGame, pData); return true;
+		case Notify::MeteorStrikeHit: NetworkMessageHandlers::HandleMeteorStrikeHit(m_pGame, pData); return true;
+		case Notify::CannotConstruct: NetworkMessageHandlers::HandleCannotConstruct(m_pGame, pData); return true;
+		case Notify::TcLoc: NetworkMessageHandlers::HandleTCLoc(m_pGame, pData); return true;
+		case Notify::ConstructionPoint: NetworkMessageHandlers::HandleConstructionPoint(m_pGame, pData); return true;
 
 		// Map
-		case DEF_NOTIFY_MAPSTATUSNEXT: NetworkMessageHandlers::HandleMapStatusNext(m_pGame, pData); return true;
-		case DEF_NOTIFY_MAPSTATUSLAST: NetworkMessageHandlers::HandleMapStatusLast(m_pGame, pData); return true;
-		case DEF_NOTIFY_LOCKEDMAP: NetworkMessageHandlers::HandleLockedMap(m_pGame, pData); return true;
-		case DEF_NOTIFY_SHOWMAP: NetworkMessageHandlers::HandleShowMap(m_pGame, pData); return true;
+		case Notify::MapStatusNext: NetworkMessageHandlers::HandleMapStatusNext(m_pGame, pData); return true;
+		case Notify::MapStatusLast: NetworkMessageHandlers::HandleMapStatusLast(m_pGame, pData); return true;
+		case Notify::LockedMap: NetworkMessageHandlers::HandleLockedMap(m_pGame, pData); return true;
+		case Notify::ShowMap: NetworkMessageHandlers::HandleShowMap(m_pGame, pData); return true;
 
 		// Crafting
-		case DEF_NOTIFY_CRAFTING_SUCCESS: NetworkMessageHandlers::HandleCraftingSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_CRAFTING_FAIL: NetworkMessageHandlers::HandleCraftingFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_BUILDITEMSUCCESS: NetworkMessageHandlers::HandleBuildItemSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_BUILDITEMFAIL: NetworkMessageHandlers::HandleBuildItemFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_PORTIONSUCCESS: NetworkMessageHandlers::HandlePortionSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_PORTIONFAIL: NetworkMessageHandlers::HandlePortionFail(m_pGame, pData); return true;
-		case DEF_NOTIFY_LOWPORTIONSKILL: NetworkMessageHandlers::HandleLowPortionSkill(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOMATCHINGPORTION: NetworkMessageHandlers::HandleNoMatchingPortion(m_pGame, pData); return true;
+		case Notify::CraftingSuccess: NetworkMessageHandlers::HandleCraftingSuccess(m_pGame, pData); return true;
+		case Notify::CraftingFail: NetworkMessageHandlers::HandleCraftingFail(m_pGame, pData); return true;
+		case Notify::BuildItemSuccess: NetworkMessageHandlers::HandleBuildItemSuccess(m_pGame, pData); return true;
+		case Notify::BuildItemFail: NetworkMessageHandlers::HandleBuildItemFail(m_pGame, pData); return true;
+		case Notify::PortionSuccess: NetworkMessageHandlers::HandlePortionSuccess(m_pGame, pData); return true;
+		case Notify::PortionFail: NetworkMessageHandlers::HandlePortionFail(m_pGame, pData); return true;
+		case Notify::LowPortionSkill: NetworkMessageHandlers::HandleLowPortionSkill(m_pGame, pData); return true;
+		case Notify::NoMatchingPortion: NetworkMessageHandlers::HandleNoMatchingPortion(m_pGame, pData); return true;
 
 		// Fish
-		case DEF_NOTIFY_FISHCHANCE: NetworkMessageHandlers::HandleFishChance(m_pGame, pData); return true;
-		case DEF_NOTIFY_EVENTFISHMODE: NetworkMessageHandlers::HandleEventFishMode(m_pGame, pData); return true;
-		case DEF_NOTIFY_FISHCANCELED: NetworkMessageHandlers::HandleFishCanceled(m_pGame, pData); return true;
-		case DEF_NOTIFY_FISHSUCCESS: NetworkMessageHandlers::HandleFishSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_FISHFAIL: NetworkMessageHandlers::HandleFishFail(m_pGame, pData); return true;
+		case Notify::FishChance: NetworkMessageHandlers::HandleFishChance(m_pGame, pData); return true;
+		case Notify::EventFishMode: NetworkMessageHandlers::HandleEventFishMode(m_pGame, pData); return true;
+		case Notify::FishCanceled: NetworkMessageHandlers::HandleFishCanceled(m_pGame, pData); return true;
+		case Notify::FishSuccess: NetworkMessageHandlers::HandleFishSuccess(m_pGame, pData); return true;
+		case Notify::FishFail: NetworkMessageHandlers::HandleFishFail(m_pGame, pData); return true;
 
 		// Agriculture
-		case DEF_NOTIFY_AGRICULTURENOAREA: NetworkMessageHandlers::HandleAgricultureNoArea(m_pGame, pData); return true;
-		case DEF_NOTIFY_AGRICULTURESKILLLIMIT: NetworkMessageHandlers::HandleAgricultureSkillLimit(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOMOREAGRICULTURE: NetworkMessageHandlers::HandleNoMoreAgriculture(m_pGame, pData); return true;
+		case Notify::AgricultureNoArea: NetworkMessageHandlers::HandleAgricultureNoArea(m_pGame, pData); return true;
+		case Notify::AgricultureSkillLimit: NetworkMessageHandlers::HandleAgricultureSkillLimit(m_pGame, pData); return true;
+		case Notify::NoMoreAgriculture: NetworkMessageHandlers::HandleNoMoreAgriculture(m_pGame, pData); return true;
 		
 		// Angels
-		case DEF_NOTIFY_ANGEL_FAILED: NetworkMessageHandlers::HandleAngelFailed(m_pGame, pData); return true;
-		case DEF_NOTIFY_ANGEL_RECEIVED: NetworkMessageHandlers::HandleAngelReceived(m_pGame, pData); return true;
-		case DEF_NOTIFY_ANGELIC_STATS: NetworkMessageHandlers::HandleAngelicStats(m_pGame, pData); return true;
+		case Notify::AngelFailed: NetworkMessageHandlers::HandleAngelFailed(m_pGame, pData); return true;
+		case Notify::AngelReceived: NetworkMessageHandlers::HandleAngelReceived(m_pGame, pData); return true;
+		case Notify::AngelicStats: NetworkMessageHandlers::HandleAngelicStats(m_pGame, pData); return true;
 
-		case DEF_NOTIFY_0BEF: NetworkMessageHandlers::HandleCrashHandler(m_pGame, pData); return true;
-		case DEF_NOTIFY_IPACCOUNTINFO: NetworkMessageHandlers::HandleIpAccountInfo(m_pGame, pData); return true;
-		case DEF_NOTIFY_REWARDGOLD: NetworkMessageHandlers::HandleRewardGold(m_pGame, pData); return true;
-		case DEF_NOTIFY_SERVERSHUTDOWN: NetworkMessageHandlers::HandleServerShutdown(m_pGame, pData); return true;
+		case Notify::Unknown0BEF: NetworkMessageHandlers::HandleCrashHandler(m_pGame, pData); return true;
+		case Notify::IpAccountInfo: NetworkMessageHandlers::HandleIpAccountInfo(m_pGame, pData); return true;
+		case Notify::RewardGold: NetworkMessageHandlers::HandleRewardGold(m_pGame, pData); return true;
+		case Notify::ServerShutdown: NetworkMessageHandlers::HandleServerShutdown(m_pGame, pData); return true;
 
 		// System (Generic)
-		case DEF_NOTIFY_WHETHERCHANGE: NetworkMessageHandlers::HandleWhetherChange(m_pGame, pData); return true;
-		case DEF_NOTIFY_TIMECHANGE: NetworkMessageHandlers::HandleTimeChange(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOTICEMSG: NetworkMessageHandlers::HandleNoticeMsg(m_pGame, pData); return true;
-		case DEF_NOTIFY_STATUSTEXT: NetworkMessageHandlers::HandleStatusText(m_pGame, pData); return true;
-		case DEF_NOTIFY_FORCEDISCONN: NetworkMessageHandlers::HandleForceDisconn(m_pGame, pData); return true;
-		case DEF_NOTIFY_SETTING_SUCCESS: NetworkMessageHandlers::HandleSettingSuccess(m_pGame, pData); return true;
-		case DEF_NOTIFY_SERVERCHANGE: NetworkMessageHandlers::HandleServerChange(m_pGame, pData); return true;
-		case DEF_NOTIFY_TOTALUSERS: NetworkMessageHandlers::HandleTotalUsers(m_pGame, pData); return true;
-		case DEF_NOTIFY_FORCERECALLTIME: NetworkMessageHandlers::HandleForceRecallTime(m_pGame, pData); return true;
-		case DEF_NOTIFY_NORECALL: NetworkMessageHandlers::HandleNoRecall(m_pGame, pData); return true;
-		case DEF_NOTIFY_FIGHTZONERESERVE: NetworkMessageHandlers::HandleFightZoneReserve(m_pGame, pData); return true;
-		case DEF_NOTIFY_LOTERY_LOST: NetworkMessageHandlers::HandleLoteryLost(m_pGame, pData); return true;
-		case DEF_NOTIFY_NOTFLAGSPOT: NetworkMessageHandlers::HandleNotFlagSpot(m_pGame, pData); return true;
-		case DEF_NOTIFY_NPCTALK: NetworkMessageHandlers::HandleNpcTalk(m_pGame, pData); return true;
-		case DEF_NOTIFY_TRAVELERLIMITEDLEVEL: NetworkMessageHandlers::HandleTravelerLimitedLevel(m_pGame, pData); return true;
-		case DEF_NOTIFY_LIMITEDLEVEL: NetworkMessageHandlers::HandleLimitedLevel(m_pGame, pData); return true;
-		case DEF_NOTIFY_TOBERECALLED: NetworkMessageHandlers::HandleToBeRecalled(m_pGame, pData); return true;
+		case Notify::WhetherChange: NetworkMessageHandlers::HandleWhetherChange(m_pGame, pData); return true;
+		case Notify::TimeChange: NetworkMessageHandlers::HandleTimeChange(m_pGame, pData); return true;
+		case Notify::NoticeMsg: NetworkMessageHandlers::HandleNoticeMsg(m_pGame, pData); return true;
+		case Notify::StatusText: NetworkMessageHandlers::HandleStatusText(m_pGame, pData); return true;
+		case Notify::ForceDisconn: NetworkMessageHandlers::HandleForceDisconn(m_pGame, pData); return true;
+		case Notify::SettingSuccess: NetworkMessageHandlers::HandleSettingSuccess(m_pGame, pData); return true;
+		case Notify::ServerChange: NetworkMessageHandlers::HandleServerChange(m_pGame, pData); return true;
+		case Notify::TotalUsers: NetworkMessageHandlers::HandleTotalUsers(m_pGame, pData); return true;
+		case Notify::ForceRecallTime: NetworkMessageHandlers::HandleForceRecallTime(m_pGame, pData); return true;
+		case Notify::NoRecall: NetworkMessageHandlers::HandleNoRecall(m_pGame, pData); return true;
+		case Notify::FightZoneReserve: NetworkMessageHandlers::HandleFightZoneReserve(m_pGame, pData); return true;
+		case Notify::LoteryLost: NetworkMessageHandlers::HandleLoteryLost(m_pGame, pData); return true;
+		case Notify::NotFlagSpot: NetworkMessageHandlers::HandleNotFlagSpot(m_pGame, pData); return true;
+		case Notify::NpcTalk: NetworkMessageHandlers::HandleNpcTalk(m_pGame, pData); return true;
+		case Notify::TravelerLimitedLevel: NetworkMessageHandlers::HandleTravelerLimitedLevel(m_pGame, pData); return true;
+		case Notify::LimitedLevel: NetworkMessageHandlers::HandleLimitedLevel(m_pGame, pData); return true;
+		case Notify::ToBeRecalled: NetworkMessageHandlers::HandleToBeRecalled(m_pGame, pData); return true;
 
 		}
 		return false;
@@ -478,11 +479,11 @@ bool NetworkMessageManager::ProcessMessage(uint32_t dwMsgID, char* pData, uint32
 
 	switch (dwMsgID)
 	{
-	case MSGID_RESPONSE_CREATENEWGUILD:
+	case MsgId::ResponseCreateNewGuild:
 		NetworkMessageHandlers::HandleCreateNewGuildResponse(m_pGame, pData);
 		return true;
 
-	case MSGID_RESPONSE_DISBANDGUILD:
+	case MsgId::ResponseDisbandGuild:
 		NetworkMessageHandlers::HandleDisbandGuildResponse(m_pGame, pData);
 		return true;
 

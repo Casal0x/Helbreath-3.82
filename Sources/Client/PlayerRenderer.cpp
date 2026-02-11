@@ -4,9 +4,9 @@
 #include "RenderHelpers.h"
 #include "CommonTypes.h"
 
-SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -49,12 +49,12 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 		RenderHelpers::DrawPlayerLayers(m_game, eq, state, sX, sY, bInv, _cMantleDrawingOrder, 8, bAdminInvis);
 
 		// Crop effects
-		if (state.m_sOwnerType == hb::owner::Crops)
+		if (state.m_sOwnerType == hb::shared::owner::Crops)
 		{
 			switch (state.m_iFrame) {
-			case 0: m_game.m_pEffectSpr[84]->Draw(sX + 52, sY + 54, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f)); break;
-			case 1: m_game.m_pEffectSpr[83]->Draw(sX + 53, sY + 59, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f)); break;
-			case 2: m_game.m_pEffectSpr[82]->Draw(sX + 53, sY + 65, (dwTime % 3000) / 120, SpriteLib::DrawParams::Alpha(0.5f)); break;
+			case 0: m_game.m_pEffectSpr[84]->Draw(sX + 52, sY + 54, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
+			case 1: m_game.m_pEffectSpr[83]->Draw(sX + 53, sY + 59, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
+			case 2: m_game.m_pEffectSpr[82]->Draw(sX + 53, sY + 65, (dwTime % 3000) / 120, hb::shared::sprite::DrawParams::Alpha(0.5f)); break;
 			}
 		}
 
@@ -86,9 +86,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawStop(int indexX, int indexY, int sX, i
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -153,9 +153,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMove(int indexX, int indexY, int sX, i
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -213,7 +213,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 				case 8: tx += i * 5; ty += i * 5; break;
 				}
 				m_game.m_pSprite[bodyDirIndex]->Draw(tx, ty, state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+					hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 			}
 		}
 	}
@@ -238,9 +238,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawRun(int indexX, int indexY, int sX, in
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -282,7 +282,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
 			m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX, sY, state.m_iFrame - 1,
-				SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX, sY);
@@ -311,9 +311,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttack(int indexX, int indexY, int sX,
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -418,7 +418,7 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 		// Attack-specific: weapon swing trail at frame 3
 		if (eq.iWeaponIndex != -1 && state.m_iFrame == 3)
 			m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX + dx, sY + dy, state.m_iFrame - 1,
-				SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 
 		// Berserk glow
 		RenderHelpers::DrawBerserkGlow(m_game, eq, state, sX + dx, sY + dy);
@@ -431,13 +431,13 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 		if (bDashDraw)
 		{
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-				SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 			if (eq.iWeaponIndex != -1)
 				m_game.m_pSprite[eq.iWeaponIndex]->Draw(sX + dsx, sY + dsy, state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+					hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 			if (eq.iShieldIndex != -1)
 				m_game.m_pSprite[eq.iShieldIndex]->Draw(sX + dsx, sY + dsy, (state.m_iDir - 1) * 8 + state.m_iFrame,
-					SpriteLib::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
+					hb::shared::sprite::DrawParams::TintedAlpha(126, 192, 242, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)
@@ -461,15 +461,15 @@ SpriteLib::BoundRect CPlayerRenderer::DrawAttackMove(int indexX, int indexY, int
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
 
 	// Magic has special invisibility handling — updates chat position for invisible enemies
-	if (hb::owner::IsAlwaysInvisible(state.m_sOwnerType)) bInv = true;
+	if (hb::shared::owner::IsAlwaysInvisible(state.m_sOwnerType)) bInv = true;
 	if (state.m_status.bInvisibility)
 	{
 		if (state.m_wObjectID == m_game.m_pPlayer->m_sPlayerObjectID)
@@ -531,9 +531,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawMagic(int indexX, int indexY, int sX, 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -581,9 +581,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawGetItem(int indexX, int indexY, int sX
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -656,9 +656,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamage(int indexX, int indexY, int sX,
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 	bool bInv = false;
 	bool bAdminInvis = false;
@@ -733,9 +733,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDamageMove(int indexX, int indexY, int
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 
 	// No invisibility check for dying
@@ -793,9 +793,9 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDying(int indexX, int indexY, int sX, 
 	return m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->GetBoundRect();
 }
 
-SpriteLib::BoundRect CPlayerRenderer::DrawDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
+hb::shared::sprite::BoundRect CPlayerRenderer::DrawDead(int indexX, int indexY, int sX, int sY, bool bTrans, uint32_t dwTime)
 {
-	SpriteLib::BoundRect invalidRect = {0, -1, 0, 0};
+	hb::shared::sprite::BoundRect invalidRect = {0, -1, 0, 0};
 	auto& state = m_game.m_entityState;
 
 	// bodyPose=11, frame=7 fixed for dead players
@@ -815,13 +815,13 @@ SpriteLib::BoundRect CPlayerRenderer::DrawDead(int indexX, int indexY, int sX, i
 		{
 			// Berserk corpse fade — reddish tint
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				SpriteLib::DrawParams::TintedAlpha(202 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(202 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 182 - 4 * state.m_iFrame, 0.7f));
 		}
 		else
 		{
 			// Normal corpse fade
 			m_game.m_pSprite[eq.iBodyIndex + (state.m_iDir - 1)]->Draw(sX, sY, iFrame,
-				SpriteLib::DrawParams::TintedAlpha(192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 0.7f));
+				hb::shared::sprite::DrawParams::TintedAlpha(192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 192 - 4 * state.m_iFrame, 0.7f));
 		}
 	}
 	else if (strlen(state.m_cName.data()) > 0)

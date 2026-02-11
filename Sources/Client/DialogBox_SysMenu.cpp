@@ -79,12 +79,12 @@ void DialogBox_SysMenu::ApplyResolution(int index)
 	ConfigManager::Get().SetWindowSize(newWidth, newHeight);
 	ConfigManager::Get().Save();
 
-	Window::SetSize(newWidth, newHeight, true);
+	hb::shared::render::Window::SetSize(newWidth, newHeight, true);
 
-	if (Renderer::Get())
-		Renderer::Get()->ResizeBackBuffer(newWidth, newHeight);
+	if (hb::shared::render::Renderer::Get())
+		hb::shared::render::Renderer::Get()->ResizeBackBuffer(newWidth, newHeight);
 
-	Input::Get()->SetWindowActive(true);
+	hb::shared::input::Get()->SetWindowActive(true);
 }
 
 DialogBox_SysMenu::DialogBox_SysMenu(CGame* pGame)
@@ -106,9 +106,9 @@ void DialogBox_SysMenu::OnUpdate()
 	// Cache frame dimensions on first update (sprites loaded by now)
 	if (!m_bFrameSizesInitialized && m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] != nullptr)
 	{
-		SpriteLib::SpriteRect wideRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(78);
-		SpriteLib::SpriteRect smallRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(79);
-		SpriteLib::SpriteRect largeRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(81);
+		hb::shared::sprite::SpriteRect wideRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(78);
+		hb::shared::sprite::SpriteRect smallRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(79);
+		hb::shared::sprite::SpriteRect largeRect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(81);
 
 		// Only use if we got valid dimensions (not from NullSprite)
 		if (wideRect.width > 0 && wideRect.height > 0 && smallRect.width > 0 && smallRect.height > 0)
@@ -179,7 +179,7 @@ void DialogBox_SysMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 
 void DialogBox_SysMenu::DrawTabs(short sX, short sY, short msX, short msY)
 {
-	SpriteLib::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
+	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
 	int btnY = sY + 33;
 
 	const int tabFrames[TAB_COUNT][2] = {
@@ -230,11 +230,11 @@ void DialogBox_SysMenu::DrawToggle(int x, int y, bool bEnabled, short msX, short
 	const int boxHeight = m_bFrameSizesInitialized ? m_iSmallBoxHeight : 16;
 
 	bool bHover = (msX >= x && msX <= x + boxWidth && msY >= boxY && msY <= boxY + boxHeight);
-	const Color& color = (bEnabled || bHover) ? GameColors::UIWhite : GameColors::UIDisabled;
+	const hb::shared::render::Color& color = (bEnabled || bHover) ? GameColors::UIWhite : GameColors::UIDisabled;
 
 	// Center text horizontally and vertically in the box
 	const char* text = bEnabled ? DRAW_DIALOGBOX_SYSMENU_ON : DRAW_DIALOGBOX_SYSMENU_OFF;
-	TextLib::TextMetrics metrics = TextLib::GetTextRenderer()->MeasureText(text);
+	hb::shared::text::TextMetrics metrics = hb::shared::text::GetTextRenderer()->MeasureText(text);
 	int textX = x + (boxWidth - metrics.width) / 2;
 	int textY = boxY + (boxHeight - metrics.height) / 2;
 	PutString(textX, textY, text, color);
@@ -272,7 +272,7 @@ void DialogBox_SysMenu::DrawGeneralTab(short sX, short sY, short msX, short msY)
 		SysTime.wMonth, SysTime.wDay, SysTime.wYear,
 		hour12, SysTime.wMinute, ampm);
 
-	int textWidth = TextLib::GetTextRenderer()->MeasureText(timeBuf).width;
+	int textWidth = hb::shared::text::GetTextRenderer()->MeasureText(timeBuf).width;
 	int timeX = centerX - (textWidth / 2);
 	PutString(timeX, contentY + 25, timeBuf, GameColors::UILabel);
 	PutString(timeX + 1, contentY + 25, timeBuf, GameColors::UILabel);
@@ -349,7 +349,7 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 		bool bSelected = (currentFps == s_FpsOptions[i]);
 		bool bHover = !bVSyncOn && (msX >= regionX && msX < regionX + fpsRegionWidth && msY >= fpsBoxY && msY <= fpsBoxY + largeBoxHeight);
 
-		TextLib::TextMetrics fm = TextLib::GetTextRenderer()->MeasureText(s_FpsLabels[i]);
+		hb::shared::text::TextMetrics fm = hb::shared::text::GetTextRenderer()->MeasureText(s_FpsLabels[i]);
 		int tx = regionX + (fpsRegionWidth - fm.width) / 2;
 		int ty = fpsBoxY + (largeBoxHeight - fm.height) / 2;
 		PutString(tx, ty, s_FpsLabels[i], bVSyncOn ? GameColors::UIDisabled : (bSelected || bHover) ? GameColors::UIWhite : GameColors::UIDisabled);
@@ -375,8 +375,8 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	bool letterHover = isFullscreen && (msX >= leftRegion && msX < rightRegion && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight);
 	bool wideHover = isFullscreen && (msX >= rightRegion && msX <= wideBoxX + wideBoxWidth && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight);
 
-	TextLib::TextMetrics lbm = TextLib::GetTextRenderer()->MeasureText(letterboxText);
-	TextLib::TextMetrics wsm = TextLib::GetTextRenderer()->MeasureText(widescreenText);
+	hb::shared::text::TextMetrics lbm = hb::shared::text::GetTextRenderer()->MeasureText(letterboxText);
+	hb::shared::text::TextMetrics wsm = hb::shared::text::GetTextRenderer()->MeasureText(widescreenText);
 	int lbx = leftRegion + (aspectRegionWidth - lbm.width) / 2;
 	int wsx = rightRegion + (aspectRegionWidth - wsm.width) / 2;
 	int aty = aspectBoxY + (wideBoxHeight - lbm.height) / 2;
@@ -409,11 +409,11 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 
 	const int regionWidth = wideBoxWidth / 3;
 
-	TextLib::TextMetrics lowMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_LOW);
+	hb::shared::text::TextMetrics lowMetrics = hb::shared::text::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_LOW);
 	int textY = boxY + (wideBoxHeight - lowMetrics.height) / 2;
 
-	TextLib::TextMetrics normMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_NORMAL);
-	TextLib::TextMetrics highMetrics = TextLib::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_HIGH);
+	hb::shared::text::TextMetrics normMetrics = hb::shared::text::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_NORMAL);
+	hb::shared::text::TextMetrics highMetrics = hb::shared::text::GetTextRenderer()->MeasureText(DRAW_DIALOGBOX_SYSMENU_HIGH);
 
 	int lowX = wideBoxX + (regionWidth - lowMetrics.width) / 2;
 	int normX = wideBoxX + regionWidth + (regionWidth - normMetrics.width) / 2;
@@ -474,28 +474,28 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, modeBoxY, 78);
 
 	bool modeHover = (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight);
-	const Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
+	const hb::shared::render::Color& modeColor = modeHover ? GameColors::UIWhite : GameColors::UIDisabled;
 
 	const char* modeText = isFullscreen ? "Fullscreen" : "Windowed";
-	TextLib::TextMetrics modeMetrics = TextLib::GetTextRenderer()->MeasureText(modeText);
+	hb::shared::text::TextMetrics modeMetrics = hb::shared::text::GetTextRenderer()->MeasureText(modeText);
 	int modeTextX = wideBoxX + (wideBoxWidth - modeMetrics.width) / 2;
 	int modeTextY = modeBoxY + (wideBoxHeight - modeMetrics.height) / 2;
 	PutString(modeTextX, modeTextY, modeText, modeColor);
 
 	lineY += 18;
 
-	// --- Window Style --- wide box (Borderless / Bordered, disabled when fullscreen)
-	PutString(labelX, lineY, "Window Style:", GameColors::UILabel);
-	PutString(labelX + 1, lineY, "Window Style:", GameColors::UILabel);
+	// --- hb::shared::render::Window Style --- wide box (Borderless / Bordered, disabled when fullscreen)
+	PutString(labelX, lineY, "hb::shared::render::Window Style:", GameColors::UILabel);
+	PutString(labelX + 1, lineY, "hb::shared::render::Window Style:", GameColors::UILabel);
 
 	const int styleBoxY = lineY - 2;
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, styleBoxY, 78);
 
 	bool styleHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight);
-	const Color& styleColor = isFullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
+	const hb::shared::render::Color& styleColor = isFullscreen ? GameColors::UIDisabled : (styleHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
 	const char* styleText = ConfigManager::Get().IsBorderlessEnabled() ? "Borderless" : "Bordered";
-	TextLib::TextMetrics styleMetrics = TextLib::GetTextRenderer()->MeasureText(styleText);
+	hb::shared::text::TextMetrics styleMetrics = hb::shared::text::GetTextRenderer()->MeasureText(styleText);
 	int styleTextX = wideBoxX + (wideBoxWidth - styleMetrics.width) / 2;
 	int styleTextY = styleBoxY + (wideBoxHeight - styleMetrics.height) / 2;
 	PutString(styleTextX, styleTextY, styleText, styleColor);
@@ -524,9 +524,9 @@ void DialogBox_SysMenu::DrawGraphicsTab(short sX, short sY, short msX, short msY
 	DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, wideBoxX, resBoxY, 78);
 
 	bool resHover = !isFullscreen && (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= resBoxY && msY <= resBoxY + wideBoxHeight);
-	const Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
+	const hb::shared::render::Color& resColor = isFullscreen ? GameColors::UIDisabled : (resHover ? GameColors::UIWhite : GameColors::UIDisabled);
 
-	TextLib::TextMetrics resMetrics = TextLib::GetTextRenderer()->MeasureText(resBuf);
+	hb::shared::text::TextMetrics resMetrics = hb::shared::text::GetTextRenderer()->MeasureText(resBuf);
 	int resTextX = wideBoxX + (wideBoxWidth - resMetrics.width) / 2;
 	int resTextY = resBoxY + (wideBoxHeight - resMetrics.height) / 2;
 	PutString(resTextX, resTextY, resBuf, resColor);
@@ -715,7 +715,7 @@ bool DialogBox_SysMenu::OnClick(short msX, short msY)
 	short sY = Info().sY;
 
 	// Check tab button clicks
-	SpriteLib::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
+	hb::shared::sprite::SpriteRect button_rect = m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON]->GetFrameRect(70);
 	int btnY = sY + 33;
 
 	for (int i = 0; i < TAB_COUNT; i++)
@@ -870,7 +870,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 		if (clickedRegion >= 0 && clickedRegion < s_NumFpsOptions) {
 			int newLimit = s_FpsOptions[clickedRegion];
 			ConfigManager::Get().SetFpsLimit(newLimit);
-			Window::Get()->SetFramerateLimit(newLimit);
+			hb::shared::render::Window::Get()->SetFramerateLimit(newLimit);
 			PlaySoundEffect('E', 14, 5);
 			return true;
 		}
@@ -884,9 +884,9 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	if (isFullscreen && msY >= aspectBoxY && msY <= aspectBoxY + wideBoxHeight && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth) {
 		bool bNewStretch = (msX >= wideBoxX + aspectRegionWidth);
 		ConfigManager::Get().SetFullscreenStretchEnabled(bNewStretch);
-		Window::Get()->SetFullscreenStretch(bNewStretch);
-		if (Renderer::Get())
-			Renderer::Get()->SetFullscreenStretch(bNewStretch);
+		hb::shared::render::Window::Get()->SetFullscreenStretch(bNewStretch);
+		if (hb::shared::render::Renderer::Get())
+			hb::shared::render::Renderer::Get()->SetFullscreenStretch(bNewStretch);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
@@ -897,7 +897,7 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	if (IsInToggleArea(smallBoxX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsVSyncEnabled();
 		ConfigManager::Get().SetVSyncEnabled(!enabled);
-		Window::Get()->SetVSyncEnabled(!enabled);
+		hb::shared::render::Window::Get()->SetVSyncEnabled(!enabled);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}
@@ -984,8 +984,8 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 	const int modeBoxY = lineY - 2;
 	if (msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= modeBoxY && msY <= modeBoxY + wideBoxHeight) {
 		m_pGame->m_Renderer->SetFullscreen(!isFullscreen);
-		m_pGame->m_Renderer->ChangeDisplayMode(Window::GetHandle());
-		Input::Get()->SetWindowActive(true);
+		m_pGame->m_Renderer->ChangeDisplayMode(hb::shared::render::Window::GetHandle());
+		hb::shared::input::Get()->SetWindowActive(true);
 		ConfigManager::Get().SetFullscreenEnabled(!isFullscreen);
 		ConfigManager::Get().Save();
 		PlaySoundEffect('E', 14, 5);
@@ -994,13 +994,13 @@ bool DialogBox_SysMenu::OnClickGraphics(short sX, short sY, short msX, short msY
 
 	lineY += 18;
 
-	// --- Window Style toggle --- (wide box, only in windowed mode)
+	// --- hb::shared::render::Window Style toggle --- (wide box, only in windowed mode)
 	const int styleBoxY = lineY - 2;
 	if (!isFullscreen && msX >= wideBoxX && msX <= wideBoxX + wideBoxWidth && msY >= styleBoxY && msY <= styleBoxY + wideBoxHeight) {
 		bool borderless = ConfigManager::Get().IsBorderlessEnabled();
 		ConfigManager::Get().SetBorderlessEnabled(!borderless);
-		Window::SetBorderless(!borderless);
-		Input::Get()->SetWindowActive(true);
+		hb::shared::render::Window::SetBorderless(!borderless);
+		hb::shared::input::Get()->SetWindowActive(true);
 		ConfigManager::Get().Save();
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -1147,7 +1147,7 @@ bool DialogBox_SysMenu::OnClickSystem(short sX, short sY, short msX, short msY)
 	if (IsInToggleArea(valueX, lineY, msX, msY)) {
 		bool enabled = ConfigManager::Get().IsMouseCaptureEnabled();
 		ConfigManager::Get().SetMouseCaptureEnabled(!enabled);
-		Window::Get()->SetMouseCaptureEnabled(!enabled);
+		hb::shared::render::Window::Get()->SetMouseCaptureEnabled(!enabled);
 		PlaySoundEffect('E', 14, 5);
 		return true;
 	}

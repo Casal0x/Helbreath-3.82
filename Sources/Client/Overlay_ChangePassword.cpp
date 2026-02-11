@@ -14,6 +14,10 @@
 #include "TextLibExt.h"
 #include "Packet/SharedPackets.h"
 
+
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Overlay_ChangePassword::Overlay_ChangePassword(CGame* pGame)
     : IGameScreen(pGame)
     , m_iCurFocus(2)
@@ -106,11 +110,11 @@ bool Overlay_ChangePassword::ValidateInputs()
     if (!CMisc::bCheckValidName(m_cConfirmPassword))
         return false;
 
-    if (memcmp(m_cNewPassword, m_cConfirmPassword, DEF_ACCOUNT_PASS - 1) != 0)
+    if (memcmp(m_cNewPassword, m_cConfirmPassword, hb::shared::limits::AccountPassLen - 1) != 0)
         return false;
 
     // New password must be different from old
-    if (memcmp(m_cOldPassword, m_cNewPassword, DEF_ACCOUNT_PASS - 1) == 0)
+    if (memcmp(m_cOldPassword, m_cNewPassword, hb::shared::limits::AccountPassLen - 1) == 0)
         return false;
 
     return true;
@@ -131,7 +135,7 @@ void Overlay_ChangePassword::HandleSubmit()
 
     // Build ChangePasswordRequest packet
     hb::net::ChangePasswordRequest req{};
-    req.header.msg_id = MSGID_REQUEST_CHANGEPASSWORD;
+    req.header.msg_id = MsgId::RequestChangePassword;
     req.header.msg_type = 0;
     std::memcpy(req.account_name, m_cAccountName, sizeof(req.account_name));
     std::memcpy(req.password, m_cOldPassword, sizeof(req.password));
@@ -143,11 +147,11 @@ void Overlay_ChangePassword::HandleSubmit()
     m_pGame->m_pendingLoginPacket.assign(p, p + sizeof(req));
 
     // Create connection
-    m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+    m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
     m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-    m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+    m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
-    m_pGame->m_dwConnectMode = MSGID_REQUEST_CHANGEPASSWORD;
+    m_pGame->m_dwConnectMode = MsgId::RequestChangePassword;
     std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
     std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "41");
 
@@ -203,7 +207,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Enter key
-    if (Input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Enter))
     {
         PlayGameSound('E', 14, 5);
         switch (m_iCurFocus)
@@ -226,7 +230,7 @@ void Overlay_ChangePassword::on_update()
     }
 
     // ESC key - return to main menu (set_screen will clear overlay automatically)
-    if (Input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
     {
         m_pGame->ChangeGameMode(GameMode::MainMenu);
         return;
@@ -236,17 +240,17 @@ void Overlay_ChangePassword::on_update()
     int dlgX, dlgY;
     GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 0, dlgX, dlgY);
 
-    if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
         PlayGameSound('E', 14, 5);
 
         int iClickedField = 0;
-        if (Input::IsMouseInRect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
-        else if (Input::IsMouseInRect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
-        else if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 5;
-        else if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 6;
+        if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 36, 125, 22)) iClickedField = 1;
+        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 60, 125, 22)) iClickedField = 2;
+        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 84, 125, 22)) iClickedField = 3;
+        else if (hb::shared::input::IsMouseInRect(dlgX + 147, dlgY + 108, 125, 22)) iClickedField = 4;
+        else if (hb::shared::input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 5;
+        else if (hb::shared::input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y)) iClickedField = 6;
 
         switch (iClickedField)
         {
@@ -266,9 +270,9 @@ void Overlay_ChangePassword::on_update()
     }
 
     // Mouse hover for buttons
-    if (Input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
+    if (hb::shared::input::IsMouseInRect(dlgX + 44, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 5;
-    if (Input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
+    if (hb::shared::input::IsMouseInRect(dlgX + 217, dlgY + 208, ui_layout::btn_size_x, ui_layout::btn_size_y))
         m_iCurFocus = 6;
 
     // Update input field focus
@@ -294,33 +298,33 @@ void Overlay_ChangePassword::on_render()
     PutString(dlgX + 53, dlgY + 115, UPDATE_SCREEN_ON_CHANGE_PASSWORD4, GameColors::UILabel);
 
     // Draw input field values (when not focused)
-    static constexpr Color kInvalidInput{55, 18, 13};
+    static constexpr hb::shared::render::Color kInvalidInput{55, 18, 13};
 
     if (m_iCurFocus != 1)
     {
-        const Color& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
+        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cAccountName) ? GameColors::UILabel : kInvalidInput;
         PutString(dlgX + 161, dlgY + 43, m_cAccountName, color);
     }
 
     if (m_iCurFocus != 2)
     {
-        const Color& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
+        const hb::shared::render::Color& color = CMisc::bCheckValidString(m_cOldPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedOld(strlen(m_cOldPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), TextLib::TextStyle::Color(color));
+        hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 67, maskedOld.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 3)
     {
-        const Color& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
+        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cNewPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedNew(strlen(m_cNewPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), TextLib::TextStyle::Color(color));
+        hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 91, maskedNew.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
     if (m_iCurFocus != 4)
     {
-        const Color& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
+        const hb::shared::render::Color& color = CMisc::bCheckValidName(m_cConfirmPassword) ? GameColors::UILabel : kInvalidInput;
         std::string maskedConfirm(strlen(m_cConfirmPassword), '*');
-        TextLib::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), TextLib::TextStyle::Color(color));
+        hb::shared::text::DrawText(GameFont::Default, dlgX + 161, dlgY + 115, maskedConfirm.c_str(), hb::shared::text::TextStyle::Color(color));
     }
 
     // Show active input string (with masking for password fields)

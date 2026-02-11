@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "IInput.h"
 
+using namespace hb::shared::net;
 DialogBox_RepairAll::DialogBox_RepairAll(CGame* pGame)
 	: IDialogBox(DialogBoxId::RepairAll, pGame)
 {
@@ -115,7 +116,7 @@ bool DialogBox_RepairAll::OnClick(short msX, short msY)
 			// Repair button
 			if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_REPAIRALLCONFIRM, 0, 0, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqRepairAllConfirm, 0, 0, 0, 0, 0);
 				DisableThisDialog();
 				return true;
 			}

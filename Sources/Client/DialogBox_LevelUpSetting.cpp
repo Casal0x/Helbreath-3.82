@@ -2,6 +2,7 @@
 #include "Game.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_LevelUpSetting::DialogBox_LevelUpSetting(CGame* pGame)
 	: IDialogBox(DialogBoxId::LevelUpSetting, pGame)
 {
@@ -116,7 +117,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 195) && (msX <= sX + 205) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (iCurrentStat <= m_pGame->iMaxStats) && (m_pGame->m_pPlayer->m_iLU_Point > 0))
 	{
-		if (Input::IsCtrlDown())
+		if (hb::shared::input::IsCtrlDown())
 		{
 			if ((m_pGame->m_pPlayer->m_iLU_Point >= 5) && !bMajesticOpen)
 			{
@@ -140,7 +141,7 @@ bool DialogBox_LevelUpSetting::HandleStatClick(short msX, short msY, short sX, s
 	if ((msX >= sX + 210) && (msX <= sX + 220) && (msY >= sY + iYOffset) && (msY <= sY + iYOffset + 6) &&
 	    (cPendingChange > 0))
 	{
-		if (Input::IsCtrlDown())
+		if (hb::shared::input::IsCtrlDown())
 		{
 			if ((cPendingChange >= 5) && !bMajesticOpen)
 			{
@@ -197,7 +198,7 @@ bool DialogBox_LevelUpSetting::OnClick(short msX, short msY)
 	    (msY > sY + ui_layout::btn_y) && (msY < sY + ui_layout::btn_y + ui_layout::btn_size_y))
 	{
 		if (Info().sV1 != m_pGame->m_pPlayer->m_iLU_Point)
-			bSendCommand(MSGID_LEVELUPSETTINGS, 0, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::LevelUpSettings, 0, 0, 0, 0, 0, 0);
 		DisableThisDialog();
 		PlaySoundEffect('E', 14, 5);
 		return true;

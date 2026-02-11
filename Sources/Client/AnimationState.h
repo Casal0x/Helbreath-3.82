@@ -11,7 +11,7 @@
 struct AnimationState
 {
 	// --- Config (set when action changes) ---
-	int8_t  cAction        = 0;    // DEF_OBJECTSTOP, MOVE, RUN, ATTACK, etc.
+	int8_t  cAction        = 0;    // hb::shared::action::Type::Stop, MOVE, RUN, ATTACK, etc.
 	int8_t  cDir           = 0;    // Facing direction (1-8)
 	int16_t sMaxFrame      = 0;    // Total frame count
 	int16_t sFrameTime     = 0;    // Milliseconds per frame (final, after modifiers)

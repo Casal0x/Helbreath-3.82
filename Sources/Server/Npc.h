@@ -36,7 +36,7 @@ public:
 	// Auras
 	char m_pMagicConfigList[100];
 
-	char  m_cNpcName[DEF_NPCNAME];
+	char  m_cNpcName[hb::shared::limits::NpcNameLen];
 
 	char  m_cName[6];
 	char  m_cMapIndex;
@@ -45,7 +45,7 @@ public:
 	short m_dX, m_dY;
 	short m_vX, m_vY;
 	int   m_tmp_iError;
-	GameRectangle  m_rcRandomArea;	// MOVETYPE_RANDOMAREA
+	hb::shared::geometry::GameRectangle  m_rcRandomArea;	// MOVETYPE_RANDOMAREA
 
 	char  m_cDir;
 	char  m_cAction;
@@ -54,8 +54,8 @@ public:
 	short m_sType;
 	short m_sOriginalType;
 	short m_iNpcConfigId;
-	EntityAppearance m_appearance;
-	EntityStatus m_status;
+	hb::shared::entity::EntityAppearance m_appearance;
+	hb::shared::entity::EntityStatus m_status;
 
 	uint32_t m_dwTime;
 	uint32_t m_dwActionTime;

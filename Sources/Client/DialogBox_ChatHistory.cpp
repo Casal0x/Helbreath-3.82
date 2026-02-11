@@ -35,7 +35,7 @@ void DialogBox_ChatHistory::HandleScrollInput(short sX, short sY, short msX, sho
 	// Mouse wheel scrolling
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() == DialogBoxId::ChatHistory)
 	{
-		short sWheelDelta = Input::GetMouseWheelDelta();
+		short sWheelDelta = hb::shared::input::GetMouseWheelDelta();
 		if (sWheelDelta != 0)
 		{
 			info.sView += sWheelDelta / 30;
@@ -98,13 +98,13 @@ void DialogBox_ChatHistory::DrawChatMessages(short sX, short sY)
 
 			switch (m_pGame->m_pChatScrollList[iIndex]->m_dwTime)
 			{
-			case 0:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UINearWhite)); break; // Normal
-			case 1:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIGuildGreen)); break; // Green
-			case 2:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIWorldChat)); break; // Red
-			case 3:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIFactionChat)); break; // Blue
-			case 4:  TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIPartyChat)); break; // Yellow
-			case 10: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UIGameMasterChat)); break; // Light green
-			case 20: TextLib::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, TextLib::TextStyle::WithShadow(GameColors::UINormalChat)); break; // Gray
+			case 0:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UINearWhite)); break; // Normal
+			case 1:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIGuildGreen)); break; // Green
+			case 2:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIWorldChat)); break; // Red
+			case 3:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIFactionChat)); break; // Blue
+			case 4:  hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIPartyChat)); break; // Yellow
+			case 10: hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UIGameMasterChat)); break; // Light green
+			case 20: hb::shared::text::DrawText(GameFont::Default, sX + 25, iYPos, pMsg, hb::shared::text::TextStyle::WithShadow(GameColors::UINormalChat)); break; // Gray
 			}
 		}
 	}

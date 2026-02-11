@@ -7,7 +7,7 @@
 #include <fstream>
 #include <ctime>
 
-using namespace hb::item;
+using namespace hb::shared::item;
 
 extern void PutLogList(char* cMsg);
 

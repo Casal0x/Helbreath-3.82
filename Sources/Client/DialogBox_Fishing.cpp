@@ -5,6 +5,7 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_Fishing::DialogBox_Fishing(CGame* pGame)
 	: IDialogBox(DialogBoxId::Fishing, pGame)
 {
@@ -37,13 +38,13 @@ void DialogBox_Fishing::OnDraw(short msX, short msY, short msZ, char cLB)
 		PutString(sX + 97, sY + 43, DRAW_DIALOGBOX_FISHING2, GameColors::UIBlack);
 
 		std::snprintf(cTxt, sizeof(cTxt), "%d %%", Info().sV1);
-		TextLib::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, TextLib::TextStyle::WithHighlight(GameColors::BmpBtnFishRed));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + 157, sY + 40, cTxt, hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnFishRed));
 
 		// "Try Now!" button
 		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 		else
-			TextLib::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+			hb::shared::text::DrawText(GameFont::Bitmap1, sX + 160, sY + 70, "Try Now!", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 		break;
 	}
 }
@@ -58,7 +59,7 @@ bool DialogBox_Fishing::OnClick(short msX, short msY)
 	case 0:
 		if ((msX >= sX + 160) && (msX <= sX + 253) && (msY >= sY + 70) && (msY <= sY + 90))
 		{
-			m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETFISHTHISTIME, 0, 0, 0, 0, 0);
+			m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::ReqGetFishThisTime, 0, 0, 0, 0, 0);
 			m_pGame->AddEventList(DLGBOX_CLICK_FISH1, 10);
 			DisableDialogBox(DialogBoxId::Fishing);
 			m_pGame->PlayGameSound('E', 14, 5);

@@ -19,7 +19,7 @@ struct HB_PACKED PacketNpcConfigEntry
 {
 	int16_t  npcId;                 // Config ID (0-199, primary key)
 	int16_t  npcType;               // Model type ID (10-110, for rendering)
-	char     name[DEF_NPCNAME];     // Display name (20 chars + null)
+	char     name[hb::shared::limits::NpcNameLen];     // Display name (20 chars + null)
 };
 HB_PACK_END
 
@@ -31,7 +31,7 @@ HB_PACK_END
 HB_PACK_BEGIN
 struct HB_PACKED PacketNpcConfigHeader
 {
-	PacketHeader header;            // Standard packet header (msg_id = MSGID_NPCCONFIGURATIONCONTENTS)
+	PacketHeader header;            // Standard packet header (msg_id = hb::shared::net::MsgId::NpcConfigContents)
 	uint16_t     npcCount;          // Number of NPCs in this packet
 	uint16_t     totalNpcs;         // Total NPCs across all packets
 	uint16_t     packetIndex;       // Index of this packet (0-based, for multi-packet sends)

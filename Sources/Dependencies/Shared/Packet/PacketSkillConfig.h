@@ -20,7 +20,7 @@ HB_PACK_END
 HB_PACK_BEGIN
 struct HB_PACKED PacketSkillConfigHeader
 {
-	PacketHeader header;    // msg_id = MSGID_SKILLCONFIGURATIONCONTENTS
+	PacketHeader header;    // msg_id = hb::shared::net::MsgId::SkillConfigContents
 	uint16_t skillCount;    // Entries in this packet
 	uint16_t totalSkills;   // Total across all packets
 	uint16_t packetIndex;   // 0-based packet index

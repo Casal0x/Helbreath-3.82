@@ -92,7 +92,7 @@ public:
 };
 
 // ============================================================================
-// Color System (defined in PrimitiveTypes.h)
+// hb::shared::render::Color System (defined in PrimitiveTypes.h)
 // ============================================================================
 
 namespace GameColors
@@ -100,7 +100,7 @@ namespace GameColors
 	// Item/Equipment tint palette (indices 0-15, multiply-ready RGB values)
 	// Values are used as multiplicative factors: pixel = sprite_pixel * (value / 255)
 	// Higher values = brighter/less tinted, lower values = darker/more saturated
-	inline constexpr Color Items[16] = {
+	inline constexpr hb::shared::render::Color Items[16] = {
 		{ 0, 0, 0 },      // 0  (no tint)
 		{ 80, 80, 192 },  // 1  IndigoBlue
 		{ 144, 144, 112 },// 2  CustomWeapon
@@ -120,7 +120,7 @@ namespace GameColors
 	};
 
 	// Weapon tint palette (indices 0-15, multiply-ready RGB values)
-	inline constexpr Color Weapons[16] = {
+	inline constexpr hb::shared::render::Color Weapons[16] = {
 		{ 0, 0, 0 },      // 0  (unused)
 		{ 128, 128, 160 },// 1  LightBlue
 		{ 128, 128, 160 },// 2  LightBlue
@@ -140,7 +140,7 @@ namespace GameColors
 	};
 
 	// Hair tint palette (indices 0-15, target color for grayscale sprites)
-	inline constexpr Color Hair[16] = {
+	inline constexpr hb::shared::render::Color Hair[16] = {
 		{ 180, 80, 60 },  // 0  Auburn
 		{ 220, 150, 60 }, // 1  Orange
 		{ 210, 180, 120 },// 2  Light brown
@@ -161,18 +161,18 @@ namespace GameColors
 
 	// Pre-computed math colors
 	// original: m_wR[13]*2, m_wG[13]*2, m_wB[13]*2
-	inline constexpr Color Yellow2x{ 160, 160, 16 };
+	inline constexpr hb::shared::render::Color Yellow2x{ 160, 160, 16 };
 	// original: m_wR[13]*4, m_wG[13]*4, m_wB[13]*4
-	inline constexpr Color Yellow4x{ 255, 255, 32 };
+	inline constexpr hb::shared::render::Color Yellow4x{ 255, 255, 32 };
 	// original: m_wR[14]*4, m_wG[14]*4, m_wB[14]*4
-	inline constexpr Color Red4x{ 255, 32, 32 };
+	inline constexpr hb::shared::render::Color Red4x{ 255, 32, 32 };
 	// original: m_wR[5]*11, m_wG[5]*11, m_wB[5]*11
-	inline constexpr Color PoisonText{ 88, 255, 88 };
+	inline constexpr hb::shared::render::Color PoisonText{ 88, 255, 88 };
 	// original: m_wR[5]*8, m_wG[5]*8, m_wB[5]*8
-	inline constexpr Color PoisonLabel{ 64, 255, 64 };
+	inline constexpr hb::shared::render::Color PoisonLabel{ 64, 255, 64 };
 	// Status effect additive colors (for AdditiveColored blend)
 	// Berserk: creates a bright reddish/golden glow when added to destination
-	inline constexpr Color BerserkGlow{ 255, 240, 240 };
+	inline constexpr hb::shared::render::Color BerserkGlow{ 255, 240, 240 };
 
 	// ====================================================================
 	// UI Text Colors
@@ -182,76 +182,76 @@ namespace GameColors
 	// HUD / Name Plate Colors
 	// ====================================================================
 
-	// TextLib::TextStyle::WithShadow (Game.cpp, Screen_OnGame.cpp)
-	inline constexpr Color InfoGrayLight{ 180, 180, 180 };  // Lighter info text
+	// hb::shared::text::TextStyle::WithShadow (Game.cpp, Screen_OnGame.cpp)
+	inline constexpr hb::shared::render::Color InfoGrayLight{ 180, 180, 180 };  // Lighter info text
 
 	// ====================================================================
 	// Additional UI Colors
 	// ====================================================================
 
-	inline constexpr Color UIMenuHighlight{ 250, 250, 0 };  // Teleport menu highlight (DialogBox_CityHallMenu, DialogBox_GuildHallMenu)
-	inline constexpr Color UINoticeRed{ 100, 10, 10 };      // Notice message text (DialogBox_Noticement)
-	inline constexpr Color UITooltip{ 250, 250, 220 };      // Tooltip text (DialogBox_HudPanel)
-	inline constexpr Color UIDisabledMed{ 120, 120, 120 };      // Grayed out text (DialogBox_Manufacture)
-	inline constexpr Color UISelectPurple{ 51, 0, 51 };     // Character select labels (Screen_SelectCharacter)
-	inline constexpr Color UIFormLabel{ 100, 100, 200 };    // Form field labels (Screen_CreateAccount)
-	inline constexpr Color UIProfileYellow{ 255, 255, 100 };// Profile overlay text (Screen_OnGame)
-	inline constexpr Color UITopMsgYellow{ 255, 255, 0 };   // Top message text (Game.cpp)
-	inline constexpr Color UIDmgYellow{ 255, 255, 20 };     // Damage text yellow (Game.cpp)
-	inline constexpr Color UIDmgRed{ 255, 80, 80 };         // Damage text red (Game.cpp)
-	inline constexpr Color UIBuildRed{ 180, 30, 30 };       // Build/craft warning (Game.cpp)
-	inline constexpr Color ChatEventGreen{ 130, 255, 130 }; // Event history green (Game.cpp)
-	inline constexpr Color UISlatesPink{ 220, 140, 160 };   // Slates effect text (DialogBox_Slates)
-	inline constexpr Color UISlatesCyan{ 90, 220, 200 };    // Slates effect text (DialogBox_Slates)
+	inline constexpr hb::shared::render::Color UIMenuHighlight{ 250, 250, 0 };  // Teleport menu highlight (DialogBox_CityHallMenu, DialogBox_GuildHallMenu)
+	inline constexpr hb::shared::render::Color UINoticeRed{ 100, 10, 10 };      // Notice message text (DialogBox_Noticement)
+	inline constexpr hb::shared::render::Color UITooltip{ 250, 250, 220 };      // Tooltip text (DialogBox_HudPanel)
+	inline constexpr hb::shared::render::Color UIDisabledMed{ 120, 120, 120 };      // Grayed out text (DialogBox_Manufacture)
+	inline constexpr hb::shared::render::Color UISelectPurple{ 51, 0, 51 };     // Character select labels (Screen_SelectCharacter)
+	inline constexpr hb::shared::render::Color UIFormLabel{ 100, 100, 200 };    // Form field labels (Screen_CreateAccount)
+	inline constexpr hb::shared::render::Color UIProfileYellow{ 255, 255, 100 };// Profile overlay text (Screen_OnGame)
+	inline constexpr hb::shared::render::Color UITopMsgYellow{ 255, 255, 0 };   // Top message text (Game.cpp)
+	inline constexpr hb::shared::render::Color UIDmgYellow{ 255, 255, 20 };     // Damage text yellow (Game.cpp)
+	inline constexpr hb::shared::render::Color UIDmgRed{ 255, 80, 80 };         // Damage text red (Game.cpp)
+	inline constexpr hb::shared::render::Color UIBuildRed{ 180, 30, 30 };       // Build/craft warning (Game.cpp)
+	inline constexpr hb::shared::render::Color ChatEventGreen{ 130, 255, 130 }; // Event history green (Game.cpp)
+	inline constexpr hb::shared::render::Color UISlatesPink{ 220, 140, 160 };   // Slates effect text (DialogBox_Slates)
+	inline constexpr hb::shared::render::Color UISlatesCyan{ 90, 220, 200 };    // Slates effect text (DialogBox_Slates)
 
 	// Bitmap font button colors
-	// TextLib::TextStyle::WithHighlight (various dialog boxes)
-	inline constexpr Color BmpBtnNormal{ 0, 0, 7 };         // Normal bitmap button (DialogBox_NpcTalk, DialogBox_Exchange, DialogBox_Manufacture, DialogBox_Slates)
-	inline constexpr Color BmpBtnHover{ 15, 15, 15 };       // Hover bitmap button (DialogBox_Exchange)
-	inline constexpr Color BmpBtnActive{ 10, 10, 10 };      // Active bitmap button (Game.cpp, DialogBox_Manufacture)
-	inline constexpr Color BmpBtnBlue{ 16, 16, 30 };        // Blue bitmap button (DialogBox_Manufacture)
-	inline constexpr Color BmpBtnRed{ 20, 6, 6 };           // Red bitmap button (DialogBox_Manufacture)
-	inline constexpr Color BmpBtnFishRed{ 10, 0, 0 };       // Fishing button (DialogBox_Fishing)
+	// hb::shared::text::TextStyle::WithHighlight (various dialog boxes)
+	inline constexpr hb::shared::render::Color BmpBtnNormal{ 0, 0, 7 };         // Normal bitmap button (DialogBox_NpcTalk, DialogBox_Exchange, DialogBox_Manufacture, DialogBox_Slates)
+	inline constexpr hb::shared::render::Color BmpBtnHover{ 15, 15, 15 };       // Hover bitmap button (DialogBox_Exchange)
+	inline constexpr hb::shared::render::Color BmpBtnActive{ 10, 10, 10 };      // Active bitmap button (Game.cpp, DialogBox_Manufacture)
+	inline constexpr hb::shared::render::Color BmpBtnBlue{ 16, 16, 30 };        // Blue bitmap button (DialogBox_Manufacture)
+	inline constexpr hb::shared::render::Color BmpBtnRed{ 20, 6, 6 };           // Red bitmap button (DialogBox_Manufacture)
+	inline constexpr hb::shared::render::Color BmpBtnFishRed{ 10, 0, 0 };       // Fishing button (DialogBox_Fishing)
 
 	// Minimap night colors (Game.cpp CMisc::ColorTransfer)
-	inline constexpr Color NightBlueMid{ 50, 50, 100 };     // Night sky mid
-	inline constexpr Color NightBlueDark{ 30, 30, 100 };    // Night sky dark
-	inline constexpr Color NightBlueDeep{ 0, 0, 30 };       // Night deep
-	inline constexpr Color NightBlueBright{ 50, 50, 200 };  // Night sky bright
+	inline constexpr hb::shared::render::Color NightBlueMid{ 50, 50, 100 };     // Night sky mid
+	inline constexpr hb::shared::render::Color NightBlueDark{ 30, 30, 100 };    // Night sky dark
+	inline constexpr hb::shared::render::Color NightBlueDeep{ 0, 0, 30 };       // Night deep
+	inline constexpr hb::shared::render::Color NightBlueBright{ 50, 50, 200 };  // Night sky bright
 
 
 	// Completed
-	inline constexpr Color UIMagicBlue{ 4,0,50 };
-	inline constexpr Color UIMagicPurple{ 60, 10, 60 };
-	inline constexpr Color UIGuildGreen{ 130, 200, 130 };
-	inline constexpr Color UIWorldChat{ 255, 130, 130 };
-	inline constexpr Color UIFactionChat{ 130, 130, 255 };
-	inline constexpr Color UIPartyChat{ 230, 230, 130 };
-	inline constexpr Color UINormalChat{ 150, 150, 170 };
-	inline constexpr Color UIGameMasterChat{ 180, 255, 180 };
-	inline constexpr Color UILabel{ 25, 25, 25 };
-	inline constexpr Color UIDisabled{ 65, 65, 65 };
-	inline constexpr Color MonsterStatusEffect{ 240, 240, 70 };
-	inline constexpr Color UIItemName_Special{ 0, 255, 50 };
-	inline constexpr Color NeutralNamePlate{ 50, 50, 255 };
-	inline constexpr Color EnemyNamePlate{ 255, 0, 0 };
-	inline constexpr Color FriendlyNamePlate{ 30, 255, 30 };
-	inline constexpr Color UIModifiedStat{ 0, 0, 192 };
+	inline constexpr hb::shared::render::Color UIMagicBlue{ 4,0,50 };
+	inline constexpr hb::shared::render::Color UIMagicPurple{ 60, 10, 60 };
+	inline constexpr hb::shared::render::Color UIGuildGreen{ 130, 200, 130 };
+	inline constexpr hb::shared::render::Color UIWorldChat{ 255, 130, 130 };
+	inline constexpr hb::shared::render::Color UIFactionChat{ 130, 130, 255 };
+	inline constexpr hb::shared::render::Color UIPartyChat{ 230, 230, 130 };
+	inline constexpr hb::shared::render::Color UINormalChat{ 150, 150, 170 };
+	inline constexpr hb::shared::render::Color UIGameMasterChat{ 180, 255, 180 };
+	inline constexpr hb::shared::render::Color UILabel{ 25, 25, 25 };
+	inline constexpr hb::shared::render::Color UIDisabled{ 65, 65, 65 };
+	inline constexpr hb::shared::render::Color MonsterStatusEffect{ 240, 240, 70 };
+	inline constexpr hb::shared::render::Color UIItemName_Special{ 0, 255, 50 };
+	inline constexpr hb::shared::render::Color NeutralNamePlate{ 50, 50, 255 };
+	inline constexpr hb::shared::render::Color EnemyNamePlate{ 255, 0, 0 };
+	inline constexpr hb::shared::render::Color FriendlyNamePlate{ 30, 255, 30 };
+	inline constexpr hb::shared::render::Color UIModifiedStat{ 0, 0, 192 };
 
-	inline constexpr Color InputValid{ 100, 200, 100 };
-	inline constexpr Color InputInvalid{ 200, 100, 100 };
-	inline constexpr Color InputNormal{ 200, 200, 200 };
+	inline constexpr hb::shared::render::Color InputValid{ 100, 200, 100 };
+	inline constexpr hb::shared::render::Color InputInvalid{ 200, 100, 100 };
+	inline constexpr hb::shared::render::Color InputNormal{ 200, 200, 200 };
 
-	inline constexpr Color UIBlack{ 0, 0, 0 };
-	inline constexpr Color UIWhite{ 255, 255, 255 };
-	inline constexpr Color UINearWhite{ 232, 232, 232 };
-	inline constexpr Color UIDescription{ 150, 150, 150 };  // Item tooltips, stats, descriptions
-	inline constexpr Color UIGreen{ 0, 255, 0 };
-	inline constexpr Color UIDarkGreen{ 0, 55, 0 };
-	inline constexpr Color UIRed{ 255, 0, 0 };
-	inline constexpr Color UIDarkRed{ 58, 0, 0 };
-	inline constexpr Color UIWarningRed{ 195, 25, 25 };
-	inline constexpr Color UIOrange{ 220, 130, 45 };
-	inline constexpr Color UIYellow{ 200, 200, 25 };
-	inline constexpr Color UIPaleYellow{ 200, 200, 120 };
+	inline constexpr hb::shared::render::Color UIBlack{ 0, 0, 0 };
+	inline constexpr hb::shared::render::Color UIWhite{ 255, 255, 255 };
+	inline constexpr hb::shared::render::Color UINearWhite{ 232, 232, 232 };
+	inline constexpr hb::shared::render::Color UIDescription{ 150, 150, 150 };  // Item tooltips, stats, descriptions
+	inline constexpr hb::shared::render::Color UIGreen{ 0, 255, 0 };
+	inline constexpr hb::shared::render::Color UIDarkGreen{ 0, 55, 0 };
+	inline constexpr hb::shared::render::Color UIRed{ 255, 0, 0 };
+	inline constexpr hb::shared::render::Color UIDarkRed{ 58, 0, 0 };
+	inline constexpr hb::shared::render::Color UIWarningRed{ 195, 25, 25 };
+	inline constexpr hb::shared::render::Color UIOrange{ 220, 130, 45 };
+	inline constexpr hb::shared::render::Color UIYellow{ 200, 200, 25 };
+	inline constexpr hb::shared::render::Color UIPaleYellow{ 200, 200, 120 };
 }

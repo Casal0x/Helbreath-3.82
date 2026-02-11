@@ -1,4 +1,4 @@
-// SFMLWindow.h: Pure SFML window implementing IWindow interface
+// SFMLWindow.h: Pure SFML window implementing hb::shared::render::IWindow interface
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
@@ -10,22 +10,22 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Keyboard.hpp>
 
-class SFMLWindow : public IWindow
+class SFMLWindow : public hb::shared::render::IWindow
 {
 public:
     SFMLWindow();
     virtual ~SFMLWindow();
 
-    // ============== IWindow Implementation ==============
+    // ============== hb::shared::render::IWindow Implementation ==============
 
     // Lifecycle
-    bool Create(const WindowParams& params) override;
+    bool Create(const hb::shared::render::WindowParams& params) override;
     void Destroy() override;
     bool IsOpen() const override;
     void Close() override;
 
     // Properties
-    NativeWindowHandle GetHandle() const override;
+    hb::shared::types::NativeWindowHandle GetHandle() const override;
     int GetWidth() const override;
     int GetHeight() const override;
     bool IsFullscreen() const override;
@@ -62,8 +62,8 @@ public:
     void WaitForMessage() override;
 
     // Event Handler
-    void SetEventHandler(IWindowEventHandler* handler) override;
-    IWindowEventHandler* GetEventHandler() const override;
+    void SetEventHandler(hb::shared::render::IWindowEventHandler* handler) override;
+    hb::shared::render::IWindowEventHandler* GetEventHandler() const override;
 
     // ============== SFML-Specific Access ==============
 
@@ -78,8 +78,8 @@ private:
     void TransformMouseCoords(int windowX, int windowY, int& logicalX, int& logicalY) const;
 
     sf::RenderWindow m_renderWindow;
-    NativeWindowHandle m_hWnd;  // Native handle for compatibility
-    IWindowEventHandler* m_pEventHandler;
+    hb::shared::types::NativeWindowHandle m_hWnd;  // Native handle for compatibility
+    hb::shared::render::IWindowEventHandler* m_pEventHandler;
     int m_width;
     int m_height;
     bool m_fullscreen;

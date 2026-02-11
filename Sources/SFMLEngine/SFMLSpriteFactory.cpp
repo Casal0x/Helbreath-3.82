@@ -20,7 +20,7 @@ SFMLSpriteFactory::~SFMLSpriteFactory()
     // Caller is responsible for destroying sprites via DestroySprite
 }
 
-SpriteLib::ISprite* SFMLSpriteFactory::CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect)
+hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSprite(const std::string& pakName, int spriteIndex, bool alphaEffect)
 {
     std::string fullPath = BuildPakPath(pakName);
 
@@ -35,7 +35,7 @@ SpriteLib::ISprite* SFMLSpriteFactory::CreateSprite(const std::string& pakName, 
     return sprite;
 }
 
-SpriteLib::ISprite* SFMLSpriteFactory::CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect)
+hb::shared::sprite::ISprite* SFMLSpriteFactory::CreateSpriteFromData(const PAKLib::sprite& spriteData, bool alphaEffect)
 {
     SFMLSprite* sprite = new SFMLSprite(m_pRenderer, spriteData, alphaEffect);
 
@@ -48,7 +48,7 @@ SpriteLib::ISprite* SFMLSpriteFactory::CreateSpriteFromData(const PAKLib::sprite
     return sprite;
 }
 
-void SFMLSpriteFactory::DestroySprite(SpriteLib::ISprite* sprite)
+void SFMLSpriteFactory::DestroySprite(hb::shared::sprite::ISprite* sprite)
 {
     delete sprite;
 }

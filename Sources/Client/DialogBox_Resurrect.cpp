@@ -1,6 +1,7 @@
 #include "DialogBox_Resurrect.h"
 #include "Game.h"
 
+using namespace hb::shared::net;
 DialogBox_Resurrect::DialogBox_Resurrect(CGame* pGame)
 	: IDialogBox(DialogBoxId::Resurrect, pGame)
 {
@@ -38,7 +39,7 @@ bool DialogBox_Resurrect::OnClick(short msX, short msY)
 	// Yes button
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 	{
-		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_YES, 0, 0, 0, 0, 0, nullptr, 0);
+		bSendCommand(MsgId::RequestResurrectYes, 0, 0, 0, 0, 0, nullptr, 0);
 		DisableThisDialog();
 		return true;
 	}
@@ -46,7 +47,7 @@ bool DialogBox_Resurrect::OnClick(short msX, short msY)
 	// No button
 	if ((msX >= sX + 170) && (msX <= sX + 170 + ui_layout::btn_size_x) && (msY >= sY + 55) && (msY <= sY + 55 + ui_layout::btn_size_y))
 	{
-		bSendCommand(DEF_REQUEST_RESURRECTPLAYER_NO, 0, 0, 0, 0, 0, nullptr, 0);
+		bSendCommand(MsgId::RequestResurrectNo, 0, 0, 0, 0, 0, nullptr, 0);
 		DisableThisDialog();
 		return true;
 	}

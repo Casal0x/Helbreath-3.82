@@ -6,6 +6,10 @@
 #include "Overlay_DevConsole.h"
 #include "LAN_ENG.H"
 
+
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
 void CGame::RegisterHotkeys()
 {
 	auto& hotkeys = HotkeyManager::Get();
@@ -53,7 +57,7 @@ void CGame::RegisterHotkeys()
 
 void CGame::Hotkey_ToggleForceAttack()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (m_pPlayer->m_bForceAttack)
@@ -70,7 +74,7 @@ void CGame::Hotkey_ToggleForceAttack()
 
 void CGame::Hotkey_CycleDetailLevel()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	int detailLevel = ConfigManager::Get().GetDetailLevel();
@@ -92,7 +96,7 @@ void CGame::Hotkey_CycleDetailLevel()
 
 void CGame::Hotkey_ToggleHelp()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::Help) == false)
@@ -106,7 +110,7 @@ void CGame::Hotkey_ToggleHelp()
 
 void CGame::Hotkey_ToggleDialogTransparency()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	bool enabled = ConfigManager::Get().IsDialogTransparencyEnabled();
@@ -115,7 +119,7 @@ void CGame::Hotkey_ToggleDialogTransparency()
 
 void CGame::Hotkey_ToggleSystemMenu()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::SystemMenu) == false)
@@ -125,7 +129,7 @@ void CGame::Hotkey_ToggleSystemMenu()
 
 void CGame::Hotkey_ToggleGuideMap()
 {
-	if (GameModeManager::GetMode() != GameMode::MainGame || !Input::IsCtrlDown()) {
+	if (GameModeManager::GetMode() != GameMode::MainGame || !hb::shared::input::IsCtrlDown()) {
 		return;
 	}
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::GuideMap) == true) m_dialogBoxManager.DisableDialogBox(DialogBoxId::GuideMap);
@@ -134,7 +138,7 @@ void CGame::Hotkey_ToggleGuideMap()
 
 void CGame::Hotkey_ToggleRunningMode()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	bool runningMode = ConfigManager::Get().IsRunningModeEnabled();
@@ -152,7 +156,7 @@ void CGame::Hotkey_ToggleRunningMode()
 
 void CGame::Hotkey_ToggleSoundAndMusic()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	if (AudioManager::Get().IsMusicEnabled())
@@ -188,7 +192,7 @@ void CGame::Hotkey_ToggleSoundAndMusic()
 
 void CGame::Hotkey_WhisperTarget()
 {
-	if (!Input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
+	if (!hb::shared::input::IsCtrlDown() || GameModeManager::GetMode() != GameMode::MainGame || m_bInputStatus) {
 		return;
 	}
 	char tempid[100], cLB, cRB;
@@ -196,15 +200,15 @@ void CGame::Hotkey_WhisperTarget()
 	sX = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sX;
 	sY = m_dialogBoxManager.Info(DialogBoxId::ChatHistory).sY;
 	std::memset(tempid, 0, sizeof(tempid));
-	msX = static_cast<short>(Input::GetMouseX());
+	msX = static_cast<short>(hb::shared::input::GetMouseX());
 
-	msY = static_cast<short>(Input::GetMouseY());
+	msY = static_cast<short>(hb::shared::input::GetMouseY());
 
-	msZ = static_cast<short>(Input::GetMouseWheelDelta());
+	msZ = static_cast<short>(hb::shared::input::GetMouseWheelDelta());
 
-	cLB = Input::IsMouseButtonDown(MOUSE_BUTTON_LEFT) ? 1 : 0;
+	cLB = hb::shared::input::IsMouseButtonDown(MouseButton::Left) ? 1 : 0;
 
-	cRB = Input::IsMouseButtonDown(MOUSE_BUTTON_RIGHT) ? 1 : 0;
+	cRB = hb::shared::input::IsMouseButtonDown(MouseButton::Right) ? 1 : 0;
 	if (m_dialogBoxManager.IsEnabled(DialogBoxId::ChatHistory) == true && (msX >= sX + 20) && (msX <= sX + 360) && (msY >= sY + 35) && (msY <= sY + 139))
 	{
 		char cBuff[64];
@@ -215,13 +219,13 @@ void CGame::Hotkey_WhisperTarget()
 		char* sep = std::strchr(cBuff, ':');
 		if (sep) *sep = '\0';
 		std::snprintf(tempid, sizeof(tempid), "/to %s", cBuff);
-		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
+		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid);
 	}
 	else if (m_entityState.IsPlayer() && (strlen(m_entityState.m_cName.data()) > 0) && (m_iIlusionOwnerH == 0)
 		&& ((m_bIsCrusadeMode == false) || !IsHostile(m_entityState.m_status.iRelationship)))
 	{
 		std::snprintf(tempid, sizeof(tempid), "/to %s", m_entityState.m_cName.data());
-		bSendCommand(MSGID_COMMAND_CHATMSG, 0, 0, 0, 0, 0, tempid);
+		bSendCommand(MsgId::CommandChatMsg, 0, 0, 0, 0, 0, tempid);
 	}
 	else
 	{
@@ -245,14 +249,14 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 		AddEventList(USE_RED_POTION2, 10);
 		return;
 	}
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 1))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_bIsItemDisabled[i] = true;
 				m_bItemUsingStatus = true;
 				return;
@@ -260,14 +264,14 @@ void CGame::Hotkey_Simple_UseHealthPotion()
 		}
 	}
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 2))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_bIsItemDisabled[i] = true;
 				m_bItemUsingStatus = true;
 				return;
@@ -291,14 +295,14 @@ void CGame::Hotkey_Simple_UseManaPotion()
 		return;
 	}
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 3))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_bIsItemDisabled[i] = true;
 				m_bItemUsingStatus = true;
 				return;
@@ -306,14 +310,14 @@ void CGame::Hotkey_Simple_UseManaPotion()
 		}
 	}
 
-	for (i = 0; i < hb::limits::MaxItems; i++)
+	for (i = 0; i < hb::shared::limits::MaxItems; i++)
 	{
 		if ((m_pItemList[i] != 0) && (m_bIsItemDisabled[i] != true))
 		{
 			CItem* pCfg = GetItemConfig(m_pItemList[i]->m_sIDnum);
 			if (pCfg && (pCfg->m_sSprite == 6) && (pCfg->m_sSpriteFrame == 4))
 			{
-				bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_USEITEM, 0, i, 0, 0, 0);
+				bSendCommand(MsgId::CommandCommon, CommonType::ReqUseItem, 0, i, 0, 0, 0);
 				m_bIsItemDisabled[i] = true;
 				m_bItemUsingStatus = true;
 				return;
@@ -469,7 +473,7 @@ void CGame::Hotkey_Simple_Screenshot()
 
 void CGame::Hotkey_Simple_TabToggleCombat()
 {
-	if (Input::IsShiftDown())
+	if (hb::shared::input::IsShiftDown())
 	{
 		m_cCurFocus--;
 		if (m_cCurFocus < 1) m_cCurFocus = m_cMaxFocus;
@@ -481,23 +485,23 @@ void CGame::Hotkey_Simple_TabToggleCombat()
 	}
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLECOMBATMODE, 0, 0, 0, 0, 0);
+		bSendCommand(MsgId::CommandCommon, CommonType::ToggleCombatMode, 0, 0, 0, 0, 0);
 	}
 }
 
 void CGame::Hotkey_Simple_ToggleSafeAttack()
 {
 	if (GameModeManager::GetMode() == GameMode::MainGame) {
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_TOGGLESAFEATTACKMODE, 0, 0, 0, 0, 0);
+		bSendCommand(MsgId::CommandCommon, CommonType::ToggleSafeAttackMode, 0, 0, 0, 0, 0);
 	}
 }
 
 void CGame::Hotkey_Simple_Escape()
 {
-	// Note: Escape handling is automatic through Input::IsKeyPressed(KeyCode::Escape)
+	// Note: Escape handling is automatic through hb::shared::input::IsKeyPressed(KeyCode::Escape)
 	if (GameModeManager::GetMode() == GameMode::MainGame)
 	{
-		if ((m_bIsObserverMode == true) && (Input::IsShiftDown())) {
+		if ((m_bIsObserverMode == true) && (hb::shared::input::IsShiftDown())) {
 			if (m_cLogOutCount == -1) m_cLogOutCount = 1;
 			m_dialogBoxManager.DisableDialogBox(DialogBoxId::SystemMenu);
 			PlayGameSound('E', 14, 5);
@@ -525,7 +529,7 @@ void CGame::Hotkey_Simple_SpecialAbility()
 	if (m_pPlayer->m_bIsSpecialAbilityEnabled == true)
 	{
 		if (m_pPlayer->m_iSpecialAbilityType != 0) {
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_ACTIVATESPECABLTY, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::RequestActivateSpecAbility, 0, 0, 0, 0, 0);
 			m_pPlayer->m_bIsSpecialAbilityEnabled = false;
 		}
 		else AddEventList(ON_KEY_UP26, 10);

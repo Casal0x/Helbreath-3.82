@@ -29,7 +29,7 @@ public:
 
 	}
 
-	char  m_cName[DEF_ITEMNAME];
+	char  m_cName[hb::shared::limits::ItemNameLen];
 	short m_sArray[12];
 
 	int   m_iSkillLimit, m_iDifficulty;

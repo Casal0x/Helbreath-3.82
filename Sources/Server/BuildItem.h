@@ -38,7 +38,7 @@ public:
 
 	}
 
-	char  m_cName[DEF_ITEMNAME];
+	char  m_cName[hb::shared::limits::ItemNameLen];
 	short m_sItemID;
 
 	int  m_iSkillLimit;

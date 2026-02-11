@@ -127,12 +127,12 @@ namespace CMisc
 	// Forwards to shared implementation in GameGeometry.h
 	static inline void GetPoint2(int x0, int y0, int x1, int y1, int* pX, int* pY, int* pError, int iCount)
 	{
-		::GetPoint2(x0, y0, x1, y1, pX, pY, pError, iCount);
+		hb::shared::geometry::GetPoint2(x0, y0, x1, y1, pX, pY, pError, iCount);
 	}
 
 	static inline void GetDirPoint(char cDir, int * pX, int * pY)
 	{
-		hb::direction::ApplyOffset(cDir, *pX, *pY);
+		hb::shared::direction::ApplyOffset(cDir, *pX, *pY);
 	}
 
 	static inline bool bCheckValidName(char *pStr)

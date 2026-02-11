@@ -89,7 +89,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 
 	const char* pItemName = pGame->m_pItemConfigList[iItemID]->m_cName;
 	auto itemType = pGame->m_pItemConfigList[iItemID]->GetItemType();
-	bool bTrueStack = hb::item::IsTrueStackType(itemType) || (iItemID == hb::item::ItemId::Gold);
+	bool bTrueStack = hb::shared::item::IsTrueStackType(itemType) || (iItemID == hb::shared::item::ItemId::Gold);
 
 	int iCreated = 0;
 

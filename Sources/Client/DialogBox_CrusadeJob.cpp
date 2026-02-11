@@ -5,6 +5,7 @@
 #include "TextLibExt.h"
 #include "lan_eng.h"
 
+using namespace hb::shared::net;
 DialogBox_CrusadeJob::DialogBox_CrusadeJob(CGame* pGame)
 	: IDialogBox(DialogBoxId::CrusadeJob, pGame)
 {
@@ -52,9 +53,9 @@ void DialogBox_CrusadeJob::DrawModeSelectJob(short sX, short sY, short msX, shor
 
 	// Help button
 	if ((msX > sX + 210) && (msX < sX + 260) && (msY >= sY + 296) && (msY <= sY + 316))
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::UIMagicBlue));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", hb::shared::text::TextStyle::WithHighlight(GameColors::UIMagicBlue));
 	else
-		TextLib::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", TextLib::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
+		hb::shared::text::DrawText(GameFont::Bitmap1, sX + 50 + 160, sY + 296, "Help", hb::shared::text::TextStyle::WithHighlight(GameColors::BmpBtnNormal));
 }
 
 void DialogBox_CrusadeJob::DrawModeConfirm(short sX, short sY, short msX, short msY)
@@ -125,7 +126,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			// Guild master - Commander option
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
 			{
-				m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 3, 0, 0, 0);
+				m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestSelectCrusadeDuty, 0, 3, 0, 0, 0);
 				DisableDialogBox(DialogBoxId::CrusadeJob);
 				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
@@ -136,7 +137,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			// Soldier option
 			if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 150) && (msY < sY + 165))
 			{
-				m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 1, 0, 0, 0);
+				m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestSelectCrusadeDuty, 0, 1, 0, 0, 0);
 				DisableDialogBox(DialogBoxId::CrusadeJob);
 				m_pGame->PlayGameSound('E', 14, 5);
 				return true;
@@ -147,7 +148,7 @@ bool DialogBox_CrusadeJob::OnClick(short msX, short msY)
 			{
 				if ((msX > sX + 24) && (msX < sX + 246) && (msY > sY + 175) && (msY < sY + 190))
 				{
-					m_pGame->bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQUEST_SELECTCRUSADEDUTY, 0, 2, 0, 0, 0);
+					m_pGame->bSendCommand(MsgId::CommandCommon, CommonType::RequestSelectCrusadeDuty, 0, 2, 0, 0, 0);
 					DisableDialogBox(DialogBoxId::CrusadeJob);
 					m_pGame->PlayGameSound('E', 14, 5);
 					return true;

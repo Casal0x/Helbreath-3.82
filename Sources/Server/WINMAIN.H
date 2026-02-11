@@ -34,6 +34,6 @@ MMRESULT _StartTimer(uint32_t dwTime);
 void _StopTimer(MMRESULT timerid);
 
 // Extern declarations for async networking globals
-class IOServicePool;
-extern IOServicePool* G_pIOPool;
+namespace hb::shared::net { class IOServicePool; }
+extern hb::shared::net::IOServicePool* G_pIOPool;
 #endif

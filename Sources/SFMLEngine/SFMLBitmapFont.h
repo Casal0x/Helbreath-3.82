@@ -16,12 +16,12 @@
 #undef CreateFont
 #endif
 
-namespace TextLib {
+namespace hb::shared::text {
 
 class SFMLBitmapFont : public IBitmapFont
 {
 public:
-    SFMLBitmapFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+    SFMLBitmapFont(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                    int frameOffset, const FontSpacing& spacing);
     ~SFMLBitmapFont() override = default;
 
@@ -36,7 +36,7 @@ public:
 private:
     int GetFrameForChar(char c) const;
 
-    SpriteLib::ISprite* m_pSprite;
+    hb::shared::sprite::ISprite* m_pSprite;
     char m_firstChar;
     char m_lastChar;
     int m_frameOffset;
@@ -50,10 +50,10 @@ class SFMLBitmapFontFactory : public BitmapFontFactory
 public:
     ~SFMLBitmapFontFactory() override = default;
 
-    std::unique_ptr<IBitmapFont> CreateFont(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+    std::unique_ptr<IBitmapFont> CreateFont(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                                             int frameOffset, const FontSpacing& spacing) override;
-    std::unique_ptr<IBitmapFont> CreateFontDynamic(SpriteLib::ISprite* sprite, char firstChar, char lastChar,
+    std::unique_ptr<IBitmapFont> CreateFontDynamic(hb::shared::sprite::ISprite* sprite, char firstChar, char lastChar,
                                                    int frameOffset) override;
 };
 
-} // namespace TextLib
+} // namespace hb::shared::text

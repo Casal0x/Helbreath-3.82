@@ -9,7 +9,7 @@
 
 // Internal state (static, not exposed)
 namespace {
-    // Mouse position (cached from Input:: at BeginFrame)
+    // Mouse position (cached from hb::shared::input:: at BeginFrame)
     int s_mouseX = 0;
     int s_mouseY = 0;
 
@@ -49,8 +49,8 @@ namespace {
 void CursorTarget::BeginFrame()
 {
     // Cache mouse position
-    s_mouseX = Input::GetMouseX();
-    s_mouseY = Input::GetMouseY();
+    s_mouseX = hb::shared::input::GetMouseX();
+    s_mouseY = hb::shared::input::GetMouseY();
 
     // Reset focus state
     s_focusedObject = FocusedObject{};
@@ -105,7 +105,7 @@ void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bo
     // Normal mode - show target cursor based on focus
     if (s_focusedObject.valid) {
         // Holding Control treats neutral targets as hostile (for force-attack)
-        if (IsHostile(relationship) || Input::IsCtrlDown())
+        if (IsHostile(relationship) || hb::shared::input::IsCtrlDown())
             s_cursorType = CursorType::TargetHostile;
         else
             s_cursorType = CursorType::TargetNeutral;
@@ -120,7 +120,7 @@ void CursorTarget::EndFrame(EntityRelationship relationship, int commandType, bo
 // Object Testing
 //-----------------------------------------------------------------------------
 
-void CursorTarget::TestObject(const SpriteLib::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY)
+void CursorTarget::TestObject(const hb::shared::sprite::BoundRect& bounds, const TargetObjectInfo& info, int screenY, int maxScreenY)
 {
     // Skip invalid bounds
     if (bounds.top == -1) return;
@@ -170,7 +170,7 @@ void CursorTarget::TestGroundItem(int screenX, int screenY, int maxScreenY)
     }
 }
 
-void CursorTarget::TestDynamicObject(const SpriteLib::BoundRect& bounds, short mapX, short mapY, int maxScreenY)
+void CursorTarget::TestDynamicObject(const hb::shared::sprite::BoundRect& bounds, short mapX, short mapY, int maxScreenY)
 {
     // Skip invalid bounds
     if (bounds.top == -1) return;
@@ -236,7 +236,7 @@ bool CursorTarget::IsOverGroundItem()
     return s_overGroundItem;
 }
 
-const PlayerStatus& CursorTarget::GetFocusStatus()
+const hb::shared::entity::PlayerStatus& CursorTarget::GetFocusStatus()
 {
     return s_focusedObject.status;
 }
@@ -249,7 +249,7 @@ bool CursorTarget::GetFocusHighlightData(
     short& outScreenX, short& outScreenY,
     uint16_t& outObjectID,
     short& outOwnerType, char& outAction, char& outDir, char& outFrame,
-    PlayerAppearance& outAppearance, PlayerStatus& outStatus,
+    hb::shared::entity::PlayerAppearance& outAppearance, hb::shared::entity::PlayerStatus& outStatus,
     short& outDataX, short& outDataY)
 {
     if (!s_focusedObject.valid) {
@@ -275,7 +275,7 @@ bool CursorTarget::GetFocusHighlightData(
 // Utilities
 //-----------------------------------------------------------------------------
 
-bool CursorTarget::PointInRect(int x, int y, const SpriteLib::BoundRect& rect)
+bool CursorTarget::PointInRect(int x, int y, const hb::shared::sprite::BoundRect& rect)
 {
     return x >= rect.left && x < rect.right &&
            y >= rect.top && y < rect.bottom;

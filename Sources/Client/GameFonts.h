@@ -15,7 +15,7 @@ namespace GameFont
 	enum ID : int
 	{
 		// TTF Font (loaded from FONTS/default.ttf)
-		Default = TextLib::FONT_ID_DEFAULT,
+		Default = hb::shared::text::FONT_ID_DEFAULT,
 
 		// Bitmap Fonts (loaded during Screen_Loading)
 		Bitmap1 = 1,        // INTERFACE_FONT1 - main bitmap font
@@ -40,9 +40,9 @@ namespace GameFont
 	// Get FontSpacing for a given font ID
 	// Returns spacing data for fonts that need explicit widths
 	// Returns empty spacing (useDynamicSpacing=true) for dynamic-width fonts
-	inline TextLib::FontSpacing GetFontSpacing(ID fontId)
+	inline hb::shared::text::FontSpacing GetFontSpacing(ID fontId)
 	{
-		TextLib::FontSpacing spacing;
+		hb::shared::text::FontSpacing spacing;
 
 		switch (fontId)
 		{

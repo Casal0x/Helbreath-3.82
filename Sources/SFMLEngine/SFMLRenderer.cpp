@@ -6,8 +6,7 @@
 #include "SFMLRenderer.h"
 #include "SFMLWindow.h"
 #include "RendererFactory.h"
-#include "PixelConversion.h"
-#include "RenderConstants.h"
+#include <SFML/Graphics/Image.hpp>
 #include "ITextRenderer.h"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -23,15 +22,9 @@
 #pragma comment(lib, "dxgi.lib")
 #endif
 
-// Static dummy tables
-long SFMLRenderer::s_dummyTransTable[64][64] = {};
-int SFMLRenderer::s_dummyAddTable[64][510] = {};
-int SFMLRenderer::s_dummyAddTransTable[510][64] = {};
-
 SFMLRenderer::SFMLRenderer()
     : m_pRenderWindow(nullptr)
     , m_texturesCreated(false)
-    , m_backBufferLocked(false)
     , m_width(640)  // Default, updated in CreateRenderTextures
     , m_height(480) // Default, updated in CreateRenderTextures
     , m_fullscreen(false)
@@ -48,43 +41,12 @@ SFMLRenderer::SFMLRenderer()
     , m_lastPresentedFrameTime(std::chrono::steady_clock::now())
     , m_spriteAlphaDegree(1)
 {
-    m_clipArea = GameRectangle(0, 0, m_width, m_height);
-    InitDummyTables();
+    m_clipArea = hb::shared::geometry::GameRectangle(0, 0, m_width, m_height);
 }
 
 SFMLRenderer::~SFMLRenderer()
 {
     Shutdown();
-}
-
-void SFMLRenderer::InitDummyTables()
-{
-    // Initialize transparency tables with identity-like values
-    // These are dummy values since SFML uses GPU blending
-    for (int i = 0; i < 64; i++)
-    {
-        for (int j = 0; j < 64; j++)
-        {
-            // Simple identity: return the source value
-            s_dummyTransTable[i][j] = i;
-        }
-    }
-
-    for (int i = 0; i < 64; i++)
-    {
-        for (int j = 0; j < 510; j++)
-        {
-            s_dummyAddTable[i][j] = (i + j > 63) ? 63 : (i + j);
-        }
-    }
-
-    for (int i = 0; i < 510; i++)
-    {
-        for (int j = 0; j < 64; j++)
-        {
-            s_dummyAddTransTable[i][j] = (i + j > 63) ? 63 : (i + j);
-        }
-    }
 }
 
 #ifdef _WIN32
@@ -143,7 +105,7 @@ static void LogGPUInfo()
 }
 #endif
 
-bool SFMLRenderer::Init(NativeWindowHandle hWnd)
+bool SFMLRenderer::Init(hb::shared::types::NativeWindowHandle hWnd)
 {
     // Log GPU information for debugging/verification
 #ifdef _WIN32
@@ -158,10 +120,10 @@ bool SFMLRenderer::CreateRenderTextures()
     if (m_texturesCreated)
         return true;
 
-    // Update dimensions from ResolutionConfig (initialized before renderer creation)
+    // Update dimensions from hb::shared::render::ResolutionConfig (initialized before renderer creation)
     m_width = RENDER_LOGICAL_WIDTH();
     m_height = RENDER_LOGICAL_HEIGHT();
-    m_clipArea = GameRectangle(0, 0, m_width, m_height);
+    m_clipArea = hb::shared::geometry::GameRectangle(0, 0, m_width, m_height);
 
     // Create back buffer render texture
     if (!m_backBuffer.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)}))
@@ -245,10 +207,10 @@ void SFMLRenderer::SetVSyncMode(bool enabled)
     m_bVSync = enabled;
 }
 
-void SFMLRenderer::ChangeDisplayMode(NativeWindowHandle hWnd)
+void SFMLRenderer::ChangeDisplayMode(hb::shared::types::NativeWindowHandle hWnd)
 {
-    // Get the window through the Window factory
-    IWindow* pWindow = Window::Get();
+    // Get the window through the hb::shared::render::Window factory
+    hb::shared::render::IWindow* pWindow = hb::shared::render::Window::Get();
     if (!pWindow)
         return;
 
@@ -464,7 +426,7 @@ double SFMLRenderer::GetDeltaTimeMS() const
     return m_deltaTime * 1000.0;
 }
 
-void SFMLRenderer::DrawPixel(int x, int y, const Color& color)
+void SFMLRenderer::DrawPixel(int x, int y, const hb::shared::render::Color& color)
 {
     if (x < m_clipArea.Left() || x >= m_clipArea.Right() ||
         y < m_clipArea.Top() || y >= m_clipArea.Bottom())
@@ -476,7 +438,7 @@ void SFMLRenderer::DrawPixel(int x, int y, const Color& color)
     m_backBuffer.draw(pixel);
 }
 
-void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const Color& color, BlendMode blend)
+void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const hb::shared::render::Color& color, hb::shared::render::BlendMode blend)
 {
     if ((x0 == x1) && (y0 == y1)) return;
 
@@ -488,10 +450,10 @@ void SFMLRenderer::DrawLine(int x0, int y0, int x1, int y1, const Color& color, 
     line[1].position = sf::Vector2f(static_cast<float>(x1), static_cast<float>(y1));
     line[1].color = lineColor;
 
-    m_backBuffer.draw(line, (blend == BlendMode::Additive) ? sf::BlendAdd : sf::BlendAlpha);
+    m_backBuffer.draw(line, (blend == hb::shared::render::BlendMode::Additive) ? sf::BlendAdd : sf::BlendAlpha);
 }
 
-void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const Color& color)
+void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const hb::shared::render::Color& color)
 {
     if (color.a == 0 || w <= 0 || h <= 0) return;
 
@@ -501,7 +463,7 @@ void SFMLRenderer::DrawRectFilled(int x, int y, int w, int h, const Color& color
     m_backBuffer.draw(rect);
 }
 
-void SFMLRenderer::DrawRectOutline(int x, int y, int w, int h, const Color& color, int thickness)
+void SFMLRenderer::DrawRectOutline(int x, int y, int w, int h, const hb::shared::render::Color& color, int thickness)
 {
     if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
 
@@ -584,7 +546,7 @@ static int GenerateRoundedRectPoints(sf::Vector2f* out, int maxVerts,
     return count;
 }
 
-void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius, const Color& color)
+void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius, const hb::shared::render::Color& color)
 {
     if (color.a == 0 || w <= 0 || h <= 0) return;
 
@@ -626,7 +588,7 @@ void SFMLRenderer::DrawRoundedRectFilled(int x, int y, int w, int h, int radius,
 }
 
 void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius,
-                                          const Color& color, int thickness)
+                                          const hb::shared::render::Color& color, int thickness)
 {
     if (color.a == 0 || w <= 0 || h <= 0 || thickness <= 0) return;
 
@@ -710,7 +672,7 @@ void SFMLRenderer::DrawRoundedRectOutline(int x, int y, int w, int h, int radius
 void SFMLRenderer::BeginTextBatch()
 {
     // Delegate to TextLib for consistency
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
         pTextRenderer->BeginBatch();
 }
@@ -718,131 +680,57 @@ void SFMLRenderer::BeginTextBatch()
 void SFMLRenderer::EndTextBatch()
 {
     // Delegate to TextLib for consistency
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
         pTextRenderer->EndBatch();
 }
 
-void SFMLRenderer::DrawText(int x, int y, const char* text, const Color& color)
+void SFMLRenderer::DrawText(int x, int y, const char* text, const hb::shared::render::Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
 
     // Delegate to TextLib - single point of font handling
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
         pTextRenderer->DrawText(x, y, text, color);
 }
 
-void SFMLRenderer::DrawTextRect(const GameRectangle& rect, const char* text, const Color& color)
+void SFMLRenderer::DrawTextRect(const hb::shared::geometry::GameRectangle& rect, const char* text, const hb::shared::render::Color& color)
 {
     if (!text || !m_texturesCreated)
         return;
 
     // Delegate to TextLib - single point of font handling
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
     {
         pTextRenderer->DrawTextAligned(rect.x, rect.y, rect.width, rect.height, text, color,
-                                        TextLib::Align::TopCenter);
+                                        hb::shared::text::Align::TopCenter);
     }
 }
 
-ITexture* SFMLRenderer::CreateTexture(uint16_t width, uint16_t height)
+hb::shared::render::ITexture* SFMLRenderer::CreateTexture(uint16_t width, uint16_t height)
 {
     return new SFMLTexture(width, height);
 }
 
-void SFMLRenderer::DestroyTexture(ITexture* texture)
+void SFMLRenderer::DestroyTexture(hb::shared::render::ITexture* texture)
 {
     delete texture;
 }
 
-uint16_t* SFMLRenderer::LockBackBuffer(int* pitch)
-{
-    if (m_backBufferLocked)
-    {
-        if (pitch)
-            *pitch = m_width;
-        return m_lockedBuffer.data();
-    }
-
-    m_backBufferLocked = true;
-
-    // Resize locked buffer if needed
-    size_t bufferSize = static_cast<size_t>(m_width) * m_height;
-    if (m_lockedBuffer.size() != bufferSize)
-    {
-        m_lockedBuffer.resize(bufferSize);
-    }
-
-    // Copy current back buffer to locked buffer (convert RGBA to RGB565)
-    m_lockedImage = m_backBuffer.getTexture().copyToImage();
-
-    for (int y = 0; y < m_height; y++)
-    {
-        for (int x = 0; x < m_width; x++)
-        {
-            sf::Color pixel = m_lockedImage.getPixel({static_cast<unsigned int>(x), static_cast<unsigned int>(y)});
-            m_lockedBuffer[y * m_width + x] = PixelConversion::MakeRGB565(pixel.r, pixel.g, pixel.b);
-        }
-    }
-
-    if (pitch)
-        *pitch = m_width;
-
-    return m_lockedBuffer.data();
-}
-
-void SFMLRenderer::UnlockBackBuffer()
-{
-    if (!m_backBufferLocked)
-        return;
-
-    // Convert RGB565 buffer back to RGBA and update the back buffer
-    sf::Image newImage;
-    newImage.resize({static_cast<unsigned int>(m_width), static_cast<unsigned int>(m_height)});
-
-    for (int y = 0; y < m_height; y++)
-    {
-        for (int x = 0; x < m_width; x++)
-        {
-            uint16_t pixel = m_lockedBuffer[y * m_width + x];
-            uint8_t r, g, b;
-            PixelConversion::ExtractRGB565(pixel, r, g, b);
-            newImage.setPixel({static_cast<unsigned int>(x), static_cast<unsigned int>(y)}, sf::Color(r, g, b, 255));
-        }
-    }
-
-    // Update the back buffer texture
-    sf::Texture tempTex;
-    if (tempTex.loadFromImage(newImage))
-    {
-        m_backBuffer.clear();
-        sf::Sprite sprite(tempTex);
-        m_backBuffer.draw(sprite);
-    }
-
-    m_backBufferLocked = false;
-}
-
 void SFMLRenderer::SetClipArea(int x, int y, int w, int h)
 {
-    m_clipArea = GameRectangle(x, y, w, h);
+    m_clipArea = hb::shared::geometry::GameRectangle(x, y, w, h);
 
     // Set SFML viewport/scissor
     // Note: SFML doesn't have direct scissor support, but we store it for manual clipping
 }
 
-GameRectangle SFMLRenderer::GetClipArea() const
+hb::shared::geometry::GameRectangle SFMLRenderer::GetClipArea() const
 {
     return m_clipArea;
-}
-
-int SFMLRenderer::GetPixelFormat() const
-{
-    // Return RGB565 for compatibility with existing code
-    return PIXELFORMAT_RGB565;
 }
 
 bool SFMLRenderer::Screenshot(const char* filename)
@@ -877,56 +765,9 @@ int SFMLRenderer::GetHeightMid() const
 void SFMLRenderer::ResizeBackBuffer(int width, int height)
 {
     // The back buffer always stays at 640x480 (logical resolution)
-    // Window scaling is handled in EndFrame() when presenting to the window
+    // hb::shared::render::Window scaling is handled in EndFrame() when presenting to the window
     // This is intentionally a no-op for SFML
 }
-
-uint32_t SFMLRenderer::GetColorKey(ITexture* texture, uint16_t colorKey)
-{
-    // For SFML, just return the color key as-is
-    return colorKey;
-}
-
-uint32_t SFMLRenderer::GetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b)
-{
-    return PixelConversion::MakeRGB565(r, g, b);
-}
-
-void SFMLRenderer::SetColorKey(ITexture* texture, uint16_t colorKey)
-{
-    if (texture)
-    {
-        texture->SetColorKey(colorKey);
-    }
-}
-
-void SFMLRenderer::SetColorKeyRGB(ITexture* texture, uint8_t r, uint8_t g, uint8_t b)
-{
-    if (texture)
-    {
-        texture->SetColorKeyRGB(r, g, b);
-    }
-}
-
-// Transparency table getters (return dummy tables)
-const long (*SFMLRenderer::GetTransTableRB100() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableG100() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableRB70() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableG70() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableRB50() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableG50() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableRB25() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableG25() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableRB2() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableG2() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableFadeRB() const)[64] { return s_dummyTransTable; }
-const long (*SFMLRenderer::GetTransTableFadeG() const)[64] { return s_dummyTransTable; }
-
-// Add table getters (return dummy tables)
-const int (*SFMLRenderer::GetAddTable31() const)[510] { return s_dummyAddTable; }
-const int (*SFMLRenderer::GetAddTable63() const)[510] { return s_dummyAddTable; }
-const int (*SFMLRenderer::GetAddTransTable31() const)[64] { return s_dummyAddTransTable; }
-const int (*SFMLRenderer::GetAddTransTable63() const)[64] { return s_dummyAddTransTable; }
 
 char SFMLRenderer::GetSpriteAlphaDegree() const
 {
@@ -953,7 +794,7 @@ int SFMLRenderer::GetTextLength(const char* text, int maxWidth)
         return 0;
 
     // Delegate to TextLib - single point of font handling
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
         return pTextRenderer->GetFittingCharCount(text, maxWidth);
 
@@ -966,10 +807,10 @@ int SFMLRenderer::GetTextWidth(const char* text)
         return 0;
 
     // Delegate to TextLib - single point of font handling
-    TextLib::ITextRenderer* pTextRenderer = TextLib::GetTextRenderer();
+    hb::shared::text::ITextRenderer* pTextRenderer = hb::shared::text::GetTextRenderer();
     if (pTextRenderer)
     {
-        TextLib::TextMetrics metrics = pTextRenderer->MeasureText(text);
+        hb::shared::text::TextMetrics metrics = pTextRenderer->MeasureText(text);
         return metrics.width;
     }
 

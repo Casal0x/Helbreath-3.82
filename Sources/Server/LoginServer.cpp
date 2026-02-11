@@ -13,6 +13,8 @@ using namespace std;
 #include "PasswordHash.h"
 #include "../../Dependencies/Shared/Packet/SharedPackets.h"
 
+using namespace hb::shared::net;
+namespace sock = hb::shared::net::socket;
 extern char	G_cData50000[50000];
 //extern void PutLogList(char* cMsg);
 extern char G_cTxt[512];
@@ -62,8 +64,8 @@ void FormatTimestamp(const SYSTEMTIME& sysTime, char* outBuffer, size_t outBuffe
 
 bool AccountDbExists(const char* accountName)
 {
-	char lower[DEF_ACCOUNT_NAME] = {};
-	std::strncpy(lower, accountName, DEF_ACCOUNT_NAME - 1);
+	char lower[hb::shared::limits::AccountNameLen] = {};
+	std::strncpy(lower, accountName, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(lower, sizeof(lower));
 	char dbPath[MAX_PATH] = {};
 	std::snprintf(dbPath, sizeof(dbPath), "Accounts\\%s.db", lower);
@@ -90,16 +92,16 @@ void LoginServer::RequestLogin(int h, char* pData)
 	if (G_pGame->_lclients[h] == 0)
 		return;
 
-	char cName[DEF_ACCOUNT_NAME] = {};
-	char cPassword[DEF_ACCOUNT_PASS] = {};
+	char cName[hb::shared::limits::AccountNameLen] = {};
+	char cPassword[hb::shared::limits::AccountPassLen] = {};
 	char world_name[32] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::LoginRequest>(pData, sizeof(hb::net::LoginRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cName, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cName, sizeof(cName));
-	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
 	std::memcpy(world_name, req->world_name, 30);
 
 	if (string(world_name) != WORLDNAMELS)
@@ -121,18 +123,18 @@ void LoginServer::RequestLogin(int h, char* pData)
 		char* cp2 = pData;
 		Push(cp2, (int)chars.size());
 		GetCharList(cName, cp2, chars);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_CONFIRM, DEF_LOGRESMSGTYPE_CONFIRM, pData, cp2 - pData, h);
+		SendLoginMsg(LogResMsg::Confirm, LogResMsg::Confirm, pData, cp2 - pData, h);
 		//PutLogList("Ok");
 		break;
 	}
 
 	case LogIn::NoAcc:
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT, DEF_LOGRESMSGTYPE_NOTEXISTINGACCOUNT, 0, 0, h);
+		SendLoginMsg(LogResMsg::NotExistingAccount, LogResMsg::NotExistingAccount, 0, 0, h);
 		PutLogList("No Acc");
 		break;
 
 	case LogIn::NoPass:
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDMISMATCH, DEF_LOGRESMSGTYPE_PASSWORDMISMATCH, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordMismatch, LogResMsg::PasswordMismatch, 0, 0, h);
 		PutLogList("No Pass");
 		break;
 	}
@@ -143,8 +145,8 @@ void LoginServer::GetCharList(string acc, char*& cp2, const std::vector<AccountD
 	for (const auto& entry : chars)
 	{
 		Push(cp2, entry.characterName, 10);
-		std::memcpy(cp2, &entry.appearance, sizeof(PlayerAppearance));
-		cp2 += sizeof(PlayerAppearance);
+		std::memcpy(cp2, &entry.appearance, sizeof(hb::shared::entity::PlayerAppearance));
+		cp2 += sizeof(hb::shared::entity::PlayerAppearance);
 		Push(cp2, entry.sex);
 		Push(cp2, entry.skin);
 		Push(cp2, entry.level);
@@ -191,7 +193,7 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 			for (const auto& item : equippedItems) {
 				if (item.itemId > 0 && item.itemId < DEF_MAXITEMTYPES && G_pGame->m_pItemConfigList[item.itemId] != nullptr) {
 					auto* config = G_pGame->m_pItemConfigList[item.itemId];
-					ApplyEquipAppearance(entry.appearance, config->GetEquipPos(), config->m_cApprValue, item.itemColor);
+					hb::shared::entity::ApplyEquipAppearance(entry.appearance, config->GetEquipPos(), config->m_cApprValue, item.itemColor);
 				}
 			}
 		}
@@ -204,9 +206,9 @@ LogIn LoginServer::AccountLogIn(string acc, string pass, std::vector<AccountDbCh
 
 void LoginServer::ResponseCharacter(int h, char* pData)
 {
-	char cName[DEF_ACCOUNT_NAME] = {};
-	char cAcc[DEF_ACCOUNT_NAME] = {};
-	char cPassword[DEF_ACCOUNT_PASS] = {};
+	char cName[hb::shared::limits::AccountNameLen] = {};
+	char cAcc[hb::shared::limits::AccountNameLen] = {};
+	char cPassword[hb::shared::limits::AccountPassLen] = {};
 	char world_name[32] = {};
 
 	char gender, skin, hairstyle, haircolor, under, str, vit, dex, intl, mag, chr;
@@ -214,10 +216,10 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateCharacterRequest>(pData, sizeof(hb::net::CreateCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, DEF_ACCOUNT_NAME - 1);
-	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cName, req->character_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
 	std::memcpy(world_name, req->world_name, 30);
 	gender = static_cast<char>(req->gender);
 	skin = static_cast<char>(req->skin);
@@ -252,7 +254,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	if (CharacterNameExistsGlobally(cName)) {
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' already exists globally", cName);
 		PutLogList(G_cTxt);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
@@ -260,14 +262,14 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	if (AccountNameExists(cName)) {
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Character name '%s' conflicts with existing account name", cName);
 		PutLogList(G_cTxt);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
 	// Also check within current account (redundant but kept for safety)
 	for (const auto& entry : chars) {
-		if (_strnicmp(entry.characterName, cName, DEF_CHARNAME - 1) == 0) {
-			SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		if (_strnicmp(entry.characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
+			SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 			return;
 		}
 	}
@@ -275,7 +277,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	sqlite3* db = nullptr;
 	std::string dbPath;
 	if (!EnsureAccountDatabase(cAcc, &db, dbPath)) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
@@ -284,7 +286,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	AccountDbAccountData storedAccount = {};
 	if (!LoadAccountRecord(db, cAcc, storedAccount)) {
 		CloseAccountDatabase(db);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
@@ -417,7 +419,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	std::vector<AccountDbIndexedValue> positionsX;
 	std::vector<AccountDbIndexedValue> positionsY;
 	std::vector<AccountDbIndexedValue> equips;
-	for(int i = 0; i < hb::limits::MaxItems; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxItems; i++) {
 		AccountDbIndexedValue posX = {};
 		AccountDbIndexedValue posY = {};
 		AccountDbIndexedValue equip = {};
@@ -433,7 +435,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	}
 
 	std::vector<AccountDbIndexedValue> magicMastery;
-	for(int i = 0; i < DEF_MAXMAGICTYPE; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxMagicType; i++) {
 		AccountDbIndexedValue entry = {};
 		entry.index = i;
 		entry.value = 0;
@@ -447,7 +449,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	std::snprintf(skillBuf, sizeof(skillBuf), "%s", skillSeed);
 	char* token = std::strtok(skillBuf, " " );
 	int skillIndex = 0;
-	while (token != nullptr && skillIndex < DEF_MAXSKILLTYPE) {
+	while (token != nullptr && skillIndex < hb::shared::limits::MaxSkillType) {
 		AccountDbIndexedValue entry = {};
 		entry.index = skillIndex;
 		entry.value = std::atoi(token);
@@ -455,13 +457,13 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 		skillIndex++;
 		token = std::strtok(nullptr, " " );
 	}
-	for (; skillIndex < DEF_MAXSKILLTYPE; skillIndex++) {
+	for (; skillIndex < hb::shared::limits::MaxSkillType; skillIndex++) {
 		AccountDbIndexedValue entry = {};
 		entry.index = skillIndex;
 		entry.value = 0;
 		skillMastery.push_back(entry);
 	}
-	for(int i = 0; i < DEF_MAXSKILLTYPE; i++) {
+	for(int i = 0; i < hb::shared::limits::MaxSkillType; i++) {
 		AccountDbIndexedValue entry = {};
 		entry.index = i;
 		entry.value = 0;
@@ -480,7 +482,7 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	CloseAccountDatabase(db);
 
 	if (!ok) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, DEF_LOGRESMSGTYPE_NEWCHARACTERFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewCharacterFailed, LogResMsg::NewCharacterFailed, 0, 0, h);
 		return;
 	}
 
@@ -499,23 +501,23 @@ void LoginServer::ResponseCharacter(int h, char* pData)
 	Push(cp2, cName, 10);
 	Push(cp2, (int)chars.size());
 	GetCharList(cAcc, cp2, chars);
-	SendLoginMsg(DEF_LOGRESMSGTYPE_NEWCHARACTERCREATED, DEF_LOGRESMSGTYPE_NEWCHARACTERCREATED, cData, cp2 - cData, h);
+	SendLoginMsg(LogResMsg::NewCharacterCreated, LogResMsg::NewCharacterCreated, cData, cp2 - cData, h);
 }
 
 void LoginServer::DeleteCharacter(int h, char* pData)
 {
-	char cName[DEF_ACCOUNT_NAME] = {};
-	char cAcc[DEF_ACCOUNT_NAME] = {};
-	char cPassword[DEF_ACCOUNT_PASS] = {};
+	char cName[hb::shared::limits::AccountNameLen] = {};
+	char cAcc[hb::shared::limits::AccountNameLen] = {};
+	char cPassword[hb::shared::limits::AccountPassLen] = {};
 	char world_name[32] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::DeleteCharacterRequest>(pData, sizeof(hb::net::DeleteCharacterRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, DEF_ACCOUNT_NAME - 1);
-	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cName, req->character_name, hb::shared::limits::AccountNameLen - 1);
+	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
 	std::memcpy(world_name, req->world_name, 30);
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request delete Character: %s", cName);
@@ -542,7 +544,7 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	CloseAccountDatabase(db);
 
 	for (auto it = chars.begin(); it != chars.end();) {
-		if (_strnicmp(it->characterName, cName, DEF_CHARNAME - 1) == 0) {
+		if (_strnicmp(it->characterName, cName, hb::shared::limits::CharNameLen - 1) == 0) {
 			it = chars.erase(it);
 			continue;
 		}
@@ -553,24 +555,24 @@ void LoginServer::DeleteCharacter(int h, char* pData)
 	char* cp2 = cData;
 	Push(cp2, (int)chars.size());
 	GetCharList(cAcc, cp2, chars);
-	SendLoginMsg(DEF_LOGRESMSGTYPE_CHARACTERDELETED, DEF_LOGRESMSGTYPE_CHARACTERDELETED, cData, cp2 - cData, h);
+	SendLoginMsg(LogResMsg::CharacterDeleted, LogResMsg::CharacterDeleted, cData, cp2 - cData, h);
 }
 
 void LoginServer::ChangePassword(int h, char* pData)
 {
-	char cAcc[DEF_ACCOUNT_NAME] = {};
-	char cPassword[DEF_ACCOUNT_PASS] = {};
-	char cNewPw[DEF_ACCOUNT_PASS] = {};
-	char cNewPwConf[DEF_ACCOUNT_PASS] = {};
+	char cAcc[hb::shared::limits::AccountNameLen] = {};
+	char cPassword[hb::shared::limits::AccountPassLen] = {};
+	char cNewPw[hb::shared::limits::AccountPassLen] = {};
+	char cNewPwConf[hb::shared::limits::AccountPassLen] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::ChangePasswordRequest>(pData, sizeof(hb::net::ChangePasswordRequest));
 	if (!req) return;
 
-	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
-	std::memcpy(cNewPw, req->new_password, DEF_ACCOUNT_PASS - 1);
-	std::memcpy(cNewPwConf, req->new_password_confirm, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cNewPw, req->new_password, hb::shared::limits::AccountPassLen - 1);
+	std::memcpy(cNewPwConf, req->new_password_confirm, hb::shared::limits::AccountPassLen - 1);
 
 	std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Request change password: %s", cAcc);
 	PutLogList(G_cTxt);
@@ -581,13 +583,13 @@ void LoginServer::ChangePassword(int h, char* pData)
 		return;
 
 	if (string(cNewPw) != cNewPwConf) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
 		return;
 	}
 
 	sqlite3* db = nullptr;
 	if (!OpenAccountDatabaseIfExists(cAcc, &db)) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
 		return;
 	}
 
@@ -595,16 +597,16 @@ void LoginServer::ChangePassword(int h, char* pData)
 	char newHash[DEF_PASSWORD_HASH_HEX] = {};
 	if (!PasswordHash::GenerateSalt(newSalt, sizeof(newSalt)) ||
 		!PasswordHash::HashPassword(cNewPw, newSalt, newHash, sizeof(newHash))) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
 		CloseAccountDatabase(db);
 		return;
 	}
 
 	if (UpdateAccountPassword(db, cAcc, newHash, newSalt)) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS, DEF_LOGRESMSGTYPE_PASSWORDCHANGESUCCESS, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordChangeSuccess, LogResMsg::PasswordChangeSuccess, 0, 0, h);
 	}
 	else {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, DEF_LOGRESMSGTYPE_PASSWORDCHANGEFAIL, 0, 0, h);
+		SendLoginMsg(LogResMsg::PasswordChangeFail, LogResMsg::PasswordChangeFail, 0, 0, h);
 	}
 
 	CloseAccountDatabase(db);
@@ -612,9 +614,9 @@ void LoginServer::ChangePassword(int h, char* pData)
 
 void LoginServer::CreateNewAccount(int h, char* pData)
 {
-	char cName[DEF_ACCOUNT_NAME] = {};
-	char cPassword[DEF_ACCOUNT_PASS] = {};
-	char cEmailAddr[DEF_ACCOUNT_EMAIL] = {};
+	char cName[hb::shared::limits::AccountNameLen] = {};
+	char cPassword[hb::shared::limits::AccountPassLen] = {};
+	char cEmailAddr[hb::shared::limits::AccountEmailLen] = {};
 
 	if (G_pGame->_lclients[h] == 0)
 		return;
@@ -622,10 +624,10 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	const auto* req = hb::net::PacketCast<hb::net::CreateAccountRequest>(pData, sizeof(hb::net::CreateAccountRequest));
 	if (!req) return;
 
-	std::strncpy(cName, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::strncpy(cName, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cName, sizeof(cName));
-	std::strncpy(cPassword, req->password, DEF_ACCOUNT_PASS - 1);
-	std::strncpy(cEmailAddr, req->email, DEF_ACCOUNT_EMAIL - 1);
+	std::strncpy(cPassword, req->password, hb::shared::limits::AccountPassLen - 1);
+	std::strncpy(cEmailAddr, req->email, hb::shared::limits::AccountEmailLen - 1);
 
 	if ((strlen(cName) == 0) || (strlen(cPassword) == 0) ||
 		(strlen(cEmailAddr) == 0))
@@ -640,14 +642,14 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	if (AccountDbExists(cName)) {
 		std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Account creation failed: '%s' already exists", cName);
 		PutLogList(G_cTxt);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewAccountFailed, LogResMsg::NewAccountFailed, 0, 0, h);
 		return;
 	}
 
 	sqlite3* db = nullptr;
 	std::string dbPath;
 	if (!EnsureAccountDatabase(cName, &db, dbPath)) {
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewAccountFailed, LogResMsg::NewAccountFailed, 0, 0, h);
 		return;
 	}
 
@@ -659,7 +661,7 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 	if (!PasswordHash::GenerateSalt(salt, sizeof(salt)) ||
 		!PasswordHash::HashPassword(cPassword, salt, hash, sizeof(hash))) {
 		CloseAccountDatabase(db);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewAccountFailed, LogResMsg::NewAccountFailed, 0, 0, h);
 		return;
 	}
 	std::snprintf(data.password_hash, sizeof(data.password_hash), "%s", hash);
@@ -674,12 +676,12 @@ void LoginServer::CreateNewAccount(int h, char* pData)
 
 	if (!InsertAccountRecord(db, data)) {
 		CloseAccountDatabase(db);
-		SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, DEF_LOGRESMSGTYPE_NEWACCOUNTFAILED, 0, 0, h);
+		SendLoginMsg(LogResMsg::NewAccountFailed, LogResMsg::NewAccountFailed, 0, 0, h);
 		return;
 	}
 
 	CloseAccountDatabase(db);
-	SendLoginMsg(DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED, DEF_LOGRESMSGTYPE_NEWACCOUNTCREATED, 0, 0, h);
+	SendLoginMsg(LogResMsg::NewAccountCreated, LogResMsg::NewAccountCreated, 0, 0, h);
 }
 
 void LoginServer::SendLoginMsg(uint32_t msg_id, uint16_t msg_type, char* data, size_t sz, int h)
@@ -709,10 +711,10 @@ void LoginServer::SendLoginMsg(uint32_t msg_id, uint16_t msg_type, char* data, s
 
 		switch (iRet)
 		{
-		case DEF_XSOCKEVENT_QUENEFULL:
-		case DEF_XSOCKEVENT_SOCKETERROR:
-		case DEF_XSOCKEVENT_CRITICALERROR:
-		case DEF_XSOCKEVENT_SOCKETCLOSED:
+		case sock::Event::QueueFull:
+		case sock::Event::SocketError:
+		case sock::Event::CriticalError:
+		case sock::Event::SocketClosed:
 			std::snprintf(G_cTxt, sizeof(G_cTxt), "(!) Login Connection Lost on Send (%d)", index);
 			PutLogList(G_cTxt);
 			delete G_pGame->_lclients[index];
@@ -726,21 +728,21 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 {
 	//	PutLogList("RequestEnterGame()");
 
-	char cName[DEF_CHARNAME] = {};
+	char cName[hb::shared::limits::CharNameLen] = {};
 	char cMapName[11] = {};
-	char cAcc[DEF_ACCOUNT_NAME] = {};
-	char cPass[DEF_ACCOUNT_PASS] = {};
+	char cAcc[hb::shared::limits::AccountNameLen] = {};
+	char cPass[hb::shared::limits::AccountPassLen] = {};
 	int lvl;
 	char ws_name[31] = {};
 
 	const auto* req = hb::net::PacketCast<hb::net::EnterGameRequest>(pData, sizeof(hb::net::EnterGameRequest));
 	if (!req) return;
 
-	std::memcpy(cName, req->character_name, DEF_CHARNAME - 1);
+	std::memcpy(cName, req->character_name, hb::shared::limits::CharNameLen - 1);
 	std::memcpy(cMapName, req->map_name, 10);
-	std::memcpy(cAcc, req->account_name, DEF_ACCOUNT_NAME - 1);
+	std::memcpy(cAcc, req->account_name, hb::shared::limits::AccountNameLen - 1);
 	LowercaseInPlace(cAcc, sizeof(cAcc));
-	std::memcpy(cPass, req->password, DEF_ACCOUNT_PASS - 1);
+	std::memcpy(cPass, req->password, hb::shared::limits::AccountPassLen - 1);
 	lvl = req->level;
 	std::memcpy(ws_name, req->world_name, 10);
 
@@ -777,7 +779,7 @@ void LoginServer::RequestEnterGame(int h, char* pData)
 	std::snprintf(enterResp.server_name, sizeof(enterResp.server_name), "%s", WORLDNAMELS2);
 
 	std::memcpy(cData, &enterResp, sizeof(enterResp));
-	SendLoginMsg(DEF_ENTERGAMERESTYPE_CONFIRM, DEF_ENTERGAMERESTYPE_CONFIRM, cData, sizeof(enterResp), h);
+	SendLoginMsg(EnterGameRes::Confirm, EnterGameRes::Confirm, cData, sizeof(enterResp), h);
 }
 
 

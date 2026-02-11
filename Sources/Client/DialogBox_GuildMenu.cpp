@@ -4,6 +4,7 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::shared::net;
 DialogBox_GuildMenu::DialogBox_GuildMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildMenu, pGame)
 {
@@ -117,7 +118,7 @@ void DialogBox_GuildMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		break;
 	case 19:
 		if (m_pGame->m_iFightzoneNumber > 0)
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETOCCUPYFIGHTZONETICKET, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::ReqGetOccupyFightZoneTicket, 0, 0, 0, 0, 0);
 		Info().cMode = 0;
 		break;
 	case 20:
@@ -196,7 +197,7 @@ void DialogBox_GuildMenu::DrawMode1_CreateGuild(short sX, short sY, short szX, s
 
 	if (m_pGame->m_dialogBoxManager.iGetTopDialogBoxIndex() != DialogBoxId::GuildMenu) {
 		std::string masked(strlen(m_pGame->m_pPlayer->m_cGuildName), '*');
-		TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), TextLib::TextStyle::Color(GameColors::UIWhite));
+		hb::shared::text::DrawText(GameFont::Default, sX + 75, sY + 140, masked.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 	}
 
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
@@ -313,7 +314,7 @@ void DialogBox_GuildMenu::DrawMode20_ConfirmCancel(short sX, short sY, short szX
 {
 	PutAlignedString(sX, sX + szX, sY + 125, DRAW_DIALOGBOX_GUILDMENU75, GameColors::UILabel);
 	PutString(sX + 75, sY + 144, "____________________", GameColors::UILabel);
-	TextLib::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, TextLib::TextStyle::Color(GameColors::UIWhite));
+	hb::shared::text::DrawText(GameFont::Default, sX + 75, sY + 140, m_pGame->m_pPlayer->m_cGuildName, hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 	if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::left_btn_x + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y))
 		m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 25);
 	else m_pGame->DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_BUTTON, sX + ui_layout::left_btn_x, sY + ui_layout::btn_y, 24);
@@ -417,7 +418,7 @@ bool DialogBox_GuildMenu::OnClickMode1(short sX, short sY, short msX, short msY)
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
 		if (strcmp(m_pGame->m_pPlayer->m_cGuildName, "NONE") == 0) return false;
 		if (strlen(m_pGame->m_pPlayer->m_cGuildName) == 0) return false;
-		bSendCommand(MSGID_REQUEST_CREATENEWGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
+		bSendCommand(MsgId::RequestCreateNewGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
 		Info().cMode = 2;
 		m_pGame->EndInputString();
 		PlaySoundEffect('E', 14, 5);
@@ -439,7 +440,7 @@ bool DialogBox_GuildMenu::OnClickMode5(short sX, short sY, short msX, short msY)
 {
 	// Confirm disband
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
-		bSendCommand(MSGID_REQUEST_DISBANDGUILD, DEF_MSGTYPE_CONFIRM, 0, 0, 0, 0, 0);
+		bSendCommand(MsgId::RequestDisbandGuild, MsgType::Confirm, 0, 0, 0, 0, 0);
 		Info().cMode = 6;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -463,7 +464,7 @@ bool DialogBox_GuildMenu::OnClickMode9(short sX, short sY, short msX, short msY)
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
 		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s", "GuildAdmissionTicket");
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, hb::item::ItemId::GuildAdmissionTicket, 0, cTemp);
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildAdmissionTicket, 0, cTemp);
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -487,7 +488,7 @@ bool DialogBox_GuildMenu::OnClickMode11(short sX, short sY, short msX, short msY
 	if ((msX >= sX + 30) && (msX <= sX + 30 + ui_layout::btn_size_x) && (msY >= sY + ui_layout::btn_y) && (msY <= sY + ui_layout::btn_y + ui_layout::btn_size_y)) {
 		std::memset(cTemp, 0, sizeof(cTemp));
 		std::snprintf(cTemp, sizeof(cTemp), "%s", "GuildSecessionTicket");
-		bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_PURCHASEITEM, 0, 1, hb::item::ItemId::GuildSecessionTicket, 0, cTemp);
+		bSendCommand(MsgId::CommandCommon, CommonType::ReqPurchaseItem, 0, 1, hb::shared::item::ItemId::GuildSecessionTicket, 0, cTemp);
 		Info().cMode = 0;
 		PlaySoundEffect('E', 14, 5);
 		return true;
@@ -507,7 +508,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 {
 	// Fightzone 1
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 168) && (msY < sY + ADJY + 185)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 1, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 1, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 1;
 		PlaySoundEffect('E', 14, 5);
@@ -515,7 +516,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 2
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 168) && (msY < sY + ADJY + 185)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 2, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 2, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 2;
 		PlaySoundEffect('E', 14, 5);
@@ -523,7 +524,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 3
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 188) && (msY < sY + ADJY + 205)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 3, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 3, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 3;
 		PlaySoundEffect('E', 14, 5);
@@ -531,7 +532,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 4
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 188) && (msY < sY + ADJY + 205)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 4, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 4, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 4;
 		PlaySoundEffect('E', 14, 5);
@@ -539,7 +540,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 5
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 208) && (msY < sY + ADJY + 225)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 5, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 5, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 5;
 		PlaySoundEffect('E', 14, 5);
@@ -547,7 +548,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 6
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 208) && (msY < sY + ADJY + 225)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 6, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 6, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 6;
 		PlaySoundEffect('E', 14, 5);
@@ -555,7 +556,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 7
 	if ((msX > sX + ADJX + 65) && (msX < sX + ADJX + 137) && (msY > sY + ADJY + 228) && (msY < sY + ADJY + 245)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 7, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 7, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 7;
 		PlaySoundEffect('E', 14, 5);
@@ -563,7 +564,7 @@ bool DialogBox_GuildMenu::OnClickMode13(short sX, short sY, short msX, short msY
 	}
 	// Fightzone 8
 	if ((msX > sX + ADJX + 150) && (msX < sX + ADJX + 222) && (msY > sY + ADJY + 228) && (msY < sY + ADJY + 245)) {
-		bSendCommand(MSGID_REQUEST_FIGHTZONE_RESERVE, 0, 0, 8, 0, 0, 0);
+		bSendCommand(MsgId::RequestFightZoneReserve, 0, 0, 8, 0, 0, 0);
 		Info().cMode = 18;
 		m_pGame->m_iFightzoneNumberTemp = 8;
 		PlaySoundEffect('E', 14, 5);

@@ -1,23 +1,17 @@
-// SFMLTexture.cpp: SFML implementation of ITexture interface
+// SFMLTexture.cpp: SFML implementation of hb::shared::render::ITexture interface
 //
 // Part of SFMLEngine static library
 //////////////////////////////////////////////////////////////////////
 
 #include "SFMLTexture.h"
-#include "PixelConversion.h"
 #include <SFML/Graphics/Sprite.hpp>
 
 SFMLTexture::SFMLTexture(uint16_t width, uint16_t height)
     : m_width(width)
     , m_height(height)
-    , m_colorKey(0)
-    , m_locked(false)
 {
-    // Create the image with the specified size
-    m_image.resize({width, height}, sf::Color::Black);
-
-    // Create the texture from the image
-    if (!m_texture.loadFromImage(m_image))
+    // Create the texture with the specified size
+    if (!m_texture.resize({width, height}))
     {
         // Texture creation failed - this shouldn't happen with a valid size
     }
@@ -48,98 +42,7 @@ uint16_t SFMLTexture::GetHeight() const
     return m_height;
 }
 
-void SFMLTexture::SetColorKey(uint16_t colorKey)
-{
-    m_colorKey = colorKey;
-}
-
-void SFMLTexture::SetColorKeyRGB(uint8_t r, uint8_t g, uint8_t b)
-{
-    m_colorKey = PixelConversion::MakeRGB565(r, g, b);
-}
-
-uint16_t* SFMLTexture::Lock(int* pitch)
-{
-    if (m_locked)
-        return nullptr;
-
-    m_locked = true;
-
-    // Resize locked buffer if needed
-    size_t bufferSize = static_cast<size_t>(m_width) * m_height;
-    if (m_lockedBuffer.size() != bufferSize)
-    {
-        m_lockedBuffer.resize(bufferSize);
-    }
-
-    // Copy current texture data to locked buffer (convert RGBA to RGB565)
-    // Get the render texture's content
-    sf::Image currentImage = m_renderTexture.getTexture().copyToImage();
-
-    for (int y = 0; y < m_height; y++)
-    {
-        for (int x = 0; x < m_width; x++)
-        {
-            sf::Color pixel = currentImage.getPixel({static_cast<unsigned int>(x), static_cast<unsigned int>(y)});
-
-            // Convert RGBA to RGB565
-            if (pixel.a == 0)
-            {
-                m_lockedBuffer[y * m_width + x] = m_colorKey;
-            }
-            else
-            {
-                m_lockedBuffer[y * m_width + x] = PixelConversion::MakeRGB565(pixel.r, pixel.g, pixel.b);
-            }
-        }
-    }
-
-    // Return pitch in pixels (not bytes)
-    if (pitch)
-        *pitch = m_width;
-
-    return m_lockedBuffer.data();
-}
-
-void SFMLTexture::Unlock()
-{
-    if (!m_locked)
-        return;
-
-    // Convert RGB565 buffer back to RGBA and update the texture
-    for (int y = 0; y < m_height; y++)
-    {
-        for (int x = 0; x < m_width; x++)
-        {
-            uint16_t pixel = m_lockedBuffer[y * m_width + x];
-
-            if (pixel == m_colorKey)
-            {
-                m_image.setPixel({static_cast<unsigned int>(x), static_cast<unsigned int>(y)}, sf::Color::Transparent);
-            }
-            else
-            {
-                uint8_t r, g, b;
-                PixelConversion::ExtractRGB565(pixel, r, g, b);
-                m_image.setPixel({static_cast<unsigned int>(x), static_cast<unsigned int>(y)}, sf::Color(r, g, b, 255));
-            }
-        }
-    }
-
-    // Update the texture from the image
-    if (!m_texture.loadFromImage(m_image))
-		throw std::runtime_error("Failed to update SFML texture from image.");
-
-    // Update the render texture
-    m_renderTexture.clear(sf::Color::Transparent);
-    sf::Sprite sprite(m_texture);
-    m_renderTexture.draw(sprite);
-    m_renderTexture.display();
-
-    m_locked = false;
-}
-
-bool SFMLTexture::Blt(RECT* destRect, ITexture* src, RECT* srcRect, uint32_t flags)
+bool SFMLTexture::Blt(RECT* destRect, hb::shared::render::ITexture* src, RECT* srcRect, uint32_t flags)
 {
     if (!src)
         return false;
@@ -190,7 +93,7 @@ bool SFMLTexture::Blt(RECT* destRect, ITexture* src, RECT* srcRect, uint32_t fla
     return true;
 }
 
-bool SFMLTexture::BltFast(int x, int y, ITexture* src, RECT* srcRect, uint32_t flags)
+bool SFMLTexture::BltFast(int x, int y, hb::shared::render::ITexture* src, RECT* srcRect, uint32_t flags)
 {
     if (!src)
         return false;
@@ -238,16 +141,3 @@ bool SFMLTexture::Restore()
     return true;
 }
 
-void SFMLTexture::UpdateFromImage()
-{
-    if (!m_texture.loadFromImage(m_image))
-    {
-		throw std::runtime_error("Failed to update SFML texture from image.");
-    }
-
-    // Update the render texture
-    m_renderTexture.clear(sf::Color::Transparent);
-    sf::Sprite sprite(m_texture);
-    m_renderTexture.draw(sprite);
-    m_renderTexture.display();
-}

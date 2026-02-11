@@ -9,6 +9,9 @@
 #include "lan_eng.h"
 #include "IInput.h"
 
+
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Overlay_VersionNotMatch::Overlay_VersionNotMatch(CGame* pGame)
     : IGameScreen(pGame)
 {
@@ -36,18 +39,18 @@ void Overlay_VersionNotMatch::on_update()
     if (m_iFrameCount > 120) m_iFrameCount = 120;
 
     // Any key press closes the application
-    if (Input::IsKeyPressed(KeyCode::Escape) || Input::IsKeyPressed(KeyCode::Enter))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape) || hb::shared::input::IsKeyPressed(KeyCode::Enter))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        Window::Close();
+        hb::shared::render::Window::Close();
         return;
     }
 
     // Mouse click also closes
-    if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
         m_pGame->ChangeGameMode(GameMode::Null);
-        Window::Close();
+        hb::shared::render::Window::Close();
         return;
     }
 }

@@ -9,8 +9,7 @@
 
 #include <cstdint>
 
-namespace hb {
-namespace item {
+namespace hb::shared::item {
 
 //------------------------------------------------------------------------
 // Attribute Bit Layout
@@ -220,5 +219,4 @@ inline uint32_t SetCustomMade(uint32_t dwAttribute, bool customMade)
         return dwAttribute & ~0x00000001;
 }
 
-} // namespace item
-} // namespace hb
+} // namespace hb::shared::item

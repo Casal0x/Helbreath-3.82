@@ -7,12 +7,15 @@
 #include <cstring>
 #include <cmath>
 
+
+using namespace hb::shared::action;
+
 namespace NetworkMessageHandlers {
 	void HandleKilled(CGame* pGame, char* pData)
 	{
 		char cAttackerName[21];
 		pGame->m_pPlayer->m_Controller.SetCommandAvailable(false);
-		pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		pGame->m_pPlayer->m_Controller.SetCommand(Type::Stop);
 		pGame->m_pPlayer->m_iHP = 0;
 		pGame->m_pPlayer->m_Controller.SetCommand(-1);
 		// Restart
@@ -196,13 +199,13 @@ namespace NetworkMessageHandlers {
 			char cName[12];
 			std::memset(cName, 0, sizeof(cName));
 			memcpy(cName, pGame->m_pPlayer->m_cPlayerName, 10);
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, PlayerAppearance{}, PlayerStatus{}, cName, 0, 0, 0, 0);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, -1, -1, 0, 0, hb::shared::entity::PlayerAppearance{}, hb::shared::entity::PlayerStatus{}, cName, 0, 0, 0, 0);
 		}
 		else
 		{
 			pGame->AddEventList(NOTIFY_MSG_HANDLER41); // "Observer Mode Off"
 			pGame->m_bIsObserverMode = false;
-			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_playerAppearance, pGame->m_pPlayer->m_playerStatus, pGame->m_pPlayer->m_cPlayerName, DEF_OBJECTSTOP, 0, 0, 0);
+			pGame->m_pMapData->bSetOwner(pGame->m_pPlayer->m_sPlayerObjectID, pGame->m_pPlayer->m_sPlayerX, pGame->m_pPlayer->m_sPlayerY, pGame->m_pPlayer->m_sPlayerType, pGame->m_pPlayer->m_iPlayerDir, pGame->m_pPlayer->m_playerAppearance, pGame->m_pPlayer->m_playerStatus, pGame->m_pPlayer->m_cPlayerName, Type::Stop, 0, 0, 0);
 		}
 	}
 
@@ -233,8 +236,8 @@ namespace NetworkMessageHandlers {
 
 	void HandleSpellInterrupted(CGame* pGame, char* pData)
 	{
-		if (pGame->m_pPlayer->m_Controller.GetCommand() == DEF_OBJECTMAGIC)
-			pGame->m_pPlayer->m_Controller.SetCommand(DEF_OBJECTSTOP);
+		if (pGame->m_pPlayer->m_Controller.GetCommand() == Type::Magic)
+			pGame->m_pPlayer->m_Controller.SetCommand(Type::Stop);
 		pGame->m_bIsGetPointingMode = false;
 		pGame->m_iPointCommandType = -1;
 	}

@@ -41,4 +41,4 @@ enum class ServerType : uint8_t {
     Log  = 2
 };
 
-// DEF_MAXMAGICTYPE and DEF_MAXSKILLTYPE are defined in NetConstants.h (shared)
+// hb::shared::limits::MaxMagicType and hb::shared::limits::MaxSkillType are defined in NetConstants.h (shared)

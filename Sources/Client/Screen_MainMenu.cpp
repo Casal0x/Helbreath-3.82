@@ -7,6 +7,9 @@
 #include "GameModeManager.h"
 #include "IInput.h"
 #include "GlobalDef.h"
+
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Screen_MainMenu::Screen_MainMenu(CGame* pGame)
     : IGameScreen(pGame), m_cCurFocus(1), m_cMaxFocus(3)
 {
@@ -43,9 +46,9 @@ void Screen_MainMenu::on_update()
     m_pGame->m_dwCurTime = dwTime;
 
     // Update focus based on mouse position
-    if ((Input::GetMouseX() >= 465) && (Input::GetMouseY() >= 238) && (Input::GetMouseX() <= 465+164) && (Input::GetMouseY() <= 238+22)) m_cCurFocus = 1;
-    if ((Input::GetMouseX() >= 465) && (Input::GetMouseY() >= 276) && (Input::GetMouseX() <= 465+164) && (Input::GetMouseY() <= 276+22)) m_cCurFocus = 2;
-    if ((Input::GetMouseX() >= 465) && (Input::GetMouseY() >= 315) && (Input::GetMouseX() <= 465+164) && (Input::GetMouseY() <= 315 +22)) m_cCurFocus = 3;
+    if ((hb::shared::input::GetMouseX() >= 465) && (hb::shared::input::GetMouseY() >= 238) && (hb::shared::input::GetMouseX() <= 465+164) && (hb::shared::input::GetMouseY() <= 238+22)) m_cCurFocus = 1;
+    if ((hb::shared::input::GetMouseX() >= 465) && (hb::shared::input::GetMouseY() >= 276) && (hb::shared::input::GetMouseX() <= 465+164) && (hb::shared::input::GetMouseY() <= 276+22)) m_cCurFocus = 2;
+    if ((hb::shared::input::GetMouseX() >= 465) && (hb::shared::input::GetMouseY() >= 315) && (hb::shared::input::GetMouseX() <= 465+164) && (hb::shared::input::GetMouseY() <= 315 +22)) m_cCurFocus = 3;
 
     if (m_pGame->m_cArrowPressed != 0) {
         switch (m_pGame->m_cArrowPressed) {
@@ -62,9 +65,9 @@ void Screen_MainMenu::on_update()
     }
 
     // Handle Tab key
-    if (Input::IsKeyPressed(KeyCode::Tab))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Tab))
     {
-        if (Input::IsShiftDown())
+        if (hb::shared::input::IsShiftDown())
         {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus--;
@@ -78,7 +81,7 @@ void Screen_MainMenu::on_update()
         }
     }
 
-    if (Input::IsKeyPressed(KeyCode::Enter) == true) {
+    if (hb::shared::input::IsKeyPressed(KeyCode::Enter) == true) {
         switch (m_cCurFocus) {
         case 1:
             m_pGame->PlayGameSound('E', 14, 5);
@@ -96,23 +99,23 @@ void Screen_MainMenu::on_update()
     }
 
     // Mouse click detection
-    if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left)) {
         // Game button
-        if (Input::IsMouseInRect(465, 238, 164, 22)) {
+        if (hb::shared::input::IsMouseInRect(465, 238, 164, 22)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 1;
             m_pGame->ChangeGameMode(GameMode::Login);
             return;
         }
         // Account button
-        else if (Input::IsMouseInRect(465, 276, 164, 22)) {
+        else if (hb::shared::input::IsMouseInRect(465, 276, 164, 22)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 2;
             m_pGame->ChangeGameMode(GameMode::CreateNewAccount);
             return;
         }
         // Quit button
-        else if (Input::IsMouseInRect(465, 315, 164, 22)) {
+        else if (hb::shared::input::IsMouseInRect(465, 315, 164, 22)) {
             m_pGame->PlayGameSound('E', 14, 5);
             m_cCurFocus = 3;
             m_pGame->ChangeGameMode(GameMode::Quit);

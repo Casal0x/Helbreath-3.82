@@ -36,7 +36,7 @@ void Overlay_Msg::on_update()
 
 void Overlay_Msg::on_render()
 {
-    TextLib::DrawText(GameFont::Default, 10, 10, m_pGame->m_cMsg,
-                      TextLib::TextStyle::WithShadow(GameColors::UIWarningRed));
+    hb::shared::text::DrawText(GameFont::Default, 10, 10, m_pGame->m_cMsg,
+                      hb::shared::text::TextStyle::WithShadow(GameColors::UIWarningRed));
     DrawVersion();
 }

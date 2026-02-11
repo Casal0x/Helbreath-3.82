@@ -12,6 +12,10 @@
 #include "TextLibExt.h"
 #include "GameFonts.h"
 
+
+using namespace hb::shared::net;
+namespace MouseButton = hb::shared::input::MouseButton;
+
 Overlay_QueryDeleteCharacter::Overlay_QueryDeleteCharacter(CGame* pGame)
     : IGameScreen(pGame)
 {
@@ -39,26 +43,26 @@ void Overlay_QueryDeleteCharacter::on_update()
     GetCenteredDialogPos(DEF_SPRID_INTERFACE_ND_GAME4, 2, dlgX, dlgY);
 
     // ESC cancels - base screen (SelectCharacter) will be revealed
-    if (Input::IsKeyPressed(KeyCode::Escape))
+    if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
     {
         clear_overlay();
         return;
     }
 
     // Mouse click detection
-    if (Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (hb::shared::input::IsMouseButtonPressed(MouseButton::Left))
     {
         PlayGameSound('E', 14, 5);
 
         // Yes button - confirm deletion
-        if (Input::IsMouseInRect(dlgX + 38, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
+        if (hb::shared::input::IsMouseInRect(dlgX + 38, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             // Create login socket and initiate delete request
-            m_pGame->m_pLSock = std::make_unique<ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
+            m_pGame->m_pLSock = std::make_unique<hb::shared::net::ASIOSocket>(m_pGame->m_pIOPool->GetContext(), game_limits::socket_block_limit);
             m_pGame->m_pLSock->bConnect(m_pGame->m_cLogServerAddr, m_pGame->m_iLogServerPort + (rand() % 1));
-            m_pGame->m_pLSock->bInitBufferSize(DEF_MSGBUFFERSIZE);
+            m_pGame->m_pLSock->bInitBufferSize(hb::shared::limits::MsgBufferSize);
 
-            m_pGame->m_dwConnectMode = MSGID_REQUEST_DELETECHARACTER;
+            m_pGame->m_dwConnectMode = MsgId::RequestDeleteCharacter;
             std::memset(m_pGame->m_cMsg, 0, sizeof(m_pGame->m_cMsg));
             std::snprintf(m_pGame->m_cMsg, sizeof(m_pGame->m_cMsg), "%s", "33");
 
@@ -68,7 +72,7 @@ void Overlay_QueryDeleteCharacter::on_update()
         }
 
         // No button - cancel, base screen (SelectCharacter) will be revealed
-        if (Input::IsMouseInRect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
+        if (hb::shared::input::IsMouseInRect(dlgX + 208, dlgY + 119, ui_layout::btn_size_x, ui_layout::btn_size_y))
         {
             clear_overlay();
             return;
@@ -96,8 +100,8 @@ void Overlay_QueryDeleteCharacter::on_update()
 
 void Overlay_QueryDeleteCharacter::on_render()
 {
-    int msX = Input::GetMouseX();
-    int msY = Input::GetMouseY();
+    int msX = hb::shared::input::GetMouseX();
+    int msY = hb::shared::input::GetMouseY();
     uint32_t dwElapsed = GameClock::GetTimeMS() - m_dwStartTime;
 
     int dlgX, dlgY;
@@ -106,14 +110,14 @@ void Overlay_QueryDeleteCharacter::on_render()
     // Double shadow effect after initial animation period (600ms)
     if (dwElapsed >= 600)
     {
-        m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), Color::Black(128));
+        m_pGame->m_Renderer->DrawRectFilled(0, 0, LOGICAL_MAX_X(), LOGICAL_MAX_Y(), hb::shared::render::Color::Black(128));
     }
 
     // Draw dialog box
     DrawNewDialogBox(DEF_SPRID_INTERFACE_ND_GAME4, dlgX, dlgY, 2);
 
     // Title
-    TextLib::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", TextLib::TextStyle::WithHighlight(GameColors::UIDarkRed));
+    hb::shared::text::DrawText(GameFont::Bitmap1, dlgX + 96, dlgY + 35, "Delete Character", hb::shared::text::TextStyle::WithHighlight(GameColors::UIDarkRed));
 
     // Character name display
     PutString(dlgX + 53, dlgY + 70, UPDATE_SCREEN_ON_QUERY_DELETE_CHARACTER1, GameColors::UIBlack);

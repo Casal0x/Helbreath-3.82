@@ -4,6 +4,7 @@
 #include <cstring>
 #include <algorithm>
 
+using namespace hb::shared::net;
 bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -11,12 +12,12 @@ bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	if (pArgs == nullptr || pArgs[0] == '\0')
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Usage: /unblock CharName");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /unblock CharName");
 		return true;
 	}
 
 	// Extract character name (max 10 chars, first word only)
-	char cCharName[DEF_CHARNAME] = {};
+	char cCharName[hb::shared::limits::CharNameLen] = {};
 	size_t nameLen = std::strlen(pArgs);
 	if (nameLen > 10) nameLen = 10;
 	for (size_t i = 0; i < nameLen; i++)
@@ -40,7 +41,7 @@ bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	{
 		char msg[64] = {};
 		std::snprintf(msg, sizeof(msg), "'%s' is not in your block list.", cCharName);
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, msg);
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, msg);
 		return true;
 	}
 
@@ -51,7 +52,7 @@ bool GameCmdUnblock::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	char msg[64] = {};
 	std::snprintf(msg, sizeof(msg), "'%s' has been unblocked.", cCharName);
-	pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, msg);
+	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, msg);
 
 	return true;
 }

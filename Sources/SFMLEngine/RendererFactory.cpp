@@ -14,6 +14,11 @@
 #include "SFMLInput.h"
 #include "IInput.h"
 
+// Global sprite alpha degree - needed by client code
+char G_cSpriteAlphaDegree = 1;
+
+namespace hb::shared::render {
+
 // Static member initialization (matches RendererFactory.h class declarations)
 IRenderer* Renderer::s_pRenderer = nullptr;
 RendererType Renderer::s_type = RendererType::SFML;
@@ -23,11 +28,9 @@ IWindow* Window::s_pWindow = nullptr;
 static SFMLSpriteFactory* s_pSpriteFactory = nullptr;
 
 // Local statics for text rendering
-static TextLib::SFMLTextRenderer* s_pTextRenderer = nullptr;
-static TextLib::SFMLBitmapFontFactory* s_pBitmapFontFactory = nullptr;
+static hb::shared::text::SFMLTextRenderer* s_pTextRenderer = nullptr;
+static hb::shared::text::SFMLBitmapFontFactory* s_pBitmapFontFactory = nullptr;
 
-// Global sprite alpha degree - needed by client code
-char G_cSpriteAlphaDegree = 1;
 
 // Factory functions implementation
 IRenderer* CreateRenderer()
@@ -50,7 +53,7 @@ void DestroyGameWindow(IWindow* window)
     delete window;
 }
 
-SpriteLib::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
+hb::shared::sprite::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
 {
     if (!renderer)
         return nullptr;
@@ -62,7 +65,7 @@ SpriteLib::ISpriteFactory* CreateSpriteFactory(IRenderer* renderer)
     return factory;
 }
 
-void DestroySpriteFactory(SpriteLib::ISpriteFactory* factory)
+void DestroySpriteFactory(hb::shared::sprite::ISpriteFactory* factory)
 {
     delete factory;
 }
@@ -88,11 +91,11 @@ bool Renderer::Set(RendererType type)
             // Create and set sprite factory - SFML uses PNG sprites
             s_pSpriteFactory = new SFMLSpriteFactory(sfmlRenderer);
             s_pSpriteFactory->SetSpritePath("SPRITES_PNG");
-            SpriteLib::Sprites::SetFactory(s_pSpriteFactory);
+            hb::shared::sprite::Sprites::SetFactory(s_pSpriteFactory);
 
             // Create bitmap font factory
-            s_pBitmapFontFactory = new TextLib::SFMLBitmapFontFactory();
-            TextLib::SetBitmapFontFactory(s_pBitmapFontFactory);
+            s_pBitmapFontFactory = new hb::shared::text::SFMLBitmapFontFactory();
+            hb::shared::text::SetBitmapFontFactory(s_pBitmapFontFactory);
 
             // If window already exists (created before renderer), link them now
             IWindow* pWindow = Window::Get();
@@ -102,8 +105,8 @@ bool Renderer::Set(RendererType type)
                 sfmlRenderer->SetRenderWindow(sfmlWindow->GetRenderWindow());
 
                 // Create text renderer with back buffer (font loaded internally with fallback)
-                s_pTextRenderer = new TextLib::SFMLTextRenderer(sfmlRenderer->GetBackBuffer());
-                TextLib::SetTextRenderer(s_pTextRenderer);
+                s_pTextRenderer = new hb::shared::text::SFMLTextRenderer(sfmlRenderer->GetBackBuffer());
+                hb::shared::text::SetTextRenderer(s_pTextRenderer);
             }
         }
         return s_pRenderer != nullptr;
@@ -122,7 +125,7 @@ void Renderer::Destroy()
     // Destroy text renderer
     if (s_pTextRenderer)
     {
-        TextLib::SetTextRenderer(nullptr);
+        hb::shared::text::SetTextRenderer(nullptr);
         delete s_pTextRenderer;
         s_pTextRenderer = nullptr;
     }
@@ -130,7 +133,7 @@ void Renderer::Destroy()
     // Destroy bitmap font factory
     if (s_pBitmapFontFactory)
     {
-        TextLib::SetBitmapFontFactory(nullptr);
+        hb::shared::text::SetBitmapFontFactory(nullptr);
         delete s_pBitmapFontFactory;
         s_pBitmapFontFactory = nullptr;
     }
@@ -138,7 +141,7 @@ void Renderer::Destroy()
     // Destroy sprite factory
     if (s_pSpriteFactory)
     {
-        SpriteLib::Sprites::SetFactory(nullptr);
+        hb::shared::sprite::Sprites::SetFactory(nullptr);
         delete s_pSpriteFactory;
         s_pSpriteFactory = nullptr;
     }
@@ -180,10 +183,10 @@ bool Window::Create(const WindowParams& params)
     }
 
     // Create input system and initialize with window handle
-    Input::Create();
-    if (Input::Get())
+    hb::shared::input::Create();
+    if (hb::shared::input::Get())
     {
-        SFMLInput* pInput = static_cast<SFMLInput*>(Input::Get());
+        SFMLInput* pInput = static_cast<SFMLInput*>(hb::shared::input::Get());
         pInput->Initialize(s_pWindow->GetHandle());
         pInput->SetRenderWindow(static_cast<SFMLWindow*>(s_pWindow)->GetRenderWindow());
     }
@@ -199,8 +202,8 @@ bool Window::Create(const WindowParams& params)
         // Create text renderer now that we have back buffer (font loaded internally with fallback)
         if (!s_pTextRenderer)
         {
-            s_pTextRenderer = new TextLib::SFMLTextRenderer(sfmlRenderer->GetBackBuffer());
-            TextLib::SetTextRenderer(s_pTextRenderer);
+            s_pTextRenderer = new hb::shared::text::SFMLTextRenderer(sfmlRenderer->GetBackBuffer());
+            hb::shared::text::SetTextRenderer(s_pTextRenderer);
         }
     }
 
@@ -215,7 +218,7 @@ IWindow* Window::Get()
 void Window::Destroy()
 {
     // Destroy input system first
-    Input::Destroy();
+    hb::shared::input::Destroy();
 
     if (s_pWindow)
     {
@@ -232,7 +235,7 @@ void Window::Destroy()
     }
 }
 
-NativeWindowHandle Window::GetHandle()
+hb::shared::types::NativeWindowHandle Window::GetHandle()
 {
     return s_pWindow ? s_pWindow->GetHandle() : nullptr;
 }
@@ -283,4 +286,6 @@ void Window::ShowError(const char* title, const char* message)
 }
 
 // Sprite factory static storage (defined in ISpriteFactory.cpp in Shared)
-// The implementation uses SpriteLib::Sprites::SetFactory/GetFactory
+// The implementation uses hb::shared::sprite::Sprites::SetFactory/GetFactory
+
+} // namespace hb::shared::render

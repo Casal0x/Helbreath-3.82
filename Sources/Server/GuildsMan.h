@@ -22,6 +22,6 @@ public:
 	{
 	}
 
-	char m_cName[DEF_CHARNAME];
+	char m_cName[hb::shared::limits::CharNameLen];
 	int  m_iRank;
 };

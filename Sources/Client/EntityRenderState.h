@@ -50,10 +50,10 @@ public:
     // Entity Type Helpers
     //------------------------------------------------------------------
 
-    bool IsPlayer() const { return hb::owner::IsPlayer(m_sOwnerType); }
-    bool IsNPC() const { return hb::owner::IsNPC(m_sOwnerType); }
-    bool IsMale() const { return hb::owner::IsMale(m_sOwnerType); }
-    bool IsFemale() const { return hb::owner::IsFemale(m_sOwnerType); }
+    bool IsPlayer() const { return hb::shared::owner::IsPlayer(m_sOwnerType); }
+    bool IsNPC() const { return hb::shared::owner::IsNPC(m_sOwnerType); }
+    bool IsMale() const { return hb::shared::owner::IsMale(m_sOwnerType); }
+    bool IsFemale() const { return hb::shared::owner::IsFemale(m_sOwnerType); }
 
     //------------------------------------------------------------------
     // Member Variables
@@ -65,10 +65,10 @@ public:
     short m_sNpcConfigId;       // NPC config index (-1 if player or unknown)
 
     // Unpacked appearance (named fields extracted from sAppr1-4 at packet reception)
-    PlayerAppearance m_appearance;
+    hb::shared::entity::PlayerAppearance m_appearance;
 
     // State
-    PlayerStatus m_status;
+    hb::shared::entity::PlayerStatus m_status;
     int8_t m_iAction;           // Current action (idle, walk, attack, etc.)
     int8_t m_iDir;              // Facing direction (1-8)
     int8_t m_iFrame;            // Current animation frame

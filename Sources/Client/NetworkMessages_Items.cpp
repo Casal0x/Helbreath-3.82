@@ -8,14 +8,15 @@
 #include <cstring>
 #include <cmath>
 
-using namespace hb::item;
+using namespace hb::shared::net;
+using namespace hb::shared::item;
 
 namespace NetworkMessageHandlers {
 	void HandleItemPurchased(CGame* pGame, char* pData)
 	{
 		int i, j;
 		uint32_t dwCount;
-		char  cName[DEF_ITEMNAME], cEquipPos, cGenderLimit;
+		char  cName[hb::shared::limits::ItemNameLen], cEquipPos, cGenderLimit;
 		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit;
@@ -53,7 +54,7 @@ namespace NetworkMessageHandlers {
 
 		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
-			for (i = 0; i < hb::limits::MaxItems; i++)
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
@@ -62,7 +63,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		short nX, nY;
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -77,7 +78,7 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
@@ -85,14 +86,14 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
 				pGame->m_pItemList[i]->m_sY = nY;
-				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
+				pGame->bSendCommand(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
 				pGame->m_bIsItemDisabled[i] = false;
 				pGame->m_bIsItemEquipped[i] = false;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
 				pGame->m_pItemList[i]->m_cItemColor = cItemColor;
 				pGame->m_pItemList[i]->m_dwAttribute = 0;
 
-				for (j = 0; j < hb::limits::MaxItems; j++)
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
 						pGame->m_cItemOrder[j] = i;
 						return;
@@ -106,7 +107,7 @@ namespace NetworkMessageHandlers {
 	{
 		int i, j;
 		uint32_t dwCount, dwAttribute;
-		char  cName[DEF_ITEMNAME], cEquipPos;
+		char  cName[hb::shared::limits::ItemNameLen], cEquipPos;
 		ItemType cItemType;
 		bool  bIsEquipped;
 		short sSprite, sSpriteFrame, sLevelLimit, sSpecialEV2;
@@ -152,7 +153,7 @@ namespace NetworkMessageHandlers {
 
 		if ((cItemType == ItemType::Consume) || (cItemType == ItemType::Arrow))
 		{
-			for (i = 0; i < hb::limits::MaxItems; i++)
+			for (i = 0; i < hb::shared::limits::MaxItems; i++)
 				if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 				{
 					pGame->m_pItemList[i]->m_dwCount += dwCount;
@@ -162,7 +163,7 @@ namespace NetworkMessageHandlers {
 		}
 
 		short nX, nY;
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -177,7 +178,7 @@ namespace NetworkMessageHandlers {
 			}
 		}
 
-		for (i = 0; i < hb::limits::MaxItems; i++)
+		for (i = 0; i < hb::shared::limits::MaxItems; i++)
 			if (pGame->m_pItemList[i] == 0)
 			{
 				pGame->m_pItemList[i] = std::make_unique<CItem>();
@@ -185,7 +186,7 @@ namespace NetworkMessageHandlers {
 				pGame->m_pItemList[i]->m_dwCount = dwCount;
 				pGame->m_pItemList[i]->m_sX = nX;
 				pGame->m_pItemList[i]->m_sY = nY;
-				pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
+				pGame->bSendCommand(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
 				pGame->m_bIsItemDisabled[i] = false;
 				pGame->m_bIsItemEquipped[i] = false;
 				pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
@@ -195,7 +196,7 @@ namespace NetworkMessageHandlers {
 
 				pGame->_bCheckBuildItemStatus();
 
-				for (j = 0; j < hb::limits::MaxItems; j++)
+				for (j = 0; j < hb::shared::limits::MaxItems; j++)
 					if (pGame->m_cItemOrder[j] == -1) {
 						pGame->m_cItemOrder[j] = i;
 						return;
@@ -210,7 +211,7 @@ namespace NetworkMessageHandlers {
 			pData, sizeof(hb::net::PacketNotifyItemObtained));
 		if (!pkt) return;
 
-		char cName[DEF_ITEMNAME];
+		char cName[hb::shared::limits::ItemNameLen];
 		std::memset(cName, 0, sizeof(cName));
 		memcpy(cName, pkt->name, sizeof(pkt->name));
 
@@ -235,7 +236,7 @@ namespace NetworkMessageHandlers {
 
 		// Create individual items in separate slots (no Consume/Arrow merge)
 		short nX = 40, nY = 30;
-		for (int i = 0; i < hb::limits::MaxItems; i++)
+		for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 		{
 			if ((pGame->m_pItemList[i] != 0) && (pGame->m_pItemList[i]->m_sIDnum == sItemID))
 			{
@@ -248,7 +249,7 @@ namespace NetworkMessageHandlers {
 		int iCreated = 0;
 		for (int n = 0; n < iTotalCount; n++)
 		{
-			for (int i = 0; i < hb::limits::MaxItems; i++)
+			for (int i = 0; i < hb::shared::limits::MaxItems; i++)
 			{
 				if (pGame->m_pItemList[i] == 0)
 				{
@@ -257,7 +258,7 @@ namespace NetworkMessageHandlers {
 					pGame->m_pItemList[i]->m_dwCount = 1;
 					pGame->m_pItemList[i]->m_sX = nX;
 					pGame->m_pItemList[i]->m_sY = nY;
-					pGame->bSendCommand(MSGID_REQUEST_SETITEMPOS, 0, i, nX, nY, 0, 0);
+					pGame->bSendCommand(MsgId::RequestSetItemPos, 0, i, nX, nY, 0, 0);
 					pGame->m_bIsItemDisabled[i] = false;
 					pGame->m_bIsItemEquipped[i] = false;
 					pGame->m_pItemList[i]->m_wCurLifeSpan = wCurLifeSpan;
@@ -267,7 +268,7 @@ namespace NetworkMessageHandlers {
 					pGame->m_pItemList[i]->m_sItemSpecEffectValue2 = sSpecialEV2;
 					pGame->m_pItemList[i]->m_dwAttribute = dwAttribute;
 
-					for (int j = 0; j < hb::limits::MaxItems; j++)
+					for (int j = 0; j < hb::shared::limits::MaxItems; j++)
 					{
 						if (pGame->m_cItemOrder[j] == -1)
 						{
@@ -327,8 +328,8 @@ namespace NetworkMessageHandlers {
 
 		{
 			short sID = pGame->m_pItemList[sItemIndex]->m_sIDnum;
-			if (sID == hb::item::ItemId::AngelicPandentSTR || sID == hb::item::ItemId::AngelicPandentDEX ||
-				sID == hb::item::ItemId::AngelicPandentINT || sID == hb::item::ItemId::AngelicPandentMAG)
+			if (sID == hb::shared::item::ItemId::AngelicPandentSTR || sID == hb::shared::item::ItemId::AngelicPandentDEX ||
+				sID == hb::shared::item::ItemId::AngelicPandentINT || sID == hb::shared::item::ItemId::AngelicPandentMAG)
 				pGame->PlayGameSound('E', 53, 0);
 			else
 				pGame->PlayGameSound('E', 29, 0);
@@ -464,7 +465,7 @@ namespace NetworkMessageHandlers {
 	{
 		int iAmount;
 		short  sItemIndex;
-		char cName[DEF_ITEMNAME], cTxt[250];
+		char cName[hb::shared::limits::ItemNameLen], cTxt[250];
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyGiveItemFinEraseItem>(
 			pData, sizeof(hb::net::PacketNotifyGiveItemFinEraseItem));
@@ -528,7 +529,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleRepairItemPrice(CGame* pGame, char* pData)
 	{
-		char cName[DEF_ITEMNAME];
+		char cName[hb::shared::limits::ItemNameLen];
 		DWORD wV1, wV2, wV3, wV4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyRepairItemPrice>(
 			pData, sizeof(hb::net::PacketNotifyRepairItemPrice));
@@ -570,7 +571,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleSellItemPrice(CGame* pGame, char* pData)
 	{
-		char cName[DEF_ITEMNAME];
+		char cName[hb::shared::limits::ItemNameLen];
 		DWORD wV1, wV2, wV3, wV4;
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifySellItemPrice>(
 			pData, sizeof(hb::net::PacketNotifySellItemPrice));
@@ -655,7 +656,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleCannotGiveItem(CGame* pGame, char* pData)
 	{
-		char cName[DEF_ITEMNAME], cTxt[256];
+		char cName[hb::shared::limits::ItemNameLen], cTxt[256];
 
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyCannotGiveItem>(
 			pData, sizeof(hb::net::PacketNotifyCannotGiveItem));
@@ -721,7 +722,7 @@ namespace NetworkMessageHandlers {
 
 	void HandleGiveItemFin_CountChanged(CGame* pGame, char* pData)
 	{
-		char cName[DEF_ITEMNAME], cTxt[256];
+		char cName[hb::shared::limits::ItemNameLen], cTxt[256];
 		WORD wItemIndex;
 		int iAmount;
 
@@ -748,7 +749,7 @@ namespace NetworkMessageHandlers {
 	{
 		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance, sItemID;
 		int iAmount, i;
-		char cColor, cItemName[DEF_ITEMNAME], cCharName[12];
+		char cColor, cItemName[hb::shared::limits::ItemNameLen], cCharName[12];
 		DWORD dwAttribute;
 		std::memset(cItemName, 0, sizeof(cItemName));
 		std::memset(cCharName, 0, sizeof(cCharName));
@@ -794,7 +795,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
 		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
 		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, DEF_ITEMNAME - 1);
+		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, hb::shared::limits::ItemNameLen - 1);
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
 		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
@@ -804,7 +805,7 @@ namespace NetworkMessageHandlers {
 	{
 		short sDir, sSprite, sSpriteFrame, sCurLife, sMaxLife, sPerformance, sItemID;
 		int iAmount;
-		char cColor, cItemName[DEF_ITEMNAME], cCharName[12];
+		char cColor, cItemName[hb::shared::limits::ItemNameLen], cCharName[12];
 		DWORD dwAttribute;
 		std::memset(cItemName, 0, sizeof(cItemName));
 		std::memset(cCharName, 0, sizeof(cCharName));
@@ -871,7 +872,7 @@ namespace NetworkMessageHandlers {
 		pGame->m_stDialogBoxExchangeInfo[i].sV5 = (int)sCurLife;
 		pGame->m_stDialogBoxExchangeInfo[i].sV6 = (int)sMaxLife;
 		pGame->m_stDialogBoxExchangeInfo[i].sV7 = (int)sPerformance;
-		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, DEF_ITEMNAME - 1);
+		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr1, cItemName, hb::shared::limits::ItemNameLen - 1);
 		memcpy(pGame->m_stDialogBoxExchangeInfo[i].cStr2, cCharName, 10);
 		pGame->m_stDialogBoxExchangeInfo[i].dwV1 = dwAttribute;
 		pGame->m_stDialogBoxExchangeInfo[i].sItemID = sItemID;
@@ -1032,7 +1033,7 @@ namespace NetworkMessageHandlers {
 		const auto* pkt = hb::net::PacketCast<hb::net::PacketNotifyItemPosList>(
 			pData, sizeof(hb::net::PacketNotifyItemPosList));
 		if (!pkt) return;
-		for (i = 0; i < hb::limits::MaxItems; i++) {
+		for (i = 0; i < hb::shared::limits::MaxItems; i++) {
 			sX = pkt->positions[i * 2];
 			sY = pkt->positions[i * 2 + 1];
 			if (pGame->m_pItemList[i] != 0) {

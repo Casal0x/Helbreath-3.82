@@ -26,7 +26,7 @@ void Screen_Loading::on_initialize()
     m_iLoadingStage = 0;
 
     // Pre-load the loading screen sprite so it can render immediately
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = SpriteLib::Sprites::Create("New-Dialog", 0, false);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOADING] = hb::shared::sprite::Sprites::Create("New-Dialog", 0, false);
 }
 
 void Screen_Loading::on_uninitialize()
@@ -86,12 +86,12 @@ void Screen_Loading::on_render()
 void Screen_Loading::LoadStage_Interface()
 {
     // Load interface sprites
-    SpriteLib::SpriteLoader::open_pak("interface", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("interface", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_MOUSECURSOR] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS] = loader.get_sprite(1, false);
     });
 
-    SpriteLib::SpriteLoader::open_pak("newmaps", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("newmaps", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS1] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS2] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS3] = loader.get_sprite(2, false);
@@ -99,15 +99,15 @@ void Screen_Loading::LoadStage_Interface()
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_NEWMAPS5] = loader.get_sprite(4, false);
     });
 
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = SpriteLib::Sprites::Create("LoginDialog", 0, false);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_LOGIN] = hb::shared::sprite::Sprites::Create("LoginDialog", 0, false);
 
-    SpriteLib::SpriteLoader::open_pak("New-Dialog", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("New-Dialog", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_MAINMENU] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_QUIT] = loader.get_sprite(2, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_NEWACCOUNT] = loader.get_sprite(2, false);
     });
 
-    SpriteLib::SpriteLoader::open_pak("GameDialog", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("GameDialog", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME1] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME2] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_GAME3] = loader.get_sprite(2, false);
@@ -120,9 +120,9 @@ void Screen_Loading::LoadStage_Interface()
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_NEWEXCHANGE] = loader.get_sprite(10, false);
     });
 
-    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = SpriteLib::Sprites::Create("PartySprite", 0, false);
+    m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_PARTYSTATUS] = hb::shared::sprite::Sprites::Create("PartySprite", 0, false);
 
-    SpriteLib::SpriteLoader::open_pak("DialogText", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("DialogText", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_TEXT] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ND_BUTTON] = loader.get_sprite(1, false);
     });
@@ -132,7 +132,7 @@ void Screen_Loading::LoadStage_Interface()
     MakeSprite("monster", DEF_SPRID_INTERFACE_MONSTER, 1, false);
 
     // Load interface2 sprites in one batch
-    SpriteLib::SpriteLoader::open_pak("interface2", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("interface2", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_F1HELPWINDOWS] = loader.get_sprite(2, false);
@@ -140,7 +140,7 @@ void Screen_Loading::LoadStage_Interface()
     });
 
     // Load sprfonts sprites in one batch
-    SpriteLib::SpriteLoader::open_pak("sprfonts", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("sprfonts", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2] = loader.get_sprite(1, false);
     });
@@ -149,20 +149,20 @@ void Screen_Loading::LoadStage_Interface()
     // Font 1: Characters '!' (33) to 'z' (122)
     if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1])
     {
-        TextLib::LoadBitmapFont(GameFont::Bitmap1, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1].get(),
+        hb::shared::text::LoadBitmapFont(GameFont::Bitmap1, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT1].get(),
             '!', 'z', 0, GameFont::GetFontSpacing(GameFont::Bitmap1));
     }
 
     // Font 2: Characters ' ' (32) to '~' (126), uses dynamic spacing from sprite frames
     if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2])
     {
-        TextLib::LoadBitmapFontDynamic(GameFont::Bitmap2, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2].get(), ' ', '~', 0);
+        hb::shared::text::LoadBitmapFontDynamic(GameFont::Bitmap2, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_FONT2].get(), ' ', '~', 0);
     }
 
     // Number font: Digits '0' to '9', frame offset 6 in ADDINTERFACE sprite
     if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE])
     {
-        TextLib::LoadBitmapFont(GameFont::Numbers, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE].get(),
+        hb::shared::text::LoadBitmapFont(GameFont::Numbers, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_ADDINTERFACE].get(),
             '0', '9', 6, GameFont::GetFontSpacing(GameFont::Numbers));
     }
 
@@ -170,9 +170,9 @@ void Screen_Loading::LoadStage_Interface()
     // Each type has 95 frames offset
     if (m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2])
     {
-        TextLib::LoadBitmapFontDynamic(GameFont::SprFont3_0, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 0);
-        TextLib::LoadBitmapFontDynamic(GameFont::SprFont3_1, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95);
-        TextLib::LoadBitmapFontDynamic(GameFont::SprFont3_2, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 190);
+        hb::shared::text::LoadBitmapFontDynamic(GameFont::SprFont3_0, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 0);
+        hb::shared::text::LoadBitmapFontDynamic(GameFont::SprFont3_1, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 95);
+        hb::shared::text::LoadBitmapFontDynamic(GameFont::SprFont3_2, m_pGame->m_pSprite[DEF_SPRID_INTERFACE_SPRFONTS2].get(), ' ', '~', 190);
     }
 
     m_iLoadingStage = 4;
@@ -184,8 +184,8 @@ void Screen_Loading::LoadStage_Interface()
 void Screen_Loading::LoadStage_Tiles1()
 {
     MakeTileSpr("maptiles1", 0, 32, true);
-    m_pGame->m_pTileSpr[1 + 50] = SpriteLib::Sprites::Create("structures1", 1, true);
-    m_pGame->m_pTileSpr[5 + 50] = SpriteLib::Sprites::Create("structures1", 5, true);
+    m_pGame->m_pTileSpr[1 + 50] = hb::shared::sprite::Sprites::Create("structures1", 1, true);
+    m_pGame->m_pTileSpr[5 + 50] = hb::shared::sprite::Sprites::Create("structures1", 5, true);
     MakeTileSpr("Sinside1", 70, 27, false);
     MakeTileSpr("Trees1", 100, 46, true);
     MakeTileSpr("TreeShadows", 150, 46, true);
@@ -241,7 +241,7 @@ void Screen_Loading::LoadStage_Tiles3()
     MakeTileSpr("Tile541-545", 541, 5, true);
 
     // Item pack sprites
-    SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-pack", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (size_t i = 0; i < 27 && i < loader.get_sprite_count(); i++) {
             m_pGame->m_pSprite[DEF_SPRID_ITEMPACK_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
         }
@@ -251,7 +251,7 @@ void Screen_Loading::LoadStage_Tiles3()
     });
 
     // Item ground sprites
-    SpriteLib::SpriteLoader::open_pak("item-ground", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-ground", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (size_t i = 0; i < 19 && i < loader.get_sprite_count(); i++) {
             m_pGame->m_pSprite[DEF_SPRID_ITEMGROUND_PIVOTPOINT + 1 + i] = loader.get_sprite(i, false);
         }
@@ -271,7 +271,7 @@ void Screen_Loading::LoadStage_Tiles3()
 void Screen_Loading::LoadStage_Equipment1()
 {
     // Male equipment
-    SpriteLib::SpriteLoader::open_pak("item-equipM", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-equipM", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 0] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 1] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 2] = loader.get_sprite(2, false);
@@ -290,7 +290,7 @@ void Screen_Loading::LoadStage_Equipment1()
     });
 
     // Female equipment
-    SpriteLib::SpriteLoader::open_pak("item-equipW", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-equipW", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 40] = loader.get_sprite(0, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 41] = loader.get_sprite(1, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 42] = loader.get_sprite(2, false);
@@ -309,7 +309,7 @@ void Screen_Loading::LoadStage_Equipment1()
     });
 
     // Necks and angels for both genders
-    SpriteLib::SpriteLoader::open_pak("item-pack", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("item-pack", [&](hb::shared::sprite::SpriteLoader& loader) {
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 16] = loader.get_sprite(15, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 22] = loader.get_sprite(19, false);
         m_pGame->m_pSprite[DEF_SPRID_ITEMEQUIP_PIVOTPOINT + 56] = loader.get_sprite(15, false);
@@ -382,7 +382,7 @@ void Screen_Loading::LoadStage_Monsters2()
     MakeSprite("Dummy", DEF_SPRID_MOB + 7 * 8 * 24, 40, true);
 
     // Energy Ball - all 40 slots use the same sprite
-    SpriteLib::SpriteLoader::open_pak("Effect5", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Effect5", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 40; i++)
             m_pGame->m_pSprite[DEF_SPRID_MOB + i + 7 * 8 * 25] = loader.get_sprite(0, true);
     });
@@ -489,7 +489,7 @@ void Screen_Loading::LoadStage_MaleUndies()
     MakeSprite("Gate", DEF_SPRID_MOB + 7 * 8 * 81, 24, true);
 
     // Male underwear
-    SpriteLib::SpriteLoader::open_pak("Mpt", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Mpt", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_UNDIES_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -506,7 +506,7 @@ void Screen_Loading::LoadStage_MaleUndies()
 void Screen_Loading::LoadStage_MaleArmor()
 {
     // Male hair
-    SpriteLib::SpriteLoader::open_pak("Mhr", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Mhr", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_HAIR_M + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -554,7 +554,7 @@ void Screen_Loading::LoadStage_MaleLegs()
     MakeSprite("MLBoots", DEF_SPRID_BOOT_M + 15 * 2, 12, true);
 
     // Male swords (batch load)
-    SpriteLib::SpriteLoader::open_pak("Msw", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Msw", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
@@ -625,13 +625,13 @@ void Screen_Loading::LoadStage_MaleWeapons()
 void Screen_Loading::LoadStage_MaleBows()
 {
     // Male bows
-    SpriteLib::SpriteLoader::open_pak("Mbo", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Mbo", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_M + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
     });
 
     // Male shields
-    SpriteLib::SpriteLoader::open_pak("Msh", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Msh", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 9; g++) {
             for (int i = 0; i < 7; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_SHIELD_M + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
@@ -678,7 +678,7 @@ void Screen_Loading::LoadStage_FemaleBase()
 void Screen_Loading::LoadStage_FemaleArmor()
 {
     // Female underwear
-    SpriteLib::SpriteLoader::open_pak("Wpt", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Wpt", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_UNDIES_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -687,7 +687,7 @@ void Screen_Loading::LoadStage_FemaleArmor()
     });
 
     // Female hair
-    SpriteLib::SpriteLoader::open_pak("Whr", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Whr", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 8; g++) {
             for (int i = 0; i < 12; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_HAIR_W + i + 15 * g] = loader.get_sprite(i + 12 * g, true);
@@ -746,7 +746,7 @@ void Screen_Loading::LoadStage_FemaleLegs()
 void Screen_Loading::LoadStage_FemaleSwords()
 {
     // Female swords (batch load)
-    SpriteLib::SpriteLoader::open_pak("Wsw", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Wsw", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 1] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 2] = loader.get_sprite(i + 56 * 1, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 3] = loader.get_sprite(i + 56 * 2, true);
@@ -837,13 +837,13 @@ void Screen_Loading::LoadStage_FemaleMantles()
 void Screen_Loading::LoadStage_FemaleBows()
 {
     // Female bows
-    SpriteLib::SpriteLoader::open_pak("Wbo", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Wbo", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 40] = loader.get_sprite(i + 56 * 0, true);
         for (int i = 0; i < 56; i++) m_pGame->m_pSprite[DEF_SPRID_WEAPON_W + i + 64 * 41] = loader.get_sprite(i + 56 * 1, true);
     });
 
     // Female shields
-    SpriteLib::SpriteLoader::open_pak("Wsh", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("Wsh", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int g = 0; g < 9; g++) {
             for (int i = 0; i < 7; i++) {
                 m_pGame->m_pSprite[DEF_SPRID_SHIELD_W + i + 8 * (g + 1)] = loader.get_sprite(i + 7 * g, true);
@@ -865,7 +865,7 @@ void Screen_Loading::LoadStage_Effects()
     MakeEffectSpr("effect4", 19, 5, false);
 
     // Effect5 batch load
-    SpriteLib::SpriteLoader::open_pak("effect5", [&](SpriteLib::SpriteLoader& loader) {
+    hb::shared::sprite::SpriteLoader::open_pak("effect5", [&](hb::shared::sprite::SpriteLoader& loader) {
         for (int i = 0; i <= 6; i++) {
             m_pGame->m_pEffectSpr[i + 24] = loader.get_sprite(i + 1, false);
         }
@@ -900,7 +900,7 @@ void Screen_Loading::LoadStage_Effects()
 void Screen_Loading::MakeSprite(const char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
     try {
-        SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+        hb::shared::sprite::SpriteLoader::open_pak(FileName, [&](hb::shared::sprite::SpriteLoader& loader) {
             size_t totalInPak = loader.get_sprite_count();
             size_t toLoad = static_cast<size_t>(sCount);
             if (toLoad > totalInPak) toLoad = totalInPak;
@@ -919,7 +919,7 @@ void Screen_Loading::MakeSprite(const char* FileName, short sStart, short sCount
 void Screen_Loading::MakeTileSpr(const char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
     try {
-        SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+        hb::shared::sprite::SpriteLoader::open_pak(FileName, [&](hb::shared::sprite::SpriteLoader& loader) {
             size_t totalInPak = loader.get_sprite_count();
             size_t toLoad = static_cast<size_t>(sCount);
             if (toLoad > totalInPak) toLoad = totalInPak;
@@ -936,7 +936,7 @@ void Screen_Loading::MakeTileSpr(const char* FileName, short sStart, short sCoun
 void Screen_Loading::MakeEffectSpr(const char* FileName, short sStart, short sCount, bool bAlphaEffect)
 {
     try {
-        SpriteLib::SpriteLoader::open_pak(FileName, [&](SpriteLib::SpriteLoader& loader) {
+        hb::shared::sprite::SpriteLoader::open_pak(FileName, [&](hb::shared::sprite::SpriteLoader& loader) {
             size_t totalInPak = loader.get_sprite_count();
             size_t toLoad = static_cast<size_t>(sCount);
             if (toLoad > totalInPak) toLoad = totalInPak;

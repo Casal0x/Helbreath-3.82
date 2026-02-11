@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdio>
 
+using namespace hb::shared::net;
 bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 {
 	if (pGame->m_pClientList[iClientH] == nullptr)
@@ -13,13 +14,13 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	int iNpcID = 0, iAmount = 1;
 	if (pArgs == nullptr || pArgs[0] == '\0' || sscanf(pArgs, "%d %d", &iNpcID, &iAmount) < 1)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Usage: /spawn <npc_id> [amount]");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Usage: /spawn <npc_id> [amount]");
 		return true;
 	}
 
 	if (iNpcID < 0 || iNpcID >= DEF_MAXNPCTYPES || pGame->m_pNpcConfigList[iNpcID] == nullptr)
 	{
-		pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, "Invalid NPC ID.");
+		pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, "Invalid NPC ID.");
 		return true;
 	}
 
@@ -47,7 +48,7 @@ bool GameCmdSpawn::Execute(CGame* pGame, int iClientH, const char* pArgs)
 
 	char buf[128];
 	std::snprintf(buf, sizeof(buf), "Spawned %d x %s (ID: %d).", iSpawned, pGame->m_pNpcConfigList[iNpcID]->m_cNpcName, iNpcID);
-	pGame->SendNotifyMsg(0, iClientH, DEF_NOTIFY_NOTICEMSG, 0, 0, 0, buf);
+	pGame->SendNotifyMsg(0, iClientH, Notify::NoticeMsg, 0, 0, 0, buf);
 
 	return true;
 }

@@ -7,6 +7,8 @@
 #include "GameFonts.h"
 #include "TextLibExt.h"
 
+using namespace hb::shared::net;
+using namespace hb::client::net;
 DialogBox_GuildHallMenu::DialogBox_GuildHallMenu(CGame* pGame)
 	: IDialogBox(DialogBoxId::GuildHallMenu, pGame)
 {
@@ -45,7 +47,7 @@ void DialogBox_GuildHallMenu::OnDraw(short msX, short msY, short msZ, char cLB)
 		if (m_pGame->m_iTeleportMapCount > 0)
 		{
 			char teleportBuf[128];
-			TextLib::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, TextLib::TextStyle::WithShadow(GameColors::UILabel));
+			hb::shared::text::DrawText(GameFont::Default, sX + 35, sY + 250, DRAW_DIALOGBOX_CITYHALL_MENU72_1, hb::shared::text::TextStyle::WithShadow(GameColors::UILabel));
 			for (int i = 0; i < m_pGame->m_iTeleportMapCount; i++)
 			{
 				std::memset(cTxt, 0, sizeof(cTxt));
@@ -178,7 +180,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		{
 			Info().cMode = 1;
 			m_pGame->m_iTeleportMapCount = -1;
-			bSendCommand(MSGID_REQUEST_HELDENIAN_TP_LIST, 0, 0, 0, 0, 0, 0);
+			bSendCommand(ClientMsgId::RequestHeldenianTpList, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX > sX + 35) && (msX < sX + 220) && (msY > sY + 95) && (msY < sY + 120))
@@ -205,7 +207,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 			{
 				if ((msX >= sX + ui_layout::left_btn_x) && (msX <= sX + ui_layout::right_btn_x + ui_layout::btn_size_x) && (msY >= sY + 130 + i * 15) && (msY <= sY + 144 + i * 15))
 				{
-					bSendCommand(MSGID_REQUEST_HELDENIAN_TP, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
+					bSendCommand(ClientMsgId::RequestHeldenianTp, 0, 0, m_pGame->m_stTeleportList[i].iIndex, 0, 0, 0);
 					DisableDialogBox(DialogBoxId::GuildHallMenu);
 					return false;
 				}
@@ -217,37 +219,37 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 70) && (msY < sY + 95)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 2000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 875, 1, 2, 3, 4, "Gail", 5);
+			bSendCommand(MsgId::RequestHeldenianScroll, 875, 1, 2, 3, 4, "Gail", 5);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 95) && (msY < sY + 120)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 876, 0, 0, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestHeldenianScroll, 876, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 120) && (msY < sY + 145)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 1500) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 877, 0, 0, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestHeldenianScroll, 877, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 145) && (msY < sY + 170)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 878, 0, 0, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestHeldenianScroll, 878, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 170) && (msY < sY + 195)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 4000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 879, 0, 0, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestHeldenianScroll, 879, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY > sY + 195) && (msY < sY + 220)
 			&& (m_pGame->m_pPlayer->m_iConstructionPoint >= 3000) && (m_pGame->m_bIsCrusadeMode == false))
 		{
-			bSendCommand(MSGID_REQUEST_HELDENIAN_SCROLL, 880, 0, 0, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestHeldenianScroll, 880, 0, 0, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		break;
@@ -256,7 +258,7 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 140) && (msY <= sY + 165)
 			&& (m_pGame->m_pPlayer->m_iEnemyKillCount >= 3))
 		{
-			bSendCommand(MSGID_COMMAND_COMMON, DEF_COMMONTYPE_REQ_GETOCCUPYFLAG, 0, 0, 0, 0, 0, 0);
+			bSendCommand(MsgId::CommandCommon, CommonType::ReqGetOccupyFlag, 0, 0, 0, 0, 0, 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		break;
@@ -265,25 +267,25 @@ bool DialogBox_GuildHallMenu::OnClick(short msX, short msY)
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 175) && (msY <= sY + 200)
 			&& (m_pGame->m_iGizonItemUpgradeLeft >= 5))
 		{
-			bSendCommand(DEF_REQUEST_ANGEL, 0, 0, 1, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestAngel, 0, 0, 1, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 200) && (msY <= sY + 225)
 			&& (m_pGame->m_iGizonItemUpgradeLeft >= 5))
 		{
-			bSendCommand(DEF_REQUEST_ANGEL, 0, 0, 2, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestAngel, 0, 0, 2, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 225) && (msY <= sY + 250)
 			&& (m_pGame->m_iGizonItemUpgradeLeft >= 5))
 		{
-			bSendCommand(DEF_REQUEST_ANGEL, 0, 0, 3, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestAngel, 0, 0, 3, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		if ((msX >= sX + 35) && (msX <= sX + 220) && (msY >= sY + 250) && (msY <= sY + 275)
 			&& (m_pGame->m_iGizonItemUpgradeLeft >= 5))
 		{
-			bSendCommand(DEF_REQUEST_ANGEL, 0, 0, 4, 0, 0, "Gail", 0);
+			bSendCommand(MsgId::RequestAngel, 0, 0, 4, 0, 0, "Gail", 0);
 			PlaySoundEffect('E', 14, 5);
 		}
 		break;

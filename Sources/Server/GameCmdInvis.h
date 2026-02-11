@@ -7,6 +7,6 @@ class GameCmdInvis : public GameChatCommand
 {
 public:
 	const char* GetName() const override { return "invis"; }
-	int GetDefaultLevel() const override { return hb::admin::GameMaster; }
+	int GetDefaultLevel() const override { return hb::shared::admin::GameMaster; }
 	bool Execute(CGame* pGame, int iClientH, const char* pArgs) override;
 };

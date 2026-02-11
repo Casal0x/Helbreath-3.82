@@ -1,6 +1,6 @@
 // Screen_TestPrimitives.h: Visual Test Scene for Primitive Drawing
 //
-// Exercises every IRenderer primitive method:
+// Exercises every hb::shared::render::IRenderer primitive method:
 // DrawPixel, DrawLine, DrawRectFilled, DrawRectOutline,
 // DrawRoundedRectFilled, DrawRoundedRectOutline
 //

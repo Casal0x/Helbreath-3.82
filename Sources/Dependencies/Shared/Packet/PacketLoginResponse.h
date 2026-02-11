@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PacketHeaders.h"
-#include "../Appearance.h"
+#include "Appearance.h"
 
 #include <cstdint>
 
@@ -15,7 +15,7 @@ namespace net {
 
 	struct HB_PACKED PacketLogCharacterEntry {
 		char name[10];
-		PlayerAppearance appearance;
+		hb::shared::entity::PlayerAppearance appearance;
 		std::uint16_t sex;
 		std::uint16_t skin;
 		std::uint16_t level;

@@ -30,7 +30,7 @@ static constexpr int SEPARATOR_Y = 222;
 static constexpr int INPUT_Y = 224;
 
 // Colors
-static constexpr Color COLOR_INPUT{0, 255, 0};      // Green
+static constexpr hb::shared::render::Color COLOR_INPUT{0, 255, 0};      // Green
 
 Overlay_DevConsole::Overlay_DevConsole(CGame* pGame)
 	: IGameScreen(pGame)
@@ -48,7 +48,7 @@ void Overlay_DevConsole::on_uninitialize()
 void Overlay_DevConsole::on_update()
 {
 	// Escape closes the console
-	if (Input::IsKeyPressed(KeyCode::Escape))
+	if (hb::shared::input::IsKeyPressed(KeyCode::Escape))
 	{
 		DevConsole::Get().Hide();
 		clear_overlay();
@@ -56,10 +56,10 @@ void Overlay_DevConsole::on_update()
 	}
 
 	// Mouse wheel scrolling within console area
-	int wheelDelta = Input::GetMouseWheelDelta();
+	int wheelDelta = hb::shared::input::GetMouseWheelDelta();
 	if (wheelDelta != 0)
 	{
-		int mouseY = Input::GetMouseY();
+		int mouseY = hb::shared::input::GetMouseY();
 		if (mouseY >= CONSOLE_TOP && mouseY <= CONSOLE_BOTTOM)
 		{
 			if (wheelDelta > 0)
@@ -73,15 +73,15 @@ void Overlay_DevConsole::on_update()
 void Overlay_DevConsole::on_render()
 {
 	DevConsole& console = DevConsole::Get();
-	IRenderer* pRenderer = m_pGame->m_Renderer;
+	hb::shared::render::IRenderer* pRenderer = m_pGame->m_Renderer;
 
 	const int consoleRight = LOGICAL_WIDTH();
 
 	// Draw 75% opaque black background over top half
-	pRenderer->DrawRectFilled(CONSOLE_LEFT, CONSOLE_TOP, consoleRight - CONSOLE_LEFT, CONSOLE_BOTTOM - CONSOLE_TOP, Color::Black(static_cast<uint8_t>(CONSOLE_ALPHA * 255)));
+	pRenderer->DrawRectFilled(CONSOLE_LEFT, CONSOLE_TOP, consoleRight - CONSOLE_LEFT, CONSOLE_BOTTOM - CONSOLE_TOP, hb::shared::render::Color::Black(static_cast<uint8_t>(CONSOLE_ALPHA * 255)));
 
 	// Draw separator line
-	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, consoleRight - TEXT_MARGIN, SEPARATOR_Y, Color(16, 32, 16, 204));
+	pRenderer->DrawLine(TEXT_MARGIN, SEPARATOR_Y, consoleRight - TEXT_MARGIN, SEPARATOR_Y, hb::shared::render::Color(16, 32, 16, 204));
 
 	// Begin text rendering
 	pRenderer->BeginTextBatch();

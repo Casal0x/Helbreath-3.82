@@ -72,19 +72,19 @@ void DialogBox_Text::OnDraw(short msX, short msY, short msZ, char cLB)
 				switch (pMsg[0])
 				{
 				case '_':
-					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, TextLib::TextStyle::Color(GameColors::UIWhite), TextLib::Align::TopCenter);
+					hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, hb::shared::text::TextStyle::Color(GameColors::UIWhite), hb::shared::text::Align::TopCenter);
 					break;
 				case ';':
-					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, TextLib::TextStyle::Color(GameColors::UIMagicBlue), TextLib::Align::TopCenter);
+					hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg + 1, hb::shared::text::TextStyle::Color(GameColors::UIMagicBlue), hb::shared::text::Align::TopCenter);
 					break;
 				default:
-					TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, TextLib::TextStyle::Color(GameColors::UILabel), TextLib::Align::TopCenter);
+					hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, hb::shared::text::TextStyle::Color(GameColors::UILabel), hb::shared::text::Align::TopCenter);
 					break;
 				}
 			}
 			else
 			{
-				TextLib::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, TextLib::TextStyle::Color(GameColors::UIBlack), TextLib::Align::TopCenter);
+				hb::shared::text::DrawTextAligned(GameFont::Default, sX + 24, sY + 50 + i * 13, sX + 236 - (sX + 24), 15, pMsg, hb::shared::text::TextStyle::Color(GameColors::UIBlack), hb::shared::text::Align::TopCenter);
 			}
 		}
 	}

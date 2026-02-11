@@ -67,7 +67,7 @@ void ConfigManager::SetDefaults()
 	m_bAmbientEnabled = true;
 	m_bUIEnabled = true;
 
-	// Window defaults
+	// hb::shared::render::Window defaults
 	m_windowWidth = 640;
 	m_windowHeight = 480;
 
@@ -181,7 +181,7 @@ bool ConfigManager::Load(const char* filename)
 			}
 		}
 
-		// Window settings
+		// hb::shared::render::Window settings
 		if (j.contains("window"))
 		{
 			auto& window = j["window"];
@@ -323,7 +323,7 @@ bool ConfigManager::Save(const char* filename)
 	j["audio"]["ambientEnabled"] = m_bAmbientEnabled;
 	j["audio"]["uiEnabled"] = m_bUIEnabled;
 
-	// Window settings
+	// hb::shared::render::Window settings
 	j["window"]["width"] = m_windowWidth;
 	j["window"]["height"] = m_windowHeight;
 

@@ -55,21 +55,21 @@ char			G_cData50000[50000];
 MMRESULT        G_mmTimer = 0;
 
 
-class ASIOSocket* G_pListenSock = 0;
-class ASIOSocket* G_pLogSock = 0;
+class hb::shared::net::ASIOSocket* G_pListenSock = 0;
+class hb::shared::net::ASIOSocket* G_pLogSock = 0;
 class CGame* G_pGame = 0;
-class ASIOSocket* G_pLoginSock = 0;
+class hb::shared::net::ASIOSocket* G_pLoginSock = 0;
 class LoginServer* g_login;
 
 // Shared I/O service pool: 4 threads for async networking
-IOServicePool* G_pIOPool = nullptr;
+hb::shared::net::IOServicePool* G_pIOPool = nullptr;
 
 // Thread-safe queues for async accept
-ConcurrentQueue<asio::ip::tcp::socket> G_gameAcceptQueue;
-ConcurrentQueue<asio::ip::tcp::socket> G_loginAcceptQueue;
+hb::shared::net::ConcurrentQueue<asio::ip::tcp::socket> G_gameAcceptQueue;
+hb::shared::net::ConcurrentQueue<asio::ip::tcp::socket> G_loginAcceptQueue;
 
 // Thread-safe error queue from I/O threads
-ConcurrentQueue<SocketErrorEvent> G_errorQueue;
+hb::shared::net::ConcurrentQueue<hb::shared::net::SocketErrorEvent> G_errorQueue;
 
 int             G_iQuitProgramCount = 0;
 bool			G_bIsThread = true;
@@ -259,7 +259,7 @@ void DrainErrorQueue()
 {
 	if (G_pGame == nullptr) return;
 
-	SocketErrorEvent evt;
+	hb::shared::net::SocketErrorEvent evt;
 	while (G_errorQueue.Pop(evt)) {
 		// Determine if this is a game client or login client
 		// Game clients have positive indices 1..DEF_MAXCLIENTS-1
@@ -371,7 +371,7 @@ void Initialize()
 {
 
 	// Create shared I/O service pool before anything that creates sockets
-	G_pIOPool = new IOServicePool(4);
+	G_pIOPool = new hb::shared::net::IOServicePool(4);
 
 	G_pGame = new class CGame(G_hWnd);
 	if (G_pGame->bInit() == false) {
@@ -388,10 +388,10 @@ void Initialize()
 	// ���� ����� Ÿ�̸�
 	G_mmTimer = _StartTimer((300 / DEF_GAMETICK_MULTIPLER));
 
-	G_pListenSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pListenSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pListenSock->bListen(G_pGame->m_cGameListenIP, G_pGame->m_iGameListenPort);
 
-	G_pLoginSock = new class ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
+	G_pLoginSock = new class hb::shared::net::ASIOSocket(G_pIOPool->GetContext(), DEF_SERVERSOCKETBLOCKLIMIT);
 	G_pLoginSock->bListen(G_pGame->m_cLoginListenIP, G_pGame->m_iLoginListenPort);
 
 	// Start async accept on both listen sockets

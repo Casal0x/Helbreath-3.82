@@ -1,30 +1,35 @@
 #pragma once
 
+#include <cstdint>
+
 // ClientMessages.h - Client-Only Network Messages
 //
-// This file contains network message definitions used exclusively by the
-// Helbreath Client. These messages are not used by the Server.
+// Network message IDs used exclusively by the Helbreath Client.
 //
-// For shared protocol messages, see Dependencies/Shared/NetMessages.h
+// For shared protocol messages, see Dependencies/Shared/Net/NetMessages.h
 
-// ============================================================================
-// Client Teleport Messages
-// NOTE: Some of these IDs conflict with Server teleport message IDs
-// ============================================================================
+namespace hb::client::net
+{
 
-// Client teleport list messages
-#define MSGID_REQUEST_TELEPORT_LIST					0x0EA03202  // Conflicts with Server CITYHALLTELEPORT
-#define MSGID_RESPONSE_TELEPORT_LIST				0x0EA03203
-#define MSGID_REQUEST_CHARGED_TELEPORT				0x0EA03204
-#define MSGID_RESPONSE_CHARGED_TELEPORT				0x0EA03205
+// Client-Only Message IDs
+namespace ClientMsgId
+{
+	enum : uint32_t
+	{
+		// Teleport list messages
+		RequestTeleportList                     = 0x0EA03202,
+		ResponseTeleportList                    = 0x0EA03203,
+		RequestChargedTeleport                  = 0x0EA03204,
+		ResponseChargedTeleport                 = 0x0EA03205,
 
-// Heldenian teleport messages
-#define MSGID_REQUEST_HELDENIAN_TP_LIST				0x0EA03206  // Conflicts with Server HELDENIANTELEPORT
-#define MSGID_RESPONSE_HELDENIAN_TP_LIST			0x0EA03207
-#define MSGID_REQUEST_HELDENIAN_TP					0x0EA03208
+		// Heldenian teleport messages
+		RequestHeldenianTpList                  = 0x0EA03206,
+		ResponseHeldenianTpList                 = 0x0EA03207,
+		RequestHeldenianTp                      = 0x0EA03208,
 
-// ============================================================================
-// Gateway Messages
-// ============================================================================
+		// Gateway messages
+		GetMinimumLoadGateway                   = 0x3B1890EA,
+	};
+}
 
-#define MSGID_GETMINIMUMLOADGATEWAY					0x3B1890EA
+} // namespace hb::client::net
