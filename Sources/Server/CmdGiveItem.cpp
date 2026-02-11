@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "CmdGiveItem.h"
 #include "Game.h"
+#include "ItemManager.h"
 #include "Item.h"
 #include "Item/ItemEnums.h"
 #include "winmain.h"
@@ -98,7 +99,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	{
 		// True stacks: single item with count = amount (arrows, materials, gold)
 		CItem* pItem = new CItem;
-		if (pGame->_bInitItemAttr(pItem, iItemID) == false)
+		if (pGame->m_pItemManager->_bInitItemAttr(pItem, iItemID) == false)
 		{
 			delete pItem;
 			char buf[256];
@@ -108,7 +109,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 		}
 		pItem->m_dwCount = iAmount;
 
-		if (pGame->bAddItem(iClientH, pItem, 0) == false)
+		if (pGame->m_pItemManager->bAddItem(iClientH, pItem, 0) == false)
 		{
 			PutLogList((char*)"Failed to give item: player inventory full.");
 			return;
@@ -118,7 +119,7 @@ void CmdGiveItem::Execute(CGame* pGame, const char* pArgs)
 	else
 	{
 		// Soft-linked items: individual items, one bulk notification
-		iCreated = pGame->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
+		iCreated = pGame->m_pItemManager->_bAddClientBulkItemList(iClientH, pItemName, iAmount);
 	}
 
 	// Success

@@ -58,7 +58,6 @@ inline int LEVELUP_TEXT_Y()     { return hb::shared::render::ResolutionConfig::G
 
 
 /*** Some more compilation options ***/
-#define DEF_MAKE_ACCOUNT		// Enable acc creation. Missing sprites, fixed!
 #define DEF_COMMA_GOLD			// Allows to show comma nbe as original HB (ie: 1,200,000)
 
 #define DEF_WINDOWED_MODE		// Shows HB in a windowed mode (for debug purpose only, sprite will bug....)

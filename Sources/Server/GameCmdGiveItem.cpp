@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "GameCmdGiveItem.h"
 #include "Game.h"
+#include "ItemManager.h"
 #include "Item.h"
 #include "Item/ItemEnums.h"
 #include <cstring>
@@ -64,13 +65,13 @@ bool GameCmdGiveItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	{
 		// True stacks: single item with count = amount (arrows, materials, gold)
 		CItem* pItem = new CItem();
-		if (pGame->_bInitItemAttr(pItem, pItemName))
+		if (pGame->m_pItemManager->_bInitItemAttr(pItem, pItemName))
 		{
 			pItem->m_dwCount = iAmount;
 			int iEraseReq = 0;
-			if (pGame->_bAddClientItemList(iTargetH, pItem, &iEraseReq))
+			if (pGame->m_pItemManager->_bAddClientItemList(iTargetH, pItem, &iEraseReq))
 			{
-				pGame->SendItemNotifyMsg(iTargetH, Notify::ItemObtained, pItem, 0);
+				pGame->m_pItemManager->SendItemNotifyMsg(iTargetH, Notify::ItemObtained, pItem, 0);
 				iCreated = iAmount;
 			}
 			else
@@ -90,7 +91,7 @@ bool GameCmdGiveItem::Execute(CGame* pGame, int iClientH, const char* pArgs)
 	else
 	{
 		// Soft-linked items: individual items, one bulk notification
-		iCreated = pGame->_bAddClientBulkItemList(iTargetH, pItemName, iAmount);
+		iCreated = pGame->m_pItemManager->_bAddClientBulkItemList(iTargetH, pItemName, iAmount);
 	}
 
 	char buf[128];

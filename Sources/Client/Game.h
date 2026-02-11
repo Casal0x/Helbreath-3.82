@@ -58,6 +58,10 @@
 #include "NpcRenderer.h"
 #include "GameTimer.h"
 #include "FloatingTextManager.h"
+#include "FishingManager.h"
+#include "CraftingManager.h"
+#include "QuestManager.h"
+#include "GuildManager.h"
 
 #include "GameConstants.h"
 
@@ -291,6 +295,10 @@ void _LoadShopMenuContents(char cType);
 
 	GameTimer m_game_timer;
 	DialogBoxManager m_dialogBoxManager;
+	FishingManager m_fishingManager;
+	CraftingManager m_craftingManager;
+	QuestManager m_questManager;
+	GuildManager m_guildManager;
 //Snoopy=>>>>>>>>>>>>>>>>>>>>>
 	struct {
 		int   sV1, sV2, sV3, sV4, sV5, sV6, sV7, sItemID;

@@ -190,6 +190,10 @@ CGame::CGame()
 	// Initialize Managers (Networking v4) - using make_unique
 	m_pEffectManager = std::make_unique<EffectManager>(this);
 	m_pNetworkMessageManager = std::make_unique<NetworkMessageManager>(this);
+	m_fishingManager.SetGame(this);
+	m_craftingManager.SetGame(this);
+	m_questManager.SetGame(this);
+	m_guildManager.SetGame(this);
 
 	// All pointer arrays (std::array<std::unique_ptr<T>, N>) default to nullptr
 	// Dialog box order initialization

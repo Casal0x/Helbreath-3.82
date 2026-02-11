@@ -1,6 +1,9 @@
 #include <windows.h>
 #include "CmdReload.h"
 #include "Game.h"
+#include "SkillManager.h"
+#include "MagicManager.h"
+#include "ItemManager.h"
 #include "winmain.h"
 #include <cstdio>
 #include <cstring>
@@ -46,9 +49,9 @@ void CmdReload::Execute(CGame* pGame, const char* pArgs)
 		pGame->SendConfigReloadNotification(bItems, bMagic, bSkills, bNpcs);
 
 	// Reload configs from database
-	if (bItems)  pGame->ReloadItemConfigs();
-	if (bMagic)  pGame->ReloadMagicConfigs();
-	if (bSkills) pGame->ReloadSkillConfigs();
+	if (bItems)  pGame->m_pItemManager->ReloadItemConfigs();
+	if (bMagic)  pGame->m_pMagicManager->ReloadMagicConfigs();
+	if (bSkills) pGame->m_pSkillManager->ReloadSkillConfigs();
 	if (bNpcs)   pGame->ReloadNpcConfigs();
 
 	// Stream updated config data to clients

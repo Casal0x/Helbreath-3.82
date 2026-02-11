@@ -342,6 +342,10 @@
     <ClInclude Include="FloatingTextTypes.h" />
     <ClInclude Include="FloatingText.h" />
     <ClInclude Include="FloatingTextManager.h" />
+    <ClInclude Include="FishingManager.h" />
+    <ClInclude Include="CraftingManager.h" />
+    <ClInclude Include="QuestManager.h" />
+    <ClInclude Include="GuildManager.h" />
     <ClInclude Include="CursorTarget.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="PlayerController.h" />
@@ -484,6 +488,10 @@
     <ClCompile Include="NetworkMessages_Events.cpp" />
     <ClCompile Include="NetworkMessages_Exchange.cpp" />
     <ClCompile Include="NetworkMessages_Fish.cpp" />
+    <ClCompile Include="FishingManager.cpp" />
+    <ClCompile Include="CraftingManager.cpp" />
+    <ClCompile Include="QuestManager.cpp" />
+    <ClCompile Include="GuildManager.cpp" />
     <ClCompile Include="NetworkMessages_Guild.cpp" />
     <ClCompile Include="NetworkMessages_Heldenian.cpp" />
     <ClCompile Include="NetworkMessages_Items.cpp" />

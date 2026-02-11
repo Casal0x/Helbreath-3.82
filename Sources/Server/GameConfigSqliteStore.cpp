@@ -7,6 +7,9 @@
 #include "Item.h"
 #include "BuildItem.h"
 #include "Game.h"
+#include "ItemManager.h"
+#include "CraftingManager.h"
+#include "QuestManager.h"
 #include "Magic.h"
 #include "Npc.h"
 #include "Portion.h"
@@ -1777,11 +1780,11 @@ bool SaveQuestConfigs(sqlite3* db, const CGame* game)
     }
 
     for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
-        if (game->m_pQuestConfigList[i] == nullptr) {
+        if (game->m_pQuestManager->m_pQuestConfigList[i] == nullptr) {
             continue;
         }
 
-        const CQuest* quest = game->m_pQuestConfigList[i];
+        const CQuest* quest = game->m_pQuestManager->m_pQuestConfigList[i];
         sqlite3_reset(stmt);
         sqlite3_clear_bindings(stmt);
         int col = 1;
@@ -1836,8 +1839,8 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
     }
 
     for(int i = 0; i < hb::server::config::MaxQuestType; i++) {
-        delete game->m_pQuestConfigList[i];
-        game->m_pQuestConfigList[i] = nullptr;
+        delete game->m_pQuestManager->m_pQuestConfigList[i];
+        game->m_pQuestManager->m_pQuestConfigList[i] = nullptr;
     }
 
     const char* sql =
@@ -1888,7 +1891,7 @@ bool LoadQuestConfigs(sqlite3* db, CGame* game)
         quest->m_iQuestID = sqlite3_column_int(stmt, col++);
         quest->m_iReqContribution = sqlite3_column_int(stmt, col++);
 
-        game->m_pQuestConfigList[questIndex] = quest;
+        game->m_pQuestManager->m_pQuestConfigList[questIndex] = quest;
     }
 
     sqlite3_finalize(stmt);
@@ -1932,8 +1935,8 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
     }
 
     for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
-        if (game->m_pPortionConfigList[i] != nullptr) {
-            const CPortion* potion = game->m_pPortionConfigList[i];
+        if (game->m_pCraftingManager->m_pPortionConfigList[i] != nullptr) {
+            const CPortion* potion = game->m_pCraftingManager->m_pPortionConfigList[i];
             sqlite3_reset(potionStmt);
             sqlite3_clear_bindings(potionStmt);
             int col = 1;
@@ -1953,8 +1956,8 @@ bool SavePortionConfigs(sqlite3* db, const CGame* game)
             }
         }
 
-        if (game->m_pCraftingConfigList[i] != nullptr) {
-            const CPortion* crafting = game->m_pCraftingConfigList[i];
+        if (game->m_pCraftingManager->m_pCraftingConfigList[i] != nullptr) {
+            const CPortion* crafting = game->m_pCraftingManager->m_pCraftingConfigList[i];
             sqlite3_reset(craftingStmt);
             sqlite3_clear_bindings(craftingStmt);
             int col = 1;
@@ -1991,10 +1994,10 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
     }
 
     for(int i = 0; i < hb::server::config::MaxPortionTypes; i++) {
-        delete game->m_pPortionConfigList[i];
-        game->m_pPortionConfigList[i] = nullptr;
-        delete game->m_pCraftingConfigList[i];
-        game->m_pCraftingConfigList[i] = nullptr;
+        delete game->m_pCraftingManager->m_pPortionConfigList[i];
+        game->m_pCraftingManager->m_pPortionConfigList[i] = nullptr;
+        delete game->m_pCraftingManager->m_pCraftingConfigList[i];
+        game->m_pCraftingManager->m_pCraftingConfigList[i] = nullptr;
     }
 
     const char* potionSql =
@@ -2024,7 +2027,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         }
         potion->m_iSkillLimit = sqlite3_column_int(stmt, col++);
         potion->m_iDifficulty = sqlite3_column_int(stmt, col++);
-        game->m_pPortionConfigList[potionId] = potion;
+        game->m_pCraftingManager->m_pPortionConfigList[potionId] = potion;
     }
 
     sqlite3_finalize(stmt);
@@ -2045,7 +2048,7 @@ bool LoadPortionConfigs(sqlite3* db, CGame* game)
         }
         crafting->m_iSkillLimit = sqlite3_column_int(stmt, col++);
         crafting->m_iDifficulty = sqlite3_column_int(stmt, col++);
-        game->m_pCraftingConfigList[craftingId] = crafting;
+        game->m_pCraftingManager->m_pCraftingConfigList[craftingId] = crafting;
     }
 
     sqlite3_finalize(stmt);
@@ -2169,7 +2172,7 @@ bool LoadBuildItemConfigs(sqlite3* db, CGame* game)
         } else {
             // Fallback to name lookup for backwards compatibility
             CItem tempItem;
-            if (game->_bInitItemAttr(&tempItem, build->m_cName)) {
+            if (game->m_pItemManager->_bInitItemAttr(&tempItem, build->m_cName)) {
                 build->m_sItemID = tempItem.m_sIDnum;
             } else {
                 char logMsg[256] = {};

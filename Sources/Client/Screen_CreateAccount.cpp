@@ -15,7 +15,6 @@ using namespace hb::shared::net;
 using namespace hb::client::sprite_id;
 namespace MouseButton = hb::shared::input::MouseButton;
 
-#ifdef DEF_MAKE_ACCOUNT
 
 Screen_CreateAccount::Screen_CreateAccount(CGame* pGame)
     : IGameScreen(pGame), m_cCurFocus(1), m_cMaxFocus(7)
@@ -380,4 +379,3 @@ void Screen_CreateAccount::on_render()
     m_pGame->DrawVersion();
 }
 
-#endif // DEF_MAKE_ACCOUNT
