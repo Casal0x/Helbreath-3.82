@@ -2,7 +2,6 @@
 #include "Game.h"
 #include "GlobalDef.h"
 #include "SharedCalculations.h"
-#include "CursorTarget.h"
 #include "GameFonts.h"
 #include "TextLibExt.h"
 #include <cstdlib>
@@ -102,16 +101,6 @@ void DialogBox_HudPanel::DrawGaugeBars()
 	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X() + 1, SP_NUM_Y() + 1, statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIBlack));
 	hb::shared::text::DrawText(GameFont::Numbers, SP_NUM_X(), SP_NUM_Y(), statBuf.c_str(), hb::shared::text::TextStyle::Color(GameColors::UIWhite));
 
-	// Experience bar
-	uint32_t iCurLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel);
-	uint32_t iNextLevelExp = m_pGame->iGetLevelExp(m_pGame->m_pPlayer->m_iLevel + 1);
-	uint32_t iExpRange = iNextLevelExp - iCurLevelExp;
-	uint32_t iExpProgress = m_pGame->m_pPlayer->m_iExp - iCurLevelExp;
-	if (iExpRange == 0) iBarWidth = ICON_PANEL_WIDTH();
-	else iBarWidth = (iExpProgress * ICON_PANEL_WIDTH()) / iExpRange;
-	if (iBarWidth < 0) iBarWidth = 0;
-	if (iBarWidth > ICON_PANEL_WIDTH()) iBarWidth = ICON_PANEL_WIDTH();
-	pSprite->DrawWidth(HudXOffset(), EXP_BAR_Y(), 18, iBarWidth);
 }
 
 void DialogBox_HudPanel::DrawStatusIcons(short msX, short msY)
@@ -262,27 +251,6 @@ bool DialogBox_HudPanel::OnClick(short msX, short msY)
 
 bool DialogBox_HudPanel::OnItemDrop(short msX, short msY)
 {
-	short sItemIndex = CursorTarget::GetSelectedID();
-	if (m_pGame->m_bIsItemDisabled[sItemIndex]) return true;
-	if (m_pGame->m_pPlayer->m_Controller.GetCommand() < 0) return true;
-
-	int xOffset = HudXOffset();
-	int yOffset = HudYOffset();
-
-	// Inventory icon area - drop item into inventory
-	if ((453 + xOffset < msX) && (486 + xOffset > msX) && (440 + yOffset < msY) && (475 + yOffset > msY))
-	{
-		auto& invInfo = InfoOf(DialogBoxId::Inventory);
-		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::Inventory)->OnItemDrop(invInfo.sX + 40, invInfo.sY + 30);
-		return true;
-	}
-
-	// Character icon area - equip item
-	if ((425 + xOffset < msX) && (448 + xOffset > msX) && (440 + yOffset < msY) && (475 + yOffset > msY))
-	{
-		m_pGame->m_dialogBoxManager.GetDialogBox(DialogBoxId::CharacterInfo)->OnItemDrop(msX, msY);
-		return true;
-	}
-
-	return true;
+	// Placeholder — no item drop behavior on HUD panel at this time
+	return false;
 }

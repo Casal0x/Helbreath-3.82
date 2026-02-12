@@ -32,16 +32,12 @@ private:
 	static constexpr int BASE_MP_BAR_Y = 459;
 	static constexpr int BASE_SP_BAR_X = 147;
 	static constexpr int BASE_SP_BAR_Y = 434;
-	static constexpr int BASE_EXP_BAR_Y = 429;
-
 	// Runtime positions (X and Y offsets applied)
 	static int HP_BAR_X() { return BASE_HP_BAR_X + HudXOffset(); }
 	static int HP_BAR_Y() { return BASE_HP_BAR_Y + HudYOffset(); }
 	static int MP_BAR_Y() { return BASE_MP_BAR_Y + HudYOffset(); }
 	static int SP_BAR_X() { return BASE_SP_BAR_X + HudXOffset(); }
 	static int SP_BAR_Y() { return BASE_SP_BAR_Y + HudYOffset(); }
-	static int EXP_BAR_X() { return HudXOffset(); }
-	static int EXP_BAR_Y() { return BASE_EXP_BAR_Y + HudYOffset(); }
 
 	// HP/MP/SP number positions
 	static constexpr int BASE_HP_NUM_X = 80;
